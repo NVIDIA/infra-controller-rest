@@ -15605,6 +15605,7 @@ components:
         - Configuring
         - Ready
         - Updating
+        - Repairing
         - Rebooting
         - Terminating
         - Error
@@ -17483,6 +17484,58 @@ components:
         status:
           $ref: '#/components/schemas/MachineStatus'
           readOnly: true
+    MachineHealthIssue:
+      title: MachineHealthIssue
+      type: object
+      required:
+        - category
+        - summary
+        - details
+      properties:
+        category:
+          type: string
+          enum:
+            - HARDWARE
+            - NETWORK
+            - PERFORMANCE
+            - STORAGE
+            - SOFTWARE
+            - OTHER
+          description: High-level category for the tenant-reported issue.
+        summary:
+          type: string
+          maxLength: 512
+          description: Brief description of the issue for operators.
+        details:
+          type: string
+          maxLength: 8192
+          description: Diagnostic information, logs, ticket numbers, etc.
+    OnlineRepairPolicy:
+      title: OnlineRepairPolicy
+      type: object
+      required:
+        - allowAutoInstanceDeletionOnFailure
+      properties:
+        allowAutoInstanceDeletionOnFailure:
+          type: boolean
+          description: When true, escalation to offline breakfix (permanent delete / deallocate) is allowed if online repair cannot be completed.
+    OnlineRepairAcknowledgments:
+      title: OnlineRepairAcknowledgments
+      type: object
+      required:
+        - acceptDataCorruptionRisk
+        - acceptRepairTeamAccess
+        - acceptInstanceDeletionRisk
+      properties:
+        acceptDataCorruptionRisk:
+          type: boolean
+          description: Tenant confirms data may be corrupted during repair.
+        acceptRepairTeamAccess:
+          type: boolean
+          description: Tenant confirms the dedicated repair team will have access to the instance.
+        acceptInstanceDeletionRisk:
+          type: boolean
+          description: Tenant confirms risk of instance deletion if escalation to offline breakfix occurs.
     MachineUpdateRequest:
       title: MachineUpdateRequest
       type: object
@@ -17496,7 +17549,20 @@ components:
             RackIdentifier: GVX11F01C02
             ServerName: SITE1-C03-Server-02
             RepairStatus: InProgress
-      description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates and labels updates must be specified in separate requests. They cannot be proceessed at the same time.'
+        - requestOnlineRepair: true
+          machineHealthIssue:
+            category: STORAGE
+            summary: Disk errors on OSD
+            details: 'Ticket FORGE-12345; smartctl logs attached'
+          repairPolicy:
+            allowAutoInstanceDeletionOnFailure: false
+          acknowledgments:
+            acceptDataCorruptionRisk: true
+            acceptRepairTeamAccess: true
+            acceptInstanceDeletionRisk: true
+        - requestOnlineRepair: false
+          clearOnlineRepair: true
+      description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates, labels updates, and in-pool online repair (enter or exit) must be specified in separate requests. They cannot be processed at the same time.'
       properties:
         instanceTypeId:
           type:
@@ -17526,6 +17592,25 @@ components:
         labels:
           description: 'Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.'
           $ref: '#/components/schemas/Labels'
+        requestOnlineRepair:
+          type:
+            - boolean
+            - 'null'
+          description: >-
+            When true, enters in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine
+            and sets the associated Instance status to Repairing. When false, must be used with clearOnlineRepair true to exit online repair.
+            Cannot be combined with instance type, maintenance, or label updates in the same request.
+        clearOnlineRepair:
+          type:
+            - boolean
+            - 'null'
+          description: Must be true when requestOnlineRepair is false to clear the OnlineRepair health override and return the Instance to Ready.
+        machineHealthIssue:
+          $ref: '#/components/schemas/MachineHealthIssue'
+        repairPolicy:
+          $ref: '#/components/schemas/OnlineRepairPolicy'
+        acknowledgments:
+          $ref: '#/components/schemas/OnlineRepairAcknowledgments'
     MachineInterface:
       title: MachineInterface
       type: object

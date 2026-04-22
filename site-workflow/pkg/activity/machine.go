@@ -116,6 +116,56 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	return err
 }
 
+// InsertHealthReportOverrideOnSite applies a health report override on the Site controller.
+func (mm *ManageMachine) InsertHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.InsertHealthReportOverrideRequest) error {
+	logger := log.With().Str("Activity", "InsertHealthReportOverrideOnSite").Logger()
+	logger.Info().Msg("Starting activity")
+
+	if request == nil || request.MachineId == nil || request.MachineId.Id == "" || request.Override == nil || request.Override.Report == nil {
+		return temporal.NewNonRetryableApplicationError("invalid InsertHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or override report"))
+	}
+
+	carbideClient := mm.carbideAtomicClient.GetClient()
+	if carbideClient == nil {
+		return cClient.ErrClientNotConnected
+	}
+	forgeClient := carbideClient.Carbide()
+
+	_, err := forgeClient.InsertHealthReportOverride(ctx, request)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Failed to insert health report override using Site Controller API")
+		return swe.WrapErr(err)
+	}
+
+	logger.Info().Msg("Completed activity")
+	return nil
+}
+
+// RemoveHealthReportOverrideOnSite removes a health report override on the Site controller.
+func (mm *ManageMachine) RemoveHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.RemoveHealthReportOverrideRequest) error {
+	logger := log.With().Str("Activity", "RemoveHealthReportOverrideOnSite").Logger()
+	logger.Info().Msg("Starting activity")
+
+	if request == nil || request.MachineId == nil || request.MachineId.Id == "" || request.Source == "" {
+		return temporal.NewNonRetryableApplicationError("invalid RemoveHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or source"))
+	}
+
+	carbideClient := mm.carbideAtomicClient.GetClient()
+	if carbideClient == nil {
+		return cClient.ErrClientNotConnected
+	}
+	forgeClient := carbideClient.Carbide()
+
+	_, err := forgeClient.RemoveHealthReportOverride(ctx, request)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Failed to remove health report override using Site Controller API")
+		return swe.WrapErr(err)
+	}
+
+	logger.Info().Msg("Completed activity")
+	return nil
+}
+
 // GetDpuMachinesByIDs is an activity to retrieve DPU Machines by IDs with network configuration
 func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs []string) ([]*cwssaws.DpuMachine, error) {
 	logger := log.With().Str("Activity", "GetDpuMachinesByIDs").Logger()

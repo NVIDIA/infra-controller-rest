@@ -184,6 +184,40 @@ func (s *MachineWorkflowTestSuite) Test_UpdateMachineMetadata_ActivityFails() {
 	s.Equal(errMsg, applicationErr.Error())
 }
 
+func (s *MachineWorkflowTestSuite) Test_ApplyMachineOnlineRepairHealthOverride_Success() {
+	var machineManager mActivity.ManageMachine
+	req := &cwssaws.InsertHealthReportOverrideRequest{
+		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
+		Override: &cwssaws.HealthReportOverride{
+			Report: &cwssaws.HealthReport{
+				Source: "tenant-reported-issue",
+				Alerts: []*cwssaws.HealthProbeAlert{
+					{Id: "OnLineRepair", Message: `{"details":"d","issue_category":"OTHER","summary":"s"}`},
+				},
+			},
+			Mode: cwssaws.OverrideMode_Replace,
+		},
+	}
+	s.env.RegisterActivity(machineManager.InsertHealthReportOverrideOnSite)
+	s.env.OnActivity(machineManager.InsertHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
+	s.env.ExecuteWorkflow(ApplyMachineOnlineRepairHealthOverride, req)
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
+func (s *MachineWorkflowTestSuite) Test_ClearMachineOnlineRepairHealthOverride_Success() {
+	var machineManager mActivity.ManageMachine
+	req := &cwssaws.RemoveHealthReportOverrideRequest{
+		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
+		Source:    "tenant-reported-issue",
+	}
+	s.env.RegisterActivity(machineManager.RemoveHealthReportOverrideOnSite)
+	s.env.OnActivity(machineManager.RemoveHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
+	s.env.ExecuteWorkflow(ClearMachineOnlineRepairHealthOverride, req)
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+}
+
 func TestMachineWorkflowSuite(t *testing.T) {
 	suite.Run(t, new(MachineWorkflowTestSuite))
 }

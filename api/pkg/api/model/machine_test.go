@@ -576,11 +576,16 @@ func TestMachine_NewAPIMachineSummary(t *testing.T) {
 
 func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 	type fields struct {
-		InstanceTypeID     *string
-		ClearInstanceType  *bool
-		SetMaintenanceMode *bool
-		MaintenanceMessage *string
-		Labels             map[string]string
+		InstanceTypeID      *string
+		ClearInstanceType   *bool
+		SetMaintenanceMode  *bool
+		MaintenanceMessage  *string
+		Labels              map[string]string
+		RequestOnlineRepair *bool
+		ClearOnlineRepair   *bool
+		MachineHealthIssue  *APIMachineHealthIssue
+		RepairPolicy        *APIOnlineRepairPolicy
+		Acknowledgments     *APIOnlineRepairAcknowledgments
 	}
 	tests := []struct {
 		name    string
@@ -721,15 +726,70 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "test valid enter online repair request",
+			fields: fields{
+				RequestOnlineRepair: cdb.GetBoolPtr(true),
+				MachineHealthIssue: &APIMachineHealthIssue{
+					Category: "STORAGE",
+					Summary:  "Disk issue",
+					Details:  "logs and ticket refs",
+				},
+				RepairPolicy: &APIOnlineRepairPolicy{
+					AllowAutoInstanceDeletionOnFailure: cdb.GetBoolPtr(false),
+				},
+				Acknowledgments: &APIOnlineRepairAcknowledgments{
+					AcceptDataCorruptionRisk:   cdb.GetBoolPtr(true),
+					AcceptRepairTeamAccess:     cdb.GetBoolPtr(true),
+					AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test invalid enter online repair with maintenance also set",
+			fields: fields{
+				RequestOnlineRepair: cdb.GetBoolPtr(true),
+				SetMaintenanceMode:  cdb.GetBoolPtr(true),
+				MaintenanceMessage:  cdb.GetStrPtr("needs work"),
+				MachineHealthIssue: &APIMachineHealthIssue{
+					Category: "OTHER",
+					Summary:  "s",
+					Details:  "d",
+				},
+				RepairPolicy: &APIOnlineRepairPolicy{
+					AllowAutoInstanceDeletionOnFailure: cdb.GetBoolPtr(true),
+				},
+				Acknowledgments: &APIOnlineRepairAcknowledgments{
+					AcceptDataCorruptionRisk:   cdb.GetBoolPtr(true),
+					AcceptRepairTeamAccess:     cdb.GetBoolPtr(true),
+					AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test valid exit online repair request",
+			fields: fields{
+				RequestOnlineRepair: cdb.GetBoolPtr(false),
+				ClearOnlineRepair:   cdb.GetBoolPtr(true),
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mur := APIMachineUpdateRequest{
-				InstanceTypeID:     tt.fields.InstanceTypeID,
-				ClearInstanceType:  tt.fields.ClearInstanceType,
-				SetMaintenanceMode: tt.fields.SetMaintenanceMode,
-				MaintenanceMessage: tt.fields.MaintenanceMessage,
-				Labels:             tt.fields.Labels,
+				InstanceTypeID:      tt.fields.InstanceTypeID,
+				ClearInstanceType:   tt.fields.ClearInstanceType,
+				SetMaintenanceMode:  tt.fields.SetMaintenanceMode,
+				MaintenanceMessage:  tt.fields.MaintenanceMessage,
+				Labels:              tt.fields.Labels,
+				RequestOnlineRepair: tt.fields.RequestOnlineRepair,
+				ClearOnlineRepair:   tt.fields.ClearOnlineRepair,
+				MachineHealthIssue:  tt.fields.MachineHealthIssue,
+				RepairPolicy:        tt.fields.RepairPolicy,
+				Acknowledgments:     tt.fields.Acknowledgments,
 			}
 			err := mur.Validate()
 			require.Equal(t, tt.wantErr, err != nil, "error: %v", err)

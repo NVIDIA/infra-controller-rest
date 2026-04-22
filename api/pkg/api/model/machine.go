@@ -18,6 +18,7 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -33,7 +34,19 @@ import (
 const (
 	// MachineMaxLabelCount is the maximum number of Labels allowed per Machine
 	MachineMaxLabelCount = 10
+	// InstanceLabelOnlineRepairAllowAutoDeletion records repairPolicy.allowAutoInstanceDeletionOnFailure from the last enter-online-repair request ("true" / "false").
+	InstanceLabelOnlineRepairAllowAutoDeletion = "onlineRepair.allowAutoInstanceDeletionOnFailure"
 )
+
+// ValidMachineHealthIssueCategories lists accepted machineHealthIssue.category values for online repair.
+var ValidMachineHealthIssueCategories = map[string]bool{
+	"HARDWARE":    true,
+	"NETWORK":     true,
+	"PERFORMANCE": true,
+	"STORAGE":     true,
+	"SOFTWARE":    true,
+	"OTHER":       true,
+}
 
 var (
 	// Time when allocationId/allocation will be deprecated
@@ -61,6 +74,25 @@ var (
 	}
 )
 
+// APIMachineHealthIssue describes the tenant-reported issue when requesting online repair.
+type APIMachineHealthIssue struct {
+	Category string `json:"category"`
+	Summary  string `json:"summary"`
+	Details  string `json:"details"`
+}
+
+// APIOnlineRepairPolicy carries escalation policy for online repair.
+type APIOnlineRepairPolicy struct {
+	AllowAutoInstanceDeletionOnFailure *bool `json:"allowAutoInstanceDeletionOnFailure"`
+}
+
+// APIOnlineRepairAcknowledgments are required confirmations to enter online repair.
+type APIOnlineRepairAcknowledgments struct {
+	AcceptDataCorruptionRisk     *bool `json:"acceptDataCorruptionRisk"`
+	AcceptRepairTeamAccess       *bool `json:"acceptRepairTeamAccess"`
+	AcceptInstanceDeletionRisk   *bool `json:"acceptInstanceDeletionRisk"`
+}
+
 // APIMachineUpdateRequest is the data structure to capture request to update a Machine
 type APIMachineUpdateRequest struct {
 	// InstanceTypeID is the ID of the InstanceType to set for the Machine
@@ -73,6 +105,27 @@ type APIMachineUpdateRequest struct {
 	MaintenanceMessage *string `json:"maintenanceMessage"`
 	// Labels allows setting a key value pair of arbitrary string metadata for the Machine
 	Labels map[string]string `json:"labels"`
+	// RequestOnlineRepair when true enters in-pool online repair; when false, must be paired with clearOnlineRepair to exit.
+	RequestOnlineRepair *bool `json:"requestOnlineRepair"`
+	// ClearOnlineRepair when true removes the OnlineRepair health override (only with requestOnlineRepair false).
+	ClearOnlineRepair *bool `json:"clearOnlineRepair"`
+	// MachineHealthIssue is required when requestOnlineRepair is true.
+	MachineHealthIssue *APIMachineHealthIssue `json:"machineHealthIssue"`
+	// RepairPolicy is required when requestOnlineRepair is true.
+	RepairPolicy *APIOnlineRepairPolicy `json:"repairPolicy"`
+	// Acknowledgments are required when requestOnlineRepair is true.
+	Acknowledgments *APIOnlineRepairAcknowledgments `json:"acknowledgments"`
+}
+
+// IsMachineOnlineRepairOperation reports whether this request is solely for entering or exiting in-pool online repair.
+func (mur *APIMachineUpdateRequest) IsMachineOnlineRepairOperation() bool {
+	if mur.RequestOnlineRepair == nil {
+		return false
+	}
+	if *mur.RequestOnlineRepair {
+		return true
+	}
+	return mur.ClearOnlineRepair != nil && *mur.ClearOnlineRepair
 }
 
 // Validate ensure the values passed in request are acceptable
@@ -106,15 +159,19 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		exclusiveOptionsCount++
 	}
 
+	if mur.IsMachineOnlineRepairOperation() {
+		exclusiveOptionsCount++
+	}
+
 	if err == nil && exclusiveOptionsCount > 1 {
 		err = validation.Errors{
-			validationCommonErrorField: errors.New("only one of setMaintenanceMode, instanceTypeId, clearInstanceType or labels can be set at a time"),
+			validationCommonErrorField: errors.New("only one of setMaintenanceMode, instanceTypeId, clearInstanceType, labels, or online repair fields can be set at a time"),
 		}
 	}
 
 	if err == nil && exclusiveOptionsCount == 0 {
 		err = validation.Errors{
-			validationCommonErrorField: errors.New("no updates specified. At least one of setMaintenanceMode, instanceTypeId, clearInstanceType or labels must be specified"),
+			validationCommonErrorField: errors.New("no updates specified. At least one of setMaintenanceMode, instanceTypeId, clearInstanceType, labels, or online repair fields must be specified"),
 		}
 	}
 
@@ -124,11 +181,91 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		}
 	}
 
+	if err == nil && mur.RequestOnlineRepair != nil {
+		if *mur.RequestOnlineRepair {
+			if mur.ClearOnlineRepair != nil && *mur.ClearOnlineRepair {
+				err = validation.Errors{
+					"clearOnlineRepair": errors.New("clearOnlineRepair cannot be true when requestOnlineRepair is true"),
+				}
+			}
+		} else {
+			if mur.ClearOnlineRepair == nil || !*mur.ClearOnlineRepair {
+				err = validation.Errors{
+					"clearOnlineRepair": errors.New("clearOnlineRepair must be true when requestOnlineRepair is false"),
+				}
+			}
+		}
+	}
+
+	if err == nil && mur.RequestOnlineRepair != nil && *mur.RequestOnlineRepair {
+		verr := validation.Errors{}
+		if mur.MachineHealthIssue == nil {
+			verr["machineHealthIssue"] = errors.New("machineHealthIssue is required when requestOnlineRepair is true")
+		} else {
+			mhi := mur.MachineHealthIssue
+			if mhi.Category == "" || !ValidMachineHealthIssueCategories[mhi.Category] {
+				verr["machineHealthIssue.category"] = errors.New("must be one of HARDWARE, NETWORK, PERFORMANCE, STORAGE, SOFTWARE, OTHER")
+			}
+			if mhi.Summary == "" {
+				verr["machineHealthIssue.summary"] = errors.New("summary is required")
+			} else if len(mhi.Summary) > 512 {
+				verr["machineHealthIssue.summary"] = errors.New("summary must be at most 512 characters")
+			}
+			if mhi.Details == "" {
+				verr["machineHealthIssue.details"] = errors.New("details is required")
+			} else if len(mhi.Details) > 8192 {
+				verr["machineHealthIssue.details"] = errors.New("details must be at most 8192 characters")
+			}
+		}
+		if mur.RepairPolicy == nil || mur.RepairPolicy.AllowAutoInstanceDeletionOnFailure == nil {
+			verr["repairPolicy"] = errors.New("repairPolicy.allowAutoInstanceDeletionOnFailure is required when requestOnlineRepair is true")
+		}
+		if mur.Acknowledgments == nil {
+			verr["acknowledgments"] = errors.New("acknowledgments is required when requestOnlineRepair is true")
+		} else {
+			a := mur.Acknowledgments
+			if a.AcceptDataCorruptionRisk == nil || !*a.AcceptDataCorruptionRisk ||
+				a.AcceptRepairTeamAccess == nil || !*a.AcceptRepairTeamAccess ||
+				a.AcceptInstanceDeletionRisk == nil || !*a.AcceptInstanceDeletionRisk {
+				verr["acknowledgments"] = errors.New("all acknowledgment flags must be true to enter online repair")
+			}
+		}
+		if len(verr) > 0 {
+			err = verr
+		}
+	}
+
+	if err == nil && mur.RequestOnlineRepair != nil && !*mur.RequestOnlineRepair {
+		if mur.MachineHealthIssue != nil || mur.RepairPolicy != nil || mur.Acknowledgments != nil {
+			err = validation.Errors{
+				validationCommonErrorField: errors.New("machineHealthIssue, repairPolicy, and acknowledgments must not be set when exiting online repair"),
+			}
+		}
+	}
+
 	if err := camu.ValidateLabels(mur.Labels); err != nil {
 		return err
 	}
 
 	return err
+}
+
+// BuildOnlineRepairHealthOverrideMessageJSON builds the JSON payload stored in the health alert message field.
+func BuildOnlineRepairHealthOverrideMessageJSON(details, category, summary string) (string, error) {
+	type payload struct {
+		Details        string `json:"details"`
+		IssueCategory  string `json:"issue_category"`
+		Summary        string `json:"summary"`
+	}
+	b, err := json.Marshal(payload{
+		Details:       details,
+		IssueCategory: category,
+		Summary:       summary,
+	})
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 // APIMachine is the data structure to capture API representation of a Machine

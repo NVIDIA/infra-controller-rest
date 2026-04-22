@@ -343,6 +343,14 @@ func (mcgsc *MockCoreGrpcServiceClient) UpdateMachineMetadata(ctx context.Contex
 	return out, nil
 }
 
+func (c *MockCoreGrpcServiceClient) InsertHealthReportOverride(ctx context.Context, in *wflows.InsertHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return new(emptypb.Empty), nil
+}
+
+func (c *MockCoreGrpcServiceClient) RemoveHealthReportOverride(ctx context.Context, in *wflows.RemoveHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return new(emptypb.Empty), nil
+}
+
 func (mcgsc *MockCoreGrpcServiceClient) FindMachineIds(ctx context.Context, in *wflows.MachineSearchConfig, opts ...grpc.CallOption) (*wflows.MachineIdList, error) {
 	err, ok := ctx.Value("wantError").(error)
 	if ok {
