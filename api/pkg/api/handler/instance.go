@@ -1630,6 +1630,48 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 	return c.JSON(http.StatusCreated, apiInstance)
 }
 
+// nvLinkInterfaceUpdateRequestMatchesExisting reports whether the update request
+// specifies the same multiset of (NVLink logical partition ID, device instance)
+// nvLinkPair as existing NVLink interface rows that are not already being deleted.
+func nvLinkInterfaceUpdateRequestMatchesExisting(apiRequestNVLinkInterfaces []model.APINVLinkInterfaceCreateOrUpdateRequest, existingNVLinkInterfaces []cdbm.NVLinkInterface) bool {
+	type nvLinkPair struct {
+		nvLinkPartitionID    uuid.UUID
+		nvLinkDeviceInstance int
+	}
+	counts := make(map[nvLinkPair]int)
+	active := 0
+	for i := range existingNVLinkInterfaces {
+		if existingNVLinkInterfaces[i].Status == cdbm.NVLinkInterfaceStatusDeleting {
+			continue
+		}
+		key := nvLinkPair{
+			nvLinkPartitionID:    existingNVLinkInterfaces[i].NVLinkLogicalPartitionID,
+			nvLinkDeviceInstance: existingNVLinkInterfaces[i].DeviceInstance,
+		}
+		counts[key]++
+		active++
+	}
+	if len(apiRequestNVLinkInterfaces) != active {
+		return false
+	}
+	for _, req := range apiRequestNVLinkInterfaces {
+		nvLinkPartitionID, err := uuid.Parse(req.NVLinkLogicalPartitionID)
+		if err != nil {
+			return false
+		}
+		key := nvLinkPair{
+			nvLinkPartitionID:    nvLinkPartitionID,
+			nvLinkDeviceInstance: req.DeviceInstance,
+		}
+		n := counts[key]
+		if n == 0 {
+			return false
+		}
+		counts[key] = n - 1
+	}
+	return true
+}
+
 // ~~~~~ Update Handler ~~~~~ //
 
 // UpdateInstanceHandler is the API Handler for updating an Instance
@@ -2610,6 +2652,10 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		// Discard if VPC has default NVLink Logical Partition specified and NVLink Interfaces are exists
 		if len(nvlIfcs) > 0 && vpc.NVLinkLogicalPartitionID != nil {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Cannot update NVLink Interfaces if VPC has default NVLink Logical Partition and NVLink Interfaces already exist for the Instance", nil)
+		}
+
+		if nvLinkInterfaceUpdateRequestMatchesExisting(apiRequest.NVLinkInterfaces, nvlIfcs) {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Cannot update NVLink Interfaces because the requested NVLink Interfaces are identical to the Instance's current NVLink Interfaces", nil)
 		}
 	}
 
