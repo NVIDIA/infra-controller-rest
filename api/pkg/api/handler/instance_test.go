@@ -579,102 +579,6 @@ func testInstanceBuildInstanceNVLinkInterface(t *testing.T, dbSession *cdb.Sessi
 	return nvlifc
 }
 
-func TestNVLinkInterfaceUpdateRequestMatchesExisting(t *testing.T) {
-	lp1 := uuid.MustParse("550e8400-e29b-41d4-a716-446655440001")
-	lp2 := uuid.MustParse("550e8400-e29b-41d4-a716-446655440002")
-
-	tests := []struct {
-		name     string
-		api      []model.APINVLinkInterfaceCreateOrUpdateRequest
-		existing []cdbm.NVLinkInterface
-		want     bool
-	}{
-		{
-			name:     "empty request and empty existing",
-			want:     true,
-			api:      []model.APINVLinkInterfaceCreateOrUpdateRequest{},
-			existing: nil,
-		},
-		{
-			name: "non-empty request and empty active existing",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: lp1.String(), DeviceInstance: 0},
-			},
-			existing: nil,
-			want:     false,
-		},
-		{
-			name: "single interface matches",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: lp1.String(), DeviceInstance: 0},
-			},
-			existing: []cdbm.NVLinkInterface{
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 0, Status: cdbm.NVLinkInterfaceStatusReady},
-			},
-			want: true,
-		},
-		{
-			name: "same multiset independent of request order",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: lp2.String(), DeviceInstance: 1},
-				{NVLinkLogicalPartitionID: lp1.String(), DeviceInstance: 0},
-			},
-			existing: []cdbm.NVLinkInterface{
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 0, Status: cdbm.NVLinkInterfaceStatusReady},
-				{NVLinkLogicalPartitionID: lp2, DeviceInstance: 1, Status: cdbm.NVLinkInterfaceStatusReady},
-			},
-			want: true,
-		},
-		{
-			name: "deleting rows ignored when matching active set",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: lp1.String(), DeviceInstance: 1},
-			},
-			existing: []cdbm.NVLinkInterface{
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 0, Status: cdbm.NVLinkInterfaceStatusDeleting},
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 1, Status: cdbm.NVLinkInterfaceStatusReady},
-			},
-			want: true,
-		},
-		{
-			name: "partition mismatch",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: lp2.String(), DeviceInstance: 0},
-			},
-			existing: []cdbm.NVLinkInterface{
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 0, Status: cdbm.NVLinkInterfaceStatusReady},
-			},
-			want: false,
-		},
-		{
-			name: "device instance mismatch",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: lp1.String(), DeviceInstance: 1},
-			},
-			existing: []cdbm.NVLinkInterface{
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 0, Status: cdbm.NVLinkInterfaceStatusReady},
-			},
-			want: false,
-		},
-		{
-			name: "invalid partition UUID in request",
-			api: []model.APINVLinkInterfaceCreateOrUpdateRequest{
-				{NVLinkLogicalPartitionID: "not-a-uuid", DeviceInstance: 0},
-			},
-			existing: []cdbm.NVLinkInterface{
-				{NVLinkLogicalPartitionID: lp1, DeviceInstance: 0, Status: cdbm.NVLinkInterfaceStatusReady},
-			},
-			want: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := nvLinkInterfaceUpdateRequestMatchesExisting(tt.api, tt.existing)
-			assert.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func testInstanceBuildStatusDetail(t *testing.T, dbSession *cdb.Session, entityID uuid.UUID, status string) {
 	sdDAO := cdbm.NewStatusDetailDAO(dbSession)
 	ssd, err := sdDAO.CreateFromParams(context.Background(), nil, entityID.String(), status, nil)
@@ -4234,6 +4138,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 		expectedNetworkSecurityGroupInherited *bool
 		expectedPropagationDetailedStatus     *string
 		expectedPropagationStatus             *string
+		// When true, only assert len(siteReq.Config.Nvlink.GpuConfigs) matches the request (e.g. NVLink no-op where workflow uses DB order).
+		nvLinkGpuConfigsVerifyCountOnly bool
 	}
 
 	tests := []struct {
@@ -5755,7 +5661,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test Instance update API endpoint fails when NVLink interfaces are unchanged (same multiset as current)",
+			name: "test Instance update API endpoint success when NVLink interfaces unchanged (no-op, multiset order)",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -5765,7 +5671,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			args: args{
 				reqData: &model.APIInstanceUpdateRequest{
 					IpxeScript: os2.IpxeScript,
-					// Order differs from DB creation order; must still be rejected as identical multiset.
+					// Same four bindings as DB; order differs from DB creation order — handler no-op, workflow still sends all GPUs.
 					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
 						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 3},
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
@@ -5773,15 +5679,15 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
 					},
 				},
-				reqInstance: inst13.ID.String(),
-				reqOrg:      tnOrg1,
-				reqUser:     tnu1,
-				respCode:    http.StatusBadRequest,
-				respMessage: cdb.GetStrPtr("Cannot update NVLink Interfaces because the requested NVLink Interfaces are identical to the Instance's current NVLink Interfaces"),
+				reqInstance:                     inst13.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				nvLinkGpuConfigsVerifyCountOnly: true,
 			},
 			wantErr:                     false,
-			verifySiteControllerRequest: false,
-			verifyChildSpanner:          false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
 		},
 		{
 			name: "test Instance update API endpoint success with NVLink interface subset replacing full set",
@@ -6246,9 +6152,12 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 					if len(tt.args.reqData.NVLinkInterfaces) > 0 {
 						assert.Equal(t, len(siteReq.Config.Nvlink.GpuConfigs), len(tt.args.reqData.NVLinkInterfaces))
 
-						// Make sure order to should be same as the request received
-						for i := range siteReq.Config.Nvlink.GpuConfigs {
-							assert.Equal(t, siteReq.Config.Nvlink.GpuConfigs[i].LogicalPartitionId.Value, tt.args.reqData.NVLinkInterfaces[i].NVLinkLogicalPartitionID)
+						if !tt.args.nvLinkGpuConfigsVerifyCountOnly {
+							// Make sure order to should be same as the request received
+							for i := range siteReq.Config.Nvlink.GpuConfigs {
+								assert.Equal(t, siteReq.Config.Nvlink.GpuConfigs[i].LogicalPartitionId.Value, tt.args.reqData.NVLinkInterfaces[i].NVLinkLogicalPartitionID)
+								assert.Equal(t, siteReq.Config.Nvlink.GpuConfigs[i].DeviceInstance, uint32(tt.args.reqData.NVLinkInterfaces[i].DeviceInstance))
+							}
 						}
 					}
 
