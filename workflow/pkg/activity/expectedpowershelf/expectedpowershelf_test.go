@@ -42,6 +42,7 @@ import (
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
 	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -95,7 +96,7 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 	testExpectedPowerShelfSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
@@ -510,7 +511,7 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB_RaceCondition(t
 	testExpectedPowerShelfSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)

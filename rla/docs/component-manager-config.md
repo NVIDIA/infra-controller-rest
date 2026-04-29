@@ -36,15 +36,15 @@ Maps each component type to its implementation. Available implementations:
 
 | Component Type | Available Implementations | Description |
 |----------------|---------------------------|-------------|
-| `compute` | `carbide`, `mock` | Manages compute nodes |
-| `nvlswitch` | `carbide`, `mock` | Manages NVLink switches |
+| `compute` | `nico`, `mock` | Manages compute nodes |
+| `nvlswitch` | `nico`, `mock` | Manages NVLink switches |
 | `powershelf` | `psm`, `mock` | Manages power shelves |
 
 ### Providers
 
 ```yaml
 providers:
-  carbide:
+  nico:
     timeout: "<duration>"
     compute_power_delay: "<duration>"
   psm:
@@ -55,15 +55,15 @@ Configures API client providers. **A provider is enabled if its section is prese
 
 | Provider | Used By | Description |
 |----------|---------|-------------|
-| `carbide` | compute, nvlswitch | Carbide API for machine management |
+| `nico` | compute, nvlswitch | NICo API for machine management |
 | `psm` | powershelf | Power Shelf Manager API |
 
 #### Provider Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `timeout` | duration string | `1m` (carbide), `30s` (psm) | gRPC call timeout |
-| `compute_power_delay` | duration string | `2s` (carbide only) | Delay between sequential power control calls for compute trays. Prevents overwhelming the power delivery system. Set to `0s` to disable. |
+| `timeout` | duration string | `1m` (nico), `30s` (psm) | gRPC call timeout |
+| `compute_power_delay` | duration string | `2s` (nico only) | Delay between sequential power control calls for compute trays. Prevents overwhelming the power delivery system. Set to `0s` to disable. |
 
 Duration strings use Go format: `30s`, `1m`, `2m30s`, etc.
 
@@ -74,12 +74,12 @@ Duration strings use Go format: `30s`, `1m`, `2m30s`, etc.
 ```go
 // Equivalent to DefaultProdConfig() in internal/task/componentmanager/config.go
 component_managers:
-  compute: carbide
-  nvlswitch: carbide
+  compute: nico
+  nvlswitch: nico
   powershelf: psm
 
 providers:
-  carbide:
+  nico:
     timeout: "1m"
   psm:
     timeout: "30s"
@@ -115,15 +115,15 @@ providers:
 
 If the `providers` section is omitted entirely, providers are automatically enabled based on the component manager implementations:
 
-- If any component uses `carbide` → Carbide provider is enabled with defaults
+- If any component uses `nico` → NICo provider is enabled with defaults
 - If any component uses `psm` → PSM provider is enabled with defaults
 
 This allows minimal configuration:
 
 ```yaml
 component_managers:
-  compute: carbide
-  nvlswitch: carbide
+  compute: nico
+  nvlswitch: nico
   powershelf: psm
 # Providers auto-enabled based on implementations above
 ```
@@ -134,7 +134,7 @@ Set the configuration file path via:
 
 1. **Command line flag**: `--component-config <path>`
 2. **Environment variable**: `COMPONENT_MANAGER_CONFIG=<path>`
-3. **Default**: embedded production config (carbide + psm)
+3. **Default**: embedded production config (nico + psm)
 
 ## Timing Parameters
 

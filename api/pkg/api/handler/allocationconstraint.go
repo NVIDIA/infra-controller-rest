@@ -74,7 +74,7 @@ func NewUpdateAllocationConstraintHandler(dbSession *cdb.Session, tc temporalCli
 // @Param id path string true "ID of Allocation Constraint"
 // @Param message body model.APIAllocationConstraintUpdateRequest true "Allocation Constraint update request"
 // @Success 200 {object} model.APIAllocationConstraint
-// @Router /v2/org/{org}/carbide/allocation/{allocation_id}/constraint/{id} [patch]
+// @Router /v2/org/{org}/nico/allocation/{allocation_id}/constraint/{id} [patch]
 func (uach UpdateAllocationConstraintHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("AllocationConstraint", "Update", c, uach.tracerSpan)
 	if handlerSpan != nil {

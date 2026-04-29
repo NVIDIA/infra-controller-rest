@@ -55,8 +55,8 @@ func main() {
 
 	dbName := os.Getenv("PGDATABASE")
 	if dbName == "" {
-		log.Print("PGDATABASE is not set, using `forge` as default")
-		dbName = "forge"
+		log.Print("PGDATABASE is not set, using `nico` as default")
+		dbName = "nico"
 	}
 
 	dbUser := os.Getenv("PGUSER")
@@ -102,7 +102,7 @@ func main() {
 	migrator := migrate.NewMigrator(db, migrations.Migrations, migrate.WithMarkAppliedOnSuccess(true))
 
 	app := &cli.App{
-		Name: "forge",
+		Name: "nico",
 
 		Commands: []*cli.Command{
 			newDBCommand(migrator),

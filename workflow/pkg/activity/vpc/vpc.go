@@ -399,7 +399,7 @@ func (mv ManageVpc) UpdateVpcMetadata(ctx context.Context, siteID uuid.UUID, tc 
 		description = *vpc.Description
 	}
 
-	// Prepare the labels for the metadata of the carbide call.
+	// Prepare the labels for the metadata of the nico call.
 	labels := []*cwssaws.Label{}
 	for k, v := range vpc.Labels {
 		labels = append(labels, &cwssaws.Label{

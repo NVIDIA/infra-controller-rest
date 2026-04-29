@@ -31,17 +31,17 @@ import (
 	"go.temporal.io/sdk/worker"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
 	svc "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/service"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	computecarbide "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/compute/carbide"
+	computenico "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/compute/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/mock"
-	nvlswitchcarbide "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/carbide"
+	nvlswitchnico "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nico"
 	nvlswitchnsm "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nvswitchmanager"
-	powershelfcarbide "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/powershelf/carbide"
+	powershelfnico "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/powershelf/nico"
 	powershelfpsm "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/powershelf/psm"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 	temporalmanager "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/manager"
@@ -99,16 +99,16 @@ func init() {
 func initProviderRegistry(config componentmanager.Config) (*componentmanager.ProviderRegistry, error) {
 	providerRegistry := componentmanager.NewProviderRegistry()
 
-	// Initialize Carbide provider if configured
-	if config.Providers.Carbide != nil {
-		carbideProvider, err := carbide.New(*config.Providers.Carbide)
+	// Initialize NICo provider if configured
+	if config.Providers.NICo != nil {
+		nicoProvider, err := nico.New(*config.Providers.NICo)
 		if err != nil {
-			log.Warn().Err(err).Msg("Unable to create Carbide GRPC client (power control may not work)")
+			log.Warn().Err(err).Msg("Unable to create NICo GRPC client (power control may not work)")
 		} else {
-			providerRegistry.Register(carbideProvider)
+			providerRegistry.Register(nicoProvider)
 			log.Info().
-				Dur("timeout", config.Providers.Carbide.Timeout).
-				Msg("Initialized Carbide provider")
+				Dur("timeout", config.Providers.NICo.Timeout).
+				Msg("Initialized NICo provider")
 		}
 	}
 
@@ -153,13 +153,13 @@ func initComponentManagerRegistry(config componentmanager.Config, providerRegist
 
 	// Register all available component manager factories
 	var computePowerDelay time.Duration
-	if config.Providers.Carbide != nil {
-		computePowerDelay = config.Providers.Carbide.ComputePowerDelay
+	if config.Providers.NICo != nil {
+		computePowerDelay = config.Providers.NICo.ComputePowerDelay
 	}
-	computecarbide.Register(registry, computePowerDelay)
-	nvlswitchcarbide.Register(registry)
+	computenico.Register(registry, computePowerDelay)
+	nvlswitchnico.Register(registry)
 	nvlswitchnsm.Register(registry)
-	powershelfcarbide.Register(registry)
+	powershelfnico.Register(registry)
 	powershelfpsm.Register(registry)
 	mock.RegisterAll(registry)
 
@@ -190,10 +190,10 @@ func initComponentManagerRegistry(config componentmanager.Config, providerRegist
 //
 //  3. Embedded default: componentmanager.DefaultProdConfig()
 //     Used when no config file is provided. The primary production path.
-//     Uses real implementations (Carbide for compute/nvlswitch, PSM for powershelf).
+//     Uses real implementations (NICo for compute/nvlswitch, PSM for powershelf).
 //
 // The config specifies:
-//   - Which component manager implementations to use (carbide, psm, mock)
+//   - Which component manager implementations to use (nico, psm, mock)
 //   - Provider settings (timeouts, endpoints)
 func loadComponentManagerConfig() (componentmanager.Config, error) {
 	// Priority 1: CLI flag
@@ -211,7 +211,7 @@ func loadComponentManagerConfig() (componentmanager.Config, error) {
 	}
 
 	// Priority 3: Embedded production config
-	log.Info().Msg("Using embedded production config (carbide + psm)")
+	log.Info().Msg("Using embedded production config (nico + psm)")
 	return componentmanager.DefaultProdConfig(), nil
 }
 
@@ -277,30 +277,30 @@ func doServe() {
 
 	ctx := context.Background()
 
-	if os.Getenv("REPORT_CARBIDE_API_VERSION") != "" {
-		// Do some basic carbide-api requests, mainly for early testing; this code can be removed when we're doing actual communication
+	if os.Getenv("REPORT_NICO_API_VERSION") != "" {
+		// Do some basic nico-api requests, mainly for early testing; this code can be removed when we're doing actual communication
 		go func() {
-			client, err := carbideapi.NewClient(time.Minute)
+			client, err := nicoapi.NewClient(time.Minute)
 			if err != nil {
 				log.Fatal().Msgf("Unable to create GRPC client: %v", err)
 			}
 			for {
 				time.Sleep(time.Second * 10)
 				if version, err := client.Version(ctx); err != nil {
-					log.Error().Msgf("Unable to retrieve version from carbide-api: %v", err)
+					log.Error().Msgf("Unable to retrieve version from nico-api: %v", err)
 					continue
 				} else {
-					log.Info().Msgf("carbide-api version: %s", version)
+					log.Info().Msgf("nico-api version: %s", version)
 					break
 				}
 			}
 			for {
 				time.Sleep(time.Second * 10)
 				if machines, err := client.GetMachines(ctx); err != nil {
-					log.Error().Msgf("Unable to retrieve machines from carbide-api: %v", err)
+					log.Error().Msgf("Unable to retrieve machines from nico-api: %v", err)
 					continue
 				} else {
-					log.Info().Msgf("carbide-api machines: %v", machines)
+					log.Info().Msgf("nico-api machines: %v", machines)
 					break
 				}
 			}

@@ -22,22 +22,22 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	carbideprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide" //nolint
+	nicoprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico" //nolint
 	taskmanager "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/manager"
 )
 
 // Job implements scheduler.Job for the leak detection task.
 type Job struct {
-	carbideClient carbideapi.Client
+	nicoClient nicoapi.Client
 	taskMgr       taskmanager.Manager
 }
 
-// New constructs a leak detection Job using the Carbide provider from the
-// registry. Returns nil, nil if leak detection is disabled or the Carbide
+// New constructs a leak detection Job using the NICo provider from the
+// registry. Returns nil, nil if leak detection is disabled or the NICo
 // provider is not registered (e.g. non-production environment).
 func New(
 	taskMgr taskmanager.Manager,
@@ -49,17 +49,17 @@ func New(
 		return nil, nil
 	}
 
-	carbideProvider, err := componentmanager.GetTyped[*carbideprovider.Provider](
-		providers, carbideprovider.ProviderName,
+	nicoProvider, err := componentmanager.GetTyped[*nicoprovider.Provider](
+		providers, nicoprovider.ProviderName,
 	)
 	if err != nil {
 		log.Error().Err(err).
-			Msg("Carbide provider not available; leak detection disabled")
+			Msg("NICo provider not available; leak detection disabled")
 		return nil, nil
 	}
 
 	return &Job{
-		carbideClient: carbideProvider.Client(),
+		nicoClient: nicoProvider.Client(),
 		taskMgr:       taskMgr,
 	}, nil
 }
@@ -69,6 +69,6 @@ func (j *Job) Name() string { return "leak-detection" }
 
 // Run executes one iteration of leak detection.
 func (j *Job) Run(ctx context.Context, _ types.Event) error {
-	runLeakDetectionOne(ctx, j.carbideClient, j.taskMgr)
+	runLeakDetectionOne(ctx, j.nicoClient, j.taskMgr)
 	return nil
 }

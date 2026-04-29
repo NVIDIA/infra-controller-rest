@@ -266,7 +266,7 @@ type APINetworkSecurityGroup struct {
 
 // Accepts a rule definition from an API request and converts
 // it to the proto representation that will be stored and passed
-// to Carbide
+// to NICo
 func ProtobufRuleFromAPINetworkSecurityGroupRule(rule *APINetworkSecurityGroupRule) (*cdbm.NetworkSecurityGroupRule, error) {
 
 	if rule.Priority < NetworkSecurityGroupRulePriorityMin || rule.Priority > NetworkSecurityGroupRulePriorityMax {
@@ -386,8 +386,8 @@ func ProtobufRuleFromAPINetworkSecurityGroupRule(rule *APINetworkSecurityGroupRu
 	return newRule, nil
 }
 
-// Accepts a Carbide rule definition and converts
-// it to the carbide-rest-api request representation that will be
+// Accepts a NICo rule definition and converts
+// it to the nico-rest-api request representation that will be
 // returned to users
 func APINetworkSecurityGroupRuleFromProtobufRule(rule *cdbm.NetworkSecurityGroupRule) (*APINetworkSecurityGroupRule, error) {
 
@@ -450,8 +450,8 @@ func APINetworkSecurityGroupRuleFromProtobufRule(rule *cdbm.NetworkSecurityGroup
 	var srcPortRange *string
 	var dstPortRange *string
 
-	// Whether carbide-rest-api validates ranges or not,
-	// Carbide will reject half-defined port ranges.
+	// Whether nico-rest-api validates ranges or not,
+	// NICo will reject half-defined port ranges.
 	// If we see a half-defined range, it means DB
 	// corruption.
 	if rule.SrcPortStart != nil || rule.SrcPortEnd != nil {
@@ -588,7 +588,7 @@ type APINetworkSecurityGroupPropagationDetails struct {
 	// The ID of the object (VPC/Instance/etc) for these details
 	ObjectID string `json:"object_id"`
 	// The detailed propagation status that was
-	// actually returned from Carbide
+	// actually returned from NICo
 	DetailedStatus string `json:"detailedStatus"`
 	// The simplified propagation status
 	// that reduces the actual status to just

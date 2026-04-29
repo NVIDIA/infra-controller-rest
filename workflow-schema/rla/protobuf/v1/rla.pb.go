@@ -1079,7 +1079,7 @@ type Component struct {
 	FirmwareVersion string                 `protobuf:"bytes,3,opt,name=firmware_version,json=firmwareVersion,proto3" json:"firmware_version,omitempty"`
 	Position        *RackPosition          `protobuf:"bytes,4,opt,name=position,proto3" json:"position,omitempty"`
 	Bmcs            []*BMCInfo             `protobuf:"bytes,5,rep,name=bmcs,proto3" json:"bmcs,omitempty"`
-	ComponentId     string                 `protobuf:"bytes,6,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty"` // Component's own ID from its source system (e.g., Carbide machine_id for Compute)
+	ComponentId     string                 `protobuf:"bytes,6,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty"` // Component's own ID from its source system (e.g., NICo machine_id for Compute)
 	RackId          *UUID                  `protobuf:"bytes,7,opt,name=rack_id,json=rackId,proto3" json:"rack_id,omitempty"`
 	PowerState      string                 `protobuf:"bytes,8,opt,name=power_state,json=powerState,proto3" json:"power_state,omitempty"` // Current power state (synced from external system by inventory loop)
 	unknownFields   protoimpl.UnknownFields
@@ -1636,11 +1636,11 @@ func (*ComponentTarget_External) isComponentTarget_Identifier() {}
 
 // ExternalRef identifies a component by its external system ID.
 // The component type determines which external system to query
-// (e.g., COMPUTE -> Carbide, POWERSHELF -> PSM)
+// (e.g., COMPUTE -> NICo, POWERSHELF -> PSM)
 type ExternalRef struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Type          ComponentType          `protobuf:"varint,1,opt,name=type,proto3,enum=v1.ComponentType" json:"type,omitempty"` // Component type determines the source system
-	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                            // ID in that system (e.g., Carbide machine_id, PSM PMC MAC)
+	Id            string                 `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`                            // ID in that system (e.g., NICo machine_id, PSM PMC MAC)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -32,16 +32,16 @@ import (
 )
 
 func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	subnetName := "the_best_subnet"
 	vpcID := "9001"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -56,7 +56,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create Subnet success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -75,7 +75,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create Subnet, bad prefix, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -94,7 +94,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create Subnet, empty prefix list, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -109,7 +109,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create Subnet, nil prefix in list, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -129,7 +129,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create Subnet, no name, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -147,7 +147,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create Subnet, no vpc ID, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -165,7 +165,7 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageSubnet(tt.fields.CarbideAtomicClient)
+			mm := NewManageSubnet(tt.fields.NICoAtomicClient)
 			err := mm.CreateSubnetOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -177,15 +177,15 @@ func TestManageSubnet_CreateSubnetOnSiteOnSite(t *testing.T) {
 }
 
 func TestManageSubnet_DeleteSubnetOnSiteOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	subnetID := "555"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -200,7 +200,7 @@ func TestManageSubnet_DeleteSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test delete Subnet success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -213,7 +213,7 @@ func TestManageSubnet_DeleteSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test delete Subnet, missing ID, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -226,7 +226,7 @@ func TestManageSubnet_DeleteSubnetOnSiteOnSite(t *testing.T) {
 		{
 			name: "test delete Subnet, empty ID, fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -239,7 +239,7 @@ func TestManageSubnet_DeleteSubnetOnSiteOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageSubnet(tt.fields.CarbideAtomicClient)
+			mm := NewManageSubnet(tt.fields.NICoAtomicClient)
 			err := mm.DeleteSubnetOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -251,10 +251,10 @@ func TestManageSubnet_DeleteSubnetOnSiteOnSite(t *testing.T) {
 }
 
 func TestManageSubnetInventory_DiscoverSubnetInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -262,7 +262,7 @@ func TestManageSubnetInventory_DiscoverSubnetInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoAtomicClient  *cClient.NICoAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -279,7 +279,7 @@ func TestManageSubnetInventory_DiscoverSubnetInventory(t *testing.T) {
 			name: "test collecting and publishing subnet inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -292,7 +292,7 @@ func TestManageSubnetInventory_DiscoverSubnetInventory(t *testing.T) {
 			name: "test collecting and publishing subnet inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -312,7 +312,7 @@ func TestManageSubnetInventory_DiscoverSubnetInventory(t *testing.T) {
 
 			manageSubnetInventory := NewManageSubnetInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoAtomicClient:   tt.fields.nicoAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

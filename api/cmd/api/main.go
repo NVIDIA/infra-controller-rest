@@ -43,13 +43,12 @@ const (
 	ZerologLevelFieldName = "type"
 )
 
-// @title NVIDIA Forge Cloud API
+// @title NVIDIA NICo Cloud API
 // @version 1.0
-// @description Forge Cloud API allows you to manage datacenter resources from Cloud
+// @description NICo Cloud API allows you to manage datacenter resources from Cloud
 // @termsOfService https://ngc.nvidia.com/legal/terms
 
-// @contact.name NVIDIA Forge Cloud
-// @contact.email forge@nvidia.com
+// @contact.name NVIDIA NICo Cloud
 
 // @license.name Proprietary
 

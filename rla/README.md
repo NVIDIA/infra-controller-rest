@@ -36,7 +36,7 @@ export TEMPORAL_HOST=localhost TEMPORAL_PORT=7233 TEMPORAL_NAMESPACE=rla
 ./rla serve --dev-mode
 ```
 
-**Note:** Carbide is not available locally; power/firmware operations will fail. Use dev/staging for those tests.
+**Note:** NICo is not available locally; power/firmware operations will fail. Use dev/staging for those tests.
 
 ### Test with grpcui
 ```bash
@@ -63,7 +63,7 @@ gRPC Request → Server (convert to TaskSpec)
              → Task Manager (resolve + split by rack → create Tasks)
              → Executor (start Temporal Workflow per Task)
              → Workflow (fan-out Activities by component)
-             → Activity (call Carbide/PSM API)
+             → Activity (call NICo/PSM API)
 ```
 
 ## gRPC APIs

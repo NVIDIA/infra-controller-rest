@@ -15,7 +15,7 @@
 
 .PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers
 .PHONY: build docker-build docker-build-local
-.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate carbide-mock-server-build carbide-mock-server-start carbide-mock-server-stop rla-mock-server-build rla-mock-server-start rla-mock-server-stop
+.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate nico-mock-server-build nico-mock-server-start nico-mock-server-stop rla-mock-server-build rla-mock-server-start rla-mock-server-stop
 .PHONY: validate-openapi preview-openapi generate-client
 .PHONY: pre-commit-install pre-commit-run pre-commit-update
 
@@ -30,23 +30,23 @@ POSTGRES_CONTAINER_NAME := project-test
 POSTGRES_PORT := 30432
 POSTGRES_USER := postgres
 POSTGRES_PASSWORD := postgres
-POSTGRES_DB := forgetest
+POSTGRES_DB := nicotest
 POSTGRES_IMAGE := postgres:14.4-alpine
 
 # Helm chart configuration (for kind-reset-helm / helm-* targets)
-UMBRELLA_CHART := helm/charts/carbide-rest
-SITE_AGENT_CHART := helm/charts/carbide-rest-site-agent
+UMBRELLA_CHART := helm/charts/nico-rest
+SITE_AGENT_CHART := helm/charts/nico-rest-site-agent
 
 HELM_SET := --set global.image.repository=$(IMAGE_REGISTRY) \
 	--set global.image.tag=$(IMAGE_TAG) \
 	--set global.image.pullPolicy=Never
 
-HELM_SET_KEYCLOAK := --set carbide-rest-api.config.keycloak.enabled=true \
-	--set carbide-rest-api.config.keycloak.baseURL=http://keycloak:8082 \
-	--set carbide-rest-api.config.keycloak.externalBaseURL=http://localhost:8082 \
-	--set carbide-rest-api.config.keycloak.realm=carbide-dev \
-	--set carbide-rest-api.config.keycloak.clientID=carbide-api \
-	--set carbide-rest-api.config.keycloak.serviceAccount=true
+HELM_SET_KEYCLOAK := --set nico-rest-api.config.keycloak.enabled=true \
+	--set nico-rest-api.config.keycloak.baseURL=http://keycloak:8082 \
+	--set nico-rest-api.config.keycloak.externalBaseURL=http://localhost:8082 \
+	--set nico-rest-api.config.keycloak.realm=nico-dev \
+	--set nico-rest-api.config.keycloak.clientID=nico-api \
+	--set nico-rest-api.config.keycloak.serviceAccount=true
 
 # Tuning flags trade durability for speed. Safe because the container is
 # ephemeral (--rm) and the database is recreated for every test run.
@@ -70,7 +70,7 @@ postgres-down:
 clean:
 	@echo "Cleaning up test resources..."
 	-$(MAKE) postgres-down
-	-$(MAKE) carbide-mock-server-stop
+	-$(MAKE) nico-mock-server-stop
 	-$(MAKE) rla-mock-server-stop
 	@echo "Stopping kind cluster..."
 	-$(MAKE) kind-down
@@ -131,11 +131,11 @@ test-db:
 	$(MAKE) ensure-postgres
 	cd db && go test -p 1 ./... -count=1
 
-carbide-mock-server-build:
+nico-mock-server-build:
 	mkdir -p build
 	cd site-agent/cmd/mock-core && go build -o ../../../build/mock-core .
 
-carbide-mock-server-start: carbide-mock-server-build
+nico-mock-server-start: nico-mock-server-build
 	-lsof -ti:11079 | xargs kill -9 2>/dev/null
 	./build/mock-core -tout 0 > build/mock-core.log 2>&1 & echo $$! > build/mock-core.pid
 	@echo "Waiting for gRPC server to start..."
@@ -150,7 +150,7 @@ carbide-mock-server-start: carbide-mock-server-build
 	echo "Timeout waiting for Mock Core gRPC server to start"; \
 	exit 1
 
-carbide-mock-server-stop:
+nico-mock-server-stop:
 	-kill $$(cat build/mock-core.pid) 2>/dev/null
 	-rm -f build/mock-core.pid
 
@@ -177,9 +177,9 @@ rla-mock-server-stop:
 	-kill $$(cat build/mock-rla.pid) 2>/dev/null
 	-rm -f build/mock-rla.pid
 
-test-site-agent: carbide-mock-server-start rla-mock-server-start
+test-site-agent: nico-mock-server-start rla-mock-server-start
 	cd site-agent/pkg/components && CGO_ENABLED=1 go test -race -p 1 ./... -count=1 ; \
-	ret=$$? ; cd ../../.. && $(MAKE) carbide-mock-server-stop rla-mock-server-stop ; exit $$ret
+	ret=$$? ; cd ../../.. && $(MAKE) nico-mock-server-stop rla-mock-server-stop ; exit $$ret
 
 test-api:
 	$(MAKE) ensure-postgres
@@ -209,30 +209,30 @@ build:
 	cd site-agent && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-extldflags '-static'" -o ../$(BUILD_DIR)/site-agent ./cmd/site-agent
 	cd db && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-extldflags '-static'" -o ../$(BUILD_DIR)/migrations ./cmd/migrations
 	cd cert-manager && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-extldflags '-static'" -o ../$(BUILD_DIR)/credsmgr ./cmd/credsmgr
-	cd cli && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-extldflags '-static'" -o ../$(BUILD_DIR)/carbidecli ./cmd/carbidecli
+	cd cli && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags "-extldflags '-static'" -o ../$(BUILD_DIR)/cli ./cmd/cli
 
 INSTALL_DIR ?= $(shell go env GOPATH)/bin
 
-carbide-cli:
-	go build -o $(INSTALL_DIR)/carbidecli ./cli/cmd/carbidecli
-	@echo "Installed carbidecli to $(INSTALL_DIR)/carbidecli"
+nico-cli:
+	go build -o $(INSTALL_DIR)/cli ./cli/cmd/cli
+	@echo "Installed cli to $(INSTALL_DIR)/cli"
 
 docker-build:
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-api:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rest-api .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-workflow:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rest-workflow .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-site-manager:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rest-site-manager .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-site-agent:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rest-site-agent .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-db:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rest-db .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-cert-manager:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rest-cert-manager .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rla:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-rla .
-	docker build -t $(IMAGE_REGISTRY)/carbide-psm:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-psm .
-	docker build -t $(IMAGE_REGISTRY)/carbide-nsm:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.carbide-nsm .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-api:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-api .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-workflow:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-workflow .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-site-manager:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-site-manager .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-site-agent:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-site-agent .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-db:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-db .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-cert-manager:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-cert-manager .
+	docker build -t $(IMAGE_REGISTRY)/nico-rla:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rla .
+	docker build -t $(IMAGE_REGISTRY)/nico-psm:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-psm .
+	docker build -t $(IMAGE_REGISTRY)/nico-nsm:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-nsm .
 
 core-proto: core-proto-fetch core-proto-fmt core-protogen
 
 core-proto-clean:
 	@echo "Cleaning up Core proto and protobuf files"
-	rm -rf workflow-schema/site-agent/workflows/v1/*_carbide.proto
+	rm -rf workflow-schema/site-agent/workflows/v1/*_nico.proto
 	rm -rf workflow-schema/schema/site-agent/workflows/v1/*.pb.go
 
 core-proto-repo ?= NVIDIA/ncx-infra-controller-core
@@ -245,7 +245,7 @@ core-proto-fetch:
 	cd nico-core && git fetch $(core-proto-repo-ssh) && git reset --hard $(core-proto-ref);
 	ls nico-core/crates/rpc/proto
 	@for file in nico-core/crates/rpc/proto/*.proto; do \
-		cp "$$file" "workflow-schema/site-agent/workflows/v1/$$(basename "$$file" .proto)_carbide.proto"; \
+		cp "$$file" "workflow-schema/site-agent/workflows/v1/$$(basename "$$file" .proto)_nico.proto"; \
 		echo "Copied: $$file"; \
 	done
 	echo "Successfully copied Core protobuf files"
@@ -281,7 +281,7 @@ rla-protogen:
 .PHONY: helm-lint helm-template helm-deploy helm-deploy-site-agent helm-deploy-all helm-redeploy helm-verify helm-verify-site-agent helm-uninstall
 
 # Kind cluster configuration
-KIND_CLUSTER_NAME := carbide-rest-local
+KIND_CLUSTER_NAME := nico-rest-local
 KUSTOMIZE_OVERLAY := deploy/kustomize/overlays/local
 LOCAL_DOCKERFILE_DIR := docker/local
 
@@ -290,13 +290,13 @@ LOCAL_DOCKERFILE_DIR := docker/local
 
 # Build images using local Dockerfiles (public base images for local dev)
 docker-build-local:
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-api:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-api .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-workflow:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-workflow .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-site-manager:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-site-manager .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-site-agent:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-site-agent .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-mock-core:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-mock-core .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-db:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-db .
-	docker build -t $(IMAGE_REGISTRY)/carbide-rest-cert-manager:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.carbide-rest-cert-manager .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-api:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-api .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-workflow:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-workflow .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-site-manager:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-site-manager .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-site-agent:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-site-agent .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-mock-core:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-mock-core .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-db:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-db .
+	docker build -t $(IMAGE_REGISTRY)/nico-rest-cert-manager:$(IMAGE_TAG) -f $(LOCAL_DOCKERFILE_DIR)/Dockerfile.nico-rest-cert-manager .
 
 # Create kind cluster with port mappings
 kind-up:
@@ -313,13 +313,13 @@ kind-deploy: docker-build-local kind-load kind-apply
 
 # Load all images into kind cluster
 kind-load:
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-api:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-workflow:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-site-manager:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-site-agent:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-mock-core:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-db:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
-	kind load docker-image $(IMAGE_REGISTRY)/carbide-rest-cert-manager:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-api:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-workflow:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-site-manager:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-site-agent:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-mock-core:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-db:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
+	kind load docker-image $(IMAGE_REGISTRY)/nico-rest-cert-manager:$(IMAGE_TAG) --name $(KIND_CLUSTER_NAME)
 
 # Apply kustomize manifests and wait for readiness
 kind-apply:
@@ -327,50 +327,50 @@ kind-apply:
 	@echo "Waiting for PostgreSQL..."
 	kubectl -n postgres rollout status statefulset/postgres --timeout=120s
 	@echo "Waiting for Cert Manager..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-cert-manager --timeout=180s
+	kubectl -n nico-rest rollout status deployment/nico-rest-cert-manager --timeout=180s
 	@echo "Waiting for Temporal..."
 	kubectl -n temporal rollout status deployment/temporal-frontend --timeout=120s || true
 	@echo "Waiting for Keycloak..."
-	kubectl -n carbide-rest rollout status deployment/keycloak --timeout=180s
+	kubectl -n nico-rest rollout status deployment/keycloak --timeout=180s
 	@echo "Running database migrations..."
-	kubectl -n carbide-rest wait --for=condition=complete job/carbide-rest-db-migration --timeout=120s
+	kubectl -n nico-rest wait --for=condition=complete job/nico-rest-db-migration --timeout=120s
 	@echo "Waiting for API service..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-api --timeout=120s || true
+	kubectl -n nico-rest rollout status deployment/nico-rest-api --timeout=120s || true
 	@echo "Waiting for Site Manager..."
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-site-manager || true
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-manager --timeout=120s || true
+	kubectl -n nico-rest rollout restart deployment/nico-rest-site-manager || true
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-manager --timeout=120s || true
 	@echo "Waiting for Site Agent..."
-	kubectl -n carbide-rest rollout restart statefulset/carbide-rest-site-agent || true
-	kubectl -n carbide-rest rollout status statefulset/carbide-rest-site-agent --timeout=120s || true
+	kubectl -n nico-rest rollout restart statefulset/nico-rest-site-agent || true
+	kubectl -n nico-rest rollout status statefulset/nico-rest-site-agent --timeout=120s || true
 
 # Rebuild and redeploy apps only (faster iteration, preserves DB/certs/secrets)
 kind-redeploy: docker-build-local kind-load
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-api
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-cloud-worker
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-site-worker
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-mock-core
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-cert-manager
-	kubectl -n carbide-rest rollout restart deployment/carbide-rest-site-manager
-	kubectl -n carbide-rest rollout restart statefulset/carbide-rest-site-agent
+	kubectl -n nico-rest rollout restart deployment/nico-rest-api
+	kubectl -n nico-rest rollout restart deployment/nico-rest-cloud-worker
+	kubectl -n nico-rest rollout restart deployment/nico-rest-site-worker
+	kubectl -n nico-rest rollout restart deployment/nico-rest-mock-core
+	kubectl -n nico-rest rollout restart deployment/nico-rest-cert-manager
+	kubectl -n nico-rest rollout restart deployment/nico-rest-site-manager
+	kubectl -n nico-rest rollout restart statefulset/nico-rest-site-agent
 	@echo "Waiting for rollouts..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-api --timeout=120s
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-cloud-worker --timeout=120s
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-worker --timeout=120s
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-mock-core --timeout=120s
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-cert-manager --timeout=120s
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-manager --timeout=120s
-	kubectl -n carbide-rest rollout status statefulset/carbide-rest-site-agent --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-api --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-cloud-worker --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-worker --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-mock-core --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-cert-manager --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-manager --timeout=120s
+	kubectl -n nico-rest rollout status statefulset/nico-rest-site-agent --timeout=120s
 	@echo ""
 	@echo "Redeploy complete. All pods ready."
-	@kubectl -n carbide-rest get pods
+	@kubectl -n nico-rest get pods
 
 # Show status of all pods and services
 kind-status:
-	kubectl -n carbide-rest get pods,svc,jobs
+	kubectl -n nico-rest get pods,svc,jobs
 
 # View logs from API service
 kind-logs:
-	kubectl -n carbide-rest logs -l app=carbide-rest-api -f --tail=100
+	kubectl -n nico-rest logs -l app=nico-rest-api -f --tail=100
 
 # Scoped overlays: deploy only one component + its deps (no duplication of yaml; requires LoadRestrictionsNone)
 deploy-overlay-api:
@@ -388,8 +388,8 @@ deploy-overlay-workflow:
 
 # Shared infrastructure: cluster, cert-manager.io, PostgreSQL, Temporal, Keycloak,
 # and mock-core (dev only).
-# common secrets and credsmgr are now installed as part of the Helm chart (carbide-rest-common,
-# carbide-rest-cert-manager sub-charts). App services are deployed separately by
+# common secrets and credsmgr are now installed as part of the Helm chart (nico-rest-common,
+# nico-rest-cert-manager sub-charts). App services are deployed separately by
 # kind-reset-helm or kind-reset-kustomize.
 kind-reset-infra: docker-build-local
 	-kind delete cluster --name $(KIND_CLUSTER_NAME)
@@ -403,11 +403,11 @@ kind-reset-infra: docker-build-local
 	kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=240s
 	kubectl -n cert-manager rollout status deployment/cert-manager-cainjector --timeout=240s
 
-	@echo "Creating carbide-rest namespace..."
-	kubectl create namespace carbide-rest || true
+	@echo "Creating nico-rest namespace..."
+	kubectl create namespace nico-rest || true
 
 	@echo "Setting up PKI secrets for cert-manager..."
-	NAMESPACE=carbide-rest ./scripts/setup-local.sh pki
+	NAMESPACE=nico-rest ./scripts/setup-local.sh pki
 
 	@echo "Setting up PostgreSQL..."
 	kubectl apply -k deploy/kustomize/base/postgres/
@@ -451,11 +451,11 @@ kind-reset-infra: docker-build-local
 
 	@echo "Setting up Keycloak..."
 	kubectl apply -k deploy/kustomize/base/keycloak
-	kubectl -n carbide-rest rollout status deployment/keycloak --timeout=240s
+	kubectl -n nico-rest rollout status deployment/keycloak --timeout=240s
 
-	@echo "Setting up Carbide Mock Core (dev only, not in Helm chart)..."
+	@echo "Setting up Nico Mock Core (dev only, not in Helm chart)..."
 	kubectl apply -k deploy/kustomize/overlays/mock-core
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-mock-core --timeout=240s
+	kubectl -n nico-rest rollout status deployment/nico-rest-mock-core --timeout=240s
 
 	@echo ""
 	@echo "================================================================================"
@@ -476,32 +476,32 @@ kind-reset-kustomize: kind-reset-infra
 
 	@echo "Setting up common secrets..."
 	kubectl apply -k deploy/kustomize/base/common
-	kubectl -n carbide-rest wait --for=condition=Ready certificate/temporal-client-cloud-cert --timeout=240s || true
+	kubectl -n nico-rest wait --for=condition=Ready certificate/temporal-client-cloud-cert --timeout=240s || true
 
-	@echo "Setting up Carbide REST Cert Manager (credsmgr)..."
+	@echo "Setting up Nico REST Cert Manager (credsmgr)..."
 	kubectl apply -k deploy/kustomize/overlays/cert-manager
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-cert-manager --timeout=240s
+	kubectl -n nico-rest rollout status deployment/nico-rest-cert-manager --timeout=240s
 
-	@echo "Waiting for Carbide REST Site Manager..."
+	@echo "Waiting for Nico REST Site Manager..."
 	kubectl apply -k deploy/kustomize/overlays/site-manager
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-manager --timeout=240s
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-manager --timeout=240s
 
-	@echo "Setting up Carbide REST DB Migration..."
+	@echo "Setting up Nico REST DB Migration..."
 	kubectl apply -k deploy/kustomize/overlays/db
-	kubectl -n carbide-rest wait --for=condition=complete job -l app=carbide-rest-db-migration --timeout=240s
+	kubectl -n nico-rest wait --for=condition=complete job -l app=nico-rest-db-migration --timeout=240s
 
-	@echo "Setting up Carbide REST Cloud and Site Workers..."
+	@echo "Setting up Nico REST Cloud and Site Workers..."
 	kubectl apply -k deploy/kustomize/overlays/workflow
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-cloud-worker --timeout=240s
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-worker --timeout=240s
+	kubectl -n nico-rest rollout status deployment/nico-rest-cloud-worker --timeout=240s
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-worker --timeout=240s
 
-	@echo "Setting up Carbide REST API..."
+	@echo "Setting up Nico REST API..."
 	kubectl apply -k deploy/kustomize/overlays/api
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-api --timeout=240s
+	kubectl -n nico-rest rollout status deployment/nico-rest-api --timeout=240s
 
-	@echo "Setting up Carbide REST Site Agent..."
+	@echo "Setting up Nico REST Site Agent..."
 	kubectl apply -k deploy/kustomize/overlays/site-agent
-	kubectl -n carbide-rest rollout status statefulset/carbide-rest-site-agent --timeout=240s
+	kubectl -n nico-rest rollout status statefulset/nico-rest-site-agent --timeout=240s
 
 	@echo "Setting up Site Agent secrets..."
 	./scripts/setup-local.sh site-agent
@@ -545,18 +545,18 @@ helm-lint:
 	helm lint $(SITE_AGENT_CHART)/ $(HELM_SET)
 
 helm-template:
-	@echo "--- carbide-rest (umbrella) ---"
-	helm template carbide-rest $(UMBRELLA_CHART)/ $(HELM_SET) $(HELM_SET_KEYCLOAK) --namespace carbide-rest
-	@echo "--- carbide-rest-site-agent ---"
-	helm template carbide-rest-site-agent $(SITE_AGENT_CHART)/ $(HELM_SET) --namespace carbide-rest
+	@echo "--- nico-rest (umbrella) ---"
+	helm template nico-rest $(UMBRELLA_CHART)/ $(HELM_SET) $(HELM_SET_KEYCLOAK) --namespace nico-rest
+	@echo "--- nico-rest-site-agent ---"
+	helm template nico-rest-site-agent $(SITE_AGENT_CHART)/ $(HELM_SET) --namespace nico-rest
 
 # Deploy umbrella chart (api + workflow + site-manager + db)
 # Note: images must be loaded into kind before calling this (kind-load or kind-reset-infra)
 helm-deploy:
-	helm upgrade --install carbide-rest $(UMBRELLA_CHART)/ \
-		--namespace carbide-rest --create-namespace $(HELM_SET) $(HELM_SET_KEYCLOAK) \
-		--set carbide-rest-api.nodePort.enabled=true \
-		--set carbide-rest-api.nodePort.port=30388 \
+	helm upgrade --install nico-rest $(UMBRELLA_CHART)/ \
+		--namespace nico-rest --create-namespace $(HELM_SET) $(HELM_SET_KEYCLOAK) \
+		--set nico-rest-api.nodePort.enabled=true \
+		--set nico-rest-api.nodePort.port=30388 \
 		--wait --timeout 5m
 	@echo ""
 	@echo "================================================================================"
@@ -567,12 +567,12 @@ helm-deploy:
 # Deploy site-agent: install chart first (will CrashLoop), then bootstrap, then stabilize
 helm-deploy-site-agent:
 	@echo "Installing site-agent chart (will CrashLoop until bootstrapped)..."
-	helm upgrade --install carbide-rest-site-agent $(SITE_AGENT_CHART)/ \
-		--namespace carbide-rest $(HELM_SET) --timeout 1m || true
+	helm upgrade --install nico-rest-site-agent $(SITE_AGENT_CHART)/ \
+		--namespace nico-rest $(HELM_SET) --timeout 1m || true
 	@echo "Running site bootstrap (setup-local.sh site-agent)..."
 	./scripts/setup-local.sh site-agent
 	@echo "Waiting for site-agent to stabilize..."
-	kubectl -n carbide-rest rollout status statefulset/carbide-rest-site-agent --timeout=120s
+	kubectl -n nico-rest rollout status statefulset/nico-rest-site-agent --timeout=120s
 
 # Deploy everything (umbrella + site-agent)
 helm-deploy-all: helm-deploy helm-deploy-site-agent
@@ -582,24 +582,24 @@ helm-redeploy: docker-build-local kind-load helm-deploy
 
 helm-verify:
 	@echo "Checking Site Manager..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-manager --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-manager --timeout=120s
 	@echo "Checking Cloud Worker..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-cloud-worker --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-cloud-worker --timeout=120s
 	@echo "Checking Site Worker..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-site-worker --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-site-worker --timeout=120s
 	@echo "Checking API..."
-	kubectl -n carbide-rest rollout status deployment/carbide-rest-api --timeout=120s
+	kubectl -n nico-rest rollout status deployment/nico-rest-api --timeout=120s
 	@echo ""
 	@echo "All umbrella chart services are ready."
-	@kubectl -n carbide-rest get pods
+	@kubectl -n nico-rest get pods
 
 helm-verify-site-agent:
 	@echo "Checking Site Agent..."
-	kubectl -n carbide-rest rollout status statefulset/carbide-rest-site-agent --timeout=120s
+	kubectl -n nico-rest rollout status statefulset/nico-rest-site-agent --timeout=120s
 
 helm-uninstall:
-	-helm uninstall carbide-rest-site-agent --namespace carbide-rest
-	-helm uninstall carbide-rest --namespace carbide-rest
+	-helm uninstall nico-rest-site-agent --namespace nico-rest
+	-helm uninstall nico-rest --namespace nico-rest
 
 # =============================================================================
 # Kind: Utilities
@@ -615,16 +615,16 @@ kind-verify:
 
 # Run the simple SDK Machine example against local dev (kind).
 # Verifies the SDK can talk to the stack (list, get machines).
-# Requires: kind cluster running, port-forward API (8388) and Keycloak (8082). Uses CARBIDE_* env vars or defaults.
+# Requires: kind cluster running, port-forward API (8388) and Keycloak (8082). Uses NICO_* env vars or defaults.
 test-simple-sdk-example:
 	@command -v jq >/dev/null 2>&1 || { echo "jq is required (e.g. brew install jq)"; exit 1; }
 	@echo "Running simple SDK Machine example against local dev..."
-	CARBIDE_BASE_URL=$${CARBIDE_BASE_URL:-http://localhost:8388} \
-	CARBIDE_ORG=$${CARBIDE_ORG:-test-org} \
-	CARBIDE_TOKEN=$${CARBIDE_TOKEN:-$$(curl -s -X POST "http://localhost:8082/realms/carbide-dev/protocol/openid-connect/token" \
+	NICO_BASE_URL=$${NICO_BASE_URL:-http://localhost:8388} \
+	NICO_ORG=$${NICO_ORG:-test-org} \
+	NICO_TOKEN=$${NICO_TOKEN:-$$(curl -s -X POST "http://localhost:8082/realms/nico-dev/protocol/openid-connect/token" \
 		-H "Content-Type: application/x-www-form-urlencoded" \
-		-d "client_id=carbide-api" \
-		-d "client_secret=carbide-local-secret" \
+		-d "client_id=nico-api" \
+		-d "client_secret=nico-local-secret" \
 		-d "grant_type=password" \
 		-d "username=admin@example.com" \
 		-d "password=adminpassword" | jq -r .access_token)} \

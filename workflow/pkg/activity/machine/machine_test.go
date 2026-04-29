@@ -643,7 +643,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 					},
 					{
 						Id:     "FileExists",
-						Target: cdb.GetStrPtr("/var/lib/hbn/etc/supervisor/conf.d/default-forge-dhcp-server.conf"),
+						Target: cdb.GetStrPtr("/var/lib/hbn/etc/supervisor/conf.d/default-nico-dhcp-server.conf"),
 					},
 					{
 						Id:     "FileExists",
@@ -663,7 +663,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 					},
 					{
 						Id:     "FileIsValid",
-						Target: cdb.GetStrPtr("etc/supervisor/conf.d/default-forge-dhcp-server.conf"),
+						Target: cdb.GetStrPtr("etc/supervisor/conf.d/default-nico-dhcp-server.conf"),
 					},
 					{
 						Id:     "FileIsValid",
@@ -1075,7 +1075,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 				assert.NotEqual(t, emis1[0].ID, mi1.ID)
 
 				// Machine 1 should have 5 capabilities (1 CPU, 3 Network, 2 Memory, 3 Storage, 1 GPU, 1 InfiniBand, 1 DPU)
-				// Carbide will report memory even when it can't determine the capacity.
+				// NICo will report memory even when it can't determine the capacity.
 				// This is slightly different from Cloud originally, which would track UNKNOWN name but skip unknown capacity.
 				mcDAO := cdbm.NewMachineCapabilityDAO(mm.dbSession)
 				mc1s, mc1Total, serr := mcDAO.GetAll(tt.args.ctx, nil, []string{um1.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
@@ -1418,7 +1418,7 @@ func TestNewManageMachine(t *testing.T) {
 	}
 }
 
-func TestGetForgeMachineStatus(t *testing.T) {
+func TestGetNICoMachineStatus(t *testing.T) {
 	type args struct {
 		controllerMachine *cwssaws.Machine
 	}
@@ -1430,7 +1430,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 		wantMachineAllocatable bool
 	}{
 		{
-			name: "test get forge machine status - with prefix",
+			name: "test get nico machine status - with prefix",
 			args: args{
 				controllerMachine: &cwssaws.Machine{
 					Id:            &cwssaws.MachineId{Id: uuid.NewString()},
@@ -1443,7 +1443,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 			wantMachineAllocatable: true, // Rule 1: InUse status without Prevent alerts
 		},
 		{
-			name: "test get forge machine status - without prefix",
+			name: "test get nico machine status - without prefix",
 			args: args{
 				controllerMachine: &cwssaws.Machine{
 					Id:            &cwssaws.MachineId{Id: uuid.NewString()},
@@ -1456,7 +1456,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 			wantMachineAllocatable: true,
 		},
 		{
-			name: "test get forge machine status - maintenance mode",
+			name: "test get nico machine status - maintenance mode",
 			args: args{
 				controllerMachine: &cwssaws.Machine{
 					Id:         &cwssaws.MachineId{Id: uuid.NewString()},
@@ -1472,7 +1472,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 			wantMachineAllocatable: false,
 		},
 		{
-			name: "test get forge machine status - missing",
+			name: "test get nico machine status - missing",
 			args: args{
 				controllerMachine: &cwssaws.Machine{
 					State: controllerMachineStateMissing,
@@ -1482,7 +1482,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 			wantMachineAllocatable: false,
 		},
 		{
-			name: "test get forge machine status - with health probe alerts prevent classification",
+			name: "test get nico machine status - with health probe alerts prevent classification",
 			args: args{
 				controllerMachine: &cwssaws.Machine{
 					State: controllerMachineStatePrefixReady,
@@ -1646,7 +1646,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			status, message, isAllocatable := getForgeMachineStatus(tt.args.controllerMachine, log.Logger)
+			status, message, isAllocatable := getNICoMachineStatus(tt.args.controllerMachine, log.Logger)
 			assert.Equal(t, tt.wantMachineAllocatable, isAllocatable)
 			assert.Equal(t, tt.wantStatus, status)
 			assert.NotEmpty(t, message)

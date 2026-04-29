@@ -27,7 +27,7 @@ import (
 
 	cmbuiltin "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/builtin"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
@@ -37,8 +37,8 @@ import (
 // current bootstrap path.
 // A nil pointer means the provider is not enabled.
 type LegacyProviderConfig struct {
-	// Carbide holds Carbide-specific configuration. Nil means disabled.
-	Carbide *carbide.Config
+	// NICo holds NICo-specific configuration. Nil means disabled.
+	NICo *nico.Config
 
 	// PSM holds PSM-specific configuration. Nil means disabled.
 	PSM *psm.Config
@@ -223,8 +223,8 @@ func deriveProviderNames(config Config) []string {
 	names := make(map[string]struct{})
 	for _, implName := range config.ComponentManagers {
 		switch implName {
-		case carbide.ProviderName:
-			names[carbide.ProviderName] = struct{}{}
+		case nico.ProviderName:
+			names[nico.ProviderName] = struct{}{}
 		case psm.ProviderName:
 			names[psm.ProviderName] = struct{}{}
 		case nvswitchmanager.ProviderName:
@@ -250,16 +250,16 @@ func applyProviderConfig(config *Config, name string, decoded ProviderConfig) er
 
 func applyLegacyProviderConfig(config *Config, name string, decoded ProviderConfig) error {
 	switch name {
-	case carbide.ProviderName:
-		carbideConfig, ok := decoded.(*carbide.Config)
+	case nico.ProviderName:
+		nicoConfig, ok := decoded.(*nico.Config)
 		if !ok {
 			return ProviderConfigTypeMismatchError{
 				Name: name,
 				Got:  decoded,
-				Want: "*carbide.Config",
+				Want: "*nico.Config",
 			}
 		}
-		config.Providers.Carbide = carbideConfig
+		config.Providers.NICo = nicoConfig
 	case psm.ProviderName:
 		psmConfig, ok := decoded.(*psm.Config)
 		if !ok {
@@ -294,8 +294,8 @@ func (c *Config) HasProvider(name string) bool {
 	}
 
 	switch name {
-	case carbide.ProviderName:
-		return c.Providers.Carbide != nil
+	case nico.ProviderName:
+		return c.Providers.NICo != nil
 	case psm.ProviderName:
 		return c.Providers.PSM != nil
 	case nvswitchmanager.ProviderName:
@@ -309,9 +309,9 @@ func (c *Config) HasProvider(name string) bool {
 //
 // Timing parameters for operations are configured per-rule via action parameters.
 func DefaultProdConfig() Config {
-	carbideConfig := &carbide.Config{
-		Timeout:           carbide.DefaultTimeout,
-		ComputePowerDelay: carbide.DefaultComputePowerDelay,
+	nicoConfig := &nico.Config{
+		Timeout:           nico.DefaultTimeout,
+		ComputePowerDelay: nico.DefaultComputePowerDelay,
 	}
 	psmConfig := &psm.Config{
 		Timeout: psm.DefaultTimeout,
@@ -319,17 +319,17 @@ func DefaultProdConfig() Config {
 
 	return Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
-			devicetypes.ComponentTypeCompute:    carbide.ProviderName,
-			devicetypes.ComponentTypeNVLSwitch:  carbide.ProviderName,
-			devicetypes.ComponentTypePowerShelf: carbide.ProviderName,
+			devicetypes.ComponentTypeCompute:    nico.ProviderName,
+			devicetypes.ComponentTypeNVLSwitch:  nico.ProviderName,
+			devicetypes.ComponentTypePowerShelf: nico.ProviderName,
 		},
 		Providers: LegacyProviderConfig{
-			Carbide: carbideConfig,
-			PSM:     psmConfig,
+			NICo: nicoConfig,
+			PSM:  psmConfig,
 		},
 		ProviderConfigs: map[string]ProviderConfig{
-			carbide.ProviderName: carbideConfig,
-			psm.ProviderName:     psmConfig,
+			nico.ProviderName: nicoConfig,
+			psm.ProviderName:  psmConfig,
 		},
 	}
 }

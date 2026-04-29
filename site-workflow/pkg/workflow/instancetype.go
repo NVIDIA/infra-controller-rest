@@ -31,7 +31,7 @@ import (
 )
 
 // CreateInstanceType is a workflow to create new InstanceTypes using the CreateInstanceTypeOnSite activity
-// to speak to carbide directly.
+// to speak to nico directly.
 func CreateInstanceType(ctx workflow.Context, request *cwssaws.CreateInstanceTypeRequest) error {
 	logger := log.With().Str("Workflow", "InstanceType").Str("Action", "Create").Str("InstanceType ID", request.GetId()).Logger()
 

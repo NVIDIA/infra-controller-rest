@@ -22,38 +22,42 @@ import (
 	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
 )
 
-// RegisterSubscriber registers NetworkSecurityGroup CRUD workflows and activities with Temporal
+// RegisterSubscriber registers the NetworkSecurityGroup workflows and activities with the Temporal client
 func (api *API) RegisterSubscriber() error {
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Registering CRUD workflows and activities")
+	// Register the subscribers here
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Registering the subscribers")
 
-	// Register workflows
+	networkSecurityGroupManager := swa.NewManageNetworkSecurityGroup(ManagerAccess.Data.EB.Managers.NICo.Client)
 
-	// Register CreateNetworkSecurityGroup workflow
+	//  Register Workflows
+
+	// Sync workflows
+	// Register CreateNetworkSecurityGroup worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CreateNetworkSecurityGroup)
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Successfully registered CreateNetworkSecurityGroup workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: successfully registered Create NetworkSecurityGroup workflow")
 
-	// Register UpdateNetworkSecurityGroup workflow
+	// Register UpdateNetworkSecurityGroup worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateNetworkSecurityGroup)
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Successfully registered UpdateNetworkSecurityGroup workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: successfully registered Update NetworkSecurityGroup workflow")
 
-	// Register DeleteNetworkSecurityGroup workflow
+	// Register DeleteNetworkSecurityGroup worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.DeleteNetworkSecurityGroup)
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Successfully registered DeleteNetworkSecurityGroup workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: successfully registered Delete NetworkSecurityGroup workflow")
 
-	// Register activities
-	networkSecurityGroupManager := swa.NewManageNetworkSecurityGroup(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	// Register Activities
 
-	// Register CreateNetworkSecurityGroupOnSite activity
+	// Sync workflow activities
+	// Register CreateNetworkSecurityGroupOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(networkSecurityGroupManager.CreateNetworkSecurityGroupOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Successfully registered CreateNetworkSecurityGroupOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: successfully registered Create NetworkSecurityGroup activity")
 
-	// Register UpdateNetworkSecurityGroupOnSite activity
+	// Register UpdateNetworkSecurityGroupOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(networkSecurityGroupManager.UpdateNetworkSecurityGroupOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Successfully registered UpdateNetworkSecurityGroupOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: successfully registered Update NetworkSecurityGroup activity")
 
-	// Register DeleteNetworkSecurityGroupOnSite activity
+	// Register DeleteNetworkSecurityGroupOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(networkSecurityGroupManager.DeleteNetworkSecurityGroupOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: Successfully registered DeleteNetworkSecurityGroupOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("NetworkSecurityGroup: successfully registered Delete NetworkSecurityGroup activity")
 
 	return nil
 }

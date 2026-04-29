@@ -80,7 +80,7 @@ func NewGetTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Client
 // @Param id path string true "ID of Tray"
 // @Param siteId query string true "ID of the Site"
 // @Success 200 {object} model.APITray
-// @Router /v2/org/{org}/carbide/tray/{id} [get]
+// @Router /v2/org/{org}/nico/tray/{id} [get]
 func (gth GetTrayHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "Get", c, gth.tracerSpan)
 	if handlerSpan != nil {
@@ -250,7 +250,7 @@ func NewGetAllTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param pageNumber query int false "Page number (1-based)"
 // @Param pageSize query int false "Page size"
 // @Success 200 {array} model.APITray
-// @Router /v2/org/{org}/carbide/tray [get]
+// @Router /v2/org/{org}/nico/tray [get]
 func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "GetAll", c, gath.tracerSpan)
 	if handlerSpan != nil {
@@ -460,7 +460,7 @@ func NewValidateTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.C
 // @Param id path string true "ID of the Tray"
 // @Param siteId query string true "ID of the Site"
 // @Success 200 {object} model.APIRackValidationResult
-// @Router /v2/org/{org}/carbide/tray/{id}/validation [get]
+// @Router /v2/org/{org}/nico/tray/{id}/validation [get]
 func (vth ValidateTrayHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "Validate", c, vth.tracerSpan)
 	if handlerSpan != nil {
@@ -639,7 +639,7 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param type query string false "Filter trays by type (Compute, NVLSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)"
 // @Success 200 {object} model.APIRackValidationResult
-// @Router /v2/org/{org}/carbide/tray/validation [get]
+// @Router /v2/org/{org}/nico/tray/validation [get]
 func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "ValidateTrays", c, vtsh.tracerSpan)
 	if handlerSpan != nil {
@@ -801,7 +801,7 @@ func NewUpdateTrayPowerStateHandler(dbSession *cdb.Session, tc tClient.Client, s
 // @Param id path string true "ID of Tray"
 // @Param body body model.APIUpdatePowerStateRequest true "Power control request"
 // @Success 200 {object} model.APIUpdatePowerStateResponse
-// @Router /v2/org/{org}/carbide/tray/{id}/power [patch]
+// @Router /v2/org/{org}/nico/tray/{id}/power [patch]
 func (pcth UpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "PowerControl", c, pcth.tracerSpan)
 	if handlerSpan != nil {
@@ -936,7 +936,7 @@ func NewBatchUpdateTrayPowerStateHandler(dbSession *cdb.Session, tc tClient.Clie
 // @Param org path string true "Name of NGC organization"
 // @Param body body model.APIBatchUpdateTrayPowerStateRequest true "Batch tray power control request"
 // @Success 200 {object} model.APIUpdatePowerStateResponse
-// @Router /v2/org/{org}/carbide/tray/power [patch]
+// @Router /v2/org/{org}/nico/tray/power [patch]
 func (pctbh BatchUpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "PowerControlBatch", c, pctbh.tracerSpan)
 	if handlerSpan != nil {
@@ -1052,7 +1052,7 @@ func NewUpdateTrayFirmwareHandler(dbSession *cdb.Session, tc tClient.Client, scp
 // @Param id path string true "UUID of the Tray"
 // @Param body body model.APIUpdateFirmwareRequest true "Firmware update request"
 // @Success 200 {object} model.APIUpdateFirmwareResponse
-// @Router /v2/org/{org}/carbide/tray/{id}/firmware [patch]
+// @Router /v2/org/{org}/nico/tray/{id}/firmware [patch]
 func (futh UpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "FirmwareUpdate", c, futh.tracerSpan)
 	if handlerSpan != nil {
@@ -1185,7 +1185,7 @@ func NewBatchUpdateTrayFirmwareHandler(dbSession *cdb.Session, tc tClient.Client
 // @Param org path string true "Name of NGC organization"
 // @Param body body model.APIBatchTrayFirmwareUpdateRequest true "Batch tray firmware update request"
 // @Success 200 {object} model.APIUpdateFirmwareResponse
-// @Router /v2/org/{org}/carbide/tray/firmware [patch]
+// @Router /v2/org/{org}/nico/tray/firmware [patch]
 func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tray", "FirmwareUpdateBatch", c, futbh.tracerSpan)
 	if handlerSpan != nil {

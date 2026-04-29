@@ -48,7 +48,7 @@ func (h *credsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	objName := nameFromUUID(req.SiteUUID)
 
-	siteObj, err := h.manager.crdClient.ForgeV1().Sites(h.manager.namespace).Get(r.Context(), objName, metav1.GetOptions{})
+	res, err := h.manager.getSite(r.Context(), objName)
 	if err != nil {
 		log.Errorf("Site Creds Req: %+v  %v", req, err)
 		var errStr string
@@ -61,21 +61,21 @@ func (h *credsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if siteObj.Status.BootstrapState != crdsv1.SiteAwaitHandshake {
+	if res.site.Status.BootstrapState != crdsv1.SiteAwaitHandshake {
 		log.Infof("Creds request with used OTP: %+v", req)
 		http.Error(w, "OTP already used", http.StatusInternalServerError)
 		return
 	}
 
-	if req.OTP != siteObj.Status.OTP.Passcode {
+	if req.OTP != res.site.Status.OTP.Passcode {
 		log.Infof("Bad OTP received: %+v", req)
 		http.Error(w, "Bad OTP", http.StatusInternalServerError)
 		return
 	}
 
-	expiry, err := parseExpiry(&siteObj.Status.OTP)
+	expiry, err := parseExpiry(&res.site.Status.OTP)
 	if err != nil {
-		log.Errorf("Error parsing expiry: %v +%v", err, siteObj.Status.OTP)
+		log.Errorf("Error parsing expiry: %v +%v", err, res.site.Status.OTP)
 		http.Error(w, "check logs", http.StatusInternalServerError)
 		return
 	}
@@ -107,8 +107,8 @@ func (h *credsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		CACertificate: ca,
 	}
 
-	siteObj.Status.BootstrapState = crdsv1.SiteHandshakeComplete
-	if _, err := h.manager.crdClient.ForgeV1().Sites(h.manager.namespace).UpdateStatus(r.Context(), siteObj, metav1.UpdateOptions{}); err != nil {
+	res.site.Status.BootstrapState = crdsv1.SiteHandshakeComplete
+	if _, err := h.manager.updateSiteStatus(r.Context(), res, metav1.UpdateOptions{}); err != nil {
 		log.Errorf("Get credentials site %s %v", objName, err)
 		http.Error(w, "check logs", http.StatusInternalServerError)
 		return

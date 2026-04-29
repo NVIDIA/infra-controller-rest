@@ -72,12 +72,12 @@ flowchart TB
 
     subgraph componentmgr [Component Managers]
         cmRegistry[CM Registry]
-        carbideCM[Carbide Manager]
+        nicoCM[NICo Manager]
         psmCM[PSM Manager]
     end
 
     subgraph external_apis [External APIs]
-        carbideAPI[Carbide API]
+        nicoAPI[NICo API]
         psmAPI[PSM API]
     end
 
@@ -94,9 +94,9 @@ flowchart TB
     executor --> temporal
     temporal --> activities
     activities --> cmRegistry
-    cmRegistry --> carbideCM
+    cmRegistry --> nicoCM
     cmRegistry --> psmCM
-    carbideCM --> carbideAPI
+    nicoCM --> nicoAPI
     psmCM --> psmAPI
 ```
 
@@ -118,8 +118,8 @@ Hardware components within a rack. Supported types:
 
 | Type | Description | External System |
 |------|-------------|-----------------|
-| `Compute` | GPU compute trays | Carbide API |
-| `NVLSwitch` | NVLink switches | Carbide API |
+| `Compute` | GPU compute trays | NICo API |
+| `NVLSwitch` | NVLink switches | NICo API |
 | `PowerShelf` | Power distribution units | PSM API |
 | `TorSwitch` | Top-of-rack network switches | - |
 | `UMS` | Unit Management System | - |
@@ -130,7 +130,7 @@ Each component has:
 - **DeviceInfo**: ID, name, manufacturer, model, serial number
 - **Position**: Slot ID, tray index, host ID within the rack
 - **BMCs**: Board Management Controllers (Host BMC, DPU BMCs)
-- **ComponentID**: External system identifier (e.g., Carbide machine_id)
+- **ComponentID**: External system identifier (e.g., NICo machine_id)
 - **FirmwareVersion**: Current firmware version
 
 ### NVL Domain
@@ -361,8 +361,8 @@ type ComponentManager interface {
 
 | Component Type | Implementation | Provider |
 |----------------|----------------|----------|
-| Compute | `compute/carbide/` | Carbide |
-| NVLSwitch | `nvlswitch/carbide/` | Carbide |
+| Compute | `compute/nico/` | NICo |
+| NVLSwitch | `nvlswitch/nico/` | NICo |
 | PowerShelf | `powershelf/psm/` | PSM |
 
 ---
@@ -425,7 +425,7 @@ flowchart LR
     end
 
     subgraph external [External Systems]
-        carbide[Carbide API]
+        nico[NICo API]
         psm[PSM API]
     end
 
@@ -436,9 +436,9 @@ flowchart LR
     req --> server
     server --> invStore
     invStore -->|Expected| server
-    server --> carbide
+    server --> nico
     server --> psm
-    carbide -->|Actual| server
+    nico -->|Actual| server
     psm -->|Actual| server
     server -->|Compare| diff
 ```
@@ -447,11 +447,11 @@ flowchart LR
 
 ## External Integrations
 
-### Carbide API
+### NICo API
 
-**Location**: `internal/carbideapi/`
+**Location**: `internal/nicoapi/`
 
-Carbide is NVIDIA's hardware management platform for compute nodes and switches.
+NICo is NVIDIA's hardware management platform for compute nodes and switches.
 
 **Used for**:
 
@@ -693,12 +693,12 @@ Stores task execution records.
 
 ```yaml
 component_managers:
-  compute: carbide
-  nvlswitch: carbide
+  compute: nico
+  nvlswitch: nico
   powershelf: psm
 
 providers:
-  carbide:
+  nico:
     timeout: "1m"
   psm:
     timeout: "30s"
@@ -749,7 +749,7 @@ rla/
 │   │   │   └── temporalworkflow/
 │   │   ├── componentmanager/     # Component-specific operations
 │   │   └── operations/           # Operation definitions
-│   ├── carbideapi/               # Carbide client
+│   ├── nicoapi/               # NICo client
 │   ├── psmapi/                   # PSM client
 │   ├── clients/                  # External clients
 │   │   └── temporal/

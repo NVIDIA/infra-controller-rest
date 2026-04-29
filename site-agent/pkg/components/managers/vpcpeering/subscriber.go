@@ -36,7 +36,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("VpcPeering: Successfully registered DeleteVpcPeering workflow")
 
 	// Register activities
-	vpcPeeringManager := swa.NewManageVpcPeering(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	vpcPeeringManager := swa.NewManageVpcPeering(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateVpcPeeringOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcPeeringManager.CreateVpcPeeringOnSite)

@@ -78,7 +78,7 @@ func NewCreateDpuExtensionServiceHandler(dbSession *cdb.Session, tc tclient.Clie
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIDpuExtensionServiceCreateRequest true "DPU Extension Service creation request"
 // @Success 201 {object} model.APIDpuExtensionService
-// @Router /v2/org/{org}/carbide/dpu-extension-service [post]
+// @Router /v2/org/{org}/nico/dpu-extension-service [post]
 func (cdesh CreateDpuExtensionServiceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Create", "DpuExtensionService", c, cdesh.tracerSpan)
 	if handlerSpan != nil {
@@ -384,7 +384,7 @@ func NewGetAllDpuExtensionServiceHandler(dbSession *cdb.Session, tc tclient.Clie
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} model.APIDpuExtensionService
-// @Router /v2/org/{org}/carbide/dpu-extension-service [get]
+// @Router /v2/org/{org}/nico/dpu-extension-service [get]
 func (gadesh GetAllDpuExtensionServiceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("GetAll", "DpuExtensionService", c, gadesh.tracerSpan)
 	if handlerSpan != nil {
@@ -589,7 +589,7 @@ func NewGetDpuExtensionServiceHandler(dbSession *cdb.Session, tc tclient.Client,
 // @Param dpuExtensionServiceId path string true "ID of DPU Extension Service"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Tenant'"
 // @Success 200 {object} model.APIDpuExtensionService
-// @Router /v2/org/{org}/carbide/dpu-extension-service/{dpuExtensionServiceId} [get]
+// @Router /v2/org/{org}/nico/dpu-extension-service/{dpuExtensionServiceId} [get]
 func (gdesh GetDpuExtensionServiceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Get", "DpuExtensionService", c, gdesh.tracerSpan)
 	if handlerSpan != nil {
@@ -703,7 +703,7 @@ func NewUpdateDpuExtensionServiceHandler(dbSession *cdb.Session, tc tclient.Clie
 // @Param dpuExtensionServiceId path string true "ID of DPU Extension Service"
 // @Param message body model.APIDpuExtensionServiceUpdateRequest true "DPU Extension Service update request"
 // @Success 200 {object} model.APIDpuExtensionService
-// @Router /v2/org/{org}/carbide/dpu-extension-service/{dpuExtensionServiceId} [patch]
+// @Router /v2/org/{org}/nico/dpu-extension-service/{dpuExtensionServiceId} [patch]
 func (udesh UpdateDpuExtensionServiceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Update", "DpuExtensionService", c, udesh.tracerSpan)
 	if handlerSpan != nil {
@@ -977,7 +977,7 @@ func NewDeleteDpuExtensionServiceHandler(dbSession *cdb.Session, tc tclient.Clie
 // @Param org path string true "Name of NGC organization"
 // @Param dpuExtensionServiceId path string true "ID of DPU Extension Service"
 // @Success 204 "No Content"
-// @Router /v2/org/{org}/carbide/dpu-extension-service/{dpuExtensionServiceId} [delete]
+// @Router /v2/org/{org}/nico/dpu-extension-service/{dpuExtensionServiceId} [delete]
 func (ddesh DeleteDpuExtensionServiceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Delete", "DpuExtensionService", c, ddesh.tracerSpan)
 	if handlerSpan != nil {
@@ -1154,7 +1154,7 @@ func NewGetDpuExtensionServiceVersionHandler(dbSession *cdb.Session, tc tclient.
 // @Param dpuExtensionServiceId path string true "ID of DPU Extension Service"
 // @Param versionId path string true "Version ID"
 // @Success 200 {object} model.APIDpuExtensionServiceVersionInfo
-// @Router /v2/org/{org}/carbide/dpu-extension-service/{dpuExtensionServiceId}/version/{versionId} [get]
+// @Router /v2/org/{org}/nico/dpu-extension-service/{dpuExtensionServiceId}/version/{versionId} [get]
 func (gdesvh GetDpuExtensionServiceVersionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("GetVersion", "DpuExtensionService", c, gdesvh.tracerSpan)
 	if handlerSpan != nil {
@@ -1318,7 +1318,7 @@ func NewDeleteDpuExtensionServiceVersionHandler(dbSession *cdb.Session, tc tclie
 // @Param dpuExtensionServiceId path string true "ID of DPU Extension Service"
 // @Param versionId path string true "Version ID"
 // @Success 202 "Accepted"
-// @Router /v2/org/{org}/carbide/dpu-extension-service/{dpuExtensionServiceId}/version/{versionId} [delete]
+// @Router /v2/org/{org}/nico/dpu-extension-service/{dpuExtensionServiceId}/version/{versionId} [delete]
 func (ddesvh DeleteDpuExtensionServiceVersionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("DeleteVersion", "DpuExtensionService", c, ddesvh.tracerSpan)
 	if handlerSpan != nil {

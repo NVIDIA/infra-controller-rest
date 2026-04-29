@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"encoding/json"
@@ -364,7 +364,7 @@ func buildActionCommand(spec *Spec, ro resolvedOp, subResource string) *cli.Comm
 		return flags[i].Names()[0] < flags[j].Names()[0]
 	})
 
-	usageText := "carbidecli " + tagToCommand(ro.tag)
+	usageText := "cli " + tagToCommand(ro.tag)
 	if subResource != "" {
 		usageText += " " + subResource
 	}
@@ -718,7 +718,7 @@ func clientFromContext(c *cli.Context) (*Client, error) {
 	}
 
 	if resolved == "" {
-		return nil, fmt.Errorf("no token available; run 'carbidecli login' or set --token / CARBIDE_TOKEN")
+		return nil, fmt.Errorf("no token available; run 'cli login' or set --token / NICO_TOKEN")
 	}
 
 	// Explicit flag > config > flag default (spec server URL).
@@ -740,7 +740,7 @@ func clientFromContext(c *cli.Context) (*Client, error) {
 
 	apiName := cfg.API.Name
 	if apiName == "" {
-		apiName = "carbide"
+		apiName = "nico"
 	}
 
 	debug := c.Bool("debug")

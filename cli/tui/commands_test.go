@@ -126,8 +126,8 @@ func TestLogCmd_IncludesScopeFlags(t *testing.T) {
 	if !strings.Contains(output, "--config /tmp/config.yaml") {
 		t.Errorf("LogCmd output missing --config flag: %q", output)
 	}
-	if !strings.Contains(output, "carbidecli") {
-		t.Errorf("LogCmd output missing carbidecli: %q", output)
+	if !strings.Contains(output, "cli") {
+		t.Errorf("LogCmd output missing cli: %q", output)
 	}
 }
 

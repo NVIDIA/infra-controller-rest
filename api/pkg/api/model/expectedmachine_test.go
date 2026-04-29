@@ -437,7 +437,7 @@ func TestAPIExpectedMachineUpdateRequest_Validate(t *testing.T) {
 					"zone":        "us-west-2",
 					"team":        "platform",
 					"cost-center": "12345",
-					"app":         "carbide-rest-api",
+					"app":         "nico-rest-api",
 				},
 			},
 			expectErr: false,
@@ -640,7 +640,7 @@ func TestNewAPIExpectedMachineEdgeCases(t *testing.T) {
 			BmcMacAddress:       "00:11:22:33:44:55",
 			ChassisSerialNumber: "CHASSIS-123",
 			Labels: map[string]string{
-				"app.kubernetes.io/name":    "carbide-rest-api",
+				"app.kubernetes.io/name":    "nico-rest-api",
 				"app.kubernetes.io/version": "v1.2.3",
 				"special-chars":             "value!@#$%^&*()",
 			},
@@ -651,7 +651,7 @@ func TestNewAPIExpectedMachineEdgeCases(t *testing.T) {
 		got := NewAPIExpectedMachine(dbEM)
 		assert.NotNil(t, got)
 		assert.Equal(t, dbEM.Labels, got.Labels)
-		assert.Equal(t, "carbide-rest-api", got.Labels["app.kubernetes.io/name"])
+		assert.Equal(t, "nico-rest-api", got.Labels["app.kubernetes.io/name"])
 	})
 
 	t.Run("with very long serial numbers", func(t *testing.T) {

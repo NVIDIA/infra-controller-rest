@@ -33,10 +33,13 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/cert-manager/pkg/certs"
 	"github.com/NVIDIA/ncx-infra-controller-rest/cert-manager/pkg/core"
 	crdclient "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned"
+	crdsv1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/crds/v1"
 	"github.com/getsentry/sentry-go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
 )
 
@@ -275,6 +278,53 @@ func (s *SiteMgr) siteRollHandler() http.Handler {
 func (s *SiteMgr) siteCredsHandler() http.Handler {
 	h := &credsHandler{manager: s}
 	return s.withWraps(h, "csm-site-bootstrap")
+}
+
+// siteResult pairs a Site object with the CRD group it was fetched from so that
+// writes (UpdateStatus) can be routed back to the correct group.
+// TODO: remove siteResult and the fallback helpers below once all site agents have
+// migrated to nico.nvidia.io and forge.nvidia.io Sites no longer exist.
+type siteResult struct {
+	site   *crdsv1.Site
+	legacy bool // true = came from forge.nvidia.io; false = nico.nvidia.io
+}
+
+// getSite tries nico.nvidia.io first; if the Site is not found it falls back to
+// the legacy forge.nvidia.io group used by pre-NICo site agents.
+func (s *SiteMgr) getSite(ctx context.Context, name string) (*siteResult, error) {
+	site, err := s.crdClient.NICoV1().Sites(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err == nil {
+		return &siteResult{site: site, legacy: false}, nil
+	}
+	if !k8serr.IsNotFound(err) {
+		return nil, err
+	}
+	// Not found in nico group — try the legacy forge group.
+	site, err = s.crdClient.ForgeLegacyV1().Sites(s.namespace).Get(ctx, name, metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return &siteResult{site: site, legacy: true}, nil
+}
+
+// updateSiteStatus writes the status back to whichever CRD group the Site was read from.
+func (s *SiteMgr) updateSiteStatus(ctx context.Context, r *siteResult, opts metav1.UpdateOptions) (*crdsv1.Site, error) {
+	if r.legacy {
+		return s.crdClient.ForgeLegacyV1().Sites(s.namespace).UpdateStatus(ctx, r.site, opts)
+	}
+	return s.crdClient.NICoV1().Sites(s.namespace).UpdateStatus(ctx, r.site, opts)
+}
+
+// deleteSite deletes from nico.nvidia.io first; falls back to forge.nvidia.io on not-found.
+func (s *SiteMgr) deleteSite(ctx context.Context, name string, opts metav1.DeleteOptions) error {
+	err := s.crdClient.NICoV1().Sites(s.namespace).Delete(ctx, name, opts)
+	if err == nil {
+		return nil
+	}
+	if !k8serr.IsNotFound(err) {
+		return err
+	}
+	return s.crdClient.ForgeLegacyV1().Sites(s.namespace).Delete(ctx, name, opts)
 }
 
 // withWraps applies the required wrappers to the handlers

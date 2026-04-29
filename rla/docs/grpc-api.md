@@ -87,7 +87,7 @@
 <a name="v1-ActualComponent"></a>
 
 ### ActualComponent
-ActualComponent represents a component&#39;s actual state from external systems (e.g., Carbide, PSM)
+ActualComponent represents a component&#39;s actual state from external systems (e.g., NICo, PSM)
 
 
 | Field | Type | Label | Description |
@@ -104,7 +104,7 @@ ActualComponent represents a component&#39;s actual state from external systems 
 When this component was last observed |
 | power_state | [string](#string) |  | Current power state |
 | health_status | [string](#string) |  | Health status from source system |
-| source | [string](#string) |  | Data source (e.g., &#34;carbide&#34;, &#34;psm&#34;) |
+| source | [string](#string) |  | Data source (e.g., &#34;nico&#34;, &#34;psm&#34;) |
 
 
 
@@ -176,7 +176,7 @@ When this component was last observed |
 | firmware_version | [string](#string) |  |  |
 | position | [RackPosition](#v1-RackPosition) |  |  |
 | bmcs | [BMCInfo](#v1-BMCInfo) | repeated |  |
-| component_id | [string](#string) |  | Component&#39;s own ID from its source system (e.g., Carbide machine_id for Compute) |
+| component_id | [string](#string) |  | Component&#39;s own ID from its source system (e.g., NICo machine_id for Compute) |
 | rack_id | [UUID](#v1-UUID) |  |  |
 
 
@@ -350,13 +350,13 @@ ComponentTargets contains one or more component targets
 ### ExternalRef
 ExternalRef identifies a component by its external system ID.
 The component type determines which external system to query
-(e.g., COMPUTE -&gt; Carbide, POWERSHELF -&gt; PSM)
+(e.g., COMPUTE -&gt; NICo, POWERSHELF -&gt; PSM)
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [ComponentType](#v1-ComponentType) |  | Component type determines the source system |
-| id | [string](#string) |  | ID in that system (e.g., Carbide machine_id, PSM PMC MAC) |
+| id | [string](#string) |  | ID in that system (e.g., NICo machine_id, PSM PMC MAC) |
 
 
 

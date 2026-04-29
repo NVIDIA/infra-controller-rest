@@ -44,6 +44,7 @@ import (
 	tmocks "go.temporal.io/sdk/mocks"
 
 	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // TestCreateDpuExtensionServiceHandler_Handle tests the Create DPU Extension Service handler
@@ -55,11 +56,11 @@ func TestCreateDpuExtensionServiceHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -298,11 +299,11 @@ func TestGetAllDpuExtensionServiceHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -474,11 +475,11 @@ func TestGetDpuExtensionServiceHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	tnOrg2 := "test-tenant-org-2"
 
@@ -628,11 +629,11 @@ func TestUpdateDpuExtensionServiceHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -916,11 +917,11 @@ func TestDeleteDpuExtensionServiceHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1080,11 +1081,11 @@ func TestGetDpuExtensionServiceVersionHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1262,11 +1263,11 @@ func TestDeleteDpuExtensionServiceVersionHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)

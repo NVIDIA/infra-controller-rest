@@ -65,7 +65,7 @@ func (vpcr APIVpcPeeringCreateRequest) Validate() error {
 
 // APIVpcPeering represents a VPC peering connection
 type APIVpcPeering struct {
-	// ID is the unique UUID v4 identifier of the VPC peering in Forge Cloud
+	// ID is the unique UUID v4 identifier of the VPC peering in NICo Cloud
 	ID string `json:"id"`
 	// Vpc1ID is the ID of the first VPC in the peering
 	Vpc1ID string `json:"vpc1Id"`
@@ -118,7 +118,7 @@ func NewAPIVpcPeering(dbVpcPeering cdbm.VpcPeering) APIVpcPeering {
 
 // APIVpcPeeringSummary represents a summary of a VPC peering connection
 type APIVpcPeeringSummary struct {
-	// ID is the unique UUID v4 identifier of the VPC peering in Forge Cloud
+	// ID is the unique UUID v4 identifier of the VPC peering in NICo Cloud
 	ID string `json:"id"`
 	// Vpc1ID is the ID of the first VPC in the peering
 	Vpc1ID string `json:"vpc1Id"`

@@ -86,14 +86,14 @@ func (tc *TemporalConfig) GetTemporalClientKeyFullPath() string {
 	return tc.TemporalCertPath + "/client/" + file
 }
 
-// CarbideConfig holds configurations for connecting to Carbide server
-type CarbideConfig struct {
-	Address        string               `json:"carbideAddress"`
-	Secure         client.SecureOptions `json:"carbideSecureOptions"`
-	SkipServerAuth bool                 `json:"carbideSkipServerAuth"`
-	ServerCAPath   string               `json:"carbideCertPath"`
-	ClientCertPath string               `json:"carbideClientCertPath"`
-	ClientKeyPath  string               `json:"carbideClientKeyPath"`
+// NICoConfig holds configurations for connecting to NICo server
+type NICoConfig struct {
+	Address        string               `json:"nicoAddress"`
+	Secure         client.SecureOptions `json:"nicoSecureOptions"`
+	SkipServerAuth bool                 `json:"nicoSkipServerAuth"`
+	ServerCAPath   string               `json:"nicoCertPath"`
+	ClientCertPath string               `json:"nicoClientCertPath"`
+	ClientKeyPath  string               `json:"nicoClientKeyPath"`
 }
 
 // RLAConfig holds configurations for connecting to RLA server
@@ -110,7 +110,7 @@ type RLAConfig struct {
 // Config for Site Agent
 type Config struct {
 	Temporal         TemporalConfig
-	Carbide          CarbideConfig
+	NICo          NICoConfig
 	RLA              RLAConfig
 	IsMasterPod      bool          `json:"isMasterPod"`
 	EnableDebug      bool          `json:"enableDebug"`
@@ -142,7 +142,7 @@ func NewConfType() *Config {
 	// We can set the default config here
 	return &Config{
 		Temporal: TemporalConfig{},
-		Carbide:  CarbideConfig{},
+		NICo:  NICoConfig{},
 		RLA:      RLAConfig{},
 	}
 }

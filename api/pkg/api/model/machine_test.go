@@ -272,7 +272,7 @@ func TestMachine_NewAPIMachine(t *testing.T) {
 					},
 					{
 						Id:     "FileExists",
-						Target: cdb.GetStrPtr("/var/lib/hbn/etc/supervisor/conf.d/default-forge-dhcp-server.conf"),
+						Target: cdb.GetStrPtr("/var/lib/hbn/etc/supervisor/conf.d/default-nico-dhcp-server.conf"),
 					},
 					{
 						Id:     "FileExists",
@@ -292,7 +292,7 @@ func TestMachine_NewAPIMachine(t *testing.T) {
 					},
 					{
 						Id:     "FileIsValid",
-						Target: cdb.GetStrPtr("etc/supervisor/conf.d/default-forge-dhcp-server.conf"),
+						Target: cdb.GetStrPtr("etc/supervisor/conf.d/default-nico-dhcp-server.conf"),
 					},
 					{
 						Id:     "FileIsValid",

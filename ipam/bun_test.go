@@ -42,7 +42,7 @@ func getTestDBParams() TestDBConfig {
 	tdbcfg := TestDBConfig{
 		Host:     "localhost",
 		Port:     "30432",
-		Name:     "forgetest",
+		Name:     "nicotest",
 		User:     "postgres",
 		Password: "postgres",
 	}

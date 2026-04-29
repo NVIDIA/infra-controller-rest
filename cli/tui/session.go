@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	carbidecli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
+	cli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
 )
 
 // LoginFunc is a callback to perform login and return a new token.
@@ -41,7 +41,7 @@ type Scope struct {
 
 // Session holds the shared state for an interactive TUI session.
 type Session struct {
-	Client     *carbidecli.Client
+	Client     *cli.Client
 	ConfigPath string
 	Org        string
 	Token      string
@@ -52,7 +52,7 @@ type Session struct {
 }
 
 // apiPath builds an org-scoped API path using the client's configured API name
-// instead of a hardcoded "carbide" segment. resource is everything after the
+// instead of a hardcoded "nico" segment. resource is everything after the
 // API name, e.g. "site", "site/{id}", "vpc/{id}/virtualization".
 func apiPath(s *Session, resource string) string {
 	return fmt.Sprintf("/v2/org/{org}/%s/%s", s.Client.APIName, resource)
@@ -67,7 +67,7 @@ func (s *Session) PromptString() string {
 	if s.Scope.VpcName != "" {
 		parts = append(parts, s.Scope.VpcName)
 	}
-	return Cyan("carbide:"+strings.Join(parts, "/")) + "> "
+	return Cyan("nico:"+strings.Join(parts, "/")) + "> "
 }
 
 // RefreshClient updates the session with a new token.
@@ -77,7 +77,7 @@ func (s *Session) RefreshClient(token string) {
 }
 
 // NewSession creates a new interactive session.
-func NewSession(client *carbidecli.Client, org, configPath string) *Session {
+func NewSession(client *cli.Client, org, configPath string) *Session {
 	cache := NewCache()
 	resolver := NewResolver(cache)
 	s := &Session{

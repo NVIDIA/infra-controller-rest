@@ -58,7 +58,7 @@ func TestUserSQLDAO_Get(t *testing.T) {
 		DisplayName: "Test Org",
 		OrgType:     "test-org-type",
 		Roles: []string{
-			"FORGE_SERVICE_PROVIDER_ADMIN",
+			"NICO_SERVICE_PROVIDER_ADMIN",
 		},
 		Teams: []Team{
 			{
@@ -66,7 +66,7 @@ func TestUserSQLDAO_Get(t *testing.T) {
 				Name:     "test-team",
 				TeamType: "test-team-type",
 				Roles: []string{
-					"FORGE_SERVICE_PROVIDER_USER",
+					"NICO_SERVICE_PROVIDER_USER",
 				},
 			},
 		},
@@ -188,7 +188,7 @@ func TestUserSQLDAO_GetAll(t *testing.T) {
 		DisplayName: "Test Org",
 		OrgType:     "test-org-type",
 		Roles: []string{
-			"FORGE_SERVICE_PROVIDER_ADMIN",
+			"NICO_SERVICE_PROVIDER_ADMIN",
 		},
 		Teams: []Team{
 			{
@@ -196,7 +196,7 @@ func TestUserSQLDAO_GetAll(t *testing.T) {
 				Name:     "test-team",
 				TeamType: "test-team-type",
 				Roles: []string{
-					"FORGE_SERVICE_PROVIDER_USER",
+					"NICO_SERVICE_PROVIDER_USER",
 				},
 			},
 		},
@@ -516,7 +516,7 @@ func TestUserSQLDAO_Update(t *testing.T) {
 		Name:    "test-org",
 		OrgType: "test-org-type",
 		Roles: []string{
-			"FORGE_SERVICE_PROVIDER_ADMIN",
+			"NICO_SERVICE_PROVIDER_ADMIN",
 		},
 		Teams: []Team{
 			{
@@ -524,7 +524,7 @@ func TestUserSQLDAO_Update(t *testing.T) {
 				Name:     "test-team",
 				TeamType: "test-team-type",
 				Roles: []string{
-					"FORGE_SERVICE_PROVIDER_USER",
+					"NICO_SERVICE_PROVIDER_USER",
 				},
 			},
 		},
@@ -648,7 +648,7 @@ func TestUser_GetOrgByName(t *testing.T) {
 		Name:    "test-org",
 		OrgType: "test-org-type",
 		Roles: []string{
-			"FORGE_SERVICE_PROVIDER_ADMIN",
+			"NICO_SERVICE_PROVIDER_ADMIN",
 		},
 		Teams: []Team{
 			{
@@ -656,7 +656,7 @@ func TestUser_GetOrgByName(t *testing.T) {
 				Name:     "test-team",
 				TeamType: "test-team-type",
 				Roles: []string{
-					"FORGE_SERVICE_PROVIDER_USER",
+					"NICO_SERVICE_PROVIDER_USER",
 				},
 			},
 		},
@@ -741,7 +741,7 @@ func TestUserSQLDAO_GetOrCreate(t *testing.T) {
 		DisplayName: "Test Org",
 		OrgType:     "test-org-type",
 		Roles: []string{
-			"FORGE_SERVICE_PROVIDER_ADMIN",
+			"NICO_SERVICE_PROVIDER_ADMIN",
 		},
 		Teams: []Team{
 			{
@@ -749,7 +749,7 @@ func TestUserSQLDAO_GetOrCreate(t *testing.T) {
 				Name:     "test-team",
 				TeamType: "test-team-type",
 				Roles: []string{
-					"FORGE_SERVICE_PROVIDER_USER",
+					"NICO_SERVICE_PROVIDER_USER",
 				},
 			},
 		},

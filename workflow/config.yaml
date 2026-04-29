@@ -22,9 +22,9 @@ log:
 db:
   host: localhost
   port: 30432
-  name: forge
-  user: forge
-  password: forge
+  name: nico
+  user: nico
+  password: nico
 
 temporal:
   host: localhost

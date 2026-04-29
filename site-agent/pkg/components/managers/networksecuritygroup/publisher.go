@@ -35,10 +35,10 @@ func (api *API) RegisterPublisher() error {
 	// Register DiscoverNetworkSecurityGroupInventory activity
 	inventoryManager := swa.NewManageNetworkSecurityGroupInventory(swa.ManageInventoryConfig{
 		SiteID:                uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		CarbideAtomicClient:   ManagerAccess.Data.EB.Managers.Carbide.Client,
+		NICoAtomicClient:   ManagerAccess.Data.EB.Managers.NICo.Client,
 		TemporalPublishClient: ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		TemporalPublishQueue:  ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
-		SitePageSize:          InventoryCarbidePageSize,
+		SitePageSize:          InventoryNICoPageSize,
 		CloudPageSize:         InventoryCloudPageSize,
 	})
 

@@ -23,7 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 )
@@ -35,14 +35,14 @@ func TestNewServiceProviderConfigDecoderRegistry(t *testing.T) {
 	assert.ElementsMatch(
 		t,
 		[]string{
-			carbide.ProviderName,
+			nico.ProviderName,
 			psm.ProviderName,
 			nvswitchmanager.ProviderName,
 		},
 		registry.List(),
 	)
 
-	_, ok := registry.Get(carbide.ProviderName)
+	_, ok := registry.Get(nico.ProviderName)
 	assert.True(t, ok)
 
 	_, ok = registry.Get(psm.ProviderName)

@@ -31,7 +31,7 @@ import (
 )
 
 func main() {
-	// CARBIDE_BASE_URL, CARBIDE_ORG, and CARBIDE_TOKEN are required environment variables.
+	// NICO_BASE_URL, NICO_ORG, and NICO_TOKEN are required environment variables.
 	// See sdk/simple/README.md for local dev (kind) setup.
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -42,7 +42,7 @@ func main() {
 		os.Exit(1)
 	}
 	ctx := context.Background()
-	if siteID := os.Getenv("CARBIDE_SITE_ID"); siteID != "" {
+	if siteID := os.Getenv("NICO_SITE_ID"); siteID != "" {
 		client.SetSiteID(siteID)
 	}
 	if err := client.Authenticate(ctx); err != nil {

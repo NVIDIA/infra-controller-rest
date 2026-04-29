@@ -30,10 +30,10 @@ var ManagerAccess *Manager.ManagerAccess
 type API struct{}
 
 // NewInstanceManager - returns a new instance of helm manager
-func NewInstanceManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
+func NewInstanceManager(superNICo *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
 	ManagerAccess = &Manager.ManagerAccess{
 		Data: &Manager.ManagerData{
-			EB: superForge,
+			EB: superNICo,
 		},
 		API:  superAPI,
 		Conf: superConf,

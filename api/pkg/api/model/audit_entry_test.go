@@ -44,7 +44,7 @@ func TestNewAPIAuditEntry(t *testing.T) {
 
 	dbAuditEntry := cdbm.AuditEntry{
 		ID:       uuid.New(),
-		Endpoint: "/v2/org/aoij2l0al10s/carbide/site",
+		Endpoint: "/v2/org/aoij2l0al10s/nico/site",
 		QueryParams: url.Values{
 			"test": []string{"1234"},
 		},

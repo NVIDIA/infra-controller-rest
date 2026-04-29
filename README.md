@@ -3,15 +3,15 @@ SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All 
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# NVIDIA Infra Controller REST API
+# NVIDIA Infrastructure Controller (NICo) REST API
 
-A collection of microservices that comprise the management backend for NVIDIA Infra Controller, exposed as a REST API.
+A collection of microservices that comprise the management backend for NVIDIA Infrastructure Controller (NICo), exposed as a REST API.
 
-In deployments, NVIDIA Infra Controller REST requires [NVIDIA Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) to function.
+In deployments, NVIDIA Infrastructure Controller REST requires [NVIDIA Infrastructure Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) to function.
 
-The REST layer can be deployed in the datacenter with NVIDIA Infra Controller Core, or deployed anywhere in Cloud and allow Site Agent to connect from the datacenter. Multiple NVIDIA Infra Controller Cores running in different datacenters can also connect to NVIDIA Infra Controller REST through respective Site Agents.
+The REST layer can be deployed in the datacenter with NVIDIA Infrastructure Controller Core, or deployed anywhere in Cloud and allow Site Agent to connect from the datacenter. Multiple NVIDIA Infrastructure Controller Cores running in different datacenters can also connect to NVIDIA Infrastructure Controller REST through respective Site Agents.
 
-View latest OpenAPI schema on [GitHub pages](https://nvidia.github.io/infra-controller-rest/).
+View latest OpenAPI schema on [GitHub pages](https://nvidia.github.io/ncx-infra-controller-rest/).
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ Test database configuration:
 
 ### Option A: Local Development with Kind
 
-The fastest path to a running stack on your laptop. Builds images locally, spins up a Kind cluster, and deploys a mock NVIDIA Infra Controller Core automatically — no external registry or bare-metal cluster required.
+The fastest path to a running stack on your laptop. Builds images locally, spins up a Kind cluster, and deploys a mock NVIDIA Infrastructure Controller Core automatically — no external registry or bare-metal cluster required.
 
 ```bash
 make kind-reset
@@ -51,7 +51,7 @@ This deploys the full stack via **Helm charts** (default). It:
 3. Sets up infrastructure (PostgreSQL, Temporal, Keycloak, cert-manager, etc.)
 4. Deploys app services via Helm umbrella chart
 5. Bootstraps and deploys site-agent
-6. Deploys a mock NVIDIA Infra Controller Core
+6. Deploys a mock NVIDIA Infrastructure Controller Core
 
 To deploy via **Kustomize overlays** instead:
 
@@ -83,23 +83,23 @@ make kind-down           # Tear down cluster
 
 ### Option B: Bare-Metal Cluster with helm-prereqs
 
-For deploying onto a real Kubernetes cluster alongside NVIDIA Infra Controller Core. Uses `helm-prereqs/setup.sh` from the [ncx-infra-controller-core](https://github.com/NVIDIA/ncx-infra-controller-core) repo, which installs the full prerequisite stack (cert-manager, Vault, external-secrets, PostgreSQL, Temporal, Keycloak) and deploys both NCX Core and NCX REST in the correct order.
+For deploying onto a real Kubernetes cluster alongside NVIDIA Infrastructure Controller Core. Uses `helm-prereqs/setup.sh` from the [ncx-infra-controller-core](https://github.com/NVIDIA/ncx-infra-controller-core) repo, which installs the full prerequisite stack (cert-manager, Vault, external-secrets, PostgreSQL, Temporal, Keycloak) and deploys both NICo Core and NICo REST in the correct order.
 
 ```bash
 # 1. Build and push images to your registry
 make docker-build IMAGE_REGISTRY=my-registry.example.com/ncx IMAGE_TAG=v1.0.4
 
-for image in carbide-rest-api carbide-rest-workflow carbide-rest-site-manager \
-             carbide-rest-site-agent carbide-rest-db carbide-rest-cert-manager; do
+for image in nico-rest-api nico-rest-workflow nico-rest-site-manager \
+             nico-rest-site-agent nico-rest-db nico-rest-cert-manager; do
     docker push my-registry.example.com/ncx/$image:v1.0.4
 done
 
 # 2. Set environment variables
 export KUBECONFIG=/path/to/kubeconfig
 export REGISTRY_PULL_SECRET=<pull-secret-or-api-key>
-export NCX_IMAGE_REGISTRY=my-registry.example.com/ncx
-export NCX_CORE_IMAGE_TAG=<ncx-core-tag>    # NVIDIA Infra Controller Core image tag
-export NCX_REST_IMAGE_TAG=v1.0.4               # NCX REST image tag
+export NICO_IMAGE_REGISTRY=my-registry.example.com/ncx
+export NICO_CORE_IMAGE_TAG=<ncx-core-tag>    # NVIDIA Infrastructure Controller Core image tag
+export NICO_REST_IMAGE_TAG=v1.0.4               # NICo REST image tag
 
 # 3. Clone ncx-infra-controller-core (if not already present as a sibling directory)
 git clone https://github.com/NVIDIA/ncx-infra-controller-core.git ../ncx-infra-controller-core
@@ -109,7 +109,7 @@ cd ../ncx-infra-controller-core/helm-prereqs
 ./setup.sh -y     # or ./setup.sh for interactive prompts
 ```
 
-The setup script auto-detects this repo from the sibling path `infra-controller-rest`. Set `NCX_REPO=/path/to/this/repo` to override.
+The setup script auto-detects this repo from the sibling path `ncx-infra-controller-rest`. Set `NICO_REPO=/path/to/this/repo` to override.
 
 To tear everything down:
 ```bash
@@ -124,23 +124,23 @@ See **[Deployment QuickStart Guide](deploy/README.md)** for a concise bring-up g
 
 ## CLI
 
-`carbidecli` is a command-line client that wraps the full REST API. Install it and set up configs for each environment you work with:
+`cli` is a command-line client that wraps the full REST API. Install it and set up configs for each environment you work with:
 
 ```bash
-make carbide-cli             # build and install to $GOPATH/bin
-carbidecli init              # generate ~/.carbide/config.yaml
+make nico-cli             # build and install to $GOPATH/bin
+cli init              # generate ~/.nico/config.yaml
 ```
 
-Create a config per environment (`~/.carbide/config.yaml`, `~/.carbide/config.staging.yaml`, `~/.carbide/config.prod.yaml`), then launch the interactive TUI which handles environment selection, login, and token refresh automatically:
+Create a config per environment (`~/.nico/config.yaml`, `~/.nico/config.staging.yaml`, `~/.nico/config.prod.yaml`), then launch the interactive TUI which handles environment selection, login, and token refresh automatically:
 
 ```bash
-carbidecli tui
+cli tui
 ```
 
 All commands are also available directly for scripting and one-off use:
 
 ```bash
-carbidecli --config ~/.carbide/config.staging.yaml site list
+cli --config ~/.nico/config.staging.yaml site list
 ```
 
 See [cli/README.md](cli/README.md) for configuration, authentication, shell completion, and the full command reference.
@@ -150,10 +150,10 @@ See [cli/README.md](cli/README.md) for configuration, authentication, shell comp
 ### Get an Access Token
 
 ```bash
-TOKEN=$(curl -s -X POST "http://localhost:8082/realms/carbide-dev/protocol/openid-connect/token" \
+TOKEN=$(curl -s -X POST "http://localhost:8082/realms/nico-dev/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "client_id=carbide-api" \
-  -d "client_secret=carbide-local-secret" \
+  -d "client_id=nico-api" \
+  -d "client_secret=nico-local-secret" \
   -d "grant_type=password" \
   -d "username=admin@example.com" \
   -d "password=adminpassword" | jq -r .access_token)
@@ -166,11 +166,11 @@ TOKEN=$(curl -s -X POST "http://localhost:8082/realms/carbide-dev/protocol/openi
 curl -s http://localhost:8388/healthz -H "Authorization: Bearer $TOKEN" | jq .
 
 # Get current tenant (auto-creates on first access)
-curl -s "http://localhost:8388/v2/org/test-org/carbide/tenant/current" \
+curl -s "http://localhost:8388/v2/org/test-org/nico/tenant/current" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # List sites
-curl -s "http://localhost:8388/v2/org/test-org/carbide/site" \
+curl -s "http://localhost:8388/v2/org/test-org/nico/site" \
   -H "Authorization: Bearer $TOKEN" | jq .
 ```
 
@@ -178,9 +178,9 @@ curl -s "http://localhost:8388/v2/org/test-org/carbide/site" \
 
 | Email | Password | Roles |
 |-------|----------|-------|
-| `admin@example.com` | `adminpassword` | FORGE_PROVIDER_ADMIN, FORGE_TENANT_ADMIN |
-| `testuser@example.com` | `testpassword` | FORGE_TENANT_ADMIN |
-| `provider@example.com` | `providerpassword` | FORGE_PROVIDER_ADMIN |
+| `admin@example.com` | `adminpassword` | PROVIDER_ADMIN, TENANT_ADMIN |
+| `testuser@example.com` | `testpassword` | TENANT_ADMIN |
+| `provider@example.com` | `providerpassword` | PROVIDER_ADMIN |
 
 All users have the `test-org` organization assigned.
 
@@ -197,7 +197,7 @@ Images are tagged with `localhost:5000` registry and `latest` tag by default.
 ### Build with Custom Registry and Tag
 
 ```bash
-make docker-build IMAGE_REGISTRY=my-registry.example.com/carbide IMAGE_TAG=v1.0.0
+make docker-build IMAGE_REGISTRY=my-registry.example.com/nico IMAGE_TAG=v1.0.0
 ```
 
 ### Push to Your Registry
@@ -221,12 +221,12 @@ az acr login --name myregistry
 2. Build and push:
 
 ```bash
-REGISTRY=my-registry.example.com/infra-controller-rest
+REGISTRY=my-registry.example.com/ncx-infra-controller-rest
 TAG=v1.0.0
 
 make docker-build IMAGE_REGISTRY=$REGISTRY IMAGE_TAG=$TAG
 
-for image in carbide-rest-api carbide-rest-workflow carbide-rest-site-manager carbide-rest-site-agent carbide-rest-db carbide-rest-cert-manager; do
+for image in nico-rest-api nico-rest-workflow nico-rest-site-manager nico-rest-site-agent nico-rest-db nico-rest-cert-manager; do
     docker push "$REGISTRY/$image:$TAG"
 done
 ```
@@ -235,25 +235,25 @@ done
 
 | Image | Description |
 |-------|-------------|
-| `carbide-rest-api` | Main REST API (port 8388) |
-| `carbide-rest-workflow` | Temporal workflow worker |
-| `carbide-rest-site-manager` | Site management worker |
-| `carbide-rest-site-agent` | On-site agent |
-| `carbide-rest-db` | Database migrations (run to completion) |
-| `carbide-rest-cert-manager` | Native PKI certificate manager |
+| `nico-rest-api` | Main REST API (port 8388) |
+| `nico-rest-workflow` | Temporal workflow worker |
+| `nico-rest-site-manager` | Site management worker |
+| `nico-rest-site-agent` | On-site agent |
+| `nico-rest-db` | Database migrations (run to completion) |
+| `nico-rest-cert-manager` | Native PKI certificate manager |
 
 
 ## Architecture
 
 | Service | Binary | Description |
 |---------|--------|-------------|
-| carbide-rest-api | `api` | Main REST API server |
-| carbide-rest-workflow | `workflow` | Temporal workflow service |
-| carbide-rest-db | `migrations` | Database migrations |
-| carbide-rest-site-agent | `site-agent` | On-site agent |
-| carbide-rest-site-manager | `sitemgr` | Site management service |
-| carbide-rest-cert-manager | `credsmgr` | Native PKI certificate manager |
-| carbide-cli | `carbidecli` | [CLI client](cli/README.md) for the REST API |
+| nico-rest-api | `api` | Main REST API server |
+| nico-rest-workflow | `workflow` | Temporal workflow service |
+| nico-rest-db | `migrations` | Database migrations |
+| nico-rest-site-agent | `site-agent` | On-site agent |
+| nico-rest-site-manager | `sitemgr` | Site management service |
+| nico-rest-cert-manager | `credsmgr` | Native PKI certificate manager |
+| nico-cli | `cli` | [CLI client](cli/README.md) for the REST API |
 
 Supporting modules:
 - **common** - Shared utilities and configurations

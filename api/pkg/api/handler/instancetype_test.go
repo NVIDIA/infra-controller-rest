@@ -55,6 +55,7 @@ import (
 	sutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestCreateInstanceTypeHandler_Handle(t *testing.T) {
@@ -75,7 +76,7 @@ func TestCreateInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	org := "test-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id", org, orgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", org, ipu)
@@ -294,28 +295,28 @@ func TestCreateInstanceTypeHandler_Handle(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide denied mocking
+	// NICo denied mocking
 	//
-	scpWithCarbideDenied := sc.NewClientPool(tcfg)
-	tscWithCarbideDenied := &tmocks.Client{}
+	scpWithNICoDenied := sc.NewClientPool(tcfg)
+	tscWithNICoDenied := &tmocks.Client{}
 
-	scpWithCarbideDenied.IDClientMap[st.ID.String()] = tscWithCarbideDenied
+	scpWithNICoDenied.IDClientMap[st.ID.String()] = tscWithNICoDenied
 
-	wrunWithCarbideDenied := &tmocks.WorkflowRun{}
-	wrunWithCarbideDenied.On("GetID").Return("workflow-WithCarbideDenied")
+	wrunWithNICoDenied := &tmocks.WorkflowRun{}
+	wrunWithNICoDenied.On("GetID").Return("workflow-WithNICoDenied")
 
-	wrunWithCarbideDenied.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideDenied, errors.New("Carbide went bananas")))
+	wrunWithNICoDenied.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoDenied, errors.New("NICo went bananas")))
 
-	tscWithCarbideDenied.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"CreateInstanceType", mock.Anything).Return(wrunWithCarbideDenied, nil)
+	tscWithNICoDenied.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"CreateInstanceType", mock.Anything).Return(wrunWithNICoDenied, nil)
 
-	tscWithCarbideDenied.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoDenied.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// OTEL Spanner configuration
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
-	// Carbide is strict about changes in capabilities and allowing
-	// instance type updates, so we sort before sending the data carbide.
+	// NICo is strict about changes in capabilities and allowing
+	// instance type updates, so we sort before sending the data nico.
 	// For the tests to pass, we'll need to sort the caps in the request
 	// and the response.
 	sort_caps := func(a, b model.APIMachineCapability) int {
@@ -360,11 +361,11 @@ func TestCreateInstanceTypeHandler_Handle(t *testing.T) {
 			respCode:               http.StatusInternalServerError,
 		},
 		{
-			name: "test instance type create API endpoint, carbide missing endpoint/denied",
+			name: "test instance type create API endpoint, nico missing endpoint/denied",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideDenied,
-				scp:       scpWithCarbideDenied,
+				tc:        tscWithNICoDenied,
+				scp:       scpWithNICoDenied,
 				cfg:       cfg,
 			},
 			args: args{
@@ -671,8 +672,8 @@ func TestGetAllInstanceTypeHandler_Handle(t *testing.T) {
 	// 10. Create Instance
 	// 11. Create Tenant Site Accociation
 	ipOrg := "test-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id-123", ipOrg, ipRoles)
 	ipuv := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipViewerRoles)
@@ -694,7 +695,7 @@ func TestGetAllInstanceTypeHandler_Handle(t *testing.T) {
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu1 := common.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg1, tnRoles)
 	tn1 := common.TestBuildTenant(t, dbSession, "Test Tenant 1", tnOrg1, tnu1)
@@ -764,7 +765,7 @@ func TestGetAllInstanceTypeHandler_Handle(t *testing.T) {
 
 	// Org with both Provider and Tenant roles: same org acts as its own infrastructure provider and tenant
 	orgName := "test-provider-and-tenant-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	orgUser := common.TestBuildUser(t, dbSession, uuid.NewString(), orgName, orgRoles)
 	orgProvider := common.TestBuildInfrastructureProvider(t, dbSession, "Test Org Provider", orgName, orgUser)
 	orgSite := common.TestBuildSite(t, dbSession, orgProvider, "Test Org Site", orgUser)
@@ -1407,7 +1408,7 @@ func TestGetAllInstanceTypeHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/instance/type?%s", tt.args.org, tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/instance/type?%s", tt.args.org, tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1510,8 +1511,8 @@ func TestGetInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	org := "test-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id-123", org, ipRoles)
 	ipuv := common.TestBuildUser(t, dbSession, uuid.NewString(), org, ipViewerRoles)
@@ -1522,7 +1523,7 @@ func TestGetInstanceTypeHandler_Handle(t *testing.T) {
 	tnOrg1 := org
 	tnOrg2 := "test-tenant-org-2"
 	tnOrg3 := "test-tenant-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu1 := common.TestBuildUser(t, dbSession, "test-starfleet-id-456", tnOrg1, tnRoles)
 	tn1 := common.TestBuildTenant(t, dbSession, "Test Tenant 1", tnOrg1, tnu1)
@@ -1790,7 +1791,7 @@ func TestGetInstanceTypeHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/instance/type/%s?%s", tt.args.org, tt.args.instanceTypeID.String(), tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/instance/type/%s?%s", tt.args.org, tt.args.instanceTypeID.String(), tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1886,7 +1887,7 @@ func TestUpdateInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	org := "test-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id", org, orgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", org, ipu)
@@ -1955,22 +1956,22 @@ func TestUpdateInstanceTypeHandler_Handle(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide denied mocking
+	// NICo denied mocking
 	//
-	scpWithCarbideDenied := sc.NewClientPool(tcfg)
-	tscWithCarbideDenied := &tmocks.Client{}
+	scpWithNICoDenied := sc.NewClientPool(tcfg)
+	tscWithNICoDenied := &tmocks.Client{}
 
-	scpWithCarbideDenied.IDClientMap[st.ID.String()] = tscWithCarbideDenied
+	scpWithNICoDenied.IDClientMap[st.ID.String()] = tscWithNICoDenied
 
-	wrunWithCarbideDenied := &tmocks.WorkflowRun{}
-	wrunWithCarbideDenied.On("GetID").Return("workflow-WithCarbideDenied")
+	wrunWithNICoDenied := &tmocks.WorkflowRun{}
+	wrunWithNICoDenied.On("GetID").Return("workflow-WithNICoDenied")
 
-	wrunWithCarbideDenied.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideDenied, errors.New("Carbide went bananas")))
+	wrunWithNICoDenied.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoDenied, errors.New("NICo went bananas")))
 
-	tscWithCarbideDenied.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"UpdateInstanceType", mock.Anything).Return(wrunWithCarbideDenied, nil)
+	tscWithNICoDenied.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"UpdateInstanceType", mock.Anything).Return(wrunWithNICoDenied, nil)
 
-	tscWithCarbideDenied.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoDenied.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// OTEL Spanner configuration
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
@@ -2017,11 +2018,11 @@ func TestUpdateInstanceTypeHandler_Handle(t *testing.T) {
 			wantRespCode: http.StatusInternalServerError,
 		},
 		{
-			name: "test Instance Type update carbide unavailable/denied, still success",
+			name: "test Instance Type update nico unavailable/denied, still success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideDenied,
-				scp:       scpWithCarbideDenied,
+				tc:        tscWithNICoDenied,
+				scp:       scpWithNICoDenied,
 				cfg:       cfg,
 			},
 			args: args{
@@ -2450,7 +2451,7 @@ func TestUpdateInstanceTypeHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/instance/type/%s", tt.args.org, tt.args.instanceTypeID.String())
+			path := fmt.Sprintf("/v2/org/%s/nico/instance/type/%s", tt.args.org, tt.args.instanceTypeID.String())
 
 			reqJSON, err := json.Marshal(tt.args.reqData)
 			require.NoError(t, err)
@@ -2526,7 +2527,7 @@ func TestDeleteInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	org := "test-provider-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id", org, orgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", org, ipu)
@@ -2554,7 +2555,7 @@ func TestDeleteInstanceTypeHandler_Handle(t *testing.T) {
 	}, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := common.TestBuildUser(t, dbSession, "test-starfleet-id-456", tnOrg, tnRoles)
 	tn := common.TestBuildTenant(t, dbSession, "Test Tenant", tnOrg, tnu)
@@ -2595,40 +2596,40 @@ func TestDeleteInstanceTypeHandler_Handle(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[st.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[st.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteInstanceType", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteInstanceType", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide denied mocking
+	// NICo denied mocking
 	//
-	scpWithCarbideDenied := sc.NewClientPool(tcfg)
-	tscWithCarbideDenied := &tmocks.Client{}
+	scpWithNICoDenied := sc.NewClientPool(tcfg)
+	tscWithNICoDenied := &tmocks.Client{}
 
-	scpWithCarbideDenied.IDClientMap[st.ID.String()] = tscWithCarbideDenied
+	scpWithNICoDenied.IDClientMap[st.ID.String()] = tscWithNICoDenied
 
-	wrunWithCarbideDenied := &tmocks.WorkflowRun{}
-	wrunWithCarbideDenied.On("GetID").Return("workflow-WithCarbideDenied")
+	wrunWithNICoDenied := &tmocks.WorkflowRun{}
+	wrunWithNICoDenied.On("GetID").Return("workflow-WithNICoDenied")
 
-	wrunWithCarbideDenied.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideDenied, errors.New("Carbide went bananas")))
+	wrunWithNICoDenied.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoDenied, errors.New("NICo went bananas")))
 
-	tscWithCarbideDenied.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteInstanceType", mock.Anything).Return(wrunWithCarbideDenied, nil)
+	tscWithNICoDenied.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteInstanceType", mock.Anything).Return(wrunWithNICoDenied, nil)
 
-	tscWithCarbideDenied.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoDenied.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Prepare client pool for sync calls
 	// to site(s).
@@ -2695,11 +2696,11 @@ func TestDeleteInstanceTypeHandler_Handle(t *testing.T) {
 			verifyChildSpanner:    true,
 		},
 		{
-			name: "test Instance Type delete API endpoint carbide not-found, still success",
+			name: "test Instance Type delete API endpoint nico not-found, still success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideNotFound,
-				scp:       scpWithCarbideNotFound,
+				tc:        tscWithNICoNotFound,
+				scp:       scpWithNICoNotFound,
 				cfg:       cfg,
 			},
 			args: args{
@@ -2712,11 +2713,11 @@ func TestDeleteInstanceTypeHandler_Handle(t *testing.T) {
 			verifyChildSpanner:    true,
 		},
 		{
-			name: "test Instance Type delete API endpoint carbide denied/unimplemented, still success",
+			name: "test Instance Type delete API endpoint nico denied/unimplemented, still success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideDenied,
-				scp:       scpWithCarbideDenied,
+				tc:        tscWithNICoDenied,
+				scp:       scpWithNICoDenied,
 				cfg:       cfg,
 			},
 			args: args{
@@ -2786,7 +2787,7 @@ func TestDeleteInstanceTypeHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/instance/type/%s", tt.args.org, tt.args.instanceTypeID)
+			path := fmt.Sprintf("/v2/org/%s/nico/instance/type/%s", tt.args.org, tt.args.instanceTypeID)
 
 			req := httptest.NewRequest(http.MethodDelete, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

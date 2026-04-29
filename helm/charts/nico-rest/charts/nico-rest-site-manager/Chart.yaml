@@ -1,0 +1,10 @@
+apiVersion: v2
+name: nico-rest-site-manager
+description: Helm chart for the NICo REST site lifecycle manager
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - nico
+  - rest
+  - site-manager

@@ -16,17 +16,17 @@
 
 # -------------------------------------------------------------------
 # gen-site-ca.sh — Generate a root CA and create the ca-signing-secret
-#                  required by carbide-rest-cert-manager and the
-#                  carbide-rest-ca-issuer ClusterIssuer.
+#                  required by nico-rest-cert-manager and the
+#                  nico-rest-ca-issuer ClusterIssuer.
 #
 # Usage:
 #   ./scripts/gen-site-ca.sh [OPTIONS]
 #
 # Options:
-#   --namespace <ns>   Namespace for carbide-rest workloads (default: carbide-rest)
+#   --namespace <ns>   Namespace for nico-rest workloads (default: nico-rest)
 #   --output-dir <dir> Write ca.crt and ca.key to this directory instead of
 #                      applying directly to the cluster. Does not run kubectl.
-#   --cn <string>      Common Name for the CA (default: "Carbide Local Dev CA")
+#   --cn <string>      Common Name for the CA (default: "NICo Local Dev CA")
 #   --org <string>     Organization for the CA (default: "NVIDIA")
 #   --days <n>         Validity period in days (default: 3650)
 #   --dry-run          Print the kubectl commands that would be run, do not apply
@@ -34,7 +34,7 @@
 #
 # What it creates:
 #   Secret "ca-signing-secret" (type: kubernetes.io/tls) in:
-#     - <namespace>     (used by carbide-rest-cert-manager and cert-manager.io ClusterIssuer)
+#     - <namespace>     (used by nico-rest-cert-manager and cert-manager.io ClusterIssuer)
 #     - cert-manager    (required if cert-manager reads the secret from its own namespace)
 #
 # Examples:
@@ -42,10 +42,10 @@
 #   ./scripts/gen-site-ca.sh
 #
 #   # Write cert files to disk, apply manually later
-#   ./scripts/gen-site-ca.sh --output-dir /tmp/carbide-ca
+#   ./scripts/gen-site-ca.sh --output-dir /tmp/nico-ca
 #
 #   # Custom CN, apply to a non-default namespace
-#   ./scripts/gen-site-ca.sh --cn "My Corp CA" --namespace my-carbide-ns
+#   ./scripts/gen-site-ca.sh --cn "My Corp CA" --namespace my-nico-ns
 # -------------------------------------------------------------------
 
 set -eEuo pipefail
@@ -56,9 +56,9 @@ ok()   { echo "✅  $*"; }
 warn() { echo "⚠️   $*"; }
 
 # ---- Defaults -------------------------------------------------------
-NAMESPACE="carbide-rest"
+NAMESPACE="nico-rest"
 OUTPUT_DIR=""
-CA_CN="Carbide Local Dev CA"
+CA_CN="NICo Local Dev CA"
 CA_ORG="NVIDIA"
 CA_DAYS=3650
 DRY_RUN=false

@@ -28,7 +28,7 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/common/utils"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
@@ -51,17 +51,17 @@ func TestInventory(t *testing.T) {
 	pool, err := utils.UnitTestDB(ctx, t, dbConf)
 	assert.Nil(t, err)
 
-	grpcMock := carbideapi.NewMockClient()
+	grpcMock := nicoapi.NewMockClient()
 
 	// Create a basic faked GRPC environment
 	serial1 := "serial1"
 	serial2 := "serial2"
 	serial3 := "serial3"
-	grpcMock.AddMachine(carbideapi.MachineDetail{MachineID: "id1", ChassisSerial: &serial1})
-	grpcMock.AddMachine(carbideapi.MachineDetail{MachineID: "id2", ChassisSerial: &serial2})
-	grpcMock.AddMachine(carbideapi.MachineDetail{MachineID: "id3", ChassisSerial: &serial3})
-	grpcMock.AddMachine(carbideapi.MachineDetail{MachineID: "id4", ChassisSerial: nil})
-	grpcMock.AddPowerState("id2", carbideapi.PowerStateOn)
+	grpcMock.AddMachine(nicoapi.MachineDetail{MachineID: "id1", ChassisSerial: &serial1})
+	grpcMock.AddMachine(nicoapi.MachineDetail{MachineID: "id2", ChassisSerial: &serial2})
+	grpcMock.AddMachine(nicoapi.MachineDetail{MachineID: "id3", ChassisSerial: &serial3})
+	grpcMock.AddMachine(nicoapi.MachineDetail{MachineID: "id4", ChassisSerial: nil})
+	grpcMock.AddPowerState("id2", nicoapi.PowerStateOn)
 
 	// Create a rack (required for components due to NOT NULL constraint)
 	rack := model.Rack{
@@ -92,12 +92,12 @@ func TestInventory(t *testing.T) {
 	var found int
 	for rows.Next() {
 		var serial string
-		var state *carbideapi.PowerState
+		var state *nicoapi.PowerState
 		rows.Scan(&serial, &state)
 
 		switch serial {
 		case "serial2":
-			assert.Equal(t, *state, carbideapi.PowerStateOn)
+			assert.Equal(t, *state, nicoapi.PowerStateOn)
 			found++
 		case "serial4":
 			assert.Nil(t, state)
@@ -110,7 +110,7 @@ func TestInventory(t *testing.T) {
 }
 
 // TestSyncFirmwareVersion verifies that syncMachines direct-writes firmware_version
-// from Carbide machine details to the component table.
+// from NICo machine details to the component table.
 func TestSyncFirmwareVersion(t *testing.T) {
 	ctx := context.Background()
 
@@ -124,13 +124,13 @@ func TestSyncFirmwareVersion(t *testing.T) {
 	pool, err := utils.UnitTestDB(ctx, t, dbConf)
 	assert.Nil(t, err)
 
-	grpcMock := carbideapi.NewMockClient()
+	grpcMock := nicoapi.NewMockClient()
 
 	serial1 := "fw-serial-1"
 	serial2 := "fw-serial-2"
-	grpcMock.AddMachine(carbideapi.MachineDetail{MachineID: "fw-id1", ChassisSerial: &serial1, FirmwareVersion: "2.0.0"})
-	grpcMock.AddMachine(carbideapi.MachineDetail{MachineID: "fw-id2", ChassisSerial: &serial2, FirmwareVersion: "3.1.0"})
-	grpcMock.AddPowerState("fw-id1", carbideapi.PowerStateOn)
+	grpcMock.AddMachine(nicoapi.MachineDetail{MachineID: "fw-id1", ChassisSerial: &serial1, FirmwareVersion: "2.0.0"})
+	grpcMock.AddMachine(nicoapi.MachineDetail{MachineID: "fw-id2", ChassisSerial: &serial2, FirmwareVersion: "3.1.0"})
+	grpcMock.AddPowerState("fw-id1", nicoapi.PowerStateOn)
 
 	rack := model.Rack{
 		Name:         "test-rack-fw",
@@ -178,7 +178,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Create mock clients
-	carbideMock := carbideapi.NewMockClient()
+	nicoMock := nicoapi.NewMockClient()
 	psmMock := psmapi.NewMockClient()
 
 	// Create a rack (required for components)
@@ -234,7 +234,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	// PMC 3: Expected powershelf but NOT DHCPed (no interface in carbide)
+	// PMC 3: Expected powershelf but NOT DHCPed (no interface in nico)
 	ps3 := model.Component{
 		Name:         "powershelf-3",
 		Type:         devicetypes.ComponentTypePowerShelf.String(),
@@ -381,36 +381,36 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	// Add machine interfaces to carbide mock
+	// Add machine interfaces to nico mock
 	// PMC 1 has DHCPed
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:dd:ee:01",
 		Addresses:  []string{"10.0.0.101"},
 	})
 
 	// PMC 2 has DHCPed
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:dd:ee:02",
 		Addresses:  []string{"10.0.0.102"},
 	})
 
 	// Random BMC interfaces (not expected powershelves)
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "ff:ff:ff:ff:ff:01",
 		Addresses:  []string{"10.0.0.201"},
 	})
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "ff:ff:ff:ff:ff:02",
 		Addresses:  []string{"10.0.0.202"},
 	})
 
 	// PMC 7 has multiple IP addresses (unexpected, should skip registration)
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:dd:ee:07",
 		Addresses:  []string{"10.0.0.107", "10.0.0.108"}, // Multiple IPs
 	})
 
-	// PMC 3 is NOT in carbide (hasn't DHCPed)
+	// PMC 3 is NOT in nico (hasn't DHCPed)
 
 	// Verify we have 3 pre-registered powershelves before running inventory
 	preRegistered, err := psmMock.GetPowershelves(ctx, []string{})
@@ -419,7 +419,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 
 	// Run the inventory loop
 	nsmMock := nsmapi.NewMockClient()
-	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
+	runInventoryOne(ctx, pool, nicoMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	// Verify that only expected PMCs that have DHCPed were registered with PSM
 	registeredPowershelves, err := psmMock.GetPowershelves(ctx, []string{})
@@ -462,7 +462,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "2.0.0", updatedPs4.FirmwareVersion, "PMC 4 firmware version should be updated")
 	assert.NotNil(t, updatedPs4.PowerState, "PMC 4 power state should be set")
-	assert.Equal(t, carbideapi.PowerStateOn, *updatedPs4.PowerState, "PMC 4 should be PowerStateOn (all PSUs on)")
+	assert.Equal(t, nicoapi.PowerStateOn, *updatedPs4.PowerState, "PMC 4 should be PowerStateOn (all PSUs on)")
 
 	// PMC 5: Should have updated firmware version and PowerStateUnknown (mixed PSU states)
 	var updatedPs5 model.Component
@@ -470,7 +470,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "2.1.0", updatedPs5.FirmwareVersion, "PMC 5 firmware version should be updated")
 	assert.NotNil(t, updatedPs5.PowerState, "PMC 5 power state should be set")
-	assert.Equal(t, carbideapi.PowerStateUnknown, *updatedPs5.PowerState, "PMC 5 should be PowerStateUnknown (mixed PSU states)")
+	assert.Equal(t, nicoapi.PowerStateUnknown, *updatedPs5.PowerState, "PMC 5 should be PowerStateUnknown (mixed PSU states)")
 
 	// PMC 6: Should have updated firmware version and PowerStateOff (all PSUs off)
 	var updatedPs6 model.Component
@@ -478,7 +478,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "2.2.0", updatedPs6.FirmwareVersion, "PMC 6 firmware version should be updated")
 	assert.NotNil(t, updatedPs6.PowerState, "PMC 6 power state should be set")
-	assert.Equal(t, carbideapi.PowerStateOff, *updatedPs6.PowerState, "PMC 6 should be PowerStateOff (all PSUs off)")
+	assert.Equal(t, nicoapi.PowerStateOff, *updatedPs6.PowerState, "PMC 6 should be PowerStateOff (all PSUs off)")
 
 	// PMC 7: Should NOT be registered (multiple IP addresses)
 	_, ok = registeredByMac["aa:bb:cc:dd:ee:07"]
@@ -499,7 +499,7 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	pool, err := utils.UnitTestDB(ctx, t, dbConf)
 	assert.Nil(t, err)
 
-	carbideMock := carbideapi.NewMockClient()
+	nicoMock := nicoapi.NewMockClient()
 	nsmMock := nsmapi.NewMockClient()
 	psmMock := psmapi.NewMockClient()
 
@@ -595,7 +595,7 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	// --- SW5: Not in Carbide expected switches — should NOT register ---
+	// --- SW5: Not in NICo expected switches — should NOT register ---
 	sw5 := model.Component{
 		Name:         "nvlswitch-5",
 		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
@@ -667,50 +667,50 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 		ChassisSerial: "actual-serial-007", // Different from DB serial to trigger drift
 	})
 
-	// --- Carbide expected switches (metadata with host_mac_address for NVOS) ---
+	// --- NICo expected switches (metadata with host_mac_address for NVOS) ---
 	// SW1-SW4 and SW6 have expected switch entries; SW5 intentionally omitted
-	carbideMock.AddExpectedSwitchInfo(carbideapi.ExpectedSwitchInfo{
+	nicoMock.AddExpectedSwitchInfo(nicoapi.ExpectedSwitchInfo{
 		BMCMACAddress: "aa:bb:cc:11:11:01",
 		Metadata:      map[string]string{"host_mac_address": "dd:ee:ff:11:11:01"},
 	})
-	carbideMock.AddExpectedSwitchInfo(carbideapi.ExpectedSwitchInfo{
+	nicoMock.AddExpectedSwitchInfo(nicoapi.ExpectedSwitchInfo{
 		BMCMACAddress: "aa:bb:cc:11:11:02",
 		Metadata:      map[string]string{"host_mac_address": "dd:ee:ff:11:11:02"},
 	})
-	carbideMock.AddExpectedSwitchInfo(carbideapi.ExpectedSwitchInfo{
+	nicoMock.AddExpectedSwitchInfo(nicoapi.ExpectedSwitchInfo{
 		BMCMACAddress: "aa:bb:cc:11:11:03",
 		Metadata:      map[string]string{"host_mac_address": "dd:ee:ff:11:11:03"},
 	})
-	carbideMock.AddExpectedSwitchInfo(carbideapi.ExpectedSwitchInfo{
+	nicoMock.AddExpectedSwitchInfo(nicoapi.ExpectedSwitchInfo{
 		BMCMACAddress: "aa:bb:cc:11:11:04",
 		Metadata:      map[string]string{"host_mac_address": "dd:ee:ff:11:11:04"},
 	})
-	carbideMock.AddExpectedSwitchInfo(carbideapi.ExpectedSwitchInfo{
+	nicoMock.AddExpectedSwitchInfo(nicoapi.ExpectedSwitchInfo{
 		BMCMACAddress: "aa:bb:cc:11:11:06",
 		Metadata:      map[string]string{"host_mac_address": "dd:ee:ff:11:11:06"},
 	})
-	carbideMock.AddExpectedSwitchInfo(carbideapi.ExpectedSwitchInfo{
+	nicoMock.AddExpectedSwitchInfo(nicoapi.ExpectedSwitchInfo{
 		BMCMACAddress: "aa:bb:cc:11:11:07",
 		Metadata:      map[string]string{"host_mac_address": "dd:ee:ff:11:11:07"},
 	})
 
-	// --- Carbide machine interfaces (DHCP status) ---
+	// --- NICo machine interfaces (DHCP status) ---
 	// SW1: BMC DHCPed, NVOS DHCPed
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:11:11:01",
 		Addresses:  []string{"10.0.0.101"},
 	})
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "dd:ee:ff:11:11:01",
 		Addresses:  []string{"10.0.1.101"},
 	})
 
 	// SW2: BMC DHCPed, NVOS DHCPed
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:11:11:02",
 		Addresses:  []string{"10.0.0.102"},
 	})
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "dd:ee:ff:11:11:02",
 		Addresses:  []string{"10.0.1.102"},
 	})
@@ -718,20 +718,20 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	// SW3: BMC NOT DHCPed (no interface entry)
 
 	// SW4: BMC DHCPed, NVOS NOT DHCPed
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:11:11:04",
 		Addresses:  []string{"10.0.0.104"},
 	})
 	// NVOS for SW4 intentionally absent
 
 	// SW5: BMC DHCPed (but not in expected switches, so won't look up NVOS)
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:11:11:05",
 		Addresses:  []string{"10.0.0.105"},
 	})
 
 	// SW6: BMC has multiple IPs
-	carbideMock.AddMachineInterface(carbideapi.MachineInterface{
+	nicoMock.AddMachineInterface(nicoapi.MachineInterface{
 		MacAddress: "aa:bb:cc:11:11:06",
 		Addresses:  []string{"10.0.0.106", "10.0.0.116"},
 	})
@@ -742,7 +742,7 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	assert.Equal(t, 1, len(preRegistered), "Should have 1 pre-registered switch (SW7)")
 
 	// Run the inventory loop
-	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
+	runInventoryOne(ctx, pool, nicoMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	// --- Verify NSM registrations ---
 	registeredSwitches, err := nsmMock.GetNVSwitches(ctx, nil)
@@ -774,9 +774,9 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	_, ok = registeredByMac["aa:bb:cc:11:11:04"]
 	assert.False(t, ok, "SW4 should NOT be registered (NVOS not DHCPed)")
 
-	// SW5 NOT registered (not in Carbide expected switches)
+	// SW5 NOT registered (not in NICo expected switches)
 	_, ok = registeredByMac["aa:bb:cc:11:11:05"]
-	assert.False(t, ok, "SW5 should NOT be registered (not in Carbide expected switches)")
+	assert.False(t, ok, "SW5 should NOT be registered (not in NICo expected switches)")
 
 	// SW6 NOT registered (multiple BMC IPs)
 	_, ok = registeredByMac["aa:bb:cc:11:11:06"]
@@ -808,7 +808,7 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	nsmMock.SetNVSwitchFirmware("aa:bb:cc:11:11:01", "3.0.0")
 	nsmMock.SetNVSwitchFirmware("aa:bb:cc:11:11:02", "3.1.0")
 
-	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
+	runInventoryOne(ctx, pool, nicoMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	// SW1: external_id and firmware_version should now be set
 	var updatedSw1 model.Component

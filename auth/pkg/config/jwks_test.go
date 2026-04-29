@@ -704,9 +704,9 @@ func TestGetScopes_Formats(t *testing.T) {
 		{
 			name: "scope as single string",
 			claims: jwt.MapClaims{
-				"scope": "carbide",
+				"scope": "nico",
 			},
-			expectedScopes: mapset.NewSet("carbide"),
+			expectedScopes: mapset.NewSet("nico"),
 		},
 
 		// Array format (modern OIDC implementations)
@@ -781,13 +781,13 @@ func TestValidateScopes(t *testing.T) {
 	// Config with issuer-level scopes
 	config := &JwksConfig{
 		Name:   "scope-test",
-		Scopes: []string{"carbide", "openid"}, // Requires BOTH scopes at issuer level
+		Scopes: []string{"nico", "openid"}, // Requires BOTH scopes at issuer level
 	}
 
 	t.Run("scope as space-separated string matches", func(t *testing.T) {
 		claims := jwt.MapClaims{
 			"sub":   "user",
-			"scope": "carbide openid profile", // space-separated
+			"scope": "nico openid profile", // space-separated
 		}
 		err := config.ValidateScopes(claims)
 		require.NoError(t, err)
@@ -796,7 +796,7 @@ func TestValidateScopes(t *testing.T) {
 	t.Run("scope as array matches", func(t *testing.T) {
 		claims := jwt.MapClaims{
 			"sub":   "user",
-			"scope": []string{"carbide", "openid", "profile"}, // array
+			"scope": []string{"nico", "openid", "profile"}, // array
 		}
 		err := config.ValidateScopes(claims)
 		require.NoError(t, err)
@@ -805,7 +805,7 @@ func TestValidateScopes(t *testing.T) {
 	t.Run("scope as interface array matches", func(t *testing.T) {
 		claims := jwt.MapClaims{
 			"sub":   "user",
-			"scope": []interface{}{"carbide", "openid"}, // interface array
+			"scope": []interface{}{"nico", "openid"}, // interface array
 		}
 		err := config.ValidateScopes(claims)
 		require.NoError(t, err)
@@ -814,7 +814,7 @@ func TestValidateScopes(t *testing.T) {
 	t.Run("missing required scope returns core.ErrInvalidScope", func(t *testing.T) {
 		claims := jwt.MapClaims{
 			"sub":   "user",
-			"scope": "carbide only", // missing "openid"
+			"scope": "nico only", // missing "openid"
 		}
 		err := config.ValidateScopes(claims)
 		assert.ErrorIs(t, err, core.ErrInvalidScope)
@@ -893,9 +893,9 @@ func TestValidateAudiences(t *testing.T) {
 	t.Run("token_matches_one_of_configured_audiences", func(t *testing.T) {
 		config := &JwksConfig{
 			Name:      "test",
-			Audiences: []string{"carbide-rest-api", "other-api"},
+			Audiences: []string{"nico-rest-api", "other-api"},
 		}
-		claims := jwt.MapClaims{"sub": "user", "aud": "carbide-rest-api"}
+		claims := jwt.MapClaims{"sub": "user", "aud": "nico-rest-api"}
 		err := config.ValidateAudience(claims)
 		assert.NoError(t, err)
 	})
@@ -903,9 +903,9 @@ func TestValidateAudiences(t *testing.T) {
 	t.Run("token_audience_array_matches_configured", func(t *testing.T) {
 		config := &JwksConfig{
 			Name:      "test",
-			Audiences: []string{"carbide-rest-api"},
+			Audiences: []string{"nico-rest-api"},
 		}
-		claims := jwt.MapClaims{"sub": "user", "aud": []string{"other", "carbide-rest-api"}}
+		claims := jwt.MapClaims{"sub": "user", "aud": []string{"other", "nico-rest-api"}}
 		err := config.ValidateAudience(claims)
 		assert.NoError(t, err)
 	})
@@ -913,10 +913,10 @@ func TestValidateAudiences(t *testing.T) {
 	t.Run("token_audience_exact_match_required", func(t *testing.T) {
 		config := &JwksConfig{
 			Name:      "test",
-			Audiences: []string{"Carbide-REST-API"},
+			Audiences: []string{"NICo-REST-API"},
 		}
 		// Different case should NOT match (exact string comparison)
-		claims := jwt.MapClaims{"sub": "user", "aud": "carbide-rest-api"}
+		claims := jwt.MapClaims{"sub": "user", "aud": "nico-rest-api"}
 		err := config.ValidateAudience(claims)
 		assert.ErrorIs(t, err, core.ErrInvalidAudience)
 	})
@@ -924,7 +924,7 @@ func TestValidateAudiences(t *testing.T) {
 	t.Run("token_audience_does_not_match", func(t *testing.T) {
 		config := &JwksConfig{
 			Name:      "test",
-			Audiences: []string{"carbide-rest-api"},
+			Audiences: []string{"nico-rest-api"},
 		}
 		claims := jwt.MapClaims{"sub": "user", "aud": "wrong-audience"}
 		err := config.ValidateAudience(claims)
@@ -934,7 +934,7 @@ func TestValidateAudiences(t *testing.T) {
 	t.Run("missing_audience_when_required_fails", func(t *testing.T) {
 		config := &JwksConfig{
 			Name:      "test",
-			Audiences: []string{"carbide-rest-api"},
+			Audiences: []string{"nico-rest-api"},
 		}
 		claims := jwt.MapClaims{"sub": "user"}
 		err := config.ValidateAudience(claims)

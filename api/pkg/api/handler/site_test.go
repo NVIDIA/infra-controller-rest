@@ -55,6 +55,7 @@ import (
 	tosv1mock "go.temporal.io/api/operatorservicemock/v1"
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testUpdateSite(t *testing.T, dbSession *cdb.Session, site *cdbm.Site) *cdbm.Site {
@@ -186,7 +187,7 @@ func testSiteBuildSite(t *testing.T, dbSession *cdb.Session, ip *cdbm.Infrastruc
 			RegistrationToken:             cdb.GetStrPtr("1234-5678-9012-3456"),
 			RegistrationTokenExpiration:   cdb.GetTimePtr(cdb.GetCurTime()),
 			IsInfinityEnabled:             false,
-			SerialConsoleHostname:         cdb.GetStrPtr("forge.acme.com"),
+			SerialConsoleHostname:         cdb.GetStrPtr("nico.acme.com"),
 			IsSerialConsoleEnabled:        true,
 			SerialConsoleIdleTimeout:      cdb.GetIntPtr(30),
 			SerialConsoleMaxSessionLength: cdb.GetIntPtr(60),
@@ -286,7 +287,7 @@ func TestCreateSiteHandler_Handle(t *testing.T) {
 	testSiteSetupSchema(t, dbSession)
 
 	org := "test-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testSiteBuildUser(t, dbSession, "test123", org, orgRoles)
 	ip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", org, ipu)
@@ -536,19 +537,19 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 	testSiteSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testSiteBuildUser(t, dbSession, "test123", ipOrg, ipRoles)
 	ip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testSiteBuildUser(t, dbSession, "test456", tnOrg, tnRoles)
 	tn := testSiteBuildTenant(t, dbSession, "Test Tenant 1", tnOrg, tnu)
 
 	mOrg := "test-mixed-org"
-	mixedRole := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	mixedRole := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	mu := testSiteBuildUser(t, dbSession, "test789", mOrg, mixedRole)
 	mip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Mixed Provider", mOrg, mu)
 	mtn := testSiteBuildTenant(t, dbSession, "Test Mixed Tenant", mOrg, mu)
@@ -609,7 +610,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 					Name:                          cdb.GetStrPtr("test-site-updated"),
 					Description:                   cdb.GetStrPtr("Test updated description"),
 					RenewRegistrationToken:        cdb.GetBoolPtr(true),
-					SerialConsoleHostname:         cdb.GetStrPtr("forge.acme.com"),
+					SerialConsoleHostname:         cdb.GetStrPtr("nico.acme.com"),
 					IsSerialConsoleEnabled:        cdb.GetBoolPtr(true),
 					SerialConsoleIdleTimeout:      cdb.GetIntPtr(120),
 					SerialConsoleMaxSessionLength: cdb.GetIntPtr(240),
@@ -801,7 +802,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 				reqData: &model.APISiteUpdateRequest{
 					Name:                   cdb.GetStrPtr("Test Site 4"),
 					Description:            cdb.GetStrPtr("Test Site Description Updated"),
-					SerialConsoleHostname:  cdb.GetStrPtr("forge.acme.com"),
+					SerialConsoleHostname:  cdb.GetStrPtr("nico.acme.com"),
 					RenewRegistrationToken: cdb.GetBoolPtr(true),
 				},
 			},
@@ -881,7 +882,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/site/%v", tt.args.org, tt.args.site.ID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/site/%v", tt.args.org, tt.args.site.ID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.org, tt.args.site.ID.String())
 			ec.Set("user", tt.args.user)
@@ -987,8 +988,8 @@ func TestGetSiteHandler_Handle(t *testing.T) {
 	testSiteSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ipuv := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipvRoles)
@@ -998,7 +999,7 @@ func TestGetSiteHandler_Handle(t *testing.T) {
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
 	tnOrg3 := "test-tenant-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu1 := testSiteBuildUser(t, dbSession, uuid.NewString(), tnOrg1, tnRoles)
 	assert.NotNil(t, tnu1)
@@ -1034,7 +1035,7 @@ func TestGetSiteHandler_Handle(t *testing.T) {
 	vu2 := testSiteBuildUser(t, dbSession, uuid.NewString(), vOrg2, ipRoles)
 
 	sOrg := "test-service-org"
-	sRoles := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	sRoles := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	su := testSiteBuildUser(t, dbSession, uuid.NewString(), sOrg, sRoles)
 	sip := testSiteBuildInfrastructureProvider(t, dbSession, "test-service-provider", sOrg, su)
 	stn := testSiteBuildTenant(t, dbSession, "test-service-tenant", sOrg, su)
@@ -1044,13 +1045,13 @@ func TestGetSiteHandler_Handle(t *testing.T) {
 
 	// Case: User with both Provider/Tenant role, has access to Site owned by another org
 	ipOrg2 := "test-provider-org-2"
-	ipRoles2 := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles2 := []string{authz.ProviderAdminRole}
 	ipu2 := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg2, ipRoles2)
 	ip2 := testSiteBuildInfrastructureProvider(t, dbSession, "test-provider-2", ipOrg2, ipu2)
 	st2 := testSiteBuildSite(t, dbSession, ip2, "test-site-2", cdbm.SiteStatusRegistered, ipu2, nil, nil)
 
 	mOrg := "test-mixed-org"
-	mixedRole := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	mixedRole := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	mu := testSiteBuildUser(t, dbSession, uuid.NewString(), mOrg, mixedRole)
 	_ = testSiteBuildInfrastructureProvider(t, dbSession, "test-mixed-provider", mOrg, mu)
 	mtn := testSiteBuildTenant(t, dbSession, "test-mixed-tenant", mOrg, mu)
@@ -1287,7 +1288,7 @@ func TestGetSiteHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/site/%v?%s", tt.args.org, tt.args.site.ID.String(), tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/site/%v?%s", tt.args.org, tt.args.site.ID.String(), tt.args.query.Encode())
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()
@@ -1359,8 +1360,8 @@ func TestGetAllSiteHandler_Handle(t *testing.T) {
 
 	ipOrg := "test-provider-org"
 	ipOrg2 := "test-provider-org-2"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu1 := testSiteBuildUser(t, dbSession, "test123", ipOrg, ipRoles)
 	ipuv := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipvRoles)
@@ -1370,13 +1371,13 @@ func TestGetAllSiteHandler_Handle(t *testing.T) {
 	ip2 := testSiteBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider 2", ipOrg2, ipu2)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testSiteBuildUser(t, dbSession, "test456", tnOrg, tnRoles)
 	tn := testSiteBuildTenant(t, dbSession, "Test Tenant", tnOrg, tnu)
 
 	sOrg := "test-service-org"
-	sRoles := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	sRoles := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	su := testSiteBuildUser(t, dbSession, "test-service-user", sOrg, sRoles)
 	sip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Service Provider", sOrg, su)
 	stn := testSiteBuildTenant(t, dbSession, "Test Service Tenant", sOrg, su)
@@ -1990,7 +1991,7 @@ func TestGetAllSiteHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/site?%s", tt.args.org, tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/site?%s", tt.args.org, tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -2079,11 +2080,11 @@ func TestGetAllSiteHandler_Handle(t *testing.T) {
 
 // TestGetAllSiteHandler_NullConfig reproduces NVBug 6072342:
 //
-//	~ carbidecli site list
+//	~ cli site list
 //	0 items
 //	[]
 //
-//	~ carbidecli site create --name "reno-qa4"
+//	~ cli site create --name "reno-qa4"
 //	Error: API error 409: A Site with specified name already exists for Infrastructure Provider
 //	Details: {"id":"bc4f6b79-f6b8-46f8-9921-0978789332907"}
 //
@@ -2100,7 +2101,7 @@ func TestGetAllSiteHandler_NullConfig(t *testing.T) {
 	testSiteSetupSchema(t, dbSession)
 
 	org := "reno-qa4-org"
-	roles := []string{"FORGE_PROVIDER_ADMIN"}
+	roles := []string{authz.ProviderAdminRole}
 	user := testSiteBuildUser(t, dbSession, "qa4-admin", org, roles)
 	ip := testSiteBuildInfrastructureProvider(t, dbSession, "QA4 Provider", org, user)
 
@@ -2124,14 +2125,14 @@ func TestGetAllSiteHandler_NullConfig(t *testing.T) {
 	cfg := common.GetTestConfig()
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
-	// ---- Step 1: carbidecli site list ----
+	// ---- Step 1: cli site list ----
 	gash := GetAllSiteHandler{
 		dbSession: dbSession,
 		tc:        &tmocks.Client{},
 		cfg:       cfg,
 	}
 
-	listPath := fmt.Sprintf("/v2/org/%s/carbide/site", org)
+	listPath := fmt.Sprintf("/v2/org/%s/nico/site", org)
 	listReq := httptest.NewRequest(http.MethodGet, listPath, nil)
 	listReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	listRec := httptest.NewRecorder()
@@ -2153,13 +2154,13 @@ func TestGetAllSiteHandler_NullConfig(t *testing.T) {
 	var listResp []model.APISite
 	require.NoError(t, json.Unmarshal(listRec.Body.Bytes(), &listResp))
 
-	t.Logf("--- carbidecli site list ---")
+	t.Logf("--- cli site list ---")
 	t.Logf("%d items", pr.Total)
 	t.Logf("%s", listRec.Body.String())
 
-	// ---- Step 2: carbidecli site create --name "reno-qa4" ----
+	// ---- Step 2: cli site create --name "reno-qa4" ----
 	createBody := `{"name":"reno-qa4"}`
-	createPath := fmt.Sprintf("/v2/org/%s/carbide/site", org)
+	createPath := fmt.Sprintf("/v2/org/%s/nico/site", org)
 	createReq := httptest.NewRequest(http.MethodPost, createPath, strings.NewReader(createBody))
 	createReq.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	createRec := httptest.NewRecorder()
@@ -2178,7 +2179,7 @@ func TestGetAllSiteHandler_NullConfig(t *testing.T) {
 	err = csh.Handle(createCtx)
 	require.NoError(t, err)
 
-	t.Logf("--- carbidecli site create --name reno-qa4 ---")
+	t.Logf("--- cli site create --name reno-qa4 ---")
 	t.Logf("HTTP %d: %s", createRec.Code, createRec.Body.String())
 
 	// The create handler can find the site (no config filter) and returns
@@ -2206,13 +2207,13 @@ func TestDeleteSiteHandler_Handle(t *testing.T) {
 	testSiteSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testSiteBuildUser(t, dbSession, "test123", ipOrg, ipRoles)
 	ip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testSiteBuildUser(t, dbSession, "test456", tnOrg, tnRoles)
 	assert.NotNil(t, tnu)
@@ -2427,7 +2428,7 @@ func TestDeleteSiteHandler_Handle(t *testing.T) {
 			// Setup echo server/context
 			e := echo.New()
 
-			path := fmt.Sprintf("/v2/org/%v/carbide/site/%v?%v", tt.args.org, tt.args.id, tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%v/nico/site/%v?%v", tt.args.org, tt.args.id, tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodDelete, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -2691,8 +2692,8 @@ func TestSiteHandler_GetStatusDetails(t *testing.T) {
 	testSiteSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ipuv := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipvRoles)
@@ -2702,7 +2703,7 @@ func TestSiteHandler_GetStatusDetails(t *testing.T) {
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
 	tnOrg3 := "test-tenant-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu1 := testSiteBuildUser(t, dbSession, uuid.NewString(), tnOrg1, tnRoles)
 	assert.NotNil(t, tnu1)
@@ -2739,7 +2740,7 @@ func TestSiteHandler_GetStatusDetails(t *testing.T) {
 
 	mOrg := "test-mixed-org"
 	mOrg2 := "test-mixed-org-2"
-	mixedRole := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	mixedRole := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 
 	mu := testSiteBuildUser(t, dbSession, uuid.NewString(), mOrg, mixedRole)
 	mu2 := testSiteBuildUser(t, dbSession, uuid.NewString(), mOrg2, mixedRole)
@@ -2752,7 +2753,7 @@ func TestSiteHandler_GetStatusDetails(t *testing.T) {
 
 	// Case: User with both Provider/Tenant role, has access to Site owned by another org
 	ipOrg2 := "test-provider-org-2"
-	ipRoles2 := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles2 := []string{authz.ProviderAdminRole}
 	ipu2 := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg2, ipRoles2)
 	ip2 := testSiteBuildInfrastructureProvider(t, dbSession, "test-provider-2", ipOrg2, ipu2)
 	st2 := testSiteBuildSite(t, dbSession, ip2, "test-site-", cdbm.SiteStatusRegistered, ipu2, nil, nil)
@@ -2878,7 +2879,7 @@ func TestSiteHandler_GetStatusDetails(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			path := fmt.Sprintf("/v2/org/%v/carbide/site/%v/status-history?%s", tc.reqOrg, tc.reqSiteID, tc.query.Encode())
+			path := fmt.Sprintf("/v2/org/%v/nico/site/%v/status-history?%s", tc.reqOrg, tc.reqSiteID, tc.query.Encode())
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			rec := httptest.NewRecorder()

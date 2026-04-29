@@ -82,7 +82,7 @@ func NewCreateInfiniBandPartitionHandler(dbSession *cdb.Session, tc temporalClie
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIInfiniBandPartitionCreateRequest true "InfiniBandPartition creation request"
 // @Success 201 {object} model.APIInfiniBandPartition
-// @Router /v2/org/{org}/carbide/infiniband-partition [post]
+// @Router /v2/org/{org}/nico/infiniband-partition [post]
 func (cibph CreateInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfiniBandPartition", "Create", c, cibph.tracerSpan)
 	if handlerSpan != nil {
@@ -371,7 +371,7 @@ func NewGetAllInfiniBandPartitionHandler(dbSession *cdb.Session, tc temporalClie
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIInfiniBandPartition
-// @Router /v2/org/{org}/carbide/infiniband-partition [get]
+// @Router /v2/org/{org}/nico/infiniband-partition [get]
 func (gaibph GetAllInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfiniBandPartition", "GetAll", c, gaibph.tracerSpan)
 	if handlerSpan != nil {
@@ -570,7 +570,7 @@ func NewGetInfiniBandPartitionHandler(dbSession *cdb.Session, tc temporalClient.
 // @Param id path string true "ID of InfiniBandPartition"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Tenant'"
 // @Success 200 {object} model.APIInfiniBandPartition
-// @Router /v2/org/{org}/carbide/infiniband-partition/{id} [get]
+// @Router /v2/org/{org}/nico/infiniband-partition/{id} [get]
 func (gibph GetInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfiniBandPartition", "Get", c, gibph.tracerSpan)
 	if handlerSpan != nil {
@@ -692,7 +692,7 @@ func NewUpdateInfiniBandPartitionHandler(dbSession *cdb.Session, tc temporalClie
 // @Param id path string true "ID of InfiniBandPartition"
 // @Param message body model.APIInfiniBandPartitionUpdateRequest true "InfiniBandPartition update request"
 // @Success 200 {object} model.APIInfiniBandPartition
-// @Router /v2/org/{org}/carbide/infiniband-partition/{id} [patch]
+// @Router /v2/org/{org}/nico/infiniband-partition/{id} [patch]
 func (uibph UpdateInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfiniBandPartition", "Update", c, uibph.tracerSpan)
 	if handlerSpan != nil {
@@ -952,7 +952,7 @@ func NewDeleteInfiniBandPartitionHandler(dbSession *cdb.Session, tc temporalClie
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of InfiniBandPartition"
 // @Success 202
-// @Router /v2/org/{org}/carbide/infiniband-partition/{id} [delete]
+// @Router /v2/org/{org}/nico/infiniband-partition/{id} [delete]
 func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfiniBandPartition", "Delete", c, dibph.tracerSpan)
 	if handlerSpan != nil {
@@ -1089,10 +1089,10 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	err = we.Get(ctx, nil)
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-			logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 			// Reset error to nil
 			err = nil
 		}

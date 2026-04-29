@@ -81,12 +81,12 @@ func normalizeProtoFile(protoFile string) {
 
 	baseName := filepath.Base(protoFile)
 	switch baseName {
-	case "site_explorer_carbide.proto":
+	case "site_explorer_nico.proto":
 		content = normalizeSiteExplorer(content)
-	case "dns_carbide.proto":
+	case "dns_nico.proto":
 		content = normalizeDns(content)
-	case "forge_carbide.proto":
-		content = normalizeForge(content)
+	case "nico_nico.proto":
+		content = normalizeNICo(content)
 	}
 
 	content = trimWhitespace(content)
@@ -143,14 +143,14 @@ func addGoPackageOption(content string) string {
 }
 
 // updateImports rewrites local proto imports (those without a path separator)
-// to use the _carbide.proto suffix, leaving google/protobuf imports untouched.
+// to use the _nico.proto suffix, leaving google/protobuf imports untouched.
 func updateImports(content string) string {
 	re := regexp.MustCompile(`import "([^"]+)\.proto"`)
 	return re.ReplaceAllStringFunc(content, func(match string) string {
-		if strings.Contains(match, "google/") || strings.Contains(match, "_carbide.proto") {
+		if strings.Contains(match, "google/") || strings.Contains(match, "_nico.proto") {
 			return match
 		}
-		return strings.Replace(match, `.proto"`, `_carbide.proto"`, 1)
+		return strings.Replace(match, `.proto"`, `_nico.proto"`, 1)
 	})
 }
 
@@ -186,7 +186,7 @@ func normalizeSiteExplorer(content string) string {
 	re := regexp.MustCompile(`\bPowerState\b`)
 	content = replaceOutsideComments(content, re, "ComputerSystemPowerState")
 
-	warning := "// WARNING: This enum conflicts with PowerState in forge_carbide.proto and must be renamed to ComputerSystemPowerState\n"
+	warning := "// WARNING: This enum conflicts with PowerState in nico_nico.proto and must be renamed to ComputerSystemPowerState\n"
 	target := "enum ComputerSystemPowerState {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -199,7 +199,7 @@ func normalizeDns(content string) string {
 	re := regexp.MustCompile(`\bMetadata\b`)
 	content = replaceOutsideComments(content, re, "DomainMetadata")
 
-	warning := "// WARNING: This type conflicts with Metadata in forge_carbide.proto and must be renamed to DomainMetadata\n"
+	warning := "// WARNING: This type conflicts with Metadata in nico_nico.proto and must be renamed to DomainMetadata\n"
 	target := "message DomainMetadata {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -208,23 +208,23 @@ func normalizeDns(content string) string {
 	return content
 }
 
-func normalizeForge(content string) string {
-	content = forgeRenameMachineInventory(content)
-	content = forgeUpdateInterfaceFunctionType(content)
-	content = forgeMoveValidationEnums(content)
-	content = forgeRemoveDomainTypes(content)
-	content = forgeUpdatePxeDomain(content)
-	content = forgeExpandExpectedObject(content, "ExpectedPowerShelf", additionalPowerShelfAttributes)
-	content = forgeExpandExpectedObject(content, "ExpectedSwitch", additionalExpectedSwitchAttributes)
-	content = forgeExpandExpectedObject(content, "ExpectedMachine", additionalExpectedMachineAttributes)
+func normalizeNICo(content string) string {
+	content = nicoRenameMachineInventory(content)
+	content = nicoUpdateInterfaceFunctionType(content)
+	content = nicoMoveValidationEnums(content)
+	content = nicoRemoveDomainTypes(content)
+	content = nicoUpdatePxeDomain(content)
+	content = nicoExpandExpectedObject(content, "ExpectedPowerShelf", additionalPowerShelfAttributes)
+	content = nicoExpandExpectedObject(content, "ExpectedSwitch", additionalExpectedSwitchAttributes)
+	content = nicoExpandExpectedObject(content, "ExpectedMachine", additionalExpectedMachineAttributes)
 	return content
 }
 
-func forgeRenameMachineInventory(content string) string {
+func nicoRenameMachineInventory(content string) string {
 	re := regexp.MustCompile(`\bMachineInventory\b`)
 	content = replaceOutsideComments(content, re, "MachineComponentInventory")
 
-	warning := "// WARNING: This type conflicts with MachineInventory in forge_carbide.proto and must be renamed to MachineComponentInventory\n"
+	warning := "// WARNING: This type conflicts with MachineInventory in nico_nico.proto and must be renamed to MachineComponentInventory\n"
 	target := "message MachineComponentInventory {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -233,8 +233,8 @@ func forgeRenameMachineInventory(content string) string {
 	return content
 }
 
-func forgeUpdateInterfaceFunctionType(content string) string {
-	warning := "// WARNING: This enum was changed in a non-backwards compatible way in forge_carbide.proto to drop _FUNCTION suffix\n"
+func nicoUpdateInterfaceFunctionType(content string) string {
+	warning := "// WARNING: This enum was changed in a non-backwards compatible way in nico_nico.proto to drop _FUNCTION suffix\n"
 	target := "enum InterfaceFunctionType {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -244,10 +244,10 @@ func forgeUpdateInterfaceFunctionType(content string) string {
 	return content
 }
 
-// forgeMoveValidationEnums extracts the three enums nested inside
+// nicoMoveValidationEnums extracts the three enums nested inside
 // MachineValidationStatus and places them at the top level immediately
 // before the message so proto3 can compile them.
-func forgeMoveValidationEnums(content string) string {
+func nicoMoveValidationEnums(content string) string {
 	warning := "// WARNING: Site proto declares these enums inside `MachineValidationStatus`. This is not compilable to protobuf so we move the enums to the top level"
 
 	enumNames := []string{"MachineValidationStarted", "MachineValidationInProgress", "MachineValidationCompleted"}
@@ -288,7 +288,7 @@ func dedent(s string) string {
 	return strings.Join(lines, "\n")
 }
 
-func forgeRemoveDomainTypes(content string) string {
+func nicoRemoveDomainTypes(content string) string {
 	typesToRemove := []string{"DomainSearchQuery", "DomainDeletionResult", "DomainDeletion", "DomainList", "Domain"}
 
 	for _, typeName := range typesToRemove {
@@ -299,13 +299,13 @@ func forgeRemoveDomainTypes(content string) string {
 	return content
 }
 
-func forgeUpdatePxeDomain(content string) string {
+func nicoUpdatePxeDomain(content string) string {
 	warning := "    // WARNING: Updated to correct legacy type\n"
 	content = strings.Replace(content, "    Domain legacy_domain = 2;", warning+"    DomainLegacy legacy_domain = 2;", 1)
 	return content
 }
 
-func forgeExpandExpectedObject(content string, objectType string, additionalAttributes string) string {
+func nicoExpandExpectedObject(content string, objectType string, additionalAttributes string) string {
 	re := regexp.MustCompile(`message ` + objectType + ` \{[^}]*\}`)
 	loc := re.FindStringIndex(content)
 	if loc == nil {
@@ -333,10 +333,10 @@ func indentBlock(s string) string {
 
 func main() {
 	workflowsDir := filepath.Join("..", "..", "site-agent", "workflows", "v1")
-	carbideProtoFiles := filepath.Join(workflowsDir, "*_carbide.proto")
-	protoFiles, err := filepath.Glob(carbideProtoFiles)
+	nicoProtoFiles := filepath.Join(workflowsDir, "*_nico.proto")
+	protoFiles, err := filepath.Glob(nicoProtoFiles)
 	if err != nil {
-		log.Panic().Err(err).Msg("Failed to get list of carbide proto files")
+		log.Panic().Err(err).Msg("Failed to get list of nico proto files")
 	}
 	for _, protoFile := range protoFiles {
 		normalizeProtoFile(protoFile)

@@ -84,7 +84,7 @@ func NewCreateAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIAllocationCreateRequest true "Allocation creation request"
 // @Success 201 {object} model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation [post]
+// @Router /v2/org/{org}/nico/allocation [post]
 func (cah CreateAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Create", c, cah.tracerSpan)
 	if handlerSpan != nil {
@@ -507,7 +507,7 @@ func NewGetAllAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation [get]
+// @Router /v2/org/{org}/nico/allocation [get]
 func (gaah GetAllAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "GetAll", c, gaah.tracerSpan)
 	if handlerSpan != nil {
@@ -828,7 +828,7 @@ func NewGetAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param tenantId query string false "Deprecated: ID of Tenant"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant', 'Site'"
 // @Success 200 {object} model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation/{id} [get]
+// @Router /v2/org/{org}/nico/allocation/{id} [get]
 func (gah GetAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Get", c, gah.tracerSpan)
 	if handlerSpan != nil {
@@ -938,7 +938,7 @@ func NewUpdateAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param id path string true "ID of Allocation"
 // @Param message body model.APIAllocationUpdateRequest true "Allocation update request"
 // @Success 200 {object} model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation/{id} [patch]
+// @Router /v2/org/{org}/nico/allocation/{id} [patch]
 func (uah UpdateAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Update", c, uah.tracerSpan)
 	if handlerSpan != nil {
@@ -1142,7 +1142,7 @@ func NewDeleteAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Allocation"
 // @Success 202
-// @Router /v2/org/{org}/carbide/allocation/{id} [delete]
+// @Router /v2/org/{org}/nico/allocation/{id} [delete]
 func (dah DeleteAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Delete", c, dah.tracerSpan)
 	if handlerSpan != nil {

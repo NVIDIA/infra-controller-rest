@@ -74,7 +74,7 @@ func NewGetTaskHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Client
 // @Param id path string true "UUID of the Task"
 // @Param siteId query string true "ID of the Site"
 // @Success 200 {object} model.APIRackTask
-// @Router /v2/org/{org}/carbide/rack/task/{id} [get]
+// @Router /v2/org/{org}/nico/rack/task/{id} [get]
 func (gth GetTaskHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Task", "Get", c, gth.tracerSpan)
 	if handlerSpan != nil {

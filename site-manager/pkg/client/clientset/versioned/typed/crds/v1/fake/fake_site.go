@@ -36,7 +36,7 @@ import (
 
 // FakeSites implements SiteInterface
 type FakeSites struct {
-	Fake *FakeForgeV1
+	Fake *testing.Fake
 	ns   string
 }
 

@@ -59,7 +59,7 @@ func newGrpcStreamMetricsInterceptor(metrics Metrics) grpc.StreamClientIntercept
 	}
 }
 
-// to match carbide gRPC status code, which is translated as Ok, instead of go translation of OK
+// to match nico gRPC status code, which is translated as Ok, instead of go translation of OK
 func normalizeRPCCode(code codes.Code) string {
 	if code == codes.OK {
 		return "Ok"

@@ -29,17 +29,32 @@ import (
 	testing "k8s.io/client-go/testing"
 )
 
-type FakeForgeV1 struct {
+type FakeNICoV1 struct {
 	*testing.Fake
 }
 
-func (c *FakeForgeV1) Sites(namespace string) v1.SiteInterface {
-	return &FakeSites{c, namespace}
+func (c *FakeNICoV1) Sites(namespace string) v1.SiteInterface {
+	return &FakeSites{c.Fake, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *FakeForgeV1) RESTClient() rest.Interface {
+func (c *FakeNICoV1) RESTClient() rest.Interface {
+	var ret *rest.RESTClient
+	return ret
+}
+
+// FakeForgeLegacyV1 implements ForgeLegacyV1Interface using the same fake tracker.
+// TODO: remove once all site agents migrated to nico.nvidia.io.
+type FakeForgeLegacyV1 struct {
+	*testing.Fake
+}
+
+func (c *FakeForgeLegacyV1) Sites(namespace string) v1.SiteInterface {
+	return &FakeSites{c.Fake, namespace}
+}
+
+func (c *FakeForgeLegacyV1) RESTClient() rest.Interface {
 	var ret *rest.RESTClient
 	return ret
 }

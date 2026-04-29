@@ -35,7 +35,7 @@ import (
 
 type ManageInventoryConfig struct {
 	SiteID                uuid.UUID
-	CarbideAtomicClient   *cClient.CarbideAtomicClient
+	NICoAtomicClient   *cClient.NICoAtomicClient
 	TemporalPublishClient tClient.Client
 	TemporalPublishQueue  string
 	SitePageSize          int
@@ -45,14 +45,14 @@ type ManageInventoryConfig struct {
 type manageInventoryImpl[K any, R any, P any] struct {
 	itemType               string
 	config                 ManageInventoryConfig
-	internalFindIDs        func(context.Context, *cClient.CarbideClient) ([]K, error)
-	internalFindByIDs      func(context.Context, *cClient.CarbideClient, []K) ([]R, error)
+	internalFindIDs        func(context.Context, *cClient.NICoClient) ([]K, error)
+	internalFindByIDs      func(context.Context, *cClient.NICoClient, []K) ([]R, error)
 	internalPagedInventory func([]K, []R, *pagedInventoryInput) P
 	// post-processing function that can optionally be used to attach additional inventory data
 	// based on the data in the inventory.  This will only be called for pages with inventory.
-	internalPagedInventoryPostProcess func(context.Context, *cClient.CarbideClient, P) (P, error)
+	internalPagedInventoryPostProcess func(context.Context, *cClient.NICoClient, P) (P, error)
 	// fallback function to get all the items when pagination is not supported
-	internalFindFallback func(ctx context.Context, client *cClient.CarbideClient) ([]K, []R, error)
+	internalFindFallback func(ctx context.Context, client *cClient.NICoClient) ([]K, []R, error)
 }
 
 type pagedInventoryInput struct {
@@ -103,19 +103,19 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 
 	// define workflow name
 	workflowName := fmt.Sprintf("Update%sInventory", impl.itemType)
-	// get carbide client
-	carbideClient := impl.config.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
+	// get nico client
+	nicoClient := impl.config.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
 
 	// find IDs
-	allIDs, err := impl.internalFindIDs(ctx, carbideClient)
+	allIDs, err := impl.internalFindIDs(ctx, nicoClient)
 	if err != nil {
 		if grpcStatus, ok := status.FromError(err); ok {
 			if grpcStatus.Code() == codes.Unimplemented {
 				log.Info().Msg("Using fallback API to get inventory")
-				if err = impl.collectAndPublishFallback(ctx, logger, carbideClient, workflowName, workflowOptions); err == nil {
+				if err = impl.collectAndPublishFallback(ctx, logger, nicoClient, workflowName, workflowOptions); err == nil {
 					return err
 				}
 			}
@@ -154,7 +154,7 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 	sitePagedIDs := cClient.SliceToChunks(allIDs, impl.config.SitePageSize)
 	for sitePage, siteItemIDs := range sitePagedIDs {
 		// find items by IDs
-		siteItems, err := impl.internalFindByIDs(ctx, carbideClient, siteItemIDs)
+		siteItems, err := impl.internalFindByIDs(ctx, nicoClient, siteItemIDs)
 		if err != nil {
 			logger.Warn().Err(err).Int("Site Page", sitePage+1).Msg("Failed to retrieve using Site Controller API")
 			return err
@@ -183,7 +183,7 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 
 			// Handle any requested post processing
 			if impl.internalPagedInventoryPostProcess != nil {
-				inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, carbideClient, inventoryPage)
+				inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, nicoClient, inventoryPage)
 				if err != nil {
 					return err
 				}
@@ -203,11 +203,11 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 }
 
 func (impl *manageInventoryImpl[K, R, P]) collectAndPublishFallback(ctx context.Context, logger *zerolog.Logger,
-	carbideClient *cClient.CarbideClient, workflowName string, workflowOptions tClient.StartWorkflowOptions) error {
+	nicoClient *cClient.NICoClient, workflowName string, workflowOptions tClient.StartWorkflowOptions) error {
 	if impl.internalFindFallback == nil {
 		return errors.New("no fallback find function defined")
 	}
-	allIDs, siteItems, err := impl.internalFindFallback(ctx, carbideClient)
+	allIDs, siteItems, err := impl.internalFindFallback(ctx, nicoClient)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to retrieve using Site Controller fallback API")
 		// Error encountered before we've published anything, report inventory collection error to Cloud
@@ -253,7 +253,7 @@ func (impl *manageInventoryImpl[K, R, P]) collectAndPublishFallback(ctx context.
 
 		// Handle any requested post processing
 		if impl.internalPagedInventoryPostProcess != nil {
-			inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, carbideClient, inventoryPage)
+			inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, nicoClient, inventoryPage)
 			if err != nil {
 				return err
 			}

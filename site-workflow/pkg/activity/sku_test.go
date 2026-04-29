@@ -30,10 +30,10 @@ import (
 )
 
 func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -41,7 +41,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoAtomicClient  *cClient.NICoAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -58,7 +58,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 			name: "test collecting and publishing sku inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -71,7 +71,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 			name: "test collecting and publishing sku inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -91,7 +91,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 
 			manageInstance := NewManageSkuInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoAtomicClient:   tt.fields.nicoAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

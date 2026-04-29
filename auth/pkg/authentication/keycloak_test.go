@@ -43,6 +43,7 @@ import (
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // Valid bearer tokens for integration and mock tests
@@ -72,7 +73,7 @@ func TestNewKeycloakAuthService(t *testing.T) {
 		ExternalBaseURL: "http://localhost:8082",
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
-		Realm:           "forge",
+		Realm:           "nico",
 	}
 
 	service := NewKeycloakAuthService(keycloakConfig)
@@ -122,7 +123,7 @@ func TestKeycloakAuthService_InitiateAuthFlow_WithMock(t *testing.T) {
 			mockTokenError: nil,
 			mockIDPError:   nil,
 			wantIDP:        "testorg-idp",
-			wantRealmName:  "forge",
+			wantRealmName:  "nico",
 			wantErr:        false,
 		},
 		{
@@ -215,7 +216,7 @@ func TestKeycloakAuthService_InitiateAuthFlow_WithMock(t *testing.T) {
 				ExternalBaseURL: mockServer.URL,
 				ClientID:        tt.clientID,
 				ClientSecret:    tt.clientSecret,
-				Realm:           "forge",
+				Realm:           "nico",
 			}
 
 			service := NewKeycloakAuthServiceWithClient(keycloakConfig, client)
@@ -280,7 +281,7 @@ func TestKeycloakAuthService_getIDPAliasForDomain(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			keycloakConfig := &config.KeycloakConfig{
 				BaseURL: testServer.URL,
-				Realm:   "forge",
+				Realm:   "nico",
 			}
 
 			service := NewKeycloakAuthService(keycloakConfig)
@@ -317,10 +318,10 @@ func TestKeycloakAuthService_InitiateAuthFlow(t *testing.T) {
 			email:       "john.doe@testorg.com",
 			redirectURI: "http://localhost:3000/callback",
 			wantResponse: &model.APILoginResponse{
-				AuthURL:   testServer.URL + "/realms/forge/protocol/openid-connect/auth?client_id=test-client&kc_idp_hint=testorg-idp&login_hint=john.doe%40testorg.com&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback&response_type=code&scope=openid",
+				AuthURL:   testServer.URL + "/realms/nico/protocol/openid-connect/auth?client_id=test-client&kc_idp_hint=testorg-idp&login_hint=john.doe%40testorg.com&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback&response_type=code&scope=openid",
 				State:     "",
 				IDP:       "testorg-idp",
-				RealmName: "forge",
+				RealmName: "nico",
 			},
 			wantErr: false,
 		},
@@ -345,10 +346,10 @@ func TestKeycloakAuthService_InitiateAuthFlow(t *testing.T) {
 			email:       "john.doe@testorg.com",
 			redirectURI: "",
 			wantResponse: &model.APILoginResponse{
-				AuthURL:   testServer.URL + "/realms/forge/protocol/openid-connect/auth?client_id=test-client&kc_idp_hint=testorg-idp&login_hint=john.doe%40testorg.com&response_type=code&scope=openid",
+				AuthURL:   testServer.URL + "/realms/nico/protocol/openid-connect/auth?client_id=test-client&kc_idp_hint=testorg-idp&login_hint=john.doe%40testorg.com&response_type=code&scope=openid",
 				State:     "",
 				IDP:       "testorg-idp",
-				RealmName: "forge",
+				RealmName: "nico",
 			},
 			wantErr: false,
 		},
@@ -361,7 +362,7 @@ func TestKeycloakAuthService_InitiateAuthFlow(t *testing.T) {
 				ExternalBaseURL: testServer.URL,
 				ClientID:        "test-client",
 				ClientSecret:    "test-secret",
-				Realm:           "forge",
+				Realm:           "nico",
 			}
 
 			service := NewKeycloakAuthService(keycloakConfig)
@@ -418,7 +419,7 @@ func TestKeycloakAuthService_ExchangeCodeForTokens(t *testing.T) {
 				BaseURL:      "http://localhost:8082",
 				ClientID:     "test-client",
 				ClientSecret: "test-secret",
-				Realm:        "forge",
+				Realm:        "nico",
 			}
 
 			// Create mock server configuration based on test case
@@ -514,7 +515,7 @@ func TestKeycloakAuthService_GetUserInfo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			keycloakConfig := &config.KeycloakConfig{
 				BaseURL: testServer.URL,
-				Realm:   "forge",
+				Realm:   "nico",
 			}
 
 			service := NewKeycloakAuthService(keycloakConfig)
@@ -577,7 +578,7 @@ func TestKeycloakAuthService_RefreshAccessToken(t *testing.T) {
 				BaseURL:      "http://localhost:8082",
 				ClientID:     "test-client",
 				ClientSecret: "test-secret",
-				Realm:        "forge",
+				Realm:        "nico",
 			}
 
 			// Create mock server configuration - refresh token endpoint is hardcoded in the handler
@@ -656,7 +657,7 @@ func TestKeycloakAuthService_ClientCredentialsAuth(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			keycloakConfig := &config.KeycloakConfig{
 				BaseURL: "http://localhost:8082",
-				Realm:   "forge",
+				Realm:   "nico",
 			}
 
 			// Create mock server configuration - client credentials are hardcoded in the handler
@@ -748,7 +749,7 @@ func TestKeycloakAuthService_Logout(t *testing.T) {
 				BaseURL:      testServer.URL,
 				ClientID:     "test-client",
 				ClientSecret: "test-secret",
-				Realm:        "forge",
+				Realm:        "nico",
 			}
 
 			service := NewKeycloakAuthService(keycloakConfig)
@@ -775,7 +776,7 @@ func TestKeycloakAuthService_Integration(t *testing.T) {
 		ExternalBaseURL: testServer.URL,
 		ClientID:        "test-client",
 		ClientSecret:    "test-secret",
-		Realm:           "forge",
+		Realm:           "nico",
 	}
 
 	service := NewKeycloakAuthService(keycloakConfig)
@@ -842,8 +843,8 @@ func TestKeycloakConfig_IssuerConstruction(t *testing.T) {
 		{
 			name:            "localhost development setup",
 			externalBaseURL: "http://localhost:8082",
-			realm:           "forge",
-			expectedIssuer:  "http://localhost:8082/realms/forge",
+			realm:           "nico",
+			expectedIssuer:  "http://localhost:8082/realms/nico",
 		},
 	}
 
@@ -873,7 +874,7 @@ func TestAuthProcessor_KeycloakFlowWithMockJWKS(t *testing.T) {
 
 	// Create mock JWKS server that returns our consistent test key
 	jwksServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if strings.Contains(req.URL.Path, "/realms/forge/protocol/openid-connect/certs") {
+		if strings.Contains(req.URL.Path, "/realms/nico/protocol/openid-connect/certs") {
 			res.WriteHeader(http.StatusOK)
 			res.Header().Set("Content-Type", "application/json")
 			// Generate JWKS from the same key used for signing
@@ -891,7 +892,7 @@ func TestAuthProcessor_KeycloakFlowWithMockJWKS(t *testing.T) {
 
 	// Setup JWT origin config with Keycloak token origin
 	joCfg := config.NewJWTOriginConfig()
-	joCfg.AddConfig("keycloak", jwksServer.URL+"/realms/forge", jwksServer.URL+"/realms/forge/protocol/openid-connect/certs", config.TokenOriginKeycloak, true, nil, nil)
+	joCfg.AddConfig("keycloak", jwksServer.URL+"/realms/nico", jwksServer.URL+"/realms/nico/protocol/openid-connect/certs", config.TokenOriginKeycloak, true, nil, nil)
 
 	// Initialize JWKS data for testing
 	if err := joCfg.UpdateAllJWKS(); err != nil {
@@ -921,11 +922,11 @@ func TestAuthProcessor_KeycloakFlowWithMockJWKS(t *testing.T) {
 				LastName:  "Doe",
 				Oidc_Id:   "oidc-123-456",
 				RealmAccess: claim.RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN"},
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
 					Subject: "user-subject-123",
-					Issuer:  jwksServer.URL + "/realms/forge",
+					Issuer:  jwksServer.URL + "/realms/nico",
 				},
 			},
 			path:    "/v2/org/testorg/user/current",
@@ -951,11 +952,11 @@ func TestAuthProcessor_KeycloakFlowWithMockJWKS(t *testing.T) {
 				ClientId:  "service-client",
 				Oidc_Id:   "", // Empty for service accounts
 				RealmAccess: claim.RealmAccess{
-					Roles: []string{"testorg:FORGE_TENANT_ADMIN"},
+					Roles: []string{"testorg:TENANT_ADMIN"},
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
 					Subject: "service-account-123",
-					Issuer:  jwksServer.URL + "/realms/forge",
+					Issuer:  jwksServer.URL + "/realms/nico",
 				},
 			},
 			path:    "/v2/org/testorg/user/current",
@@ -995,7 +996,7 @@ func TestAuthProcessor_KeycloakFlowWithMockJWKS(t *testing.T) {
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
 					Subject: "user-subject-123",
-					Issuer:  jwksServer.URL + "/realms/forge",
+					Issuer:  jwksServer.URL + "/realms/nico",
 				},
 			},
 			path:           "/v2/org/testorg/user/current",
@@ -1057,7 +1058,7 @@ func TestAuthProcessor_KeycloakServiceAccountsDisabled(t *testing.T) {
 
 	// Create mock JWKS server
 	jwksServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if strings.Contains(req.URL.Path, "/realms/forge/protocol/openid-connect/certs") {
+		if strings.Contains(req.URL.Path, "/realms/nico/protocol/openid-connect/certs") {
 			res.WriteHeader(http.StatusOK)
 			res.Header().Set("Content-Type", "application/json")
 			// Generate JWKS from the same key used for signing
@@ -1079,13 +1080,13 @@ func TestAuthProcessor_KeycloakServiceAccountsDisabled(t *testing.T) {
 		jwksServer.URL,
 		"test-client",
 		"test-secret",
-		"forge",
+		"nico",
 		false, // ServiceAccountEnabled = false
 	)
 
 	// Setup JWT origin config with Keycloak token origin
 	joCfg := config.NewJWTOriginConfig()
-	joCfg.AddConfig("keycloak", jwksServer.URL+"/realms/forge", jwksServer.URL+"/realms/forge/protocol/openid-connect/certs", config.TokenOriginKeycloak, keycloakConfigDisabled.ServiceAccountEnabled, nil, nil)
+	joCfg.AddConfig("keycloak", jwksServer.URL+"/realms/nico", jwksServer.URL+"/realms/nico/protocol/openid-connect/certs", config.TokenOriginKeycloak, keycloakConfigDisabled.ServiceAccountEnabled, nil, nil)
 
 	// Initialize JWKS data for testing
 	if err := joCfg.UpdateAllJWKS(); err != nil {
@@ -1115,11 +1116,11 @@ func TestAuthProcessor_KeycloakServiceAccountsDisabled(t *testing.T) {
 				ClientId:  "service-client-disabled", // Non-empty ClientId indicates service account
 				Oidc_Id:   "",
 				RealmAccess: claim.RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN"},
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
 					Subject: "service-account-disabled-123",
-					Issuer:  jwksServer.URL + "/realms/forge",
+					Issuer:  jwksServer.URL + "/realms/nico",
 				},
 			},
 			path:           "/v2/org/testorg/user/current",
@@ -1137,11 +1138,11 @@ func TestAuthProcessor_KeycloakServiceAccountsDisabled(t *testing.T) {
 				ClientId:  "", // Empty ClientId indicates regular user
 				Oidc_Id:   "oidc-regular-user",
 				RealmAccess: claim.RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN"},
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
 					Subject: "regular-user-123",
-					Issuer:  jwksServer.URL + "/realms/forge",
+					Issuer:  jwksServer.URL + "/realms/nico",
 				},
 			},
 			path:    "/v2/org/testorg/user/current",
@@ -1203,14 +1204,14 @@ func TestKeycloakClaimsProcessing_RealData(t *testing.T) {
 				Oidc_Id:   "oidc-alice-12345",
 				RealmAccess: claim.RealmAccess{
 					Roles: []string{
-						"default-roles-forge",
-						"Forge-Tenant-Dev:FORGE_TENANT_ADMIN",
+						"default-roles-nico",
+						"NICo-Tenant-Dev:TENANT_ADMIN",
 						"offline_access",
-						"Forge-Prime-Provider:FORGE_PROVIDER_ADMIN",
+						"NICo-Prime-Provider:PROVIDER_ADMIN",
 						"uma_authorization",
 						"malformed-role",              // Ignored (no colon)
-						"Forge-Test:INVALID_ROLE",     // Now included
-						"Forge-Another:REGISTRY_READ", // Now included
+						"NICo-Test:INVALID_ROLE",     // Now included
+						"NICo-Another:REGISTRY_READ", // Now included
 					},
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
@@ -1225,19 +1226,19 @@ func TestKeycloakClaimsProcessing_RealData(t *testing.T) {
 				orgData := claims.ToOrgData()
 				assert.Len(t, orgData, 4) // Should have 4 orgs (all orgs from roles, no filtering)
 
-				tenantOrg, exists := orgData["forge-tenant-dev"]
+				tenantOrg, exists := orgData["nico-tenant-dev"]
 				assert.True(t, exists)
-				assert.Equal(t, []string{"FORGE_TENANT_ADMIN"}, tenantOrg.Roles)
+				assert.Equal(t, []string{authz.TenantAdminRole}, tenantOrg.Roles)
 
-				providerOrg, exists := orgData["forge-prime-provider"]
+				providerOrg, exists := orgData["nico-prime-provider"]
 				assert.True(t, exists)
-				assert.Equal(t, []string{"FORGE_PROVIDER_ADMIN"}, providerOrg.Roles)
+				assert.Equal(t, []string{authz.ProviderAdminRole}, providerOrg.Roles)
 
-				testOrg, exists := orgData["forge-test"]
+				testOrg, exists := orgData["nico-test"]
 				assert.True(t, exists)
 				assert.Equal(t, []string{"INVALID_ROLE"}, testOrg.Roles)
 
-				anotherOrg, exists := orgData["forge-another"]
+				anotherOrg, exists := orgData["nico-another"]
 				assert.True(t, exists)
 				assert.Equal(t, []string{"REGISTRY_READ"}, anotherOrg.Roles)
 			},
@@ -1252,11 +1253,11 @@ func TestKeycloakClaimsProcessing_RealData(t *testing.T) {
 				Oidc_Id:   "", // Empty for service accounts
 				RealmAccess: claim.RealmAccess{
 					Roles: []string{
-						"default-roles-forge",
-						"Forge-System:FORGE_PROVIDER_ADMIN", // Valid role
+						"default-roles-nico",
+						"NICo-System:PROVIDER_ADMIN", // Valid role
 						"offline_access",
 						"uma_authorization",
-						"Forge-System:INVALID_ROLE", // Now included
+						"NICo-System:INVALID_ROLE", // Now included
 					},
 				},
 				RegisteredClaims: jwt.RegisteredClaims{
@@ -1282,9 +1283,9 @@ func TestKeycloakClaimsProcessing_RealData(t *testing.T) {
 				orgData := claims.ToOrgData()
 				assert.Len(t, orgData, 1)
 
-				systemOrg, exists := orgData["forge-system"]
+				systemOrg, exists := orgData["nico-system"]
 				assert.True(t, exists)
-				assert.Equal(t, []string{"FORGE_PROVIDER_ADMIN", "INVALID_ROLE"}, systemOrg.Roles)
+				assert.Equal(t, []string{authz.ProviderAdminRole, "INVALID_ROLE"}, systemOrg.Roles)
 			},
 		},
 	}
@@ -1318,7 +1319,7 @@ func TestKeycloakUserDatabaseOperations(t *testing.T) {
 				Name:        "testorg",
 				DisplayName: "testorg",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+				Roles:       []string{authz.ProviderAdminRole},
 				Teams:       []cdbm.Team{},
 			},
 		}
@@ -1363,7 +1364,7 @@ func TestKeycloakUserDatabaseOperations(t *testing.T) {
 				Name:        "testorg",
 				DisplayName: "Test Org",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+				Roles:       []string{authz.ProviderAdminRole},
 				Teams:       []cdbm.Team{},
 			},
 		}
@@ -1390,7 +1391,7 @@ func TestKeycloakUserDatabaseOperations(t *testing.T) {
 				Name:        "testorg",
 				DisplayName: "Test Org",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}, // Valid FORGE roles
+				Roles:       []string{authz.ProviderAdminRole, authz.TenantAdminRole}, // Valid NICO roles
 				Teams:       []cdbm.Team{},
 			},
 		}
@@ -1409,8 +1410,8 @@ func TestKeycloakUserDatabaseOperations(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, updatedUser.OrgData.Equal(newOrgData))
-		assert.Contains(t, updatedUser.OrgData["testorg"].Roles, "FORGE_PROVIDER_ADMIN")
-		assert.Contains(t, updatedUser.OrgData["testorg"].Roles, "FORGE_TENANT_ADMIN")
+		assert.Contains(t, updatedUser.OrgData["testorg"].Roles, authz.ProviderAdminRole)
+		assert.Contains(t, updatedUser.OrgData["testorg"].Roles, authz.TenantAdminRole)
 	})
 }
 
@@ -1482,7 +1483,7 @@ func TestKeycloakAuthURLConstruction(t *testing.T) {
 func TestKeycloakConfig_WithMockServer(t *testing.T) {
 	// Create server that responds to JWKS requests properly
 	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if strings.Contains(req.URL.Path, "/realms/forge/protocol/openid-connect/certs") {
+		if strings.Contains(req.URL.Path, "/realms/nico/protocol/openid-connect/certs") {
 			res.WriteHeader(http.StatusOK)
 			res.Header().Set("Content-Type", "application/json")
 			// Generate JWKS from the consistent test key
@@ -1498,14 +1499,14 @@ func TestKeycloakConfig_WithMockServer(t *testing.T) {
 	t.Run("successful JWKS config initialization", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		jwksConfig, err := keycloakConfig.GetJwksConfig()
 		assert.NoError(t, err)
 		assert.NotNil(t, jwksConfig)
 
-		expectedURL := testServer.URL + "/realms/forge/protocol/openid-connect/certs"
+		expectedURL := testServer.URL + "/realms/nico/protocol/openid-connect/certs"
 		assert.Equal(t, expectedURL, jwksConfig.URL)
 		assert.NotNil(t, jwksConfig.GetJWKS())
 		assert.Greater(t, jwksConfig.KeyCount(), 0)
@@ -1514,7 +1515,7 @@ func TestKeycloakConfig_WithMockServer(t *testing.T) {
 	t.Run("JWKS config is cached", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		// First call
@@ -1536,23 +1537,23 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 
 		switch {
 		// Token endpoint for the test realm (handles both admin login and token exchange)
-		case req.URL.Path == "/realms/forge/protocol/openid-connect/token" && req.Method == "POST":
+		case req.URL.Path == "/realms/nico/protocol/openid-connect/token" && req.Method == "POST":
 			handleIntegrationTokenEndpoint(res, req)
 
 		// Admin API for identity providers
-		case req.URL.Path == "/admin/realms/forge/identity-provider/instances" && req.Method == "GET":
+		case req.URL.Path == "/admin/realms/nico/identity-provider/instances" && req.Method == "GET":
 			handleIntegrationIdentityProviders(res, req)
 
 		// User info endpoint
-		case req.URL.Path == "/realms/forge/protocol/openid-connect/userinfo" && req.Method == "GET":
+		case req.URL.Path == "/realms/nico/protocol/openid-connect/userinfo" && req.Method == "GET":
 			handleIntegrationUserInfo(res, req)
 
 		// Logout endpoint
-		case req.URL.Path == "/realms/forge/protocol/openid-connect/logout" && req.Method == "POST":
+		case req.URL.Path == "/realms/nico/protocol/openid-connect/logout" && req.Method == "POST":
 			handleIntegrationLogout(res, req)
 
 		// JWKS endpoint
-		case req.URL.Path == "/realms/forge/protocol/openid-connect/certs" && req.Method == "GET":
+		case req.URL.Path == "/realms/nico/protocol/openid-connect/certs" && req.Method == "GET":
 			handleIntegrationJWKS(res, req)
 
 		default:
@@ -1565,20 +1566,20 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 	t.Run("admin token retrieval", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
 
 		// Test that service can be created with client credentials
 		assert.NotNil(t, service)
-		assert.Equal(t, "forge", service.config.Realm)
+		assert.Equal(t, "nico", service.config.Realm)
 	})
 
 	t.Run("IDP alias retrieval", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1594,7 +1595,7 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 			ExternalBaseURL: testServer.URL,
 			ClientID:        "test-client",
 			ClientSecret:    "test-secret",
-			Realm:           "forge",
+			Realm:           "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1605,7 +1606,7 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 		assert.Contains(t, authResponse.AuthURL, "testorg-idp")
 		assert.Contains(t, authResponse.AuthURL, "john.doe%40testorg.com")
 		assert.Equal(t, "testorg-idp", authResponse.IDP)
-		assert.Equal(t, "forge", authResponse.RealmName)
+		assert.Equal(t, "nico", authResponse.RealmName)
 	})
 
 	t.Run("code exchange for tokens", func(t *testing.T) {
@@ -1613,7 +1614,7 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 			BaseURL:      testServer.URL,
 			ClientID:     "test-client",
 			ClientSecret: "test-secret",
-			Realm:        "forge",
+			Realm:        "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1632,7 +1633,7 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 			BaseURL:      testServer.URL,
 			ClientID:     "test-client",
 			ClientSecret: "test-secret",
-			Realm:        "forge",
+			Realm:        "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1647,7 +1648,7 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 	t.Run("client credentials auth", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1664,7 +1665,7 @@ func TestKeycloakAuthService_RealServerIntegration(t *testing.T) {
 			BaseURL:      testServer.URL,
 			ClientID:     "test-client",
 			ClientSecret: "test-secret",
-			Realm:        "forge",
+			Realm:        "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1797,7 +1798,7 @@ func handleIntegrationLogout(res http.ResponseWriter, req *http.Request) {
 func handleIntegrationJWKS(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusOK)
 	res.Header().Set("Content-Type", "application/json")
-	// Real  JWKS response from forge development environment
+	// Real  JWKS response from nico development environment
 	res.Write([]byte(`{"keys":[{"kid":"2qPROcQfHMCXUi4rKt-CRB5iG4Z-5rfbP7zHOsxWA28","kty":"RSA","alg":"RS256","use":"sig","x5c":["MIICmTCCAYECBgGYzofhRDANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVmb3JnZTAeFw0yNTA4MjEyMTI2MDhaFw0zNTA4MjEyMTI3NDhaMBAxDjAMBgNVBAMMBWZvcmdlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA9YNTgddbGn0PKUbk3uISXkhWro0ColFLRZYFWSCCHV5JXG6bgmCeFa4RWnUi0qzRtzyu2uEAWbf5XMJl0TSO9F0N4OdeeW6nK2ZzdK1ASuRy9ACBGgv0kCRpukgX9vlJAjSR3DIHROom9evsf5RYzX9tgNKdkRz1134zZpQ+EtskZ9MnoZEd8NfFbyzAeyAe4iAL+Sjf5DV+ACKwJopDUPz9MwvK7BYEdqZ6ZNnn6nmwNAt/0jabf5Z6QTeKJv22fk6jKM3vQZH2IE/h+ulHYA9pMZoLciQ7zchXVvyAJkIjmeO2nGtW5cFHZ3X2Bm6MMU9MtzIfjAR2FCbKwtJF9QIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQAqNZY5kMW8VcnmuC1Ux4c6EMLhaAej6mQsGawic6sj9AHiYI24zY6VID9I9IG6cBP9J5Pw84TVU+J96CNcavMmCZV80hQNrunABJHM/lUtv0sUsqGm4qpsnOD+g7B9XKIu9YxnpGzX7ouH0nk355rBN7swTuEBpy5ELtQlraAGMbTDv+UjgpxAiUczsQeS3mvKnyiINx9Rv0imJhRskyuaqmLaVb0eZkezFEWPYzqqOAEEuMOkuwOD/1vJVz3j1gCcy9ZOqwe+8O0zPJuN/cLjDiXPmpqOvI1eKW03O+sBKasYm9dVC/JaBktHeQ0LJZUVGYzgVmbun41z/2Q01WQW"],"x5t":"UHFsVos9chqrKD4oPeyih58kFr0","x5t#S256":"UQ7TfWdf5BUFzuZ_8OcK1Idbzz_mYU2Xrpu-Mv9W1KI","n":"9YNTgddbGn0PKUbk3uISXkhWro0ColFLRZYFWSCCHV5JXG6bgmCeFa4RWnUi0qzRtzyu2uEAWbf5XMJl0TSO9F0N4OdeeW6nK2ZzdK1ASuRy9ACBGgv0kCRpukgX9vlJAjSR3DIHROom9evsf5RYzX9tgNKdkRz1134zZpQ-EtskZ9MnoZEd8NfFbyzAeyAe4iAL-Sjf5DV-ACKwJopDUPz9MwvK7BYEdqZ6ZNnn6nmwNAt_0jabf5Z6QTeKJv22fk6jKM3vQZH2IE_h-ulHYA9pMZoLciQ7zchXVvyAJkIjmeO2nGtW5cFHZ3X2Bm6MMU9MtzIfjAR2FCbKwtJF9Q","e":"AQAB"},{"kid":"rYde1QMYY3w-bK7qt5GPvI6uGK1b38KtguxnLYcYg-U","kty":"RSA","alg":"RSA-OAEP","use":"enc","x5c":["MIICmTCCAYECBgGYzofh5DANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAVmb3JnZTAeFw0yNTA4MjEyMTI2MDhaFw0zNTA4MjEyMTI3NDhaMBAxDjAMBgNVBAMMBWZvcmdlMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtlnHXyI93apJ2gqfX80VlKuz6CrGh79hxPAF3WcKPXfqrng4HjjlH8BYFY37WRXKX4whEEDaE3KPp6p59sOaVpcfYAlf7Nxrzdpm0Mro23mNCR1VCzMlc4enlcD7hB753diBYr93bkMUTZPtE7Ws3YNPPY7+JV+c8xjA0yz7Er1YG89GYuey6sKGxOrNxwvTh9477hN5fKwfVDBBZAZr7oiNxNPFN2ecQ1rXy36byNg8mSRcF32z2Y2KUKuUMXysmSf3W+aC48SHNtykXY9btNEMFhnE2FekmKMc6cefkgkVuSgLo8zmyWYFcFAcmNaqce6EgS4wb4ITfNs9IKrqWwIDAQABMA0GCSqGSIb3DQEBCwUAA4IBAQCZZj+L4eIeLGrSqM0HiacMYDG0KXUHO/x3RM6D7UNRXt+pGF8hs1j9+Q27BEejD6IptBjQEfipHAvOaYV8TuFBpE4UEOLXxQBloLPRO4fb/OS7s7UFyE2XgnOS9E4NMxzRYVfyFxtXPZssNd7WxTeiA4/ISh9C47or9Ge+F5h5YQSVkLtXjRmEhN4K5OMkeafGbmA1WGHSEKQei6QbGgzbTbXTgtTpQgcL6WHLtpBaOnd4X9h38mJ9yPwr+aiadco33VDHWaruG0APDIadjq+SI2pn6H+TPpAfzvr11wnjvZswj6ePoPk9HgxtvQbUBalbOO8rIWSl2n5PrKzZNXwM"],"x5t":"pKk7-fkjCqoobuCTe--sBvdX0wc","x5t#S256":"JL1f_QDCxBTj81_-h_K1KBvRtYAc4GbZBcjuAWWOv2c","n":"tlnHXyI93apJ2gqfX80VlKuz6CrGh79hxPAF3WcKPXfqrng4HjjlH8BYFY37WRXKX4whEEDaE3KPp6p59sOaVpcfYAlf7Nxrzdpm0Mro23mNCR1VCzMlc4enlcD7hB753diBYr93bkMUTZPtE7Ws3YNPPY7-JV-c8xjA0yz7Er1YG89GYuey6sKGxOrNxwvTh9477hN5fKwfVDBBZAZr7oiNxNPFN2ecQ1rXy36byNg8mSRcF32z2Y2KUKuUMXysmSf3W-aC48SHNtykXY9btNEMFhnE2FekmKMc6cefkgkVuSgLo8zmyWYFcFAcmNaqce6EgS4wb4ITfNs9IKrqWw","e":"AQAB"}]}`))
 }
 
@@ -1806,16 +1807,16 @@ func TestKeycloakAuthService_ErrorScenarios(t *testing.T) {
 	// Create server that returns various error responses
 	errorServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
 		switch {
-		case strings.Contains(req.URL.Path, "/realms/forge/protocol/openid-connect/token"):
+		case strings.Contains(req.URL.Path, "/realms/nico/protocol/openid-connect/token"):
 			// Always return unauthorized for admin login
 			res.WriteHeader(http.StatusUnauthorized)
 			res.Write([]byte(`{"error":"invalid_grant","error_description":"Invalid credentials"}`))
-		case strings.Contains(req.URL.Path, "/admin/realms/forge/identity-provider/instances"):
+		case strings.Contains(req.URL.Path, "/admin/realms/nico/identity-provider/instances"):
 			// Return empty IDP list
 			res.WriteHeader(http.StatusOK)
 			res.Header().Set("Content-Type", "application/json")
 			res.Write([]byte(`[]`))
-		case strings.Contains(req.URL.Path, "/realms/forge/protocol/openid-connect/token"):
+		case strings.Contains(req.URL.Path, "/realms/nico/protocol/openid-connect/token"):
 			// Return error for token exchange
 			res.WriteHeader(http.StatusBadRequest)
 			res.Write([]byte(`{"error":"invalid_grant","error_description":"Authorization code expired"}`))
@@ -1828,7 +1829,7 @@ func TestKeycloakAuthService_ErrorScenarios(t *testing.T) {
 	t.Run("admin login failure", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: errorServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1843,7 +1844,7 @@ func TestKeycloakAuthService_ErrorScenarios(t *testing.T) {
 	t.Run("no IDP found for domain", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: errorServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1859,7 +1860,7 @@ func TestKeycloakAuthService_ErrorScenarios(t *testing.T) {
 			BaseURL:      errorServer.URL,
 			ClientID:     "test-client",
 			ClientSecret: "test-secret",
-			Realm:        "forge",
+			Realm:        "nico",
 		}
 
 		service := NewKeycloakAuthService(keycloakConfig)
@@ -1875,7 +1876,7 @@ func TestKeycloakAuthService_ErrorScenarios(t *testing.T) {
 func TestKeycloakConfig_WithRealServer(t *testing.T) {
 	// Create server that responds to JWKS requests
 	testServer := httptest.NewServer(http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-		if strings.Contains(req.URL.Path, "/realms/forge/protocol/openid-connect/certs") {
+		if strings.Contains(req.URL.Path, "/realms/nico/protocol/openid-connect/certs") {
 			res.WriteHeader(http.StatusOK)
 			res.Header().Set("Content-Type", "application/json")
 			res.Write([]byte(`{"keys":[{"kid":"2qPROcQfHMCXUi4rKt-CRB5iG4Z-5rfbP7zHOsxWA28","kty":"RSA","alg":"RS256","use":"sig","n":"9YNTgddbGn0PKUbk3uISXkhWro0ColFLRZYFWSCCHV5JXG6bgmCeFa4RWnUi0qzRtzyu2uEAWbf5XMJl0TSO9F0N4OdeeW6nK2ZzdK1ASuRy9ACBGgv0kCRpukgX9vlJAjSR3DIHROom9evsf5RYzX9tgNKdkRz1134zZpQ-EtskZ9MnoZEd8NfFbyzAeyAe4iAL-Sjf5DV-ACKwJopDUPz9MwvK7BYEdqZ6ZNnn6nmwNAt_0jabf5Z6QTeKJv22fk6jKM3vQZH2IE_h-ulHYA9pMZoLciQ7zchXVvyAJkIjmeO2nGtW5cFHZ3X2Bm6MMU9MtzIfjAR2FCbKwtJF9Q","e":"AQAB"}]}`))
@@ -1888,14 +1889,14 @@ func TestKeycloakConfig_WithRealServer(t *testing.T) {
 	t.Run("JWKS config initialization with real server", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		jwksConfig, err := keycloakConfig.GetJwksConfig()
 		assert.NoError(t, err)
 		assert.NotNil(t, jwksConfig)
 
-		expectedURL := testServer.URL + "/realms/forge/protocol/openid-connect/certs"
+		expectedURL := testServer.URL + "/realms/nico/protocol/openid-connect/certs"
 		assert.Equal(t, expectedURL, jwksConfig.URL)
 		assert.NotNil(t, jwksConfig.GetJWKS())
 		assert.Greater(t, jwksConfig.KeyCount(), 0)
@@ -1904,7 +1905,7 @@ func TestKeycloakConfig_WithRealServer(t *testing.T) {
 	t.Run("JWKS config caching", func(t *testing.T) {
 		keycloakConfig := &config.KeycloakConfig{
 			BaseURL: testServer.URL,
-			Realm:   "forge",
+			Realm:   "nico",
 		}
 
 		// First call
@@ -2234,7 +2235,7 @@ func TestKeycloakAuthService_InitiateAuthFlow_EdgeCases(t *testing.T) {
 			}))
 			defer server.Close()
 
-			kcCfg := config.NewKeycloakConfig(server.URL, server.URL, "test-client", "test-secret", "forge", true)
+			kcCfg := config.NewKeycloakConfig(server.URL, server.URL, "test-client", "test-secret", "nico", true)
 			svc := NewKeycloakAuthService(kcCfg)
 
 			result, err := svc.InitiateAuthFlow(context.Background(), tt.email, tt.redirectURI)
@@ -2290,8 +2291,8 @@ func TestKeycloakConfig_IssuerMatching(t *testing.T) {
 		},
 		{
 			name:         "localhost_development_match",
-			configIssuer: "http://localhost:8082/realms/forge",
-			tokenIssuer:  "http://localhost:8082/realms/forge",
+			configIssuer: "http://localhost:8082/realms/nico",
+			tokenIssuer:  "http://localhost:8082/realms/nico",
 			shouldMatch:  true,
 		},
 	}
@@ -2301,10 +2302,10 @@ func TestKeycloakConfig_IssuerMatching(t *testing.T) {
 			// Create a config with the expected issuer
 			kcConfig := config.NewKeycloakConfig(
 				"http://localhost:8082",
-				strings.TrimSuffix(tt.configIssuer, "/realms/forge"), // Extract base URL
+				strings.TrimSuffix(tt.configIssuer, "/realms/nico"), // Extract base URL
 				"test-client",
 				"test-secret",
-				"forge", // This will be overridden by direct issuer assignment
+				"nico", // This will be overridden by direct issuer assignment
 				true,
 			)
 

@@ -31,24 +31,24 @@ import (
 	rest "k8s.io/client-go/rest"
 )
 
-type ForgeV1Interface interface {
+type NICoV1Interface interface {
 	RESTClient() rest.Interface
 	SitesGetter
 }
 
-// ForgeV1Client is used to interact with features provided by the forge.nvidia.io group.
-type ForgeV1Client struct {
+// NICoV1Client is used to interact with features provided by the nico.nvidia.io group.
+type NICoV1Client struct {
 	restClient rest.Interface
 }
 
-func (c *ForgeV1Client) Sites(namespace string) SiteInterface {
+func (c *NICoV1Client) Sites(namespace string) SiteInterface {
 	return newSites(c, namespace)
 }
 
-// NewForConfig creates a new ForgeV1Client for the given config.
+// NewForConfig creates a new NICoV1Client for the given config.
 // NewForConfig is equivalent to NewForConfigAndClient(c, httpClient),
 // where httpClient was generated with rest.HTTPClientFor(c).
-func NewForConfig(c *rest.Config) (*ForgeV1Client, error) {
+func NewForConfig(c *rest.Config) (*NICoV1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -60,9 +60,9 @@ func NewForConfig(c *rest.Config) (*ForgeV1Client, error) {
 	return NewForConfigAndClient(&config, httpClient)
 }
 
-// NewForConfigAndClient creates a new ForgeV1Client for the given config and http client.
+// NewForConfigAndClient creates a new NICoV1Client for the given config and http client.
 // Note the http client provided takes precedence over the configured transport values.
-func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ForgeV1Client, error) {
+func NewForConfigAndClient(c *rest.Config, h *http.Client) (*NICoV1Client, error) {
 	config := *c
 	if err := setConfigDefaults(&config); err != nil {
 		return nil, err
@@ -71,12 +71,12 @@ func NewForConfigAndClient(c *rest.Config, h *http.Client) (*ForgeV1Client, erro
 	if err != nil {
 		return nil, err
 	}
-	return &ForgeV1Client{client}, nil
+	return &NICoV1Client{client}, nil
 }
 
-// NewForConfigOrDie creates a new ForgeV1Client for the given config and
+// NewForConfigOrDie creates a new NICoV1Client for the given config and
 // panics if there is an error in the config.
-func NewForConfigOrDie(c *rest.Config) *ForgeV1Client {
+func NewForConfigOrDie(c *rest.Config) *NICoV1Client {
 	client, err := NewForConfig(c)
 	if err != nil {
 		panic(err)
@@ -84,9 +84,9 @@ func NewForConfigOrDie(c *rest.Config) *ForgeV1Client {
 	return client
 }
 
-// New creates a new ForgeV1Client for the given RESTClient.
-func New(c rest.Interface) *ForgeV1Client {
-	return &ForgeV1Client{c}
+// New creates a new NICoV1Client for the given RESTClient.
+func New(c rest.Interface) *NICoV1Client {
+	return &NICoV1Client{c}
 }
 
 func setConfigDefaults(config *rest.Config) error {
@@ -104,7 +104,74 @@ func setConfigDefaults(config *rest.Config) error {
 
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
-func (c *ForgeV1Client) RESTClient() rest.Interface {
+func (c *NICoV1Client) RESTClient() rest.Interface {
+	if c == nil {
+		return nil
+	}
+	return c.restClient
+}
+
+// ForgeLegacyV1Interface provides access to Site resources in the legacy forge.nvidia.io group.
+// TODO: remove ForgeLegacyV1Interface and ForgeLegacyV1Client once all site agents have
+// migrated from forge.nvidia.io to nico.nvidia.io and forge Sites no longer exist.
+type ForgeLegacyV1Interface interface {
+	RESTClient() rest.Interface
+	SitesGetter
+}
+
+// ForgeLegacyV1Client interacts with Sites in the legacy forge.nvidia.io group.
+type ForgeLegacyV1Client struct {
+	restClient rest.Interface
+}
+
+func (c *ForgeLegacyV1Client) Sites(namespace string) SiteInterface {
+	return newForgeLegacySites(c, namespace)
+}
+
+// NewForgeLegacyForConfig creates a new ForgeLegacyV1Client for the given config.
+func NewForgeLegacyForConfig(c *rest.Config) (*ForgeLegacyV1Client, error) {
+	config := *c
+	if err := setForgeLegacyConfigDefaults(&config); err != nil {
+		return nil, err
+	}
+	httpClient, err := rest.HTTPClientFor(&config)
+	if err != nil {
+		return nil, err
+	}
+	return NewForgeLegacyForConfigAndClient(&config, httpClient)
+}
+
+// NewForgeLegacyForConfigAndClient creates a new ForgeLegacyV1Client for the given config and http client.
+func NewForgeLegacyForConfigAndClient(c *rest.Config, h *http.Client) (*ForgeLegacyV1Client, error) {
+	config := *c
+	if err := setForgeLegacyConfigDefaults(&config); err != nil {
+		return nil, err
+	}
+	client, err := rest.RESTClientForConfigAndClient(&config, h)
+	if err != nil {
+		return nil, err
+	}
+	return &ForgeLegacyV1Client{client}, nil
+}
+
+// NewForgeLegacy creates a new ForgeLegacyV1Client for the given RESTClient.
+func NewForgeLegacy(c rest.Interface) *ForgeLegacyV1Client {
+	return &ForgeLegacyV1Client{c}
+}
+
+func setForgeLegacyConfigDefaults(config *rest.Config) error {
+	gv := v1.ForgeLegacySchemeGroupVersion
+	config.GroupVersion = &gv
+	config.APIPath = "/apis"
+	config.NegotiatedSerializer = scheme.Codecs.WithoutConversion()
+	if config.UserAgent == "" {
+		config.UserAgent = rest.DefaultKubernetesUserAgent()
+	}
+	return nil
+}
+
+// RESTClient returns the underlying RESTClient.
+func (c *ForgeLegacyV1Client) RESTClient() rest.Interface {
 	if c == nil {
 		return nil
 	}

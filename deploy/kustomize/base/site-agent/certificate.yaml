@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# SPIFFE certificate for site-agent gRPC client connections to Carbide/Forge API
-# Issued by carbide-rest-ca-issuer (native Go PKI CA)
+# SPIFFE certificate for site-agent gRPC client connections to NICo/NICo API
+# Issued by nico-rest-ca-issuer (native Go PKI CA)
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
@@ -34,12 +34,12 @@ spec:
   usages:
     - client auth
   dnsNames:
-    - carbide-rest-site-agent
-    - carbide-rest-site-agent.carbide-rest
-    - carbide-rest-site-agent.carbide-rest.svc.cluster.local
+    - nico-rest-site-agent
+    - nico-rest-site-agent.nico-rest
+    - nico-rest-site-agent.nico-rest.svc.cluster.local
   uris:
-    - spiffe://carbide.local/carbide-rest/sa/carbide-rest-site-agent
+    - spiffe://nico.local/nico-rest/sa/nico-rest-site-agent
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io

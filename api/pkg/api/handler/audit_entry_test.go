@@ -34,6 +34,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"testing"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestGetAllAuditEntryHandler_Handle(t *testing.T) {
@@ -47,14 +48,14 @@ func TestGetAllAuditEntryHandler_Handle(t *testing.T) {
 	org2 := "test-org-2"
 
 	// build users to execute GetAll
-	adminUser1 := common.TestBuildUser(t, dbSession, "admin-1", org1, []string{"FORGE_PROVIDER_ADMIN"})
-	nonAdminUser1 := common.TestBuildUser(t, dbSession, "view-1", org1, []string{"FORGE_PROVIDER_VIEWER"})
-	adminUser2 := common.TestBuildUser(t, dbSession, "admin-2", org2, []string{"FORGE_TENANT_ADMIN"})
-	nonAdminUser2 := common.TestBuildUser(t, dbSession, "user-2", org2, []string{"FORGE_TENANT_USER"})
+	adminUser1 := common.TestBuildUser(t, dbSession, "admin-1", org1, []string{authz.ProviderAdminRole})
+	nonAdminUser1 := common.TestBuildUser(t, dbSession, "view-1", org1, []string{authz.ProviderViewerRole})
+	adminUser2 := common.TestBuildUser(t, dbSession, "admin-2", org2, []string{authz.TenantAdminRole})
+	nonAdminUser2 := common.TestBuildUser(t, dbSession, "user-2", org2, []string{"NICO_TENANT_USER"})
 
 	// build users for audit entries
-	org1user := common.TestBuildUser(t, dbSession, "org-1-user", org1, []string{"FORGE_PROVIDER_ADMIN"})
-	org2user := common.TestBuildUser(t, dbSession, "org-2-user", org2, []string{"FORGE_TENANT_ADMIN"})
+	org1user := common.TestBuildUser(t, dbSession, "org-1-user", org1, []string{authz.ProviderAdminRole})
+	org2user := common.TestBuildUser(t, dbSession, "org-2-user", org2, []string{authz.TenantAdminRole})
 
 	// build audit entries
 	totalCount := 50
@@ -200,9 +201,9 @@ func TestGetAllAuditEntryHandler_Handle(t *testing.T) {
 
 			path := ""
 			if tt.args.query != nil {
-				path = fmt.Sprintf("/v2/org/%s/carbide/audit?%s", tt.args.org, tt.args.query.Encode())
+				path = fmt.Sprintf("/v2/org/%s/nico/audit?%s", tt.args.org, tt.args.query.Encode())
 			} else {
-				path = fmt.Sprintf("/v2/org/%s/carbide/audit", tt.args.org)
+				path = fmt.Sprintf("/v2/org/%s/nico/audit", tt.args.org)
 			}
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -252,14 +253,14 @@ func TestGetAuditEntryHandler_Handle(t *testing.T) {
 	org2 := "test-org-2"
 
 	// build users to execute GetAll
-	adminUser1 := common.TestBuildUser(t, dbSession, "admin-1", org1, []string{"FORGE_PROVIDER_ADMIN"})
-	nonAdminUser1 := common.TestBuildUser(t, dbSession, "view-1", org1, []string{"FORGE_PROVIDER_VIEWER"})
-	adminUser2 := common.TestBuildUser(t, dbSession, "admin-2", org2, []string{"FORGE_TENANT_ADMIN"})
-	nonAdminUser2 := common.TestBuildUser(t, dbSession, "user-2", org2, []string{"FORGE_TENANT_USER"})
+	adminUser1 := common.TestBuildUser(t, dbSession, "admin-1", org1, []string{authz.ProviderAdminRole})
+	nonAdminUser1 := common.TestBuildUser(t, dbSession, "view-1", org1, []string{authz.ProviderViewerRole})
+	adminUser2 := common.TestBuildUser(t, dbSession, "admin-2", org2, []string{authz.TenantAdminRole})
+	nonAdminUser2 := common.TestBuildUser(t, dbSession, "user-2", org2, []string{"NICO_TENANT_USER"})
 
 	// build users for audit entries
-	org1user := common.TestBuildUser(t, dbSession, "org-1-user", org1, []string{"FORGE_PROVIDER_ADMIN"})
-	org2user := common.TestBuildUser(t, dbSession, "org-2-user", org2, []string{"FORGE_TENANT_ADMIN"})
+	org1user := common.TestBuildUser(t, dbSession, "org-1-user", org1, []string{authz.ProviderAdminRole})
+	org2user := common.TestBuildUser(t, dbSession, "org-2-user", org2, []string{authz.TenantAdminRole})
 
 	// build audit entries
 	totalCount := 10
@@ -374,7 +375,7 @@ func TestGetAuditEntryHandler_Handle(t *testing.T) {
 				dbSession: tt.fields.dbSession,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/audit/%s", tt.args.org, tt.args.id)
+			path := fmt.Sprintf("/v2/org/%s/nico/audit/%s", tt.args.org, tt.args.id)
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

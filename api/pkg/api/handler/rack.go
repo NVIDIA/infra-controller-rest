@@ -80,7 +80,7 @@ func NewGetRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Client
 // @Param siteId query string true "ID of the Site"
 // @Param includeComponents query boolean false "Include rack components in response"
 // @Success 200 {object} model.APIRack
-// @Router /v2/org/{org}/carbide/rack/{id} [get]
+// @Router /v2/org/{org}/nico/rack/{id} [get]
 func (grh GetRackHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "Get", c, grh.tracerSpan)
 	if handlerSpan != nil {
@@ -256,7 +256,7 @@ func NewGetAllRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} model.APIRack
-// @Router /v2/org/{org}/carbide/rack [get]
+// @Router /v2/org/{org}/nico/rack [get]
 func (garh GetAllRackHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "GetAll", c, garh.tracerSpan)
 	if handlerSpan != nil {
@@ -466,7 +466,7 @@ func NewValidateRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.C
 // @Param id path string true "ID of the Rack"
 // @Param siteId query string true "ID of the Site"
 // @Success 200 {object} model.APIRackValidationResult
-// @Router /v2/org/{org}/carbide/rack/{id}/validation [get]
+// @Router /v2/org/{org}/nico/rack/{id}/validation [get]
 func (vrh ValidateRackHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "Validate", c, vrh.tracerSpan)
 	if handlerSpan != nil {
@@ -641,7 +641,7 @@ func NewValidateRacksHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param name query string false "Filter racks by name"
 // @Param manufacturer query string false "Filter racks by manufacturer"
 // @Success 200 {object} model.APIRackValidationResult
-// @Router /v2/org/{org}/carbide/rack/validation [get]
+// @Router /v2/org/{org}/nico/rack/validation [get]
 func (vrsh ValidateRacksHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "ValidateRacks", c, vrsh.tracerSpan)
 	if handlerSpan != nil {
@@ -804,7 +804,7 @@ func NewUpdateRackPowerStateHandler(dbSession *cdb.Session, tc tClient.Client, s
 // @Param id path string true "ID of Rack"
 // @Param body body model.APIUpdatePowerStateRequest true "Power control request"
 // @Success 200 {object} model.APIUpdatePowerStateResponse
-// @Router /v2/org/{org}/carbide/rack/{id}/power [patch]
+// @Router /v2/org/{org}/nico/rack/{id}/power [patch]
 func (pcrh UpdateRackPowerStateHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "PowerControl", c, pcrh.tracerSpan)
 	if handlerSpan != nil {
@@ -939,7 +939,7 @@ func NewBatchUpdateRackPowerStateHandler(dbSession *cdb.Session, tc tClient.Clie
 // @Param org path string true "Name of NGC organization"
 // @Param body body model.APIBatchUpdateRackPowerStateRequest true "Batch rack power control request"
 // @Success 200 {object} model.APIUpdatePowerStateResponse
-// @Router /v2/org/{org}/carbide/rack/power [patch]
+// @Router /v2/org/{org}/nico/rack/power [patch]
 func (pcrbh BatchUpdateRackPowerStateHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "PowerControlBatch", c, pcrbh.tracerSpan)
 	if handlerSpan != nil {
@@ -1058,7 +1058,7 @@ func NewUpdateRackFirmwareHandler(dbSession *cdb.Session, tc tClient.Client, scp
 // @Param id path string true "UUID of the Rack"
 // @Param body body model.APIUpdateFirmwareRequest true "Firmware update request"
 // @Success 200 {object} model.APIUpdateFirmwareResponse
-// @Router /v2/org/{org}/carbide/rack/{id}/firmware [patch]
+// @Router /v2/org/{org}/nico/rack/{id}/firmware [patch]
 func (furh UpdateRackFirmwareHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "FirmwareUpdate", c, furh.tracerSpan)
 	if handlerSpan != nil {
@@ -1191,7 +1191,7 @@ func NewBatchUpdateRackFirmwareHandler(dbSession *cdb.Session, tc tClient.Client
 // @Param org path string true "Name of NGC organization"
 // @Param body body model.APIBatchRackFirmwareUpdateRequest true "Batch rack firmware update request"
 // @Success 200 {object} model.APIUpdateFirmwareResponse
-// @Router /v2/org/{org}/carbide/rack/firmware [patch]
+// @Router /v2/org/{org}/nico/rack/firmware [patch]
 func (furbh BatchUpdateRackFirmwareHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "FirmwareUpdateBatch", c, furbh.tracerSpan)
 	if handlerSpan != nil {
@@ -1310,7 +1310,7 @@ func NewBringUpRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cl
 // @Param id path string true "UUID of the Rack"
 // @Param body body model.APIBringUpRackRequest true "Bring up request"
 // @Success 200 {object} model.APIBringUpRackResponse
-// @Router /v2/org/{org}/carbide/rack/{id}/bringup [post]
+// @Router /v2/org/{org}/nico/rack/{id}/bringup [post]
 func (burh BringUpRackHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "BringUp", c, burh.tracerSpan)
 	if handlerSpan != nil {
@@ -1449,7 +1449,7 @@ func NewBatchBringUpRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *
 // @Param org path string true "Name of NGC organization"
 // @Param body body model.APIBatchBringUpRackRequest true "Batch rack bring up request"
 // @Success 200 {object} model.APIBringUpRackResponse
-// @Router /v2/org/{org}/carbide/rack/bringup [post]
+// @Router /v2/org/{org}/nico/rack/bringup [post]
 func (bbuh BatchBringUpRackHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Rack", "BringUpBatch", c, bbuh.tracerSpan)
 	if handlerSpan != nil {

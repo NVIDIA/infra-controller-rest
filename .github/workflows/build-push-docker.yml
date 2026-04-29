@@ -81,16 +81,16 @@ on:
 #      Value: Your NVIDIA NGC API token (get from https://ngc.nvidia.com/)
 
 jobs:
-  # Build and push carbide-rest-api
-  build-carbide-rest-api:
-    name: Build carbide-rest-api
+  # Build and push nico-rest-api
+  build-nico-rest-api:
+    name: Build nico-rest-api
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rest-api
+      service_name: nico-rest-api
       binary_name: api
       binary_path: /app/api
-      dockerfile: ./docker/production/Dockerfile.carbide-rest-api
+      dockerfile: ./docker/production/Dockerfile.nico-rest-api
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -100,16 +100,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-rest-db
-  build-carbide-rest-db:
-    name: Build carbide-rest-db
+  # Build and push nico-rest-db
+  build-nico-rest-db:
+    name: Build nico-rest-db
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rest-db
+      service_name: nico-rest-db
       binary_name: migrations
       binary_path: /app/migrations
-      dockerfile: ./docker/production/Dockerfile.carbide-rest-db
+      dockerfile: ./docker/production/Dockerfile.nico-rest-db
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -119,16 +119,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-rest-site-manager
-  build-carbide-rest-site-manager:
-    name: Build carbide-rest-site-manager
+  # Build and push nico-rest-site-manager
+  build-nico-rest-site-manager:
+    name: Build nico-rest-site-manager
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rest-site-manager
+      service_name: nico-rest-site-manager
       binary_name: sitemgr
       binary_path: /app/sitemgr
-      dockerfile: ./docker/production/Dockerfile.carbide-rest-site-manager
+      dockerfile: ./docker/production/Dockerfile.nico-rest-site-manager
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -138,16 +138,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-rest-workflow
-  build-carbide-rest-workflow:
-    name: Build carbide-rest-workflow
+  # Build and push nico-rest-workflow
+  build-nico-rest-workflow:
+    name: Build nico-rest-workflow
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rest-workflow
+      service_name: nico-rest-workflow
       binary_name: workflow
       binary_path: /app/workflow
-      dockerfile: ./docker/production/Dockerfile.carbide-rest-workflow
+      dockerfile: ./docker/production/Dockerfile.nico-rest-workflow
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -157,16 +157,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-rest-site-agent
-  build-carbide-rest-site-agent:
-    name: Build carbide-rest-site-agent
+  # Build and push nico-rest-site-agent
+  build-nico-rest-site-agent:
+    name: Build nico-rest-site-agent
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rest-site-agent
+      service_name: nico-rest-site-agent
       binary_name: site-agent
       binary_path: /app/site-agent
-      dockerfile: ./docker/production/Dockerfile.carbide-rest-site-agent
+      dockerfile: ./docker/production/Dockerfile.nico-rest-site-agent
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -176,16 +176,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-rest-cert-manager
-  build-carbide-rest-cert-manager:
-    name: Build carbide-rest-cert-manager
+  # Build and push nico-rest-cert-manager
+  build-nico-rest-cert-manager:
+    name: Build nico-rest-cert-manager
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rest-cert-manager
+      service_name: nico-rest-cert-manager
       binary_name: credsmgr
       binary_path: /app/credsmgr
-      dockerfile: ./docker/production/Dockerfile.carbide-rest-cert-manager
+      dockerfile: ./docker/production/Dockerfile.nico-rest-cert-manager
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -195,16 +195,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-rla
-  build-carbide-rla:
-    name: Build carbide-rla
+  # Build and push nico-rla
+  build-nico-rla:
+    name: Build nico-rla
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-rla
+      service_name: nico-rla
       binary_name: rla
       binary_path: /app/rla
-      dockerfile: ./docker/production/Dockerfile.carbide-rla
+      dockerfile: ./docker/production/Dockerfile.nico-rla
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -214,16 +214,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-# Build and push carbide-psm
-  build-carbide-psm:
-    name: Build carbide-psm
+# Build and push nico-psm
+  build-nico-psm:
+    name: Build nico-psm
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-psm
+      service_name: nico-psm
       binary_name: psm
       binary_path: /app/psm
-      dockerfile: ./docker/production/Dockerfile.carbide-psm
+      dockerfile: ./docker/production/Dockerfile.nico-psm
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -233,16 +233,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push carbide-nsm
-  build-carbide-nsm:
-    name: Build carbide-nsm
+  # Build and push nico-nsm
+  build-nico-nsm:
+    name: Build nico-nsm
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: carbide-nsm
+      service_name: nico-nsm
       binary_name: nsm
       binary_path: /app/nsm
-      dockerfile: ./docker/production/Dockerfile.carbide-nsm
+      dockerfile: ./docker/production/Dockerfile.nico-nsm
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -257,15 +257,15 @@ jobs:
     name: Build Summary
     runs-on: ${{ inputs.runner }}
     needs:
-      - build-carbide-rest-api
-      - build-carbide-rest-db
-      - build-carbide-rest-site-manager
-      - build-carbide-rest-workflow
-      - build-carbide-rest-site-agent
-      - build-carbide-rest-cert-manager
-      - build-carbide-rla
-      - build-carbide-psm
-      - build-carbide-nsm
+      - build-nico-rest-api
+      - build-nico-rest-db
+      - build-nico-rest-site-manager
+      - build-nico-rest-workflow
+      - build-nico-rest-site-agent
+      - build-nico-rest-cert-manager
+      - build-nico-rla
+      - build-nico-psm
+      - build-nico-nsm
     if: always()
     outputs:
       build_artifacts: ${{ steps.aggregate.outputs.artifacts }}
@@ -305,15 +305,15 @@ jobs:
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Images Built" >> $GITHUB_STEP_SUMMARY
-          echo "1. \`carbide-rest-api:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "2. \`carbide-rest-db:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "3. \`carbide-rest-site-manager:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "4. \`carbide-rest-workflow:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "5. \`carbide-rest-site-agent:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "6. \`carbide-rest-cert-manager:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "7. \`carbide-rla:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "8. \`carbide-psm:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "9. \`carbide-nsm:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "1. \`nico-rest-api:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "2. \`nico-rest-db:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "3. \`nico-rest-site-manager:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "4. \`nico-rest-workflow:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "5. \`nico-rest-site-agent:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "6. \`nico-rest-cert-manager:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "7. \`nico-rla:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "8. \`nico-psm:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "9. \`nico-nsm:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           if [ "${{ inputs.is_main_branch }}" = "true" ] || [ "${{ github.ref_name }}" = "main" ]; then
             echo "## Binary Artifacts Uploaded (Main Branch)" >> $GITHUB_STEP_SUMMARY
@@ -321,15 +321,15 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
           fi
           echo "## Job Status" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rest-api: \`${{ needs.build-carbide-rest-api.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rest-db: \`${{ needs.build-carbide-rest-db.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rest-site-manager: \`${{ needs.build-carbide-rest-site-manager.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rest-workflow: \`${{ needs.build-carbide-rest-workflow.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rest-site-agent: \`${{ needs.build-carbide-rest-site-agent.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rest-cert-manager: \`${{ needs.build-carbide-rest-cert-manager.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-rla: \`${{ needs.build-carbide-rla.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-psm: \`${{ needs.build-carbide-psm.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- carbide-nsm: \`${{ needs.build-carbide-nsm.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rest-api: \`${{ needs.build-nico-rest-api.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rest-db: \`${{ needs.build-nico-rest-db.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rest-site-manager: \`${{ needs.build-nico-rest-site-manager.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rest-workflow: \`${{ needs.build-nico-rest-workflow.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rest-site-agent: \`${{ needs.build-nico-rest-site-agent.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rest-cert-manager: \`${{ needs.build-nico-rest-cert-manager.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-rla: \`${{ needs.build-nico-rla.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-psm: \`${{ needs.build-nico-psm.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-nsm: \`${{ needs.build-nico-nsm.result }}\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Aggregate outputs
         id: aggregate
@@ -339,58 +339,58 @@ jobs:
           cat <<EOF > artifacts.json
           [
             {
-              "service": "carbide-rest-api",
-              "image_ref": "${{ needs.build-carbide-rest-api.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rest-api.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rest-api.outputs.ngc_image_resource }}"
+              "service": "nico-rest-api",
+              "image_ref": "${{ needs.build-nico-rest-api.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rest-api.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rest-api.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-rest-db",
-              "image_ref": "${{ needs.build-carbide-rest-db.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rest-db.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rest-db.outputs.ngc_image_resource }}"
+              "service": "nico-rest-db",
+              "image_ref": "${{ needs.build-nico-rest-db.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rest-db.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rest-db.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-rest-site-manager",
-              "image_ref": "${{ needs.build-carbide-rest-site-manager.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rest-site-manager.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rest-site-manager.outputs.ngc_image_resource }}"
+              "service": "nico-rest-site-manager",
+              "image_ref": "${{ needs.build-nico-rest-site-manager.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rest-site-manager.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rest-site-manager.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-rest-workflow",
-              "image_ref": "${{ needs.build-carbide-rest-workflow.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rest-workflow.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rest-workflow.outputs.ngc_image_resource }}"
+              "service": "nico-rest-workflow",
+              "image_ref": "${{ needs.build-nico-rest-workflow.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rest-workflow.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rest-workflow.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-rest-site-agent",
-              "image_ref": "${{ needs.build-carbide-rest-site-agent.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rest-site-agent.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rest-site-agent.outputs.ngc_image_resource }}"
+              "service": "nico-rest-site-agent",
+              "image_ref": "${{ needs.build-nico-rest-site-agent.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rest-site-agent.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rest-site-agent.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-rest-cert-manager",
-              "image_ref": "${{ needs.build-carbide-rest-cert-manager.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rest-cert-manager.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rest-cert-manager.outputs.ngc_image_resource }}"
+              "service": "nico-rest-cert-manager",
+              "image_ref": "${{ needs.build-nico-rest-cert-manager.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rest-cert-manager.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rest-cert-manager.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-rla",
-              "image_ref": "${{ needs.build-carbide-rla.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-rla.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-rla.outputs.ngc_image_resource }}"
+              "service": "nico-rla",
+              "image_ref": "${{ needs.build-nico-rla.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-rla.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-rla.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-psm",
-              "image_ref": "${{ needs.build-carbide-psm.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-psm.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-psm.outputs.ngc_image_resource }}"
+              "service": "nico-psm",
+              "image_ref": "${{ needs.build-nico-psm.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-psm.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-psm.outputs.ngc_image_resource }}"
             },
             {
-              "service": "carbide-nsm",
-              "image_ref": "${{ needs.build-carbide-nsm.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-carbide-nsm.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-carbide-nsm.outputs.ngc_image_resource }}"
+              "service": "nico-nsm",
+              "image_ref": "${{ needs.build-nico-nsm.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-nsm.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-nsm.outputs.ngc_image_resource }}"
             }
           ]
           EOF

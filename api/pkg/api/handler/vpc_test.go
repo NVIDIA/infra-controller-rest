@@ -55,6 +55,7 @@ import (
 	tp "go.temporal.io/sdk/temporal"
 
 	oteltrace "go.opentelemetry.io/otel/trace"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testVPCInitDB(t *testing.T) *cdb.Session {
@@ -311,10 +312,10 @@ func TestCreateVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1126,10 +1127,10 @@ func TestUpdateVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1593,7 +1594,7 @@ func TestUpdateVPCHandler_Handle(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPCID)
 			ec.Set("user", tt.args.reqUser)
@@ -1688,10 +1689,10 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 	testInstanceSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -2017,7 +2018,7 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPCID)
 			ec.Set("user", tt.args.reqUser)
@@ -2080,11 +2081,11 @@ func TestGetVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -2294,7 +2295,7 @@ func TestGetVPCHandler_Handle(t *testing.T) {
 
 			ec := e.NewContext(req, rec)
 
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPCID)
 			ec.Set("user", tt.args.reqUser)
@@ -2365,10 +2366,10 @@ func TestGetAllVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 	tn2Org := "test-tenant-org-2"
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
@@ -2990,7 +2991,7 @@ func TestGetAllVPCHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/vpc?%s", tt.args.org, tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/vpc?%s", tt.args.org, tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -3047,8 +3048,8 @@ func TestGetAllVPCHandler_Handle(t *testing.T) {
 
 				for _, apivpc := range resp {
 					if tt.expectedNetworkSecurityGroupName != nil {
-						assert.NotNil(t, apivpc.NetworkSecurityGroupID, "NetworkSecurityGroupID for VPC in api response was unexpectedly nil.  Did you forget to set it for this test?")
-						assert.NotNil(t, apivpc.NetworkSecurityGroup, "NetworkSecurityGroup for VPC in api response was unexpectedly nil.  Did you forget to include the relation for this test?")
+						assert.NotNil(t, apivpc.NetworkSecurityGroupID, "NetworkSecurityGroupID for VPC in api response was unexpectedly nil.  Did you nicot to set it for this test?")
+						assert.NotNil(t, apivpc.NetworkSecurityGroup, "NetworkSecurityGroup for VPC in api response was unexpectedly nil.  Did you nicot to include the relation for this test?")
 						assert.Equal(t, *tt.expectedNetworkSecurityGroupName, apivpc.NetworkSecurityGroup.Name)
 					}
 					assert.Equal(t, 0, len(apivpc.StatusHistory))
@@ -3084,11 +3085,11 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -3173,22 +3174,22 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[st.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[st.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteVPCV2", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteVPCV2", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Prepare client pool for sync calls
 	// to site(s).
@@ -3239,11 +3240,11 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name: "test VPC delete API endpoint carbide not-found, still success",
+			name: "test VPC delete API endpoint nico not-found, still success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideNotFound,
-				scp:       scpWithCarbideNotFound,
+				tc:        tscWithNICoNotFound,
+				scp:       scpWithNICoNotFound,
 				cfg:       cfg,
 			},
 			args: args{
@@ -3399,7 +3400,7 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPC))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPC))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPC)
 			ec.Set("user", tt.args.reqUser)

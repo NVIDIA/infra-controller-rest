@@ -35,10 +35,10 @@ func (api *API) RegisterPublisher() error {
 	// Register CollectAndPublishMachineInventory activity
 	machineInventoryManager := swa.NewManageMachineInventory(
 		uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		ManagerAccess.Data.EB.Managers.Carbide.Client,
+		ManagerAccess.Data.EB.Managers.NICo.Client,
 		ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
-		InventoryCarbidePageSize,
+		InventoryNICoPageSize,
 		InventoryCloudPageSize,
 	)
 

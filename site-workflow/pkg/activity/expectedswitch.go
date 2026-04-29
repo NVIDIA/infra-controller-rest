@@ -40,7 +40,7 @@ import (
 // ManageExpectedSwitchInventory is an activity wrapper for Expected Switch inventory collection and publishing
 type ManageExpectedSwitchInventory struct {
 	siteID                uuid.UUID
-	carbideAtomicClient   *cclient.CarbideAtomicClient
+	nicoAtomicClient   *cclient.NICoAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -63,13 +63,11 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Get Site Controller gRPC client
-	forgeClient, err := mesi.carbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
-	}
+	nicoClient := mesi.nicoAtomicClient.GetClient()
+	rpcClient := nicoClient.NICo()
 
 	// Call GetAllExpectedSwitches to get full list of ExpectedSwitches on Site
-	esList, err := forgeClient.GetAllExpectedSwitches(ctx, &emptypb.Empty{})
+	esList, err := rpcClient.GetAllExpectedSwitches(ctx, &emptypb.Empty{})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to retrieve ExpectedSwitches using Site Controller API")
 
@@ -91,7 +89,7 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Call GetAllExpectedSwitchesLinked to get linked Switch IDs
-	linkedList, lerr := forgeClient.GetAllExpectedSwitchesLinked(ctx, &emptypb.Empty{})
+	linkedList, lerr := rpcClient.GetAllExpectedSwitchesLinked(ctx, &emptypb.Empty{})
 	if lerr != nil {
 		logger.Warn().Err(lerr).Msg("Failed to retrieve linked Switch IDs using Site Controller API")
 
@@ -243,10 +241,10 @@ func getPagedExpectedSwitchInventory(
 }
 
 // NewManageExpectedSwitchInventory returns a ManageInventory implementation for Expected Switch activity
-func NewManageExpectedSwitchInventory(siteID uuid.UUID, carbideAtomicClient *cclient.CarbideAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
+func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoAtomicClient *cclient.NICoAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
 	return ManageExpectedSwitchInventory{
 		siteID:                siteID,
-		carbideAtomicClient:   carbideAtomicClient,
+		nicoAtomicClient:   nicoAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -255,19 +253,19 @@ func NewManageExpectedSwitchInventory(siteID uuid.UUID, carbideAtomicClient *ccl
 
 // ManageExpectedSwitch is an activity wrapper for Expected Switch management
 type ManageExpectedSwitch struct {
-	CarbideAtomicClient *cclient.CarbideAtomicClient
+	NICoAtomicClient *cclient.NICoAtomicClient
 	RlaAtomicClient     *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedSwitch returns a new ManageExpectedSwitch client
-func NewManageExpectedSwitch(carbideClient *cclient.CarbideAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedSwitch {
+func NewManageExpectedSwitch(nicoClient *cclient.NICoAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedSwitch {
 	return ManageExpectedSwitch{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 		RlaAtomicClient:     rlaClient,
 	}
 }
 
-// CreateExpectedSwitchOnSite creates Expected Switch with Carbide
+// CreateExpectedSwitchOnSite creates Expected Switch with NICo
 func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context, request *cwssaws.ExpectedSwitch) error {
 	logger := log.With().Str("Activity", "CreateExpectedSwitchOnSite").Logger()
 
@@ -289,13 +287,11 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mes.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
-	}
+	nicoClient := mes.NICoAtomicClient.GetClient()
+	rpcClient := nicoClient.NICo()
 
-	// Call Forge gRPC endpoint
-	_, err = forgeClient.AddExpectedSwitch(ctx, request)
+	// Call NICo gRPC endpoint
+	_, err = rpcClient.AddExpectedSwitch(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Switch using Site Controller API")
 		return swe.WrapErr(err)
@@ -306,7 +302,7 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 	return nil
 }
 
-// UpdateExpectedSwitchOnSite updates Expected Switch on Carbide
+// UpdateExpectedSwitchOnSite updates Expected Switch on NICo
 func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context, request *cwssaws.ExpectedSwitch) error {
 	logger := log.With().Str("Activity", "UpdateExpectedSwitchOnSite").Logger()
 
@@ -328,12 +324,10 @@ func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mes.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
-	}
+	nicoClient := mes.NICoAtomicClient.GetClient()
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateExpectedSwitch(ctx, request)
+	_, err = rpcClient.UpdateExpectedSwitch(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update Expected Switch using Site Controller API")
 		return swe.WrapErr(err)
@@ -378,7 +372,7 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnRLA(ctx context.Context, 
 	return nil
 }
 
-// expectedSwitchToRLAComponent converts a Forge ExpectedSwitch proto to an RLA Component proto
+// expectedSwitchToRLAComponent converts a NICo ExpectedSwitch proto to an RLA Component proto
 func expectedSwitchToRLAComponent(es *cwssaws.ExpectedSwitch) *rlav1.Component {
 	component := &rlav1.Component{
 		Type: rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
@@ -436,7 +430,7 @@ func expectedSwitchToRLAComponent(es *cwssaws.ExpectedSwitch) *rlav1.Component {
 	return component
 }
 
-// DeleteExpectedSwitchOnSite deletes Expected Switch on Carbide
+// DeleteExpectedSwitchOnSite deletes Expected Switch on NICo
 func (mes *ManageExpectedSwitch) DeleteExpectedSwitchOnSite(ctx context.Context, request *cwssaws.ExpectedSwitchRequest) error {
 	logger := log.With().Str("Activity", "DeleteExpectedSwitchOnSite").Logger()
 
@@ -456,12 +450,10 @@ func (mes *ManageExpectedSwitch) DeleteExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mes.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
-	}
+	nicoClient := mes.NICoAtomicClient.GetClient()
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteExpectedSwitch(ctx, request)
+	_, err = rpcClient.DeleteExpectedSwitch(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete Expected Switch using Site Controller API")
 		return swe.WrapErr(err)

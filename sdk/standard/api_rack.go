@@ -61,7 +61,7 @@ BringupRack Bring up a Rack
 
 Bring up a Rack identified by Rack UUID.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -93,7 +93,7 @@ func (a *RackAPIService) BringupRackExecute(r ApiBringupRackRequest) (*BringUpRa
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/{id}/bringup"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}/bringup"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 
@@ -146,7 +146,7 @@ func (a *RackAPIService) BringupRackExecute(r ApiBringupRackRequest) (*BringUpRa
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -157,7 +157,7 @@ func (a *RackAPIService) BringupRackExecute(r ApiBringupRackRequest) (*BringUpRa
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -202,7 +202,7 @@ BringupRacks Bring up Racks
 
 Bring up Racks with optional name filter. If no filter is specified, targets all racks in the Site.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -232,7 +232,7 @@ func (a *RackAPIService) BringupRacksExecute(r ApiBringupRacksRequest) (*BringUp
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/bringup"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/bringup"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -284,7 +284,7 @@ func (a *RackAPIService) BringupRacksExecute(r ApiBringupRacksRequest) (*BringUp
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -295,7 +295,7 @@ func (a *RackAPIService) BringupRacksExecute(r ApiBringupRacksRequest) (*BringUp
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -341,7 +341,7 @@ FirmwareUpdateRack Firmware update a Rack
 
 Update firmware on a Rack identified by Rack UUID.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -373,7 +373,7 @@ func (a *RackAPIService) FirmwareUpdateRackExecute(r ApiFirmwareUpdateRackReques
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/{id}/firmware"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}/firmware"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 
@@ -426,7 +426,7 @@ func (a *RackAPIService) FirmwareUpdateRackExecute(r ApiFirmwareUpdateRackReques
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -437,7 +437,7 @@ func (a *RackAPIService) FirmwareUpdateRackExecute(r ApiFirmwareUpdateRackReques
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -482,7 +482,7 @@ FirmwareUpdateRacks Firmware update Racks
 
 Update firmware on Racks with optional name filter. If no filter is specified, targets all racks in the Site.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -512,7 +512,7 @@ func (a *RackAPIService) FirmwareUpdateRacksExecute(r ApiFirmwareUpdateRacksRequ
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/firmware"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/firmware"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -564,7 +564,7 @@ func (a *RackAPIService) FirmwareUpdateRacksExecute(r ApiFirmwareUpdateRacksRequ
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -575,7 +575,7 @@ func (a *RackAPIService) FirmwareUpdateRacksExecute(r ApiFirmwareUpdateRacksRequ
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -663,7 +663,7 @@ GetAllRack Retrieve all Racks
 
 Get all Racks for the specified Site.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -693,7 +693,7 @@ func (a *RackAPIService) GetAllRackExecute(r ApiGetAllRackRequest) ([]Rack, *htt
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -766,7 +766,7 @@ func (a *RackAPIService) GetAllRackExecute(r ApiGetAllRackRequest) ([]Rack, *htt
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -820,7 +820,7 @@ GetRack Retrieve a Rack
 
 Get a Rack by ID.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -852,7 +852,7 @@ func (a *RackAPIService) GetRackExecute(r ApiGetRackRequest) (*Rack, *http.Respo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/{id}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 
@@ -907,7 +907,7 @@ func (a *RackAPIService) GetRackExecute(r ApiGetRackRequest) (*Rack, *http.Respo
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -918,7 +918,7 @@ func (a *RackAPIService) GetRackExecute(r ApiGetRackRequest) (*Rack, *http.Respo
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -966,7 +966,7 @@ GetRackTask Retrieve a Task
 Get a Task by UUID.
 
 Tasks are site-scoped; `siteId` must be the Site where the task was created.
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -998,7 +998,7 @@ func (a *RackAPIService) GetRackTaskExecute(r ApiGetRackTaskRequest) (*RackTask,
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/task/{id}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/task/{id}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 
@@ -1050,7 +1050,7 @@ func (a *RackAPIService) GetRackTaskExecute(r ApiGetRackTaskRequest) (*RackTask,
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1061,7 +1061,7 @@ func (a *RackAPIService) GetRackTaskExecute(r ApiGetRackTaskRequest) (*RackTask,
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1072,7 +1072,7 @@ func (a *RackAPIService) GetRackTaskExecute(r ApiGetRackTaskRequest) (*RackTask,
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1120,7 +1120,7 @@ Power control a Rack identified by Rack UUID.
 
 Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1152,7 +1152,7 @@ func (a *RackAPIService) PowerControlRackExecute(r ApiPowerControlRackRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/{id}/power"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}/power"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 
@@ -1205,7 +1205,7 @@ func (a *RackAPIService) PowerControlRackExecute(r ApiPowerControlRackRequest) (
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1216,7 +1216,7 @@ func (a *RackAPIService) PowerControlRackExecute(r ApiPowerControlRackRequest) (
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1263,7 +1263,7 @@ Power control Racks with optional filters. If no filter is specified, targets al
 
 Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1293,7 +1293,7 @@ func (a *RackAPIService) PowerControlRacksExecute(r ApiPowerControlRacksRequest)
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/power"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/power"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1345,7 +1345,7 @@ func (a *RackAPIService) PowerControlRacksExecute(r ApiPowerControlRacksRequest)
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1356,7 +1356,7 @@ func (a *RackAPIService) PowerControlRacksExecute(r ApiPowerControlRacksRequest)
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1405,7 +1405,7 @@ Validate a Rack's components by comparing expected vs actual state.
 
 Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1437,7 +1437,7 @@ func (a *RackAPIService) ValidateRackExecute(r ApiValidateRackRequest) (*RackVal
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/{id}/validation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}/validation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 
@@ -1489,7 +1489,7 @@ func (a *RackAPIService) ValidateRackExecute(r ApiValidateRackRequest) (*RackVal
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1500,7 +1500,7 @@ func (a *RackAPIService) ValidateRackExecute(r ApiValidateRackRequest) (*RackVal
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1564,7 +1564,7 @@ If no filter is specified, validates all racks in the Site. Filters can narrow t
 
 Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1594,7 +1594,7 @@ func (a *RackAPIService) ValidateRacksExecute(r ApiValidateRacksRequest) (*RackV
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/rack/validation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/validation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -1651,7 +1651,7 @@ func (a *RackAPIService) ValidateRacksExecute(r ApiValidateRacksRequest) (*RackV
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1662,7 +1662,7 @@ func (a *RackAPIService) ValidateRacksExecute(r ApiValidateRacksRequest) (*RackV
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

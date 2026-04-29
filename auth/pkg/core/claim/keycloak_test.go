@@ -27,6 +27,7 @@ import (
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestKeycloakClaims_GetClientId(t *testing.T) {
@@ -129,10 +130,10 @@ func TestKeycloakClaims_GetRealmRoles(t *testing.T) {
 			name: "returns realm roles when present with org-specific roles",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"},
 				},
 			},
-			want: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"},
+			want: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"},
 		},
 		{
 			name: "returns empty slice when no roles",
@@ -170,7 +171,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 			name: "converts realm roles to org data correctly",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"},
 				},
 			},
 			want: cdbm.OrgData{
@@ -179,7 +180,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "testorg",
 					DisplayName: "testorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole, authz.TenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 				"anotherorg": cdbm.Org{
@@ -187,7 +188,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "anotherorg",
 					DisplayName: "anotherorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -196,7 +197,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 			name: "handles mixed case org names by converting to lowercase",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"TestOrg:FORGE_PROVIDER_ADMIN", "ANOTHERORG:FORGE_TENANT_ADMIN"},
+					Roles: []string{"TestOrg:PROVIDER_ADMIN", "ANOTHERORG:TENANT_ADMIN"},
 				},
 			},
 			want: cdbm.OrgData{
@@ -205,7 +206,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "testorg",
 					DisplayName: "testorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 				"anotherorg": cdbm.Org{
@@ -213,7 +214,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "anotherorg",
 					DisplayName: "anotherorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.TenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -222,7 +223,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 			name: "ignores malformed roles without colon",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN", "malformed-role", "anotherorg:FORGE_TENANT_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN", "malformed-role", "anotherorg:TENANT_ADMIN"},
 				},
 			},
 			want: cdbm.OrgData{
@@ -231,7 +232,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "testorg",
 					DisplayName: "testorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 				"anotherorg": cdbm.Org{
@@ -239,7 +240,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "anotherorg",
 					DisplayName: "anotherorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.TenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -257,7 +258,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 			name: "appends roles to existing org",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN"},
 				},
 			},
 			want: cdbm.OrgData{
@@ -266,7 +267,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "testorg",
 					DisplayName: "testorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole, authz.TenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -275,7 +276,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 			name: "ignores roles with extra colons",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"testorg:FORGE_PROVIDER_ADMIN:special", "testorg:FORGE_TENANT_ADMIN"},
+					Roles: []string{"testorg:PROVIDER_ADMIN:special", "testorg:TENANT_ADMIN"},
 				},
 			},
 			want: cdbm.OrgData{
@@ -284,7 +285,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "testorg",
 					DisplayName: "testorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.TenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -293,7 +294,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 			name: "accepts all roles from issuer (no role validation)",
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
-					Roles: []string{"testorg:CUSTOM_ROLE", "testorg:ANY_OTHER_ROLE", "anotherorg:NON_FORGE_ROLE"},
+					Roles: []string{"testorg:CUSTOM_ROLE", "testorg:ANY_OTHER_ROLE", "anotherorg:NON_NICO_ROLE"},
 				},
 			},
 			want: cdbm.OrgData{
@@ -310,7 +311,7 @@ func TestKeycloakClaims_ToOrgData(t *testing.T) {
 					Name:        "anotherorg",
 					DisplayName: "anotherorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"NON_FORGE_ROLE"},
+					Roles:       []string{"NON_NICO_ROLE"},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -334,9 +335,9 @@ func TestRealmAccess(t *testing.T) {
 		{
 			name: "realm access with multiple org-specific roles",
 			realmAccess: RealmAccess{
-				Roles: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"},
+				Roles: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"},
 			},
-			want: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"},
+			want: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"},
 		},
 		{
 			name: "realm access with no roles",
@@ -370,7 +371,7 @@ func TestKeycloakClaims_Integration(t *testing.T) {
 		ClientId:  "test-client",
 		Oidc_Id:   "oidc-123-456",
 		RealmAccess: RealmAccess{
-			Roles: []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"},
+			Roles: []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"},
 		},
 		RegisteredClaims: jwt.RegisteredClaims{
 			Subject: "user-subject-123",
@@ -380,7 +381,7 @@ func TestKeycloakClaims_Integration(t *testing.T) {
 	assert.Equal(t, "john.doe@testorg.com", claims.GetEmail())
 	assert.Equal(t, "test-client", claims.GetClientId())
 	assert.Equal(t, "oidc-123-456", claims.GetOidcId())
-	assert.Equal(t, []string{"testorg:FORGE_PROVIDER_ADMIN", "testorg:FORGE_TENANT_ADMIN", "anotherorg:FORGE_PROVIDER_ADMIN"}, claims.GetRealmRoles())
+	assert.Equal(t, []string{"testorg:PROVIDER_ADMIN", "testorg:TENANT_ADMIN", "anotherorg:PROVIDER_ADMIN"}, claims.GetRealmRoles())
 	orgData := claims.ToOrgData()
 	assert.Len(t, orgData, 2)
 
@@ -389,7 +390,7 @@ func TestKeycloakClaims_Integration(t *testing.T) {
 	assert.Equal(t, "testorg", testOrg.Name)
 	assert.Equal(t, "testorg", testOrg.DisplayName)
 	assert.Equal(t, "ENTERPRISE", testOrg.OrgType)
-	assert.Equal(t, []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}, testOrg.Roles)
+	assert.Equal(t, []string{authz.ProviderAdminRole, authz.TenantAdminRole}, testOrg.Roles)
 	assert.Empty(t, testOrg.Teams)
 
 	anotherOrg, exists := orgData["anotherorg"]
@@ -397,7 +398,7 @@ func TestKeycloakClaims_Integration(t *testing.T) {
 	assert.Equal(t, "anotherorg", anotherOrg.Name)
 	assert.Equal(t, "anotherorg", anotherOrg.DisplayName)
 	assert.Equal(t, "ENTERPRISE", anotherOrg.OrgType)
-	assert.Equal(t, []string{"FORGE_PROVIDER_ADMIN"}, anotherOrg.Roles)
+	assert.Equal(t, []string{authz.ProviderAdminRole}, anotherOrg.Roles)
 	assert.Empty(t, anotherOrg.Teams)
 }
 
@@ -413,7 +414,7 @@ func TestKeycloakClaims_ToOrgData_WithConstants(t *testing.T) {
 			claims: &KeycloakClaims{
 				RealmAccess: RealmAccess{
 					Roles: []string{
-						testutil.TestOrgName + ":" + testutil.ForgeProviderAdminRole,
+						testutil.TestOrgName + ":" + testutil.NICoProviderAdminRole,
 					},
 				},
 			},
@@ -423,7 +424,7 @@ func TestKeycloakClaims_ToOrgData_WithConstants(t *testing.T) {
 					Name:        testutil.TestOrgName,
 					DisplayName: testutil.TestOrgName,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{testutil.ForgeProviderAdminRole},
+					Roles:       []string{testutil.NICoProviderAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -441,15 +442,15 @@ func TestKeycloakClaims_ToOrgData_WithConstants(t *testing.T) {
 					Name:        testutil.TestOrgName,
 					DisplayName: testutil.TestOrgName,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{testutil.ForgeProviderAdminRole},
+					Roles:       []string{testutil.NICoProviderAdminRole},
 					Teams:       []cdbm.Team{},
 				},
-				testutil.ForgeDevOrgName: cdbm.Org{
+				testutil.NICoDevOrgName: cdbm.Org{
 					ID:          0,
-					Name:        testutil.ForgeDevOrgName,
-					DisplayName: testutil.ForgeDevOrgName,
+					Name:        testutil.NICoDevOrgName,
+					DisplayName: testutil.NICoDevOrgName,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{testutil.ForgeTenantAdminRole},
+					Roles:       []string{testutil.NICoTenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 				testutil.NvidiaOrgName: cdbm.Org{
@@ -457,7 +458,7 @@ func TestKeycloakClaims_ToOrgData_WithConstants(t *testing.T) {
 					Name:        testutil.NvidiaOrgName,
 					DisplayName: testutil.NvidiaOrgName,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{testutil.ForgeProviderViewerRole},
+					Roles:       []string{testutil.NICoProviderViewerRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -475,7 +476,7 @@ func TestKeycloakClaims_ToOrgData_WithConstants(t *testing.T) {
 					Name:        "testorg",
 					DisplayName: "testorg",
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{testutil.ForgeProviderAdminRole, testutil.ForgeTenantAdminRole},
+					Roles:       []string{testutil.NICoProviderAdminRole, testutil.NICoTenantAdminRole},
 					Teams:       []cdbm.Team{},
 				},
 			},
@@ -532,18 +533,18 @@ func TestKeycloakClaims_WithUtilities(t *testing.T) {
 	assert.Equal(t, testutil.TestOrgName, testOrg.Name)
 	assert.Equal(t, testutil.TestOrgName, testOrg.DisplayName)
 	assert.Equal(t, "ENTERPRISE", testOrg.OrgType)
-	assert.Equal(t, []string{testutil.ForgeProviderAdminRole}, testOrg.Roles)
+	assert.Equal(t, []string{testutil.NICoProviderAdminRole}, testOrg.Roles)
 	assert.Empty(t, testOrg.Teams)
 
-	forgeOrg, exists := orgData[testutil.ForgeDevOrgName]
+	nicoOrg, exists := orgData[testutil.NICoDevOrgName]
 	assert.True(t, exists)
-	assert.Equal(t, testutil.ForgeDevOrgName, forgeOrg.Name)
-	assert.Equal(t, []string{testutil.ForgeTenantAdminRole}, forgeOrg.Roles)
+	assert.Equal(t, testutil.NICoDevOrgName, nicoOrg.Name)
+	assert.Equal(t, []string{testutil.NICoTenantAdminRole}, nicoOrg.Roles)
 
 	nvidiaOrg, exists := orgData[testutil.NvidiaOrgName]
 	assert.True(t, exists)
 	assert.Equal(t, testutil.NvidiaOrgName, nvidiaOrg.Name)
-	assert.Equal(t, []string{testutil.ForgeProviderViewerRole}, nvidiaOrg.Roles)
+	assert.Equal(t, []string{testutil.NICoProviderViewerRole}, nvidiaOrg.Roles)
 }
 
 // TestKeycloakClaims_EdgeCases tests error handling edge cases
@@ -639,9 +640,9 @@ func TestKeycloakClaims_TimeHandling(t *testing.T) {
 // TestKeycloakClaims_ToOrgData_InputVariations tests ToOrgData with various inputs
 func TestKeycloakClaims_ToOrgData_InputVariations(t *testing.T) {
 	testCases := []string{
-		"testorg:FORGE_PROVIDER_ADMIN",
-		"nvidia:FORGE_TENANT_ADMIN",
-		"forge-dev:FORGE_PROVIDER_VIEWER",
+		"testorg:PROVIDER_ADMIN",
+		"nvidia:TENANT_ADMIN",
+		"nico-dev:PROVIDER_VIEWER",
 		"org:role",
 		"a:b",
 		"UPPERCASE:ROLE",
@@ -819,8 +820,8 @@ func TestOrgDataInvariants_InputVariations(t *testing.T) {
 		org  string
 		role string
 	}{
-		{"nvidia", "FORGE_PROVIDER_ADMIN"},
-		{"test-org", "FORGE_TENANT_ADMIN"},
+		{"nvidia", authz.ProviderAdminRole},
+		{"test-org", authz.TenantAdminRole},
 		{"", "ROLE"},
 		{"ORG", ""},
 		{"", ""},

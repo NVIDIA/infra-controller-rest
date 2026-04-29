@@ -33,16 +33,16 @@ import (
 )
 
 func TestManageInstanceType_UpdateInstanceTypeOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	labelKey := "key1"
 	labelValue := "value1"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -57,7 +57,7 @@ func TestManageInstanceType_UpdateInstanceTypeOnSite(t *testing.T) {
 		{
 			name: "test InstanceType update success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -80,7 +80,7 @@ func TestManageInstanceType_UpdateInstanceTypeOnSite(t *testing.T) {
 		{
 			name: "test InstanceType update missing id in request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -103,7 +103,7 @@ func TestManageInstanceType_UpdateInstanceTypeOnSite(t *testing.T) {
 		{
 			name: "test InstanceType update nil request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -114,7 +114,7 @@ func TestManageInstanceType_UpdateInstanceTypeOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInstanceType(tt.fields.CarbideAtomicClient)
+			mm := NewManageInstanceType(tt.fields.NICoAtomicClient)
 			err := mm.UpdateInstanceTypeOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -126,13 +126,13 @@ func TestManageInstanceType_UpdateInstanceTypeOnSite(t *testing.T) {
 }
 
 func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -147,7 +147,7 @@ func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T
 		{
 			name: "test InstanceType update success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -161,7 +161,7 @@ func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T
 		{
 			name: "test InstanceType update nil request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -172,7 +172,7 @@ func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T
 		{
 			name: "test InstanceType update request without machine ids fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -186,7 +186,7 @@ func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T
 		{
 			name: "test InstanceType update request without instance id fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -200,7 +200,7 @@ func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInstanceType(tt.fields.CarbideAtomicClient)
+			mm := NewManageInstanceType(tt.fields.NICoAtomicClient)
 			err := mm.AssociateMachinesWithInstanceTypeOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -212,13 +212,13 @@ func TestManageInstanceType_AssociateMachinesWithInstanceTypeOnSite(t *testing.T
 }
 
 func TestManageInstanceType_RemoveMachineInstanceTypeAssociationOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -233,7 +233,7 @@ func TestManageInstanceType_RemoveMachineInstanceTypeAssociationOnSite(t *testin
 		{
 			name: "test InstanceType association remove update success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -246,7 +246,7 @@ func TestManageInstanceType_RemoveMachineInstanceTypeAssociationOnSite(t *testin
 		{
 			name: "test InstanceType association remove update nil request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -257,7 +257,7 @@ func TestManageInstanceType_RemoveMachineInstanceTypeAssociationOnSite(t *testin
 		{
 			name: "test InstanceType association remove request without machine id fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -270,7 +270,7 @@ func TestManageInstanceType_RemoveMachineInstanceTypeAssociationOnSite(t *testin
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInstanceType(tt.fields.CarbideAtomicClient)
+			mm := NewManageInstanceType(tt.fields.NICoAtomicClient)
 			err := mm.RemoveMachineInstanceTypeAssociationOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -282,16 +282,16 @@ func TestManageInstanceType_RemoveMachineInstanceTypeAssociationOnSite(t *testin
 }
 
 func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	labelKey := "key1"
 	labelValue := "value1"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -306,7 +306,7 @@ func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create InstanceType success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -330,7 +330,7 @@ func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create InstanceType nil request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -342,7 +342,7 @@ func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create InstanceType missing id in request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -366,7 +366,7 @@ func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
 		{
 			name: "test create InstanceType nil id in request fail",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -389,7 +389,7 @@ func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInstanceType(tt.fields.CarbideAtomicClient)
+			mm := NewManageInstanceType(tt.fields.NICoAtomicClient)
 			err := mm.CreateInstanceTypeOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -401,10 +401,10 @@ func TestManageInstanceType_CreateInstanceTypeOnSiteOnSite(t *testing.T) {
 }
 
 func TestManageInstanceTypeInventory_DiscoverInstanceTypeInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -412,7 +412,7 @@ func TestManageInstanceTypeInventory_DiscoverInstanceTypeInventory(t *testing.T)
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoAtomicClient  *cClient.NICoAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -429,7 +429,7 @@ func TestManageInstanceTypeInventory_DiscoverInstanceTypeInventory(t *testing.T)
 			name: "test collecting and publishing instanceType inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -442,7 +442,7 @@ func TestManageInstanceTypeInventory_DiscoverInstanceTypeInventory(t *testing.T)
 			name: "test collecting and publishing instanceType inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -462,7 +462,7 @@ func TestManageInstanceTypeInventory_DiscoverInstanceTypeInventory(t *testing.T)
 
 			manageInstanceType := NewManageInstanceTypeInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoAtomicClient:   tt.fields.nicoAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,
@@ -506,13 +506,13 @@ func TestManageInstanceTypeInventory_DiscoverInstanceTypeInventory(t *testing.T)
 }
 
 func TestManageInstanceType_DeleteInstanceTypeOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -527,7 +527,7 @@ func TestManageInstanceType_DeleteInstanceTypeOnSite(t *testing.T) {
 		{
 			name: "test delete InstanceType success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -540,7 +540,7 @@ func TestManageInstanceType_DeleteInstanceTypeOnSite(t *testing.T) {
 		{
 			name: "test delete InstanceType with nil ID failure",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -553,7 +553,7 @@ func TestManageInstanceType_DeleteInstanceTypeOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInstanceType(tt.fields.CarbideAtomicClient)
+			mm := NewManageInstanceType(tt.fields.NICoAtomicClient)
 			err := mm.DeleteInstanceTypeOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

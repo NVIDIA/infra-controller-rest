@@ -44,7 +44,7 @@
 
 set -e
 
-NAMESPACE="carbide-rest"
+NAMESPACE="nico-rest"
 PASSED=0
 FAILED=0
 STRICT_MODE=${STRICT_MODE:-true}
@@ -88,16 +88,16 @@ fi
 
 # Wait for the services we're testing
 echo "Waiting for pods..."
-kubectl -n $NAMESPACE wait --for=condition=ready pod -l app=carbide-rest-cert-manager --timeout=60s
-kubectl -n $NAMESPACE wait --for=condition=ready pod -l app=carbide-rest-site-manager --timeout=60s
+kubectl -n $NAMESPACE wait --for=condition=ready pod -l app=nico-rest-cert-manager --timeout=60s
+kubectl -n $NAMESPACE wait --for=condition=ready pod -l app=nico-rest-site-manager --timeout=60s
 
 # Port-forward so we can hit the services from localhost
 echo "Setting up port-forwards..."
-kubectl -n $NAMESPACE port-forward svc/carbide-rest-cert-manager 18001:8001 > /dev/null 2>&1 &
+kubectl -n $NAMESPACE port-forward svc/nico-rest-cert-manager 18001:8001 > /dev/null 2>&1 &
 CM_PF_PID=$!
-kubectl -n $NAMESPACE port-forward svc/carbide-rest-cert-manager 18000:8000 > /dev/null 2>&1 &
+kubectl -n $NAMESPACE port-forward svc/nico-rest-cert-manager 18000:8000 > /dev/null 2>&1 &
 CM_TLS_PF_PID=$!
-kubectl -n $NAMESPACE port-forward svc/carbide-rest-site-manager 18100:8100 > /dev/null 2>&1 &
+kubectl -n $NAMESPACE port-forward svc/nico-rest-site-manager 18100:8100 > /dev/null 2>&1 &
 SM_PF_PID=$!
 
 # Wait for port-forwards (HTTP and HTTPS)
@@ -164,7 +164,7 @@ echo "--- Test 4: CA Certificate Issuer ---"
 echo "Checks: The CA is self-signed (issuer matches subject for root CA)"
 if [[ -n "$CA_PEM" ]] && echo "$CA_PEM" | grep -q "BEGIN CERTIFICATE"; then
     CA_ISSUER=$(echo "$CA_PEM" | openssl x509 -noout -issuer 2>/dev/null || echo "")
-    if echo "$CA_ISSUER" | grep -qi "carbide\|nvidia\|local"; then
+    if echo "$CA_ISSUER" | grep -qi "nico\|nvidia\|local"; then
         pass "CA issuer looks correct: $CA_ISSUER"
     else
         fail "CA issuer unexpected: $CA_ISSUER"
@@ -184,11 +184,11 @@ echo "=========================================="
 echo ""
 echo "--- Test 5: ClusterIssuer Ready ---"
 echo "Checks: The ClusterIssuer that connects cert-manager.io to our CA is working"
-ISSUER_STATUS=$(kubectl get clusterissuer carbide-rest-ca-issuer -o jsonpath='{.status.conditions[0].status}' 2>/dev/null || echo "")
+ISSUER_STATUS=$(kubectl get clusterissuer nico-rest-ca-issuer -o jsonpath='{.status.conditions[0].status}' 2>/dev/null || echo "")
 if [[ "$ISSUER_STATUS" == "True" ]]; then
-    pass "carbide-rest-ca-issuer ClusterIssuer is ready"
+    pass "nico-rest-ca-issuer ClusterIssuer is ready"
 else
-    fail "carbide-rest-ca-issuer not ready (status: $ISSUER_STATUS)"
+    fail "nico-rest-ca-issuer not ready (status: $ISSUER_STATUS)"
 fi
 
 echo ""
@@ -262,7 +262,7 @@ echo "Checks: The cert's SAN (Subject Alternative Name) includes the service hos
 echo "        TLS clients verify the server cert matches the hostname they connected to"
 if [[ -n "$TLS_CRT" ]]; then
     DNS_NAMES=$(echo "$TLS_CRT" | openssl x509 -noout -text 2>/dev/null | grep -A1 "Subject Alternative Name" | tail -1 || echo "")
-    if echo "$DNS_NAMES" | grep -qi "carbide-rest-site-manager"; then
+    if echo "$DNS_NAMES" | grep -qi "nico-rest-site-manager"; then
         pass "Certificate has correct DNS SANs"
     else
         fail "Certificate missing expected DNS names: $DNS_NAMES"
@@ -306,10 +306,10 @@ echo "=========================================="
 echo ""
 echo "--- Test 14: Keycloak Token ---"
 echo "Checks: Auth system is working (not PKI-related, but ensures full stack is up)"
-TOKEN=$(curl -sf -X POST "http://localhost:8082/realms/carbide-dev/protocol/openid-connect/token" \
+TOKEN=$(curl -sf -X POST "http://localhost:8082/realms/nico-dev/protocol/openid-connect/token" \
     -H "Content-Type: application/x-www-form-urlencoded" \
-    -d "client_id=carbide-api" \
-    -d "client_secret=carbide-local-secret" \
+    -d "client_id=nico-api" \
+    -d "client_secret=nico-local-secret" \
     -d "grant_type=password" \
     -d "username=admin@example.com" \
     -d "password=adminpassword" 2>/dev/null | jq -r .access_token || echo "")
@@ -528,11 +528,11 @@ spec:
   secretName: e2e-test-cert-secret
   duration: 24h
   renewBefore: 1h
-  commonName: e2e-test.carbide.local
+  commonName: e2e-test.nico.local
   dnsNames:
-    - e2e-test.carbide.local
+    - e2e-test.nico.local
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
 EOF
@@ -594,8 +594,8 @@ echo ""
 echo "--- Test 34: Site Manager Certificate Issuer ---"
 echo "Checks: The production site-manager cert was issued by our CA"
 SM_ISSUER=$(echo "$TLS_CRT" | openssl x509 -noout -issuer 2>/dev/null || echo "")
-if echo "$SM_ISSUER" | grep -qi "carbide"; then
-    pass "Site-manager cert issued by Carbide CA: $SM_ISSUER"
+if echo "$SM_ISSUER" | grep -qi "nico"; then
+    pass "Site-manager cert issued by NICo CA: $SM_ISSUER"
 else
     fail "Site-manager cert issuer unexpected: $SM_ISSUER"
 fi
@@ -621,11 +621,11 @@ spec:
   secretName: rotation-test-secret
   duration: 2h
   renewBefore: 30m
-  commonName: rotation-test.carbide.local
+  commonName: rotation-test.nico.local
   dnsNames:
-    - rotation-test.carbide.local
+    - rotation-test.nico.local
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
 EOF

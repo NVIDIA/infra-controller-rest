@@ -110,7 +110,7 @@ func NewConfiguration() *Configuration {
 		Debug:         false,
 		Servers: ServerConfigurations{
 			{
-				URL:         "https://carbide-rest-api.carbide.svc.cluster.local",
+				URL:         "https://nico-rest-api.nico.svc.cluster.local",
 				Description: "Kubernetes Cluster",
 			},
 		},

@@ -85,7 +85,7 @@ func TestNewAPITray(t *testing.T) {
 					Description:  &description,
 				},
 				FirmwareVersion: "2.1.0",
-				ComponentId:     "carbide-machine-456",
+				ComponentId:     "nico-machine-456",
 				Position: &rlav1.RackPosition{
 					SlotId:  1,
 					TrayIdx: 0,
@@ -102,7 +102,7 @@ func TestNewAPITray(t *testing.T) {
 			},
 			want: &APITray{
 				ID:              "tray-id-123",
-				ComponentID:     "carbide-machine-456",
+				ComponentID:     "nico-machine-456",
 				Type:            "Compute",
 				Name:            "compute-tray-1",
 				Manufacturer:    "NVIDIA",

@@ -40,7 +40,7 @@ func NewMetadataHandler() MetadataHandler {
 // @Accept */*
 // @Produce json
 // @Success 200 {object} model.APIMetadata
-// @Router /v2/org/{org}/carbide/metadata [get]
+// @Router /v2/org/{org}/nico/metadata [get]
 func (mdh MetadataHandler) Handle(c echo.Context) error {
 	amd := model.NewAPIMetadata()
 	return c.JSON(http.StatusOK, amd)

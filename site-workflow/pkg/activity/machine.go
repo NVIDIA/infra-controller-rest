@@ -39,7 +39,7 @@ import (
 
 // ManageMachine is an activity wrapper for Machine management tasks that allows injecting DB access
 type ManageMachine struct {
-	carbideAtomicClient *cClient.CarbideAtomicClient
+	nicoAtomicClient *cClient.NICoAtomicClient
 }
 
 // SetMachineMaintenanceOnSite is an activity to set Machine maintenance mode using Site Controller API
@@ -62,12 +62,13 @@ func (mm *ManageMachine) SetMachineMaintenanceOnSite(ctx context.Context, reques
 	}
 
 	// Call Site Controller gRPC endpoint to set SetMaintenance request
-	forgeClient, err := mm.carbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.nicoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.SetMaintenance(ctx, request)
+	_, err = rpcClient.SetMaintenance(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to set Maintenance mode for Machine using Site Controller API")
 		return swe.WrapErr(err)
@@ -98,12 +99,13 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	}
 
 	// Call Site Controller gRPC endpoint to update Machine metadata
-	forgeClient, err := mm.carbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.nicoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateMachineMetadata(ctx, request)
+	_, err = rpcClient.UpdateMachineMetadata(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update Machine metadata using Site Controller API")
 		return swe.WrapErr(err)
@@ -129,10 +131,11 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 	}
 
 	// Call Site Controller gRPC endpoint to get DPU Machines by IDs
-	forgeClient, err := mm.carbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return nil, err
+	nicoClient := mm.nicoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return nil, cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
 	// Convert string IDs to MachineId objects
 	machineIDs := make([]*cwssaws.MachineId, 0, len(dpuMachineIDs))
@@ -144,7 +147,7 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 		MachineIds: machineIDs,
 	}
 
-	machineList, err := forgeClient.FindMachinesByIds(ctx, request)
+	machineList, err := rpcClient.FindMachinesByIds(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to retrieve DPU Machines by IDs using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -157,7 +160,7 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 			networkConfigReq := &cwssaws.ManagedHostNetworkConfigRequest{
 				DpuMachineId: machine.Id,
 			}
-			networkConfig, nerr := forgeClient.GetManagedHostNetworkConfig(ctx, networkConfigReq)
+			networkConfig, nerr := rpcClient.GetManagedHostNetworkConfig(ctx, networkConfigReq)
 			if nerr != nil {
 				logger.Warn().Err(nerr).Str("DPU Machine ID", machine.Id.Id).Msg("Failed to retrieve network config for DPU machine, continuing without it")
 				// Don't fail the entire request if network config is unavailable
@@ -177,16 +180,16 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 }
 
 // NewManageMachine returns a new ManageMachine activity
-func NewManageMachine(carbideAtomicClient *cClient.CarbideAtomicClient) ManageMachine {
+func NewManageMachine(nicoAtomicClient *cClient.NICoAtomicClient) ManageMachine {
 	return ManageMachine{
-		carbideAtomicClient: carbideAtomicClient,
+		nicoAtomicClient: nicoAtomicClient,
 	}
 }
 
 // ManageMachineInventory is an activity wrapper for Machine inventory collection and publishing
 type ManageMachineInventory struct {
 	siteID                uuid.UUID
-	carbideAtomicClient   *cClient.CarbideAtomicClient
+	nicoAtomicClient   *cClient.NICoAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	sitePageSize          int
@@ -206,12 +209,13 @@ func (mmi *ManageMachineInventory) CollectAndPublishMachineInventory(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint to get available Machine IDs
-	forgeClient, err := mmi.carbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mmi.nicoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	machineIDList, err := forgeClient.FindMachineIds(ctx, &cwssaws.MachineSearchConfig{})
+	machineIDList, err := rpcClient.FindMachineIds(ctx, &cwssaws.MachineSearchConfig{})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to retreive available Machine IDs using Site Controller API")
 
@@ -258,7 +262,7 @@ func (mmi *ManageMachineInventory) CollectAndPublishMachineInventory(ctx context
 		pagedMachineIDs := getPagedMachineIDs(machineIDList.MachineIds, sitePage, mmi.sitePageSize)
 
 		// Call Site Controller gRPC endpoint to get Machines for the paged IDs
-		pagedMachines, serr := forgeClient.FindMachinesByIds(ctx, &cwssaws.MachinesByIdsRequest{
+		pagedMachines, serr := rpcClient.FindMachinesByIds(ctx, &cwssaws.MachinesByIdsRequest{
 			MachineIds: pagedMachineIDs,
 		})
 		if serr != nil {
@@ -355,10 +359,10 @@ func getPagedMachineInventory(pagedMachines []*cwssaws.Machine, machineIDs []*cw
 }
 
 // NewManageMachineInventory returns a new ManageMachineInventory activity
-func NewManageMachineInventory(siteID uuid.UUID, carbideAtomicClient *cClient.CarbideAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, sitePageSize int, cloudPageSize int) ManageMachineInventory {
+func NewManageMachineInventory(siteID uuid.UUID, nicoAtomicClient *cClient.NICoAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, sitePageSize int, cloudPageSize int) ManageMachineInventory {
 	return ManageMachineInventory{
 		siteID:                siteID,
-		carbideAtomicClient:   carbideAtomicClient,
+		nicoAtomicClient:   nicoAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		sitePageSize:          sitePageSize,

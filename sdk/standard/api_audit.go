@@ -82,7 +82,7 @@ GetAllAuditEntry Retrieve all Audit Log Entries
 
 # Get all Audit Log entries
 
-User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` authorization role.
+User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -112,7 +112,7 @@ func (a *AuditAPIService) GetAllAuditEntryExecute(r ApiGetAllAuditEntryRequest) 
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/audit"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/audit"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -175,7 +175,7 @@ func (a *AuditAPIService) GetAllAuditEntryExecute(r ApiGetAllAuditEntryRequest) 
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -215,7 +215,7 @@ GetAuditEntry Retrieve Audit Log Entry
 
 # Retrieve a specific Audit Log Entry by ID
 
-User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` authorization role
+User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` authorization role
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -247,7 +247,7 @@ func (a *AuditAPIService) GetAuditEntryExecute(r ApiGetAuditEntryRequest) (*Audi
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/audit/{auditEntryId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/audit/{auditEntryId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"auditEntryId"+"}", url.PathEscape(parameterValueToString(r.auditEntryId, "auditEntryId")), -1)
 
@@ -295,7 +295,7 @@ func (a *AuditAPIService) GetAuditEntryExecute(r ApiGetAuditEntryRequest) (*Audi
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

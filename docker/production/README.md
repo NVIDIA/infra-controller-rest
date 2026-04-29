@@ -27,13 +27,13 @@ This directory contains multi-stage Dockerfiles optimized for production deploym
 - Timezone data for proper logging
 
 ## Available Images
-1. **Dockerfile.carbide-rest-api** - REST API server
-2. **Dockerfile.carbide-rest-db** - Database Migrations
-3. **Dockerfile.carbide-rest-workflow** - Workflow Service
-4. **Dockerfile.carbide-rest-site-manager** - Site Manager service
-5. **Dockerfile.carbide-rest-cert-manager** - Certificate Manager
-6. **Dockerfile.carbide-rest-site-agent** - Site Agent
-7. **Dockerfile.carbide-rla** - Rack Level Abstraction
+1. **Dockerfile.nico-rest-api** - REST API server
+2. **Dockerfile.nico-rest-db** - Database Migrations
+3. **Dockerfile.nico-rest-workflow** - Workflow Service
+4. **Dockerfile.nico-rest-site-manager** - Site Manager service
+5. **Dockerfile.nico-rest-cert-manager** - Certificate Manager
+6. **Dockerfile.nico-rest-site-agent** - Site Agent
+7. **Dockerfile.nico-rla** - Rack Level Abstraction
 
 ## Building Images
 
@@ -42,11 +42,11 @@ This directory contains multi-stage Dockerfiles optimized for production deploym
 All Dockerfiles must be built from the repository root as they require access to multiple modules:
 
 ```bash
-cd /path/to/carbide-rest-api
+cd /path/to/nico-rest-api
 
 docker build \
-  -f docker/production/Dockerfile.carbide-rest-api \
-  -t carbide-rest-api:latest \
+  -f docker/production/Dockerfile.nico-rest-api \
+  -t nico-rest-api:latest \
   .
 ```
 

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Carbide REST CI
+name: NICo REST CI
 
 # Trigger on push to main/master or any tag
 on:
@@ -127,8 +127,8 @@ jobs:
       NVCR_STG_TOKEN: ${{ secrets.NVCR_STG_TOKEN }}
 
   # Step 7: Promote to release candidate
-  promote-carbide-rest-to-release-candidate:
-    name: Promote Carbide REST to Release Candidate
+  promote-nico-rest-to-release-candidate:
+    name: Promote NICo REST to Release Candidate
     needs:
       - prepare
       - lint-and-test

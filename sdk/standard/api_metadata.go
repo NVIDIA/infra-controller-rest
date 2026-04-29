@@ -82,7 +82,7 @@ func (a *MetadataAPIService) GetMetadataExecute(r ApiGetMetadataRequest) (*Metad
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/metadata"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/metadata"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)

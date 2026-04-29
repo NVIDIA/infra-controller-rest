@@ -44,6 +44,7 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testRackInitDB(t *testing.T) *cdb.Session {
@@ -174,10 +175,10 @@ func TestGetRackHandler_Handle(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Create provider user
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-rack-get", org, []string{"FORGE_PROVIDER_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-rack-get", org, []string{authz.ProviderAdminRole})
 
 	// Create tenant user (no provider role)
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-rack-get", org, []string{"FORGE_TENANT_ADMIN"})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-rack-get", org, []string{authz.TenantAdminRole})
 
 	handler := NewGetRackHandler(dbSession, nil, scp, cfg)
 
@@ -297,7 +298,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/%s?%s", tt.reqOrg, tt.rackID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/%s?%s", tt.reqOrg, tt.rackID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -356,10 +357,10 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Create provider user
-	providerUser := testRackBuildUser(t, dbSession, "provider-user", org, []string{"FORGE_PROVIDER_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user", org, []string{authz.ProviderAdminRole})
 
 	// Create privileged tenant user
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user", org, []string{"FORGE_TENANT_ADMIN"})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user", org, []string{authz.TenantAdminRole})
 
 	handler := NewGetAllRackHandler(dbSession, nil, scp, cfg)
 
@@ -582,7 +583,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack?%s", tt.reqOrg, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/rack?%s", tt.reqOrg, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -655,10 +656,10 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Create provider user
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-validate", org, []string{"FORGE_PROVIDER_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-validate", org, []string{authz.ProviderAdminRole})
 
 	// Create tenant user (should be denied)
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-validate", org, []string{"FORGE_TENANT_ADMIN"})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-validate", org, []string{authz.TenantAdminRole})
 
 	handler := NewValidateRackHandler(dbSession, nil, scp, cfg)
 
@@ -799,7 +800,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/%s/validation?%s", tt.reqOrg, tt.rackID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/%s/validation?%s", tt.reqOrg, tt.rackID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -859,8 +860,8 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
 	assert.Nil(t, err)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-validate-racks", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-validate-racks", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-validate-racks", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-validate-racks", org, []string{authz.TenantAdminRole})
 
 	handler := NewValidateRacksHandler(dbSession, nil, scp, cfg)
 
@@ -1021,7 +1022,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/validation?%s", tt.reqOrg, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/validation?%s", tt.reqOrg, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1067,8 +1068,8 @@ func TestUpdateRackPowerStateHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-pc-rack", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-pc-rack", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-pc-rack", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-pc-rack", org, []string{authz.TenantAdminRole})
 
 	handler := NewUpdateRackPowerStateHandler(dbSession, nil, scp, cfg)
 
@@ -1187,7 +1188,7 @@ func TestUpdateRackPowerStateHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/%s/power", tt.reqOrg, tt.rackID)
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/%s/power", tt.reqOrg, tt.rackID)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1232,8 +1233,8 @@ func TestBatchUpdateRackPowerStateHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-pc-rack-batch", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-pc-rack-batch", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-pc-rack-batch", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-pc-rack-batch", org, []string{authz.TenantAdminRole})
 
 	handler := NewBatchUpdateRackPowerStateHandler(dbSession, nil, scp, cfg)
 
@@ -1308,7 +1309,7 @@ func TestBatchUpdateRackPowerStateHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/power", tt.reqOrg)
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/power", tt.reqOrg)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1353,8 +1354,8 @@ func TestUpdateRackFirmwareHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-fw-rack", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-fw-rack", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-fw-rack", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-fw-rack", org, []string{authz.TenantAdminRole})
 
 	handler := NewUpdateRackFirmwareHandler(dbSession, nil, scp, cfg)
 
@@ -1430,7 +1431,7 @@ func TestUpdateRackFirmwareHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/%s/firmware", tt.reqOrg, tt.rackID)
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/%s/firmware", tt.reqOrg, tt.rackID)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1475,8 +1476,8 @@ func TestBringUpRackHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-bu-rack", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-bu-rack", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-bu-rack", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-bu-rack", org, []string{authz.TenantAdminRole})
 
 	handler := NewBringUpRackHandler(dbSession, nil, scp, cfg)
 
@@ -1552,7 +1553,7 @@ func TestBringUpRackHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/%s/bringup", tt.reqOrg, tt.rackID)
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/%s/bringup", tt.reqOrg, tt.rackID)
 
 			req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1597,8 +1598,8 @@ func TestBatchBringUpRackHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-bu-rack-batch", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-bu-rack-batch", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-bu-rack-batch", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-bu-rack-batch", org, []string{authz.TenantAdminRole})
 
 	handler := NewBatchBringUpRackHandler(dbSession, nil, scp, cfg)
 
@@ -1674,7 +1675,7 @@ func TestBatchBringUpRackHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/bringup", tt.reqOrg)
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/bringup", tt.reqOrg)
 
 			req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1719,8 +1720,8 @@ func TestBatchUpdateRackFirmwareHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-fw-rack-batch", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-fw-rack-batch", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-fw-rack-batch", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-fw-rack-batch", org, []string{authz.TenantAdminRole})
 
 	handler := NewBatchUpdateRackFirmwareHandler(dbSession, nil, scp, cfg)
 
@@ -1781,7 +1782,7 @@ func TestBatchUpdateRackFirmwareHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/firmware", tt.reqOrg)
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/firmware", tt.reqOrg)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

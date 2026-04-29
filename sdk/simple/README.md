@@ -1,6 +1,6 @@
 # Simple SDK
 
-The Simple SDK provides a simplified, high-level interface to the NVIDIA Infra Controller REST API. It wraps the [standard SDK](../standard) with a cleaner API and automatic metadata management.
+The Simple SDK provides a simplified, high-level interface to the NVIDIA Infrastructure Controller (NICo) REST API. It wraps the [standard SDK](../standard) with a cleaner API and automatic metadata management.
 
 ## Features
 
@@ -42,7 +42,7 @@ go get github.com/NVIDIA/ncx-infra-controller-rest/sdk/simple
 For local development, use a `replace` directive:
 
 ```go
-replace github.com/NVIDIA/ncx-infra-controller-rest => /path/to/infra-controller-rest
+replace github.com/NVIDIA/ncx-infra-controller-rest => /path/to/ncx-infra-controller-rest
 ```
 
 ### Local development (kind)
@@ -52,16 +52,16 @@ After running `make kind-reset` from the repo root, the API is available at `htt
 **1. Get a token** (requires `jq`; run in a separate terminal or before your program):
 
 ```bash
-export CARBIDE_TOKEN=$(curl -s -X POST "http://localhost:8082/realms/carbide-dev/protocol/openid-connect/token" \
+export NICO_TOKEN=$(curl -s -X POST "http://localhost:8082/realms/nico-dev/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "client_id=carbide-api" \
-  -d "client_secret=carbide-local-secret" \
+  -d "client_id=nico-api" \
+  -d "client_secret=nico-local-secret" \
   -d "grant_type=password" \
   -d "username=admin@example.com" \
   -d "password=adminpassword" | jq -r .access_token)
 
-export CARBIDE_BASE_URL="http://localhost:8388"
-export CARBIDE_ORG="test-org"
+export NICO_BASE_URL="http://localhost:8388"
+export NICO_ORG="test-org"
 ```
 
 **2. Use the SDK with environment variables:**
@@ -173,9 +173,9 @@ func main() {
 
 | Email | Password | Roles |
 |-------|----------|-------|
-| `admin@example.com` | `adminpassword` | FORGE_PROVIDER_ADMIN, FORGE_TENANT_ADMIN |
-| `testuser@example.com` | `testpassword` | FORGE_TENANT_ADMIN |
-| `provider@example.com` | `providerpassword` | FORGE_PROVIDER_ADMIN |
+| `admin@example.com` | `adminpassword` | PROVIDER_ADMIN, TENANT_ADMIN |
+| `testuser@example.com` | `testpassword` | TENANT_ADMIN |
+| `provider@example.com` | `providerpassword` | PROVIDER_ADMIN |
 
 ### Programmatic configuration
 
@@ -208,9 +208,9 @@ Use `NewClientFromEnv()` to create a client from environment variables:
 
 | Variable | Description |
 |----------|-------------|
-| `CARBIDE_BASE_URL` | API base URL (e.g. `http://localhost:8388` for kind, `https://api.example.com` for production) |
-| `CARBIDE_ORG` | Organization name (e.g. `test-org` for kind) |
-| `CARBIDE_TOKEN` | JWT token (or `CARBIDE_API_KEY`) |
+| `NICO_BASE_URL` | API base URL (e.g. `http://localhost:8388` for kind, `https://api.example.com` for production) |
+| `NICO_ORG` | Organization name (e.g. `test-org` for kind) |
+| `NICO_TOKEN` | JWT token (or `NICO_API_KEY`) |
 
 ```go
 client, err := simple.NewClientFromEnv()

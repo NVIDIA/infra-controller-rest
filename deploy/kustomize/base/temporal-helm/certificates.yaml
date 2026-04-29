@@ -53,7 +53,7 @@ spec:
     - temporal-worker.temporal.svc
     - temporal-worker.temporal.svc.cluster.local
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
 ---
@@ -83,7 +83,7 @@ spec:
     - cloud.temporal-frontend.temporal
     - cloud.temporal-frontend.temporal.svc.cluster.local
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io
 ---
@@ -113,6 +113,6 @@ spec:
     - site.temporal-frontend.temporal
     - site.temporal-frontend.temporal.svc.cluster.local
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io

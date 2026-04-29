@@ -67,13 +67,13 @@ func NewFilteredSiteInformer(client versioned.Interface, namespace string, resyn
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ForgeV1().Sites(namespace).List(context.TODO(), options)
+				return client.NICoV1().Sites(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.ForgeV1().Sites(namespace).Watch(context.TODO(), options)
+				return client.NICoV1().Sites(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&crdsv1.Site{},

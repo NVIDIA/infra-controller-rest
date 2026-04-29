@@ -33,10 +33,10 @@ import (
 )
 
 func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -44,7 +44,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoAtomicClient  *cClient.NICoAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -62,7 +62,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -75,7 +75,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -88,7 +88,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory fallback, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -102,7 +102,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory fallback, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -123,7 +123,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 
 			manageInstance := NewManageExpectedMachineInventory(
 				tt.fields.siteID,
-				tt.fields.carbideAtomicClient,
+				tt.fields.nicoAtomicClient,
 				tc,
 				tt.fields.temporalPublishQueue,
 				tt.fields.cloudPageSize,
@@ -169,13 +169,13 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 }
 
 func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -190,7 +190,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test create expected machine success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -205,7 +205,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test create expected machine fail on missing MAC address",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -220,7 +220,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test create expected machine fail on missing serial number",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -235,7 +235,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test create expected machine fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -250,7 +250,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test create expected machine fail on missing identifying information",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -265,7 +265,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test create expected machine fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -276,7 +276,7 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedMachine(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedMachine(tt.fields.NICoAtomicClient, nil)
 			err := mm.CreateExpectedMachineOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -288,13 +288,13 @@ func TestManageExpectedMachine_CreateExpectedMachineOnSite(t *testing.T) {
 }
 
 func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -309,7 +309,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test update expected machine success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -324,7 +324,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test update expected machine fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -339,7 +339,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test update expected machine fail on missing MAC address",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -354,7 +354,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test update expected machine fail on missing serial number",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -369,7 +369,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test update expected machine fail on missing both MAC and serial",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -384,7 +384,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test update expected machine fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -395,7 +395,7 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedMachine(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedMachine(tt.fields.NICoAtomicClient, nil)
 			err := mm.UpdateExpectedMachineOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -407,13 +407,13 @@ func TestManageExpectedMachine_UpdateExpectedMachineOnSite(t *testing.T) {
 }
 
 func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -428,7 +428,7 @@ func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test delete expected machine success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -442,7 +442,7 @@ func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test delete expected machine fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -456,7 +456,7 @@ func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test delete expected machine success with missing BMC MAC address",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -470,7 +470,7 @@ func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
 		{
 			name: "test delete expected machine fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -481,7 +481,7 @@ func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedMachine(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedMachine(tt.fields.NICoAtomicClient, nil)
 			err := mm.DeleteExpectedMachineOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -493,13 +493,13 @@ func TestManageExpectedMachine_DeleteExpectedMachineOnSite(t *testing.T) {
 }
 
 func TestManageExpectedMachine_CreateExpectedMachinesOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -514,7 +514,7 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnSite(t *testing.T) {
 		{
 			name: "test create expected machines success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -541,7 +541,7 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnSite(t *testing.T) {
 		{
 			name: "test create expected machines fail on empty list",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -556,7 +556,7 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnSite(t *testing.T) {
 		{
 			name: "test create expected machines fail on nil request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -567,7 +567,7 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedMachine(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedMachine(tt.fields.NICoAtomicClient, nil)
 			response, err := mm.CreateExpectedMachinesOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -590,13 +590,13 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnSite(t *testing.T) {
 }
 
 func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -611,7 +611,7 @@ func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
 		{
 			name: "test update expected machines success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -638,7 +638,7 @@ func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
 		{
 			name: "test update expected machines fail on empty list",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -653,7 +653,7 @@ func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
 		{
 			name: "test update expected machines fail on nil request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -664,7 +664,7 @@ func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedMachine(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedMachine(tt.fields.NICoAtomicClient, nil)
 			response, err := mm.UpdateExpectedMachinesOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

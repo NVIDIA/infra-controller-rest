@@ -64,11 +64,11 @@ func getLabelsMapFromProto(es *cwssaws.ExpectedSwitch) map[string]string {
 
 // UpdateExpectedSwitchesInDB is a Temporal activity that takes a collection of ExpectedSwitch data pushed by Site Agent and updates the DB
 // Expected Switch records have two unique values (MAC and UUID). We ignore the MAC value and only rely on the UUID for uniqueness.
-// Carbide is the source of truth: out of the race-condition window we make the DB match Carbide exactly.
+// NICo is the source of truth: out of the race-condition window we make the DB match NICo exactly.
 // The reconciliation logic is as follows:
-// - UUID existing in Carbide but not in DB: create record in DB
-// - UUID existing in both Carbide and DB with differences: update record in DB
-// - UUID existing in DB but not in Carbide: delete record in DB
+// - UUID existing in NICo but not in DB: create record in DB
+// - UUID existing in both NICo and DB with differences: update record in DB
+// - UUID existing in DB but not in NICo: delete record in DB
 func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, siteID uuid.UUID, expectedSwitchInventory *cwssaws.ExpectedSwitchInventory) error {
 	logger := log.With().Str("Activity", "UpdateExpectedSwitchesInDB").Str("Site ID", siteID.String()).Logger()
 
@@ -162,7 +162,7 @@ func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, 
 				BmcMacAddress:      res.BmcMacAddress,
 				SwitchSerialNumber: res.SwitchSerialNumber,
 				Labels:             reportedLabels,
-				CreatedBy:          siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+				CreatedBy:          siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
 				logger.Error().Err(cerr).Str("ID", esID.String()).Msg("failed to create ExpectedSwitch in DB")
@@ -174,7 +174,7 @@ func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, 
 		if cur.BmcMacAddress != res.BmcMacAddress ||
 			cur.SwitchSerialNumber != res.SwitchSerialNumber ||
 			!reflect.DeepEqual(cur.Labels, reportedLabels) {
-			// nil labels in carbide can mean we need to clear out existing labels in DB
+			// nil labels in nico can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
 			if cur.Labels != nil && reportedLabels == nil {
@@ -192,9 +192,9 @@ func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, 
 		}
 	}
 
-	// Delete any Expected Switch present in DB not present in Carbide.
+	// Delete any Expected Switch present in DB not present in NICo.
 	// We only act if this is the last page (or paging disabled) and outside race window.
-	// The source of truth for Carbide is reportedIDs.
+	// The source of truth for NICo is reportedIDs.
 	if expectedSwitchInventory.InventoryPage == nil || expectedSwitchInventory.InventoryPage.TotalPages == 0 || (expectedSwitchInventory.InventoryPage.CurrentPage == expectedSwitchInventory.InventoryPage.TotalPages) {
 		for _, es := range existingExpectedSwitches {
 			if _, keep := reportedIDs[es.ID]; keep {

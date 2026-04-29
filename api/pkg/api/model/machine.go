@@ -184,7 +184,7 @@ type APIMachine struct {
 	// Status represents the status of the machine
 	Status string `json:"status"`
 	// IsUsableByTenant indicates whether the machine is usable by or currently in use by a tenant.
-	// See: https://jirasw.nvidia.com/browse/FORGE-7530
+	// See: https://jirasw.nvidia.com/browse/NICO-7530
 	IsUsableByTenant bool `json:"isUsableByTenant"`
 	// StatusHistory is the history of statuses for the Machine
 	StatusHistory []APIStatusDetail `json:"statusHistory"`
@@ -576,22 +576,22 @@ func NewAPIMachineSummary(dbm *cdbm.Machine) *APIMachineSummary {
 
 // APIMachineStats is a data structure to capture information about machine stats at the API layer
 type APIMachineStats struct {
-	// Total is the total number of the machine object in Forge Cloud
+	// Total is the total number of the machine object in NICo Cloud
 	Total int `json:"total"`
-	// Initializing is the total number of initializing machine object in Forge Cloud
+	// Initializing is the total number of initializing machine object in NICo Cloud
 	Initializing int `json:"initializing"`
-	// Reset is the total number of reset machine object in Forge Cloud
+	// Reset is the total number of reset machine object in NICo Cloud
 	Reset int `json:"reset"`
-	// Ready is the total number of ready machine object in Forge Cloud
+	// Ready is the total number of ready machine object in NICo Cloud
 	Ready int `json:"ready"`
 	// InUse is the total number of Machines in use by Tenant Instances
 	InUse int `json:"inUse"`
-	// Error is the total number of error machine object in Forge Cloud
+	// Error is the total number of error machine object in NICo Cloud
 	Error int `json:"error"`
-	// Decommissioned is the total number of error decommissioned object in Forge Cloud
+	// Decommissioned is the total number of error decommissioned object in NICo Cloud
 	Decommissioned int `json:"decommissioned"`
 	// Maintenance is the total number of machines in Maintenance
 	Maintenance int `json:"maintenance"`
-	// Unknown is the total number of unknown machine object in Forge Cloud
+	// Unknown is the total number of unknown machine object in NICo Cloud
 	Unknown int `json:"unknown"`
 }

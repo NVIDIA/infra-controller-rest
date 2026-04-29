@@ -36,8 +36,8 @@ func TestNewDBConfig(t *testing.T) {
 	dbcfg := cconfig.DBConfig{
 		Host:     "localhost",
 		Port:     5432,
-		Name:     "forge",
-		User:     "forge",
+		Name:     "nico",
+		User:     "nico",
 		Password: "test123",
 	}
 

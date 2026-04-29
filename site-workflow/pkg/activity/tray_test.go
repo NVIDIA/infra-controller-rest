@@ -79,7 +79,7 @@ func TestManageTray_GetTray(t *testing.T) {
 						SerialNumber: "TSN001",
 					},
 					FirmwareVersion: "2.0.0",
-					ComponentId:     "carbide-machine-123",
+					ComponentId:     "nico-machine-123",
 					Position: &rlav1.RackPosition{
 						SlotId:  1,
 						TrayIdx: 0,

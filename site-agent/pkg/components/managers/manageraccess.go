@@ -19,7 +19,7 @@ package managers
 
 import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/bootstrap"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
@@ -83,9 +83,9 @@ func (m *Manager) VpcPeering() *vpcpeering.API {
 	return vpcpeering.NewVpcPeeringManager(m.Data.EB, m.API, m.Conf)
 }
 
-// Carbide manager instance here
-func (m *Manager) Carbide() *carbide.API {
-	return carbide.NewCarbideManager(m.Data.EB, m.API, m.Conf)
+// NICo manager instance here
+func (m *Manager) NICo() *nico.API {
+	return nico.NewNICoManager(m.Data.EB, m.API, m.Conf)
 }
 
 // Machine - Add Machine manager instance here
@@ -172,3 +172,4 @@ func (m *Manager) NVLinkLogicalPartition() *nvlinklogicalpartition.API {
 func (m *Manager) RLA() *rla.API {
 	return rla.NewRLAManager(m.Data.EB, m.API, m.Conf)
 }
+

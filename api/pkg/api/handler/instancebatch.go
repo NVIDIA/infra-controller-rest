@@ -224,7 +224,7 @@ func (bcih BatchCreateInstanceHandler) buildBatchInstanceCreateRequestOsConfig(c
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIBatchInstanceCreateRequest true "Batch instance creation request"
 // @Success 201 {object} []model.APIInstance
-// @Router /v2/org/{org}/carbide/instance/batch [post]
+// @Router /v2/org/{org}/nico/instance/batch [post]
 func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	// Execution Steps:
 	// 1. Authentication & Authorization
@@ -836,7 +836,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 
 	// Validate and build OS configuration for temporal workflow
 	// apiRequest will be mutated for use in CreateFromParams.
-	// osConfig will hold the struct/data for use with Temporal/Carbide calls.
+	// osConfig will hold the struct/data for use with Temporal/NICo calls.
 	// Errors will be returned already in the form of cutil.NewAPIErrorResponse
 	osConfig, osID, oserr := bcih.buildBatchInstanceCreateRequestOsConfig(c, &logger, &apiRequest, site)
 	if oserr != nil {

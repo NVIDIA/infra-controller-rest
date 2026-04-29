@@ -60,7 +60,7 @@ CreateInstanceType Create an Instance Type
 
 Create an Instance Type for Infrastructure Provider.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -90,7 +90,7 @@ func (a *InstanceTypeAPIService) CreateInstanceTypeExecute(r ApiCreateInstanceTy
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -139,7 +139,7 @@ func (a *InstanceTypeAPIService) CreateInstanceTypeExecute(r ApiCreateInstanceTy
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -150,7 +150,7 @@ func (a *InstanceTypeAPIService) CreateInstanceTypeExecute(r ApiCreateInstanceTy
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -196,7 +196,7 @@ CreateInstanceTypeMachineAssociation Create a Machine/Instance Type association
 
 # Associate a Machine to an Instance Type
 
-Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -228,7 +228,7 @@ func (a *InstanceTypeAPIService) CreateInstanceTypeMachineAssociationExecute(r A
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type/{instanceTypeId}/machine"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type/{instanceTypeId}/machine"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceTypeId"+"}", url.PathEscape(parameterValueToString(r.instanceTypeId, "instanceTypeId")), -1)
 
@@ -278,7 +278,7 @@ func (a *InstanceTypeAPIService) CreateInstanceTypeMachineAssociationExecute(r A
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -289,7 +289,7 @@ func (a *InstanceTypeAPIService) CreateInstanceTypeMachineAssociationExecute(r A
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -329,7 +329,7 @@ DeleteInstanceType Delete Instance Type
 
 Delete an Instance Type by ID.
 
-Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -358,7 +358,7 @@ func (a *InstanceTypeAPIService) DeleteInstanceTypeExecute(r ApiDeleteInstanceTy
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type/{instanceTypeId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type/{instanceTypeId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceTypeId"+"}", url.PathEscape(parameterValueToString(r.instanceTypeId, "instanceTypeId")), -1)
 
@@ -406,7 +406,7 @@ func (a *InstanceTypeAPIService) DeleteInstanceTypeExecute(r ApiDeleteInstanceTy
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -440,7 +440,7 @@ Delete a Machine's association with an Instance Type.
 
 `machineAssociationId` path parameter has been renamed to `machineId`. The path parameter will continue to accept both Machine ID and Machine/Instance Type ID until July 9th, 2026 00:00 UTC. After that time, Machine/Instance Type ID will no longer be accepted.
 
-Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -471,7 +471,7 @@ func (a *InstanceTypeAPIService) DeleteInstanceTypeMachineAssociationExecute(r A
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type/{instanceTypeId}/machine/{machineAssociationId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type/{instanceTypeId}/machine/{machineAssociationId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceTypeId"+"}", url.PathEscape(parameterValueToString(r.instanceTypeId, "instanceTypeId")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"machineAssociationId"+"}", url.PathEscape(parameterValueToString(r.machineAssociationId, "machineAssociationId")), -1)
@@ -520,7 +520,7 @@ func (a *InstanceTypeAPIService) DeleteInstanceTypeMachineAssociationExecute(r A
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -636,7 +636,7 @@ GetAllInstanceType Retrieve all Instance Types
 
 Get all Instance Types for the org.
 
-Provider and Tenant roles are inferred from the org's membership. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` role.
+Provider and Tenant roles are inferred from the org's membership. User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
 
 Results are returned from both Provider and Tenant perspectives when the org has both roles.
 
@@ -668,7 +668,7 @@ func (a *InstanceTypeAPIService) GetAllInstanceTypeExecute(r ApiGetAllInstanceTy
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -755,7 +755,7 @@ func (a *InstanceTypeAPIService) GetAllInstanceTypeExecute(r ApiGetAllInstanceTy
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -816,9 +816,9 @@ GetInstanceType Retrieve an Instance Type
 
 Get an Instance Type by ID.
 
-If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have `FORGE_PROVIDER_ADMIN` role.
+If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have `PROVIDER_ADMIN` role.
 
-If the org has a Tenant entity and it has a Tenant Account with the Infrastructure Provider of the Instance Type, then the Instance Type detail is returned. User must have `FORGE_TENANT_ADMIN` role.
+If the org has a Tenant entity and it has a Tenant Account with the Infrastructure Provider of the Instance Type, then the Instance Type detail is returned. User must have `TENANT_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -850,7 +850,7 @@ func (a *InstanceTypeAPIService) GetInstanceTypeExecute(r ApiGetInstanceTypeRequ
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type/{instanceTypeId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type/{instanceTypeId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceTypeId"+"}", url.PathEscape(parameterValueToString(r.instanceTypeId, "instanceTypeId")), -1)
 
@@ -907,7 +907,7 @@ func (a *InstanceTypeAPIService) GetInstanceTypeExecute(r ApiGetInstanceTypeRequ
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -968,7 +968,7 @@ GetInstanceTypeMachineAssociation Retrieve all Machines/Instance Type associatio
 
 # Get all Machines for a given Instance Type
 
-Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1000,7 +1000,7 @@ func (a *InstanceTypeAPIService) GetInstanceTypeMachineAssociationExecute(r ApiG
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type/{instanceTypeId}/machine"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type/{instanceTypeId}/machine"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceTypeId"+"}", url.PathEscape(parameterValueToString(r.instanceTypeId, "instanceTypeId")), -1)
 
@@ -1061,7 +1061,7 @@ func (a *InstanceTypeAPIService) GetInstanceTypeMachineAssociationExecute(r ApiG
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1107,7 +1107,7 @@ UpdateInstanceType Update Instance Type
 
 Update an Instance Type by ID.
 
-Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `PROVIDER_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1139,7 +1139,7 @@ func (a *InstanceTypeAPIService) UpdateInstanceTypeExecute(r ApiUpdateInstanceTy
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/type/{instanceTypeId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/type/{instanceTypeId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceTypeId"+"}", url.PathEscape(parameterValueToString(r.instanceTypeId, "instanceTypeId")), -1)
 
@@ -1189,7 +1189,7 @@ func (a *InstanceTypeAPIService) UpdateInstanceTypeExecute(r ApiUpdateInstanceTy
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

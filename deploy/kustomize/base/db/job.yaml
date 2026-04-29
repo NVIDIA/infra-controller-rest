@@ -17,9 +17,9 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: carbide-rest-db-migration
+  name: nico-rest-db-migration
   labels:
-    app: carbide-rest-db-migration
+    app: nico-rest-db-migration
 spec:
   ttlSecondsAfterFinished: 300
   # Allow retries so init (single pg_isready) can succeed once postgres is up
@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       labels:
-        app: carbide-rest-db-migration
+        app: nico-rest-db-migration
     spec:
       imagePullSecrets:
         - name: image-pull-secret
@@ -46,7 +46,7 @@ spec:
             - postgres
       containers:
         - name: migrations
-          image: carbide-rest-db
+          image: nico-rest-db
           imagePullPolicy: IfNotPresent
           env:
             - name: PGHOST
@@ -54,9 +54,9 @@ spec:
             - name: PGPORT
               value: "5432"
             - name: PGDATABASE
-              value: forge
+              value: nico
             - name: PGUSER
-              value: forge
+              value: nico
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:

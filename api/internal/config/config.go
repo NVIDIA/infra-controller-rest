@@ -231,7 +231,7 @@ func NewConfig() *Config {
 	c.v.SetDefault(ConfigEnvDisconnected, false)
 
 	// Set API name
-	c.v.SetDefault(ConfigAPIName, "carbide")
+	c.v.SetDefault(ConfigAPIName, "nico")
 	c.v.SetDefault(ConfigAPIRouteVersion, "v1")
 
 	// Set config file

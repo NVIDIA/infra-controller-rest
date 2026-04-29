@@ -45,6 +45,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -257,13 +258,13 @@ func TestManageVpcPrefix_UpdateVpcPrefixesInDB(t *testing.T) {
 	ipamStorage := ipam.NewIpamStorage(dbSession.DB, nil)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testVPCBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 	tn := testVPCBuildTenant(t, dbSession, "test-tenant", tnOrg, tnu)

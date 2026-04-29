@@ -48,6 +48,7 @@ import (
 	"go.temporal.io/api/enums/v1"
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testSubnetBuildDomain(t *testing.T, dbSession *cdb.Session, hostname, org string, userID *uuid.UUID) *cdbm.Domain {
@@ -105,14 +106,14 @@ func TestSubnetHandler_Create(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1, tnOrg2, tnOrg3}, tnRoles)
 
@@ -628,14 +629,14 @@ func TestSubnetHandler_GetAll(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1, tnOrg2, tnOrg3}, tnRoles)
 
@@ -1000,7 +1001,7 @@ func TestSubnetHandler_GetAll(t *testing.T) {
 				q.Add("includeRelation", *tc.queryIncludeRelations4)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/subnet?%s", tc.reqOrgName, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/subnet?%s", tc.reqOrgName, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1099,14 +1100,14 @@ func TestSubnetHandler_Get(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1, tnOrg2, tnOrg3}, tnRoles)
 
@@ -1330,14 +1331,14 @@ func TestSubnetHandler_Update(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1, tnOrg2, tnOrg3}, tnRoles)
 
@@ -1589,14 +1590,14 @@ func TestSubnetHandler_Delete(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1, tnOrg2, tnOrg3}, tnRoles)
 
@@ -1644,23 +1645,23 @@ func TestSubnetHandler_Delete(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[site.ID.String()] = tscWithCarbideNotFound
-	scpWithCarbideNotFound.IDClientMap[site2.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[site.ID.String()] = tscWithNICoNotFound
+	scpWithNICoNotFound.IDClientMap[site2.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteSubnetV2", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteSubnetV2", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Normal mocks
 	tempClient := &tmocks.Client{}
@@ -1849,15 +1850,15 @@ func TestSubnetHandler_Delete(t *testing.T) {
 			tClient:            tscWithTimeout,
 		},
 		{
-			name:               "carbide not-found success",
+			name:               "nico not-found success",
 			reqOrgName:         tnOrg1,
 			user:               tnu,
 			id:                 subnet.ID,
 			expectedErr:        false,
 			expectedStatus:     http.StatusAccepted,
 			verifyChildSpanner: true,
-			clientPool:         scpWithCarbideNotFound,
-			tClient:            tscWithCarbideNotFound,
+			clientPool:         scpWithNICoNotFound,
+			tClient:            tscWithNICoNotFound,
 		},
 		{
 			name:               "success case",

@@ -36,7 +36,7 @@ import (
 
 // ManageTenant is activity to manage a Tenant on Site
 type ManageTenant struct {
-	CarbideAtomicClient *cClient.CarbideAtomicClient
+	NICoAtomicClient *cClient.NICoAtomicClient
 }
 
 // CreateTenantOnSite creates a Tenant by calling Site Controller gRPC API
@@ -59,12 +59,13 @@ func (mt *ManageTenant) CreateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mt.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mt.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateTenant(ctx, request)
+	_, err = rpcClient.CreateTenant(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Tenant using Site Controller API")
 		return swe.WrapErr(err)
@@ -95,12 +96,13 @@ func (mt *ManageTenant) UpdateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mt.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mt.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateTenant(ctx, request)
+	_, err = rpcClient.UpdateTenant(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update Tenant using Site Controller API")
 		return swe.WrapErr(err)
@@ -112,9 +114,9 @@ func (mt *ManageTenant) UpdateTenantOnSite(ctx context.Context, request *cwssaws
 }
 
 // NewManageTenant returns a new ManageTenant activity
-func NewManageTenant(carbideClient *cClient.CarbideAtomicClient) ManageTenant {
+func NewManageTenant(nicoClient *cClient.NICoAtomicClient) ManageTenant {
 	return ManageTenant{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
@@ -144,26 +146,22 @@ func NewManageTenantInventory(config ManageInventoryConfig) ManageTenantInventor
 	}
 }
 
-func tenantFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]string, error) {
-	forgeClient := carbideClient.Carbide()
-
-	idList, err := forgeClient.FindTenantOrganizationIds(ctx, &cwssaws.TenantSearchFilter{})
+func tenantFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]string, error) {
+	idList, err := nicoClient.NICo().FindTenantOrganizationIds(ctx, &cwssaws.TenantSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
 	return idList.GetTenantOrganizationIds(), nil
 }
 
-func tenantFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []string) ([]*cwssaws.Tenant, error) {
-	forgeClient := carbideClient.Carbide()
-
-	tenantList, err := forgeClient.FindTenantsByOrganizationIds(ctx, &cwssaws.TenantByOrganizationIdsRequest{
+func tenantFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []string) ([]*cwssaws.Tenant, error) {
+	list, err := nicoClient.NICo().FindTenantsByOrganizationIds(ctx, &cwssaws.TenantByOrganizationIdsRequest{
 		OrganizationIds: ids,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return tenantList.GetTenants(), nil
+	return list.GetTenants(), nil
 }
 
 func tenantPagedInventory(allItemIDs []string, pagedItems []*cwssaws.Tenant, input *pagedInventoryInput) *cwssaws.TenantInventory {

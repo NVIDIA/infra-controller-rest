@@ -37,6 +37,7 @@ import (
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // ~~~~~ Test Helpers ~~~~~ //
@@ -294,8 +295,8 @@ func TestStatsHandlers(t *testing.T) {
 	org := "stats-org"
 
 	// Users
-	providerUser := testStatsBuildUser(t, dbSession, []string{org}, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testStatsBuildUser(t, dbSession, []string{org}, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testStatsBuildUser(t, dbSession, []string{org}, []string{authz.ProviderAdminRole})
+	tenantUser := testStatsBuildUser(t, dbSession, []string{org}, []string{authz.TenantAdminRole})
 
 	// Infrastructure provider & site
 	ip := testStatsBuildInfrastructureProvider(t, dbSession, org, "stats-provider")

@@ -305,7 +305,7 @@ func nvSwitchTrayFromPb(tray *pb.NVSwitchTray) NVSwitchTray {
 }
 
 // RegisterNVSwitchRequest contains the information needed to register an NV-Switch.
-// Credentials are omitted; Carbide writes them to Vault and NSM looks them up
+// Credentials are omitted; NICo writes them to Vault and NSM looks them up
 // by MAC address at the time of use.
 type RegisterNVSwitchRequest struct {
 	BMCMACAddress  string

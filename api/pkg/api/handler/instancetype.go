@@ -90,7 +90,7 @@ func NewCreateInstanceTypeHandler(dbSession *cdb.Session, tc temporalClient.Clie
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIInstanceTypeCreateRequest true "Instance Type create request"
 // @Success 201 {object} model.APIInstanceType
-// @Router /v2/org/{org}/carbide/instance/type [post]
+// @Router /v2/org/{org}/nico/instance/type [post]
 func (cith CreateInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InstanceType", "Create", c, cith.tracerSpan)
 	if handlerSpan != nil {
@@ -265,7 +265,7 @@ func (cith CreateInstanceTypeHandler) Handle(c echo.Context) error {
 
 	capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
 
-	// Sort the capabilities list.  Carbide will deny later updates
+	// Sort the capabilities list.  NICo will deny later updates
 	// if an InstanceType is associated with machines and a change
 	// in capabilities is attempted, so we'll sort here and
 	// in the update handler so that users can update metadata
@@ -422,15 +422,15 @@ func (cith CreateInstanceTypeHandler) Handle(c echo.Context) error {
 	// Handle skippable errors
 	if err != nil {
 		var applicationErr *tp.ApplicationError
-		// Carbide _could_ respond with an unimplemented if it's an
-		// older Carbide that doesn't have the endpoint yet, but it's more
+		// NICo _could_ respond with an unimplemented if it's an
+		// older NICo that doesn't have the endpoint yet, but it's more
 		// likely to respond with a PermissionDenied because the permission
 		// for the path isn't there either, but we can watch for both just to
 		// be safe.
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
-			logger.Warn().Msg("Carbide endpoint unimplemented or restricted response received from Site")
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
+			logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
 			// Reset error to nil because we'll want to ignore while
-			// Carbide is being rolled out.
+			// NICo is being rolled out.
 			err = nil
 		}
 	}
@@ -504,7 +504,7 @@ func NewGetAllInstanceTypeHandler(dbSession *cdb.Session, tc temporalClient.Clie
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIInstanceType
-// @Router /v2/org/{org}/carbide/instance/type [get]
+// @Router /v2/org/{org}/nico/instance/type [get]
 func (gaith GetAllInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InstanceType", "GetAll", c, gaith.tracerSpan)
 	if handlerSpan != nil {
@@ -848,7 +848,7 @@ func NewGetInstanceTypeHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param includeMachineAssignment query boolean false "Machine associations entity to include in response (Provider only)"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Site'"
 // @Success 200 {object} []model.APIInstanceType
-// @Router /v2/org/{org}/carbide/instance/type/{id} [get]
+// @Router /v2/org/{org}/nico/instance/type/{id} [get]
 func (gith GetInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InstanceType", "Get", c, gith.tracerSpan)
 	if handlerSpan != nil {
@@ -1025,7 +1025,7 @@ func NewUpdateInstanceTypeHandler(dbSession *cdb.Session, tc temporalClient.Clie
 // @Param id query string true "ID of Instance Type"
 // @Param message body model.APIInstanceTypeUpdateRequest true "Instance Type update request"
 // @Success 200 {object} model.APIInstanceType
-// @Router /v2/org/{org}/carbide/instance/type/{id} [patch]
+// @Router /v2/org/{org}/nico/instance/type/{id} [patch]
 func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InstanceType", "Update", c, uith.tracerSpan)
 	if handlerSpan != nil {
@@ -1146,7 +1146,7 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 
 		// We don't get any useful locks here, so it's technically possible for someone to
 		// slip in a request to associate machines to an instance type after this query returns,
-		// but it's an unlikely case, and Carbide already has all the proper locking to protect
+		// but it's an unlikely case, and NICo already has all the proper locking to protect
 		// against it because it could technically be done directly on a site.
 		_, total, err := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(0)}, nil)
 		if err != nil {
@@ -1281,7 +1281,7 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 
 	capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
 
-	// Sort the capabilities list.  Carbide will deny updates
+	// Sort the capabilities list.  NICo will deny updates
 	// if an InstanceType is associated with machines and a change
 	// in capabilities is attempted, and order matters.
 
@@ -1427,27 +1427,27 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 	// Handle skippable errors
 	if err != nil {
 		// TODO:
-		// If this was a 404 back from Carbide, we'll need to ignore until the
+		// If this was a 404 back from NICo, we'll need to ignore until the
 		// process for syncing cloud to site is done and the SOT has fully moved
-		// to Carbide.  At that point, all of these guard rails should be removed
+		// to NICo.  At that point, all of these guard rails should be removed
 		// and it should no longer be possible for the cloud to know about an
 		// instance type that the site does not know about.
 		var applicationErr *tp.ApplicationError
 		if errors.As(err, &applicationErr) {
-			if applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-				logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+			if applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
-			} else if applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied {
-				// Carbide _could_ respond with an unimplemented if it's an
-				// older Carbide that doesn't have the endpoint yet, but it's more
+			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied {
+				// NICo _could_ respond with an unimplemented if it's an
+				// older NICo that doesn't have the endpoint yet, but it's more
 				// likely to respond with a PermissionDenied because the permission
 				// for the path isn't there either, but we can watch for both just to
 				// be safe.
 
-				logger.Warn().Msg("Carbide endpoint unimplemented or restricted response received from Site")
+				logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
 				// Reset error to nil because we'll want to ignore while
-				// Carbide is being rolled out.
+				// NICo is being rolled out.
 				err = nil
 			}
 		}
@@ -1513,7 +1513,7 @@ func NewDeleteInstanceTypeHandler(dbSession *cdb.Session, tc temporalClient.Clie
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Instance Type"
 // @Success 204
-// @Router /v2/org/{org}/carbide/instance/type/{id} [delete]
+// @Router /v2/org/{org}/nico/instance/type/{id} [delete]
 func (dith DeleteInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InstanceType", "Delete", c, dith.tracerSpan)
 	if handlerSpan != nil {
@@ -1690,23 +1690,23 @@ func (dith DeleteInstanceTypeHandler) Handle(c echo.Context) error {
 
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
 		if errors.As(err, &applicationErr) {
-			if applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-				logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+			if applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
-			} else if applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied {
-				// Carbide _could_ respond with an unimplemented if it's an
-				// older Carbide that doesn't have the endpoint yet, but it's more
+			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied {
+				// NICo _could_ respond with an unimplemented if it's an
+				// older NICo that doesn't have the endpoint yet, but it's more
 				// likely to respond with a PermissionDenied because the permission
 				// for the path isn't there either, but we can watch for both just to
 				// be safe.
 
-				logger.Warn().Msg("Carbide endpoint unimplemented or restricted response received from Site")
+				logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
 				// Reset error to nil because we'll want to ignore while
-				// Carbide is being rolled out.
+				// NICo is being rolled out.
 				err = nil
 			}
 		}

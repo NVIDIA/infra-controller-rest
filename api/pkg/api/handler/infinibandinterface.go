@@ -78,7 +78,7 @@ func NewGetAllInstanceInfiniBandInterfaceHandler(dbSession *cdb.Session, tc temp
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APIInterface
-// @Router /v2/org/{org}/carbide/instance/{instance_id}/interface [get]
+// @Router /v2/org/{org}/nico/instance/{instance_id}/interface [get]
 func (gaiibih GetAllInstanceInfiniBandInterfaceHandler) Handle(c echo.Context) error {
 	instanceID := c.Param("instanceId")
 	queryOverride := &common.QueryOverride{
@@ -134,7 +134,7 @@ func NewGetAllInfiniBandInterfaceHandler(dbSession *cdb.Session, tc temporalClie
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APIInfiniBandInterface
-// @Router /v2/org/{org}/carbide/infiniband-interface [get]
+// @Router /v2/org/{org}/nico/infiniband-interface [get]
 func (gaibih GetAllInfiniBandInterfaceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfiniBandInterface", "GetAll", c, gaibih.tracerSpan)
 	if handlerSpan != nil {

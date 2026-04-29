@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Overview
 
-Define the code of conduct followed and enforced for NVIDIA Infra Controller.
+Define the code of conduct followed and enforced for NVIDIA Infrastructure Controller (NICo).
 
 ### Intended audience
 

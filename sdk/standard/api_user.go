@@ -82,7 +82,7 @@ func (a *UserAPIService) GetUserExecute(r ApiGetUserRequest) (*User, *http.Respo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/user/current"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/user/current"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)

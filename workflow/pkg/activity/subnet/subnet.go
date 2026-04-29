@@ -181,7 +181,7 @@ func (ms ManageSubnet) UpdateSubnetsInDB(ctx context.Context, siteID uuid.UUID, 
 		}
 
 		// Update Subnet in DB
-		status, statusMessage := getForgeSubnetStatus(controllerSegment.State)
+		status, statusMessage := getNICoSubnetStatus(controllerSegment.State)
 
 		// If Subnet is already in Deleting state then no need to update status
 		if subnet.Status == cdbm.SubnetStatusDeleting {
@@ -380,8 +380,8 @@ func (ms ManageSubnet) deleteSubnetFromDB(ctx context.Context, tx *cdb.Tx, subne
 	return nil
 }
 
-// Utility function to get Forge Subent status from Controller Segment state
-func getForgeSubnetStatus(controllerNetworkSegmentTenantState cwsv1.TenantState) (string, string) {
+// Utility function to get NICo Subent status from Controller Segment state
+func getNICoSubnetStatus(controllerNetworkSegmentTenantState cwsv1.TenantState) (string, string) {
 	switch controllerNetworkSegmentTenantState {
 	case cwsv1.TenantState_PROVISIONING:
 		return cdbm.SubnetStatusProvisioning, "Subnet is being provisioned on Site"

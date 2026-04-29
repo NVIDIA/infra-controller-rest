@@ -12,6 +12,6 @@ psm:
 	go build -C build ..
 
 container: psm
-	docker build -t carbide-psm:$$(grep -v -e '^#' -e "^$$" ../VERSION)-$(CURDATE)-$$(git rev-parse HEAD) -t carbide-psm:latest .
+	docker build -t nico-psm:$$(grep -v -e '^#' -e "^$$" ../VERSION)-$(CURDATE)-$$(git rev-parse HEAD) -t nico-psm:latest .
 
 .PHONY: gen-pb psm container runcontainer test

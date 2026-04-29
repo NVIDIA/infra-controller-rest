@@ -80,7 +80,7 @@ func NewCreateVpcPeeringHandler(dbSession *cdb.Session, tc tclient.Client, sc *s
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIVpcPeeringCreateRequest true "VPC Peering create request"
 // @Success 201 {object} model.APIVpcPeering
-// @Router /v2/org/{org}/carbide/vpc-peering [post]
+// @Router /v2/org/{org}/nico/vpc-peering [post]
 func (cvph CreateVpcPeeringHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Create", "VpcPeering", c, cvph.tracerSpan)
 	if handlerSpan != nil {
@@ -319,7 +319,7 @@ func (cvph CreateVpcPeeringHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for VPC Peering", nil)
 	}
 
-	// Create the peering directly in Carbide via site agent
+	// Create the peering directly in NICo via site agent
 	err = vpcPeeringDAO.UpdateStatusByID(ctx, tx, vpcPeering.ID, cdbm.VpcPeeringStatusConfiguring)
 	if err != nil {
 		logger.Error().Err(err).Msg("error updating VPC Peering status to Configuring")
@@ -368,7 +368,7 @@ func (cvph CreateVpcPeeringHandler) Handle(c echo.Context) error {
 	err = workflowRun.Get(workflowCtx, nil)
 	if err != nil {
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}
@@ -443,7 +443,7 @@ func NewGetAllVpcPeeringHandler(dbSession *cdb.Session, tc tclient.Client, cfg *
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} model.APIVpcPeering
-// @Router /v2/org/{org}/carbide/vpc-peering [get]
+// @Router /v2/org/{org}/nico/vpc-peering [get]
 func (gavph GetAllVpcPeeringHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("GetAll", "VpcPeering", c, gavph.tracerSpan)
 	if handlerSpan != nil {
@@ -622,7 +622,7 @@ func NewGetVpcPeeringHandler(dbSession *cdb.Session, tc tclient.Client, cfg *con
 // @Param id path string true "ID of VPC Peering"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Vpc1', 'Vpc2', 'Site'""
 // @Success 200 {object} model.APIVpcPeering
-// @Router /v2/org/{org}/carbide/vpc-peering/{id} [get]
+// @Router /v2/org/{org}/nico/vpc-peering/{id} [get]
 func (gvph GetVpcPeeringHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Get", "VpcPeering", c, gvph.tracerSpan)
 	if handlerSpan != nil {
@@ -752,7 +752,7 @@ func NewDeleteVpcPeeringHandler(dbSession *cdb.Session, tc tclient.Client, sc *s
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of VPC Peering"
 // @Success 204 "No Content"
-// @Router /v2/org/{org}/carbide/vpc-peering/{id} [delete]
+// @Router /v2/org/{org}/nico/vpc-peering/{id} [delete]
 func (dvph DeleteVpcPeeringHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Delete", "VpcPeering", c, dvph.tracerSpan)
 	if handlerSpan != nil {
@@ -912,7 +912,7 @@ func (dvph DeleteVpcPeeringHandler) Handle(c echo.Context) error {
 	err = we.Get(workflowCtx, nil)
 	if err != nil {
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}

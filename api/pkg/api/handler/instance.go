@@ -77,7 +77,7 @@ func NewCreateInstanceHandler(dbSession *cdb.Session, tc temporalClient.Client, 
 
 // Returns either a default OS or an existing instance OS config.
 // apiRequest will be mutated for use in createFromParams.
-// osConfig will hold the struct/data for use with Temporal/Carbide calls.
+// osConfig will hold the struct/data for use with Temporal/NICo calls.
 // Errors should be returned in the form of cutil.NewAPIErrorResponse
 func (cih CreateInstanceHandler) buildInstanceCreateRequestOsConfig(c echo.Context, logger *zerolog.Logger, apiRequest *model.APIInstanceCreateRequest, site *cdbm.Site) (*cwssaws.OperatingSystem, *uuid.UUID, *cutil.APIError) {
 
@@ -222,7 +222,7 @@ func (cih CreateInstanceHandler) buildInstanceCreateRequestOsConfig(c echo.Conte
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIInstanceCreateRequest true "Instance create request"
 // @Success 201 {object} model.APIInstance
-// @Router /v2/org/{org}/carbide/instance [post]
+// @Router /v2/org/{org}/nico/instance [post]
 func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 	// Execution Steps:
 	// 1. Authentication & Authorization
@@ -748,7 +748,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 	}
 
 	// apiRequest will be mutated for use in CreateFromParams.
-	// osConfig will hold the struct/data for use with Temporal/Carbide calls.
+	// osConfig will hold the struct/data for use with Temporal/NICo calls.
 	// Errors will be returned already in the form of cutil.NewAPIErrorResponse
 	osConfig, osID, oserr := cih.buildInstanceCreateRequestOsConfig(c, &logger, &apiRequest, site)
 	if oserr != nil {
@@ -1281,7 +1281,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// We'll need a list of the IDs as a string slice to
-		// send along in the config update request to carbide.
+		// send along in the config update request to nico.
 		instanceSshKeyGroupIds := []string{}
 
 		// create the ssh key group instance association in the db
@@ -1296,7 +1296,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 			instanceSshKeyGroupIds = append(instanceSshKeyGroupIds, skg.ID.String())
 		}
 
-		// Prepare interface details to pass to carbide call
+		// Prepare interface details to pass to nico call
 		interfaceConfigs := []*cwssaws.InstanceInterfaceConfig{}
 
 		// Create the instance subnet record in the db from info gathered earlier
@@ -1374,7 +1374,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 			interfaceConfigs = append(interfaceConfigs, interfaceConfig)
 		}
 
-		//We'll need this later for the carbide call
+		//We'll need this later for the nico call
 		ibInterfaceConfigs := []*cwssaws.InstanceIBInterfaceConfig{}
 
 		// Create the instance infiniband interface record in the db from info gathered earlier IF instance type was used
@@ -1824,7 +1824,7 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 
 // Returns either an existing instance OS config or an updated OS config based on the incoming request.
 // apiRequest will be mutated for use in UpdateFromParams.
-// osConfig will hold the struct/data for use with Temporal/Carbide calls.
+// osConfig will hold the struct/data for use with Temporal/NICo calls.
 // Errors should be returned in the form of cutil.NewAPIErrorResponse
 func (uih UpdateInstanceHandler) buildInstanceUpdateRequestOsConfig(c echo.Context, logger *zerolog.Logger, apiRequest *model.APIInstanceUpdateRequest, instance *cdbm.Instance, site *cdbm.Site) (*cwssaws.OperatingSystem, *uuid.UUID, *cutil.APIError) {
 
@@ -2029,7 +2029,7 @@ func (uih UpdateInstanceHandler) buildInstanceUpdateRequestOsConfig(c echo.Conte
 // @Param id path string true "ID of Instance"
 // @Param message body model.APIInstanceUpdateRequest true "Instance update request"
 // @Success 200 {object} model.APIInstance
-// @Router /v2/org/{org}/carbide/instance/{id} [patch]
+// @Router /v2/org/{org}/nico/instance/{id} [patch]
 func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Instance", "Update", c, uih.tracerSpan)
 	if handlerSpan != nil {
@@ -2723,7 +2723,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		sdDAO := cdbm.NewStatusDetailDAO(uih.dbSession)
 
 		// apiRequest will be mutated for use in UpdateFromParams.
-		// osConfig will hold the struct/data for use with Temporal/Carbide calls.
+		// osConfig will hold the struct/data for use with Temporal/NICo calls.
 		// Errors will be returned already in the form of cutil.NewAPIError
 		osConfig, osID, oserr := uih.buildInstanceUpdateRequestOsConfig(c, &logger, &apiRequest, instance, site)
 		if oserr != nil {
@@ -2811,12 +2811,12 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// We'll need a list of the IDs as a string slice to
-		// send along in the config update request to carbide.
+		// send along in the config update request to nico.
 		var instanceSshKeyGroupIds []string
 
 		if apiRequest.SSHKeyGroupIDs == nil {
 			// If no change in keygroups, we just need to build the keygroup and keygroup ID
-			// lists from the existing instance data so we can send to carbide
+			// lists from the existing instance data so we can send to nico
 			// and return it to the client.
 			for _, skgia := range skgias {
 				dbskgs = append(dbskgs, *skgia.SSHKeyGroup)
@@ -2850,7 +2850,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				skgia, found := existingSkgiasBySkg[skgID]
 				// If the SKG is already associated with the Instance, we can
 				// skip any DB work and just add the keygroup to the lists we'll
-				// send to carbide and back to the client.
+				// send to nico and back to the client.
 				if found {
 					dbskgs = append(dbskgs, *skgia.SSHKeyGroup)
 					instanceSshKeyGroupIds = append(instanceSshKeyGroupIds, skgID.String())
@@ -2922,7 +2922,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		ifcDAO := cdbm.NewInterfaceDAO(uih.dbSession)
 
 		// OrderAscending is our best-effort to make sure we send
-		// Carbide the interfaces in the order it originally received them
+		// NICo the interfaces in the order it originally received them
 		// so the config doesn't get rejected.
 		existingIfcs, _, derr = ifcDAO.GetAll(ctx, tx, cdbm.InterfaceFilterInput{InstanceIDs: []uuid.UUID{instance.ID}}, cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InterfaceOrderByCreated, Order: cdbp.OrderAscending}}, []string{cdbm.SubnetRelationName, cdbm.VpcPrefixRelationName})
 		if derr != nil {
@@ -2974,7 +2974,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		// Create new InfiniBand Interface records in the DB if specified in request
 		ibiDAO := cdbm.NewInfiniBandInterfaceDAO(uih.dbSession)
 
-		// OrderAscending is our best-effort to make sure we send Carbide the interfaces in the order it originally received them. so the config doesn't get rejected
+		// OrderAscending is our best-effort to make sure we send NICo the interfaces in the order it originally received them. so the config doesn't get rejected
 		existingIbIfcs, _, derr = ibiDAO.GetAll(ctx, tx, cdbm.InfiniBandInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}}, cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InfiniBandInterfaceOrderByCreated, Order: cdbp.OrderAscending}}, nil)
 		if derr != nil {
 			logger.Error().Err(derr).Msg("failed to retrieve InfinibandInterface details for Instance")
@@ -3105,7 +3105,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		// Create new NVLink Interface records in the DB if specified in request
 		nvlIfcDAO := cdbm.NewNVLinkInterfaceDAO(uih.dbSession)
 
-		// OrderAscending is our best-effort to make sure we send Carbide the interfaces in the order it originally received them. so the config doesn't get rejected
+		// OrderAscending is our best-effort to make sure we send NICo the interfaces in the order it originally received them. so the config doesn't get rejected
 		existingNvlIfcs, _, derr = nvlIfcDAO.GetAll(ctx, tx, cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}}, cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.NVLinkInterfaceOrderByCreated, Order: cdbp.OrderAscending}}, nil)
 		if derr != nil {
 			logger.Error().Err(derr).Msg("failed to retrieve NVLink Interfaces details for Instance")
@@ -3566,7 +3566,7 @@ func NewGetInstanceHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg
 // @Param id path string true "ID of Instance"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant', 'Site'"
 // @Success 200 {object} model.APIInstance
-// @Router /v2/org/{org}/carbide/instance/{id} [get]
+// @Router /v2/org/{org}/nico/instance/{id} [get]
 func (gih GetInstanceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Instance", "Get", c, gih.tracerSpan)
 	if handlerSpan != nil {
@@ -3780,7 +3780,7 @@ func NewGetAllInstanceHandler(dbSession *cdb.Session, tc temporalClient.Client, 
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} []model.APIInstance
-// @Router /v2/org/{org}/carbide/instance [get]
+// @Router /v2/org/{org}/nico/instance [get]
 func (gaih GetAllInstanceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Instance", "GetAll", c, gaih.tracerSpan)
 	if handlerSpan != nil {
@@ -4417,7 +4417,7 @@ func NewDeleteInstanceHandler(dbSession *cdb.Session, tc temporalClient.Client, 
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Instance"
 // @Success 202
-// @Router /v2/org/{org}/carbide/instance/{id} [delete]
+// @Router /v2/org/{org}/nico/instance/{id} [delete]
 func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Instance", "Delete", c, dih.tracerSpan)
 	if handlerSpan != nil {
@@ -4586,10 +4586,10 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 
 		// Handle skippable errors
 		if wferr != nil {
-			// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 			var applicationErr *tp.ApplicationError
-			if errors.As(wferr, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-				logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+			if errors.As(wferr, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				wferr = nil
 			}
@@ -4661,7 +4661,7 @@ func NewGetInstanceStatusDetailsHandler(dbSession *cdb.Session) GetInstanceStatu
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Instance"
 // @Success 200 {object} []model.APIStatusDetail
-// @Router /v2/org/{org}/carbide/instance/{id}/status-history [get]
+// @Router /v2/org/{org}/nico/instance/{id}/status-history [get]
 func (gisdh GetInstanceStatusDetailsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Instance", "Get", c, gisdh.tracerSpan)
 	if handlerSpan != nil {

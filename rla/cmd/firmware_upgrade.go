@@ -39,12 +39,12 @@ var (
 	firmwareUpgradeCmd = &cobra.Command{
 		Use:   "upgrade",
 		Short: "Upgrade firmware for machines",
-		Long: `Upgrade firmware for machines via carbide API.
+		Long: `Upgrade firmware for machines via nico API.
 		
 Specify exactly ONE of the following options:
   --rack-ids      : Comma-separated list of rack UUIDs
   --rack-names    : Comma-separated list of rack names
-  --component-ids : Comma-separated list of component IDs (e.g. machine_id from Carbide)
+  --component-ids : Comma-separated list of component IDs (e.g. machine_id from NICo)
 
 If racks are specified, component IDs will be retrieved from the database.
 If --start and --end are not specified, defaults to now + 24 hours.

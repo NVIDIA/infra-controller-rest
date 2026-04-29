@@ -38,7 +38,7 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/conftypes"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
 	"github.com/rs/zerolog/log"
@@ -49,7 +49,7 @@ import (
 )
 
 var (
-	// NOTE: These values must match values in test Carbide server in elektra-carbide-lib
+	// NOTE: These values must match values in test NICo server in elektra-nico-lib
 
 	// DefaultTestVpcID is the default VPC ID for testing
 	DefaultTestVpcID = "00000000-0000-4000-8000-000000000000"
@@ -100,19 +100,19 @@ type bootstrapSecretData struct {
 	SiteManagerCACert   string
 }
 
-// checkGrpcState checks the state of the Carbide gRPC connection
+// checkGrpcState checks the state of the NICo gRPC connection
 func checkGrpcState(stats *workflowtypes.MgrState) {
-	fail := int(carbide.ManagerAccess.Data.EB.Managers.Carbide.State.GrpcFail.Load())
+	fail := int(nico.ManagerAccess.Data.EB.Managers.NICo.State.GrpcFail.Load())
 	if wflowGrpcFail != fail {
 		log.Info().Msgf("wflowGrpcFail: %v, state fail: %v ", wflowGrpcFail, fail)
 		panic("wflowGrpcFail ctr incorrect")
 	}
-	succ := int(carbide.ManagerAccess.Data.EB.Managers.Carbide.State.GrpcSucc.Load())
+	succ := int(nico.ManagerAccess.Data.EB.Managers.NICo.State.GrpcSucc.Load())
 	if wflowGrpcSucc != succ {
 		log.Info().Msgf("wflowGrpcSucc: %v, state succ %v", wflowGrpcSucc, succ)
 		panic("wflowGrpcSucc ctr incorrect")
 	}
-	state := uint64(carbide.ManagerAccess.Data.EB.Managers.Carbide.State.HealthStatus.Load())
+	state := uint64(nico.ManagerAccess.Data.EB.Managers.NICo.State.HealthStatus.Load())
 	if uint64(computils.CompHealthy) != state {
 		log.Info().Msgf("state %v ", state)
 		panic("Component not in Healthy State")
@@ -288,8 +288,8 @@ func TestInitElektra(t *testing.T) {
 	if testElektra != nil {
 		return
 	}
-	os.Setenv("CARBIDE_CERT_CHECK_INTERVAL", "1") // set this to check if certs were rotated every second to help with unit tests
-	defer os.Unsetenv("CARBIDE_CERT_CHECK_INTERVAL")
+	os.Setenv("NICO_CERT_CHECK_INTERVAL", "1") // set this to check if certs were rotated every second to help with unit tests
+	defer os.Unsetenv("NICO_CERT_CHECK_INTERVAL")
 
 	// Initialize test Site Agent
 	log.Info().Msg("Elektra: Initializing test Site Agent")
@@ -306,14 +306,14 @@ func TestInitElektra(t *testing.T) {
 	}
 
 	// Config has been initialized here
-	// Generate Carbide CA and client certs
-	carbideCACertPath := SetupTestCA(t, testElektraTypes.Conf.Carbide.ServerCAPath)
-	carbideKeyPath, carbideCertPath := SetupTestCerts(t, testElektraTypes.Conf.Carbide.ClientCertPath, testElektraTypes.Conf.Carbide.ClientKeyPath,
-		carbideCACertPath)
+	// Generate NICo CA and client certs
+	nicoCACertPath := SetupTestCA(t, testElektraTypes.Conf.NICo.ServerCAPath)
+	nicoKeyPath, nicoCertPath := SetupTestCerts(t, testElektraTypes.Conf.NICo.ClientCertPath, testElektraTypes.Conf.NICo.ClientKeyPath,
+		nicoCACertPath)
 
-	assert.Equal(t, carbideCACertPath, testElektraTypes.Conf.Carbide.ServerCAPath)
-	assert.Equal(t, carbideKeyPath, testElektraTypes.Conf.Carbide.ClientKeyPath)
-	assert.Equal(t, carbideCertPath, testElektraTypes.Conf.Carbide.ClientCertPath)
+	assert.Equal(t, nicoCACertPath, testElektraTypes.Conf.NICo.ServerCAPath)
+	assert.Equal(t, nicoKeyPath, testElektraTypes.Conf.NICo.ClientKeyPath)
+	assert.Equal(t, nicoCertPath, testElektraTypes.Conf.NICo.ClientCertPath)
 
 	// Generate and set Temporal access certs
 	temporalCACertPath := SetupTestCA(t, testElektraTypes.Conf.Temporal.GetTemporalCACertFullPath())

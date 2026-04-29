@@ -392,7 +392,7 @@ func TestComponentConversion(t *testing.T) {
 func TestComponentConversionWithComponentID(t *testing.T) {
 	compID := uuid.New()
 	rackID := uuid.New()
-	componentID := "carbide-machine-12345"
+	componentID := "nico-machine-12345"
 
 	testCases := map[string]struct {
 		daoComponentID      *string

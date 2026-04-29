@@ -54,7 +54,7 @@ func (api *API) RegisterSubscriber() error {
 
 	// Register activities
 
-	instanceManager := swa.NewManageInstance(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	instanceManager := swa.NewManageInstance(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateInstanceOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceManager.CreateInstanceOnSite)

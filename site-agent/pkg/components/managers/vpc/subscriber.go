@@ -45,7 +45,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("VPC: Successfully registered DeleteVPCV2 workflow")
 
 	// Register activities
-	vpcManager := swa.NewManageVPC(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	vpcManager := swa.NewManageVPC(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateVpcOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcManager.CreateVpcOnSite)

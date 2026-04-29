@@ -18,7 +18,10 @@
 // Package testing provides shared constants and utilities for cloud-auth tests
 package testing
 
-import "github.com/Nerzal/gocloak/v13"
+import (
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
+	"github.com/Nerzal/gocloak/v13"
+)
 
 // Test domain constants - consolidate similar patterns across test files
 const (
@@ -40,8 +43,8 @@ const (
 
 	// Organization names
 	TestOrgName      = "test-org"
-	ForgeDevOrgName  = "forge-tenant-dev"
-	ForgeProviderOrg = "forge-prime-provider"
+	NICoDevOrgName  = "nico-tenant-dev"
+	NICoProviderOrg = "nico-prime-provider"
 	NvidiaOrgName    = "nvidia"
 
 	// User identifiers
@@ -56,17 +59,17 @@ const (
 	TestAudience = "ngc"
 
 	// Keycloak realm and IDP constants
-	TestRealm       = "forge"
+	TestRealm       = "nico"
 	TestIDPAlias    = "testorg-idp"
 	TestIDPProvider = "oidc"
 )
 
 // Test role constants
 const (
-	ForgeProviderAdminRole  = "FORGE_PROVIDER_ADMIN"
-	ForgeTenantAdminRole    = "FORGE_TENANT_ADMIN"
-	ForgeProviderViewerRole = "FORGE_PROVIDER_VIEWER"
-	ForgeTenantViewerRole   = "FORGE_TENANT_VIEWER"
+	NICoProviderAdminRole  = authz.ProviderAdminRole
+	NICoTenantAdminRole    = authz.TenantAdminRole
+	NICoProviderViewerRole = authz.ProviderViewerRole
+	NICoTenantViewerRole   = "TENANT_VIEWER"
 )
 
 // Key generation constants
@@ -138,21 +141,21 @@ var TestRealmRoles = struct {
 	InvalidFormat []string
 }{
 	SingleOrg: []string{
-		TestOrgName + ":" + ForgeProviderAdminRole,
-		TestOrgName + ":" + ForgeTenantAdminRole,
+		TestOrgName + ":" + NICoProviderAdminRole,
+		TestOrgName + ":" + NICoTenantAdminRole,
 	},
 	MultiOrg: []string{
-		TestOrgName + ":" + ForgeProviderAdminRole,
-		ForgeDevOrgName + ":" + ForgeTenantAdminRole,
-		NvidiaOrgName + ":" + ForgeProviderViewerRole,
+		TestOrgName + ":" + NICoProviderAdminRole,
+		NICoDevOrgName + ":" + NICoTenantAdminRole,
+		NvidiaOrgName + ":" + NICoProviderViewerRole,
 	},
 	MixedCase: []string{
-		"TestOrg:" + ForgeProviderAdminRole,
-		"TESTORG:" + ForgeTenantAdminRole,
+		"TestOrg:" + NICoProviderAdminRole,
+		"TESTORG:" + NICoTenantAdminRole,
 	},
 	InvalidFormat: []string{
 		"invalid-role-format",
-		":" + ForgeProviderAdminRole, // Empty org
+		":" + NICoProviderAdminRole, // Empty org
 		TestOrgName + ":",            // Empty role
 		"",                           // Empty string
 	},

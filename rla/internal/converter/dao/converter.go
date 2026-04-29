@@ -26,7 +26,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
 	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
@@ -55,17 +55,17 @@ func ComponentTypeFrom(dt string) devicetypes.ComponentType {
 	return devicetypes.ComponentTypeFromString(dt)
 }
 
-// powerStateFromDAO converts a carbideapi.PowerState pointer to a string.
-func powerStateFromDAO(ps *carbideapi.PowerState) string {
+// powerStateFromDAO converts a nicoapi.PowerState pointer to a string.
+func powerStateFromDAO(ps *nicoapi.PowerState) string {
 	if ps == nil {
 		return ""
 	}
 	switch *ps {
-	case carbideapi.PowerStateOn:
+	case nicoapi.PowerStateOn:
 		return "on"
-	case carbideapi.PowerStateOff:
+	case nicoapi.PowerStateOff:
 		return "off"
-	case carbideapi.PowerStateDisabled:
+	case nicoapi.PowerStateDisabled:
 		return "disabled"
 	default:
 		return "unknown"

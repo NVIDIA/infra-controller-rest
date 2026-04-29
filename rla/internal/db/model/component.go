@@ -25,7 +25,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
@@ -52,7 +52,7 @@ type Component struct {
 	Rack            *Rack                  `bun:"rel:belongs-to,join:rack_id=id"`
 	BMCs            []BMC                  `bun:"rel:has-many,join:id=component_id"`
 	ComponentID     *string                `bun:"external_id"`
-	PowerState      *carbideapi.PowerState `bun:"power_state"`
+	PowerState      *nicoapi.PowerState `bun:"power_state"`
 }
 
 func (cd *Component) Create(ctx context.Context, idb bun.IDB) error {

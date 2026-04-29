@@ -70,7 +70,7 @@ func NewCreateTenantHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APITenantCreateRequest true "Tenant creation request"
 // @Success 201 {object} model.APITenant
-// @Router /v2/org/{org}/carbide/tenant [post]
+// @Router /v2/org/{org}/nico/tenant [post]
 func (cth CreateTenantHandler) Handle(c echo.Context) error {
 	org, dbUser, _, logger, handlerSpan := common.SetupHandler("Tenant", "Create", c, cth.tracerSpan)
 	if handlerSpan != nil {
@@ -130,7 +130,7 @@ func NewGetCurrentTenantHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APITenant
-// @Router /v2/org/{org}/carbide/tenant/current [get]
+// @Router /v2/org/{org}/nico/tenant/current [get]
 func (gcth GetCurrentTenantHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tenant", "GetCurrent", c, gcth.tracerSpan)
 	if handlerSpan != nil {
@@ -252,7 +252,7 @@ func NewGetCurrentTenantStatsHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APITenantStats
-// @Router /v2/org/{org}/carbide/tenant/current/stats [get]
+// @Router /v2/org/{org}/nico/tenant/current/stats [get]
 func (gcth GetCurrentTenantStatsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tenant", "GetCurrentStats", c, gcth.tracerSpan)
 	if handlerSpan != nil {
@@ -362,7 +362,7 @@ func NewUpdateCurrentTenantHandler(dbSession *cdb.Session, tc temporalClient.Cli
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APITenantUpdateRequest true "Tenant update request"
 // @Success 200 {object} model.APITenant
-// @Router /v2/org/{org}/carbide/tenant/current [patch]
+// @Router /v2/org/{org}/nico/tenant/current [patch]
 func (ucth UpdateCurrentTenantHandler) Handle(c echo.Context) error {
 	org, dbUser, _, logger, handlerSpan := common.SetupHandler("Tenant", "UpdateCurrent", c, ucth.tracerSpan)
 	if handlerSpan != nil {

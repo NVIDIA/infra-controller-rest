@@ -52,6 +52,7 @@ import (
 	tp "go.temporal.io/sdk/temporal"
 
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testMachineInitDB(t *testing.T) *cdb.Session {
@@ -291,8 +292,8 @@ func TestMachineHandler_Get(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipunone := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, []string{})
 	ipu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
@@ -301,7 +302,7 @@ func TestMachineHandler_Get(t *testing.T) {
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, tnOrg2}, tnRoles)
 	tnuo3 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg3}, tnRoles)
@@ -687,8 +688,8 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
 	ipOrg4 := "test-ip-org-4"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipunone := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg4}, []string{})
 	ipu := testMachineBuildUser(t, dbSession, "TestMachineHandler_GetAll", []string{ipOrg1, ipOrg2, ipOrg3, ipOrg4}, ipRoles)
@@ -703,7 +704,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	site3 := testMachineBuildSite(t, dbSession, ip4, "testSite3", cdbm.SiteStatusRegistered)
 
 	tnOrg1 := "test-tn-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 	tnu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles)
 
 	tenant := testMachineBuildTenant(t, dbSession, tnOrg1, "test-tenant")
@@ -1479,7 +1480,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 				q.Set("orderBy", *tc.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/machine?%s", tc.reqOrgName, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/machine?%s", tc.reqOrgName, q.Encode())
 
 			fmt.Println(path)
 
@@ -1594,13 +1595,13 @@ func TestMachineHandler_Update(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles)
 	tnu2 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg2}, tnRoles)
@@ -2299,7 +2300,7 @@ func TestMachineHandler_Update(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/machine/%v", tt.args.reqOrg, tt.args.reqMachine.ID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/machine/%v", tt.args.reqOrg, tt.args.reqMachine.ID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqMachine.ID)
 			ec.Set("user", tt.args.reqUser)
@@ -2428,15 +2429,15 @@ func TestMachineHandler_GetStatusDetails(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 	ipuv := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipViewerRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, tnOrg2}, tnRoles)
 
@@ -2562,7 +2563,7 @@ func TestMachineHandler_GetStatusDetails(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/machine/%v/status-history", tc.reqOrg, tc.reqMachineID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/machine/%v/status-history", tc.reqOrg, tc.reqMachineID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tc.reqOrg, tc.reqMachineID)
 			ec.Set("user", tc.reqUser)
@@ -2600,15 +2601,15 @@ func TestMachineHandler_Delete(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 	ipuv := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipViewerRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, tnOrg2}, tnRoles)
 
@@ -2787,7 +2788,7 @@ func TestMachineHandler_Delete(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 			rec := httptest.NewRecorder()
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/machine/%v", tc.reqOrgName, tc.mID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/machine/%v", tc.reqOrgName, tc.mID))
 			names := []string{"orgName", "id"}
 			ec.SetParamNames(names...)
 			values := []string{tc.reqOrgName, tc.mID}

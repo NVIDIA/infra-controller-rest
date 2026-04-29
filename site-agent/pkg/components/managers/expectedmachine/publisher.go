@@ -35,10 +35,10 @@ func (api *API) RegisterPublisher() error {
 	// Register DiscoverExpectedMachineInventory activity
 	inventoryManager := swa.NewManageExpectedMachineInventory(
 		uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		ManagerAccess.Data.EB.Managers.Carbide.Client,
+		ManagerAccess.Data.EB.Managers.NICo.Client,
 		ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
-		InventoryCarbidePageSize,
+		InventoryNICoPageSize,
 	)
 
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(inventoryManager.DiscoverExpectedMachineInventory)

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: nico-rest-common
+description: Helm chart for NICo REST common secrets and certificates
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - nico
+  - rest
+  - common

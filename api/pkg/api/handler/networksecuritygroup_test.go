@@ -51,6 +51,7 @@ import (
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func getIntPtrToUint32Ptr(i *int) *uint32 {
@@ -162,10 +163,10 @@ func TestNetworkSecurityGroupHandler_Create(t *testing.T) {
 	testNetworkSecurityGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	tnOrg2 := "test-tenant-org-2"
 
@@ -258,20 +259,20 @@ func TestNetworkSecurityGroupHandler_Create(t *testing.T) {
 		"CreateNetworkSecurityGroup", mock.Anything).Return(wrunUnimplemented, nil)
 
 	//
-	// Carbide unimplemented mocking
+	// NICo unimplemented mocking
 	//
-	scpWithCarbideUnimplemented := sc.NewClientPool(tcfg)
-	tscWithCarbideUnimplemented := &tmocks.Client{}
+	scpWithNICoUnimplemented := sc.NewClientPool(tcfg)
+	tscWithNICoUnimplemented := &tmocks.Client{}
 
-	scpWithCarbideUnimplemented.IDClientMap[st.ID.String()] = tscWithCarbideUnimplemented
+	scpWithNICoUnimplemented.IDClientMap[st.ID.String()] = tscWithNICoUnimplemented
 
-	wrunWithCarbideUnimplemented := &tmocks.WorkflowRun{}
-	wrunWithCarbideUnimplemented.On("GetID").Return("workflow-WithCarbideUnimplemented")
+	wrunWithNICoUnimplemented := &tmocks.WorkflowRun{}
+	wrunWithNICoUnimplemented.On("GetID").Return("workflow-WithNICoUnimplemented")
 
-	wrunWithCarbideUnimplemented.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideUnimplemented, errors.New("Carbide went bananas")))
+	wrunWithNICoUnimplemented.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoUnimplemented, errors.New("NICo went bananas")))
 
-	tscWithCarbideUnimplemented.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"CreateNetworkSecurityGroup", mock.Anything).Return(wrunWithCarbideUnimplemented, nil)
+	tscWithNICoUnimplemented.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"CreateNetworkSecurityGroup", mock.Anything).Return(wrunWithNICoUnimplemented, nil)
 
 	type params struct {
 		org  string
@@ -506,8 +507,8 @@ func TestNetworkSecurityGroupHandler_Create(t *testing.T) {
 			wantResponseCode: http.StatusNotImplemented,
 			handlerConfig: handlerConfig{
 				dbSession:      dbSession,
-				temporalClient: tscWithCarbideUnimplemented,
-				clientPool:     scpWithCarbideUnimplemented,
+				temporalClient: tscWithNICoUnimplemented,
+				clientPool:     scpWithNICoUnimplemented,
 				config:         cfg,
 			},
 			params: params{
@@ -629,7 +630,7 @@ func TestNetworkSecurityGroupHandler_Create(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/network-security-group", test.params.org))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/network-security-group", test.params.org))
 			ec.SetParamNames("orgName")
 			ec.SetParamValues(test.params.org)
 			ec.Set("user", test.params.user)
@@ -738,13 +739,13 @@ func TestNetworkSecurityGroupHandler_GetAll(t *testing.T) {
 	testNetworkSecurityGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles2 := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles2 := []string{authz.TenantAdminRole}
 
 	// Providers
 	ipu := testInstanceBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
@@ -1047,7 +1048,7 @@ func TestNetworkSecurityGroupHandler_GetAll(t *testing.T) {
 				cfg:       test.handlerConfig.config,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/network-security-group?%s", test.params.org, test.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/network-security-group?%s", test.params.org, test.query.Encode())
 
 			// Setup echo server/context
 			req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -1156,10 +1157,10 @@ func TestNetworkSecurityGroupHandler_Get(t *testing.T) {
 	testNetworkSecurityGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	// Providers
 	ipu := testInstanceBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
@@ -1371,7 +1372,7 @@ func TestNetworkSecurityGroupHandler_Get(t *testing.T) {
 				cfg:       test.handlerConfig.config,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/network-security-group/%s?%s", test.params.org, test.params.networkSecurityGroupID, test.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/network-security-group/%s?%s", test.params.org, test.params.networkSecurityGroupID, test.query.Encode())
 
 			// Setup echo server/context
 			req := httptest.NewRequest(http.MethodGet, path, nil)
@@ -1481,10 +1482,10 @@ func TestNetworkSecurityGroupHandler_Delete(t *testing.T) {
 	testNetworkSecurityGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	// Providers
 	ipu := testInstanceBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
@@ -1612,38 +1613,38 @@ func TestNetworkSecurityGroupHandler_Delete(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[st1.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[st1.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteNetworkSecurityGroup", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteNetworkSecurityGroup", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide unimplemented mocking
+	// NICo unimplemented mocking
 	//
-	scpWithCarbideUnimplemented := sc.NewClientPool(tcfg)
-	tscWithCarbideUnimplemented := &tmocks.Client{}
+	scpWithNICoUnimplemented := sc.NewClientPool(tcfg)
+	tscWithNICoUnimplemented := &tmocks.Client{}
 
-	scpWithCarbideUnimplemented.IDClientMap[st1.ID.String()] = tscWithCarbideUnimplemented
+	scpWithNICoUnimplemented.IDClientMap[st1.ID.String()] = tscWithNICoUnimplemented
 
-	wrunWithCarbideUnimplemented := &tmocks.WorkflowRun{}
-	wrunWithCarbideUnimplemented.On("GetID").Return("workflow-WithCarbideUnimplemented")
+	wrunWithNICoUnimplemented := &tmocks.WorkflowRun{}
+	wrunWithNICoUnimplemented.On("GetID").Return("workflow-WithNICoUnimplemented")
 
-	wrunWithCarbideUnimplemented.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideUnimplemented, errors.New("Carbide went bananas")))
+	wrunWithNICoUnimplemented.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoUnimplemented, errors.New("NICo went bananas")))
 
-	tscWithCarbideUnimplemented.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteNetworkSecurityGroup", mock.Anything).Return(wrunWithCarbideUnimplemented, nil)
+	tscWithNICoUnimplemented.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteNetworkSecurityGroup", mock.Anything).Return(wrunWithNICoUnimplemented, nil)
 
 	type params struct {
 		org                    string
@@ -1688,8 +1689,8 @@ func TestNetworkSecurityGroupHandler_Delete(t *testing.T) {
 			},
 			handlerConfig: handlerConfig{
 				dbSession:      dbSession,
-				temporalClient: tscWithCarbideNotFound,
-				clientPool:     scpWithCarbideNotFound,
+				temporalClient: tscWithNICoNotFound,
+				clientPool:     scpWithNICoNotFound,
 				config:         cfg,
 			},
 			wantResponseCode: http.StatusAccepted,
@@ -1718,8 +1719,8 @@ func TestNetworkSecurityGroupHandler_Delete(t *testing.T) {
 			},
 			handlerConfig: handlerConfig{
 				dbSession:      dbSession,
-				temporalClient: tscWithCarbideUnimplemented,
-				clientPool:     scpWithCarbideUnimplemented,
+				temporalClient: tscWithNICoUnimplemented,
+				clientPool:     scpWithNICoUnimplemented,
 				config:         cfg,
 			},
 			wantResponseCode: http.StatusNotImplemented,
@@ -1767,7 +1768,7 @@ func TestNetworkSecurityGroupHandler_Delete(t *testing.T) {
 
 			// Setup echo server/context
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/network-security-group/%s", test.params.org, test.params.networkSecurityGroupID)
+			path := fmt.Sprintf("/v2/org/%s/nico/network-security-group/%s", test.params.org, test.params.networkSecurityGroupID)
 
 			req := httptest.NewRequest(http.MethodDelete, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1901,10 +1902,10 @@ func TestNetworkSecurityGroupHandler_Update(t *testing.T) {
 	testNetworkSecurityGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	// Providers
 	ipu := testInstanceBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
@@ -2032,20 +2033,20 @@ func TestNetworkSecurityGroupHandler_Update(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide unimplemented mocking
+	// NICo unimplemented mocking
 	//
-	scpWithCarbideUnimplemented := sc.NewClientPool(tcfg)
-	tscWithCarbideUnimplemented := &tmocks.Client{}
+	scpWithNICoUnimplemented := sc.NewClientPool(tcfg)
+	tscWithNICoUnimplemented := &tmocks.Client{}
 
-	scpWithCarbideUnimplemented.IDClientMap[st1.ID.String()] = tscWithCarbideUnimplemented
+	scpWithNICoUnimplemented.IDClientMap[st1.ID.String()] = tscWithNICoUnimplemented
 
-	wrunWithCarbideUnimplemented := &tmocks.WorkflowRun{}
-	wrunWithCarbideUnimplemented.On("GetID").Return("workflow-WithCarbideUnimplemented")
+	wrunWithNICoUnimplemented := &tmocks.WorkflowRun{}
+	wrunWithNICoUnimplemented.On("GetID").Return("workflow-WithNICoUnimplemented")
 
-	wrunWithCarbideUnimplemented.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideUnimplemented, errors.New("Carbide went bananas")))
+	wrunWithNICoUnimplemented.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoUnimplemented, errors.New("NICo went bananas")))
 
-	tscWithCarbideUnimplemented.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"UpdateNetworkSecurityGroup", mock.Anything).Return(wrunWithCarbideUnimplemented, nil)
+	tscWithNICoUnimplemented.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"UpdateNetworkSecurityGroup", mock.Anything).Return(wrunWithNICoUnimplemented, nil)
 
 	type params struct {
 		org                    string
@@ -2205,8 +2206,8 @@ func TestNetworkSecurityGroupHandler_Update(t *testing.T) {
 			},
 			handlerConfig: handlerConfig{
 				dbSession:      dbSession,
-				temporalClient: tscWithCarbideUnimplemented,
-				clientPool:     scpWithCarbideUnimplemented,
+				temporalClient: tscWithNICoUnimplemented,
+				clientPool:     scpWithNICoUnimplemented,
 				config:         cfg,
 			},
 			requestPayload: &model.APINetworkSecurityGroupUpdateRequest{
@@ -2227,7 +2228,7 @@ func TestNetworkSecurityGroupHandler_Update(t *testing.T) {
 
 			// Setup echo server/context
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/network-security-group/%s", test.params.org, test.params.networkSecurityGroupID)
+			path := fmt.Sprintf("/v2/org/%s/nico/network-security-group/%s", test.params.org, test.params.networkSecurityGroupID)
 
 			jsonData, _ := json.Marshal(test.requestPayload)
 

@@ -47,7 +47,7 @@ const (
 	// VpcOrderByDefault default field to be used for ordering when none specified
 	VpcOrderByDefault = "created"
 
-	// VpcEthernetVirtualizer is basic forge native netorking
+	// VpcEthernetVirtualizer is basic nico native netorking
 	VpcEthernetVirtualizer         = "ETHERNET_VIRTUALIZER"
 	VpcEthernetVirtualizerWithNVUE = "ETHERNET_VIRTUALIZER_WITH_NVUE"
 	VpcFNNClassic                  = "FNN_CLASSIC"

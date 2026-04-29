@@ -250,21 +250,21 @@ func TestCustomProcessor_ValidateScopes_Success(t *testing.T) {
 		shouldPass       bool
 	}{
 		{
-			name:             "single scope matches - carbide",
-			configuredScopes: []string{"carbide"},
-			tokenScopes:      "carbide",
+			name:             "single scope matches - nico",
+			configuredScopes: []string{"nico"},
+			tokenScopes:      "nico",
 			shouldPass:       true,
 		},
 		{
-			name:             "multiple scopes all present - includes carbide",
-			configuredScopes: []string{"carbide", "read:data"},
-			tokenScopes:      "carbide read:data write:data",
+			name:             "multiple scopes all present - includes nico",
+			configuredScopes: []string{"nico", "read:data"},
+			tokenScopes:      "nico read:data write:data",
 			shouldPass:       true,
 		},
 		{
 			name:             "scopes as array",
-			configuredScopes: []string{"carbide"},
-			tokenScopes:      []interface{}{"carbide", "other"},
+			configuredScopes: []string{"nico"},
+			tokenScopes:      []interface{}{"nico", "other"},
 			shouldPass:       true,
 		},
 		{
@@ -287,8 +287,8 @@ func TestCustomProcessor_ValidateScopes_Success(t *testing.T) {
 		},
 		{
 			name:             "scopes in scp claim instead of scope",
-			configuredScopes: []string{"carbide"},
-			tokenScopes:      "carbide", // Will be put in "scp" claim in test
+			configuredScopes: []string{"nico"},
+			tokenScopes:      "nico", // Will be put in "scp" claim in test
 			shouldPass:       true,
 		},
 	}
@@ -351,28 +351,28 @@ func TestCustomProcessor_ValidateScopes_Failure(t *testing.T) {
 	}{
 		{
 			name:             "scope does not match",
-			configuredScopes: []string{"carbide"},
+			configuredScopes: []string{"nico"},
 			tokenScopes:      "other",
 		},
 		{
 			name:             "missing one required scope",
-			configuredScopes: []string{"carbide", "read:data"},
-			tokenScopes:      "carbide",
+			configuredScopes: []string{"nico", "read:data"},
+			tokenScopes:      "nico",
 		},
 		{
 			name:             "completely different scopes",
-			configuredScopes: []string{"carbide"},
+			configuredScopes: []string{"nico"},
 			tokenScopes:      "admin write:data",
 		},
 		{
 			name:             "empty token scopes",
-			configuredScopes: []string{"carbide"},
+			configuredScopes: []string{"nico"},
 			tokenScopes:      "",
 		},
 		{
 			name:             "token has array but missing required scope",
-			configuredScopes: []string{"carbide", "admin"},
-			tokenScopes:      []interface{}{"carbide"},
+			configuredScopes: []string{"nico", "admin"},
+			tokenScopes:      []interface{}{"nico"},
 		},
 	}
 
@@ -420,17 +420,17 @@ func TestCustomProcessor_CombinedAudienceAndScope_Validation(t *testing.T) {
 		errorShouldContain  string
 	}{
 		{
-			name:                "both audience and scopes valid - carbide scope",
+			name:                "both audience and scopes valid - nico scope",
 			configuredAudiences: []string{"api.example.com"},
-			configuredScopes:    []string{"carbide"},
+			configuredScopes:    []string{"nico"},
 			tokenAudience:       "api.example.com",
-			tokenScopes:         "carbide admin",
+			tokenScopes:         "nico admin",
 			shouldPass:          true,
 		},
 		{
 			name:                "valid audience but invalid scopes",
 			configuredAudiences: []string{"api.example.com"},
-			configuredScopes:    []string{"carbide"},
+			configuredScopes:    []string{"nico"},
 			tokenAudience:       "api.example.com",
 			tokenScopes:         "other",
 			shouldPass:          false,
@@ -439,16 +439,16 @@ func TestCustomProcessor_CombinedAudienceAndScope_Validation(t *testing.T) {
 		{
 			name:                "invalid audience but valid scopes",
 			configuredAudiences: []string{"api.example.com"},
-			configuredScopes:    []string{"carbide"},
+			configuredScopes:    []string{"nico"},
 			tokenAudience:       "wrong.example.com",
-			tokenScopes:         "carbide",
+			tokenScopes:         "nico",
 			shouldPass:          false,
 			errorShouldContain:  "audience",
 		},
 		{
 			name:                "both invalid",
 			configuredAudiences: []string{"api.example.com"},
-			configuredScopes:    []string{"carbide"},
+			configuredScopes:    []string{"nico"},
 			tokenAudience:       "wrong.example.com",
 			tokenScopes:         "other",
 			shouldPass:          false,
@@ -539,7 +539,7 @@ func TestCustomProcessor_MissingAudienceClaim(t *testing.T) {
 }
 
 func TestCustomProcessor_MissingScopeClaim(t *testing.T) {
-	processor, jwksConfig, privateKey, _, cleanup := setupTestEnvironment(t, nil, []string{"carbide"})
+	processor, jwksConfig, privateKey, _, cleanup := setupTestEnvironment(t, nil, []string{"nico"})
 	defer cleanup()
 
 	claims := jwt.MapClaims{
@@ -578,19 +578,19 @@ func TestValidateAudiences_DirectTest(t *testing.T) {
 		shouldPass          bool
 	}{
 		{
-			name: "single audience matches - carbide example",
+			name: "single audience matches - nico example",
 			tokenClaims: jwt.MapClaims{
-				"aud": "api.carbide.com",
+				"aud": "api.nico.com",
 			},
-			configuredAudiences: []string{"api.carbide.com"},
+			configuredAudiences: []string{"api.nico.com"},
 			shouldPass:          true,
 		},
 		{
 			name: "multiple audiences, one matches",
 			tokenClaims: jwt.MapClaims{
-				"aud": []interface{}{"other.com", "api.carbide.com"},
+				"aud": []interface{}{"other.com", "api.nico.com"},
 			},
-			configuredAudiences: []string{"api.carbide.com"},
+			configuredAudiences: []string{"api.nico.com"},
 			shouldPass:          true,
 		},
 		{
@@ -598,7 +598,7 @@ func TestValidateAudiences_DirectTest(t *testing.T) {
 			tokenClaims: jwt.MapClaims{
 				"aud": "wrong.com",
 			},
-			configuredAudiences: []string{"api.carbide.com"},
+			configuredAudiences: []string{"api.nico.com"},
 			shouldPass:          false,
 		},
 		{
@@ -606,7 +606,7 @@ func TestValidateAudiences_DirectTest(t *testing.T) {
 			tokenClaims: jwt.MapClaims{
 				"sub": "test",
 			},
-			configuredAudiences: []string{"api.carbide.com"},
+			configuredAudiences: []string{"api.nico.com"},
 			shouldPass:          false,
 		},
 		{
@@ -644,27 +644,27 @@ func TestValidateScopes_DirectTest(t *testing.T) {
 		shouldPass     bool
 	}{
 		{
-			name: "single scope matches - scopes array with carbide",
+			name: "single scope matches - scopes array with nico",
 			tokenClaims: jwt.MapClaims{
-				"scopes": []interface{}{"carbide"},
+				"scopes": []interface{}{"nico"},
 			},
-			requiredScopes: []string{"carbide"},
+			requiredScopes: []string{"nico"},
 			shouldPass:     true,
 		},
 		{
-			name: "multiple scopes in token, all required present - carbide included",
+			name: "multiple scopes in token, all required present - nico included",
 			tokenClaims: jwt.MapClaims{
-				"scopes": []interface{}{"carbide", "read:data", "write:data"},
+				"scopes": []interface{}{"nico", "read:data", "write:data"},
 			},
-			requiredScopes: []string{"carbide", "read:data"},
+			requiredScopes: []string{"nico", "read:data"},
 			shouldPass:     true,
 		},
 		{
 			name: "scopes as space-separated string",
 			tokenClaims: jwt.MapClaims{
-				"scopes": "carbide admin read:data",
+				"scopes": "nico admin read:data",
 			},
-			requiredScopes: []string{"carbide"},
+			requiredScopes: []string{"nico"},
 			shouldPass:     true,
 		},
 		{
@@ -672,7 +672,7 @@ func TestValidateScopes_DirectTest(t *testing.T) {
 			tokenClaims: jwt.MapClaims{
 				"scopes": []interface{}{"read:data"},
 			},
-			requiredScopes: []string{"carbide"},
+			requiredScopes: []string{"nico"},
 			shouldPass:     false,
 		},
 		{
@@ -680,7 +680,7 @@ func TestValidateScopes_DirectTest(t *testing.T) {
 			tokenClaims: jwt.MapClaims{
 				"sub": "test",
 			},
-			requiredScopes: []string{"carbide"},
+			requiredScopes: []string{"nico"},
 			shouldPass:     false,
 		},
 		{
@@ -694,9 +694,9 @@ func TestValidateScopes_DirectTest(t *testing.T) {
 		{
 			name: "scp claim as fallback - space-separated",
 			tokenClaims: jwt.MapClaims{
-				"scp": "carbide admin",
+				"scp": "nico admin",
 			},
-			requiredScopes: []string{"carbide"},
+			requiredScopes: []string{"nico"},
 			shouldPass:     true,
 		},
 		{
@@ -710,17 +710,17 @@ func TestValidateScopes_DirectTest(t *testing.T) {
 		{
 			name: "multiple required scopes, all present",
 			tokenClaims: jwt.MapClaims{
-				"scopes": []interface{}{"carbide", "read:data", "write:data", "admin"},
+				"scopes": []interface{}{"nico", "read:data", "write:data", "admin"},
 			},
-			requiredScopes: []string{"carbide", "read:data", "admin"},
+			requiredScopes: []string{"nico", "read:data", "admin"},
 			shouldPass:     true,
 		},
 		{
 			name: "multiple required scopes, one missing",
 			tokenClaims: jwt.MapClaims{
-				"scopes": []interface{}{"carbide", "read:data"},
+				"scopes": []interface{}{"nico", "read:data"},
 			},
-			requiredScopes: []string{"carbide", "admin"},
+			requiredScopes: []string{"nico", "admin"},
 			shouldPass:     false,
 		},
 	}
@@ -753,23 +753,23 @@ func TestCombinedValidation_DirectTest(t *testing.T) {
 		expectScopeErr      bool
 	}{
 		{
-			name: "both audience and scopes valid - carbide example",
+			name: "both audience and scopes valid - nico example",
 			tokenClaims: jwt.MapClaims{
-				"aud":    "api.carbide.com",
-				"scopes": []interface{}{"carbide", "read:data"},
+				"aud":    "api.nico.com",
+				"scopes": []interface{}{"nico", "read:data"},
 			},
-			configuredAudiences: []string{"api.carbide.com"},
-			requiredScopes:      []string{"carbide"},
+			configuredAudiences: []string{"api.nico.com"},
+			requiredScopes:      []string{"nico"},
 			shouldPass:          true,
 		},
 		{
 			name: "valid audience, invalid scopes",
 			tokenClaims: jwt.MapClaims{
-				"aud":    "api.carbide.com",
+				"aud":    "api.nico.com",
 				"scopes": []interface{}{"other"},
 			},
-			configuredAudiences: []string{"api.carbide.com"},
-			requiredScopes:      []string{"carbide"},
+			configuredAudiences: []string{"api.nico.com"},
+			requiredScopes:      []string{"nico"},
 			shouldPass:          false,
 			expectScopeErr:      true,
 		},
@@ -777,10 +777,10 @@ func TestCombinedValidation_DirectTest(t *testing.T) {
 			name: "invalid audience, valid scopes",
 			tokenClaims: jwt.MapClaims{
 				"aud":    "wrong.com",
-				"scopes": []interface{}{"carbide"},
+				"scopes": []interface{}{"nico"},
 			},
-			configuredAudiences: []string{"api.carbide.com"},
-			requiredScopes:      []string{"carbide"},
+			configuredAudiences: []string{"api.nico.com"},
+			requiredScopes:      []string{"nico"},
 			shouldPass:          false,
 			expectAudienceErr:   true,
 		},
@@ -790,8 +790,8 @@ func TestCombinedValidation_DirectTest(t *testing.T) {
 				"aud":    "wrong.com",
 				"scopes": []interface{}{"other"},
 			},
-			configuredAudiences: []string{"api.carbide.com"},
-			requiredScopes:      []string{"carbide"},
+			configuredAudiences: []string{"api.nico.com"},
+			requiredScopes:      []string{"nico"},
 			shouldPass:          false,
 			expectAudienceErr:   true, // Audience checked first
 		},

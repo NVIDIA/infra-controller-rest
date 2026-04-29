@@ -72,7 +72,7 @@ func NewCreateExpectedPowerShelfHandler(dbSession *cdb.Session, scp *sc.ClientPo
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIExpectedPowerShelfCreateRequest true "ExpectedPowerShelf creation request"
 // @Success 201 {object} model.APIExpectedPowerShelf
-// @Router /v2/org/{org}/carbide/expected-power-shelf [post]
+// @Router /v2/org/{org}/nico/expected-power-shelf [post]
 func (cepsh CreateExpectedPowerShelfHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedPowerShelf", "Create", c, cepsh.tracerSpan)
 	if handlerSpan != nil {
@@ -250,7 +250,7 @@ func NewGetAllExpectedPowerShelfHandler(dbSession *cdb.Session, cfg *config.Conf
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIExpectedPowerShelf
-// @Router /v2/org/{org}/carbide/expected-power-shelf [get]
+// @Router /v2/org/{org}/nico/expected-power-shelf [get]
 func (gaepsh GetAllExpectedPowerShelfHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedPowerShelf", "GetAll", c, gaepsh.tracerSpan)
 	if handlerSpan != nil {
@@ -407,7 +407,7 @@ func NewGetExpectedPowerShelfHandler(dbSession *cdb.Session, cfg *config.Config)
 // @Param id path string true "ID of Expected Power Shelf"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site'"
 // @Success 200 {object} model.APIExpectedPowerShelf
-// @Router /v2/org/{org}/carbide/expected-power-shelf/{id} [get]
+// @Router /v2/org/{org}/nico/expected-power-shelf/{id} [get]
 func (gepsh GetExpectedPowerShelfHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedPowerShelf", "Get", c, gepsh.tracerSpan)
 	if handlerSpan != nil {
@@ -514,7 +514,7 @@ func NewUpdateExpectedPowerShelfHandler(dbSession *cdb.Session, scp *sc.ClientPo
 // @Param id path string true "ID of Expected Power Shelf"
 // @Param message body model.APIExpectedPowerShelfUpdateRequest true "ExpectedPowerShelf update request"
 // @Success 200 {object} model.APIExpectedPowerShelf
-// @Router /v2/org/{org}/carbide/expected-power-shelf/{id} [patch]
+// @Router /v2/org/{org}/nico/expected-power-shelf/{id} [patch]
 func (uepsh UpdateExpectedPowerShelfHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedPowerShelf", "Update", c, uepsh.tracerSpan)
 	if handlerSpan != nil {
@@ -686,7 +686,7 @@ func NewDeleteExpectedPowerShelfHandler(dbSession *cdb.Session, scp *sc.ClientPo
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Expected Power Shelf"
 // @Success 204
-// @Router /v2/org/{org}/carbide/expected-power-shelf/{id} [delete]
+// @Router /v2/org/{org}/nico/expected-power-shelf/{id} [delete]
 func (depsh DeleteExpectedPowerShelfHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedPowerShelf", "Delete", c, depsh.tracerSpan)
 	if handlerSpan != nil {

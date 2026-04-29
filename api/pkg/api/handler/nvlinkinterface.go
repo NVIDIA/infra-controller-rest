@@ -78,7 +78,7 @@ func NewGetAllInstanceNVLinkInterfaceHandler(dbSession *cdb.Session, tc temporal
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APIInterface
-// @Router /v2/org/{org}/carbide/instance/{instance_id}/interface [get]
+// @Router /v2/org/{org}/nico/instance/{instance_id}/interface [get]
 func (ganvliih GetAllInstanceNVLinkInterfaceHandler) Handle(c echo.Context) error {
 	instanceID := c.Param("instanceId")
 	queryOverride := &common.QueryOverride{
@@ -135,7 +135,7 @@ func NewGetAllNVLinkInterfaceHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APINVLinkInterface
-// @Router /v2/org/{org}/carbide/nvlink-interface [get]
+// @Router /v2/org/{org}/nico/nvlink-interface [get]
 func (gaish GetAllNVLinkInterfaceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkInterface", "GetAll", c, gaish.tracerSpan)
 	if handlerSpan != nil {

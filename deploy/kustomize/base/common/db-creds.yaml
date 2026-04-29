@@ -18,7 +18,7 @@ kind: Secret
 metadata:
   name: db-creds
   labels:
-    app.kubernetes.io/part-of: carbide-rest
+    app.kubernetes.io/part-of: nico-rest
 type: Opaque
 stringData:
-  password: "forge"
+  password: "nico"

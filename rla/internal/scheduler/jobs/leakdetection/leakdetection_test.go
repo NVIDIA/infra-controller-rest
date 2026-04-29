@@ -26,7 +26,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
 )
@@ -108,10 +108,10 @@ func TestSubmitPowerOffTask_SubmitError(t *testing.T) {
 
 func TestRunLeakDetectionOne_NoLeaks(t *testing.T) {
 	ctx := context.Background()
-	carbideClient := carbideapi.NewMockClient()
+	nicoClient := nicoapi.NewMockClient()
 	mgr := &mockManager{}
 
-	runLeakDetectionOne(ctx, carbideClient, mgr)
+	runLeakDetectionOne(ctx, nicoClient, mgr)
 
 	assert.Empty(t, mgr.requests)
 }
@@ -121,10 +121,10 @@ func TestRunLeakDetectionOne_SubmitsTaskPerMachine(t *testing.T) {
 	mgr := &mockManager{}
 
 	machines := []string{"machine-1", "machine-2", "machine-3"}
-	carbideClient := carbideapi.NewMockClient()
-	carbideClient.SetLeakingMachineIds(machines)
+	nicoClient := nicoapi.NewMockClient()
+	nicoClient.SetLeakingMachineIds(machines)
 
-	runLeakDetectionOne(ctx, carbideClient, mgr)
+	runLeakDetectionOne(ctx, nicoClient, mgr)
 
 	require.Len(t, mgr.requests, 3)
 	for i, m := range machines {
@@ -134,11 +134,11 @@ func TestRunLeakDetectionOne_SubmitsTaskPerMachine(t *testing.T) {
 
 func TestRunLeakDetectionOne_ContinuesOnSubmitError(t *testing.T) {
 	ctx := context.Background()
-	carbideClient := carbideapi.NewMockClient()
-	carbideClient.SetLeakingMachineIds([]string{"machine-a", "machine-b"})
+	nicoClient := nicoapi.NewMockClient()
+	nicoClient.SetLeakingMachineIds([]string{"machine-a", "machine-b"})
 	mgr := &mockManager{submitErr: errors.New("always fails")}
 
-	runLeakDetectionOne(ctx, carbideClient, mgr)
+	runLeakDetectionOne(ctx, nicoClient, mgr)
 
 	// Verify all machines were attempted despite errors
 	require.Len(t, mgr.requests, 2)

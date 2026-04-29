@@ -78,7 +78,7 @@ func NewCreateIPBlockHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIIPBlockCreateRequest true "IPBlock creation request"
 // @Success 201 {object} model.APIIPBlock
-// @Router /v2/org/{org}/carbide/ipblock [post]
+// @Router /v2/org/{org}/nico/ipblock [post]
 func (cipbh CreateIPBlockHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("IPBlock", "Create", c, cipbh.tracerSpan)
 	if handlerSpan != nil {
@@ -302,7 +302,7 @@ func NewGetAllIPBlockHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIIPBlock
-// @Router /v2/org/{org}/carbide/ipblock [get]
+// @Router /v2/org/{org}/nico/ipblock [get]
 func (gaipbh GetAllIPBlockHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("IPBlock", "GetAll", c, gaipbh.tracerSpan)
 	if handlerSpan != nil {
@@ -547,7 +547,7 @@ func NewGetAllDerivedIPBlockHandler(dbSession *cdb.Session, tc temporalClient.Cl
 // @Param query query string false "Query input for full text search"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant', 'Site'"
 // @Success 200 {object} model.APIIPBlock
-// @Router /v2/org/{org}/carbide/ipblock/{id}/derived [get]
+// @Router /v2/org/{org}/nico/ipblock/{id}/derived [get]
 func (gadipbh GetAllDerivedIPBlockHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("IPBlock", "GetAllDerived", c, gadipbh.tracerSpan)
 	if handlerSpan != nil {
@@ -774,7 +774,7 @@ func NewGetIPBlockHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg 
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant', 'Site'"
 // @Param includeUsageStats query boolean false "IPBlock usage stats to include in response
 // @Success 200 {object} model.APIIPBlock
-// @Router /v2/org/{org}/carbide/ipblock/{id} [get]
+// @Router /v2/org/{org}/nico/ipblock/{id} [get]
 func (gipbh GetIPBlockHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("IPBlock", "Get", c, gipbh.tracerSpan)
 	if handlerSpan != nil {
@@ -907,7 +907,7 @@ func NewUpdateIPBlockHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param id path string true "ID of IPBlock"
 // @Param message body model.APIIPBlockUpdateRequest true "IPBlock update request"
 // @Success 200 {object} model.APIIPBlock
-// @Router /v2/org/{org}/carbide/ipblock/{id} [patch]
+// @Router /v2/org/{org}/nico/ipblock/{id} [patch]
 func (uipbh UpdateIPBlockHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("IPBlock", "Update", c, uipbh.tracerSpan)
 	if handlerSpan != nil {
@@ -1094,7 +1094,7 @@ func NewDeleteIPBlockHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of IPBlock"
 // @Success 202
-// @Router /v2/org/{org}/carbide/ipblock/{id} [delete]
+// @Router /v2/org/{org}/nico/ipblock/{id} [delete]
 func (dipbh DeleteIPBlockHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("IPBlock", "Delete", c, dipbh.tracerSpan)
 	if handlerSpan != nil {

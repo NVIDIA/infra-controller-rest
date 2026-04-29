@@ -146,7 +146,7 @@ func (m *VaultCredentialManager) Stop(ctx context.Context) error {
 	return nil
 }
 
-// Uppercase the MAC to match Carbide Core's vault key convention (Rust's
+// Uppercase the MAC to match NICo Core's vault key convention (Rust's
 // MacAddress Display trait emits uppercase hex). Go's net.HardwareAddr.String()
 // emits lowercase, and vault paths are case-sensitive.
 func (m *VaultCredentialManager) getBMCCredentialKey(mac net.HardwareAddr) string {

@@ -27,8 +27,8 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi/gen"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
+	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi/gen"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/common/utils"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
@@ -45,32 +45,32 @@ const driftFieldSerialNumber = "serial_number"
 func runInventoryOne(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 	psmClient psmapi.Client,
 	nsmClient nsmapi.Client,
 	cmConfig componentmanager.Config,
 ) {
 	var allDrifts []model.ComponentDrift
 
-	// Sync machines against Carbide
-	machineDrifts := syncMachines(ctx, pool, carbideClient)
+	// Sync machines against NICo
+	machineDrifts := syncMachines(ctx, pool, nicoClient)
 	allDrifts = append(allDrifts, machineDrifts...)
 
 	// Sync NVL switches: dispatch based on configured component manager
 	var nvlSwitchDrifts []model.ComponentDrift
-	if cmConfig.ComponentManagers[devicetypes.ComponentTypeNVLSwitch] == "carbide" {
-		nvlSwitchDrifts = syncNVSwitchesCarbide(ctx, pool, carbideClient)
+	if cmConfig.ComponentManagers[devicetypes.ComponentTypeNVLSwitch] == "nico" {
+		nvlSwitchDrifts = syncNVSwitchesNICo(ctx, pool, nicoClient)
 	} else {
-		nvlSwitchDrifts = syncNVSwitches(ctx, pool, carbideClient, nsmClient)
+		nvlSwitchDrifts = syncNVSwitches(ctx, pool, nicoClient, nsmClient)
 	}
 	allDrifts = append(allDrifts, nvlSwitchDrifts...)
 
 	// Sync powershelves: dispatch based on configured component manager
 	var powershelfDrifts []model.ComponentDrift
-	if cmConfig.ComponentManagers[devicetypes.ComponentTypePowerShelf] == "carbide" {
-		powershelfDrifts = syncPowershelvesCarbide(ctx, pool, carbideClient)
+	if cmConfig.ComponentManagers[devicetypes.ComponentTypePowerShelf] == "nico" {
+		powershelfDrifts = syncPowershelvesNICo(ctx, pool, nicoClient)
 	} else {
-		powershelfDrifts = syncPowershelves(ctx, pool, carbideClient, psmClient)
+		powershelfDrifts = syncPowershelves(ctx, pool, nicoClient, psmClient)
 	}
 	allDrifts = append(allDrifts, powershelfDrifts...)
 
@@ -89,10 +89,10 @@ func isMachineComponentType(t string) bool {
 }
 
 // ---------------------------------------------------------------------------
-// syncMachines: sync machine components against Carbide
+// syncMachines: sync machine components against NICo
 // ---------------------------------------------------------------------------
 //
-// Carbide API calls (3 round-trips):
+// NICo API calls (3 round-trips):
 //   - GetMachines (FindMachineIds + FindMachinesByIds): serial matching,
 //     firmware_version direct-write, and drift comparison data
 //   - GetPowerStates: power_state direct-write
@@ -100,18 +100,18 @@ func isMachineComponentType(t string) bool {
 //
 // Flow:
 //  1. DB: get all machine components
-//  2. Carbide GetMachines: fetch all machine details (reused for steps 3, 5, and drift)
+//  2. NICo GetMachines: fetch all machine details (reused for steps 3, 5, and drift)
 //  3. Match by serial → direct-write external_id
-//  4. Carbide GetPowerStates: direct-write power_state
+//  4. NICo GetPowerStates: direct-write power_state
 //  5. Direct-write firmware_version (from step 2 data)
-//  6. Carbide GetMachinePositionInfo: compare validation fields, return drifts
+//  6. NICo GetMachinePositionInfo: compare validation fields, return drifts
 //
 // Validation fields (compared for drift): slot_id, tray_index, host_id, serial_number
 // Direct-write fields (written to DB, not compared): external_id, power_state, firmware_version
 func syncMachines(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 ) []model.ComponentDrift {
 	log.Debug().Msg("Syncing machines...")
 
@@ -133,14 +133,14 @@ func syncMachines(
 		return nil
 	}
 
-	// Step 2: Fetch all machine details from Carbide
-	allMachineDetails, err := carbideClient.GetMachines(ctx)
+	// Step 2: Fetch all machine details from NICo
+	allMachineDetails, err := nicoClient.GetMachines(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve machine details from Carbide: %v", err)
+		log.Error().Msgf("Unable to retrieve machine details from NICo: %v", err)
 		return nil
 	}
 
-	detailByID := make(map[string]carbideapi.MachineDetail)
+	detailByID := make(map[string]nicoapi.MachineDetail)
 	for _, d := range allMachineDetails {
 		detailByID[d.MachineID] = d
 	}
@@ -176,20 +176,20 @@ func syncMachines(
 		return buildDriftsForUnmatchedComponents(components, allMachineDetails)
 	}
 
-	// Step 4: Direct-write power_state (requires separate Carbide API)
-	syncPowerStates(ctx, pool, carbideClient, machineIDs, componentsByExternalID)
+	// Step 4: Direct-write power_state (requires separate NICo API)
+	syncPowerStates(ctx, pool, nicoClient, machineIDs, componentsByExternalID)
 
 	// Step 5: Direct-write firmware_version (from pre-fetched details, no extra API call)
 	syncFirmwareVersions(ctx, pool, detailByID, componentsByExternalID)
 
-	// Step 6: Fetch positions and build drift records (requires separate Carbide API)
-	machinePositions, err := carbideClient.GetMachinePositionInfo(ctx, machineIDs)
+	// Step 6: Fetch positions and build drift records (requires separate NICo API)
+	machinePositions, err := nicoClient.GetMachinePositionInfo(ctx, machineIDs)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve machine positions from Carbide: %v", err)
+		log.Error().Msgf("Unable to retrieve machine positions from NICo: %v", err)
 		return nil
 	}
 
-	positionByID := make(map[string]carbideapi.MachinePosition)
+	positionByID := make(map[string]nicoapi.MachinePosition)
 	for _, p := range machinePositions {
 		positionByID[p.MachineID] = p
 	}
@@ -228,7 +228,7 @@ func syncMachines(
 			continue
 		}
 
-		var posPtr *carbideapi.MachinePosition
+		var posPtr *nicoapi.MachinePosition
 		if foundPosition {
 			posPtr = &position
 		}
@@ -245,7 +245,7 @@ func syncMachines(
 		}
 	}
 
-	// Detect missing_in_expected: machines in Carbide but not in local DB
+	// Detect missing_in_expected: machines in NICo but not in local DB
 	for _, detail := range allMachineDetails {
 		if _, found := componentsByExternalID[detail.MachineID]; !found {
 			extID := detail.MachineID
@@ -265,11 +265,11 @@ func syncMachines(
 
 // buildDriftsForUnmatchedComponents returns missing_in_actual drifts for all
 // components that have no external_id, plus missing_in_expected drifts for
-// every Carbide machine (since no DB component has an external_id, none can
+// every NICo machine (since no DB component has an external_id, none can
 // match).
 func buildDriftsForUnmatchedComponents(
 	components []model.Component,
-	allMachineDetails []carbideapi.MachineDetail,
+	allMachineDetails []nicoapi.MachineDetail,
 ) []model.ComponentDrift {
 	now := time.Now()
 	var drifts []model.ComponentDrift
@@ -297,12 +297,12 @@ func buildDriftsForUnmatchedComponents(
 	return drifts
 }
 
-// syncMachineIDs matches components by serial number against pre-fetched Carbide
+// syncMachineIDs matches components by serial number against pre-fetched NICo
 // machine details and direct-writes the external_id.
 func syncMachineIDs(
 	ctx context.Context,
 	pool *cdb.Session,
-	allDetails []carbideapi.MachineDetail,
+	allDetails []nicoapi.MachineDetail,
 	components []model.Component,
 ) {
 	containersBySerial := make(map[string]model.Component)
@@ -341,17 +341,17 @@ func syncMachineIDs(
 	}
 }
 
-// syncPowerStates fetches power states from Carbide and direct-writes to component table.
+// syncPowerStates fetches power states from NICo and direct-writes to component table.
 func syncPowerStates(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 	machineIDs []string,
 	componentsByExternalID map[string]*model.Component,
 ) {
-	machines, err := carbideClient.GetPowerStates(ctx, machineIDs)
+	machines, err := nicoClient.GetPowerStates(ctx, machineIDs)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve power states from carbide-api: %v", err)
+		log.Error().Msgf("Unable to retrieve power states from nico-api: %v", err)
 		return
 	}
 
@@ -380,11 +380,11 @@ func syncPowerStates(
 	}
 }
 
-// syncFirmwareVersions direct-writes firmware_version from Carbide machine details to component table.
+// syncFirmwareVersions direct-writes firmware_version from NICo machine details to component table.
 func syncFirmwareVersions(
 	ctx context.Context,
 	pool *cdb.Session,
-	detailByID map[string]carbideapi.MachineDetail,
+	detailByID map[string]nicoapi.MachineDetail,
 	componentsByExternalID map[string]*model.Component,
 ) {
 	var toUpdate []model.Component
@@ -411,12 +411,12 @@ func syncFirmwareVersions(
 	}
 }
 
-// compareMachineFieldsForDrift compares validation fields between expected (DB) and actual (Carbide).
+// compareMachineFieldsForDrift compares validation fields between expected (DB) and actual (NICo).
 // Validation fields: slot_id, tray_index, host_id, serial_number.
 func compareMachineFieldsForDrift(
 	expected *model.Component,
-	actual carbideapi.MachineDetail,
-	position *carbideapi.MachinePosition,
+	actual nicoapi.MachineDetail,
+	position *nicoapi.MachinePosition,
 ) []model.FieldDiff {
 	var diffs []model.FieldDiff
 
@@ -486,15 +486,15 @@ func compareMachineFieldsForDrift(
 //   - GetNVSwitches: get registered switches (firmware_version direct-write)
 //   - RegisterNVSwitches: register un-registered DHCPed switches
 //
-// Carbide API calls (2 round-trips):
+// NICo API calls (2 round-trips):
 //   - GetAllExpectedSwitches: get credentials + NVOS MAC from metadata
 //   - FindInterfaces: check which BMCs/NVOS hosts have DHCPed
 //
 // Flow:
 //  1. DB: get all NVLSwitch components with BMCs
 //  2. NSM GetNVSwitches: get registered switches
-//  3. Carbide GetAllExpectedSwitches: get credentials and NVOS MAC (metadata label "host_mac_address")
-//  4. Carbide FindInterfaces: check which BMCs/NVOS hosts have DHCPed
+//  3. NICo GetAllExpectedSwitches: get credentials and NVOS MAC (metadata label "host_mac_address")
+//  4. NICo FindInterfaces: check which BMCs/NVOS hosts have DHCPed
 //  5. Direct-write: firmware_version (from NSM)
 //  6. Register un-registered DHCPed switches with NSM (BMC + NVOS subsystems)
 //  7. Return drifts (missing_in_actual for unregistered switches)
@@ -502,7 +502,7 @@ func compareMachineFieldsForDrift(
 func syncNVSwitches(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 	nsmClient nsmapi.Client,
 ) []model.ComponentDrift {
 	if nsmClient == nil {
@@ -556,17 +556,17 @@ func syncNVSwitches(
 		}
 	}
 
-	// Step 3: Get expected switches from Carbide for NVOS MAC metadata
-	carbideByBmcMac, err := carbideClient.GetAllExpectedSwitches(ctx)
+	// Step 3: Get expected switches from NICo for NVOS MAC metadata
+	nicoByBmcMac, err := nicoClient.GetAllExpectedSwitches(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve expected switches from carbide-api: %v", err)
+		log.Error().Msgf("Unable to retrieve expected switches from nico-api: %v", err)
 		return nil
 	}
 
-	// Step 4: Get machine interfaces from Carbide to check DHCP status
-	interfacesByMac, err := carbideClient.FindInterfaces(ctx)
+	// Step 4: Get machine interfaces from NICo to check DHCP status
+	interfacesByMac, err := nicoClient.FindInterfaces(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve interfaces from carbide-api: %v", err)
+		log.Error().Msgf("Unable to retrieve interfaces from nico-api: %v", err)
 		return nil
 	}
 
@@ -642,15 +642,15 @@ func syncNVSwitches(
 
 		bmcIP := bmcIface.Addresses[0]
 
-		carbideES, hasCarbideInfo := carbideByBmcMac[bmcMac]
-		if !hasCarbideInfo {
-			log.Warn().Msgf("NVLSwitch %s (BMC %s): not found in Carbide expected switches, skipping registration", nvswitchID, bmcMac)
+		nicoES, hasNICoInfo := nicoByBmcMac[bmcMac]
+		if !hasNICoInfo {
+			log.Warn().Msgf("NVLSwitch %s (BMC %s): not found in NICo expected switches, skipping registration", nvswitchID, bmcMac)
 			continue
 		}
 
-		nvosMacRaw, hasNvosMac := carbideES.Metadata["host_mac_address"]
+		nvosMacRaw, hasNvosMac := nicoES.Metadata["host_mac_address"]
 		if !hasNvosMac || nvosMacRaw == "" {
-			log.Warn().Msgf("NVLSwitch %s (BMC %s): no host_mac_address in Carbide metadata, skipping registration", nvswitchID, bmcMac)
+			log.Warn().Msgf("NVLSwitch %s (BMC %s): no host_mac_address in NICo metadata, skipping registration", nvswitchID, bmcMac)
 			continue
 		}
 		nvosMac := utils.NormalizeMAC(nvosMacRaw)
@@ -715,7 +715,7 @@ func syncNVSwitches(
 // Flow:
 //  1. DB: get all PowerShelf components with BMCs
 //  2. PSM GetPowershelves: get registered powershelves
-//  3. Carbide FindInterfaces: check which PMCs have DHCPed
+//  3. NICo FindInterfaces: check which PMCs have DHCPed
 //  4. Direct-write: firmware_version, power_state (from PSM)
 //  5. Register un-registered DHCPed powershelves with PSM
 //  6. Return drifts (missing_in_actual for unregistered powershelves)
@@ -729,7 +729,7 @@ const (
 func syncPowershelves(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 	psmClient psmapi.Client,
 ) []model.ComponentDrift {
 	if psmClient == nil {
@@ -788,10 +788,10 @@ func syncPowershelves(
 		registeredByMac[utils.NormalizeMAC(ps.PMC.MACAddress)] = ps
 	}
 
-	// Step 3: Get machine interfaces from Carbide to check DHCP status
-	interfacesByMac, err := carbideClient.FindInterfaces(ctx)
+	// Step 3: Get machine interfaces from NICo to check DHCP status
+	interfacesByMac, err := nicoClient.FindInterfaces(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve interfaces from carbide-api: %v", err)
+		log.Error().Msgf("Unable to retrieve interfaces from nico-api: %v", err)
 		return nil
 	}
 
@@ -830,11 +830,11 @@ func syncPowershelves(
 					allOn = false
 				}
 			}
-			psuPowerState := carbideapi.PowerStateUnknown
+			psuPowerState := nicoapi.PowerStateUnknown
 			if allOn {
-				psuPowerState = carbideapi.PowerStateOn
+				psuPowerState = nicoapi.PowerStateOn
 			} else if allOff {
-				psuPowerState = carbideapi.PowerStateOff
+				psuPowerState = nicoapi.PowerStateOff
 			}
 			if powershelf.PowerState == nil || *powershelf.PowerState != psuPowerState {
 				powershelf.PowerState = &psuPowerState
@@ -908,30 +908,30 @@ func syncPowershelves(
 }
 
 // ---------------------------------------------------------------------------
-// syncNVSwitchesCarbide: sync NVLSwitch components via Core (Carbide)
+// syncNVSwitchesNICo: sync NVLSwitch components via Core (NICo)
 // ---------------------------------------------------------------------------
 //
-// Uses Core's Forge API instead of talking directly to NSM.
+// Uses Core's NICo API instead of talking directly to NSM.
 // Core's NSM backend auto-registers switches, so no registration step is needed.
 //
-// Carbide API calls (2 round-trips):
+// NICo API calls (2 round-trips):
 //   - GetAllExpectedSwitchesLinked: discover Core switch IDs by BMC MAC
 //   - GetComponentInventory: get firmware, serial, power state from site explorer
 //
 // Flow:
 //  1. DB: get all NVLSwitch components with BMCs
-//  2. Carbide GetAllExpectedSwitchesLinked: map BMC MAC → Core SwitchId
+//  2. NICo GetAllExpectedSwitchesLinked: map BMC MAC → Core SwitchId
 //  3. Direct-write external_id (Core's SwitchId) for matched components
-//  4. Carbide GetComponentInventory: extract firmware_version, serial_number, power_state
+//  4. NICo GetComponentInventory: extract firmware_version, serial_number, power_state
 //  5. Direct-write inventory fields to DB
 //  6. Return drifts (missing_in_actual for components without a Core SwitchId)
 
-func syncNVSwitchesCarbide(
+func syncNVSwitchesNICo(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 ) []model.ComponentDrift {
-	log.Debug().Msg("Syncing NV switches via Carbide...")
+	log.Debug().Msg("Syncing NV switches via NICo...")
 
 	expectedSwitches, err := model.GetComponentsByType(ctx, pool.DB, devicetypes.ComponentTypeNVLSwitch)
 	if err != nil {
@@ -959,13 +959,13 @@ func syncNVSwitchesCarbide(
 	}
 
 	// ID discovery: map BMC MAC → Core SwitchId
-	linked, err := carbideClient.GetAllExpectedSwitchesLinked(ctx)
+	linked, err := nicoClient.GetAllExpectedSwitchesLinked(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve linked expected switches from Carbide: %v", err)
+		log.Error().Msgf("Unable to retrieve linked expected switches from NICo: %v", err)
 		return nil
 	}
 
-	linkedByMac := make(map[string]carbideapi.LinkedExpectedSwitch)
+	linkedByMac := make(map[string]nicoapi.LinkedExpectedSwitch)
 	for _, les := range linked {
 		if les.BMCMACAddress != "" {
 			linkedByMac[utils.NormalizeMAC(les.BMCMACAddress)] = les
@@ -1000,13 +1000,13 @@ func syncNVSwitchesCarbide(
 	now := time.Now()
 	var drifts []model.ComponentDrift
 	if len(switchIDs) > 0 {
-		invResp, err := carbideClient.GetComponentInventory(ctx, &pb.GetComponentInventoryRequest{
+		invResp, err := nicoClient.GetComponentInventory(ctx, &pb.GetComponentInventoryRequest{
 			Target: &pb.GetComponentInventoryRequest_SwitchIds{
 				SwitchIds: &pb.SwitchIdList{Ids: switchIDs},
 			},
 		})
 		if err != nil {
-			log.Error().Msgf("Unable to retrieve switch inventory from Carbide: %v", err)
+			log.Error().Msgf("Unable to retrieve switch inventory from NICo: %v", err)
 		} else {
 			drifts = append(drifts, applyInventoryToComponents(ctx, pool, invResp, componentsBySwitchID)...)
 		}
@@ -1026,35 +1026,35 @@ func syncNVSwitchesCarbide(
 		}
 	}
 
-	log.Info().Msgf("NVLSwitch Carbide sync: %d drift(s) out of %d expected", len(drifts), len(expectedSwitches))
+	log.Info().Msgf("NVLSwitch NICo sync: %d drift(s) out of %d expected", len(drifts), len(expectedSwitches))
 	return drifts
 }
 
 // ---------------------------------------------------------------------------
-// syncPowershelvesCarbide: sync PowerShelf components via Core (Carbide)
+// syncPowershelvesNICo: sync PowerShelf components via Core (NICo)
 // ---------------------------------------------------------------------------
 //
-// Uses Core's Forge API instead of talking directly to PSM.
+// Uses Core's NICo API instead of talking directly to PSM.
 // Core's PSM backend auto-registers power shelves, so no registration step is needed.
 //
-// Carbide API calls (2 round-trips):
+// NICo API calls (2 round-trips):
 //   - GetAllExpectedPowerShelvesLinked: discover Core power shelf IDs by PMC MAC
 //   - GetComponentInventory: get firmware, power state from site explorer
 //
 // Flow:
 //  1. DB: get all PowerShelf components with PMCs
-//  2. Carbide GetAllExpectedPowerShelvesLinked: map PMC MAC → Core PowerShelfId
+//  2. NICo GetAllExpectedPowerShelvesLinked: map PMC MAC → Core PowerShelfId
 //  3. Direct-write external_id (Core's PowerShelfId) for matched components
-//  4. Carbide GetComponentInventory: extract firmware_version, power_state
+//  4. NICo GetComponentInventory: extract firmware_version, power_state
 //  5. Direct-write inventory fields to DB
 //  6. Return drifts (missing_in_actual for components without a Core PowerShelfId)
 
-func syncPowershelvesCarbide(
+func syncPowershelvesNICo(
 	ctx context.Context,
 	pool *cdb.Session,
-	carbideClient carbideapi.Client,
+	nicoClient nicoapi.Client,
 ) []model.ComponentDrift {
-	log.Debug().Msg("Syncing powershelves via Carbide...")
+	log.Debug().Msg("Syncing powershelves via NICo...")
 
 	expectedPowershelves, err := model.GetComponentsByType(ctx, pool.DB, devicetypes.ComponentTypePowerShelf)
 	if err != nil {
@@ -1082,13 +1082,13 @@ func syncPowershelvesCarbide(
 	}
 
 	// ID discovery: map PMC MAC → Core PowerShelfId
-	linked, err := carbideClient.GetAllExpectedPowerShelvesLinked(ctx)
+	linked, err := nicoClient.GetAllExpectedPowerShelvesLinked(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve linked expected power shelves from Carbide: %v", err)
+		log.Error().Msgf("Unable to retrieve linked expected power shelves from NICo: %v", err)
 		return nil
 	}
 
-	linkedByMac := make(map[string]carbideapi.LinkedExpectedPowerShelf)
+	linkedByMac := make(map[string]nicoapi.LinkedExpectedPowerShelf)
 	for _, leps := range linked {
 		if leps.BMCMACAddress != "" {
 			linkedByMac[utils.NormalizeMAC(leps.BMCMACAddress)] = leps
@@ -1123,13 +1123,13 @@ func syncPowershelvesCarbide(
 	now := time.Now()
 	var drifts []model.ComponentDrift
 	if len(shelfIDs) > 0 {
-		invResp, err := carbideClient.GetComponentInventory(ctx, &pb.GetComponentInventoryRequest{
+		invResp, err := nicoClient.GetComponentInventory(ctx, &pb.GetComponentInventoryRequest{
 			Target: &pb.GetComponentInventoryRequest_PowerShelfIds{
 				PowerShelfIds: &pb.PowerShelfIdList{Ids: shelfIDs},
 			},
 		})
 		if err != nil {
-			log.Error().Msgf("Unable to retrieve powershelf inventory from Carbide: %v", err)
+			log.Error().Msgf("Unable to retrieve powershelf inventory from NICo: %v", err)
 		} else {
 			drifts = append(drifts, applyInventoryToComponents(ctx, pool, invResp, componentsByShelfID)...)
 		}
@@ -1149,7 +1149,7 @@ func syncPowershelvesCarbide(
 		}
 	}
 
-	log.Info().Msgf("Powershelf Carbide sync: %d drift(s) out of %d expected", len(drifts), len(expectedPowershelves))
+	log.Info().Msgf("Powershelf NICo sync: %d drift(s) out of %d expected", len(drifts), len(expectedPowershelves))
 	return drifts
 }
 
@@ -1221,7 +1221,7 @@ func applyInventoryToComponents(
 
 		// Extract power_state from first ComputerSystem entry
 		if systems := report.GetSystems(); len(systems) > 0 {
-			ps := computerSystemPowerStateToCarbide(systems[0].GetPowerState())
+			ps := computerSystemPowerStateToNICo(systems[0].GetPowerState())
 			if comp.PowerState == nil || *comp.PowerState != ps {
 				comp.PowerState = &ps
 				needsUpdate = true
@@ -1238,15 +1238,15 @@ func applyInventoryToComponents(
 	return drifts
 }
 
-func computerSystemPowerStateToCarbide(
+func computerSystemPowerStateToNICo(
 	ps pb.ComputerSystemPowerState,
-) carbideapi.PowerState {
+) nicoapi.PowerState {
 	switch ps {
 	case pb.ComputerSystemPowerState_On, pb.ComputerSystemPowerState_PoweringOn:
-		return carbideapi.PowerStateOn
+		return nicoapi.PowerStateOn
 	case pb.ComputerSystemPowerState_Off, pb.ComputerSystemPowerState_PoweringOff:
-		return carbideapi.PowerStateOff
+		return nicoapi.PowerStateOff
 	default:
-		return carbideapi.PowerStateUnknown
+		return nicoapi.PowerStateUnknown
 	}
 }

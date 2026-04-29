@@ -56,7 +56,7 @@ func NewGetCurrentServiceAccountHandler(dbSession *cdb.Session, cfg *config.Conf
 // @Security ApiKeyAuth
 // @Param org path string true "Name of organization"
 // @Success 200 {object} model.APIServiceAccount
-// @Router /v2/org/{org}/carbide/service-account/current [get]
+// @Router /v2/org/{org}/nico/service-account/current [get]
 func (gcsah GetCurrentServiceAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ServiceAccount", "GetCurrent", c, gcsah.tracerSpan)
 	if handlerSpan != nil {

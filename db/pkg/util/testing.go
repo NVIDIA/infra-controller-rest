@@ -44,7 +44,7 @@ func getTestDBParams() TestDBConfig {
 	tdbcfg := TestDBConfig{
 		Host:     "localhost",
 		Port:     30432,
-		Name:     "forgetest",
+		Name:     "nicotest",
 		User:     "postgres",
 		Password: "postgres",
 	}
@@ -116,7 +116,7 @@ func GetTestDBSession(t *testing.T, reset bool) *db.Session {
 	// close this session
 	dbSession.Close()
 
-	// Create another session to the forgetest database
+	// Create another session to the nicotest database
 	dbSession, err = db.NewSession(context.Background(), tdbcfg.Host, tdbcfg.Port, tdbcfg.Name, tdbcfg.User, tdbcfg.Password, "")
 	if err != nil {
 		t.Fatal(err)

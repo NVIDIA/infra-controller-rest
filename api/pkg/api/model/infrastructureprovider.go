@@ -25,10 +25,10 @@ import (
 
 var (
 	// errMsgproviderCreateEndpointDeprecated is the error message to indicate that create endpoint is deprecated
-	ErrMsgproviderCreateEndpointDeprecated = "POST '/org/:orgName/carbide/infrastructure-provider' endpoint has been deprecated"
+	ErrMsgproviderCreateEndpointDeprecated = "POST '/org/:orgName/nico/infrastructure-provider' endpoint has been deprecated"
 
 	// errMsgproviderUpdateEndpointDeprecated is the error message to indicate that update endpoint is deprecated
-	ErrMsgproviderUpdateEndpointDeprecated = "PATCH '/org/:orgName/carbide/infrastructure-provider/current' endpoint has been deprecated"
+	ErrMsgproviderUpdateEndpointDeprecated = "PATCH '/org/:orgName/nico/infrastructure-provider/current' endpoint has been deprecated"
 )
 
 // APIInfrastructureProvider is the data structure to capture API representation of an Infrastructure Provider

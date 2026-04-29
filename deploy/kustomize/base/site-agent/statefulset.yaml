@@ -13,29 +13,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-site-agent Deployment
+# nico-rest-site-agent Deployment
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: carbide-rest-site-agent
+  name: nico-rest-site-agent
   labels:
-    app: carbide-rest-site-agent
+    app: nico-rest-site-agent
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carbide-rest-site-agent
+      app: nico-rest-site-agent
   template:
     metadata:
       labels:
-        app: carbide-rest-site-agent
+        app: nico-rest-site-agent
     spec:
       imagePullSecrets:
         - name: image-pull-secret
-      serviceAccountName: carbide-rest-site-agent
+      serviceAccountName: nico-rest-site-agent
       containers:
         - name: site-agent
-          image: carbide-rest-site-agent
+          image: nico-rest-site-agent
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -44,7 +44,7 @@ spec:
               name: metrics
           envFrom:
             - configMapRef:
-                name: carbide-rest-site-agent-config
+                name: nico-rest-site-agent-config
           env:
             - name: POD_NAMESPACE
               valueFrom:
@@ -58,8 +58,8 @@ spec:
             - name: site-registration
               mountPath: /etc/sitereg
               readOnly: true
-            - name: carbide-certs
-              mountPath: /etc/carbide
+            - name: nico-certs
+              mountPath: /etc/nico
               readOnly: true
             - name: temporal-certs
               mountPath: /etc/temporal-certs
@@ -75,7 +75,7 @@ spec:
         - name: site-registration
           secret:
             secretName: site-registration
-        - name: carbide-certs
+        - name: nico-certs
           secret:
             secretName: core-grpc-client-site-agent-certs
             optional: true

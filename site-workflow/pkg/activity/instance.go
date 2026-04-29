@@ -36,10 +36,10 @@ import (
 
 // ManageInstance is an activity wrapper for Instance management tasks that allows injecting DB access
 type ManageInstance struct {
-	CarbideAtomicClient *cClient.CarbideAtomicClient
+	NICoAtomicClient *cClient.NICoAtomicClient
 }
 
-// Function Update Forge Instance with the Site Controller
+// Function Update NICo Instance with the Site Controller
 func (mm *ManageInstance) UpdateInstanceOnSite(ctx context.Context, request *cwssaws.InstanceConfigUpdateRequest) error {
 	logger := log.With().Str("Activity", "UpdateInstanceOnSite").Logger()
 
@@ -59,12 +59,13 @@ func (mm *ManageInstance) UpdateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateInstanceConfig(ctx, request)
+	_, err = rpcClient.UpdateInstanceConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update config for Instance using Site Controller API")
 		return swe.WrapErr(err)
@@ -75,7 +76,7 @@ func (mm *ManageInstance) UpdateInstanceOnSite(ctx context.Context, request *cws
 	return nil
 }
 
-// Function to Create (allocate) Forge Instance with the Site Controller
+// Function to Create (allocate) NICo Instance with the Site Controller
 func (mm *ManageInstance) CreateInstanceOnSite(ctx context.Context, request *cwssaws.InstanceAllocationRequest) error {
 	logger := log.With().Str("Activity", "CreateInstanceOnSite").Logger()
 
@@ -95,12 +96,13 @@ func (mm *ManageInstance) CreateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.AllocateInstance(ctx, request)
+	_, err = rpcClient.AllocateInstance(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Instance using Site Controller API")
 		return swe.WrapErr(err)
@@ -111,7 +113,7 @@ func (mm *ManageInstance) CreateInstanceOnSite(ctx context.Context, request *cws
 	return nil
 }
 
-// CreateInstancesOnSite is an activity to create (allocate) multiple Forge Instances with the Site Controller
+// CreateInstancesOnSite is an activity to create (allocate) multiple NICo Instances with the Site Controller
 // in a single transaction. This is the batch version of CreateInstanceOnSite.
 func (mm *ManageInstance) CreateInstancesOnSite(ctx context.Context, request *cwssaws.BatchInstanceAllocationRequest) error {
 	logger := log.With().Str("Activity", "CreateInstancesOnSite").Logger()
@@ -136,13 +138,13 @@ func (mm *ManageInstance) CreateInstancesOnSite(ctx context.Context, request *cw
 		}
 	}
 
-	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.AllocateInstances(ctx, request)
+	_, err = rpcClient.AllocateInstances(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Int("Count", len(request.InstanceRequests)).Msg("Failed to batch create Instances using Site Controller API")
 		return swe.WrapErr(err)
@@ -152,7 +154,7 @@ func (mm *ManageInstance) CreateInstancesOnSite(ctx context.Context, request *cw
 	return nil
 }
 
-// Function to Create (allocate) Forge Instance with the Site Controller
+// Function to Create (allocate) NICo Instance with the Site Controller
 func (mm *ManageInstance) RebootInstanceOnSite(ctx context.Context, request *cwssaws.InstancePowerRequest) error {
 	logger := log.With().Str("Activity", "RebootInstanceOnSite").Logger()
 
@@ -172,12 +174,13 @@ func (mm *ManageInstance) RebootInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.InvokeInstancePower(ctx, request)
+	_, err = rpcClient.InvokeInstancePower(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to reboot Instance using Site Controller API")
 		return swe.WrapErr(err)
@@ -188,7 +191,7 @@ func (mm *ManageInstance) RebootInstanceOnSite(ctx context.Context, request *cws
 	return nil
 }
 
-// Function to Delete Forge Instance with the Site Controller
+// Function to Delete NICo Instance with the Site Controller
 func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cwssaws.InstanceReleaseRequest) error {
 	logger := log.With().Str("Activity", "DeleteInstanceOnSite").Logger()
 
@@ -208,12 +211,13 @@ func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.ReleaseInstance(ctx, request)
+	_, err = rpcClient.ReleaseInstance(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete Instance using Site Controller API")
 		return swe.WrapErr(err)
@@ -225,9 +229,9 @@ func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cws
 }
 
 // NewManageInstance returns a new ManageInstance activity
-func NewManageInstance(carbideClient *cClient.CarbideAtomicClient) ManageInstance {
+func NewManageInstance(nicoClient *cClient.NICoAtomicClient) ManageInstance {
 	return ManageInstance{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
@@ -258,21 +262,16 @@ func NewManageInstanceInventory(config ManageInventoryConfig) ManageInstanceInve
 	}
 }
 
-func instanceFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.InstanceId, error) {
-	forgeClient := carbideClient.Carbide()
-
-	instanceIdList, err := forgeClient.FindInstanceIds(ctx, &cwssaws.InstanceSearchFilter{})
+func instanceFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.InstanceId, error) {
+	instanceIdList, err := nicoClient.NICo().FindInstanceIds(ctx, &cwssaws.InstanceSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
-
 	return instanceIdList.GetInstanceIds(), nil
 }
 
-func instanceFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.InstanceId) ([]*cwssaws.Instance, error) {
-	forgeClient := carbideClient.Carbide()
-
-	instanceList, err := forgeClient.FindInstancesByIds(ctx, &cwssaws.InstancesByIdsRequest{
+func instanceFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.InstanceId) ([]*cwssaws.Instance, error) {
+	instanceList, err := nicoClient.NICo().FindInstancesByIds(ctx, &cwssaws.InstancesByIdsRequest{
 		InstanceIds: ids,
 	})
 	if err != nil {
@@ -285,7 +284,7 @@ func instanceFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient
 // instancePagedInventoryPostProcess will attach NSG propagation
 // information for the inventory page of instances.
 // This will only be called for pages with inventory.
-func instancePagedInventoryPostProcess(ctx context.Context, carbideClient *cClient.CarbideClient, inventory *cwssaws.InstanceInventory) (*cwssaws.InstanceInventory, error) {
+func instancePagedInventoryPostProcess(ctx context.Context, nicoClient *cClient.NICoClient, inventory *cwssaws.InstanceInventory) (*cwssaws.InstanceInventory, error) {
 
 	instanceIds := make([]string, len(inventory.GetInstances()))
 
@@ -293,7 +292,7 @@ func instancePagedInventoryPostProcess(ctx context.Context, carbideClient *cClie
 		instanceIds[i] = instance.GetId().GetValue()
 	}
 
-	propList, err := carbideClient.Carbide().GetNetworkSecurityGroupPropagationStatus(ctx, &cwssaws.GetNetworkSecurityGroupPropagationStatusRequest{
+	propList, err := nicoClient.NICo().GetNetworkSecurityGroupPropagationStatus(ctx, &cwssaws.GetNetworkSecurityGroupPropagationStatusRequest{
 		InstanceIds: instanceIds,
 	})
 

@@ -32,17 +32,17 @@ import (
 
 // ManageVpcPeering is an activity wrapper for VpcPeering management
 type ManageVpcPeering struct {
-	CarbideAtomicClient *cClient.CarbideAtomicClient
+	NICoAtomicClient *cClient.NICoAtomicClient
 }
 
 // NewManageVpcPeering returns a new ManageVpcPeering client
-func NewManageVpcPeering(carbideClient *cClient.CarbideAtomicClient) ManageVpcPeering {
+func NewManageVpcPeering(nicoClient *cClient.NICoAtomicClient) ManageVpcPeering {
 	return ManageVpcPeering{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
-// Function to create VpcPeering with Carbide
+// Function to create VpcPeering with NICo
 func (mvp *ManageVpcPeering) CreateVpcPeeringOnSite(ctx context.Context, request *cwssaws.VpcPeeringCreationRequest) error {
 	logger := log.With().Str("Activity", "CreateVpcPeeringOnSite").Logger()
 
@@ -68,12 +68,13 @@ func (mvp *ManageVpcPeering) CreateVpcPeeringOnSite(ctx context.Context, request
 	}
 
 	// Call Site Controller API
-	forgeClient, err := mvp.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mvp.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateVpcPeering(ctx, request)
+	_, err = rpcClient.CreateVpcPeering(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create VpcPeering using Site Controller API")
 		return swe.WrapErr(err)
@@ -84,7 +85,7 @@ func (mvp *ManageVpcPeering) CreateVpcPeeringOnSite(ctx context.Context, request
 	return nil
 }
 
-// Function to delete VpcPeering on Carbide
+// Function to delete VpcPeering on NICo
 func (mvp *ManageVpcPeering) DeleteVpcPeeringOnSite(ctx context.Context, request *cwssaws.VpcPeeringDeletionRequest) error {
 	logger := log.With().Str("Activity", "DeleteVpcPeeringOnSite").Logger()
 
@@ -104,12 +105,13 @@ func (mvp *ManageVpcPeering) DeleteVpcPeeringOnSite(ctx context.Context, request
 	}
 
 	// Call Site Controller API
-	forgeClient, err := mvp.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mvp.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteVpcPeering(ctx, request)
+	_, err = rpcClient.DeleteVpcPeering(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete VpcPeering using Site Controller API")
 		return swe.WrapErr(err)
@@ -146,19 +148,19 @@ func (mvi *ManageVpcPeeringInventory) DiscoverVpcPeeringInventory(ctx context.Co
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func VpcPeeringFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.VpcPeeringId, error) {
-	resp, err := carbideClient.Carbide().FindVpcPeeringIds(ctx, &cwssaws.VpcPeeringSearchFilter{})
+func VpcPeeringFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.VpcPeeringId, error) {
+	resp, err := nicoClient.NICo().FindVpcPeeringIds(ctx, &cwssaws.VpcPeeringSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
 	return resp.VpcPeeringIds, nil
 }
 
-func VpcPeeringFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
+func VpcPeeringFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
 	req := &cwssaws.VpcPeeringsByIdsRequest{
 		VpcPeeringIds: ids,
 	}
-	resp, err := carbideClient.Carbide().FindVpcPeeringsByIds(ctx, req)
+	resp, err := nicoClient.NICo().FindVpcPeeringsByIds(ctx, req)
 	if err != nil {
 		return nil, err
 	}

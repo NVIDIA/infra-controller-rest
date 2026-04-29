@@ -117,8 +117,8 @@ func TestValidateNgcUserRoles(t *testing.T) {
 	providerOrg := "test-provider-org"
 	tenantOrg := "test-tenant-org"
 	tenantTeam := "test-tenant-team"
-	providerRole := "FORGE_PROVIDER_ADMIN"
-	tenantRole := "FORGE_TENANT_ADMIN"
+	providerRole := ProviderAdminRole
+	tenantRole := TenantAdminRole
 
 	// Add user entry
 	user := &cdbm.User{
@@ -227,15 +227,15 @@ func TestValidateOrgMembershipCaseInsensitive(t *testing.T) {
 				Name:        "nvidia",
 				DisplayName: "nvidia",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+				Roles:       []string{ProviderAdminRole},
 				Teams:       []cdbm.Team{},
 			},
 			"fh93zk6uqtt1": cdbm.Org{
 				ID:          38732,
 				Name:        "fh93zk6uqtt1",
-				DisplayName: "Forge-Tenant-Dev",
+				DisplayName: "NICo-Tenant-Dev",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_TENANT_ADMIN"},
+				Roles:       []string{TenantAdminRole},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -249,20 +249,20 @@ func TestValidateOrgMembershipCaseInsensitive(t *testing.T) {
 		FirstName:   cdb.GetStrPtr("Keycloak"),
 		LastName:    cdb.GetStrPtr("User"),
 		OrgData: cdbm.OrgData{
-			"forge-tenant-dev": cdbm.Org{
+			"nico-tenant-dev": cdbm.Org{
 				ID:          0,
-				Name:        "forge-tenant-dev",
-				DisplayName: "forge-tenant-dev",
+				Name:        "nico-tenant-dev",
+				DisplayName: "nico-tenant-dev",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_TENANT_ADMIN"},
+				Roles:       []string{TenantAdminRole},
 				Teams:       []cdbm.Team{},
 			},
-			"forge-prime-provider": cdbm.Org{
+			"nico-prime-provider": cdbm.Org{
 				ID:          0,
-				Name:        "forge-prime-provider",
-				DisplayName: "forge-prime-provider",
+				Name:        "nico-prime-provider",
+				DisplayName: "nico-prime-provider",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+				Roles:       []string{ProviderAdminRole},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -322,35 +322,35 @@ func TestValidateOrgMembershipCaseInsensitive(t *testing.T) {
 		{
 			name:     "Keycloak - exact case match",
 			user:     keycloakUser,
-			orgName:  "forge-tenant-dev",
+			orgName:  "nico-tenant-dev",
 			expected: true,
 			wantErr:  false,
 		},
 		{
 			name:     "Keycloak - uppercase input",
 			user:     keycloakUser,
-			orgName:  "FORGE-TENANT-DEV",
+			orgName:  "NICO-TENANT-DEV",
 			expected: true,
 			wantErr:  false,
 		},
 		{
 			name:     "Keycloak - mixed case input",
 			user:     keycloakUser,
-			orgName:  "Forge-Tenant-Dev",
+			orgName:  "NICo-Tenant-Dev",
 			expected: true,
 			wantErr:  false,
 		},
 		{
 			name:     "Keycloak - provider org exact match",
 			user:     keycloakUser,
-			orgName:  "forge-prime-provider",
+			orgName:  "nico-prime-provider",
 			expected: true,
 			wantErr:  false,
 		},
 		{
 			name:     "Keycloak - provider org uppercase",
 			user:     keycloakUser,
-			orgName:  "FORGE-PRIME-PROVIDER",
+			orgName:  "NICO-PRIME-PROVIDER",
 			expected: true,
 			wantErr:  false,
 		},
@@ -393,13 +393,13 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 				Name:        "nvidia",
 				DisplayName: "nvidia",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"},
+				Roles:       []string{ProviderAdminRole, TenantAdminRole},
 				Teams: []cdbm.Team{
 					{
 						ID:       44225,
 						Name:     "qa1",
 						TeamType: "",
-						Roles:    []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"},
+						Roles:    []string{ProviderAdminRole, TenantAdminRole},
 					},
 				},
 			},
@@ -414,12 +414,12 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 		FirstName:   cdb.GetStrPtr("Keycloak"),
 		LastName:    cdb.GetStrPtr("User"),
 		OrgData: cdbm.OrgData{
-			"forge-tenant-dev": cdbm.Org{
+			"nico-tenant-dev": cdbm.Org{
 				ID:          0,
-				Name:        "forge-tenant-dev",
-				DisplayName: "forge-tenant-dev",
+				Name:        "nico-tenant-dev",
+				DisplayName: "nico-tenant-dev",
 				OrgType:     "ENTERPRISE",
-				Roles:       []string{"FORGE_TENANT_ADMIN"},
+				Roles:       []string{TenantAdminRole},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -439,7 +439,7 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        ngcUser,
 			orgName:     "nvidia",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_PROVIDER_ADMIN"},
+			targetRoles: []string{ProviderAdminRole},
 			expected:    true,
 		},
 		{
@@ -447,7 +447,7 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        ngcUser,
 			orgName:     "NVIDIA",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_PROVIDER_ADMIN"},
+			targetRoles: []string{ProviderAdminRole},
 			expected:    true,
 		},
 		{
@@ -455,7 +455,7 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        ngcUser,
 			orgName:     "NVidia",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_TENANT_ADMIN"},
+			targetRoles: []string{TenantAdminRole},
 			expected:    true,
 		},
 		// NGC data tests - team level roles
@@ -464,7 +464,7 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        ngcUser,
 			orgName:     "nvidia",
 			teamName:    cdb.GetStrPtr("qa1"),
-			targetRoles: []string{"FORGE_PROVIDER_ADMIN"},
+			targetRoles: []string{ProviderAdminRole},
 			expected:    true,
 		},
 		{
@@ -472,32 +472,32 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        ngcUser,
 			orgName:     "NVIDIA",
 			teamName:    cdb.GetStrPtr("qa1"),
-			targetRoles: []string{"FORGE_TENANT_ADMIN"},
+			targetRoles: []string{TenantAdminRole},
 			expected:    true,
 		},
 		// Keycloak data tests
 		{
 			name:        "Keycloak - exact case org role match",
 			user:        keycloakUser,
-			orgName:     "forge-tenant-dev",
+			orgName:     "nico-tenant-dev",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_TENANT_ADMIN"},
+			targetRoles: []string{TenantAdminRole},
 			expected:    true,
 		},
 		{
 			name:        "Keycloak - uppercase org name role match",
 			user:        keycloakUser,
-			orgName:     "FORGE-TENANT-DEV",
+			orgName:     "NICO-TENANT-DEV",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_TENANT_ADMIN"},
+			targetRoles: []string{TenantAdminRole},
 			expected:    true,
 		},
 		{
 			name:        "Keycloak - mixed case org name role match",
 			user:        keycloakUser,
-			orgName:     "Forge-Tenant-Dev",
+			orgName:     "NICo-Tenant-Dev",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_TENANT_ADMIN"},
+			targetRoles: []string{TenantAdminRole},
 			expected:    true,
 		},
 		// Negative tests
@@ -506,7 +506,7 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        ngcUser,
 			orgName:     "nonexistent",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_PROVIDER_ADMIN"},
+			targetRoles: []string{ProviderAdminRole},
 			expected:    false,
 		},
 		{
@@ -514,7 +514,7 @@ func TestValidateUserRolesCaseInsensitive(t *testing.T) {
 			user:        keycloakUser,
 			orgName:     "nonexistent",
 			teamName:    nil,
-			targetRoles: []string{"FORGE_TENANT_ADMIN"},
+			targetRoles: []string{TenantAdminRole},
 			expected:    false,
 		},
 		{
@@ -561,51 +561,51 @@ func TestKeycloakRealmAccessToOrgDataValidation(t *testing.T) {
 		{
 			name: "Keycloak user with single org admin role",
 			realmAccessRoles: []string{
-				"forge-tenant-dev:FORGE_TENANT_ADMIN",
+				"nico-tenant-dev:TENANT_ADMIN",
 			},
-			testOrgName:         "forge-tenant-dev",
+			testOrgName:         "nico-tenant-dev",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_TENANT_ADMIN"},
+			targetRoles:         []string{TenantAdminRole},
 			expectOrgMembership: true,
 			expectRoleMatch:     true,
-			description:         "User has FORGE_TENANT_ADMIN role for forge-tenant-dev org",
+			description:         "User has TENANT_ADMIN role for nico-tenant-dev org",
 		},
 		{
 			name: "Keycloak user with multiple org roles",
 			realmAccessRoles: []string{
-				"forge-tenant-dev:FORGE_TENANT_ADMIN",
-				"forge-prime-provider:FORGE_PROVIDER_ADMIN",
-				"forge-prime-provider:FORGE_PROVIDER_VIEWER",
+				"nico-tenant-dev:TENANT_ADMIN",
+				"nico-prime-provider:PROVIDER_ADMIN",
+				"nico-prime-provider:PROVIDER_VIEWER",
 			},
-			testOrgName:         "forge-prime-provider",
+			testOrgName:         "nico-prime-provider",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_PROVIDER_ADMIN"},
+			targetRoles:         []string{ProviderAdminRole},
 			expectOrgMembership: true,
 			expectRoleMatch:     true,
-			description:         "User has multiple roles in forge-prime-provider org",
+			description:         "User has multiple roles in nico-prime-provider org",
 		},
 		{
 			name: "Keycloak user testing different org",
 			realmAccessRoles: []string{
-				"forge-tenant-dev:FORGE_TENANT_ADMIN",
-				"forge-prime-provider:FORGE_PROVIDER_ADMIN",
+				"nico-tenant-dev:TENANT_ADMIN",
+				"nico-prime-provider:PROVIDER_ADMIN",
 			},
-			testOrgName:         "forge-tenant-dev",
+			testOrgName:         "nico-tenant-dev",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_TENANT_ADMIN"},
+			targetRoles:         []string{TenantAdminRole},
 			expectOrgMembership: true,
 			expectRoleMatch:     true,
-			description:         "User has FORGE_TENANT_ADMIN role for forge-tenant-dev org",
+			description:         "User has TENANT_ADMIN role for nico-tenant-dev org",
 		},
 		{
 			name: "Keycloak user with wrong role for org",
 			realmAccessRoles: []string{
-				"forge-tenant-dev:FORGE_TENANT_ADMIN",
-				"forge-prime-provider:FORGE_PROVIDER_VIEWER",
+				"nico-tenant-dev:TENANT_ADMIN",
+				"nico-prime-provider:PROVIDER_VIEWER",
 			},
-			testOrgName:         "forge-prime-provider",
+			testOrgName:         "nico-prime-provider",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_PROVIDER_ADMIN"}, // User only has VIEWER, not ADMIN
+			targetRoles:         []string{ProviderAdminRole}, // User only has VIEWER, not ADMIN
 			expectOrgMembership: true,
 			expectRoleMatch:     false,
 			description:         "User is member but doesn't have the required ADMIN role",
@@ -613,12 +613,12 @@ func TestKeycloakRealmAccessToOrgDataValidation(t *testing.T) {
 		{
 			name: "Keycloak user not member of tested org",
 			realmAccessRoles: []string{
-				"forge-tenant-dev:FORGE_TENANT_ADMIN",
-				"other-org:FORGE_PROVIDER_ADMIN",
+				"nico-tenant-dev:TENANT_ADMIN",
+				"other-org:PROVIDER_ADMIN",
 			},
 			testOrgName:         "nonexistent-org",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_TENANT_ADMIN"},
+			targetRoles:         []string{TenantAdminRole},
 			expectOrgMembership: false,
 			expectRoleMatch:     false,
 			description:         "User is not a member of the tested org",
@@ -626,11 +626,11 @@ func TestKeycloakRealmAccessToOrgDataValidation(t *testing.T) {
 		{
 			name: "Keycloak user with case-insensitive org matching",
 			realmAccessRoles: []string{
-				"FORGE-TENANT-DEV:FORGE_TENANT_ADMIN", // Uppercase in realmAccess
+				"NICO-TENANT-DEV:TENANT_ADMIN", // Uppercase in realmAccess
 			},
-			testOrgName:         "forge-tenant-dev", // Lowercase in test
+			testOrgName:         "nico-tenant-dev", // Lowercase in test
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_TENANT_ADMIN"},
+			targetRoles:         []string{TenantAdminRole},
 			expectOrgMembership: true,
 			expectRoleMatch:     true,
 			description:         "Case-insensitive org name matching should work",
@@ -638,13 +638,13 @@ func TestKeycloakRealmAccessToOrgDataValidation(t *testing.T) {
 		{
 			name: "Keycloak user with multiple roles in same org",
 			realmAccessRoles: []string{
-				"nvidia:FORGE_PROVIDER_ADMIN",
-				"nvidia:FORGE_TENANT_ADMIN",
-				"nvidia:FORGE_PROVIDER_VIEWER",
+				"nvidia:PROVIDER_ADMIN",
+				"nvidia:TENANT_ADMIN",
+				"nvidia:PROVIDER_VIEWER",
 			},
 			testOrgName:         "nvidia",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_PROVIDER_VIEWER"}, // Test for viewer role
+			targetRoles:         []string{ProviderViewerRole}, // Test for viewer role
 			expectOrgMembership: true,
 			expectRoleMatch:     true,
 			description:         "User with multiple roles in same org should match any target role",
@@ -657,7 +657,7 @@ func TestKeycloakRealmAccessToOrgDataValidation(t *testing.T) {
 			},
 			testOrgName:         "any-org",
 			testTeamName:        nil,
-			targetRoles:         []string{"FORGE_TENANT_ADMIN"},
+			targetRoles:         []string{TenantAdminRole},
 			expectOrgMembership: false,
 			expectRoleMatch:     false,
 			description:         "Invalid realm role formats should not create org memberships",
@@ -746,9 +746,9 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 		{
 			name: "Mixed valid and invalid role formats",
 			realmAccessRoles: []string{
-				"valid-org:FORGE_TENANT_ADMIN",       // Valid
+				"valid-org:TENANT_ADMIN",       // Valid
 				"invalid-format",                     // Invalid - no colon (ignored)
-				"another-valid:FORGE_PROVIDER_ADMIN", // Valid
+				"another-valid:PROVIDER_ADMIN", // Valid
 				":EMPTY_ORG",                         // Invalid - empty org name (skipped)
 				"EMPTY_ROLE:",                        // Invalid - empty role (skipped)
 			},
@@ -758,9 +758,9 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 		{
 			name: "Duplicate roles for same org",
 			realmAccessRoles: []string{
-				"test-org:FORGE_TENANT_ADMIN",
-				"test-org:FORGE_TENANT_ADMIN",   // Duplicate (will be deduplicated)
-				"test-org:FORGE_PROVIDER_ADMIN", // Different role, same org
+				"test-org:TENANT_ADMIN",
+				"test-org:TENANT_ADMIN",   // Duplicate (will be deduplicated)
+				"test-org:PROVIDER_ADMIN", // Different role, same org
 			},
 			expectedOrgCount: 1, // Only 1 org, with deduplicated roles
 			description:      "Duplicate roles are deduplicated by ToOrgData()",
@@ -768,9 +768,9 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 		{
 			name: "Case variations in org names",
 			realmAccessRoles: []string{
-				"Test-Org:FORGE_TENANT_ADMIN",
-				"TEST-ORG:FORGE_PROVIDER_ADMIN",  // Same org, different case
-				"test-org:FORGE_PROVIDER_VIEWER", // Same org, different case
+				"Test-Org:TENANT_ADMIN",
+				"TEST-ORG:PROVIDER_ADMIN",  // Same org, different case
+				"test-org:PROVIDER_VIEWER", // Same org, different case
 			},
 			expectedOrgCount: 1, // All should map to same org (lowercase)
 			description:      "Different case variations should map to same org",
@@ -778,9 +778,9 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 		{
 			name: "Whitespace trimming in org names and roles",
 			realmAccessRoles: []string{
-				" test-org :FORGE_TENANT_ADMIN",      // Spaces around org name
-				"test-org: FORGE_PROVIDER_ADMIN ",    // Spaces around role
-				" test-org : FORGE_PROVIDER_VIEWER ", // Spaces around both
+				" test-org :TENANT_ADMIN",      // Spaces around org name
+				"test-org: PROVIDER_ADMIN ",    // Spaces around role
+				" test-org : PROVIDER_VIEWER ", // Spaces around both
 			},
 			expectedOrgCount: 1, // All should map to same org after trimming
 			description:      "Whitespace should be trimmed from org names and roles",
@@ -813,25 +813,25 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 					if len(org.Roles) != 2 {
 						t.Errorf("Expected 2 unique roles (duplicate removed), got %d: %v", len(org.Roles), org.Roles)
 					}
-					// Should contain only one instance of FORGE_TENANT_ADMIN
+					// Should contain only one instance of TENANT_ADMIN
 					adminCount := 0
 					for _, role := range org.Roles {
-						if role == "FORGE_TENANT_ADMIN" {
+						if role == TenantAdminRole {
 							adminCount++
 						}
 					}
 					if adminCount != 1 {
-						t.Errorf("Expected 1 instance of FORGE_TENANT_ADMIN (deduplicated), got %d", adminCount)
+						t.Errorf("Expected 1 instance of TENANT_ADMIN (deduplicated), got %d", adminCount)
 					}
-					// Should also contain FORGE_PROVIDER_ADMIN
+					// Should also contain PROVIDER_ADMIN
 					providerCount := 0
 					for _, role := range org.Roles {
-						if role == "FORGE_PROVIDER_ADMIN" {
+						if role == ProviderAdminRole {
 							providerCount++
 						}
 					}
 					if providerCount != 1 {
-						t.Errorf("Expected 1 instance of FORGE_PROVIDER_ADMIN, got %d", providerCount)
+						t.Errorf("Expected 1 instance of PROVIDER_ADMIN, got %d", providerCount)
 					}
 				}
 			}
@@ -861,9 +861,9 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 					}
 					// Check that roles are properly trimmed
 					expectedRoles := map[string]bool{
-						"FORGE_TENANT_ADMIN":    false,
-						"FORGE_PROVIDER_ADMIN":  false,
-						"FORGE_PROVIDER_VIEWER": false,
+						TenantAdminRole:    false,
+						ProviderAdminRole:  false,
+						ProviderViewerRole: false,
 					}
 					for _, role := range org.Roles {
 						if _, exists := expectedRoles[role]; exists {

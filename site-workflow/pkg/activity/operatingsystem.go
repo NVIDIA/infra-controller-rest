@@ -36,17 +36,17 @@ import (
 
 // ManageOperatingSystem is an activity wrapper for Operating System management
 type ManageOperatingSystem struct {
-	CarbideAtomicClient *client.CarbideAtomicClient
+	NICoAtomicClient *client.NICoAtomicClient
 }
 
 // NewManageOperatingSystem returns a new ManageOperatingSystem client
-func NewManageOperatingSystem(carbideClient *client.CarbideAtomicClient) ManageOperatingSystem {
+func NewManageOperatingSystem(nicoClient *client.NICoAtomicClient) ManageOperatingSystem {
 	return ManageOperatingSystem{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
-// Function to create OsImage with Carbide
+// Function to create OsImage with NICo
 func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, request *cwssaws.OsImageAttributes) error {
 	logger := log.With().Str("Activity", "CreateOsImageOnSite").Logger()
 
@@ -70,12 +70,13 @@ func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mos.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mos.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateOsImage(ctx, request)
+	_, err = rpcClient.CreateOsImage(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create OS Image using Site Controller API")
 		return swe.WrapErr(err)
@@ -86,7 +87,7 @@ func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, reque
 	return nil
 }
 
-// Function to update OsImage with Carbide
+// Function to update OsImage with NICo
 func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, request *cwssaws.OsImageAttributes) error {
 	logger := log.With().Str("Activity", "UpdateOsImageOnSite").Logger()
 
@@ -110,12 +111,13 @@ func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mos.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mos.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateOsImage(ctx, request)
+	_, err = rpcClient.UpdateOsImage(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update OS Image using Site Controller API")
 		return swe.WrapErr(err)
@@ -126,7 +128,7 @@ func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, reque
 	return nil
 }
 
-// Function to delete OsImage on Carbide
+// Function to delete OsImage on NICo
 func (mos *ManageOperatingSystem) DeleteOsImageOnSite(ctx context.Context, request *cwssaws.DeleteOsImageRequest) error {
 	logger := log.With().Str("Activity", "DeleteOsImageOnSite").Logger()
 
@@ -148,12 +150,13 @@ func (mos *ManageOperatingSystem) DeleteOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mos.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mos.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteOsImage(ctx, request)
+	_, err = rpcClient.DeleteOsImage(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete OS Image using Site Controller API")
 		return swe.WrapErr(err)
@@ -192,11 +195,11 @@ func (moii *ManageOsImageInventory) DiscoverOsImageInventory(ctx context.Context
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func osImageFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.UUID, error) {
+func osImageFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
-func osImageFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
+func osImageFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
@@ -222,20 +225,15 @@ func osImagePagedInventory(allItemIDs []*cwssaws.UUID, pagedItems []*cwssaws.OsI
 	return inventory
 }
 
-func osImageFindFallback(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
+func osImageFindFallback(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
 	request := &cwssaws.ListOsImageRequest{}
-
-	forgeClient := carbideClient.Carbide()
-
-	items, err := forgeClient.ListOsImage(ctx, request)
+	items, err := nicoClient.NICo().ListOsImage(ctx, request)
 	if err != nil {
 		return nil, nil, err
 	}
-
 	var ids []*cwssaws.UUID
 	for _, it := range items.GetImages() {
 		ids = append(ids, it.GetAttributes().Id)
 	}
-
 	return ids, items.GetImages(), nil
 }

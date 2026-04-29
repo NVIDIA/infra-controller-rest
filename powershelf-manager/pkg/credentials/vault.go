@@ -142,7 +142,7 @@ func (m *VaultCredentialManager) Stop(ctx context.Context) error {
 	return nil
 }
 
-// Uppercase the MAC to match Carbide Core's vault key convention (Rust's
+// Uppercase the MAC to match NICo Core's vault key convention (Rust's
 // MacAddress Display trait emits uppercase hex). Go's net.HardwareAddr.String()
 // emits lowercase, and vault paths are case-sensitive.
 func (m *VaultCredentialManager) getCredentialKey(mac net.HardwareAddr) string {
@@ -270,7 +270,7 @@ var (
 )
 
 // credentialToMap converts a Credential to a map[string]interface{} suitable for Vault storage.
-// Uses Forge's credential format with a UsernamePassword wrapper.
+// Uses NICo's credential format with a UsernamePassword wrapper.
 func credentialToMap(c *credential.Credential) map[string]interface{} {
 	return map[string]interface{}{
 		"UsernamePassword": map[string]interface{}{
@@ -281,7 +281,7 @@ func credentialToMap(c *credential.Credential) map[string]interface{} {
 }
 
 // credentialFromMap converts a map[string]interface{} from Vault storage to a Credential.
-// Expects Forge's credential format: {"UsernamePassword": {"username": ..., "password": ...}}
+// Expects NICo's credential format: {"UsernamePassword": {"username": ..., "password": ...}}
 func credentialFromMap(data map[string]interface{}) (*credential.Credential, error) {
 	nested, ok := data["UsernamePassword"].(map[string]interface{})
 	if !ok {

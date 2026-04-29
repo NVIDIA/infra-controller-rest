@@ -65,7 +65,7 @@ func NewCreateInfrastructureProviderHandler(dbSession *cdb.Session, tc temporalC
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIInfrastructureProviderCreateRequest true "Infrastructure Provider create request"
 // @Success 201 {object} model.APIInfrastructureProvider
-// @Router /v2/org/{org}/carbide/infrastructure-provider [post]
+// @Router /v2/org/{org}/nico/infrastructure-provider [post]
 func (ciph CreateInfrastructureProviderHandler) Handle(c echo.Context) error {
 	org, dbUser, _, logger, handlerSpan := common.SetupHandler("InfrastructureProvider", "Create", c, ciph.tracerSpan)
 	if handlerSpan != nil {
@@ -125,7 +125,7 @@ func NewGetCurrentInfrastructureProviderHandler(dbSession *cdb.Session, tc tempo
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIInfrastructureProvider
-// @Router /v2/org/{org}/carbide/infrastructure-provider/current [get]
+// @Router /v2/org/{org}/nico/infrastructure-provider/current [get]
 func (gciph GetCurrentInfrastructureProviderHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfrastructureProvider", "GetCurrent", c, gciph.tracerSpan)
 	if handlerSpan != nil {
@@ -221,7 +221,7 @@ func NewGetCurrentInfrastructureProviderStatsHandler(dbSession *cdb.Session, tc 
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIInfrastructureProviderStats
-// @Router /v2/org/{org}/carbide/infrastructure-provider/current/stats [get]
+// @Router /v2/org/{org}/nico/infrastructure-provider/current/stats [get]
 func (gcipsh GetCurrentInfrastructureProviderStatsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("InfrastructureProvider", "GetCurrentStats", c, gcipsh.tracerSpan)
 	if handlerSpan != nil {
@@ -324,7 +324,7 @@ func NewUpdateCurrentInfrastructureProviderHandler(dbSession *cdb.Session, tc te
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIInfrastructureProviderUpdateRequest true "Infrastructure Provider update request"
 // @Success 200 {object} model.APIInfrastructureProvider
-// @Router /v2/org/{org}/carbide/infrastructure-provider/current [patch]
+// @Router /v2/org/{org}/nico/infrastructure-provider/current [patch]
 func (uciph UpdateCurrentInfrastructureProviderHandler) Handle(c echo.Context) error {
 	org, dbUser, _, logger, handlerSpan := common.SetupHandler("InfrastructureProvider", "UpdateCurrent", c, uciph.tracerSpan)
 	if handlerSpan != nil {

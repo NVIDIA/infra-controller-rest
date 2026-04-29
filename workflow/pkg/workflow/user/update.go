@@ -42,7 +42,7 @@ const (
 	WorkflowIDPrefixUpdateUserFromNGCImmediate = "user_update_from_ngc_immediate_"
 )
 
-// UpdateUserFromNGC is a Temporal workflow to fetch user data from NGC and update Forge DB
+// UpdateUserFromNGC is a Temporal workflow to fetch user data from NGC and update NICo DB
 func UpdateUserFromNGC(ctx workflow.Context, userID uuid.UUID, encryptedNgcToken []byte, immediate bool) error {
 	logger := log.With().Str("Workflow", "UpdateUserFromNGC").Str("User ID", userID.String()).Logger()
 
@@ -89,7 +89,7 @@ func UpdateUserFromNGC(ctx workflow.Context, userID uuid.UUID, encryptedNgcToken
 	return nil
 }
 
-// UpdateUserFromNGCWithAuxiliaryID is a Temporal workflow to fetch user data from NGC and update Forge DB
+// UpdateUserFromNGCWithAuxiliaryID is a Temporal workflow to fetch user data from NGC and update NICo DB
 func UpdateUserFromNGCWithAuxiliaryID(ctx workflow.Context, auxiliaryID string, encryptedNgcToken []byte, immediate bool) error {
 	logger := log.With().Str("Workflow", "UpdateUserFromNGC").Str("User ClientID", auxiliaryID).Logger()
 

@@ -60,7 +60,7 @@ CreateAllocation Create Allocation
 
 Create an Allocation for the org.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
 
 Tenant management of Allocation is not supported in MVP.
 
@@ -92,7 +92,7 @@ func (a *AllocationAPIService) CreateAllocationExecute(r ApiCreateAllocationRequ
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -141,7 +141,7 @@ func (a *AllocationAPIService) CreateAllocationExecute(r ApiCreateAllocationRequ
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -152,7 +152,7 @@ func (a *AllocationAPIService) CreateAllocationExecute(r ApiCreateAllocationRequ
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -198,7 +198,7 @@ CreateAllocationConstraint Create Allocation Constraint
 
 Create an Allocation Constraint for a given Allocation ID.
 
-Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have `PROVIDER_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -230,7 +230,7 @@ func (a *AllocationAPIService) CreateAllocationConstraintExecute(r ApiCreateAllo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}/constraint"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}/constraint"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 
@@ -280,7 +280,7 @@ func (a *AllocationAPIService) CreateAllocationConstraintExecute(r ApiCreateAllo
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -291,7 +291,7 @@ func (a *AllocationAPIService) CreateAllocationConstraintExecute(r ApiCreateAllo
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -331,7 +331,7 @@ DeleteAllocation Delete Allocation
 
 Delete an Allocation by ID.
 
-Org must have an Infrastructure Provider entity, specified Allocation must be created by said Provider. Requesting user must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity, specified Allocation must be created by said Provider. Requesting user must have `PROVIDER_ADMIN` role.
 
 Tenant management of Allocation is not supported in MVP.
 
@@ -362,7 +362,7 @@ func (a *AllocationAPIService) DeleteAllocationExecute(r ApiDeleteAllocationRequ
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 
@@ -432,7 +432,7 @@ DeleteAllocationConstraint Delete Allocation Constraint
 
 # Delete an existing Allocation Constraint by ID
 
-Org must have an Infrastructure Provider. Specified Allocation must have been created by the Provider and requesting user must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider. Specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -463,7 +463,7 @@ func (a *AllocationAPIService) DeleteAllocationConstraintExecute(r ApiDeleteAllo
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}/constraint/{allocationConstraintId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}/constraint/{allocationConstraintId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationConstraintId"+"}", url.PathEscape(parameterValueToString(r.allocationConstraintId, "allocationConstraintId")), -1)
@@ -631,7 +631,7 @@ GetAllAllocation Retrieve all Allocations
 
 Retrieve all Allocations for the org.
 
-Provider and Tenant roles are inferred from the org's membership. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` role.
+Provider and Tenant roles are inferred from the org's membership. User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
 
 Results are returned from both Provider and Tenant perspectives when the org has both roles.
 
@@ -663,7 +663,7 @@ func (a *AllocationAPIService) GetAllAllocationExecute(r ApiGetAllAllocationRequ
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -756,7 +756,7 @@ func (a *AllocationAPIService) GetAllAllocationExecute(r ApiGetAllAllocationRequ
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -817,9 +817,9 @@ GetAllAllocationConstraint Retrieve all Allocation Constraints
 
 Retrieve all Allocation Constraints for a given Allocation ID.
 
-If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `FORGE_PROVIDER_ADMIN` role.
+If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
 
-If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `FORGE_TENANT_ADMIN` role.
+If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `TENANT_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -851,7 +851,7 @@ func (a *AllocationAPIService) GetAllAllocationConstraintExecute(r ApiGetAllAllo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}/constraint"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}/constraint"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 
@@ -912,7 +912,7 @@ func (a *AllocationAPIService) GetAllAllocationConstraintExecute(r ApiGetAllAllo
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -977,7 +977,7 @@ GetAllocation Retrieve Allocation
 
 Provider and Tenant roles are inferred from the org's membership. Allocation must belong to the Provider or Tenant associated with the org.
 
-User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` role.
+User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1009,7 +1009,7 @@ func (a *AllocationAPIService) GetAllocationExecute(r ApiGetAllocationRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 
@@ -1066,7 +1066,7 @@ func (a *AllocationAPIService) GetAllocationExecute(r ApiGetAllocationRequest) (
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1107,9 +1107,9 @@ GetAllocationConstraint Retrieve Allocation Constraint
 
 Retrieve an Allocation Constraint for a given Allocation ID.
 
-If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `FORGE_PROVIDER_ADMIN` role.
+If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
 
-If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `FORGE_TENANT_ADMIN` role.
+If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `TENANT_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1143,7 +1143,7 @@ func (a *AllocationAPIService) GetAllocationConstraintExecute(r ApiGetAllocation
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}/constraint/{allocationConstraintId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}/constraint/{allocationConstraintId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationConstraintId"+"}", url.PathEscape(parameterValueToString(r.allocationConstraintId, "allocationConstraintId")), -1)
@@ -1192,7 +1192,7 @@ func (a *AllocationAPIService) GetAllocationConstraintExecute(r ApiGetAllocation
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1238,7 +1238,7 @@ UpdateAllocation Update Allocation
 
 # Update an existing Allocation
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role. Provider must own the Allocation.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role. Provider must own the Allocation.
 
 Tenant management of Allocation is not supported in MVP.
 
@@ -1272,7 +1272,7 @@ func (a *AllocationAPIService) UpdateAllocationExecute(r ApiUpdateAllocationRequ
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 
@@ -1359,7 +1359,7 @@ UpdateAllocationConstraint Update Allocation Constraint
 
 # Update an existing Allocation Constraint by ID
 
-Org must have an Infrastructure Provider. Specified Allocation must have been created by the Provider and requesting user must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider. Specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
 
 Modifying allocations may not be possible if Tenant has started utilizing resources from this allocation.
 
@@ -1399,7 +1399,7 @@ func (a *AllocationAPIService) UpdateAllocationConstraintExecute(r ApiUpdateAllo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/allocation/{allocationId}/constraint/{allocationConstraintId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/allocation/{allocationId}/constraint/{allocationConstraintId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationId"+"}", url.PathEscape(parameterValueToString(r.allocationId, "allocationId")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"allocationConstraintId"+"}", url.PathEscape(parameterValueToString(r.allocationConstraintId, "allocationConstraintId")), -1)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"strings"
@@ -342,7 +342,7 @@ func TestBuildCommands_NoDuplicateFlags(t *testing.T) {
 			}
 		}
 	}
-	visit("carbidecli", cmds)
+	visit("cli", cmds)
 }
 
 // TestBuildActionCommand_ReservedBodyPropertyPrefixed verifies that when a
@@ -353,7 +353,7 @@ func TestBuildCommands_NoDuplicateFlags(t *testing.T) {
 func TestBuildActionCommand_ReservedBodyPropertyPrefixed(t *testing.T) {
 	spec := &Spec{
 		Paths: map[string]PathItem{
-			"/v2/org/{org}/carbide/widget": {
+			"/v2/org/{org}/nico/widget": {
 				Post: &Operation{
 					OperationID: "create-widget",
 					Tags:        []string{"Widget"},
@@ -383,8 +383,8 @@ func TestBuildActionCommand_ReservedBodyPropertyPrefixed(t *testing.T) {
 		tag:    "Widget",
 		action: "create",
 		method: "POST",
-		path:   "/v2/org/{org}/carbide/widget",
-		op:     spec.Paths["/v2/org/{org}/carbide/widget"].Post,
+		path:   "/v2/org/{org}/nico/widget",
+		op:     spec.Paths["/v2/org/{org}/nico/widget"].Post,
 	}
 
 	cmd := buildActionCommand(spec, ro, "")
@@ -414,7 +414,7 @@ func TestBuildActionCommand_ReservedBodyPropertyPrefixed(t *testing.T) {
 }
 
 // TestNewApp_DpuExtensionServiceCreate_DoesNotPanic loads the real embedded
-// OpenAPI spec and runs `carbidecli dpu-extension-service create --help`. Prior
+// OpenAPI spec and runs `cli dpu-extension-service create --help`. Prior
 // to the reserved-flag fix this invocation panics with
 // "create flag redefined: data" during urfave/cli flag-set construction.
 func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
@@ -422,12 +422,12 @@ func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
 	require.NoError(t, err, "NewApp failed")
 
 	require.NotPanics(t, func() {
-		require.NoError(t, app.Run([]string{"carbidecli", "dpu-extension-service", "create", "--help"}))
+		require.NoError(t, app.Run([]string{"cli", "dpu-extension-service", "create", "--help"}))
 	})
 }
 
 func TestDetectMisorderedFlags(t *testing.T) {
-	usage := "carbidecli machine update <machineId>"
+	usage := "cli machine update <machineId>"
 	tests := []struct {
 		name         string
 		args         []string

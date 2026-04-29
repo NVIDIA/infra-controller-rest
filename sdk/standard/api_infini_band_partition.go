@@ -60,7 +60,7 @@ CreateInfinibandPartition Create InfiniBand Partition
 
 Create an InfiniBand Partition for the org.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -90,7 +90,7 @@ func (a *InfiniBandPartitionAPIService) CreateInfinibandPartitionExecute(r ApiCr
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/infiniband-partition"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/infiniband-partition"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -139,7 +139,7 @@ func (a *InfiniBandPartitionAPIService) CreateInfinibandPartitionExecute(r ApiCr
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -150,7 +150,7 @@ func (a *InfiniBandPartitionAPIService) CreateInfinibandPartitionExecute(r ApiCr
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -190,7 +190,7 @@ DeleteInfinibandPartition Delete InfiniBand Partition
 
 Delete a specific InfiniBand Partition by ID.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
 
 Tenant must own the Partition.
 
@@ -221,7 +221,7 @@ func (a *InfiniBandPartitionAPIService) DeleteInfinibandPartitionExecute(r ApiDe
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/infiniband-partition/{infiniBandPartitionId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/infiniband-partition/{infiniBandPartitionId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"infiniBandPartitionId"+"}", url.PathEscape(parameterValueToString(r.infiniBandPartitionId, "infiniBandPartitionId")), -1)
 
@@ -269,7 +269,7 @@ func (a *InfiniBandPartitionAPIService) DeleteInfinibandPartitionExecute(r ApiDe
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -355,7 +355,7 @@ GetAllInfinibandInterface Retrieve all InfiniBand Interfaces
 
 # Get all InfiniBand Interfaces
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -385,7 +385,7 @@ func (a *InfiniBandPartitionAPIService) GetAllInfinibandInterfaceExecute(r ApiGe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/infiniband-interface"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/infiniband-interface"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -460,7 +460,7 @@ func (a *InfiniBandPartitionAPIService) GetAllInfinibandInterfaceExecute(r ApiGe
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -548,7 +548,7 @@ GetAllInfinibandPartition Retrieve all InfiniBand Partitions
 
 # Retrieve all InfiniBand Partitions for the org
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -578,7 +578,7 @@ func (a *InfiniBandPartitionAPIService) GetAllInfinibandPartitionExecute(r ApiGe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/infiniband-partition"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/infiniband-partition"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -650,7 +650,7 @@ func (a *InfiniBandPartitionAPIService) GetAllInfinibandPartitionExecute(r ApiGe
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -697,7 +697,7 @@ GetInfinibandPartition Retrieve InfiniBand Partition
 
 # Retrieve a specific InfiniBand Partition
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
 
 Tenant must own the Partition.
 
@@ -731,7 +731,7 @@ func (a *InfiniBandPartitionAPIService) GetInfinibandPartitionExecute(r ApiGetIn
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/infiniband-partition/{infiniBandPartitionId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/infiniband-partition/{infiniBandPartitionId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"infiniBandPartitionId"+"}", url.PathEscape(parameterValueToString(r.infiniBandPartitionId, "infiniBandPartitionId")), -1)
 
@@ -782,7 +782,7 @@ func (a *InfiniBandPartitionAPIService) GetInfinibandPartitionExecute(r ApiGetIn
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -828,7 +828,7 @@ UpdateInfinibandPartition Update InfiniBand Partition
 
 # Update an existing InfiniBand Partition
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 Tenant must own the Partition.
 
@@ -862,7 +862,7 @@ func (a *InfiniBandPartitionAPIService) UpdateInfinibandPartitionExecute(r ApiUp
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/infiniband-partition/{infiniBandPartitionId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/infiniband-partition/{infiniBandPartitionId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"infiniBandPartitionId"+"}", url.PathEscape(parameterValueToString(r.infiniBandPartitionId, "infiniBandPartitionId")), -1)
 
@@ -912,7 +912,7 @@ func (a *InfiniBandPartitionAPIService) UpdateInfinibandPartitionExecute(r ApiUp
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -923,7 +923,7 @@ func (a *InfiniBandPartitionAPIService) UpdateInfinibandPartitionExecute(r ApiUp
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

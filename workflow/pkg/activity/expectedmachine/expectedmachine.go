@@ -64,11 +64,11 @@ func getLabelsMapFromProto(em *cwssaws.ExpectedMachine) map[string]string {
 
 // UpdateExpectedMachinesInDB is a Temporal activity that takes a collection of ExpectedMachine data pushed by Site Agent and updates the DB
 // Expected Machine records have two unique values (MAC and UUID). We ignore the MAC value and only rely on the UUID for uniqueness.
-// Carbide is the source of truth: out of the race-condition window we make the DB match Carbide exactly.
+// NICo is the source of truth: out of the race-condition window we make the DB match NICo exactly.
 // The reconciliation logic is as follows:
-// - UUID existing in Carbide but not in DB: create record in DB
-// - UUID existing in both Carbide and DB with differences: update record in DB
-// - UUID existing in DB but not in Carbide: delete record in DB
+// - UUID existing in NICo but not in DB: create record in DB
+// - UUID existing in both NICo and DB with differences: update record in DB
+// - UUID existing in DB but not in NICo: delete record in DB
 func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context, siteID uuid.UUID, expectedMachineInventory *cwssaws.ExpectedMachineInventory) error {
 	logger := log.With().Str("Activity", "UpdateExpectedMachinesInDB").Str("Site ID", siteID.String()).Logger()
 
@@ -182,7 +182,7 @@ func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context,
 				FallbackDpuSerialNumbers: rem.FallbackDpuSerialNumbers,
 				Labels:                   reportedLabels,
 				MachineID:                linkedMachineID,
-				CreatedBy:                siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+				CreatedBy:                siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
 				logger.Error().Err(cerr).Str("ID", emID.String()).Msg("failed to create ExpectedMachine in DB")
@@ -197,7 +197,7 @@ func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context,
 			!util.PtrsEqual(cur.MachineID, linkedMachineID) ||
 			!reflect.DeepEqual(cur.FallbackDpuSerialNumbers, rem.FallbackDpuSerialNumbers) ||
 			!reflect.DeepEqual(cur.Labels, reportedLabels) {
-			// nil labels in carbide can mean we need to clear out existing labels in DB
+			// nil labels in nico can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
 			if cur.Labels != nil && reportedLabels == nil {
@@ -218,9 +218,9 @@ func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context,
 		}
 	}
 
-	// Delete any Expected Machine present in DB not present in Carbide.
+	// Delete any Expected Machine present in DB not present in NICo.
 	// We only act if this is the last page (or paging disabled) and outside race window.
-	// The source of truth for Carbide is reportedIDs.
+	// The source of truth for NICo is reportedIDs.
 	if expectedMachineInventory.InventoryPage == nil || expectedMachineInventory.InventoryPage.TotalPages == 0 || (expectedMachineInventory.InventoryPage.CurrentPage == expectedMachineInventory.InventoryPage.TotalPages) {
 		for _, em := range existingExpectedMachines {
 			if _, keep := reportedIDs[em.ID]; keep {

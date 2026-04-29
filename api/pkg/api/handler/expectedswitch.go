@@ -72,7 +72,7 @@ func NewCreateExpectedSwitchHandler(dbSession *cdb.Session, scp *sc.ClientPool, 
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIExpectedSwitchCreateRequest true "ExpectedSwitch creation request"
 // @Success 201 {object} model.APIExpectedSwitch
-// @Router /v2/org/{org}/carbide/expected-switch [post]
+// @Router /v2/org/{org}/nico/expected-switch [post]
 func (cesh CreateExpectedSwitchHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedSwitch", "Create", c, cesh.tracerSpan)
 	if handlerSpan != nil {
@@ -252,7 +252,7 @@ func NewGetAllExpectedSwitchHandler(dbSession *cdb.Session, cfg *config.Config) 
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIExpectedSwitch
-// @Router /v2/org/{org}/carbide/expected-switch [get]
+// @Router /v2/org/{org}/nico/expected-switch [get]
 func (gaesh GetAllExpectedSwitchHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedSwitch", "GetAll", c, gaesh.tracerSpan)
 	if handlerSpan != nil {
@@ -409,7 +409,7 @@ func NewGetExpectedSwitchHandler(dbSession *cdb.Session, cfg *config.Config) Get
 // @Param id path string true "ID of Expected Switch"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site'"
 // @Success 200 {object} model.APIExpectedSwitch
-// @Router /v2/org/{org}/carbide/expected-switch/{id} [get]
+// @Router /v2/org/{org}/nico/expected-switch/{id} [get]
 func (gesh GetExpectedSwitchHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedSwitch", "Get", c, gesh.tracerSpan)
 	if handlerSpan != nil {
@@ -516,7 +516,7 @@ func NewUpdateExpectedSwitchHandler(dbSession *cdb.Session, scp *sc.ClientPool, 
 // @Param id path string true "ID of Expected Switch"
 // @Param message body model.APIExpectedSwitchUpdateRequest true "ExpectedSwitch update request"
 // @Success 200 {object} model.APIExpectedSwitch
-// @Router /v2/org/{org}/carbide/expected-switch/{id} [patch]
+// @Router /v2/org/{org}/nico/expected-switch/{id} [patch]
 func (uesh UpdateExpectedSwitchHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedSwitch", "Update", c, uesh.tracerSpan)
 	if handlerSpan != nil {
@@ -690,7 +690,7 @@ func NewDeleteExpectedSwitchHandler(dbSession *cdb.Session, scp *sc.ClientPool, 
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Expected Switch"
 // @Success 204
-// @Router /v2/org/{org}/carbide/expected-switch/{id} [delete]
+// @Router /v2/org/{org}/nico/expected-switch/{id} [delete]
 func (desh DeleteExpectedSwitchHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedSwitch", "Delete", c, desh.tracerSpan)
 	if handlerSpan != nil {

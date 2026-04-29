@@ -26,10 +26,10 @@ import (
 
 	"golang.org/x/term"
 
-	carbidecli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
+	cli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
 )
 
-// ChooseConfigFile scans ~/.carbide for config*.yaml files and shows an interactive
+// ChooseConfigFile scans ~/.nico for config*.yaml files and shows an interactive
 // selector if multiple configs exist. Returns the chosen path, or empty string
 // if only one config exists (use default) or no terminal is available.
 func ChooseConfigFile(explicitPath string) (string, error) {
@@ -45,7 +45,7 @@ func ChooseConfigFile(explicitPath string) (string, error) {
 		return "", nil
 	}
 
-	configDir := filepath.Join(home, ".carbide")
+	configDir := filepath.Join(home, ".nico")
 	entries, err := os.ReadDir(configDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -102,7 +102,7 @@ func ChooseConfigFile(explicitPath string) (string, error) {
 	return selected.ID, nil
 }
 
-// RunTUI is the entry point for carbidecli tui. It handles config selection,
+// RunTUI is the entry point for cli tui. It handles config selection,
 // authentication, and starts the REPL.
 func RunTUI(explicitConfig string) error {
 	configPath, err := ChooseConfigFile(explicitConfig)
@@ -110,12 +110,12 @@ func RunTUI(explicitConfig string) error {
 		return fmt.Errorf("choosing config: %w", err)
 	}
 
-	var cfg *carbidecli.ConfigFile
+	var cfg *cli.ConfigFile
 	if configPath != "" {
-		cfg, err = carbidecli.LoadConfigFromPath(configPath)
+		cfg, err = cli.LoadConfigFromPath(configPath)
 	} else {
-		cfg, err = carbidecli.LoadConfig()
-		configPath = carbidecli.ConfigPath()
+		cfg, err = cli.LoadConfig()
+		configPath = cli.ConfigPath()
 	}
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
@@ -129,21 +129,21 @@ func RunTUI(explicitConfig string) error {
 	baseURL := cfg.API.Base
 	apiName := cfg.API.Name
 	if apiName == "" {
-		apiName = "carbide"
+		apiName = "nico"
 	}
 
-	token, _ := carbidecli.AutoRefreshToken(cfg)
+	token, _ := cli.AutoRefreshToken(cfg)
 	if token == "" {
-		token = carbidecli.GetAuthToken(cfg)
+		token = cli.GetAuthToken(cfg)
 	}
 
-	client := carbidecli.NewClient(baseURL, org, token, nil, false)
+	client := cli.NewClient(baseURL, org, token, nil, false)
 	client.APIName = apiName
 
 	session := NewSession(client, org, configPath)
 	session.Token = token
 
-	if carbidecli.HasOIDCConfig(cfg) || carbidecli.HasAPIKeyConfig(cfg) {
+	if cli.HasOIDCConfig(cfg) || cli.HasAPIKeyConfig(cfg) {
 		session.LoginFn = func() (string, error) {
 			return loginFromConfig(cfg, configPath)
 		}
@@ -158,19 +158,19 @@ func RunTUI(explicitConfig string) error {
 }
 
 // loginFromConfig performs a fresh login using the config's auth method.
-func loginFromConfig(cfg *carbidecli.ConfigFile, configPath string) (string, error) {
-	if carbidecli.HasOIDCConfig(cfg) {
-		newToken, err := carbidecli.AutoRefreshToken(cfg)
+func loginFromConfig(cfg *cli.ConfigFile, configPath string) (string, error) {
+	if cli.HasOIDCConfig(cfg) {
+		newToken, err := cli.AutoRefreshToken(cfg)
 		if err != nil || newToken == "" {
 			return "", fmt.Errorf("OIDC token refresh failed: %w", err)
 		}
-		if saveErr := carbidecli.SaveConfigToPath(cfg, configPath); saveErr != nil {
+		if saveErr := cli.SaveConfigToPath(cfg, configPath); saveErr != nil {
 			fmt.Fprintf(os.Stderr, "Warning: could not save refreshed token: %v\n", saveErr)
 		}
 		return newToken, nil
 	}
-	if carbidecli.HasAPIKeyConfig(cfg) {
-		return carbidecli.ExchangeAPIKey(cfg, configPath)
+	if cli.HasAPIKeyConfig(cfg) {
+		return cli.ExchangeAPIKey(cfg, configPath)
 	}
 	return "", fmt.Errorf("no auth method configured")
 }

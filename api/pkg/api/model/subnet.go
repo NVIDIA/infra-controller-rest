@@ -214,17 +214,17 @@ func NewAPISubnet(dbs *cdbm.Subnet, dbsds []cdbm.StatusDetail) *APISubnet {
 
 // APISubnetStats is a data structure to capture information about Subnet stats at the API layer
 type APISubnetStats struct {
-	// Total is the total number of the Subnet object in Forge Cloud
+	// Total is the total number of the Subnet object in NICo Cloud
 	Total int `json:"total"`
-	// Pending is the total number of pending Subnet object in Forge Cloud
+	// Pending is the total number of pending Subnet object in NICo Cloud
 	Pending int `json:"pending"`
-	// Provisioning is the total number of provisioning Subnet object in Forge Cloud
+	// Provisioning is the total number of provisioning Subnet object in NICo Cloud
 	Provisioning int `json:"provisioning"`
-	// Ready is the total number of ready Subnet object in Forge Cloud
+	// Ready is the total number of ready Subnet object in NICo Cloud
 	Ready int `json:"ready"`
-	// Deleting is the total number of deleting Subnet object in Forge Cloud
+	// Deleting is the total number of deleting Subnet object in NICo Cloud
 	Deleting int `json:"deleting"`
-	// Error is the total number of error Subnet object in Forge Cloud
+	// Error is the total number of error Subnet object in NICo Cloud
 	Error int `json:"error"`
 }
 

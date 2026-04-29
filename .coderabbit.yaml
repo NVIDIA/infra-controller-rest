@@ -28,7 +28,7 @@ reviews:
   collapse_walkthrough: false
   path_filters:
     - "!**/*.pb.go"
-    - "!workflow-schema/site-agent/workflows/v1/*_carbide.proto"
+    - "!workflow-schema/site-agent/workflows/v1/*_nico.proto"
   path_instructions:
     - path: '**/*.go'
       instructions: >-

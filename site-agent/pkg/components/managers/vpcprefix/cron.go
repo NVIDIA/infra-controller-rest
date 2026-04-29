@@ -28,8 +28,8 @@ import (
 const (
 	// InventoryQueuePrefix is the prefix for the inventory temporal queue
 	InventoryQueuePrefix = "inventory-"
-	// InventoryCarbidePageSize is the number of items to be fetched from Carbide API at a time
-	InventoryCarbidePageSize = 100
+	// InventoryNICoPageSize is the number of items to be fetched from NICo API at a time
+	InventoryNICoPageSize = 100
 	// InventoryCloudPageSize is the number of items to be sent to Cloud at a time
 	InventoryCloudPageSize = 25
 	// InventoryDefaultSchedule is the default schedule for inventory discovery

@@ -76,7 +76,7 @@ type SKU struct {
 	ID                   string         `bun:"id,pk"`
 	SiteID               uuid.UUID      `bun:"site_id,type:uuid,notnull"`
 	Site                 *Site          `bun:"rel:belongs-to,join:site_id=id"`
-	DeviceType           *string        `bun:"device_type"` // NOTE: can be added once available in forge.proto
+	DeviceType           *string        `bun:"device_type"` // NOTE: can be added once available in nico.proto
 	Components           *SkuComponents `bun:"components,type:jsonb"`
 	AssociatedMachineIds []string       `bun:"associated_machines,type:text[],default:'{}'"`
 	Created              time.Time      `bun:"created,nullzero,notnull,default:current_timestamp"`
@@ -85,7 +85,7 @@ type SKU struct {
 
 // SkuCreateInput input parameters for Create method
 type SkuCreateInput struct {
-	SkuID                string // Carbide is the source of truth: id must always be provided on creation.
+	SkuID                string // NICo is the source of truth: id must always be provided on creation.
 	SiteID               uuid.UUID
 	Components           *SkuComponents
 	DeviceType           *string
@@ -152,7 +152,7 @@ type SkuSQLDAO struct {
 }
 
 // Create creates a new SKU from the given parameters
-// SKU comes from Carbide, so SkuID is required
+// SKU comes from NICo, so SkuID is required
 func (ssd SkuSQLDAO) Create(ctx context.Context, tx *db.Tx, input SkuCreateInput) (*SKU, error) {
 	// Create a child span and set the attributes for current request
 	ctx, skuDAOSpan := ssd.tracerSpan.CreateChildInCurrentContext(ctx, "SkuDAO.Create")

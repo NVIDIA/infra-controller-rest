@@ -41,7 +41,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("InfiniBandPartition: Successfully registered DeleteInfiniBandPartitionV2 workflow")
 
 	// Register activities
-	ibpManager := swa.NewManageInfiniBandPartition(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	ibpManager := swa.NewManageInfiniBandPartition(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateInfiniBandPartitionOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(ibpManager.CreateInfiniBandPartitionOnSite)

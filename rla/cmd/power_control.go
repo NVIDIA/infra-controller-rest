@@ -32,12 +32,12 @@ var (
 	powerControlCmd = &cobra.Command{
 		Use:   "control",
 		Short: "Control power state of components in racks",
-		Long: `Control power state of components via carbide API.
+		Long: `Control power state of components via nico API.
 		
 Specify exactly ONE of the following options:
   --rack-ids      : Comma-separated list of rack UUIDs
   --rack-names    : Comma-separated list of rack names
-  --component-ids : Comma-separated list of component IDs (e.g. machine_id from Carbide)
+  --component-ids : Comma-separated list of component IDs (e.g. machine_id from NICo)
 
 Component types (required for rack-ids/rack-names):
   --type compute     : Compute nodes

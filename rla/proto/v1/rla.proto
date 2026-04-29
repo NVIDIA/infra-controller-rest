@@ -224,7 +224,7 @@ message Component {
     string firmware_version = 3;
     RackPosition position = 4;
     repeated BMCInfo bmcs = 5;
-    string component_id = 6;  // Component's own ID from its source system (e.g., Carbide machine_id for Compute)
+    string component_id = 6;  // Component's own ID from its source system (e.g., NICo machine_id for Compute)
     UUID rack_id = 7;
     string power_state = 8;  // Current power state (synced from external system by inventory loop)
 }
@@ -286,10 +286,10 @@ message ComponentTarget {
 
 // ExternalRef identifies a component by its external system ID.
 // The component type determines which external system to query
-// (e.g., COMPUTE -> Carbide, POWERSHELF -> PSM)
+// (e.g., COMPUTE -> NICo, POWERSHELF -> PSM)
 message ExternalRef {
     ComponentType type = 1;  // Component type determines the source system
-    string id = 2;           // ID in that system (e.g., Carbide machine_id, PSM PMC MAC)
+    string id = 2;           // ID in that system (e.g., NICo machine_id, PSM PMC MAC)
 }
 
 message NVLDomain {

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: Carbide Promotion to Carbide Registry
+name: NICo Promotion to NICo Registry
 
 on:
   workflow_call:
@@ -45,25 +45,25 @@ on:
 
 jobs:
   # ============================================================================
-  # Approve Promote to Carbide Registry
+  # Approve Promote to NICo Registry
   # ============================================================================
-  promote-carbide-rest-to-carbide-registry:
+  promote-nico-rest-to-nico-registry:
     runs-on: ${{ inputs.runner }}
     environment: 
-      name: promote-carbide-registry
+      name: promote-nico-registry
     steps:
-      - name: Approve Promote to Carbide Registry
+      - name: Approve Promote to NICo Registry
         run: |
           echo "Received build artifacts: ${{ inputs.build_artifacts }}"  
-          echo "Approve Promote to Carbide Registry"
-          echo "Promote Carbide REST to registry ngcr.io/0837451325059433/carbide"
+          echo "Approve Promote to NICo Registry"
+          echo "Promote NICo REST to registry ngcr.io/0837451325059433/nico"
 
   # ============================================================================
   # Prepare Promotion Matrix
   # ============================================================================
   prepare-matrix:
     runs-on: ${{ inputs.runner }}
-    needs: promote-carbide-rest-to-carbide-registry
+    needs: promote-nico-rest-to-nico-registry
     outputs:
       images: ${{ steps.gen-matrix.outputs.images }}
       artifacts: ${{ steps.gen-matrix.outputs.artifacts }}
@@ -77,7 +77,7 @@ jobs:
           jq -c '[ .[] | {
             source: .image_ref | split(":") | .[0],
             source_tag: .image_ref | split(":") | .[1],
-            destination: (.image_ref | split(":") | .[0] | sub("carbide-dev"; "carbide")),
+            destination: (.image_ref | split(":") | .[0] | sub("nico-dev"; "nico")),
             destination_tag: "${{ inputs.semantic_version }}"
           } ]' artifacts.json > image_matrix.json
           
@@ -104,7 +104,7 @@ jobs:
           echo "artifacts=$(cat artifact_matrix.json)" >> $GITHUB_OUTPUT
 
   # ============================================================================
-  # Promote Images (Carbide Registry)
+  # Promote Images (NICo Registry)
   # ============================================================================
   promote-images:
     needs: prepare-matrix
@@ -130,7 +130,7 @@ jobs:
   promote-artifacts:
     runs-on: ${{ inputs.runner }}
     needs: 
-      - promote-carbide-rest-to-carbide-registry
+      - promote-nico-rest-to-nico-registry
       - prepare-matrix
     strategy:
       matrix:

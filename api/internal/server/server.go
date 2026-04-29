@@ -298,7 +298,7 @@ func InitMetricsServer(e *echo.Echo) *echo.Echo {
 	ep.HideBanner = true
 
 	conf := echoPrometheus.MiddlewareConfig{
-		Subsystem: "carbide_api",
+		Subsystem: "nico_api",
 		Skipper:   api.MetricsURLSkipper,
 	}
 

@@ -78,7 +78,7 @@ func NewCreateSSHKeyHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APISSHKeyCreateRequest true "SSH Key create request"
 // @Success 201 {object} model.APISSHKey
-// @Router /v2/org/{org}/carbide/sshkey [post]
+// @Router /v2/org/{org}/nico/sshkey [post]
 func (cskh CreateSSHKeyHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKey", "Create", c, cskh.tracerSpan)
 	if handlerSpan != nil {
@@ -371,7 +371,7 @@ func NewUpdateSSHKeyHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param id path string true "ID of SSHKey"
 // @Param message body model.APISSHKeyUpdateRequest true "SSH Key update request"
 // @Success 200 {object} model.APISSHKey
-// @Router /v2/org/{org}/carbide/sshkey/{id} [patch]
+// @Router /v2/org/{org}/nico/sshkey/{id} [patch]
 func (uskh UpdateSSHKeyHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKey", "Update", c, uskh.tracerSpan)
 	if handlerSpan != nil {
@@ -556,7 +556,7 @@ func NewGetSSHKeyHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *
 // @Param id path string true "ID of SSH Key"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Tenant'"
 // @Success 200 {object} model.APISSHKey
-// @Router /v2/org/{org}/carbide/sshkey/{id} [get]
+// @Router /v2/org/{org}/nico/sshkey/{id} [get]
 func (gskh GetSSHKeyHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKey", "Get", c, gskh.tracerSpan)
 	if handlerSpan != nil {
@@ -682,7 +682,7 @@ func NewGetAllSSHKeyHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} []model.APISSHKey
-// @Router /v2/org/{org}/carbide/sshkey [get]
+// @Router /v2/org/{org}/nico/sshkey [get]
 func (gaskh GetAllSSHKeyHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKey", "GetAll", c, gaskh.tracerSpan)
 	if handlerSpan != nil {
@@ -852,7 +852,7 @@ func NewDeleteSSHKeyHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of SSHKey"
 // @Success 202
-// @Router /v2/org/{org}/carbide/sshkey/{id} [delete]
+// @Router /v2/org/{org}/nico/sshkey/{id} [delete]
 func (dskh DeleteSSHKeyHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKey", "Delete", c, dskh.tracerSpan)
 	if handlerSpan != nil {

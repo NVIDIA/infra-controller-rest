@@ -55,7 +55,7 @@ func TestNewAPISite(t *testing.T) {
 		SiteAgentVersion:              cdb.GetStrPtr("1.0.0"),
 		RegistrationToken:             cdb.GetStrPtr("test-registration-token"),
 		RegistrationTokenExpiration:   cdb.GetTimePtr(time.Now()),
-		SerialConsoleHostname:         cdb.GetStrPtr("forge.acme.com"),
+		SerialConsoleHostname:         cdb.GetStrPtr("nico.acme.com"),
 		IsSerialConsoleEnabled:        true,
 		SerialConsoleIdleTimeout:      cdb.GetIntPtr(30),
 		SerialConsoleMaxSessionLength: cdb.GetIntPtr(60),
@@ -246,7 +246,7 @@ func TestAPISiteCreateRequest_Validate(t *testing.T) {
 			fields: fields{
 				Name:                  "test-site",
 				Description:           cdb.GetStrPtr("Test Site Description"),
-				SerialConsoleHostname: cdb.GetStrPtr("forge.acme.com"),
+				SerialConsoleHostname: cdb.GetStrPtr("nico.acme.com"),
 			},
 			wantErr: false,
 		},
@@ -254,7 +254,7 @@ func TestAPISiteCreateRequest_Validate(t *testing.T) {
 			name: "validate create request failure, missing name",
 			fields: fields{
 				Description:           cdb.GetStrPtr("Test Site Description"),
-				SerialConsoleHostname: cdb.GetStrPtr("forge.acme.com"),
+				SerialConsoleHostname: cdb.GetStrPtr("nico.acme.com"),
 			},
 			wantErr: true,
 		},
@@ -271,7 +271,7 @@ func TestAPISiteCreateRequest_Validate(t *testing.T) {
 			fields: fields{
 				Name:                  "test-site",
 				Description:           cdb.GetStrPtr("Test Site Description"),
-				SerialConsoleHostname: cdb.GetStrPtr("forge.acme.com"),
+				SerialConsoleHostname: cdb.GetStrPtr("nico.acme.com"),
 			},
 			wantErr: false,
 		},
@@ -312,7 +312,7 @@ func TestAPISiteUpdateRequest_Validate(t *testing.T) {
 			fields: fields{
 				Name:                   cdb.GetStrPtr("test-site"),
 				Description:            cdb.GetStrPtr("Test Site Description"),
-				SerialConsoleHostname:  cdb.GetStrPtr("forge.acme.com"),
+				SerialConsoleHostname:  cdb.GetStrPtr("nico.acme.com"),
 				RenewRegistrationToken: cdb.GetBoolPtr(true),
 			},
 			isProvider: true,
@@ -326,7 +326,7 @@ func TestAPISiteUpdateRequest_Validate(t *testing.T) {
 		{
 			name: "validate update request success, serial console params specified",
 			fields: fields{
-				SerialConsoleHostname:         cdb.GetStrPtr("forge.acme.com"),
+				SerialConsoleHostname:         cdb.GetStrPtr("nico.acme.com"),
 				IsSerialConsoleEnabled:        cdb.GetBoolPtr(true),
 				SerialConsoleIdleTimeout:      cdb.GetIntPtr(10),
 				SerialConsoleMaxSessionLength: cdb.GetIntPtr(20),
@@ -372,7 +372,7 @@ func TestAPISiteUpdateRequest_Validate(t *testing.T) {
 			fields: fields{
 				Name:                   cdb.GetStrPtr("test-site"),
 				Description:            cdb.GetStrPtr("Test Site Description"),
-				SerialConsoleHostname:  cdb.GetStrPtr("forge.acme.com"),
+				SerialConsoleHostname:  cdb.GetStrPtr("nico.acme.com"),
 				IsSerialConsoleEnabled: cdb.GetBoolPtr(true),
 				RenewRegistrationToken: cdb.GetBoolPtr(true),
 			},

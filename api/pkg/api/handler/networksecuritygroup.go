@@ -81,7 +81,7 @@ func NewCreateNetworkSecurityGroupHandler(dbSession *cdb.Session, tc temporalCli
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APINetworkSecurityGroupCreateRequest true "NetworkSecurityGroup creation request"
 // @Success 201 {object} model.APINetworkSecurityGroup
-// @Router /v2/org/{org}/carbide/network-security-group [post]
+// @Router /v2/org/{org}/nico/network-security-group [post]
 func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NetworkSecurityGroup", "Create", c, cnsgh.tracerSpan)
 	if handlerSpan != nil {
@@ -178,7 +178,7 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	nsgDAO := cdbm.NewNetworkSecurityGroupDAO(cnsgh.dbSession)
 
 	// Check if an NSG already exists for the given name and Site ID
-	// Another case where we might want to leave this to Carbide
+	// Another case where we might want to leave this to NICo
 	// and simply return the error and map the response code from
 	// the sync call to the appropriate http status code.
 	nsgs, tot, err := nsgDAO.GetAll(ctx, nil, cdbm.NetworkSecurityGroupFilterInput{Name: &apiRequest.Name, TenantIDs: []uuid.UUID{tenant.ID}, SiteIDs: []uuid.UUID{site.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
@@ -193,7 +193,7 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert all the request rules into rules
-	// we can store and send to Carbide.
+	// we can store and send to NICo.
 	rules := make([]*cdbm.NetworkSecurityGroupRule, len(apiRequest.Rules))
 
 	names := map[string]bool{}
@@ -280,11 +280,11 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert the DB rule wrappers into rules
-	// we can send to Carbide.
-	carbideRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(rules))
+	// we can send to NICo.
+	nicoRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(rules))
 
 	for i, rule := range rules {
-		carbideRules[i] = rule.NetworkSecurityGroupRuleAttributes
+		nicoRules[i] = rule.NetworkSecurityGroupRuleAttributes
 	}
 
 	// Prepare the create request workflow object
@@ -298,7 +298,7 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		},
 		NetworkSecurityGroupAttributes: &cwssaws.NetworkSecurityGroupAttributes{
 			StatefulEgress: apiRequest.StatefulEgress,
-			Rules:          carbideRules,
+			Rules:          nicoRules,
 		},
 	}
 
@@ -330,7 +330,7 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	if err != nil {
 
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}
@@ -405,7 +405,7 @@ func NewGetAllNetworkSecurityGroupHandler(dbSession *cdb.Session, tc temporalCli
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APINetworkSecurityGroup
-// @Router /v2/org/{org}/carbide/network-security-group [get]
+// @Router /v2/org/{org}/nico/network-security-group [get]
 func (gansgh GetAllNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NetworkSecurityGroup", "GetAll", c, gansgh.tracerSpan)
 	if handlerSpan != nil {
@@ -673,7 +673,7 @@ func NewGetNetworkSecurityGroupHandler(dbSession *cdb.Session, tc temporalClient
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APINetworkSecurityGroup
-// @Router /v2/org/{org}/carbide/network-security-group [get]
+// @Router /v2/org/{org}/nico/network-security-group [get]
 func (gansgh GetNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NetworkSecurityGroup", "Get", c, gansgh.tracerSpan)
 	if handlerSpan != nil {
@@ -833,7 +833,7 @@ func NewDeleteNetworkSecurityGroupHandler(dbSession *cdb.Session, tc temporalCli
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of NetworkSecurityGroup"
 // @Success 202 {object} model.APINetworkSecurityGroup
-// @Router /v2/org/{org}/carbide/network-security-group [post]
+// @Router /v2/org/{org}/nico/network-security-group [post]
 func (dnsgh DeleteNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NetworkSecurityGroup", "Delete", c, dnsgh.tracerSpan)
 	if handlerSpan != nil {
@@ -886,7 +886,7 @@ func (dnsgh DeleteNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	}
 
 	// Check if any objects are using the NetworkSecurityGroup
-	// NOTE: We don't really _need_ to do this here.  Carbide
+	// NOTE: We don't really _need_ to do this here.  NICo
 	// already performs all of these checks, so we could skip
 	// this here and defer to the sites.
 
@@ -991,10 +991,10 @@ func (dnsgh DeleteNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	err = we.Get(ctx, nil)
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-			logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 			// Reset error to nil
 			err = nil
 		}
@@ -1002,7 +1002,7 @@ func (dnsgh DeleteNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 
 	if err != nil {
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}
@@ -1065,7 +1065,7 @@ func NewUpdateNetworkSecurityGroupHandler(dbSession *cdb.Session, tc temporalCli
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APINetworkSecurityGroupUpdateRequest true "NetworkSecurityGroup update request"
 // @Success 200 {object} model.APINetworkSecurityGroup
-// @Router /v2/org/{org}/carbide/network-security-group [post]
+// @Router /v2/org/{org}/nico/network-security-group [post]
 func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NetworkSecurityGroup", "Update", c, dnsgh.tracerSpan)
 	if handlerSpan != nil {
@@ -1175,7 +1175,7 @@ func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	// Override rules if requested.
 	if apiRequest.Rules != nil {
 		// Convert all the request rules into rules
-		// we can store and send to Carbide.
+		// we can store and send to NICo.
 		rules = make([]*cdbm.NetworkSecurityGroupRule, len(apiRequest.Rules))
 
 		names := map[string]bool{}
@@ -1252,11 +1252,11 @@ func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert the DB rule wrappers into rules
-	// we can send to Carbide.
-	carbideRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(nsg.Rules))
+	// we can send to NICo.
+	nicoRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(nsg.Rules))
 
 	for i, rule := range nsg.Rules {
-		carbideRules[i] = rule.NetworkSecurityGroupRuleAttributes
+		nicoRules[i] = rule.NetworkSecurityGroupRuleAttributes
 	}
 
 	// Prepare the create request workflow object
@@ -1270,7 +1270,7 @@ func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		},
 		NetworkSecurityGroupAttributes: &cwssaws.NetworkSecurityGroupAttributes{
 			StatefulEgress: nsg.StatefulEgress,
-			Rules:          carbideRules,
+			Rules:          nicoRules,
 		},
 	}
 
@@ -1302,7 +1302,7 @@ func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	if err != nil {
 
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}

@@ -32,7 +32,7 @@ import (
 
 // CreateSubnetV2 is a workflow to create new Subnets using the CreateSubnetOnSite activity
 // V1 (CreateSubnet) is found cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func CreateSubnetV2(ctx workflow.Context, request *cwssaws.NetworkSegmentCreationRequest) error {
 	logger := log.With().Str("Workflow", "Subnet").Str("Action", "Create").Str("VPC ID", request.VpcId.String()).Str("Name", request.Name).Logger()
 
@@ -69,7 +69,7 @@ func CreateSubnetV2(ctx workflow.Context, request *cwssaws.NetworkSegmentCreatio
 
 // DeleteSubnetV2 is a workflow to delete Subnets using the DeleteSubnetOnSite activity
 // V1 (DeleteSubnet) is found cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func DeleteSubnetV2(ctx workflow.Context, request *cwssaws.NetworkSegmentDeletionRequest) error {
 	logger := log.With().Str("Workflow", "Subnet").Str("Action", "Delete").Str("Subnet ID", request.GetId().GetValue()).Logger()
 

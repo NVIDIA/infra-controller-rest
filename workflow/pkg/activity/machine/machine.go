@@ -242,7 +242,7 @@ func (mm *ManageMachine) UpdateMachinesInDB(ctx context.Context, siteIDStr strin
 		existingCloudMachine, found := existingCloudMachineIDMap[controllerMachineID]
 
 		// Determine status
-		machineStatus, statusMessage, isMachineUsableByTenant := getForgeMachineStatus(controllerMachine, slogger)
+		machineStatus, statusMessage, isMachineUsableByTenant := getNICoMachineStatus(controllerMachine, slogger)
 
 		// Populate machine health information
 		var machineHealth map[string]interface{}
@@ -424,7 +424,7 @@ func (mm *ManageMachine) UpdateMachinesInDB(ctx context.Context, siteIDStr strin
 		} else {
 			// Update existing Machine record
 
-			// There could be a race between inventory and human changes in carbide-rest-api,
+			// There could be a race between inventory and human changes in nico-rest-api,
 			// so we need to grab a txn and also lock on the machine record.
 
 			txn, err := cdb.BeginTx(ctx, mm.dbSession, &sql.TxOptions{})
@@ -957,9 +957,9 @@ func processMachineCapabilities(ctx context.Context, logger zerolog.Logger, dbSe
 	return nil
 }
 
-// Utility function to get Forge Machine status and usability from Controller Machine state
+// Utility function to get NICo Machine status and usability from Controller Machine state
 // Returns: (status string, message string, isUsableByTenant bool)
-func getForgeMachineStatus(controllerMachine *cwssaws.Machine, logger zerolog.Logger) (string, string, bool) {
+func getNICoMachineStatus(controllerMachine *cwssaws.Machine, logger zerolog.Logger) (string, string, bool) {
 	// Early return only for truly invalid input
 	if controllerMachine == nil || controllerMachine.State == "" {
 		logger.Warn().Msg("Received empty Machine state from Site Controller")

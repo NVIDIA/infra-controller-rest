@@ -31,10 +31,10 @@ var ManagerAccess *Manager.ManagerAccess
 type API struct{} //nolint:all
 
 // NewRLAManager - returns a new instance of helm manager
-func NewRLAManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
+func NewRLAManager(superNICo *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
 	ManagerAccess = &Manager.ManagerAccess{
 		Data: &Manager.ManagerData{
-			EB: superForge,
+			EB: superNICo,
 		},
 		API:  superAPI,
 		Conf: superConf,

@@ -30,13 +30,13 @@ import (
 
 // ManageMachineValidation is an activity wrapper for Machine Validation management
 type ManageMachineValidation struct {
-	CarbideAtomicClient *client.CarbideAtomicClient
+	NICoAtomicClient *client.NICoAtomicClient
 }
 
 // NewManageMachineValidation returns a new ManageMachineValidation client
-func NewManageMachineValidation(carbideClient *client.CarbideAtomicClient) ManageMachineValidation {
+func NewManageMachineValidation(nicoClient *client.NICoAtomicClient) ManageMachineValidation {
 	return ManageMachineValidation{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
@@ -61,12 +61,12 @@ func (mmv *ManageMachineValidation) EnableDisableMachineValidationTestOnSite(ctx
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
 
-	_, err = forgeClient.MachineValidationTestEnableDisableTest(ctx, request)
+	_, err = nicoClient.NICo().MachineValidationTestEnableDisableTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to enable/disable machine validation test using Site Controller API")
 		return swe.WrapErr(err)
@@ -96,12 +96,12 @@ func (mmv *ManageMachineValidation) PersistValidationResultOnSite(ctx context.Co
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
 
-	_, err = forgeClient.PersistValidationResult(ctx, request)
+	_, err = nicoClient.NICo().PersistValidationResult(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to persist validation results using Site Controller API")
 		return swe.WrapErr(err)
@@ -129,12 +129,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationResultsFromSite(ctx cont
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return nil, err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return nil, client.ErrClientNotConnected
 	}
 
-	result, err := forgeClient.GetMachineValidationResults(ctx, request)
+	result, err := nicoClient.NICo().GetMachineValidationResults(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation results using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -164,12 +164,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationRunsFromSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return nil, err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return nil, client.ErrClientNotConnected
 	}
 
-	result, err := forgeClient.GetMachineValidationRuns(ctx, request)
+	result, err := nicoClient.NICo().GetMachineValidationRuns(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation runs using Site Controller API")
 		return nil, err
@@ -197,12 +197,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationTestsFromSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return nil, err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return nil, client.ErrClientNotConnected
 	}
 
-	result, err := forgeClient.GetMachineValidationTests(ctx, request)
+	result, err := nicoClient.NICo().GetMachineValidationTests(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation tests using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -236,12 +236,12 @@ func (mmv *ManageMachineValidation) AddMachineValidationTestOnSite(ctx context.C
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return nil, err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return nil, client.ErrClientNotConnected
 	}
 
-	response, err := forgeClient.AddMachineValidationTest(ctx, request)
+	response, err := nicoClient.NICo().AddMachineValidationTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to add machine validation test using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -275,12 +275,12 @@ func (mmv *ManageMachineValidation) UpdateMachineValidationTestOnSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
 
-	_, err = forgeClient.UpdateMachineValidationTest(ctx, request)
+	_, err = nicoClient.NICo().UpdateMachineValidationTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update machine validation test using Site Controller API")
 		return swe.WrapErr(err)
@@ -308,12 +308,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationExternalConfigsFromSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return nil, err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return nil, client.ErrClientNotConnected
 	}
 
-	result, err := forgeClient.GetMachineValidationExternalConfigs(ctx, request)
+	result, err := nicoClient.NICo().GetMachineValidationExternalConfigs(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation external configs using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -343,12 +343,12 @@ func (mmv *ManageMachineValidation) AddUpdateMachineValidationExternalConfigOnSi
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
 
-	_, err = forgeClient.AddUpdateMachineValidationExternalConfig(ctx, request)
+	_, err = nicoClient.NICo().AddUpdateMachineValidationExternalConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to add/update machine validation external config using Site Controller API")
 		return swe.WrapErr(err)
@@ -378,12 +378,12 @@ func (mmv *ManageMachineValidation) RemoveMachineValidationExternalConfigOnSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mmv.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
 
-	_, err = forgeClient.RemoveMachineValidationExternalConfig(ctx, request)
+	_, err = nicoClient.NICo().RemoveMachineValidationExternalConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to remove machine validation external config using Site Controller API")
 		return swe.WrapErr(err)

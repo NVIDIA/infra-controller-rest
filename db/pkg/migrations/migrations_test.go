@@ -33,6 +33,7 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/extra/bundebug"
 	"github.com/uptrace/bun/migrate"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestMigrations(t *testing.T) {
@@ -91,9 +92,9 @@ func Test_vpcProviderIDUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
@@ -167,9 +168,9 @@ func Test_subnetSiteIDUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
@@ -243,7 +244,7 @@ func Test_machineInstanceTypeIDUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
@@ -378,7 +379,7 @@ func Test_machineControllerMachineIDUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
@@ -458,7 +459,7 @@ func Test_ipBlockBlockSizeRenameUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 	site := model.TestBuildSite(t, dbSession, ip, "Test Site", ipu)
@@ -524,7 +525,7 @@ func Test_subnetIPBlockSizeRenameUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 	site := model.TestBuildSite(t, dbSession, ip, "Test Site", ipu)
@@ -566,12 +567,12 @@ func Test_renameInstanceSubnetToInterfaceUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 	tnu := model.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 	tn := model.TestBuildTenant(t, dbSession, "test-tenant", tnOrg, tnu)
 
@@ -622,13 +623,13 @@ func Test_createAndPopulateTenantSiteUpMigrationfunc(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu1 := model.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg1, tnRoles)
 	tn1 := model.TestBuildTenant(t, dbSession, "test-tenant", tnOrg1, tnu1)
@@ -676,7 +677,7 @@ func Test_siteSshHostnameRenameUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 	site := model.TestBuildSite(t, dbSession, ip, "Test Site", ipu)
@@ -719,7 +720,7 @@ func Test_alterMachineIDUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
@@ -852,7 +853,7 @@ func Test_operatingSystemImageAttributeUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := model.TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 	site := model.TestBuildSite(t, dbSession, ip, "Test Site", ipu)
@@ -895,7 +896,7 @@ func Test_tenantConfigUpMigration(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 
 	tnOrg1 := "test-tenant-org-1"

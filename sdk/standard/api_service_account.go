@@ -84,7 +84,7 @@ func (a *ServiceAccountAPIService) GetCurrentServiceAccountExecute(r ApiGetCurre
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/service-account/current"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/service-account/current"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -131,7 +131,7 @@ func (a *ServiceAccountAPIService) GetCurrentServiceAccountExecute(r ApiGetCurre
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

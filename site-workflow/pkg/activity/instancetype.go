@@ -37,10 +37,10 @@ import (
 
 // ManageInstanceType is an activity wrapper for InstanceType management tasks that allows injecting DB access
 type ManageInstanceType struct {
-	CarbideAtomicClient *cClient.CarbideAtomicClient
+	NICoAtomicClient *cClient.NICoAtomicClient
 }
 
-// Function to Create Forge InstanceType with the Site Controller
+// Function to Create NICo InstanceType with the Site Controller
 func (mm *ManageInstanceType) CreateInstanceTypeOnSite(ctx context.Context, request *cwssaws.CreateInstanceTypeRequest) error {
 	logger := log.With().Str("Activity", "CreateInstanceTypeOnSite").Logger()
 
@@ -60,12 +60,13 @@ func (mm *ManageInstanceType) CreateInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateInstanceType(ctx, request)
+	_, err = rpcClient.CreateInstanceType(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create InstanceType using Site Controller API")
 		return swe.WrapErr(err)
@@ -76,7 +77,7 @@ func (mm *ManageInstanceType) CreateInstanceTypeOnSite(ctx context.Context, requ
 	return nil
 }
 
-// Function Update Forge InstanceType with the Site Controller
+// Function Update NICo InstanceType with the Site Controller
 func (mm *ManageInstanceType) UpdateInstanceTypeOnSite(ctx context.Context, request *cwssaws.UpdateInstanceTypeRequest) error {
 	logger := log.With().Str("Activity", "UpdateInstanceTypeOnSite").Logger()
 
@@ -96,12 +97,13 @@ func (mm *ManageInstanceType) UpdateInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateInstanceType(ctx, request)
+	_, err = rpcClient.UpdateInstanceType(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update config for InstanceType using Site Controller API")
 		return swe.WrapErr(err)
@@ -112,7 +114,7 @@ func (mm *ManageInstanceType) UpdateInstanceTypeOnSite(ctx context.Context, requ
 	return nil
 }
 
-// Function to Delete Forge InstanceType with the Site Controller
+// Function to Delete NICo InstanceType with the Site Controller
 func (mm *ManageInstanceType) DeleteInstanceTypeOnSite(ctx context.Context, request *cwssaws.DeleteInstanceTypeRequest) error {
 	logger := log.With().Str("Activity", "DeleteInstanceTypeOnSite").Logger()
 
@@ -132,12 +134,13 @@ func (mm *ManageInstanceType) DeleteInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteInstanceType(ctx, request)
+	_, err = rpcClient.DeleteInstanceType(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete InstanceType using Site Controller API")
 		return swe.WrapErr(err)
@@ -171,12 +174,13 @@ func (mm *ManageInstanceType) AssociateMachinesWithInstanceTypeOnSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.AssociateMachinesWithInstanceType(ctx, request)
+	_, err = rpcClient.AssociateMachinesWithInstanceType(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to associate Machines with InstanceType using Site Controller API")
 		return swe.WrapErr(err)
@@ -208,12 +212,13 @@ func (mm *ManageInstanceType) RemoveMachineInstanceTypeAssociationOnSite(ctx con
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.RemoveMachineInstanceTypeAssociation(ctx, request)
+	_, err = rpcClient.RemoveMachineInstanceTypeAssociation(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to associate Machines with InstanceType using Site Controller API")
 		return swe.WrapErr(err)
@@ -225,9 +230,9 @@ func (mm *ManageInstanceType) RemoveMachineInstanceTypeAssociationOnSite(ctx con
 }
 
 // NewManageInstanceType returns a new ManageInstanceType activity
-func NewManageInstanceType(carbideClient *cClient.CarbideAtomicClient) ManageInstanceType {
+func NewManageInstanceType(nicoClient *cClient.NICoAtomicClient) ManageInstanceType {
 	return ManageInstanceType{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
@@ -257,20 +262,20 @@ func NewManageInstanceTypeInventory(config ManageInventoryConfig) ManageInstance
 	}
 }
 
-func instanceTypeFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.UUID, error) {
+func instanceTypeFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, error) {
 	// Call Site Controller gRPC endpoint
-	forgeClient := carbideClient.Carbide()
-	instanceTypeIdList, err := forgeClient.FindInstanceTypeIds(ctx, &cwssaws.FindInstanceTypeIdsRequest{})
+	rpcClient := nicoClient.NICo()
+	instanceTypeIdList, err := rpcClient.FindInstanceTypeIds(ctx, &cwssaws.FindInstanceTypeIdsRequest{})
 	if err != nil {
 		return nil, err
 	}
 	return util.StringsToProtobufUUIDList(instanceTypeIdList.GetInstanceTypeIds()), nil
 }
 
-func instanceTypeFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.UUID) ([]*cwssaws.InstanceType, error) {
+func instanceTypeFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.UUID) ([]*cwssaws.InstanceType, error) {
 	// Call Site Controller gRPC endpoint
-	forgeClient := carbideClient.Carbide()
-	instanceTypeList, err := forgeClient.FindInstanceTypesByIds(ctx, &cwssaws.FindInstanceTypesByIdsRequest{
+	rpcClient := nicoClient.NICo()
+	instanceTypeList, err := rpcClient.FindInstanceTypesByIds(ctx, &cwssaws.FindInstanceTypesByIdsRequest{
 		InstanceTypeIds: util.ProtobufUUIDListToStringList(ids),
 	})
 	if err != nil {

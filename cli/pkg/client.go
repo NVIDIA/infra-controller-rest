@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"bytes"
@@ -70,7 +70,7 @@ func NewClient(baseURL, org, token string, log *logrus.Entry, debug bool) *Clien
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Org:     org,
 		Token:   token,
-		APIName: "carbide",
+		APIName: "nico",
 		HTTPClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -84,7 +84,7 @@ var orgScopedAPIPathPattern = regexp.MustCompile(`(/v[0-9]+/org/[^/]+/)([^/]+)`)
 // rewriteAPIName replaces the API path segment after /org/{org}/ with the
 // configured API name. This decouples the CLI from the hardcoded path in the spec.
 func (c *Client) rewriteAPIName(path string) string {
-	if c.APIName == "" || c.APIName == "carbide" {
+	if c.APIName == "" || c.APIName == "nico" {
 		return path
 	}
 	return orgScopedAPIPathPattern.ReplaceAllString(path, "${1}"+c.APIName)

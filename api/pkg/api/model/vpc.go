@@ -244,7 +244,7 @@ func (avvur APIVpcVirtualizationUpdateRequest) Validate(existingVpc *cdbm.Vpc) e
 
 // APIVpc is a data structure to capture information about VPC at the API layer
 type APIVpc struct {
-	// ID is the unique UUID v4 identifier of the VPC in Forge Cloud
+	// ID is the unique UUID v4 identifier of the VPC in NICo Cloud
 	ID string `json:"id"`
 	// Name is the name of the VPC
 	Name string `json:"name"`
@@ -364,23 +364,23 @@ func NewAPIVpc(dbVpc cdbm.Vpc, dbsds []cdbm.StatusDetail) APIVpc {
 
 // APIVpcStats is a data structure to capture information about VPC stats at the API layer
 type APIVpcStats struct {
-	// Total is the total number of the VPC object in Forge Cloud
+	// Total is the total number of the VPC object in NICo Cloud
 	Total int `json:"total"`
-	// Pending is the total number of pending VPC object in Forge Cloud
+	// Pending is the total number of pending VPC object in NICo Cloud
 	Pending int `json:"pending"`
-	// Provisioning is the total number of provisioning VPC object in Forge Cloud
+	// Provisioning is the total number of provisioning VPC object in NICo Cloud
 	Provisioning int `json:"provisioning"`
-	// Ready is the total number of ready VPC object in Forge Cloud
+	// Ready is the total number of ready VPC object in NICo Cloud
 	Ready int `json:"ready"`
-	// Deleting is the total number of deleting VPC object in Forge Cloud
+	// Deleting is the total number of deleting VPC object in NICo Cloud
 	Deleting int `json:"deleting"`
-	// Error is the total number of error VPC object in Forge Cloud
+	// Error is the total number of error VPC object in NICo Cloud
 	Error int `json:"error"`
 }
 
 // APIVpcSummary is the data structure to capture API representation of a Vpc Summary
 type APIVpcSummary struct {
-	// ID is the unique UUID v4 identifier of the VPC in Forge Cloud
+	// ID is the unique UUID v4 identifier of the VPC in NICo Cloud
 	ID string `json:"id"`
 	// Name of the Vpc, only lowercase characters, digits, hyphens and cannot begin/end with hyphen
 	Name string `json:"name"`

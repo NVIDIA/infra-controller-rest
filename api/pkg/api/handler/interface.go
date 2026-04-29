@@ -76,7 +76,7 @@ func NewGetAllInterfaceHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APIInterface
-// @Router /v2/org/{org}/carbide/instance/{instance_id}/interface [get]
+// @Router /v2/org/{org}/nico/instance/{instance_id}/interface [get]
 func (gaish GetAllInterfaceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Interface", "GetAll", c, gaish.tracerSpan)
 	if handlerSpan != nil {

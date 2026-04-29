@@ -25,8 +25,8 @@ package fake
 
 import (
 	clientset "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned"
-	forgev1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1"
-	fakeforgev1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1/fake"
+	nicov1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1"
+	fakenicov1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -84,7 +84,13 @@ var (
 	_ testing.FakeClient  = &Clientset{}
 )
 
-// ForgeV1 retrieves the ForgeV1Client
-func (c *Clientset) ForgeV1() forgev1.ForgeV1Interface {
-	return &fakeforgev1.FakeForgeV1{Fake: &c.Fake}
+// NICoV1 retrieves the NICoV1Client
+func (c *Clientset) NICoV1() nicov1.NICoV1Interface {
+	return &fakenicov1.FakeNICoV1{Fake: &c.Fake}
+}
+
+// ForgeLegacyV1 returns a fake ForgeLegacyV1 client backed by the same tracker.
+// TODO: remove once all site agents migrated to nico.nvidia.io.
+func (c *Clientset) ForgeLegacyV1() nicov1.ForgeLegacyV1Interface {
+	return &fakenicov1.FakeForgeLegacyV1{Fake: &c.Fake}
 }

@@ -24,7 +24,7 @@ import (
 )
 
 // DefaultAPIName is the default API path segment used in org-scoped routes.
-const DefaultAPIName = "carbide"
+const DefaultAPIName = "nico"
 
 var orgScopedAPIPathPattern = regexp.MustCompile(`(/v[0-9]+/org/[^/]+/)([^/]+)`)
 

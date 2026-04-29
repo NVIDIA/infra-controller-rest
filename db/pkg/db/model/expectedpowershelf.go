@@ -54,7 +54,7 @@ var (
 	}
 )
 
-// ExpectedPowerShelf is a record for each power shelf expected to be processed by Forge
+// ExpectedPowerShelf is a record for each power shelf expected to be processed by NICo
 type ExpectedPowerShelf struct {
 	bun.BaseModel `bun:"table:expected_power_shelf,alias:eps"`
 

@@ -215,7 +215,7 @@ func (mv ManageInstanceType) UpdateInstanceTypeInCloud(ctx context.Context, site
 
 		machineCap, err := MachineCapabilityFromProtobufMachineCapability(controllerCap, idx)
 		if err != nil {
-			return fmt.Errorf("failed to convert Carbide machine capability into MachineCapability: %w", err)
+			return fmt.Errorf("failed to convert NICo machine capability into MachineCapability: %w", err)
 		}
 
 		macCapName := machineCap.Name
@@ -354,7 +354,7 @@ func (mv ManageInstanceType) AddInstanceTypeToCloud(ctx context.Context, site *c
 		SiteID:                   &site.ID,
 		Status:                   cdbm.InstanceTypeStatusReady,
 		Version:                  controllerInstanceType.Version,
-		CreatedBy:                site.ID, /* This would normally be a user ID, but that isn't something Carbide provides */
+		CreatedBy:                site.ID, /* This would normally be a user ID, but that isn't something NICo provides */
 	})
 
 	if err != nil {
@@ -436,7 +436,7 @@ func (mv ManageInstanceType) ProtobufCapabilitiesFromCloudCapabilities(mcs []cdb
 	// Get the caps for the instance type
 	capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
 
-	// Sort the capabilities list.  Carbide will deny later updates
+	// Sort the capabilities list.  NICo will deny later updates
 	// if an InstanceType is associated with machines and a change
 	// in capabilities is attempted, so we'll sort here and
 	// in the update handler so that users can update metadata

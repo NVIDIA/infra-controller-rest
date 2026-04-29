@@ -71,7 +71,7 @@ func NewGetAllSkuHandler(dbSession *cdb.Session, tc tclient.Client, cfg *config.
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APISku
-// @Router /v2/org/{org}/carbide/sku [get]
+// @Router /v2/org/{org}/nico/sku [get]
 func (gash GetAllSkuHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("GetAll", "SKU", c, gash.tracerSpan)
 	if handlerSpan != nil {
@@ -229,7 +229,7 @@ func NewGetSkuHandler(dbSession *cdb.Session, tc tclient.Client, cfg *config.Con
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of SKU"
 // @Success 200 {object} model.APISku
-// @Router /v2/org/{org}/carbide/sku/{id} [get]
+// @Router /v2/org/{org}/nico/sku/{id} [get]
 func (gsh GetSkuHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Get", "SKU", c, gsh.tracerSpan)
 	if handlerSpan != nil {

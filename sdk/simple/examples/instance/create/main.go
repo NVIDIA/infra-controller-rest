@@ -27,9 +27,9 @@ import (
 )
 
 func main() {
-	// CARBIDE_BASE_URL, CARBIDE_ORG, and CARBIDE_TOKEN are required.
-	// CARBIDE_MACHINE_ID is optional; if not set, a Ready machine is selected.
-	// CARBIDE_SITE_ID and CARBIDE_VPC_ID are optional for testing.
+	// NICO_BASE_URL, NICO_ORG, and NICO_TOKEN are required.
+	// NICO_MACHINE_ID is optional; if not set, a Ready machine is selected.
+	// NICO_SITE_ID and NICO_VPC_ID are optional for testing.
 	// See sdk/simple/README.md for local dev (kind) setup.
 	client, err := simple.NewClientFromEnv()
 	if err != nil {
@@ -37,10 +37,10 @@ func main() {
 		os.Exit(1)
 	}
 	ctx := context.Background()
-	if siteID := os.Getenv("CARBIDE_SITE_ID"); siteID != "" {
+	if siteID := os.Getenv("NICO_SITE_ID"); siteID != "" {
 		client.SetSiteID(siteID)
 	}
-	if vpcID := os.Getenv("CARBIDE_VPC_ID"); vpcID != "" {
+	if vpcID := os.Getenv("NICO_VPC_ID"); vpcID != "" {
 		client.SetVpcID(vpcID)
 	}
 	if err := client.Authenticate(ctx); err != nil {
@@ -55,7 +55,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	selectedMachineID := os.Getenv("CARBIDE_MACHINE_ID")
+	selectedMachineID := os.Getenv("NICO_MACHINE_ID")
 	if selectedMachineID == "" {
 		for _, machine := range machines {
 			if machine.Status == "Ready" {
@@ -65,12 +65,12 @@ func main() {
 		}
 	}
 	if selectedMachineID == "" {
-		fmt.Println("Could not find a suitable Machine to create an Instance. Set CARBIDE_MACHINE_ID or ensure a Ready machine exists.")
+		fmt.Println("Could not find a suitable Machine to create an Instance. Set NICO_MACHINE_ID or ensure a Ready machine exists.")
 		os.Exit(1)
 	}
 
 	// Create an Instance
-	userData := "#cloud-config\nnetwork:\n  version: 2\n  ethernets:\n    eth0:\n      set-name: eth0\n      dhcp4: true\n      optional: true\n      match:\n        name: en*np0\n\n#user-data\nusers:\n- name: forge\nlock_passwd: false\nshell: /bin/bash\nsudo: ALL=(ALL) NOPASSWD:ALL\ngroups: users, admin\npasswd: <replace-with-hashed-password>\n"
+	userData := "#cloud-config\nnetwork:\n  version: 2\n  ethernets:\n    eth0:\n      set-name: eth0\n      dhcp4: true\n      optional: true\n      match:\n        name: en*np0\n\n#user-data\nusers:\n- name: nico\nlock_passwd: false\nshell: /bin/bash\nsudo: ALL=(ALL) NOPASSWD:ALL\ngroups: users, admin\npasswd: <replace-with-hashed-password>\n"
 	instanceCreateRequest := simple.InstanceCreateRequest{
 		Name:       "test-instance",
 		MachineID:  selectedMachineID,

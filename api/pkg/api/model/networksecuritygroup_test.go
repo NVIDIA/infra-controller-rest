@@ -141,7 +141,7 @@ func TestAPINetworkSecurityGroupRuleConversions(t *testing.T) {
 
 		apiRule, err := APINetworkSecurityGroupRuleFromProtobufRule(rule)
 
-		failMsg := fmt.Sprintf("\nCarbide Rule\n\n%+v\n\nAPI Rule\n\n%+v\n\n", rule, apiRule)
+		failMsg := fmt.Sprintf("\nNICo Rule\n\n%+v\n\nAPI Rule\n\n%+v\n\n", rule, apiRule)
 
 		// Here, we're doing the inverse of what we did during rule generation where we
 		// excluded matching rules from the set of validRules.
@@ -173,7 +173,7 @@ func TestAPINetworkSecurityGroupRuleConversions(t *testing.T) {
 		}
 
 		// Compare the double-conversion to the original of rule
-		assert.True(t, proto.Equal(validRules[i], newRule), fmt.Sprintf("\nCarbide Rule\n\n%+v\n\nAPI Rule\n\n%+v\n\nNew Carbide Rule\n\n%+v\n", rule, apiRule, newRule))
+		assert.True(t, proto.Equal(validRules[i], newRule), fmt.Sprintf("\nNICo Rule\n\n%+v\n\nAPI Rule\n\n%+v\n\nNew NICo Rule\n\n%+v\n", rule, apiRule, newRule))
 
 		// Track the valid rule index
 		i++
@@ -214,8 +214,8 @@ func TestAPINetworkSecurityGroupRuleConversions(t *testing.T) {
 
 									failMsg := fmt.Sprintf("\n%v\n%v\n%v\n%v\n%v\n%v\n%v\n%d\n\n%+v\n", d, p, a, sr, dr, sp, dp, prio, rule)
 
-									// Now, convert to a Carbide/proto rule
-									carbideRule, err := ProtobufRuleFromAPINetworkSecurityGroupRule(rule)
+									// Now, convert to a NICo/proto rule
+									nicoRule, err := ProtobufRuleFromAPINetworkSecurityGroupRule(rule)
 
 									// If this rule has all the known good entries,
 									// it should have passed (converted successfully).
@@ -224,7 +224,7 @@ func TestAPINetworkSecurityGroupRuleConversions(t *testing.T) {
 
 										// Now, convert back again so we can confirm that all conversions
 										// are symmetric.
-										apiRule, err := APINetworkSecurityGroupRuleFromProtobufRule(carbideRule)
+										apiRule, err := APINetworkSecurityGroupRuleFromProtobufRule(nicoRule)
 
 										assert.Nil(t, err, failMsg)
 

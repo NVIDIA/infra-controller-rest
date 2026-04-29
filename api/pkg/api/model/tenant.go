@@ -25,10 +25,10 @@ import (
 
 var (
 	// errMsgTenantCreateEndpointDeprecated is the error message to indicate that create endpoint is deprecated
-	ErrMsgTenantCreateEndpointDeprecated = "POST '/org/:orgName/carbide/tenant' endpoint has been deprecated"
+	ErrMsgTenantCreateEndpointDeprecated = "POST '/org/:orgName/nico/tenant' endpoint has been deprecated"
 
 	// errMsgTenantUpdateEndpointDeprecated is the error message to indicate that update endpoint is deprecated
-	ErrMsgTenantUpdateEndpointDeprecated = "PATCH '/org/:orgName/carbide/tenant/current' endpoint has been deprecated"
+	ErrMsgTenantUpdateEndpointDeprecated = "PATCH '/org/:orgName/nico/tenant/current' endpoint has been deprecated"
 )
 
 // APITenant is the data structure to capture API representation of a Tenant

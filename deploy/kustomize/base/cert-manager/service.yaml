@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-cert-manager Service (native Go PKI)
+# nico-rest-cert-manager Service (native Go PKI)
 apiVersion: v1
 kind: Service
 metadata:
-  name: carbide-rest-cert-manager
+  name: nico-rest-cert-manager
   labels:
-    app: carbide-rest-cert-manager
+    app: nico-rest-cert-manager
 spec:
   type: ClusterIP
   ports:
@@ -30,4 +30,4 @@ spec:
       targetPort: 8001
       name: http
   selector:
-    app: carbide-rest-cert-manager
+    app: nico-rest-cert-manager

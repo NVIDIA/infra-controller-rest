@@ -37,7 +37,7 @@ var (
 		Short: "Compare expected (local DB) vs actual (source system) components",
 		Long: `Compare expected components from local database against actual components from source systems.
 
-Each component type queries its own source system (e.g., Carbide for Compute, PSM for PowerShelf).
+Each component type queries its own source system (e.g., NICo for Compute, PSM for PowerShelf).
 Currently only supports Compute component type.
 
 Specify exactly ONE of the following options:

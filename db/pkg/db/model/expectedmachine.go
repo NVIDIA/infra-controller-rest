@@ -57,7 +57,7 @@ var (
 	}
 )
 
-// ExpectedMachine is a record for each bare-metal host expected to be processed by Forge
+// ExpectedMachine is a record for each bare-metal host expected to be processed by NICo
 type ExpectedMachine struct {
 	bun.BaseModel `bun:"table:expected_machine,alias:em"`
 
@@ -325,7 +325,7 @@ func (emsd ExpectedMachineSQLDAO) CreateMultiple(ctx context.Context, tx *db.Tx,
 	expectedMachines := make([]ExpectedMachine, 0, len(inputs))
 	ids := make([]uuid.UUID, 0, len(inputs))
 
-	// NOTE: since Expected Machine can be created by Carbide or Cloud API the caller MUST provide the ID.
+	// NOTE: since Expected Machine can be created by NICo or Cloud API the caller MUST provide the ID.
 	for _, input := range inputs {
 		em := ExpectedMachine{
 			ID:                       input.ExpectedMachineID,

@@ -44,6 +44,7 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testTrayInitDB(t *testing.T) *cdb.Session {
@@ -192,10 +193,10 @@ func TestGetTrayHandler_Handle(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Create provider user
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-tray-get", org, []string{"FORGE_PROVIDER_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-tray-get", org, []string{authz.ProviderAdminRole})
 
 	// Create tenant user (no provider role, no site access)
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-tray-get", org, []string{"FORGE_TENANT_ADMIN"})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-tray-get", org, []string{authz.TenantAdminRole})
 
 	handler := NewGetTrayHandler(dbSession, nil, scp, cfg)
 
@@ -203,7 +204,7 @@ func TestGetTrayHandler_Handle(t *testing.T) {
 
 	// Create mock component for success cases
 	mockComponent := createMockComponent(
-		trayID, "compute-tray-1", "NVIDIA", "GB200", "carbide-machine-001",
+		trayID, "compute-tray-1", "NVIDIA", "GB200", "nico-machine-001",
 		rlav1.ComponentType_COMPONENT_TYPE_COMPUTE, "rack-id-1",
 	)
 
@@ -315,7 +316,7 @@ func TestGetTrayHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/%s?%s", tt.reqOrg, tt.trayID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/%s?%s", tt.reqOrg, tt.trayID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -376,10 +377,10 @@ func TestGetAllTrayHandler_Handle(t *testing.T) {
 	assert.Nil(t, err)
 
 	// Create provider user
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-tray", org, []string{"FORGE_PROVIDER_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-tray", org, []string{authz.ProviderAdminRole})
 
 	// Create tenant user (no provider role, no site access)
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-tray", org, []string{"FORGE_TENANT_ADMIN"})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-tray", org, []string{authz.TenantAdminRole})
 
 	handler := NewGetAllTrayHandler(dbSession, nil, scp, cfg)
 
@@ -663,7 +664,7 @@ func TestGetAllTrayHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray?%s", tt.reqOrg, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/tray?%s", tt.reqOrg, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -734,8 +735,8 @@ func TestValidateTrayHandler_Handle(t *testing.T) {
 	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
 	assert.Nil(t, err)
 
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-validate-tray", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-validate-tray", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-validate-tray", org, []string{authz.ProviderAdminRole})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-validate-tray", org, []string{authz.TenantAdminRole})
 
 	handler := NewValidateTrayHandler(dbSession, nil, scp, cfg)
 
@@ -880,7 +881,7 @@ func TestValidateTrayHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/%s/validation?%s", tt.reqOrg, tt.trayID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/%s/validation?%s", tt.reqOrg, tt.trayID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -938,8 +939,8 @@ func TestValidateTraysHandler_Handle(t *testing.T) {
 	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
 	assert.Nil(t, err)
 
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-validate-trays", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-validate-trays", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-validate-trays", org, []string{authz.ProviderAdminRole})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-validate-trays", org, []string{authz.TenantAdminRole})
 
 	handler := NewValidateTraysHandler(dbSession, nil, scp, cfg)
 
@@ -1173,7 +1174,7 @@ func TestValidateTraysHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/validation?%s", tt.reqOrg, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/validation?%s", tt.reqOrg, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1219,8 +1220,8 @@ func TestUpdateTrayPowerStateHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testTraySetupTestData(t, dbSession, org)
 
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-pc-tray", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-pc-tray", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-pc-tray", org, []string{authz.ProviderAdminRole})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-pc-tray", org, []string{authz.TenantAdminRole})
 
 	handler := NewUpdateTrayPowerStateHandler(dbSession, nil, scp, cfg)
 
@@ -1313,7 +1314,7 @@ func TestUpdateTrayPowerStateHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/%s/power", tt.reqOrg, tt.trayID)
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/%s/power", tt.reqOrg, tt.trayID)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1358,8 +1359,8 @@ func TestBatchUpdateTrayPowerStateHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testTraySetupTestData(t, dbSession, org)
 
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-pc-tray-batch", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-pc-tray-batch", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-pc-tray-batch", org, []string{authz.ProviderAdminRole})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-pc-tray-batch", org, []string{authz.TenantAdminRole})
 
 	handler := NewBatchUpdateTrayPowerStateHandler(dbSession, nil, scp, cfg)
 
@@ -1429,7 +1430,7 @@ func TestBatchUpdateTrayPowerStateHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/power", tt.reqOrg)
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/power", tt.reqOrg)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1474,8 +1475,8 @@ func TestUpdateTrayFirmwareHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testTraySetupTestData(t, dbSession, org)
 
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-fw-tray", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-fw-tray", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-fw-tray", org, []string{authz.ProviderAdminRole})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-fw-tray", org, []string{authz.TenantAdminRole})
 
 	handler := NewUpdateTrayFirmwareHandler(dbSession, nil, scp, cfg)
 
@@ -1551,7 +1552,7 @@ func TestUpdateTrayFirmwareHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/%s/firmware", tt.reqOrg, tt.trayID)
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/%s/firmware", tt.reqOrg, tt.trayID)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1596,8 +1597,8 @@ func TestBatchUpdateTrayFirmwareHandler_Handle(t *testing.T) {
 	org := "test-org"
 	_, site, _ := testTraySetupTestData(t, dbSession, org)
 
-	providerUser := testTrayBuildUser(t, dbSession, "provider-user-fw-tray-batch", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-fw-tray-batch", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testTrayBuildUser(t, dbSession, "provider-user-fw-tray-batch", org, []string{authz.ProviderAdminRole})
+	tenantUser := testTrayBuildUser(t, dbSession, "tenant-user-fw-tray-batch", org, []string{authz.TenantAdminRole})
 
 	handler := NewBatchUpdateTrayFirmwareHandler(dbSession, nil, scp, cfg)
 
@@ -1660,7 +1661,7 @@ func TestBatchUpdateTrayFirmwareHandler_Handle(t *testing.T) {
 			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/tray/firmware", tt.reqOrg)
+			path := fmt.Sprintf("/v2/org/%s/nico/tray/firmware", tt.reqOrg)
 
 			req := httptest.NewRequest(http.MethodPatch, path, strings.NewReader(tt.body))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

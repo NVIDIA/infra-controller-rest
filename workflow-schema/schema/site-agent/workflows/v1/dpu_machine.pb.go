@@ -96,11 +96,11 @@ var File_dpu_machine_proto protoreflect.FileDescriptor
 
 const file_dpu_machine_proto_rawDesc = "" +
 	"\n" +
-	"\x11dpu_machine.proto\x12\x14workflows.v1.machine\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x13forge_carbide.proto\x1a\x1fmachine_discovery_carbide.proto\"\x8d\x01\n" +
+	"\x11dpu_machine.proto\x12\x14workflows.v1.machine\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x0fnico_nico.proto\x1a\x1cmachine_discovery_nico.proto\"\x8b\x01\n" +
 	"\n" +
-	"DpuMachine\x12(\n" +
-	"\amachine\x18\x01 \x01(\v2\x0e.forge.MachineR\amachine\x12U\n" +
-	"\x12dpu_network_config\x18\x02 \x01(\v2'.forge.ManagedHostNetworkConfigResponseR\x10dpuNetworkConfigBCZAgithub.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/protob\x06proto3"
+	"DpuMachine\x12'\n" +
+	"\amachine\x18\x01 \x01(\v2\r.nico.MachineR\amachine\x12T\n" +
+	"\x12dpu_network_config\x18\x02 \x01(\v2&.nico.ManagedHostNetworkConfigResponseR\x10dpuNetworkConfigBCZAgithub.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/protob\x06proto3"
 
 var (
 	file_dpu_machine_proto_rawDescOnce sync.Once
@@ -117,12 +117,12 @@ func file_dpu_machine_proto_rawDescGZIP() []byte {
 var file_dpu_machine_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
 var file_dpu_machine_proto_goTypes = []any{
 	(*DpuMachine)(nil),                       // 0: workflows.v1.machine.DpuMachine
-	(*Machine)(nil),                          // 1: forge.Machine
-	(*ManagedHostNetworkConfigResponse)(nil), // 2: forge.ManagedHostNetworkConfigResponse
+	(*Machine)(nil),                          // 1: nico.Machine
+	(*ManagedHostNetworkConfigResponse)(nil), // 2: nico.ManagedHostNetworkConfigResponse
 }
 var file_dpu_machine_proto_depIdxs = []int32{
-	1, // 0: workflows.v1.machine.DpuMachine.machine:type_name -> forge.Machine
-	2, // 1: workflows.v1.machine.DpuMachine.dpu_network_config:type_name -> forge.ManagedHostNetworkConfigResponse
+	1, // 0: workflows.v1.machine.DpuMachine.machine:type_name -> nico.Machine
+	2, // 1: workflows.v1.machine.DpuMachine.dpu_network_config:type_name -> nico.ManagedHostNetworkConfigResponse
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -135,8 +135,8 @@ func file_dpu_machine_proto_init() {
 	if File_dpu_machine_proto != nil {
 		return
 	}
-	file_forge_carbide_proto_init()
-	file_machine_discovery_carbide_proto_init()
+	file_nico_nico_proto_init()
+	file_machine_discovery_nico_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

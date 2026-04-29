@@ -24,13 +24,13 @@ import (
 	"github.com/rs/zerolog/log"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	carbideprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide"                 //nolint
+	nicoprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                 //nolint
 	nvswitchmanagerprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager" //nolint
 	psmprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"                         //nolint
 )
@@ -38,7 +38,7 @@ import (
 // Job implements scheduler.Job for the inventory sync task.
 type Job struct {
 	dbConf        *cdb.Config
-	carbideClient carbideapi.Client
+	nicoClient nicoapi.Client
 	psmClient     psmapi.Client
 	nsmClient     nsmapi.Client
 	pool          *cdb.Session
@@ -46,7 +46,7 @@ type Job struct {
 }
 
 // New constructs an inventory sync Job using clients sourced from the provider
-// registry. Returns nil, nil if inventory is disabled or the Carbide provider
+// registry. Returns nil, nil if inventory is disabled or the NICo provider
 // is not registered. PSM and NVSwitch Manager providers are optional; their
 // sync paths are skipped when the providers are absent.
 func New(
@@ -65,13 +65,13 @@ func New(
 		return nil, fmt.Errorf("database configuration is nil")
 	}
 
-	carbideProvider, err := componentmanager.GetTyped[*carbideprovider.Provider](
-		providers, carbideprovider.ProviderName,
+	nicoProvider, err := componentmanager.GetTyped[*nicoprovider.Provider](
+		providers, nicoprovider.ProviderName,
 	)
 	if err != nil {
 		log.Warn().
 			Err(err).
-			Msg("Carbide provider not available; inventory sync disabled")
+			Msg("NICo provider not available; inventory sync disabled")
 		return nil, nil
 	}
 
@@ -115,14 +115,14 @@ func New(
 	//  - Store abstraction: raw DB access (pool, dbConf) should be hidden behind
 	//    a store interface so jobs depend on a domain-level contract rather than
 	//    the database session directly.
-	//  - Provider encapsulation: the Carbide, PSM, and NVSwitch Manager clients
+	//  - Provider encapsulation: the NICo, PSM, and NVSwitch Manager clients
 	//    are wired here by reaching into the component-manager provider registry.
 	//    This logic should move into the component manager so jobs receive
 	//    ready-to-use domain clients instead of low-level provider handles.
 
 	return &Job{
 		dbConf:        dbConf,
-		carbideClient: carbideProvider.Client(),
+		nicoClient: nicoProvider.Client(),
 		psmClient:     psmClient,
 		nsmClient:     nsmClient,
 		pool:          pool,
@@ -141,7 +141,7 @@ func (j *Job) Name() string { return "inventory-sync" }
 func (j *Job) Run(ctx context.Context, _ types.Event) error {
 	runInventoryOne(
 		ctx, j.pool,
-		j.carbideClient, j.psmClient, j.nsmClient,
+		j.nicoClient, j.psmClient, j.nsmClient,
 		j.cmConfig,
 	)
 	return nil

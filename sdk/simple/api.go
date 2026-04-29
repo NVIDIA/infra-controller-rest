@@ -455,16 +455,16 @@ func HandleResponseError(resp *http.Response, err error) *ApiError {
 	var oaErr *standard.GenericOpenAPIError
 	if errors.As(err, &oaErr) {
 		if oaErr.Model() != nil {
-			// Model can be CarbideAPIError (value) or *CarbideAPIError (pointer)
+			// Model can be NICoAPIError (value) or *NICoAPIError (pointer)
 			switch v := oaErr.Model().(type) {
-			case standard.CarbideAPIError:
+			case standard.NICoAPIError:
 				apiError := &ApiError{Code: resp.StatusCode, Data: v.GetData()}
 				apiError.Message = v.GetMessage()
 				if apiError.Message == "" {
 					apiError.Message = "Error processing API response"
 				}
 				return apiError
-			case *standard.CarbideAPIError:
+			case *standard.NICoAPIError:
 				apiError := &ApiError{Code: resp.StatusCode, Data: v.GetData()}
 				apiError.Message = v.GetMessage()
 				if apiError.Message == "" {
@@ -475,13 +475,13 @@ func HandleResponseError(resp *http.Response, err error) *ApiError {
 		}
 		if oaErr.Body() != nil {
 			apiError := &ApiError{Code: resp.StatusCode}
-			var carbideErr standard.CarbideAPIError
-			if jerr := json.Unmarshal(oaErr.Body(), &carbideErr); jerr == nil {
-				apiError.Message = carbideErr.GetMessage()
+			var nicoErr standard.NICoAPIError
+			if jerr := json.Unmarshal(oaErr.Body(), &nicoErr); jerr == nil {
+				apiError.Message = nicoErr.GetMessage()
 				if apiError.Message == "" {
 					apiError.Message = "Error processing API response"
 				}
-				apiError.Data = carbideErr.GetData()
+				apiError.Data = nicoErr.GetData()
 			} else {
 				apiError.Message = fmt.Sprintf("Error processing API response: %v", string(oaErr.Body()))
 			}

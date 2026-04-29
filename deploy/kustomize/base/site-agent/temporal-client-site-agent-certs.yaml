@@ -20,7 +20,7 @@ kind: Secret
 metadata:
   name: temporal-client-site-agent-certs
   labels:
-    app: carbide-rest-site-agent
+    app: nico-rest-site-agent
 type: Opaque
 stringData:
   otp: ""

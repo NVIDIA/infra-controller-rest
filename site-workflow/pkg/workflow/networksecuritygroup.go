@@ -31,7 +31,7 @@ import (
 )
 
 // CreateNetworkSecurityGroup is a workflow to create new NetworkSecurityGroups using the CreateNetworkSecurityGroupOnSite activity
-// to speak to carbide directly.
+// to speak to nico directly.
 func CreateNetworkSecurityGroup(ctx workflow.Context, request *cwssaws.CreateNetworkSecurityGroupRequest) error {
 	logger := log.With().Str("Workflow", "NetworkSecurityGroup").Str("Action", "Create").Str("NetworkSecurityGroup ID", request.GetId()).Logger()
 

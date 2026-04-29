@@ -25,19 +25,19 @@ gen-pb: ## Generate protobuf files
 		proto/v1/*.proto
 	@echo "Successfully generated protobuf"
 
-gen-carbideapi-pb: ## Generate protobuf files for carbide-api access, only needed for new messages or fields that we will actually use
+gen-nicoapi-pb: ## Generate protobuf files for nico-api access, only needed for new messages or fields that we will actually use
 	rm -rf ncx-infra-controller-core
 	git clone https://github.com/NVIDIA/ncx-infra-controller-core.git
-	rm -f internal/carbideapi/carbideproto/*.proto
-	cp ncx-infra-controller-core/crates/rpc/proto/*.proto internal/carbideapi/carbideproto/
+	rm -f internal/nicoapi/nicoproto/*.proto
+	cp ncx-infra-controller-core/crates/rpc/proto/*.proto internal/nicoapi/nicoproto/
 	rm -rf ncx-infra-controller-core
 # The protodefs are a bit unclean, and we need to make some tweaks to make them usable.
-	cd internal/carbideapi && ./tweak_protodefs.sh
+	cd internal/nicoapi && ./tweak_protodefs.sh
 # Specify version of buf for consistency in pipeline builds
 	which buf || go install github.com/bufbuild/buf/cmd/buf@v1.57.2
 # Clean old generated files before regenerating
-	rm -f internal/carbideapi/gen/*.pb.go
-	cd internal/carbideapi && buf generate
+	rm -f internal/nicoapi/gen/*.pb.go
+	cd internal/nicoapi && buf generate
 
 gen-psmapi-pb: ## Generate protobuf files for PSM client access
 	cp ../powershelf-manager/internal/proto/v1/powershelf-manager.proto internal/psmapi/psmproto/
@@ -72,7 +72,7 @@ rla:
 		..
 
 container: rla
-	docker build -t carbide-rla:$$(grep -v -e '^#' -e "^$$" ../VERSION)-$(CURDATE)-$$(git rev-parse HEAD) -t carbide-rla:latest .
+	docker build -t nico-rla:$$(grep -v -e '^#' -e "^$$" ../VERSION)-$(CURDATE)-$$(git rev-parse HEAD) -t nico-rla:latest .
 
 # test-local runs tests locally with a postgres container
 # Requires: ./scripts/start-test-postgres.sh to be running

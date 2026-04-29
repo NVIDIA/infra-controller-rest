@@ -28,16 +28,16 @@ import (
 )
 
 func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	testID := "test-id-1"
 	testVersion := "test-version-1"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -52,7 +52,7 @@ func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *tes
 		{
 			name: "test enable validation test success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -67,7 +67,7 @@ func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *tes
 		{
 			name: "test enable validation test fails on missing ID",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -81,7 +81,7 @@ func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *tes
 		{
 			name: "test enable validation test fails on missing Version",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -95,7 +95,7 @@ func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *tes
 		{
 			name: "test enable validation test fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -106,7 +106,7 @@ func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *tes
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			err := mt.EnableDisableMachineValidationTestOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -118,13 +118,13 @@ func TestManageMachineValidation_EnableDisableMachineValidationTestOnSite(t *tes
 }
 
 func TestManageMachineValidation_PersistValidationResultOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -139,7 +139,7 @@ func TestManageMachineValidation_PersistValidationResultOnSite(t *testing.T) {
 		{
 			name: "test persist validation result success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -154,7 +154,7 @@ func TestManageMachineValidation_PersistValidationResultOnSite(t *testing.T) {
 		{
 			name: "test persist validation result fails on missing Result",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -165,7 +165,7 @@ func TestManageMachineValidation_PersistValidationResultOnSite(t *testing.T) {
 		{
 			name: "test persist validation result fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -176,7 +176,7 @@ func TestManageMachineValidation_PersistValidationResultOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			err := mt.PersistValidationResultOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -188,13 +188,13 @@ func TestManageMachineValidation_PersistValidationResultOnSite(t *testing.T) {
 }
 
 func TestManageMachineValidation_GetMachineValidationResultsFromSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -209,7 +209,7 @@ func TestManageMachineValidation_GetMachineValidationResultsFromSite(t *testing.
 		{
 			name: "test get machine validation results success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -224,7 +224,7 @@ func TestManageMachineValidation_GetMachineValidationResultsFromSite(t *testing.
 		{
 			name: "test get machine validation results fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -235,7 +235,7 @@ func TestManageMachineValidation_GetMachineValidationResultsFromSite(t *testing.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			_, err := mt.GetMachineValidationResultsFromSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -247,13 +247,13 @@ func TestManageMachineValidation_GetMachineValidationResultsFromSite(t *testing.
 }
 
 func TestManageMachineValidation_GetMachineValidationRunsFromSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -268,7 +268,7 @@ func TestManageMachineValidation_GetMachineValidationRunsFromSite(t *testing.T) 
 		{
 			name: "test get machine validation runs success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -283,7 +283,7 @@ func TestManageMachineValidation_GetMachineValidationRunsFromSite(t *testing.T) 
 		{
 			name: "test get machine validation runs fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -294,7 +294,7 @@ func TestManageMachineValidation_GetMachineValidationRunsFromSite(t *testing.T) 
 		{
 			name: "test get machine validation runs fails on missing MachineId in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -305,7 +305,7 @@ func TestManageMachineValidation_GetMachineValidationRunsFromSite(t *testing.T) 
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			_, err := mt.GetMachineValidationRunsFromSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -317,13 +317,13 @@ func TestManageMachineValidation_GetMachineValidationRunsFromSite(t *testing.T) 
 }
 
 func TestManageMachineValidation_GetMachineValidationTestsFromSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -338,7 +338,7 @@ func TestManageMachineValidation_GetMachineValidationTestsFromSite(t *testing.T)
 		{
 			name: "test get machine validation tests success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -349,7 +349,7 @@ func TestManageMachineValidation_GetMachineValidationTestsFromSite(t *testing.T)
 		{
 			name: "test get machine validation tests fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -360,7 +360,7 @@ func TestManageMachineValidation_GetMachineValidationTestsFromSite(t *testing.T)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			_, err := mt.GetMachineValidationTestsFromSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -372,13 +372,13 @@ func TestManageMachineValidation_GetMachineValidationTestsFromSite(t *testing.T)
 }
 
 func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		request *cwssaws.MachineValidationTestAddRequest
@@ -393,7 +393,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 		{
 			name: "test add machine validation test success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				request: &cwssaws.MachineValidationTestAddRequest{
@@ -408,7 +408,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 		{
 			name: "test add machine validation test fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				request: nil,
@@ -418,7 +418,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 		{
 			name: "test add machine validation test fails on empty request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				request: &cwssaws.MachineValidationTestAddRequest{},
@@ -428,7 +428,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 		{
 			name: "test add machine validation test fails on missing Name in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				request: &cwssaws.MachineValidationTestAddRequest{
@@ -441,7 +441,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 		{
 			name: "test add machine validation test fails on missing Command in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				request: &cwssaws.MachineValidationTestAddRequest{
@@ -454,7 +454,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 		{
 			name: "test add machine validation test fails on missing Args in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				request: &cwssaws.MachineValidationTestAddRequest{
@@ -471,7 +471,7 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 			if tt.wantID != "" {
 				ctx = context.WithValue(ctx, "wantID", tt.wantID)
 			}
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			response, err := mt.AddMachineValidationTestOnSite(ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -486,13 +486,13 @@ func TestManageMachineValidation_AddMachineValidationTestOnSite(t *testing.T) {
 }
 
 func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -507,7 +507,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 		{
 			name: "test update machine validation test success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -524,7 +524,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 		{
 			name: "test update machine validation test fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -535,7 +535,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 		{
 			name: "test update machine validation test fails on empty request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -546,7 +546,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 		{
 			name: "test update machine validation test fails on missing TestId in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -562,7 +562,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 		{
 			name: "test update machine validation test fails on missing Version in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -578,7 +578,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 		{
 			name: "test update machine validation test fails on missing Payload in request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -592,7 +592,7 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			err := mt.UpdateMachineValidationTestOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -604,13 +604,13 @@ func TestManageMachineValidation_UpdateMachineValidationTestOnSite(t *testing.T)
 }
 
 func TestManageMachineValidation_GetMachineValidationExternalConfigsFromSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -625,7 +625,7 @@ func TestManageMachineValidation_GetMachineValidationExternalConfigsFromSite(t *
 		{
 			name: "test get machine validation external configs success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -636,7 +636,7 @@ func TestManageMachineValidation_GetMachineValidationExternalConfigsFromSite(t *
 		{
 			name: "test get machine validation external configs fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -647,7 +647,7 @@ func TestManageMachineValidation_GetMachineValidationExternalConfigsFromSite(t *
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			_, err := mt.GetMachineValidationExternalConfigsFromSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -659,13 +659,13 @@ func TestManageMachineValidation_GetMachineValidationExternalConfigsFromSite(t *
 }
 
 func TestManageMachineValidation_AddUpdateMachineValidationExternalConfigOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -680,7 +680,7 @@ func TestManageMachineValidation_AddUpdateMachineValidationExternalConfigOnSite(
 		{
 			name: "test add/update machine validation external config success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -693,7 +693,7 @@ func TestManageMachineValidation_AddUpdateMachineValidationExternalConfigOnSite(
 		{
 			name: "test add/update machine validation external config fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -704,7 +704,7 @@ func TestManageMachineValidation_AddUpdateMachineValidationExternalConfigOnSite(
 		{
 			name: "test add/update machine validation external config fails on empty request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -715,7 +715,7 @@ func TestManageMachineValidation_AddUpdateMachineValidationExternalConfigOnSite(
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			err := mt.AddUpdateMachineValidationExternalConfigOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -727,13 +727,13 @@ func TestManageMachineValidation_AddUpdateMachineValidationExternalConfigOnSite(
 }
 
 func TestManageMachineValidation_RemoveMachineValidationExternalConfigOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -748,7 +748,7 @@ func TestManageMachineValidation_RemoveMachineValidationExternalConfigOnSite(t *
 		{
 			name: "test remove machine validation external config success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -761,7 +761,7 @@ func TestManageMachineValidation_RemoveMachineValidationExternalConfigOnSite(t *
 		{
 			name: "test remove machine validation external config fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -772,7 +772,7 @@ func TestManageMachineValidation_RemoveMachineValidationExternalConfigOnSite(t *
 		{
 			name: "test remove machine validation external config fails on empty request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -783,7 +783,7 @@ func TestManageMachineValidation_RemoveMachineValidationExternalConfigOnSite(t *
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageMachineValidation(tt.fields.CarbideAtomicClient)
+			mt := NewManageMachineValidation(tt.fields.NICoAtomicClient)
 			err := mt.RemoveMachineValidationExternalConfigOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

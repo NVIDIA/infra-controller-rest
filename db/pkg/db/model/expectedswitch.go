@@ -54,7 +54,7 @@ var (
 	}
 )
 
-// ExpectedSwitch is a record for each network switch expected to be processed by Forge
+// ExpectedSwitch is a record for each network switch expected to be processed by NICo
 type ExpectedSwitch struct {
 	bun.BaseModel `bun:"table:expected_switch,alias:es"`
 

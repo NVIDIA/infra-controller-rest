@@ -85,7 +85,7 @@ func NewCreateSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, sc
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APISubnetCreateRequest true "Subnet creation request"
 // @Success 201 {object} model.APISubnet
-// @Router /v2/org/{org}/carbide/subnet [post]
+// @Router /v2/org/{org}/nico/subnet [post]
 func (csh CreateSubnetHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Subnet", "Create", c, csh.tracerSpan)
 	if handlerSpan != nil {
@@ -440,7 +440,7 @@ func NewGetAllSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APISubnet
-// @Router /v2/org/{org}/carbide/subnet [get]
+// @Router /v2/org/{org}/nico/subnet [get]
 func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Subnet", "GetAll", c, gash.tracerSpan)
 	if handlerSpan != nil {
@@ -649,7 +649,7 @@ func NewGetSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *
 // @Param id path string true "ID of Subnet"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
 // @Success 200 {object} model.APISubnet
-// @Router /v2/org/{org}/carbide/subnet/{id} [get]
+// @Router /v2/org/{org}/nico/subnet/{id} [get]
 func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Subnet", "Get", c, gsh.tracerSpan)
 	if handlerSpan != nil {
@@ -766,7 +766,7 @@ func NewUpdateSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param id path string true "ID of Subnet"
 // @Param message body model.APISubnetUpdateRequest true "Subnet update request"
 // @Success 200 {object} model.APISubnet
-// @Router /v2/org/{org}/carbide/subnet/{id} [patch]
+// @Router /v2/org/{org}/nico/subnet/{id} [patch]
 func (ush UpdateSubnetHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Subnet", "Update", c, ush.tracerSpan)
 	if handlerSpan != nil {
@@ -926,7 +926,7 @@ func NewDeleteSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, sc
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Subnet"
 // @Success 202
-// @Router /v2/org/{org}/carbide/subnet/{id} [delete]
+// @Router /v2/org/{org}/nico/subnet/{id} [delete]
 func (dsh DeleteSubnetHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Subnet", "Delete", c, dsh.tracerSpan)
 	if handlerSpan != nil {
@@ -1093,10 +1093,10 @@ func (dsh DeleteSubnetHandler) Handle(c echo.Context) error {
 	err = we.Get(ctx, nil)
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-			logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 			// Reset error to nil
 			err = nil
 		}

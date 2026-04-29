@@ -29,7 +29,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/bootstrap"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
@@ -68,7 +68,7 @@ func NewAPIHandlers() {
 		Subnet:                 &subnet.API{},
 		Instance:               &instance.API{},
 		Machine:                &machine.API{},
-		Carbide:                &carbide.API{},
+		NICo:                &nico.API{},
 		Bootstrap:              &bootstrap.BoostrapAPI{},
 		SSHKeyGroup:            &sshkeygroup.API{},
 		InfiniBandPartition:    &infinibandpartition.API{},
@@ -88,15 +88,15 @@ func NewAPIHandlers() {
 }
 
 // NewInstance - new instance with the parent datastruct
-func NewInstance(superforge *elektratypes.Elektra) (*Manager, error) {
+func NewInstance(supernico *elektratypes.Elektra) (*Manager, error) {
 	NewAPIHandlers()
 	ManagerAccess = &Manager{
 		Data: &managerapi.ManagerData{
-			EB: superforge,
+			EB: supernico,
 		},
 		API: &managerapi.ManagerHdl,
 		Conf: &managerapi.ManagerConf{
-			EB: superforge.Conf,
+			EB: supernico.Conf,
 		},
 	}
 	ManagerAccess.NewInstance()
@@ -111,7 +111,7 @@ func (Managers *Manager) NewInstance() {
 	Managers.VpcPrefix()
 	Managers.Subnet()
 	Managers.Instance()
-	Managers.Carbide()
+	Managers.NICo()
 	Managers.Machine()
 	Managers.Bootstrap()
 	Managers.SSHKeyGroup()
@@ -156,7 +156,7 @@ func (Managers *Manager) Init() {
 	ManagerAccess.Data.EB.HealthStatus.Store(uint64(computils.CompUnhealthy))
 
 	Managers.Orchestrator().Init()
-	Managers.Carbide().Init()
+	Managers.NICo().Init()
 	Managers.Bootstrap().Init()
 	Managers.VPC().Init()
 	Managers.VpcPrefix().Init()
@@ -184,7 +184,7 @@ func (Managers *Manager) Start() {
 	go StartMetricServer()
 	StartHTTPServer()
 	ManagerAccess.Data.EB.Log.Info().Msg("Managers: Starting all the managers")
-	Managers.Carbide().Start()
+	Managers.NICo().Start()
 	Managers.Bootstrap().Start()
 	Managers.Orchestrator().Start()
 	Managers.RLA().Start()

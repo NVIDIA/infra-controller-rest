@@ -97,7 +97,7 @@ func workflowOrchestrator() error {
 	var subscribeClientConnOptions client.ConnectionOptions
 
 	if ManagerAccess.Conf.EB.EnableTLS {
-		log.Info().Msg("Workflow: Creating Forge Cluster Temporal client with TLS enable")
+		log.Info().Msg("Workflow: Creating NICo Cluster Temporal client with TLS enable")
 
 		// TemporalCertPath should exist
 		if ManagerAccess.Conf.EB.Temporal.TemporalCertPath == "" {
@@ -228,7 +228,7 @@ func workflowOrchestrator() error {
 	}
 
 	// Register all manager flows here
-	ManagerAccess.API.Carbide.RegisterGRPC()
+	ManagerAccess.API.NICo.RegisterGRPC()
 
 	// TODO: all RegisterSubscriber calls return an error and we ignore them. Should we?
 	ManagerAccess.API.VPC.RegisterSubscriber()

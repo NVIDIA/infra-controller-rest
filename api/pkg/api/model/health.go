@@ -17,7 +17,7 @@
 
 package model
 
-// APIHealthCheck is a data structure to capture Forge API health information
+// APIHealthCheck is a data structure to capture NICo API health information
 type APIHealthCheck struct {
 	// IsHealthy provides a flag to accompany an error status code
 	IsHealthy bool `json:"is_healthy"`

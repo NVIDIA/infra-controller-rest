@@ -154,7 +154,7 @@ func (mv ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupsInDB(ctx context
 				SiteID:                 siteID,
 				Status:                 cdbm.NetworkSecurityGroupStatusReady,
 				Version:                &controllerNetworkSecurityGroup.Version,
-				CreatedByID:            siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+				CreatedByID:            siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 
 			if err != nil {
@@ -186,7 +186,7 @@ func (mv ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupsInDB(ctx context
 					Rules:                  rules,
 					Status:                 cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusReady),
 					Version:                &controllerNetworkSecurityGroup.Version,
-					UpdatedByID:            siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+					UpdatedByID:            siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 				})
 
 				if err != nil {

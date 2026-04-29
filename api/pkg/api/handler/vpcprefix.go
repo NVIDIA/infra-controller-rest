@@ -83,7 +83,7 @@ func NewCreateVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIVpcPrefixCreateRequest true "VPC prefix creation request"
 // @Success 201 {object} model.APIVpcPrefix
-// @Router /v2/org/{org}/carbide/vpcprefix [post]
+// @Router /v2/org/{org}/nico/vpcprefix [post]
 func (csh CreateVpcPrefixHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC prefix", "Create", c, csh.tracerSpan)
 	if handlerSpan != nil {
@@ -381,7 +381,7 @@ func NewGetAllVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIVpcPrefix
-// @Router /v2/org/{org}/carbide/vpcprefix [get]
+// @Router /v2/org/{org}/nico/vpcprefix [get]
 func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC prefix", "GetAll", c, gash.tracerSpan)
 	if handlerSpan != nil {
@@ -581,7 +581,7 @@ func NewGetVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param id path string true "ID of VPC prefix"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
 // @Success 200 {object} model.APIVpcPrefix
-// @Router /v2/org/{org}/carbide/vpcprefix/{id} [get]
+// @Router /v2/org/{org}/nico/vpcprefix/{id} [get]
 func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC prefix", "Get", c, gsh.tracerSpan)
 	if handlerSpan != nil {
@@ -700,7 +700,7 @@ func NewUpdateVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param id path string true "ID of VPC prefix"
 // @Param message body model.APIVpcPrefixUpdateRequest true "VPC prefix update request"
 // @Success 200 {object} model.APIVpcPrefix
-// @Router /v2/org/{org}/carbide/vpcprefix/{id} [patch]
+// @Router /v2/org/{org}/nico/vpcprefix/{id} [patch]
 func (ush UpdateVpcPrefixHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC prefix", "Update", c, ush.tracerSpan)
 	if handlerSpan != nil {
@@ -929,7 +929,7 @@ func NewDeleteVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of VPC prefix"
 // @Success 202
-// @Router /v2/org/{org}/carbide/vpcprefix/{id} [delete]
+// @Router /v2/org/{org}/nico/vpcprefix/{id} [delete]
 func (dsh DeleteVpcPrefixHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC prefix", "Delete", c, dsh.tracerSpan)
 	if handlerSpan != nil {
@@ -1085,10 +1085,10 @@ func (dsh DeleteVpcPrefixHandler) Handle(c echo.Context) error {
 	err = we.Get(ctx, nil)
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-			logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 			// Reset error to nil
 			err = nil
 		}

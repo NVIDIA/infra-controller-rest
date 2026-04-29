@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-mock-core Service
+# nico-rest-mock-core Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: carbide-rest-mock-core
+  name: nico-rest-mock-core
   labels:
-    app: carbide-rest-mock-core
+    app: nico-rest-mock-core
 spec:
   type: ClusterIP
   ports:
@@ -27,4 +27,4 @@ spec:
       targetPort: 11079
       name: grpc
   selector:
-    app: carbide-rest-mock-core
+    app: nico-rest-mock-core

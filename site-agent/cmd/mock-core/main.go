@@ -23,9 +23,9 @@ import (
 	gsv "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/server"
 )
 
-// Test the carbide grpc client
+// Test the nico grpc client
 func main() {
 	toutPtr := flag.Int("tout", 300, "grpc server timeout")
 	flag.Parse()
-	gsv.ForgeTest(*toutPtr)
+	gsv.NICoTest(*toutPtr)
 }

@@ -33,6 +33,7 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestServiceAccountHandler_GetCurrent(t *testing.T) {
@@ -47,17 +48,17 @@ func TestServiceAccountHandler_GetCurrent(t *testing.T) {
 	cfg := common.GetTestConfig()
 
 	org1 := "test-org"
-	user1 := common.TestBuildUser(t, dbSession, uuid.NewString(), org1, []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"})
+	user1 := common.TestBuildUser(t, dbSession, uuid.NewString(), org1, []string{authz.ProviderAdminRole, authz.TenantAdminRole})
 
 	org2 := "test-org-2"
-	user2 := common.TestBuildUser(t, dbSession, uuid.NewString(), org2, []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"})
+	user2 := common.TestBuildUser(t, dbSession, uuid.NewString(), org2, []string{authz.ProviderAdminRole, authz.TenantAdminRole})
 
 	ip2 := common.TestBuildInfrastructureProvider(t, dbSession, "test-provider-2", org2, user2)
 	tn2 := common.TestBuildTenant(t, dbSession, "test-tenant-2", org2, user2)
 	_ = common.TestBuildTenantAccount(t, dbSession, ip2, &tn2.ID, org2, cdbm.TenantAccountStatusReady, user2)
 
 	org3 := "test-org-3"
-	user3 := common.TestBuildUser(t, dbSession, uuid.NewString(), org3, []string{"FORGE_TENANT_ADMIN"})
+	user3 := common.TestBuildUser(t, dbSession, uuid.NewString(), org3, []string{authz.TenantAdminRole})
 
 	tests := []struct {
 		name                  string

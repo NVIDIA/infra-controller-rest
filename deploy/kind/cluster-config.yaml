@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Kind cluster configuration for local Carbide REST development
+# Kind cluster configuration for local NICo REST development
 # Creates a single-node cluster with port mappings for local access
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-name: carbide-rest-local
+name: nico-rest-local
 nodes:
   - role: control-plane
     extraPortMappings:

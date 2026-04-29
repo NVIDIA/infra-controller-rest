@@ -26,13 +26,13 @@ import (
 var (
 	// ErrTypeInvalidRequest is returned when the request is invalid
 	ErrTypeInvalidRequest            = "InvalidRequest"
-	ErrTypeCarbideObjectNotFound     = "CarbideObjectNotFound"
-	ErrTypeCarbideUnimplemented      = "CarbideUnimplemented"
-	ErrTypeCarbideUnavailable        = "CarbideUnavailable"
-	ErrTypeCarbideDenied             = "CarbideDenied"
-	ErrTypeCarbideAlreadyExists      = "CarbideAlreadyExists"
-	ErrTypeCarbideFailedPrecondition = "CarbideFailedPrecondition"
-	ErrTypeCarbideInvalidArgument    = "CarbideInvalidArgument"
+	ErrTypeNICoObjectNotFound     = "NICoObjectNotFound"
+	ErrTypeNICoUnimplemented      = "NICoUnimplemented"
+	ErrTypeNICoUnavailable        = "NICoUnavailable"
+	ErrTypeNICoDenied             = "NICoDenied"
+	ErrTypeNICoAlreadyExists      = "NICoAlreadyExists"
+	ErrTypeNICoFailedPrecondition = "NICoFailedPrecondition"
+	ErrTypeNICoInvalidArgument    = "NICoInvalidArgument"
 )
 
 // WrapError accepts an error and checks if it
@@ -48,20 +48,20 @@ func WrapErr(err error) error {
 	if hasGrpcStatus {
 		switch status.Code() {
 		case codes.NotFound:
-			// If this is a 404 back from Carbide, we'll bubble that back up as a custom temporal error.
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideObjectNotFound, err)
+			// If this is a 404 back from NICo, we'll bubble that back up as a custom temporal error.
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoObjectNotFound, err)
 		case codes.Unimplemented:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideUnimplemented, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoUnimplemented, err)
 		case codes.Unavailable:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideUnavailable, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoUnavailable, err)
 		case codes.PermissionDenied:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideDenied, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoDenied, err)
 		case codes.AlreadyExists:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideAlreadyExists, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoAlreadyExists, err)
 		case codes.FailedPrecondition:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideFailedPrecondition, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoFailedPrecondition, err)
 		case codes.InvalidArgument:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideInvalidArgument, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoInvalidArgument, err)
 		}
 	}
 	return err

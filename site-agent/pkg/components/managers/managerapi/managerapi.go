@@ -49,7 +49,7 @@ type ManagerAPI struct {
 	Instance               InstanceInterface
 	Machine                MachineInterface
 	Orchestrator           OrchestratorInterface
-	Carbide                CarbideInterface
+	NICo                NICoInterface
 	SSHKeyGroup            SSHKeyGroupInterface
 	InfiniBandPartition    InfiniBandPartitionInterface
 	Tenant                 TenantInterface

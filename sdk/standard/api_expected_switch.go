@@ -61,7 +61,7 @@ CreateExpectedSwitch Create Expected Switch
 
 Create an Expected Switch to pre-register network switches expected to be discovered at a Site.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Switches if they have an account with the Site's Infrastructure Provider.
 
@@ -93,7 +93,7 @@ func (a *ExpectedSwitchAPIService) CreateExpectedSwitchExecute(r ApiCreateExpect
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/expected-switch"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/expected-switch"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -145,7 +145,7 @@ func (a *ExpectedSwitchAPIService) CreateExpectedSwitchExecute(r ApiCreateExpect
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -156,7 +156,7 @@ func (a *ExpectedSwitchAPIService) CreateExpectedSwitchExecute(r ApiCreateExpect
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -196,7 +196,7 @@ DeleteExpectedSwitch Delete Expected Switch
 
 Delete an existing Expected Switch by ID.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
 
 Infrastructure Provider must own the Expected Switch.
 
@@ -229,7 +229,7 @@ func (a *ExpectedSwitchAPIService) DeleteExpectedSwitchExecute(r ApiDeleteExpect
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/expected-switch/{expectedSwitchId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/expected-switch/{expectedSwitchId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"expectedSwitchId"+"}", url.PathEscape(parameterValueToString(r.expectedSwitchId, "expectedSwitchId")), -1)
 
@@ -277,7 +277,7 @@ func (a *ExpectedSwitchAPIService) DeleteExpectedSwitchExecute(r ApiDeleteExpect
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -288,7 +288,7 @@ func (a *ExpectedSwitchAPIService) DeleteExpectedSwitchExecute(r ApiDeleteExpect
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -299,7 +299,7 @@ func (a *ExpectedSwitchAPIService) DeleteExpectedSwitchExecute(r ApiDeleteExpect
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -364,7 +364,7 @@ GetAllExpectedSwitch Retrieve all Expected Switches
 
 Retrieve all Expected Switches.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_PROVIDER_VIEWER` role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Switches if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
 
@@ -396,7 +396,7 @@ func (a *ExpectedSwitchAPIService) GetAllExpectedSwitchExecute(r ApiGetAllExpect
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/expected-switch"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/expected-switch"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -462,7 +462,7 @@ func (a *ExpectedSwitchAPIService) GetAllExpectedSwitchExecute(r ApiGetAllExpect
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -473,7 +473,7 @@ func (a *ExpectedSwitchAPIService) GetAllExpectedSwitchExecute(r ApiGetAllExpect
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -520,7 +520,7 @@ GetExpectedSwitch Retrieve Expected Switch
 
 Retrieve a specific Expected Switch by ID.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_PROVIDER_VIEWER` role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Switches if they have an account with the Site's Infrastructure Provider.
 
@@ -554,7 +554,7 @@ func (a *ExpectedSwitchAPIService) GetExpectedSwitchExecute(r ApiGetExpectedSwit
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/expected-switch/{expectedSwitchId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/expected-switch/{expectedSwitchId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"expectedSwitchId"+"}", url.PathEscape(parameterValueToString(r.expectedSwitchId, "expectedSwitchId")), -1)
 
@@ -605,7 +605,7 @@ func (a *ExpectedSwitchAPIService) GetExpectedSwitchExecute(r ApiGetExpectedSwit
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -616,7 +616,7 @@ func (a *ExpectedSwitchAPIService) GetExpectedSwitchExecute(r ApiGetExpectedSwit
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -627,7 +627,7 @@ func (a *ExpectedSwitchAPIService) GetExpectedSwitchExecute(r ApiGetExpectedSwit
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -674,7 +674,7 @@ UpdateExpectedSwitch Update Expected Switch
 
 Update an existing Expected Switch by ID.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
 
 Infrastructure Provider must own the Expected Switch.
 
@@ -710,7 +710,7 @@ func (a *ExpectedSwitchAPIService) UpdateExpectedSwitchExecute(r ApiUpdateExpect
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/expected-switch/{expectedSwitchId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/expected-switch/{expectedSwitchId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"expectedSwitchId"+"}", url.PathEscape(parameterValueToString(r.expectedSwitchId, "expectedSwitchId")), -1)
 
@@ -763,7 +763,7 @@ func (a *ExpectedSwitchAPIService) UpdateExpectedSwitchExecute(r ApiUpdateExpect
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -774,7 +774,7 @@ func (a *ExpectedSwitchAPIService) UpdateExpectedSwitchExecute(r ApiUpdateExpect
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -785,7 +785,7 @@ func (a *ExpectedSwitchAPIService) UpdateExpectedSwitchExecute(r ApiUpdateExpect
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

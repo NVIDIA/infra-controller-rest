@@ -68,7 +68,7 @@ When `topologyOptimized` is false, instances can be spread across different NVLi
 
 Instance names are automatically generated using the `namePrefix` with a random 6-character suffix (e.g., "worker" becomes "worker-abc123", "worker-def456").
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -98,7 +98,7 @@ func (a *InstanceAPIService) BatchCreateInstanceExecute(r ApiBatchCreateInstance
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/batch"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/batch"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -147,7 +147,7 @@ func (a *InstanceAPIService) BatchCreateInstanceExecute(r ApiBatchCreateInstance
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -158,7 +158,7 @@ func (a *InstanceAPIService) BatchCreateInstanceExecute(r ApiBatchCreateInstance
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -203,7 +203,7 @@ CreateInstance Create an Instance
 
 Create an Instance for Tenant.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -233,7 +233,7 @@ func (a *InstanceAPIService) CreateInstanceExecute(r ApiCreateInstanceRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -282,7 +282,7 @@ func (a *InstanceAPIService) CreateInstanceExecute(r ApiCreateInstanceRequest) (
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -293,7 +293,7 @@ func (a *InstanceAPIService) CreateInstanceExecute(r ApiCreateInstanceRequest) (
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -340,7 +340,7 @@ DeleteInstance Delete Instance
 
 # Delete an Instance by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -369,7 +369,7 @@ func (a *InstanceAPIService) DeleteInstanceExecute(r ApiDeleteInstanceRequest) (
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -544,7 +544,7 @@ GetAllInstance Retrieve all Instances
 
 Get all Instances for Tenant.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -574,7 +574,7 @@ func (a *InstanceAPIService) GetAllInstanceExecute(r ApiGetAllInstanceRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -670,7 +670,7 @@ func (a *InstanceAPIService) GetAllInstanceExecute(r ApiGetAllInstanceRequest) (
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -745,7 +745,7 @@ GetAllInstanceInfinibandInterface Retrieve all Instance InfiniBand Interfaces
 
 # Get all InfiniBand Interfaces for an Instance
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -777,7 +777,7 @@ func (a *InstanceAPIService) GetAllInstanceInfinibandInterfaceExecute(r ApiGetAl
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}/infiniband-interface"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}/infiniband-interface"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -844,7 +844,7 @@ func (a *InstanceAPIService) GetAllInstanceInfinibandInterfaceExecute(r ApiGetAl
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -919,7 +919,7 @@ GetAllInstanceNvlinkInterface Retrieve all Instance NVLink Interfaces
 
 # Get all NVLink Interfaces for an Instance
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -951,7 +951,7 @@ func (a *InstanceAPIService) GetAllInstanceNvlinkInterfaceExecute(r ApiGetAllIns
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}/nvlink-interface"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}/nvlink-interface"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -1018,7 +1018,7 @@ func (a *InstanceAPIService) GetAllInstanceNvlinkInterfaceExecute(r ApiGetAllIns
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1093,7 +1093,7 @@ GetAllInterface Retrieve all Interfaces
 
 # Get all Interfaces for an Instance
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1125,7 +1125,7 @@ func (a *InstanceAPIService) GetAllInterfaceExecute(r ApiGetAllInterfaceRequest)
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}/interface"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}/interface"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -1192,7 +1192,7 @@ func (a *InstanceAPIService) GetAllInterfaceExecute(r ApiGetAllInterfaceRequest)
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1239,7 +1239,7 @@ GetInstance Retrieve Instance
 
 # Get an Instance by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1271,7 +1271,7 @@ func (a *InstanceAPIService) GetInstanceExecute(r ApiGetInstanceRequest) (*Insta
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -1322,7 +1322,7 @@ func (a *InstanceAPIService) GetInstanceExecute(r ApiGetInstanceRequest) (*Insta
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1383,7 +1383,7 @@ GetInstanceStatusHistory Retrieve Instance status history
 
 # Get Instance status history
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1415,7 +1415,7 @@ func (a *InstanceAPIService) GetInstanceStatusHistoryExecute(r ApiGetInstanceSta
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}/status-history"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}/status-history"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -1472,7 +1472,7 @@ func (a *InstanceAPIService) GetInstanceStatusHistoryExecute(r ApiGetInstanceSta
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1518,7 +1518,7 @@ UpdateInstance Update Instance
 
 # Update an Instance by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1550,7 +1550,7 @@ func (a *InstanceAPIService) UpdateInstanceExecute(r ApiUpdateInstanceRequest) (
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/instance/{instanceId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/instance/{instanceId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"instanceId"+"}", url.PathEscape(parameterValueToString(r.instanceId, "instanceId")), -1)
 
@@ -1600,7 +1600,7 @@ func (a *InstanceAPIService) UpdateInstanceExecute(r ApiUpdateInstanceRequest) (
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -1611,7 +1611,7 @@ func (a *InstanceAPIService) UpdateInstanceExecute(r ApiUpdateInstanceRequest) (
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

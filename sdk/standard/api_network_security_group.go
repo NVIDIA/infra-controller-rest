@@ -60,7 +60,7 @@ CreateNetworkSecurityGroup Create Network Security Group
 
 Create a Network Security Group for Tenant.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -90,7 +90,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/network-security-group"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/network-security-group"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -139,7 +139,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -150,7 +150,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -161,7 +161,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -172,7 +172,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 412 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -183,7 +183,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 500 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -194,7 +194,7 @@ func (a *NetworkSecurityGroupAPIService) CreateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 501 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -234,7 +234,7 @@ DeleteNetworkSecurityGroup Delete Network Security Group
 
 # Delete a Network Security Group by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
 
 Deleting a Network Security Group will also delete all the associations and all policies.
 
@@ -265,7 +265,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/network-security-group/{networkSecurityGroupId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/network-security-group/{networkSecurityGroupId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"networkSecurityGroupId"+"}", url.PathEscape(parameterValueToString(r.networkSecurityGroupId, "networkSecurityGroupId")), -1)
 
@@ -313,7 +313,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -324,7 +324,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -335,7 +335,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -346,7 +346,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 412 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -357,7 +357,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 500 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -368,7 +368,7 @@ func (a *NetworkSecurityGroupAPIService) DeleteNetworkSecurityGroupExecute(r Api
 			return localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 501 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -454,7 +454,7 @@ GetAllNetworkSecurityGroup Retrieve all Network Security Groups
 
 # Get all Network Security Groups for Tenant
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -484,7 +484,7 @@ func (a *NetworkSecurityGroupAPIService) GetAllNetworkSecurityGroupExecute(r Api
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/network-security-group"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/network-security-group"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -559,7 +559,7 @@ func (a *NetworkSecurityGroupAPIService) GetAllNetworkSecurityGroupExecute(r Api
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -570,7 +570,7 @@ func (a *NetworkSecurityGroupAPIService) GetAllNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -581,7 +581,7 @@ func (a *NetworkSecurityGroupAPIService) GetAllNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 500 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -592,7 +592,7 @@ func (a *NetworkSecurityGroupAPIService) GetAllNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 501 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -639,7 +639,7 @@ GetNetworkSecurityGroup Retrieve Network Security Group
 
 # Get a Network Security Group by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -671,7 +671,7 @@ func (a *NetworkSecurityGroupAPIService) GetNetworkSecurityGroupExecute(r ApiGet
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/network-security-group/{networkSecurityGroupId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/network-security-group/{networkSecurityGroupId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"networkSecurityGroupId"+"}", url.PathEscape(parameterValueToString(r.networkSecurityGroupId, "networkSecurityGroupId")), -1)
 
@@ -722,7 +722,7 @@ func (a *NetworkSecurityGroupAPIService) GetNetworkSecurityGroupExecute(r ApiGet
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -733,7 +733,7 @@ func (a *NetworkSecurityGroupAPIService) GetNetworkSecurityGroupExecute(r ApiGet
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -744,7 +744,7 @@ func (a *NetworkSecurityGroupAPIService) GetNetworkSecurityGroupExecute(r ApiGet
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -755,7 +755,7 @@ func (a *NetworkSecurityGroupAPIService) GetNetworkSecurityGroupExecute(r ApiGet
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 500 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -766,7 +766,7 @@ func (a *NetworkSecurityGroupAPIService) GetNetworkSecurityGroupExecute(r ApiGet
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 501 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -812,7 +812,7 @@ UpdateNetworkSecurityGroup Update Network Security Group
 
 # Update a Network Security Group by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
 
 After a group has been created, policy updates are absolute.  The complete desired policy set must be specified.
 
@@ -846,7 +846,7 @@ func (a *NetworkSecurityGroupAPIService) UpdateNetworkSecurityGroupExecute(r Api
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/network-security-group/{networkSecurityGroupId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/network-security-group/{networkSecurityGroupId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"networkSecurityGroupId"+"}", url.PathEscape(parameterValueToString(r.networkSecurityGroupId, "networkSecurityGroupId")), -1)
 
@@ -896,7 +896,7 @@ func (a *NetworkSecurityGroupAPIService) UpdateNetworkSecurityGroupExecute(r Api
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -907,7 +907,7 @@ func (a *NetworkSecurityGroupAPIService) UpdateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -918,7 +918,7 @@ func (a *NetworkSecurityGroupAPIService) UpdateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 404 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -929,7 +929,7 @@ func (a *NetworkSecurityGroupAPIService) UpdateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 500 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -940,7 +940,7 @@ func (a *NetworkSecurityGroupAPIService) UpdateNetworkSecurityGroupExecute(r Api
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 501 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

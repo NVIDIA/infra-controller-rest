@@ -61,7 +61,7 @@ func NewGetAllMachineCapabilityHandler(dbSession *cdb.Session) GetAllMachineCapa
 // @Param org path string true "Name of NGC organization"
 // @Param site_id query string true "Filter by site ID"
 // @Success 200 {object} model.APIUser
-// @Router /v2/org/{org}/carbide/machine-capability [get]
+// @Router /v2/org/{org}/nico/machine-capability [get]
 func (gamch GetAllMachineCapabilityHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineCapability", "GetAll", c, gamch.tracerSpan)
 	if handlerSpan != nil {

@@ -31,10 +31,10 @@ import (
 )
 
 func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -42,7 +42,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoAtomicClient  *cClient.NICoAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -59,7 +59,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 			name: "test collecting and publishing expected switch inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -72,7 +72,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 			name: "test collecting and publishing expected switch inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -92,7 +92,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 
 			manageInstance := NewManageExpectedSwitchInventory(
 				tt.fields.siteID,
-				tt.fields.carbideAtomicClient,
+				tt.fields.nicoAtomicClient,
 				tc,
 				tt.fields.temporalPublishQueue,
 				tt.fields.cloudPageSize,
@@ -135,13 +135,13 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 }
 
 func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -156,7 +156,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test create expected switch success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -171,7 +171,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test create expected switch fail on missing MAC address",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -186,7 +186,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test create expected switch fail on missing serial number",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -201,7 +201,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test create expected switch fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -216,7 +216,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test create expected switch fail on missing identifying information",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -231,7 +231,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test create expected switch fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -242,7 +242,7 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedSwitch(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedSwitch(tt.fields.NICoAtomicClient, nil)
 			err := mm.CreateExpectedSwitchOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -254,13 +254,13 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnSite(t *testing.T) {
 }
 
 func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -275,7 +275,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test update expected switch success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -290,7 +290,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test update expected switch fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -305,7 +305,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test update expected switch fail on missing MAC address",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -320,7 +320,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test update expected switch fail on missing serial number",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -335,7 +335,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test update expected switch fail on missing both MAC and serial",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -350,7 +350,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test update expected switch fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -361,7 +361,7 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedSwitch(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedSwitch(tt.fields.NICoAtomicClient, nil)
 			err := mm.UpdateExpectedSwitchOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -373,13 +373,13 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchOnSite(t *testing.T) {
 }
 
 func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -394,7 +394,7 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test delete expected switch success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -408,7 +408,7 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test delete expected switch fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -422,7 +422,7 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test delete expected switch success with missing BMC MAC address",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -436,7 +436,7 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 		{
 			name: "test delete expected switch fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -447,7 +447,7 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageExpectedSwitch(tt.fields.CarbideAtomicClient, nil)
+			mm := NewManageExpectedSwitch(tt.fields.NICoAtomicClient, nil)
 			err := mm.DeleteExpectedSwitchOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

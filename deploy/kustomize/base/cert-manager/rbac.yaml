@@ -13,20 +13,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# RBAC for carbide-rest-cert-manager
+# RBAC for nico-rest-cert-manager
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: carbide-rest-cert-manager
+  name: nico-rest-cert-manager
   labels:
-    app: carbide-rest-cert-manager
+    app: nico-rest-cert-manager
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: carbide-rest-cert-manager
+  name: nico-rest-cert-manager
   labels:
-    app: carbide-rest-cert-manager
+    app: nico-rest-cert-manager
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
@@ -38,14 +38,14 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: carbide-rest-cert-manager
+  name: nico-rest-cert-manager
   labels:
-    app: carbide-rest-cert-manager
+    app: nico-rest-cert-manager
 subjects:
   - kind: ServiceAccount
-    name: carbide-rest-cert-manager
+    name: nico-rest-cert-manager
 roleRef:
   kind: Role
-  name: carbide-rest-cert-manager
+  name: nico-rest-cert-manager
   apiGroup: rbac.authorization.k8s.io
 

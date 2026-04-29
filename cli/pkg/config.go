@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"fmt"
@@ -25,7 +25,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ConfigFile mirrors the ~/.carbide/config.yaml structure.
+// ConfigFile mirrors the ~/.nico/config.yaml structure.
 type ConfigFile struct {
 	API  ConfigAPI  `yaml:"api"`
 	Auth ConfigAuth `yaml:"auth"`
@@ -79,9 +79,9 @@ func defaultConfigPath() string {
 	home, err := os.UserHomeDir()
 	if err != nil || home == "" {
 		fmt.Fprintln(os.Stderr, "Warning: could not determine home directory, using current directory for config")
-		return filepath.Join(".carbide", "config.yaml")
+		return filepath.Join(".nico", "config.yaml")
 	}
-	return filepath.Join(home, ".carbide", "config.yaml")
+	return filepath.Join(home, ".nico", "config.yaml")
 }
 
 // ConfigDir returns the directory containing the active config file.
@@ -176,12 +176,12 @@ func HasAPIKeyConfig(cfg *ConfigFile) bool {
 		cfg.Auth.APIKey.Key != ""
 }
 
-const SampleConfig = `# Carbide CLI configuration
+const SampleConfig = `# NICo CLI configuration
 #
 # API connection:
 #   api.base -- server URL
 #   api.org  -- organization name used in API paths
-#   api.name -- API path segment (default: carbide)
+#   api.name -- API path segment (default: nico)
 #
 # Authentication options (choose one):
 #   auth.token      -- direct bearer token (no login required)
@@ -191,7 +191,7 @@ const SampleConfig = `# Carbide CLI configuration
 api:
   base: http://localhost:8388
   org: test-org
-  name: carbide
+  name: nico
 
 auth:
   # Option 1: Direct bearer token
@@ -199,9 +199,9 @@ auth:
 
   # Option 2: OIDC provider (e.g. Keycloak)
   oidc:
-    token_url: http://localhost:8080/realms/carbide-dev/protocol/openid-connect/token
-    client_id: carbide-api
-    client_secret: carbide-local-secret
+    token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
+    client_id: nico-api
+    client_secret: nico-local-secret
     username: admin@example.com
     password: adminpassword
 

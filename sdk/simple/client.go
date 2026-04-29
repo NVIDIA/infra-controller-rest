@@ -99,11 +99,11 @@ var _ ClientInterface = (*Client)(nil)
 
 // ClientConfig is a struct that contains the configuration for the client
 type ClientConfig struct {
-	// BaseURL is the base URL of Carbide REST API. For in-cluster requests, use "https://carbide-rest-api.carbide-rest.svc.cluster.local"
+	// BaseURL is the base URL of NICo REST API. For in-cluster requests, use "https://nico-rest-api.nico-rest.svc.cluster.local"
 	BaseURL string
 	// Org is the organization to use for the client. Select desired service org from const.go.
 	Org string
-	// APIName overrides the API path segment after /org/{org}/. Leave empty to use the default carbide path.
+	// APIName overrides the API path segment after /org/{org}/. Leave empty to use the default nico path.
 	APIName string
 	// Token should contain a valid JWT
 	Token string
@@ -111,7 +111,7 @@ type ClientConfig struct {
 	Logger Logger
 }
 
-// Client is a struct that contains the client for the Forge API
+// Client is a struct that contains the client for the NICo API
 type Client struct {
 	// The configuration for the client supplied by the SDK user
 	Config ClientConfig
@@ -123,7 +123,7 @@ type Client struct {
 	Logger Logger
 }
 
-// Authenticate initiate session with carbide-rest-api/keycloak and retrieve JWT.
+// Authenticate initiate session with nico-rest-api/keycloak and retrieve JWT.
 // It also makes an API call to retrieve service-specific information to cache.
 func (c *Client) Authenticate(ctx context.Context) error {
 	ctx = WithLogger(ctx, c.Logger)
@@ -675,16 +675,16 @@ func NewClient(config ClientConfig) (*Client, error) {
 // NewClientFromEnv creates a new client from environment variables
 func NewClientFromEnv() (*Client, error) {
 	config := ClientConfig{
-		BaseURL: os.Getenv("CARBIDE_BASE_URL"),
-		Org:     os.Getenv("CARBIDE_ORG"),
-		APIName: os.Getenv("CARBIDE_API_NAME"),
-		Token:   os.Getenv("CARBIDE_TOKEN"),
+		BaseURL: os.Getenv("NICO_BASE_URL"),
+		Org:     os.Getenv("NICO_ORG"),
+		APIName: os.Getenv("NICO_API_NAME"),
+		Token:   os.Getenv("NICO_TOKEN"),
 	}
 	if config.Token == "" {
-		if os.Getenv("CARBIDE_API_KEY") != "" {
-			config.Token = os.Getenv("CARBIDE_API_KEY")
+		if os.Getenv("NICO_API_KEY") != "" {
+			config.Token = os.Getenv("NICO_API_KEY")
 		} else {
-			return nil, errors.New("CARBIDE_TOKEN env var (or alternatively CARBIDE_API_KEY) must be set")
+			return nil, errors.New("NICO_TOKEN env var (or alternatively NICO_API_KEY) must be set")
 		}
 	}
 	return NewClient(config)

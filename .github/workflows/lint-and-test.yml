@@ -242,7 +242,7 @@ jobs:
       postgres:
         image: postgres:14.4-alpine
         env:
-          POSTGRES_DB: forgetest
+          POSTGRES_DB: nicotest
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
           POSTGRES_HOST_AUTH_METHOD: trust
@@ -258,7 +258,7 @@ jobs:
       # Override CI to use localhost instead of 'postgres' docker hostname
       # (see db/pkg/util/testing.go - it checks CI=true for GitLab CI)
       CI: "false"
-      DB_NAME: forgetest
+      DB_NAME: nicotest
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_HOST: localhost
@@ -304,14 +304,14 @@ jobs:
           echo "Testing module: ${{ matrix.module }}"
 
           if [ "${{ matrix.module }}" = "site-agent" ]; then
-            make carbide-mock-server-start
+            make nico-mock-server-start
             make rla-mock-server-start
           fi
 
           go test -v -race -p 1 ./${{ matrix.module }}/... -coverprofile=coverage-${{ matrix.module }}.txt -covermode=atomic 2>&1 | tee test-output-${{ matrix.module }}.txt
 
           if [ "${{ matrix.module }}" = "site-agent" ]; then
-            make carbide-mock-server-stop
+            make nico-mock-server-stop
             make rla-mock-server-stop
           fi
 

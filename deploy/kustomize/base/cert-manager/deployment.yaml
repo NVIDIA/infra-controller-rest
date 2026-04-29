@@ -13,27 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-cert-manager (credsmgr) Deployment with native Go PKI
+# nico-rest-cert-manager (credsmgr) Deployment with native Go PKI
 # Requires CA certificate to be provided via K8s secrets (no fallback generation)
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carbide-rest-cert-manager
+  name: nico-rest-cert-manager
   labels:
-    app: carbide-rest-cert-manager
+    app: nico-rest-cert-manager
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carbide-rest-cert-manager
+      app: nico-rest-cert-manager
   template:
     metadata:
       labels:
-        app: carbide-rest-cert-manager
+        app: nico-rest-cert-manager
     spec:
       imagePullSecrets:
         - name: image-pull-secret
-      serviceAccountName: carbide-rest-cert-manager
+      serviceAccountName: nico-rest-cert-manager
       terminationGracePeriodSeconds: 5
       securityContext:
         runAsNonRoot: true
@@ -41,7 +41,7 @@ spec:
         fsGroup: 65534
       containers:
         - name: cert-manager
-          image: carbide-rest-cert-manager
+          image: nico-rest-cert-manager
           imagePullPolicy: IfNotPresent
           securityContext:
             readOnlyRootFilesystem: true
@@ -50,13 +50,13 @@ spec:
               drop:
                 - ALL
           args:
-            - --ca-common-name=Carbide Local Dev CA
+            - --ca-common-name=NICo Local Dev CA
             - --ca-organization=NVIDIA
             - --ca-cert-file=/etc/pki/ca/tls.crt
             - --ca-key-file=/etc/pki/ca/tls.key
             - --tls-port=8000
             - --insecure-port=8001
-            - --ca-base-dns=carbide.local
+            - --ca-base-dns=nico.local
             - --debug
           ports:
             - containerPort: 8000

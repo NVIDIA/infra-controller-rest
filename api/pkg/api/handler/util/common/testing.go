@@ -603,7 +603,7 @@ func TestCommonTraceProviderSetup(t *testing.T, ctx context.Context) (trace.Trac
 func TestBuildAuditEntry(t *testing.T, dbSession *cdb.Session, orgName string, userID *uuid.UUID, statusCode int) *cdbm.AuditEntry {
 	aeDAO := cdbm.NewAuditEntryDAO(dbSession)
 	aeo, err := aeDAO.Create(context.Background(), nil, cdbm.AuditEntryCreateInput{
-		Endpoint: fmt.Sprintf("/v2/org/%s/carbide/ep", orgName),
+		Endpoint: fmt.Sprintf("/v2/org/%s/nico/ep", orgName),
 		QueryParams: url.Values{
 			"test": []string{"1234"},
 		},

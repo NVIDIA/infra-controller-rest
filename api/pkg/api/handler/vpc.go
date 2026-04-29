@@ -85,7 +85,7 @@ func NewCreateVPCHandler(dbSession *cdb.Session, tc temporalClient.Client, sc *s
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIVpcCreateRequest true "VPC create request"
 // @Success 201 {object} model.APIVpc
-// @Router /v2/org/{org}/carbide/vpc [post]
+// @Router /v2/org/{org}/nico/vpc [post]
 func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC", "Create", c, cvh.tracerSpan)
 	if handlerSpan != nil {
@@ -558,7 +558,7 @@ func NewUpdateVPCHandler(dbSession *cdb.Session, tc temporalClient.Client, sc *s
 // @Param id path string true "ID of Vpc"
 // @Param message body model.APIVpcUpdateRequest true "VPC update request"
 // @Success 200 {object} model.APIVpc
-// @Router /v2/org/{org}/carbide/vpc/{id} [patch]
+// @Router /v2/org/{org}/nico/vpc/{id} [patch]
 func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC", "Update", c, uvh.tracerSpan)
 	if handlerSpan != nil {
@@ -986,7 +986,7 @@ func NewUpdateVPCVirtualizationHandler(dbSession *cdb.Session, tc temporalClient
 // @Param id path string true "ID of Vpc"
 // @Param message body model.APIVpcVirtualizationUpdateRequest true "VPC virtualization update request"
 // @Success 200 {object} model.APIVpc
-// @Router /v2/org/{org}/carbide/vpc/{id}/virtualization [patch]
+// @Router /v2/org/{org}/nico/vpc/{id}/virtualization [patch]
 func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC", "Update Virtualization", c, uvvh.tracerSpan)
 	if handlerSpan != nil {
@@ -1246,7 +1246,7 @@ func NewGetVPCHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *con
 // @Param id path string true "ID of Vpc"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Site', 'Tenant'"
 // @Success 200 {object} model.APIVpc
-// @Router /v2/org/{org}/carbide/vpc/{id} [get]
+// @Router /v2/org/{org}/nico/vpc/{id} [get]
 func (gvh GetVPCHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC", "Get", c, gvh.tracerSpan)
 	if handlerSpan != nil {
@@ -1373,7 +1373,7 @@ func NewGetAllVPCHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} []model.APIVpc
-// @Router /v2/org/{org}/carbide/vpc [get]
+// @Router /v2/org/{org}/nico/vpc [get]
 func (gavh GetAllVPCHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC", "GetAll", c, gavh.tracerSpan)
 	if handlerSpan != nil {
@@ -1680,7 +1680,7 @@ func NewDeleteVPCHandler(dbSession *cdb.Session, tc temporalClient.Client, scp *
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of VPC"
 // @Success 202
-// @Router /v2/org/{org}/carbide/vpc/{id} [delete]
+// @Router /v2/org/{org}/nico/vpc/{id} [delete]
 func (dvh DeleteVPCHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("VPC", "Delete", c, dvh.tracerSpan)
 	if handlerSpan != nil {
@@ -1856,10 +1856,10 @@ func (dvh DeleteVPCHandler) Handle(c echo.Context) error {
 	err = we.Get(ctx, nil)
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-			logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 			// Reset error to nil
 			err = nil
 		}

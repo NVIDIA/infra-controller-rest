@@ -31,6 +31,7 @@ import (
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
 	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun/extra/bundebug"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -46,6 +47,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -103,6 +105,438 @@ func testInfiniBandPartitionSetupSchema(t *testing.T, dbSession *cdb.Session) {
 	assert.Nil(t, err)
 }
 
+func TestManageInfiniBandPartition_CreateInfiniBandPartitionViaSiteAgent(t *testing.T) {
+	type fields struct {
+		dbSession      *cdb.Session
+		siteClientPool *sc.ClientPool
+		temporalsuit   testsuite.WorkflowTestSuite
+		env            *testsuite.TestWorkflowEnvironment
+	}
+
+	type args struct {
+		ctx    context.Context
+		siteID uuid.UUID
+		ibpID  uuid.UUID
+	}
+
+	dbSession := util.TestInitDB(t)
+	defer dbSession.Close()
+
+	util.TestSetupSchema(t, dbSession)
+
+	ipOrg := "test-provider-org"
+	ipRoles := []string{authz.ProviderAdminRole}
+
+	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
+	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
+
+	tnOrg := "test-tenant-org"
+	tnRoles := []string{authz.TenantAdminRole}
+
+	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
+
+	tn := util.TestBuildTenant(t, dbSession, tnOrg, "Test Tenant", nil, tnu)
+	assert.NotNil(t, tn)
+
+	st1 := util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusRegistered, nil, ipu)
+	assert.NotNil(t, st1)
+
+	ts1 := util.TestBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st1.ID, tn.ID)
+	assert.NotNil(t, ts1)
+
+	ibp1 := util.TestBuildInfiniBandPartition(t, dbSession, "test-ibp-1", st1, tn, nil, cdbm.InfiniBandPartitionStatusReady, false)
+	assert.NotNil(t, ibp1)
+
+	tSiteClientPool := testTemporalSiteClientPool(t)
+	assert.NotNil(t, tSiteClientPool)
+
+	temporalsuit := testsuite.WorkflowTestSuite{}
+	env := temporalsuit.NewTestWorkflowEnvironment()
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		want    error
+		wantErr bool
+	}{
+		{
+			name: "test InfiniBandPartition create activity from site agent",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx:    context.Background(),
+				siteID: st1.ID,
+				ibpID:  ibp1.ID,
+			},
+			want: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mibp := ManageInfiniBandPartition{
+				dbSession:      tt.fields.dbSession,
+				siteClientPool: tSiteClientPool,
+			}
+
+			// Mock the "CreateInfiniBandPartition" workflow
+			mtc := &tmocks.Client{}
+			mibp.siteClientPool.IDClientMap[st1.ID.String()] = mtc
+
+			createInfiniBandPartitionRequest := &cwssaws.CreateInfiniBandPartitionRequest{
+				IbPartitionId:        &cwssaws.UUID{Value: ibp1.ID.String()},
+				Name:                 ibp1.Name,
+				TenantOrganizationId: ibp1.Org,
+			}
+
+			testWorkflowID := "test-workflowid"
+			testRunID := "test-runid"
+
+			mockWorkflowRun := &tmocks.WorkflowRun{}
+			mockWorkflowRun.On("GetID").Return(testWorkflowID).Times(4)
+			mockWorkflowRun.On("GetRunID").Return(testRunID).Times(4)
+			mockWorkflowRun.On("Get", mock.Anything, mock.Anything).Return(nil).Times(2)
+			mockWorkflowRun.On("GetWithOptions", mock.Anything, mock.Anything).Return(nil).Times(2)
+
+			mtc.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything, createInfiniBandPartitionRequest).Return(mockWorkflowRun, nil).Once()
+
+			err := mibp.CreateInfiniBandPartitionViaSiteAgent(tt.args.ctx, tt.args.siteID, tt.args.ibpID)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ManageInfiniBandPartition.CreateInfiniBandPartitionViaSiteAgent() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			// Check if the InfiniBandPartition was updated in the DB
+			ibpDAO := cdbm.NewInfiniBandPartitionDAO(dbSession)
+			tInfiniBandPartition, err := ibpDAO.GetByID(context.Background(), nil, tt.args.ibpID, nil)
+			assert.Nil(t, err)
+			assert.Equal(t, tInfiniBandPartition.Status, cdbm.InfiniBandPartitionStatusProvisioning)
+		})
+	}
+}
+
+func TestManageInfiniBandPartition_DeleteInfiniBandPartitionViaSiteAgent(t *testing.T) {
+	dbSession := util.TestInitDB(t)
+	defer dbSession.Close()
+
+	util.TestSetupSchema(t, dbSession)
+
+	ipOrg := "test-provider-org"
+	ipRoles := []string{authz.ProviderAdminRole}
+
+	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
+	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
+
+	tnOrg := "test-tenant-org"
+	tnRoles := []string{authz.TenantAdminRole}
+
+	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
+
+	tn := util.TestBuildTenant(t, dbSession, tnOrg, "Test Tenant", nil, tnu)
+	assert.NotNil(t, tn)
+
+	st1 := util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusRegistered, nil, ipu)
+	assert.NotNil(t, st1)
+
+	ts1 := util.TestBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st1.ID, tn.ID)
+	assert.NotNil(t, ts1)
+
+	ibp1 := util.TestBuildInfiniBandPartition(t, dbSession, "test-ibp-1", st1, tn, cdb.GetUUIDPtr(uuid.New()), cdbm.InfiniBandPartitionStatusDeleting, false)
+	assert.NotNil(t, ibp1)
+
+	ibp2 := util.TestBuildInfiniBandPartition(t, dbSession, "test-ibp-2", st1, tn, nil, cdbm.InfiniBandPartitionStatusDeleting, false)
+	assert.NotNil(t, ibp2)
+
+	tSiteClientPool := testTemporalSiteClientPool(t)
+	assert.NotNil(t, tSiteClientPool)
+
+	temporalsuit := testsuite.WorkflowTestSuite{}
+	env := temporalsuit.NewTestWorkflowEnvironment()
+
+	type fields struct {
+		dbSession      *cdb.Session
+		siteClientPool *sc.ClientPool
+		env            *testsuite.TestWorkflowEnvironment
+	}
+
+	type args struct {
+		ctx    context.Context
+		siteID uuid.UUID
+		ibp    *cdbm.InfiniBandPartition
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test InfiniBandPartition delete activity from site agent successfully when controllerIBPartition Id set",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx:    context.Background(),
+				siteID: st1.ID,
+				ibp:    ibp1,
+			},
+			wantErr: false,
+		},
+		{
+			name: "test InfiniBandPartition delete activity from returns error when controllerIBPartition is nil",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx:    context.Background(),
+				siteID: st1.ID,
+				ibp:    ibp2,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mibp := ManageInfiniBandPartition{
+				dbSession:      tt.fields.dbSession,
+				siteClientPool: tSiteClientPool,
+			}
+
+			// Mock Temporal client pool
+			mtc := &tmocks.Client{}
+			mibp.siteClientPool.IDClientMap[st1.ID.String()] = mtc
+
+			// Match controller InfiniBandPartition ID for mocking workflow
+			controllerIBPartitionID := &cwssaws.UUID{Value: ""}
+			if tt.args.ibp.ControllerIBPartitionID != nil {
+				controllerIBPartitionID = &cwssaws.UUID{Value: tt.args.ibp.ControllerIBPartitionID.String()}
+			}
+
+			deleteInfiniBandPartitionRequest := &cwssaws.DeleteInfiniBandPartitionRequest{
+				Id: controllerIBPartitionID,
+			}
+
+			testWorkflowID := "test-workflowid"
+			testRunID := "test-runid"
+
+			mockWorkflowRun := &tmocks.WorkflowRun{}
+			mockWorkflowRun.On("GetID").Return(testWorkflowID).Times(4)
+			mockWorkflowRun.On("GetRunID").Return(testRunID).Times(4)
+			mockWorkflowRun.On("Get", mock.Anything, mock.Anything).Return(nil).Times(2)
+			mockWorkflowRun.On("GetWithOptions", mock.Anything, mock.Anything).Return(nil).Times(2)
+
+			mtc.On("ExecuteWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything, deleteInfiniBandPartitionRequest).Return(mockWorkflowRun, nil).Once()
+
+			err := mibp.DeleteInfiniBandPartitionViaSiteAgent(tt.args.ctx, tt.args.siteID, tt.args.ibp.ID)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			// Check if the InfiniBandPartition was updated or deleted in the DB, we will check for `deleting`
+			ibpDAO := cdbm.NewInfiniBandPartitionDAO(dbSession)
+			tInfiniBandPartition, err := ibpDAO.GetByID(context.Background(), nil, tt.args.ibp.ID, nil)
+			assert.Nil(t, err)
+			assert.Equal(t, cdbm.InfiniBandPartitionStatusDeleting, tInfiniBandPartition.Status)
+		})
+	}
+}
+
+func TestManageInfiniBandPartition_UpdateInfiniBandPartitionInDB(t *testing.T) {
+	dbSession := util.TestInitDB(t)
+	defer dbSession.Close()
+
+	util.TestSetupSchema(t, dbSession)
+
+	ipOrg := "test-provider-org"
+	ipRoles := []string{authz.ProviderAdminRole}
+
+	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
+	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
+
+	tnOrg := "test-tenant-org"
+	tnRoles := []string{authz.TenantAdminRole}
+
+	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
+
+	tn := util.TestBuildTenant(t, dbSession, tnOrg, "Test Tenant", nil, tnu)
+	assert.NotNil(t, tn)
+
+	st1 := util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusRegistered, nil, ipu)
+	assert.NotNil(t, st1)
+
+	ts1 := util.TestBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st1.ID, tn.ID)
+	assert.NotNil(t, ts1)
+
+	ibp1 := util.TestBuildInfiniBandPartition(t, dbSession, "test-ibp-1", st1, tn, nil, cdbm.InfiniBandPartitionStatusReady, false)
+	assert.NotNil(t, ibp1)
+
+	ibp2 := util.TestBuildInfiniBandPartition(t, dbSession, "test-ibp-2", st1, tn, nil, cdbm.InfiniBandPartitionStatusDeleting, false)
+	assert.NotNil(t, ibp2)
+
+	tSiteClientPool := testTemporalSiteClientPool(t)
+	assert.NotNil(t, tSiteClientPool)
+
+	temporalsuit := testsuite.WorkflowTestSuite{}
+	env := temporalsuit.NewTestWorkflowEnvironment()
+
+	type fields struct {
+		dbSession      *cdb.Session
+		siteClientPool *sc.ClientPool
+		env            *testsuite.TestWorkflowEnvironment
+	}
+
+	type args struct {
+		ctx               context.Context
+		ibp               *cdbm.InfiniBandPartition
+		transactionID     *cwssaws.TransactionID
+		ibpInfo           *cwssaws.InfiniBandPartitionInfo
+		expectIbpDeletion bool
+	}
+
+	tests := []struct {
+		name   string
+		fields fields
+		args   args
+	}{
+		{
+			name: "test InfiniBandPartition update on creation",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx: context.Background(),
+				ibp: ibp1,
+				transactionID: &cwssaws.TransactionID{
+					ResourceId: ibp1.ID.String(),
+					Timestamp:  timestamppb.Now(),
+				},
+				ibpInfo: &cwssaws.InfiniBandPartitionInfo{
+					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
+					StatusMsg: "InfiniBandPartition was successfully created",
+					IbPartition: &cwssaws.IBPartition{
+						Id: &cwssaws.IBPartitionId{Value: uuid.NewString()},
+						Config: &cwssaws.IBPartitionConfig{
+							Name:                 ibp1.ID.String(),
+							TenantOrganizationId: ibp1.Org,
+						},
+					},
+					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_CREATED,
+				},
+			},
+		},
+		{
+			name: "test InfiniBandPartition update on deletion",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx: context.Background(),
+				ibp: ibp2,
+				transactionID: &cwssaws.TransactionID{
+					ResourceId: ibp2.ID.String(),
+					Timestamp:  timestamppb.Now(),
+				},
+				ibpInfo: &cwssaws.InfiniBandPartitionInfo{
+					Status:       cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
+					StatusMsg:    "InfiniBandPartition was successfully deleted",
+					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_DELETED,
+				},
+			},
+		},
+		{
+			name: "test InfiniBandPartition update on error",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx: context.Background(),
+				ibp: ibp2,
+				transactionID: &cwssaws.TransactionID{
+					ResourceId: ibp2.ID.String(),
+					Timestamp:  timestamppb.Now(),
+				},
+				ibpInfo: &cwssaws.InfiniBandPartitionInfo{
+					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE,
+					StatusMsg: "error creating InfiniBandPartition",
+				},
+			},
+		},
+		{
+			name: "test InfiniBandPartition update on error while deleting, arbitrary error on Site",
+			fields: fields{
+				dbSession:      dbSession,
+				siteClientPool: tSiteClientPool,
+				env:            env,
+			},
+			args: args{
+				ctx: context.Background(),
+				ibp: ibp2,
+				transactionID: &cwssaws.TransactionID{
+					ResourceId: ibp2.ID.String(),
+					Timestamp:  timestamppb.Now(),
+				},
+				ibpInfo: &cwssaws.InfiniBandPartitionInfo{
+					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE,
+					StatusMsg: "arbitrary error",
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mibp := ManageInfiniBandPartition{
+				dbSession:      tt.fields.dbSession,
+				siteClientPool: tSiteClientPool,
+			}
+
+			// Mock the "CreateInfiniBandPartition" workflow
+			mtc := &tmocks.Client{}
+			mibp.siteClientPool.IDClientMap[st1.ID.String()] = mtc
+
+			err := mibp.UpdateInfiniBandPartitionInDB(tt.args.ctx, tt.args.transactionID, tt.args.ibpInfo)
+			assert.NoError(t, err)
+
+			ibpDAO := cdbm.NewInfiniBandPartitionDAO(dbSession)
+			uInfiniBandPartition, err := ibpDAO.GetByID(context.Background(), nil, tt.args.ibp.ID, nil)
+
+			// Verify statuses
+			if tt.args.ibpInfo.ObjectStatus == cwssaws.ObjectStatus_OBJECT_STATUS_CREATED {
+				assert.Nil(t, err)
+				assert.Equal(t, cdbm.InfiniBandPartitionStatusProvisioning, uInfiniBandPartition.Status)
+			} else if tt.args.ibpInfo.ObjectStatus == cwssaws.ObjectStatus_OBJECT_STATUS_DELETED {
+				assert.Nil(t, err)
+				assert.Equal(t, cdbm.InfiniBandPartitionStatusDeleting, uInfiniBandPartition.Status)
+			} else if tt.args.ibpInfo.Status == cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE {
+				if tt.args.expectIbpDeletion {
+					assert.Error(t, cdb.ErrDoesNotExist)
+					assert.Nil(t, uInfiniBandPartition)
+				} else if tt.args.ibp.Status == cdbm.InfiniBandPartitionStatusDeleting {
+					assert.Equal(t, cdbm.InfiniBandPartitionStatusDeleting, uInfiniBandPartition.Status)
+					assert.Nil(t, err)
+				} else {
+					assert.Equal(t, cdbm.InfiniBandPartitionStatusError, uInfiniBandPartition.Status)
+					assert.Nil(t, err)
+				}
+			}
+		})
+	}
+}
+
 func TestManageInfiniBandPartition_UpdateInfiniBandPartitionsInDB(t *testing.T) {
 	ctx := context.Background()
 	dbSession := util.TestInitDB(t)
@@ -111,13 +545,13 @@ func TestManageInfiniBandPartition_UpdateInfiniBandPartitionsInDB(t *testing.T) 
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 

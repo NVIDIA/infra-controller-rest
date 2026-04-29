@@ -37,10 +37,10 @@ import (
 
 // ManageNetworkSecurityGroup is an activity wrapper for NetworkSecurityGroup management tasks that allows injecting DB access
 type ManageNetworkSecurityGroup struct {
-	CarbideAtomicClient *cClient.CarbideAtomicClient
+	NICoAtomicClient *cClient.NICoAtomicClient
 }
 
-// Function to Create Forge NetworkSecurityGroup with the Site Controller
+// Function to Create NICo NetworkSecurityGroup with the Site Controller
 func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx context.Context, request *cwssaws.CreateNetworkSecurityGroupRequest) error {
 	logger := log.With().Str("Activity", "CreateNetworkSecurityGroupOnSite").Logger()
 
@@ -64,12 +64,13 @@ func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateNetworkSecurityGroup(ctx, request)
+	_, err = rpcClient.CreateNetworkSecurityGroup(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create NetworkSecurityGroup using Site Controller API")
 		return swe.WrapErr(err)
@@ -80,7 +81,7 @@ func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx conte
 	return nil
 }
 
-// Function Update Forge NetworkSecurityGroup with the Site Controller
+// Function Update NICo NetworkSecurityGroup with the Site Controller
 func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx context.Context, request *cwssaws.UpdateNetworkSecurityGroupRequest) error {
 	logger := log.With().Str("Activity", "UpdateNetworkSecurityGroupOnSite").Logger()
 
@@ -103,12 +104,13 @@ func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateNetworkSecurityGroup(ctx, request)
+	_, err = rpcClient.UpdateNetworkSecurityGroup(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update config for NetworkSecurityGroup using Site Controller API")
 		return swe.WrapErr(err)
@@ -119,7 +121,7 @@ func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx conte
 	return nil
 }
 
-// Function to Delete Forge NetworkSecurityGroup with the Site Controller
+// Function to Delete NICo NetworkSecurityGroup with the Site Controller
 func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx context.Context, request *cwssaws.DeleteNetworkSecurityGroupRequest) error {
 	logger := log.With().Str("Activity", "DeleteNetworkSecurityGroupOnSite").Logger()
 
@@ -142,12 +144,13 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteNetworkSecurityGroup(ctx, request)
+	_, err = rpcClient.DeleteNetworkSecurityGroup(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete NetworkSecurityGroup using Site Controller API")
 		return swe.WrapErr(err)
@@ -159,9 +162,9 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 }
 
 // NewManageNetworkSecurityGroup returns a new ManageNetworkSecurityGroup activity
-func NewManageNetworkSecurityGroup(carbideClient *cClient.CarbideAtomicClient) ManageNetworkSecurityGroup {
+func NewManageNetworkSecurityGroup(nicoClient *cClient.NICoAtomicClient) ManageNetworkSecurityGroup {
 	return ManageNetworkSecurityGroup{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
@@ -191,17 +194,17 @@ func NewManageNetworkSecurityGroupInventory(config ManageInventoryConfig) Manage
 	}
 }
 
-func networkSecurityGroupFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.UUID, error) {
+func networkSecurityGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, error) {
 	// Call Site Controller gRPC endpoint
-	forgeClient := carbideClient.Carbide()
-	networkSecurityGroupIdList, err := forgeClient.FindNetworkSecurityGroupIds(ctx, &cwssaws.FindNetworkSecurityGroupIdsRequest{})
+	rpcClient := nicoClient.NICo()
+	networkSecurityGroupIdList, err := rpcClient.FindNetworkSecurityGroupIds(ctx, &cwssaws.FindNetworkSecurityGroupIdsRequest{})
 	if err != nil {
 		return nil, err
 	}
 	return util.StringsToProtobufUUIDList(networkSecurityGroupIdList.GetNetworkSecurityGroupIds()), nil
 }
 
-func networkSecurityGroupFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
+func networkSecurityGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
 	nsgIDs := make([]string, len(ids))
 
 	for i, id := range ids {
@@ -209,8 +212,8 @@ func networkSecurityGroupFindByIDs(ctx context.Context, carbideClient *cClient.C
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient := carbideClient.Carbide()
-	networkSecurityGroupList, err := forgeClient.FindNetworkSecurityGroupsByIds(ctx, &cwssaws.FindNetworkSecurityGroupsByIdsRequest{
+	rpcClient := nicoClient.NICo()
+	networkSecurityGroupList, err := rpcClient.FindNetworkSecurityGroupsByIds(ctx, &cwssaws.FindNetworkSecurityGroupsByIdsRequest{
 		NetworkSecurityGroupIds: nsgIDs,
 	})
 	if err != nil {

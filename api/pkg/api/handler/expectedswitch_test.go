@@ -38,6 +38,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/uptrace/bun/extra/bundebug"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testExpectedSwitchInitDB initializes a test database session
@@ -155,7 +156,7 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -274,7 +275,7 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest(http.MethodPost, "/v2/org/test-org/carbide/expected-switch", bytes.NewReader(reqBody))
+			req := httptest.NewRequest(http.MethodPost, "/v2/org/test-org/nico/expected-switch", bytes.NewReader(reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req = req.WithContext(context.Background())
 
@@ -369,7 +370,7 @@ func TestGetAllExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_VIEWER"},
+					Roles:       []string{authz.ProviderViewerRole},
 				},
 			},
 		}
@@ -456,7 +457,7 @@ func TestGetAllExpectedSwitchHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-switch"
+			url := "/v2/org/" + org + "/nico/expected-switch"
 			params := []string{}
 			if tt.siteId != "" {
 				params = append(params, "siteId="+tt.siteId)
@@ -556,7 +557,7 @@ func TestGetExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -614,7 +615,7 @@ func TestGetExpectedSwitchHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-switch/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-switch/" + tt.id
 			req := httptest.NewRequest(http.MethodGet, url, nil)
 			req = req.WithContext(context.Background())
 
@@ -716,7 +717,7 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -791,7 +792,7 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(tt.requestBody)
-			url := "/v2/org/" + org + "/carbide/expected-switch/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-switch/" + tt.id
 			req := httptest.NewRequest(http.MethodPatch, url, bytes.NewReader(reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req = req.WithContext(context.Background())
@@ -894,7 +895,7 @@ func TestDeleteExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -932,7 +933,7 @@ func TestDeleteExpectedSwitchHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-switch/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-switch/" + tt.id
 			req := httptest.NewRequest(http.MethodDelete, url, nil)
 			req = req.WithContext(context.Background())
 

@@ -30,10 +30,10 @@ import (
 )
 
 func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -41,7 +41,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoAtomicClient  *cClient.NICoAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -58,7 +58,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 			name: "test collecting and publishing ib partition inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -71,7 +71,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 			name: "test collecting and publishing ib partition inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoAtomicClient:  nicoAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -91,7 +91,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 
 			manageInstance := NewManageInfiniBandPartitionInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoAtomicClient:   tt.fields.nicoAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,
@@ -135,16 +135,16 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 }
 
 func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	name := "best_ibpartition_ever"
 	org := "best_org_ever"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -159,7 +159,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -176,7 +176,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition fail on missing name",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -193,7 +193,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition fail on missing org",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -210,7 +210,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -227,7 +227,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -238,7 +238,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition success with Metadata only (no deprecated Config)",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -257,7 +257,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test create ibpartition success with deprecated Config only (backward compatibility)",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -274,7 +274,7 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInfiniBandPartition(tt.fields.CarbideAtomicClient)
+			mm := NewManageInfiniBandPartition(tt.fields.NICoAtomicClient)
 			err := mm.CreateInfiniBandPartitionOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -286,13 +286,13 @@ func TestManageIBPartition_CreateIBPartitionOnSite(t *testing.T) {
 }
 
 func TestManageIBPartition_DeleteIBPartitionOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
+	nicoAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoAtomicClient *cClient.NICoAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -307,7 +307,7 @@ func TestManageIBPartition_DeleteIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test delete ibpartition success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -320,7 +320,7 @@ func TestManageIBPartition_DeleteIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test delete ibpartition fail on blank id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -333,7 +333,7 @@ func TestManageIBPartition_DeleteIBPartitionOnSite(t *testing.T) {
 		{
 			name: "test delete ibpartition fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoAtomicClient: nicoAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -344,7 +344,7 @@ func TestManageIBPartition_DeleteIBPartitionOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageInfiniBandPartition(tt.fields.CarbideAtomicClient)
+			mm := NewManageInfiniBandPartition(tt.fields.NICoAtomicClient)
 			err := mm.DeleteInfiniBandPartitionOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

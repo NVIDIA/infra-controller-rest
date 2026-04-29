@@ -66,7 +66,7 @@ func DiscoverSSHKeyGroupInventory(ctx workflow.Context) error {
 
 // CreateSSHKeyGroupV2 is a workflow to create new SSH Key Groups using the CreateSSHKeyGroupOnSite activity
 // V1 (CreateSSHKeyGroup) is found in cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func CreateSSHKeyGroupV2(ctx workflow.Context, request *cwssaws.CreateTenantKeysetRequest) error {
 	logger := log.With().Str("Workflow", "SSHKeyGroup").Str("Action", "Create").Str("SSHKeyGroup ID", request.GetKeysetIdentifier().GetKeysetId()).Logger()
 
@@ -138,7 +138,7 @@ func UpdateSSHKeyGroupV2(ctx workflow.Context, request *cwssaws.UpdateTenantKeys
 
 // DeleteSSHKeyGroupV2 is a workflow to Delete SSH Key Groups using the DeleteSSHKeyGroupOnSite activity
 // V1 (DeleteSSHKeyGroup) is found in cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func DeleteSSHKeyGroupV2(ctx workflow.Context, request *cwssaws.DeleteTenantKeysetRequest) error {
 	logger := log.With().Str("Workflow", "SSHKeyGroup").Str("Action", "Delete").Str("SSHKeyGroup ID", request.GetKeysetIdentifier().GetKeysetId()).Logger()
 

@@ -60,7 +60,7 @@ CreateSite Create Site
 
 Create a Site for the org.
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 Tenants cannot create Sites.
 
@@ -92,7 +92,7 @@ func (a *SiteAPIService) CreateSiteExecute(r ApiCreateSiteRequest) (*Site, *http
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/site"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -141,7 +141,7 @@ func (a *SiteAPIService) CreateSiteExecute(r ApiCreateSiteRequest) (*Site, *http
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -152,7 +152,7 @@ func (a *SiteAPIService) CreateSiteExecute(r ApiCreateSiteRequest) (*Site, *http
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -199,7 +199,7 @@ DeleteSite Delete Site
 
 # Delete a specific Site
 
-Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
 
 Site can only be deleted if all Allocations have been deleted.
 
@@ -230,7 +230,7 @@ func (a *SiteAPIService) DeleteSiteExecute(r ApiDeleteSiteRequest) (*http.Respon
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/site/{siteId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteId"+"}", url.PathEscape(parameterValueToString(r.siteId, "siteId")), -1)
 
@@ -392,7 +392,7 @@ GetAllSite Retrieve all Sites
 
 Retrieve all Sites for org.
 
-User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` role. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
+User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -422,7 +422,7 @@ func (a *SiteAPIService) GetAllSiteExecute(r ApiGetAllSiteRequest) ([]Site, *htt
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/site"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -512,7 +512,7 @@ func (a *SiteAPIService) GetAllSiteExecute(r ApiGetAllSiteRequest) ([]Site, *htt
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -552,7 +552,7 @@ GetSite Retrieve Site
 
 Retrieve a specific Site by ID.
 
-User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` role.
+User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
 
 Access is granted if:
 - The Site is owned by the org's Infrastructure Provider
@@ -589,7 +589,7 @@ func (a *SiteAPIService) GetSiteExecute(r ApiGetSiteRequest) (*Site, *http.Respo
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/site/{siteId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteId"+"}", url.PathEscape(parameterValueToString(r.siteId, "siteId")), -1)
 
@@ -637,7 +637,7 @@ func (a *SiteAPIService) GetSiteExecute(r ApiGetSiteRequest) (*Site, *http.Respo
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -698,7 +698,7 @@ GetSiteStatusHistory Retrieve Site status history
 
 # Retrieve a specific Site status history
 
-User must have `FORGE_PROVIDER_ADMIN` or `FORGE_TENANT_ADMIN` role.
+User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
 
 Access is granted if:
 - The Site is owned by the org's Infrastructure Provider
@@ -735,7 +735,7 @@ func (a *SiteAPIService) GetSiteStatusHistoryExecute(r ApiGetSiteStatusHistoryRe
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/site/{siteId}/status-history"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteId}/status-history"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteId"+"}", url.PathEscape(parameterValueToString(r.siteId, "siteId")), -1)
 
@@ -792,7 +792,7 @@ func (a *SiteAPIService) GetSiteStatusHistoryExecute(r ApiGetSiteStatusHistoryRe
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -838,7 +838,7 @@ UpdateSite Update Site
 
 # Update a specific Site
 
-User must have `FORGE_PROVIDER_ADMIN` role.
+User must have `PROVIDER_ADMIN` role.
 
 Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no Site specific configuration modifiable by Tenant.
 
@@ -872,7 +872,7 @@ func (a *SiteAPIService) UpdateSiteExecute(r ApiUpdateSiteRequest) (*Site, *http
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/site/{siteId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteId"+"}", url.PathEscape(parameterValueToString(r.siteId, "siteId")), -1)
 

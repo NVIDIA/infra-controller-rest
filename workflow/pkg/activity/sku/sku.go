@@ -146,7 +146,7 @@ func (ms ManageSku) UpdateSkusInDB(ctx context.Context, siteID uuid.UUID, skuInv
 		// Update existing SKU data in DB
 		if !reflect.DeepEqual(cur.Components.SkuComponents, reportedSku.Components) || cur.DeviceType != reportedSku.DeviceType ||
 			!reflect.DeepEqual(cur.AssociatedMachineIds, reportedAssociatedMachineIDs) {
-			// nil AssociatedMachineIds in carbide can mean we need to clear out existing AssociatedMachineIds in DB
+			// nil AssociatedMachineIds in nico can mean we need to clear out existing AssociatedMachineIds in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
 			if cur.AssociatedMachineIds != nil && reportedAssociatedMachineIDs == nil {
@@ -165,9 +165,9 @@ func (ms ManageSku) UpdateSkusInDB(ctx context.Context, siteID uuid.UUID, skuInv
 		}
 	}
 
-	// Delete any SKU present in DB not present in Carbide.
+	// Delete any SKU present in DB not present in NICo.
 	// We only act if this is the last page (or paging disabled) and outside race window.
-	// The source of truth for Carbide is reportedIDs.
+	// The source of truth for NICo is reportedIDs.
 	if skuInventory.InventoryPage == nil || skuInventory.InventoryPage.TotalPages == 0 || (skuInventory.InventoryPage.CurrentPage == skuInventory.InventoryPage.TotalPages) {
 		for _, sk := range existingSkus {
 			if _, keep := reportedIDs[sk.ID]; keep {

@@ -67,7 +67,7 @@ func UpdateInstance(ctx workflow.Context, updateRequest *cwssaws.InstanceConfigU
 
 // CreateInstanceV2 is a workflow to create (allocate) new Instances using the CreateInstanceOnSite activity
 // V1 (CreateInstance) is found in cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func CreateInstanceV2(ctx workflow.Context, request *cwssaws.InstanceAllocationRequest) error {
 	logger := log.With().Str("Workflow", "Instance").Str("Action", "Create").Str("Machine ID", request.MachineId.Id).Logger()
 
@@ -145,7 +145,7 @@ func CreateInstances(ctx workflow.Context, request *cwssaws.BatchInstanceAllocat
 
 // DeleteInstanceV2 is a workflow to delete new Instances using the DeleteInstanceOnSite activity
 // V1 (DeleteInstance) is found in cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func DeleteInstanceV2(ctx workflow.Context, request *cwssaws.InstanceReleaseRequest) error {
 
 	logger := log.With().Str("Workflow", "Instance").Str("Action", "Delete").Str("Request", request.String()).Logger()

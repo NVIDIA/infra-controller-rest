@@ -45,6 +45,7 @@ import (
 	"github.com/stretchr/testify/require"
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 const (
@@ -74,7 +75,7 @@ var (
 const (
 	ssaIssuer      = "https://ytynxseffxl4u4jswpl8k6wfcbjzudh1k9dmmlfnquw.stg.ssa.nvidia.com"
 	kasIssuer      = "stg.auth.ngc.nvidia.com"
-	keycloakIssuer = "http://localhost:8082/realms/forge"
+	keycloakIssuer = "http://localhost:8082/realms/nico"
 )
 
 func TestAuthProcessor(t *testing.T) {
@@ -243,7 +244,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			"test-org": cdbm.Org{
 				Name:        "test-org",
 				DisplayName: "Test Org",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+				Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -275,7 +276,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			"test-org": cdbm.Org{
 				Name:        "test-org",
 				DisplayName: "Test Org",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+				Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -307,7 +308,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 				headers: map[string]string{
 					ngcUserNameHeader:       base64.StdEncoding.EncodeToString([]byte("Jane Smith")),
 					ngcUserEmailHeader:      base64.StdEncoding.EncodeToString([]byte("jane@test.com")),
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Org")),
 				},
 				existingUser: *noDataUser,
@@ -322,7 +323,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Org",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -335,7 +336,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 				headers: map[string]string{
 					ngcUserNameHeader:       base64.StdEncoding.EncodeToString([]byte("John Robert Smith")),
 					ngcUserEmailHeader:      base64.StdEncoding.EncodeToString([]byte("jrsmith@test.com")),
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Organization")),
 				},
 				existingUser: *dataUser1,
@@ -349,7 +350,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Organization",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -362,7 +363,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 				headers: map[string]string{
 					ngcUserNameHeader:       base64.StdEncoding.EncodeToString([]byte("John Doe")),
 					ngcUserEmailHeader:      base64.StdEncoding.EncodeToString([]byte("jdoe@test.com")),
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("SRE Org")),
 				},
 				existingUser: *dataUser2,
@@ -381,7 +382,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"sre-org": cdbm.Org{
 						Name:        "sre-org",
 						DisplayName: "SRE Org",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -392,7 +393,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			name: "test user data update, no name or email headers",
 			args: args{
 				headers: map[string]string{
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Organization")),
 				},
 				existingUser: *dataUser3,
@@ -404,7 +405,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Organization",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -416,7 +417,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			args: args{
 				headers: map[string]string{
 					ngcUserNameHeader:       "invalid-base64-encoded-name",
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Organization")),
 				},
 				existingUser: *dataUser3,

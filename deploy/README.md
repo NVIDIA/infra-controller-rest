@@ -1,6 +1,6 @@
-# Carbide REST Production Quick Start
+# NICo REST Production Quick Start
 
-This guide deploys the Carbide REST control plane running on an existing Kubernetes cluster. For a full explanation of each component and production configuration options, see [INSTALLATION.md](INSTALLATION.md).
+This guide deploys the NICo REST control plane running on an existing Kubernetes cluster. For a full explanation of each component and production configuration options, see [INSTALLATION.md](INSTALLATION.md).
 
 **Prerequisites:**
 - Kubernetes cluster (v1.27+) with cluster-admin access
@@ -12,13 +12,13 @@ This guide deploys the Carbide REST control plane running on an existing Kuberne
 ## 1. Build and Push Images
 
 ```bash
-REGISTRY=my-registry.example.com/carbide
+REGISTRY=my-registry.example.com/nico
 TAG=v1.0.0
 
 make docker-build IMAGE_REGISTRY=$REGISTRY IMAGE_TAG=$TAG
 
-for image in carbide-rest-api carbide-rest-workflow carbide-rest-site-manager \
-             carbide-rest-site-agent carbide-rest-db carbide-rest-cert-manager; do
+for image in nico-rest-api nico-rest-workflow nico-rest-site-manager \
+             nico-rest-site-agent nico-rest-db nico-rest-cert-manager; do
     docker push "$REGISTRY/$image:$TAG"
 done
 ```
@@ -30,7 +30,7 @@ Then update the `images:` stanza in each overlay under `deploy/kustomize/overlay
 ## 2. Create Namespaces
 
 ```bash
-kubectl create namespace carbide-rest
+kubectl create namespace nico-rest
 kubectl apply -f deploy/kustomize/base/postgres/namespace.yaml
 kubectl apply -f deploy/kustomize/base/temporal-helm/namespace.yaml
 ```
@@ -43,7 +43,7 @@ kubectl apply -f deploy/kustomize/base/temporal-helm/namespace.yaml
 ./scripts/gen-site-ca.sh
 ```
 
-Creates `ca-signing-secret` in both `carbide-rest` and `cert-manager` namespaces. This is the trust anchor for all TLS in the deployment — every certificate issued to Carbide REST workloads traces back to it.
+Creates `ca-signing-secret` in both `nico-rest` and `cert-manager` namespaces. This is the trust anchor for all TLS in the deployment — every certificate issued to NICo REST workloads traces back to it.
 
 To bring your own CA instead, see [INSTALLATION.md — Step 2](INSTALLATION.md#step-2--create-the-ca-signing-secret).
 
@@ -109,13 +109,13 @@ kubectl exec -it -n temporal deployment/temporal-admintools -- \
 kubectl kustomize --load-restrictor LoadRestrictionsNone \
   deploy/kustomize/overlays/db | kubectl apply -f -
 
-kubectl wait --for=condition=complete job/carbide-rest-db-migration \
-  -n carbide-rest --timeout=120s
+kubectl wait --for=condition=complete job/nico-rest-db-migration \
+  -n nico-rest --timeout=120s
 ```
 
 ---
 
-## 8. Deploy Carbide REST Workloads
+## 8. Deploy NICo REST Workloads
 
 ```bash
 # Site CRD must be applied before site-manager
@@ -139,12 +139,12 @@ kubectl kustomize --load-restrictor LoadRestrictionsNone \
 ## Verify
 
 ```bash
-kubectl get pods -n carbide-rest
+kubectl get pods -n nico-rest
 kubectl get pods -n temporal
 kubectl get pods -n postgres
 ```
 
-The API is available at `http://<node-ip>:30388` (NodePort) or `carbide-rest-api.carbide-rest:8388` within the cluster.
+The API is available at `http://<node-ip>:30388` (NodePort) or `nico-rest-api.nico-rest:8388` within the cluster.
 
 ```bash
 curl http://<node-ip>:30388/healthz
@@ -154,6 +154,6 @@ curl http://<node-ip>:30388/healthz
 
 ## Next Steps
 
-- **Site agent bootstrap** — register a site via the API and configure the site agent with the resulting UUID and OTP. See [INSTALLATION.md — Step 13](INSTALLATION.md#step-13--deploy-carbide-rest-site-agent).
+- **Site agent bootstrap** — register a site via the API and configure the site agent with the resulting UUID and OTP. See [INSTALLATION.md — Step 13](INSTALLATION.md#step-13--deploy-nico-rest-site-agent).
 - **Production hardening** — change default credentials, replace `start-dev` Keycloak mode, tune Temporal resource limits. See [INSTALLATION.md](INSTALLATION.md) for per-component configuration details.
-- **CLI** — install `carbidecli` to interact with the deployed cluster. See [cli/README.md](cli/README.md).
+- **CLI** — install `cli` to interact with the deployed cluster. See [cli/README.md](cli/README.md).

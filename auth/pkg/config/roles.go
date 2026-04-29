@@ -18,6 +18,7 @@
 package config
 
 import (
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/core"
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -28,13 +29,13 @@ import (
 
 var (
 	// ServiceAccountRoles are the default roles assigned to service accounts
-	ServiceAccountRoles = []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	ServiceAccountRoles = []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 
 	// AllowedRoles is the set of valid roles that can be assigned to users.
 	// Both static roles in config and dynamic roles from claims must be from this set.
 	AllowedRoles = map[string]bool{
-		"FORGE_TENANT_ADMIN":   true,
-		"FORGE_PROVIDER_ADMIN": true,
+		authz.TenantAdminRole:   true,
+		authz.ProviderAdminRole: true,
 	}
 )
 

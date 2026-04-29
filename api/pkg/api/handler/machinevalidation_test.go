@@ -38,6 +38,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestCreateMachineValidationTestHandler(t *testing.T) {
@@ -49,7 +50,7 @@ func TestCreateMachineValidationTestHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -290,7 +291,7 @@ func TestUpdateMachineValidationTestHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -487,7 +488,7 @@ func TestGetAllMachineValidationTestHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -646,7 +647,7 @@ func TestGetMachineValidationTestHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -801,7 +802,7 @@ func TestGetMachineValidationResultsHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -958,7 +959,7 @@ func TestGetAllMachineValidationRunHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -1115,7 +1116,7 @@ func TestGetAllMachineValidationExternalConfigHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -1272,7 +1273,7 @@ func TestGetMachineValidationExternalConfigHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -1451,7 +1452,7 @@ func TestCreateMachineValidationExternalConfigHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -1658,7 +1659,7 @@ func TestUpdateMachineValidationExternalConfigHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 
@@ -1835,7 +1836,7 @@ func TestDeleteMachineValidationExternalConfigHandler(t *testing.T) {
 
 	// Add user entry
 	ipOrg1 := "test-ip-org-1"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	pvu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, ipRoles)
 

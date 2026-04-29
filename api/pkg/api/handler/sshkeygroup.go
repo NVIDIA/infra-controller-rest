@@ -76,7 +76,7 @@ func NewCreateSSHKeyGroupHandler(dbSession *cdb.Session, tc temporalClient.Clien
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APISSHKeyGroupCreateRequest true "SSH Key Group create request"
 // @Success 201 {object} model.APISSHKeyGroup
-// @Router /v2/org/{org}/carbide/sshkeygroup [post]
+// @Router /v2/org/{org}/nico/sshkeygroup [post]
 func (cskgh CreateSSHKeyGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKeyGroup", "Create", c, cskgh.tracerSpan)
 	if handlerSpan != nil {
@@ -417,7 +417,7 @@ func NewUpdateSSHKeyGroupHandler(dbSession *cdb.Session, tc temporalClient.Clien
 // @Param id path string true "ID of SSH Key Group"
 // @Param message body model.APISSHKeyGroupUpdateRequest true "SSH Key Group update request"
 // @Success 200 {object} model.SSHKeyGroup
-// @Router /v2/org/{org}/carbide/sshkeygroup/{id} [patch]
+// @Router /v2/org/{org}/nico/sshkeygroup/{id} [patch]
 func (uskgh UpdateSSHKeyGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKeyGroup", "Update", c, uskgh.tracerSpan)
 	if handlerSpan != nil {
@@ -932,7 +932,7 @@ func NewGetSSHKeyGroupHandler(dbSession *cdb.Session, tc temporalClient.Client, 
 // @Param id path string true "ID of SSH Key Group"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Tenant'"
 // @Success 200 {object} model.APISSHKeyGroup
-// @Router /v2/org/{org}/carbide/sshkeygroup/{id} [get]
+// @Router /v2/org/{org}/nico/sshkeygroup/{id} [get]
 func (gskgh GetSSHKeyGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKeyGroup", "Get", c, gskgh.tracerSpan)
 	if handlerSpan != nil {
@@ -1121,7 +1121,7 @@ func NewGetAllSSHKeyGroupHandler(dbSession *cdb.Session, tc temporalClient.Clien
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {array} []model.APISSHKeyGroup
-// @Router /v2/org/{org}/carbide/sshkeygroup [get]
+// @Router /v2/org/{org}/nico/sshkeygroup [get]
 func (gaskgh GetAllSSHKeyGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKeyGroup", "GetAll", c, gaskgh.tracerSpan)
 	if handlerSpan != nil {
@@ -1479,7 +1479,7 @@ func NewDeleteSSHKeyGroupHandler(dbSession *cdb.Session, tc temporalClient.Clien
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of SSHKeyGroup"
 // @Success 202
-// @Router /v2/org/{org}/carbide/sshkeygroup/{id} [delete]
+// @Router /v2/org/{org}/nico/sshkeygroup/{id} [delete]
 func (dskgh DeleteSSHKeyGroupHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("SSHKeyGroup", "Delete", c, dskgh.tracerSpan)
 	if handlerSpan != nil {

@@ -54,7 +54,7 @@ func NewGetUserHandler(dbSession *cdb.Session) GetUserHandler {
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIUser
-// @Router /v2/org/{org}/carbide/user/current [get]
+// @Router /v2/org/{org}/nico/user/current [get]
 func (guh GetUserHandler) Handle(c echo.Context) error {
 	org, dbUser, _, logger, handlerSpan := common.SetupHandler("User", "Get", c, guh.tracerSpan)
 	if handlerSpan != nil {

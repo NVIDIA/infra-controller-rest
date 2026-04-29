@@ -25,7 +25,7 @@ import (
 
 // APIUser is a data structure to capture information about user at the API layer
 type APIUser struct {
-	// ID is the unique UUID v4 identifier of the user in Forge Cloud
+	// ID is the unique UUID v4 identifier of the user in NICo Cloud
 	ID string `json:"id"`
 	// FirstName denotes the first name of the user
 	FirstName *string `json:"firstName"`
@@ -33,9 +33,9 @@ type APIUser struct {
 	LastName *string `json:"lastName"`
 	// Email contains the email used by the user to register with NGC
 	Email *string `json:"email"`
-	// Created indicates the ISO datetime string for when the user was created in Forge
+	// Created indicates the ISO datetime string for when the user was created in NICo
 	Created time.Time `json:"created"`
-	// Updated indicates the ISO datetime string for when the user was last updated in Forge
+	// Updated indicates the ISO datetime string for when the user was last updated in NICo
 	Updated time.Time `json:"updated"`
 }
 

@@ -54,7 +54,7 @@ GetCurrentTenant Retrieve Tenant for current Org
 
 Retrieve Tenant entity for current Org.
 
-User must have `FORGE_TENANT_ADMIN` authorization role.
+User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -84,7 +84,7 @@ func (a *TenantAPIService) GetCurrentTenantExecute(r ApiGetCurrentTenantRequest)
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/tenant/current"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/tenant/current"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -131,7 +131,7 @@ func (a *TenantAPIService) GetCurrentTenantExecute(r ApiGetCurrentTenantRequest)
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -170,7 +170,7 @@ GetCurrentTenantStats Retrieve Stats for current Tenant
 
 Retrieve stats for current Tenant.
 
-User must have `FORGE_TENANT_ADMIN` authorization role.
+User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -200,7 +200,7 @@ func (a *TenantAPIService) GetCurrentTenantStatsExecute(r ApiGetCurrentTenantSta
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/tenant/current/stats"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/tenant/current/stats"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -247,7 +247,7 @@ func (a *TenantAPIService) GetCurrentTenantStatsExecute(r ApiGetCurrentTenantSta
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -293,7 +293,7 @@ GetTenantInstanceTypeStats Retrieve per-tenant instance type allocation stats fo
 
 Returns instance type allocation stats grouped by tenant for the specified site.
 
-User must have `FORGE_PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -323,7 +323,7 @@ func (a *TenantAPIService) GetTenantInstanceTypeStatsExecute(r ApiGetTenantInsta
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/tenant/instance-type/stats"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/tenant/instance-type/stats"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -374,7 +374,7 @@ func (a *TenantAPIService) GetTenantInstanceTypeStatsExecute(r ApiGetTenantInsta
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

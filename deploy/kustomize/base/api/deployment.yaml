@@ -13,28 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-api Deployment
+# nico-rest-api Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carbide-rest-api
+  name: nico-rest-api
   labels:
-    app: carbide-rest-api
+    app: nico-rest-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carbide-rest-api
+      app: nico-rest-api
   template:
     metadata:
       labels:
-        app: carbide-rest-api
+        app: nico-rest-api
     spec:
       imagePullSecrets:
         - name: image-pull-secret
       containers:
         - name: api
-          image: carbide-rest-api
+          image: nico-rest-api
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8388
@@ -79,7 +79,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: carbide-rest-api-config
+            name: nico-rest-api-config
         - name: keycloak-secret
           secret:
             secretName: keycloak-client-secret

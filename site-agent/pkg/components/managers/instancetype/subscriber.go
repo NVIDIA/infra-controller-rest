@@ -22,54 +22,56 @@ import (
 	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
 )
 
-// RegisterSubscriber registers InstanceType CRUD workflows and activities with Temporal
+// RegisterSubscriber registers the InstanceType workflows and activities with the Temporal client
 func (api *API) RegisterSubscriber() error {
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Registering CRUD workflows and activities")
+	// Register the subscribers here
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Registering the subscribers")
 
-	// Register workflows
+	instanceTypeManager := swa.NewManageInstanceType(ManagerAccess.Data.EB.Managers.NICo.Client)
 
-	// Register CreateInstanceType workflow
+	//  Register Workflows
+
+	// Sync workflows
+	// Register CreateInstanceType worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CreateInstanceType)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered CreateInstanceType workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered Create InstanceType workflow")
 
-	// Register UpdateInstanceType workflow
+	// Register UpdateInstanceType worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateInstanceType)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered UpdateInstanceType workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered Update InstanceType workflow")
 
-	// Register DeleteInstanceType workflow
+	// Register DeleteInstanceType worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.DeleteInstanceType)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered DeleteInstanceType workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered Delete InstanceType workflow")
 
-	// Register AssociateMachinesWithInstanceType workflow
+	// Register AssociateMachinesWithInstanceType worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.AssociateMachinesWithInstanceType)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered AssociateMachinesWithInstanceType workflow")
 
-	// Register RemoveMachineInstanceTypeAssociation workflow
+	// Register RemoveMachineInstanceTypeAssociation worfklow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.RemoveMachineInstanceTypeAssociation)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered RemoveMachineInstanceTypeAssociation workflow")
 
-	// Register activities
-	instanceTypeManager := swa.NewManageInstanceType(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	// Regsiter Activities
 
+	// Sync workflow activities
 	// Register CreateInstanceTypeOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.CreateInstanceTypeOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered CreateInstanceTypeOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered Create InstanceType activity")
 
 	// Register UpdateInstanceTypeOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.UpdateInstanceTypeOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered UpdateInstanceTypeOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered Update InstanceType activity")
 
 	// Register DeleteInstanceTypeOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.DeleteInstanceTypeOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered DeleteInstanceTypeOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered Delete InstanceType activity")
 
 	// Register AssociateMachinesWithInstanceTypeOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.AssociateMachinesWithInstanceTypeOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered AssociateMachinesWithInstanceTypeOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered AssociateMachinesWithInstanceType activity")
 
 	// Register RemoveMachineInstanceTypeAssociationOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.RemoveMachineInstanceTypeAssociationOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered RemoveMachineInstanceTypeAssociationOnSite activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: successfully registered RemoveMachineInstanceTypeAssociation activity")
 
 	return nil
 }

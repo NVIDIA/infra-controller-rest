@@ -40,6 +40,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testSSHKeySetupSchema(t *testing.T, dbSession *cdb.Session) {
@@ -95,11 +96,11 @@ func TestSSHKeyHandler_Create(t *testing.T) {
 	testSSHKeySetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	tnOrg2 := "test-tenant-org-2"
 
@@ -353,11 +354,11 @@ func TestSSHKeyHandler_GetByID(t *testing.T) {
 	testInstanceSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	tnOrg2 := "test-tenant-org-2"
 
@@ -537,12 +538,12 @@ func TestSSHKeyHandler_GetAll(t *testing.T) {
 	testSSHKeyGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := testInstanceBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := testInstanceSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -744,7 +745,7 @@ func TestSSHKeyHandler_GetAll(t *testing.T) {
 				q.Add("query", *tc.querySearch)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/sshkey?%s", tc.reqOrgName, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/sshkey?%s", tc.reqOrgName, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -815,11 +816,11 @@ func TestSSHKeyHandler_Update(t *testing.T) {
 	testSSHKeySetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	tnOrg2 := "test-tenant-org-2"
 
@@ -1024,11 +1025,11 @@ func TestSSHKeyHandler_Delete(t *testing.T) {
 	testSSHKeySetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org-1"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	tnOrg2 := "test-tenant-org-2"
 

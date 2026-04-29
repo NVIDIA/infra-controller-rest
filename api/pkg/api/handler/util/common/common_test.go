@@ -41,6 +41,7 @@ import (
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testCommonInitDB(t *testing.T) *cdb.Session {
@@ -321,7 +322,7 @@ func TestGetInfrastructureProviderForOrg(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", "TestIPOrg", user)
 	assert.NotNil(t, ip)
@@ -391,13 +392,13 @@ func TestUnwrapWorkflowError(t *testing.T) {
 		},
 		{
 			name:     "maps non-gRPC error with collected invalid argument (nvbugs 5778658)",
-			err:      temporal.NewApplicationErrorWithCause("wrapper", swe.ErrTypeCarbideInvalidArgument, causeErr),
+			err:      temporal.NewApplicationErrorWithCause("wrapper", swe.ErrTypeNICoInvalidArgument, causeErr),
 			wantCode: http.StatusBadRequest,
 			wantErr:  causeErr,
 		},
 		{
 			name:     "unwraps ApplicationError wrapped in generic error chain",
-			err:      fmt.Errorf("workflow execution error: %w", fmt.Errorf("activity error: %w", temporal.NewApplicationErrorWithCause("wrapped", swe.ErrTypeCarbideObjectNotFound, causeErr))),
+			err:      fmt.Errorf("workflow execution error: %w", fmt.Errorf("activity error: %w", temporal.NewApplicationErrorWithCause("wrapped", swe.ErrTypeNICoObjectNotFound, causeErr))),
 			wantCode: http.StatusNotFound,
 			wantErr:  causeErr,
 		},
@@ -423,7 +424,7 @@ func TestGetTenantForOrg(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, "test123GetTenForOrg", []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 	tn := testCommonBuildTenant(t, dbSession, "testTenant", "testTnOrg", user)
 	assert.NotNil(t, tn)
@@ -466,7 +467,7 @@ func TestGetTenantFromTenantIDOrOrg(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, "TestGetTenantFromTenantIDOrOrg", []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 	tn := testCommonBuildTenant(t, dbSession, "testTenant", "testTnOrg", user)
 	assert.NotNil(t, tn)
@@ -534,7 +535,7 @@ func TestGetSiteFromIDString(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, "test123TestGetSite", []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", "TestIpOrg", user)
@@ -585,7 +586,7 @@ func TestGetIPBlockFromIDString(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", "TestIpOrg", user)
@@ -637,7 +638,7 @@ func TestGetInstanceTypeFromIDString(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp1", "TestIpOrg1", user)
@@ -688,7 +689,7 @@ func TestGetVpcFromIDString(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -740,7 +741,7 @@ func TestGetDomainFromIDString(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	domain := testCommonBuildDomain(t, dbSession, "test.com", ipOrg1, &user.ID)
@@ -787,7 +788,7 @@ func TestGetAllocationConstraintsForInstanceType(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -797,7 +798,7 @@ func TestGetAllocationConstraintsForInstanceType(t *testing.T) {
 	assert.NotNil(t, site1)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -862,7 +863,7 @@ func TestGetUnallocatedMachineForInstanceType(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -872,7 +873,7 @@ func TestGetUnallocatedMachineForInstanceType(t *testing.T) {
 	assert.NotNil(t, site1)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -937,7 +938,7 @@ func TestGetSiteMachineCountStats(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	ipuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg1, ipuser)
@@ -947,7 +948,7 @@ func TestGetSiteMachineCountStats(t *testing.T) {
 	assert.NotNil(t, site1)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -1055,7 +1056,7 @@ func TestGetAllocationIDsForTenantAtSite(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -1068,7 +1069,7 @@ func TestGetAllocationIDsForTenantAtSite(t *testing.T) {
 	assert.NotNil(t, site2)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -1126,7 +1127,7 @@ func TestGetTotalAllocationConstraintValueForInstanceType(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -1139,7 +1140,7 @@ func TestGetTotalAllocationConstraintValueForInstanceType(t *testing.T) {
 	assert.NotNil(t, site2)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -1227,7 +1228,7 @@ func TestGetCountOfInstanceTypeAllocationConstraint(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -1240,7 +1241,7 @@ func TestGetCountOfInstanceTypeAllocationConstraint(t *testing.T) {
 	assert.NotNil(t, site2)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -1351,14 +1352,14 @@ func TestGetInstanceTypeAllocationStats(t *testing.T) {
 	testCommonSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
 	tnOrg3 := "test-tenant-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu1 := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 	tnu2 := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg2}, tnRoles)
@@ -1552,14 +1553,14 @@ func TestGetIsProviderRequest(t *testing.T) {
 	logger := zerolog.New(os.Stdout)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := TestBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 	tn := TestBuildTenant(t, dbSession, "Test Tenant", tnOrg, tnu)
@@ -1571,7 +1572,7 @@ func TestGetIsProviderRequest(t *testing.T) {
 	nOrg1 := "test-no-entity-org-1"
 	nOrg2 := "test-no-entity-org-2"
 
-	mRoles := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	mRoles := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 
 	mu1 := TestBuildUser(t, dbSession, uuid.NewString(), mOrg1, mRoles)
 	mu2 := TestBuildUser(t, dbSession, uuid.NewString(), mOrg2, mRoles)
@@ -2015,7 +2016,7 @@ func TestMatchInstanceTypeCapabilitiesForMachines(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -2025,7 +2026,7 @@ func TestMatchInstanceTypeCapabilitiesForMachines(t *testing.T) {
 	assert.NotNil(t, site1)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)
@@ -2118,7 +2119,7 @@ func TestGetAllocationResourceTypeMaps(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_SERVICE_PROVIDER_ADMIN"}
+	orgRoles := []string{"NICO_SERVICE_PROVIDER_ADMIN"}
 	user := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testCommonBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -2131,7 +2132,7 @@ func TestGetAllocationResourceTypeMaps(t *testing.T) {
 	assert.NotNil(t, site2)
 
 	tnOrg1 := "test-tenant-org-1"
-	tnRoles := []string{"FORGE_TENANT_ADMIN_1"}
+	tnRoles := []string{"TENANT_ADMIN_1"}
 	tnuser := testCommonBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1}, tnRoles)
 
 	tenant1 := testCommonBuildTenant(t, dbSession, "test-tenant-1", tnOrg1, tnuser)

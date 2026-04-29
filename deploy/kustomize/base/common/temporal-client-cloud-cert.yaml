@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Client certificate for workflow services (API, cloud-worker, site-worker) in carbide-rest namespace
+# Client certificate for workflow services (API, cloud-worker, site-worker) in nico-rest namespace
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
   name: temporal-client-cloud-cert
-  namespace: carbide-rest
+  namespace: nico-rest
 spec:
   secretName: temporal-client-cloud-certs
   duration: 2160h # 90 days
@@ -35,10 +35,10 @@ spec:
     - client auth
   dnsNames:
     - temporal-client
-    - carbide-rest-api
+    - nico-rest-api
     - cloud-worker
     - site-worker
   issuerRef:
-    name: carbide-rest-ca-issuer
+    name: nico-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io

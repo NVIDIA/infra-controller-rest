@@ -43,6 +43,7 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testIPBlockInitDB(t *testing.T) *cdb.Session {
@@ -233,7 +234,7 @@ func TestIPBlockHandler_Create(t *testing.T) {
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	user := testIPBlockBuildUser(t, dbSession, "TestIPBlockHandler_Create", []string{ipOrg1, ipOrg2, ipOrg3, tnOrg1, tnOrg2}, orgRoles)
 	ip := testIPBlockBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -579,7 +580,7 @@ func TestIPBlockHandler_Update(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testIPBlockBuildUser(t, dbSession, "TestIPBlockHandler_Update", []string{ipOrg1, ipOrg2, ipOrg3}, orgRoles)
 
 	ip := testIPBlockBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)
@@ -812,15 +813,15 @@ func TestIPBlockHandler_Get(t *testing.T) {
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
 	ipOrg5 := "test-ip-org-5"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg5}, ipRoles)
 	ipuv := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg5}, ipvRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, tnOrg2}, tnRoles)
 
@@ -880,7 +881,7 @@ func TestIPBlockHandler_Get(t *testing.T) {
 
 	// Generate data for service account org
 	sOrg := "test-service-org"
-	sRoles := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	sRoles := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	su := testSiteBuildUser(t, dbSession, uuid.NewString(), sOrg, sRoles)
 	sip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Service Provider", sOrg, su)
 	stn := testSiteBuildTenant(t, dbSession, "Test Service Tenant", sOrg, su)
@@ -1216,13 +1217,13 @@ func TestIPBlockHandler_GetAll(t *testing.T) {
 	ipOrg4 := "test-provider-org-4"
 	ipOrg5 := "test-provider-org-5"
 
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
 
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	ipu := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg4, ipOrg5}, ipRoles)
 	ipuv := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg4, ipOrg5}, ipvRoles)
@@ -1298,7 +1299,7 @@ func TestIPBlockHandler_GetAll(t *testing.T) {
 
 	// Generate data for service account org
 	sOrg := "test-service-org"
-	sRoles := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	sRoles := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	su := testSiteBuildUser(t, dbSession, uuid.NewString(), sOrg, sRoles)
 	sip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Service Provider", sOrg, su)
 	stn := testSiteBuildTenant(t, dbSession, "Test Service Tenant", sOrg, su)
@@ -1597,7 +1598,7 @@ func TestIPBlockHandler_GetAll(t *testing.T) {
 				q.Set("orderBy", *tc.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/ipblock?%s", tc.reqOrgName, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/ipblock?%s", tc.reqOrgName, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -1716,15 +1717,15 @@ func TestDerivedIPBlockHandler_GetAll(t *testing.T) {
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
 	ipOrg5 := "test-ip-org-5"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg5}, ipRoles)
 	ipuv := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3, ipOrg5}, ipvRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testIPBlockBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, tnOrg2}, tnRoles)
 
@@ -1979,7 +1980,7 @@ func TestDerivedIPBlockHandler_GetAll(t *testing.T) {
 				q.Set("orderBy", *tc.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/ipblock/%s/derived?%s", tc.reqOrgName, tc.ipbID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/ipblock/%s/derived?%s", tc.reqOrgName, tc.ipbID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -2079,7 +2080,7 @@ func TestIPBlockHandler_Delete(t *testing.T) {
 	ipOrg3 := "test-ip-org-3"
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 	user := testIPBlockBuildUser(t, dbSession, "TestIPBlockHandler_Delete", []string{ipOrg1, ipOrg2, ipOrg3, tnOrg1, tnOrg2}, orgRoles)
 
 	ip := testIPBlockBuildInfrastructureProvider(t, dbSession, "TestIp", ipOrg1, user)

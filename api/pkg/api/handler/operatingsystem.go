@@ -83,7 +83,7 @@ func NewCreateOperatingSystemHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIOperatingSystemCreateRequest true "OperatingSystem creation request"
 // @Success 201 {object} model.APIOperatingSystem
-// @Router /v2/org/{org}/carbide/operating-system [post]
+// @Router /v2/org/{org}/nico/operating-system [post]
 func (csh CreateOperatingSystemHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("OperatingSystem", "Create", c, csh.tracerSpan)
 	if handlerSpan != nil {
@@ -493,7 +493,7 @@ func NewGetAllOperatingSystemHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIOperatingSystem
-// @Router /v2/org/{org}/carbide/operating-system [get]
+// @Router /v2/org/{org}/nico/operating-system [get]
 func (gash GetAllOperatingSystemHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("OperatingSystem", "GetAll", c, gash.tracerSpan)
 	if handlerSpan != nil {
@@ -776,7 +776,7 @@ func NewGetOperatingSystemHandler(dbSession *cdb.Session, tc temporalClient.Clie
 // @Param id path string true "ID of OperatingSystem"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant', 'Site'"
 // @Success 200 {object} model.APIOperatingSystem
-// @Router /v2/org/{org}/carbide/operating-system/{id} [get]
+// @Router /v2/org/{org}/nico/operating-system/{id} [get]
 func (gsh GetOperatingSystemHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("OperatingSystem", "Get", c, gsh.tracerSpan)
 	if handlerSpan != nil {
@@ -944,7 +944,7 @@ func NewUpdateOperatingSystemHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Param id path string true "ID of OperatingSystem"
 // @Param message body model.APIOperatingSystemUpdateRequest true "OperatingSystem update request"
 // @Success 200 {object} model.APIOperatingSystem
-// @Router /v2/org/{org}/carbide/operating-system/{id} [patch]
+// @Router /v2/org/{org}/nico/operating-system/{id} [patch]
 func (ush UpdateOperatingSystemHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("OperatingSystem", "Update", c, ush.tracerSpan)
 	if handlerSpan != nil {
@@ -1348,7 +1348,7 @@ func NewDeleteOperatingSystemHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of OperatingSystem"
 // @Success 202
-// @Router /v2/org/{org}/carbide/operating-system/{id} [delete]
+// @Router /v2/org/{org}/nico/operating-system/{id} [delete]
 func (dsh DeleteOperatingSystemHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("OperatingSystem", "Delete", c, dsh.tracerSpan)
 	if handlerSpan != nil {
@@ -1553,10 +1553,10 @@ func (dsh DeleteOperatingSystemHandler) Handle(c echo.Context) error {
 				err = we.Get(ctx, nil)
 				// Handle skippable errors
 				if err != nil {
-					// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+					// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 					var applicationErr *tp.ApplicationError
-					if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-						logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+					if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+						logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 						// Reset error to nil
 						err = nil
 					}

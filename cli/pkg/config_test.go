@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"os"
@@ -230,12 +230,12 @@ func TestLoadConfigFromPath_Roundtrip(t *testing.T) {
 		API: ConfigAPI{
 			Base: "http://localhost:8388",
 			Org:  "test-org",
-			Name: "carbide",
+			Name: "nico",
 		},
 		Auth: ConfigAuth{
 			OIDC: &ConfigOIDC{
-				TokenURL:     "http://localhost:8080/realms/carbide-dev/protocol/openid-connect/token",
-				ClientID:     "carbide-api",
+				TokenURL:     "http://localhost:8080/realms/nico-dev/protocol/openid-connect/token",
+				ClientID:     "nico-api",
 				ClientSecret: "secret",
 				Token:        "eyJhbG...",
 				RefreshToken: "refresh...",

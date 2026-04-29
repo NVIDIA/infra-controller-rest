@@ -57,30 +57,22 @@ func NewManageInfiniBandPartitionInventory(config ManageInventoryConfig) ManageI
 	}
 }
 
-func ibpFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.IBPartitionId, error) {
-	// Call Site Controller gRPC endpoint
-	forgeClient := carbideClient.Carbide()
-
-	idList, err := forgeClient.FindIBPartitionIds(ctx, &cwssaws.IBPartitionSearchFilter{})
+func ibpFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.IBPartitionId, error) {
+	idList, err := nicoClient.NICo().FindIBPartitionIds(ctx, &cwssaws.IBPartitionSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
-
 	return idList.GetIbPartitionIds(), nil
 }
 
-func ibpFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.IBPartitionId) ([]*cwssaws.IBPartition, error) {
-	// Call Site Controller gRPC endpoint
-	forgeClient := carbideClient.Carbide()
-
-	ibPartitionList, err := forgeClient.FindIBPartitionsByIds(ctx, &cwssaws.IBPartitionsByIdsRequest{
+func ibpFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.IBPartitionId) ([]*cwssaws.IBPartition, error) {
+	list, err := nicoClient.NICo().FindIBPartitionsByIds(ctx, &cwssaws.IBPartitionsByIdsRequest{
 		IbPartitionIds: ids,
 	})
 	if err != nil {
 		return nil, err
 	}
-
-	return ibPartitionList.GetIbPartitions(), nil
+	return list.GetIbPartitions(), nil
 }
 
 func ibpPagedInventory(allItemIDs []*cwssaws.IBPartitionId, pagedItems []*cwssaws.IBPartition, input *pagedInventoryInput) *cwssaws.InfiniBandPartitionInventory {
@@ -107,17 +99,17 @@ func ibpPagedInventory(allItemIDs []*cwssaws.IBPartitionId, pagedItems []*cwssaw
 
 // ManageInfiniBandPartition is an activity wrapper for InfiniBand Partition management
 type ManageInfiniBandPartition struct {
-	CarbideAtomicClient *client.CarbideAtomicClient
+	NICoAtomicClient *client.NICoAtomicClient
 }
 
 // NewManageInfiniBandPartition returns a new ManageInfiniBandPartition client
-func NewManageInfiniBandPartition(carbideClient *client.CarbideAtomicClient) ManageInfiniBandPartition {
+func NewManageInfiniBandPartition(nicoClient *client.NICoAtomicClient) ManageInfiniBandPartition {
 	return ManageInfiniBandPartition{
-		CarbideAtomicClient: carbideClient,
+		NICoAtomicClient: nicoClient,
 	}
 }
 
-// Function to create InfiniBand Partition with Carbide
+// Function to create InfiniBand Partition with NICo
 func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx context.Context, request *cwssaws.IBPartitionCreationRequest) error {
 	logger := log.With().Str("Activity", "CreateInfiniBandPartitionOnSite").Logger()
 
@@ -144,12 +136,14 @@ func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mibp.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mibp.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateIBPartition(ctx, request)
+	// Call NICo gRPC endpoint
+	_, err = rpcClient.CreateIBPartition(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create InfiniBand Partition using Site Controller API")
 		return swe.WrapErr(err)
@@ -160,7 +154,7 @@ func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx conte
 	return nil
 }
 
-// UpdateInfiniBandPartitionOnSite applies an IB partition update on the site Forge controller
+// UpdateInfiniBandPartitionOnSite applies an IB partition update on the site NICo controller
 func (mibp *ManageInfiniBandPartition) UpdateInfiniBandPartitionOnSite(ctx context.Context, request *cwssaws.IBPartitionUpdateRequest) error {
 	logger := log.With().Str("Activity", "UpdateInfiniBandPartitionOnSite").Logger()
 
@@ -180,13 +174,13 @@ func (mibp *ManageInfiniBandPartition) UpdateInfiniBandPartitionOnSite(ctx conte
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	forgeClient, err := mibp.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mibp.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.UpdateIBPartition(ctx, request)
+	_, err = rpcClient.UpdateIBPartition(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update InfiniBand Partition using Site Controller API")
 		return swe.WrapErr(err)
@@ -197,7 +191,7 @@ func (mibp *ManageInfiniBandPartition) UpdateInfiniBandPartitionOnSite(ctx conte
 	return nil
 }
 
-// Function to delete InfiniBand Partition on Carbide
+// Function to delete InfiniBand Partition on NICo
 func (mipb *ManageInfiniBandPartition) DeleteInfiniBandPartitionOnSite(ctx context.Context, request *cwssaws.IBPartitionDeletionRequest) error {
 	logger := log.With().Str("Activity", "DeleteInfiniBandPartitionOnSite").Logger()
 
@@ -217,12 +211,13 @@ func (mipb *ManageInfiniBandPartition) DeleteInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mipb.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mipb.NICoAtomicClient.GetClient()
+	if nicoClient == nil {
+		return client.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteIBPartition(ctx, request)
+	_, err = rpcClient.DeleteIBPartition(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete InfiniBand Partition using Site Controller API")
 		return swe.WrapErr(err)

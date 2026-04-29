@@ -51,6 +51,7 @@ import (
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestCreateMachineInstanceTypeHandler_Handle(t *testing.T) {
@@ -61,7 +62,7 @@ func TestCreateMachineInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	org := "test-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id", org, orgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", org, ipu)
@@ -176,7 +177,7 @@ func TestCreateMachineInstanceTypeHandler_Handle(t *testing.T) {
 			reqInstaceTypeID: it.ID,
 		},
 		{
-			name: "valid data but carbide timeout - fail",
+			name: "valid data but nico timeout - fail",
 			tc:   tscWithTimeout,
 			scp:  scpWithTimeout,
 			reqData: &model.APIMachineInstanceTypeCreateRequest{
@@ -327,13 +328,13 @@ func TestGetAllMachineInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := common.TestBuildUser(t, dbSession, "test-starfleet-id-2", tnOrg, tnRoles)
 	common.TestBuildTenant(t, dbSession, "Test Tenant", tnOrg, tnu)
@@ -457,7 +458,7 @@ func TestGetAllMachineInstanceTypeHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/instance/type/%s/machine?%s", tt.args.org, it.ID.String(), tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/instance/type/%s/machine?%s", tt.args.org, it.ID.String(), tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -521,7 +522,7 @@ func TestDeleteMachineInstanceTypeHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	org := "test-org"
-	orgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	orgRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id", org, orgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", org, ipu)
@@ -572,7 +573,7 @@ func TestDeleteMachineInstanceTypeHandler_Handle(t *testing.T) {
 	// create an allocation for the instance type it2
 	ipamStorage := ipam.NewIpamStorage(dbSession.DB, nil)
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := common.TestBuildUser(t, dbSession, "test-starfleet-id-2", tnOrg, tnRoles)
 	tenant := common.TestBuildTenant(t, dbSession, "Test Tenant", tnOrg, tnu)
@@ -640,22 +641,22 @@ func TestDeleteMachineInstanceTypeHandler_Handle(t *testing.T) {
 		"RemoveMachineInstanceTypeAssociation", mock.Anything).Return(wrun, nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[st.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[st.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"RemoveMachineInstanceTypeAssociation", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"RemoveMachineInstanceTypeAssociation", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
 	// Timeout mocking
@@ -757,11 +758,11 @@ func TestDeleteMachineInstanceTypeHandler_Handle(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name: "test delete Machine Instance Type API endpoint again - carbide not found - success",
+			name: "test delete Machine Instance Type API endpoint again - nico not found - success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideNotFound,
-				scp:       scpWithCarbideNotFound,
+				tc:        tscWithNICoNotFound,
+				scp:       scpWithNICoNotFound,
 				cfg:       cfg,
 			},
 			args: args{

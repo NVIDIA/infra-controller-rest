@@ -22,7 +22,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
 )
 
@@ -38,11 +38,11 @@ func TestCompareMachineFieldsForDrift_NoMismatch(t *testing.T) {
 		TrayIndex:       1,
 		HostID:          5,
 	}
-	actual := carbideapi.MachineDetail{
+	actual := nicoapi.MachineDetail{
 		ChassisSerial:   ptr("SN001"),
 		FirmwareVersion: "1.0.0",
 	}
-	position := carbideapi.MachinePosition{
+	position := nicoapi.MachinePosition{
 		PhysicalSlotNum:  ptr(int32(2)),
 		ComputeTrayIndex: ptr(int32(1)),
 		TopologyID:       ptr(int32(5)),
@@ -60,11 +60,11 @@ func TestCompareMachineFieldsForDrift_AllFieldsMismatch(t *testing.T) {
 		TrayIndex:       1,
 		HostID:          5,
 	}
-	actual := carbideapi.MachineDetail{
+	actual := nicoapi.MachineDetail{
 		ChassisSerial:   ptr("SN999"),
 		FirmwareVersion: "2.0.0",
 	}
-	position := carbideapi.MachinePosition{
+	position := nicoapi.MachinePosition{
 		PhysicalSlotNum:  ptr(int32(10)),
 		ComputeTrayIndex: ptr(int32(3)),
 		TopologyID:       ptr(int32(7)),
@@ -101,12 +101,12 @@ func TestCompareMachineFieldsForDrift_NilPositionFieldsSkipped(t *testing.T) {
 		TrayIndex:       1,
 		HostID:          5,
 	}
-	actual := carbideapi.MachineDetail{
+	actual := nicoapi.MachineDetail{
 		ChassisSerial:   ptr("SN001"),
 		FirmwareVersion: "1.0.0",
 	}
 	// Position found but all fields nil — should not produce diffs
-	position := carbideapi.MachinePosition{}
+	position := nicoapi.MachinePosition{}
 
 	diffs := compareMachineFieldsForDrift(expected, actual, &position)
 	assert.Empty(t, diffs)
@@ -116,11 +116,11 @@ func TestCompareMachineFieldsForDrift_NilChassisSerialSkipped(t *testing.T) {
 	expected := &model.Component{
 		SerialNumber: "SN001",
 	}
-	// Nil ChassisSerial from Carbide — should not flag as mismatch
-	actual := carbideapi.MachineDetail{
+	// Nil ChassisSerial from NICo — should not flag as mismatch
+	actual := nicoapi.MachineDetail{
 		ChassisSerial: nil,
 	}
-	position := carbideapi.MachinePosition{}
+	position := nicoapi.MachinePosition{}
 
 	diffs := compareMachineFieldsForDrift(expected, actual, &position)
 	assert.Empty(t, diffs)
@@ -134,11 +134,11 @@ func TestCompareMachineFieldsForDrift_PartialMismatch(t *testing.T) {
 		TrayIndex:       1,
 		HostID:          5,
 	}
-	actual := carbideapi.MachineDetail{
+	actual := nicoapi.MachineDetail{
 		ChassisSerial:   ptr("SN001"), // match
 		FirmwareVersion: "2.0.0",      // mismatch
 	}
-	position := carbideapi.MachinePosition{
+	position := nicoapi.MachinePosition{
 		PhysicalSlotNum:  ptr(int32(2)), // match
 		ComputeTrayIndex: ptr(int32(1)), // match
 		TopologyID:       ptr(int32(9)), // mismatch
@@ -163,10 +163,10 @@ func TestCompareMachineFieldsForDrift_FirmwareVersionNotCompared(t *testing.T) {
 	expected := &model.Component{
 		FirmwareVersion: "", // empty in DB
 	}
-	actual := carbideapi.MachineDetail{
-		FirmwareVersion: "2.0.0", // Carbide has value — should NOT produce drift (firmware_version is direct-write)
+	actual := nicoapi.MachineDetail{
+		FirmwareVersion: "2.0.0", // NICo has value — should NOT produce drift (firmware_version is direct-write)
 	}
-	position := carbideapi.MachinePosition{}
+	position := nicoapi.MachinePosition{}
 
 	diffs := compareMachineFieldsForDrift(expected, actual, &position)
 	assert.Empty(t, diffs)
@@ -180,7 +180,7 @@ func TestCompareMachineFieldsForDrift_MissingPositionReportsDrift(t *testing.T) 
 		TrayIndex:       1,
 		HostID:          5,
 	}
-	actual := carbideapi.MachineDetail{
+	actual := nicoapi.MachineDetail{
 		ChassisSerial:   ptr("SN001"),
 		FirmwareVersion: "1.0.0",
 	}
@@ -211,7 +211,7 @@ func TestCompareMachineFieldsForDrift_MissingPositionZeroExpectedNoDrift(t *test
 		TrayIndex:    0,
 		HostID:       0,
 	}
-	actual := carbideapi.MachineDetail{
+	actual := nicoapi.MachineDetail{
 		ChassisSerial: ptr("SN001"),
 	}
 

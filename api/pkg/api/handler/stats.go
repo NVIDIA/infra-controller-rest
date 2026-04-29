@@ -63,7 +63,7 @@ func NewGetMachineGPUStatsHandler(dbSession *cdb.Session, cfg *config.Config) Ge
 // @Param orgName path string true "Name of NGC organization"
 // @Param siteId query string true "Site ID"
 // @Success 200 {array} model.APIMachineGPUStats
-// @Router /v2/org/{orgName}/carbide/machine/gpu/stats [get]
+// @Router /v2/org/{orgName}/nico/machine/gpu/stats [get]
 func (gmgsh GetMachineGPUStatsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "GetGPUStats", c, gmgsh.tracerSpan)
 	if handlerSpan != nil {
@@ -152,7 +152,7 @@ func NewGetTenantInstanceTypeStatsHandler(dbSession *cdb.Session, cfg *config.Co
 // @Param orgName path string true "Name of NGC organization"
 // @Param siteId query string true "Site ID"
 // @Success 200 {array} model.APITenantInstanceTypeStats
-// @Router /v2/org/{orgName}/carbide/tenant/instance-type/stats [get]
+// @Router /v2/org/{orgName}/nico/tenant/instance-type/stats [get]
 func (gtitsh GetTenantInstanceTypeStatsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Tenant", "GetInstanceTypeStats", c, gtitsh.tracerSpan)
 	if handlerSpan != nil {
@@ -385,7 +385,7 @@ func NewGetMachineInstanceTypeSummaryHandler(dbSession *cdb.Session, cfg *config
 // @Param orgName path string true "Name of NGC organization"
 // @Param siteId query string true "Site ID"
 // @Success 200 {object} model.APIMachineInstanceTypeSummary
-// @Router /v2/org/{orgName}/carbide/machine/instance-type/stats/summary [get]
+// @Router /v2/org/{orgName}/nico/machine/instance-type/stats/summary [get]
 func (gmitsh GetMachineInstanceTypeSummaryHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "GetInstanceTypeSummary", c, gmitsh.tracerSpan)
 	if handlerSpan != nil {
@@ -471,7 +471,7 @@ func NewGetMachineInstanceTypeStatsHandler(dbSession *cdb.Session, cfg *config.C
 // @Param orgName path string true "Name of NGC organization"
 // @Param siteId query string true "Site ID"
 // @Success 200 {array} model.APIMachineInstanceTypeStats
-// @Router /v2/org/{orgName}/carbide/machine/instance-type/stats [get]
+// @Router /v2/org/{orgName}/nico/machine/instance-type/stats [get]
 func (gmitsh GetMachineInstanceTypeStatsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "GetInstanceTypeStats", c, gmitsh.tracerSpan)
 	if handlerSpan != nil {

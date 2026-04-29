@@ -18,7 +18,7 @@
 package namespace
 
 const (
-	// CloudNamespace provides segregation for Forge Cloud system tasks
+	// CloudNamespace provides segregation for NICo Cloud system tasks
 	CloudNamespace = "cloud"
 	// SiteNamespace provides segregation for Site workflows
 	SiteNamespace = "site"

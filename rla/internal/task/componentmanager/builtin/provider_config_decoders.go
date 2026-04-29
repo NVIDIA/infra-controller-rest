@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 )
@@ -51,7 +51,7 @@ func NewServiceProviderConfigDecoderRegistry() (*providerapi.ProviderConfigDecod
 // compiled into the service.
 func serviceProviderConfigDecoders() []providerapi.ProviderConfigDecoder {
 	return []providerapi.ProviderConfigDecoder{
-		carbide.ConfigDecoder{},
+		nico.ConfigDecoder{},
 		psm.ConfigDecoder{},
 		nvswitchmanager.ConfigDecoder{},
 	}

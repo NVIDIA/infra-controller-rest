@@ -39,6 +39,7 @@ import (
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 	tmocks "go.temporal.io/sdk/mocks"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func setupSessionAndInfrastructureProviderTables(t *testing.T) *cdb.Session {
@@ -70,12 +71,12 @@ func TestCreateInfrastructureProviderHandler_Handle(t *testing.T) {
 
 	// Add user entry
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 	tnu := common.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 
 	cfg := common.GetTestConfig()
@@ -166,8 +167,8 @@ func TestGetCurrentInfrastructureProviderHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	// Add user entry
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipViewerRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipViewerRoles := []string{authz.ProviderViewerRole}
 
 	ipOrg := "test-provider-org"
 	ipu := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
@@ -177,7 +178,7 @@ func TestGetCurrentInfrastructureProviderHandler_Handle(t *testing.T) {
 	ipu2 := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg2, ipRoles)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 	tnu := common.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 
 	// Add infrastructure provider entry
@@ -324,7 +325,7 @@ func TestGetCurrentInfrastructureProviderStatsHandler_Handle(t *testing.T) {
 	// Add user entry
 	ipOrg1 := "test-provider-org-1"
 	ipOrg2 := "test-provider-org-2"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu1 := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg1, ipRoles)
 	ipu2 := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg2, ipRoles)
@@ -342,7 +343,7 @@ func TestGetCurrentInfrastructureProviderStatsHandler_Handle(t *testing.T) {
 	assert.NotNil(t, site2)
 
 	tnOrg1 := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 	tnu1 := common.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg1, tnRoles)
 	tn1 := testVPCBuildTenant(t, dbSession, "test-tenant", tnOrg1, tnu1)
 	assert.NotNil(t, tn1)
@@ -501,12 +502,12 @@ func TestUpdateInfrastructureProviderHandler_Handle(t *testing.T) {
 
 	// Add user entry
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 	tnu := common.TestBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 
 	cfg := common.GetTestConfig()

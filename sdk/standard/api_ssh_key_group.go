@@ -60,7 +60,7 @@ CreateSshKeyGroup Create SSH Key Group
 
 Create an SSH Key Group for the current Tenant.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -90,7 +90,7 @@ func (a *SSHKeyGroupAPIService) CreateSshKeyGroupExecute(r ApiCreateSshKeyGroupR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/sshkeygroup"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/sshkeygroup"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -139,7 +139,7 @@ func (a *SSHKeyGroupAPIService) CreateSshKeyGroupExecute(r ApiCreateSshKeyGroupR
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -150,7 +150,7 @@ func (a *SSHKeyGroupAPIService) CreateSshKeyGroupExecute(r ApiCreateSshKeyGroupR
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -192,7 +192,7 @@ Delete a specific SSH key Group.
 
 SSH Key Group must be owned by current Tenant. All Sites associated must be online to proceed.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -221,7 +221,7 @@ func (a *SSHKeyGroupAPIService) DeleteSshKeyGroupExecute(r ApiDeleteSshKeyGroupR
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/sshkeygroup/{sshKeyGroupId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/sshkeygroup/{sshKeyGroupId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"sshKeyGroupId"+"}", url.PathEscape(parameterValueToString(r.sshKeyGroupId, "sshKeyGroupId")), -1)
 
@@ -269,7 +269,7 @@ func (a *SSHKeyGroupAPIService) DeleteSshKeyGroupExecute(r ApiDeleteSshKeyGroupR
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -355,7 +355,7 @@ GetAllSshKeyGroup Retrieve all SSH Key Groups
 
 Retrieve all SSH Key Groups for the current Tenant.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -385,7 +385,7 @@ func (a *SSHKeyGroupAPIService) GetAllSshKeyGroupExecute(r ApiGetAllSshKeyGroupR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/sshkeygroup"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/sshkeygroup"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -460,7 +460,7 @@ func (a *SSHKeyGroupAPIService) GetAllSshKeyGroupExecute(r ApiGetAllSshKeyGroupR
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -502,7 +502,7 @@ GetSshKeyGroup Retrieve an SSH Key Group
 
 SSH Key Group must be owned by current Tenant.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -534,7 +534,7 @@ func (a *SSHKeyGroupAPIService) GetSshKeyGroupExecute(r ApiGetSshKeyGroupRequest
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/sshkeygroup/{sshKeyGroupId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/sshkeygroup/{sshKeyGroupId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"sshKeyGroupId"+"}", url.PathEscape(parameterValueToString(r.sshKeyGroupId, "sshKeyGroupId")), -1)
 
@@ -582,7 +582,7 @@ func (a *SSHKeyGroupAPIService) GetSshKeyGroupExecute(r ApiGetSshKeyGroupRequest
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -630,7 +630,7 @@ Update a specific SSH Key Group.
 
 SSH Key Group must be owned by current Tenant. All Sites being added or removed must be online to proceed.
 
-Org must have a Tenant entity. User must have `FORGE_TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -662,7 +662,7 @@ func (a *SSHKeyGroupAPIService) UpdateSshKeyGroupExecute(r ApiUpdateSshKeyGroupR
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/sshkeygroup/{sshKeyGroupId}"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/sshkeygroup/{sshKeyGroupId}"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"sshKeyGroupId"+"}", url.PathEscape(parameterValueToString(r.sshKeyGroupId, "sshKeyGroupId")), -1)
 
@@ -712,7 +712,7 @@ func (a *SSHKeyGroupAPIService) UpdateSshKeyGroupExecute(r ApiUpdateSshKeyGroupR
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 400 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()
@@ -723,7 +723,7 @@ func (a *SSHKeyGroupAPIService) UpdateSshKeyGroupExecute(r ApiUpdateSshKeyGroupR
 			return localVarReturnValue, localVarHTTPResponse, newErr
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

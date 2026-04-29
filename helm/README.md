@@ -1,26 +1,26 @@
-# Carbide REST Helm Charts
+# NICo REST Helm Charts
 
-Helm charts for deploying the Carbide REST API platform services.
+Helm charts for deploying the NICo REST API platform services.
 
 ## Charts
 
 | Chart | Path | Description |
 |-------|------|-------------|
-| `carbide-rest` | `charts/carbide-rest/` | Umbrella chart (api + workflow + site-manager + db) |
-| `carbide-rest-site-agent` | `charts/carbide-rest-site-agent/` | Site agent (deployed independently per-site) |
+| `nico-rest` | `charts/nico-rest/` | Umbrella chart (api + workflow + site-manager + db) |
+| `nico-rest-site-agent` | `charts/nico-rest-site-agent/` | Site agent (deployed independently per-site) |
 
 ### Umbrella Sub-Charts
 
 | Sub-Chart | Description |
 |-----------|-------------|
-| `carbide-rest-common` | Common secrets and certificates (created by Helm) |
-| `carbide-rest-cert-manager` | Carbide credential manager service (credsmgr) |
-| `carbide-rest-api` | REST API server (port 8388) |
-| `carbide-rest-workflow` | Temporal workers (cloud-worker + site-worker) |
-| `carbide-rest-site-manager` | Site lifecycle manager (TLS on port 8100) |
-| `carbide-rest-db` | Database migration job (Bun ORM, idempotent) |
+| `nico-rest-common` | Common secrets and certificates (created by Helm) |
+| `nico-rest-cert-manager` | NICo credential manager service (credsmgr) |
+| `nico-rest-api` | REST API server (port 8388) |
+| `nico-rest-workflow` | Temporal workers (cloud-worker + site-worker) |
+| `nico-rest-site-manager` | Site lifecycle manager (TLS on port 8100) |
+| `nico-rest-db` | Database migration job (Bun ORM, idempotent) |
 
-> `carbide-rest-common` creates the secrets (`db-creds`, `temporal-encryption-key`, `image-pull-secret`,
+> `nico-rest-common` creates the secrets (`db-creds`, `temporal-encryption-key`, `image-pull-secret`,
 > `keycloak-client-secret`) and the `temporal-client-cloud-cert` Certificate as part of the Helm install.
 
 ## Prerequisites
@@ -29,10 +29,10 @@ The following must be running before installing charts:
 
 - **PostgreSQL** database
 - **Temporal** server with `cloud` and `site` namespaces
-- **cert-manager.io** with ClusterIssuer `carbide-rest-ca-issuer`
+- **cert-manager.io** with ClusterIssuer `nico-rest-ca-issuer`
 - **Keycloak** (optional) — only if using Keycloak for authentication
 
-> The Site CRD (`sites.forge.nvidia.io`) is bundled in `carbide-rest-site-manager/crds/` and installed automatically by Helm.
+> The Site CRD (`sites.nico.nvidia.io`) is bundled in `nico-rest-site-manager/crds/` and installed automatically by Helm.
 
 ## Authentication
 
@@ -41,7 +41,7 @@ The API requires exactly **one** authentication method. Keycloak and JWT issuers
 ### Option A: JWT Issuers (any OpenID Connect provider)
 
 ```bash
-helm upgrade --install carbide-rest charts/carbide-rest/ \
+helm upgrade --install nico-rest charts/nico-rest/ \
   --namespace $NS --create-namespace \
   --set global.image.repository=$REPO \
   --set global.image.tag=$TAG \
@@ -51,7 +51,7 @@ helm upgrade --install carbide-rest charts/carbide-rest/ \
 Where `my-auth-values.yaml` contains:
 
 ```yaml
-carbide-rest-api:
+nico-rest-api:
   config:
     issuers:
       - name: my-idp
@@ -65,7 +65,7 @@ See [auth documentation](../auth/README.md) for full issuer configuration option
 ### Option B: Keycloak
 
 ```bash
-helm upgrade --install carbide-rest charts/carbide-rest/ \
+helm upgrade --install nico-rest charts/nico-rest/ \
   --namespace $NS --create-namespace \
   --set global.image.repository=$REPO \
   --set global.image.tag=$TAG \
@@ -75,7 +75,7 @@ helm upgrade --install carbide-rest charts/carbide-rest/ \
 Where `my-keycloak-values.yaml` contains:
 
 ```yaml
-carbide-rest-api:
+nico-rest-api:
   config:
     keycloak:
       enabled: true
@@ -86,7 +86,7 @@ carbide-rest-api:
       serviceAccount: true
 ```
 
-If `carbide-rest-common.enabled=false`, you must pre-create the following resources in the target namespace before install:
+If `nico-rest-common.enabled=false`, you must pre-create the following resources in the target namespace before install:
 - Secrets: `db-creds`, `temporal-encryption-key`, `image-pull-secret`
 - `keycloak-client-secret` (when Keycloak authentication is enabled)
 - The `temporal-client-cloud-cert` Certificate (or its resulting TLS Secret) consumed by the workflow workers
@@ -98,11 +98,11 @@ If `carbide-rest-common.enabled=false`, you must pre-create the following resour
 ### Umbrella Chart (cloud-side services)
 
 ```bash
-REPO=nvcr.io/0837451325059433/carbide-dev
+REPO=nvcr.io/0837451325059433/nico-dev
 TAG=latest
-NS=carbide-rest
+NS=nico-rest
 
-helm upgrade --install carbide-rest charts/carbide-rest/ \
+helm upgrade --install nico-rest charts/nico-rest/ \
   --namespace $NS --create-namespace \
   --set global.image.repository=$REPO \
   --set global.image.tag=$TAG \
@@ -115,7 +115,7 @@ Site agent requires a registered site (UUID + OTP). The chart must be installed 
 
 ```bash
 # 1. Install chart
-helm upgrade --install carbide-rest-site-agent charts/carbide-rest-site-agent/ \
+helm upgrade --install nico-rest-site-agent charts/nico-rest-site-agent/ \
   --namespace $NS \
   --set global.image.repository=$REPO \
   --set global.image.tag=$TAG || true
@@ -124,26 +124,26 @@ helm upgrade --install carbide-rest-site-agent charts/carbide-rest-site-agent/ \
 ./scripts/setup-local.sh site-agent
 
 # 3. Site agent will stabilize after bootstrap
-kubectl -n $NS rollout status statefulset/carbide-rest-site-agent --timeout=120s
+kubectl -n $NS rollout status statefulset/nico-rest-site-agent --timeout=120s
 ```
 
 ## Uninstall
 
 ```bash
-helm uninstall carbide-rest-site-agent -n carbide-rest
-helm uninstall carbide-rest -n carbide-rest
+helm uninstall nico-rest-site-agent -n nico-rest
+helm uninstall nico-rest -n nico-rest
 ```
 
 ## Configuration
 
-### Umbrella Chart (`carbide-rest`)
+### Umbrella Chart (`nico-rest`)
 
 Global values are passed to all sub-charts:
 
 ```yaml
 global:
   image:
-    repository: nvcr.io/0837451325059433/carbide-dev
+    repository: nvcr.io/0837451325059433/nico-dev
     tag: "1.0.6"
     pullPolicy: IfNotPresent
   imagePullSecrets:
@@ -151,11 +151,11 @@ global:
   certificate:
     issuerRef:
       kind: ClusterIssuer
-      name: carbide-rest-ca-issuer
+      name: nico-rest-ca-issuer
       group: cert-manager.io
 ```
 
-### Site Agent Chart (`carbide-rest-site-agent`)
+### Site Agent Chart (`nico-rest-site-agent`)
 
 Standalone chart with its own `global` section (same structure as above).
 

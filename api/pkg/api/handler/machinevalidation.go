@@ -71,7 +71,7 @@ func NewCreateMachineValidationTestHandler(dbSession *cdb.Session, tc tclient.Cl
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIMachineValidationTestCreateRequest true "MachineValidationTest creation request"
 // @Success 201 {object} model.APIMachineValidationTest
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/test [post]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/test [post]
 func (handler CreateMachineValidationTestHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationTest", "Create", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -221,7 +221,7 @@ func NewUpdateMachineValidationTestHandler(dbSession *cdb.Session, tc tclient.Cl
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIMachineValidationTestUpdateRequest true "MachineValidationTest update request"
 // @Success 201 {object} model.APIMachineValidationTest
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/test/{id}/version/{version} [patch]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/test/{id}/version/{version} [patch]
 func (handler UpdateMachineValidationTestHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationTest", "Update", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -416,7 +416,7 @@ func NewGetAllMachineValidationTestHandler(dbSession *cdb.Session, tc tclient.Cl
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} []model.APIMachineValidationTest
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/test [get]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/test [get]
 func (handler GetAllMachineValidationTestHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationTest", "GetAll", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -552,7 +552,7 @@ func NewGetMachineValidationTestHandler(dbSession *cdb.Session, tc tclient.Clien
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIMachineValidationTest
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/test [get]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/test [get]
 func (handler GetMachineValidationTestHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationTest", "Get", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -694,7 +694,7 @@ func NewGetMachineValidationResultsHandler(dbSession *cdb.Session, tc tclient.Cl
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} []model.APIMachineValidationResult
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/results/machine/{id} [get]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/results/machine/{id} [get]
 func (handler GetMachineValidationResultsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationResult", "Get", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -830,7 +830,7 @@ func NewGetAllMachineValidationRunHandler(dbSession *cdb.Session, tc tclient.Cli
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} []model.APIMachineValidationRun
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/runs/machine/{id} [get]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/runs/machine/{id} [get]
 func (handler GetAllMachineValidationRunHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationRun", "GetAll", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -966,7 +966,7 @@ func NewGetAllMachineValidationExternalConfigHandler(dbSession *cdb.Session, tc 
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} []model.APIMachineValidationExternalConfig
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/external-config [get]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/external-config [get]
 func (handler GetAllMachineValidationExternalConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationExternalConfig", "GetAll", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -1095,7 +1095,7 @@ func NewGetMachineValidationExternalConfigHandler(dbSession *cdb.Session, tc tcl
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIMachineValidationExternalConfig
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/external-config/{name} [get]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/external-config/{name} [get]
 func (handler GetMachineValidationExternalConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationExternalConfig", "Get", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -1235,7 +1235,7 @@ func NewCreateMachineValidationExternalConfigHandler(dbSession *cdb.Session, tc 
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIMachineValidationExternalConfigCreateRequest true "MachineValidationExternalConfig creation request"
 // @Success 201 {object} model.APIMachineValidationExternalConfig
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/external-config [post]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/external-config [post]
 func (handler CreateMachineValidationExternalConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationExternalConfig", "Create", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -1383,7 +1383,7 @@ func NewUpdateMachineValidationExternalConfigHandler(dbSession *cdb.Session, tc 
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIMachineValidationExternalConfigUpdateRequest true "MachineValidationExternalConfig update request"
 // @Success 200 {object} model.APIMachineValidationExternalConfig
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/external-config/{name} [patch]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/external-config/{name} [patch]
 func (handler UpdateMachineValidationExternalConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationExternalConfig", "Update", c, handler.tracerSpan)
 	if handlerSpan != nil {
@@ -1591,7 +1591,7 @@ func NewDeleteMachineValidationExternalConfigHandler(dbSession *cdb.Session, tc 
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 202
-// @Router /v2/org/{org}/carbide/site/{site}/machine-validation/external-config/{name} [delete]
+// @Router /v2/org/{org}/nico/site/{site}/machine-validation/external-config/{name} [delete]
 func (handler DeleteMachineValidationExternalConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineValidationExternalConfig", "Delete", c, handler.tracerSpan)
 	if handlerSpan != nil {

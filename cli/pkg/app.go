@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"fmt"
@@ -41,7 +41,7 @@ func NewApp(specData []byte) (*cli.App, error) {
 	commands = append(commands, completionCommand())
 
 	app := &cli.App{
-		Name:                 "carbidecli",
+		Name:                 "cli",
 		Usage:                spec.Info.Title,
 		Version:              spec.Info.Version,
 		EnableBashCompletion: true,
@@ -49,23 +49,23 @@ func NewApp(specData []byte) (*cli.App, error) {
 			&cli.StringFlag{
 				Name:    "config",
 				Usage:   "Path to config file",
-				EnvVars: []string{"CARBIDE_CONFIG"},
+				EnvVars: []string{"NICO_CONFIG"},
 			},
 			&cli.StringFlag{
 				Name:    "base-url",
 				Usage:   "API base URL",
-				EnvVars: []string{"CARBIDE_BASE_URL"},
+				EnvVars: []string{"NICO_BASE_URL"},
 				Value:   defaultBaseURL,
 			},
 			&cli.StringFlag{
 				Name:    "org",
 				Usage:   "Organization name",
-				EnvVars: []string{"CARBIDE_ORG"},
+				EnvVars: []string{"NICO_ORG"},
 			},
 			&cli.StringFlag{
 				Name:    "token",
 				Usage:   "API bearer token",
-				EnvVars: []string{"CARBIDE_TOKEN"},
+				EnvVars: []string{"NICO_TOKEN"},
 			},
 			&cli.StringFlag{
 				Name:  "token-command",
@@ -78,24 +78,24 @@ func NewApp(specData []byte) (*cli.App, error) {
 			&cli.StringFlag{
 				Name:    "token-url",
 				Usage:   "OIDC token endpoint URL for login and token refresh",
-				EnvVars: []string{"CARBIDE_TOKEN_URL"},
+				EnvVars: []string{"NICO_TOKEN_URL"},
 			},
 			&cli.StringFlag{
 				Name:    "keycloak-url",
 				Usage:   "Keycloak base URL (constructs token-url if --token-url is not set)",
-				EnvVars: []string{"CARBIDE_KEYCLOAK_URL"},
+				EnvVars: []string{"NICO_KEYCLOAK_URL"},
 			},
 			&cli.StringFlag{
 				Name:    "keycloak-realm",
 				Usage:   "Keycloak realm (used with --keycloak-url)",
-				EnvVars: []string{"CARBIDE_KEYCLOAK_REALM"},
-				Value:   "carbide-dev",
+				EnvVars: []string{"NICO_KEYCLOAK_REALM"},
+				Value:   "nico-dev",
 			},
 			&cli.StringFlag{
 				Name:    "client-id",
 				Usage:   "OAuth client ID",
-				EnvVars: []string{"CARBIDE_CLIENT_ID"},
-				Value:   "carbide-api",
+				EnvVars: []string{"NICO_CLIENT_ID"},
+				Value:   "nico-api",
 			},
 		},
 		Commands: commands,
@@ -143,9 +143,9 @@ func completionCommand() *cli.Command {
 	}
 }
 
-const bashCompletion = `# bash completion for carbidecli
-# Add to ~/.bashrc:  eval "$(carbidecli completion bash)"
-_carbidecli_complete() {
+const bashCompletion = `# bash completion for cli
+# Add to ~/.bashrc:  eval "$(cli completion bash)"
+_cli_complete() {
     local cur opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -153,21 +153,21 @@ _carbidecli_complete() {
     COMPREPLY=($(compgen -W "${opts}" -- "${cur}"))
     return 0
 }
-complete -o default -F _carbidecli_complete carbidecli
+complete -o default -F _cli_complete cli
 `
 
-const zshCompletion = `# zsh completion for carbidecli
-# Add to ~/.zshrc:  eval "$(carbidecli completion zsh)"
-_carbidecli_complete() {
+const zshCompletion = `# zsh completion for cli
+# Add to ~/.zshrc:  eval "$(cli completion zsh)"
+_cli_complete() {
     local -a opts
     opts=(${(f)"$(${words[1]} --generate-bash-completion ${words:1:$CURRENT-1})"})
-    _describe 'carbidecli' opts
+    _describe 'cli' opts
 }
-compdef _carbidecli_complete carbidecli
+compdef _cli_complete cli
 `
 
-const fishCompletion = `# fish completion for carbidecli
-# Add to ~/.config/fish/completions/carbidecli.fish or run:
-#   carbidecli completion fish > ~/.config/fish/completions/carbidecli.fish
-complete -c carbidecli -f -a '(carbidecli --generate-bash-completion (commandline -cop))'
+const fishCompletion = `# fish completion for cli
+# Add to ~/.config/fish/completions/cli.fish or run:
+#   cli completion fish > ~/.config/fish/completions/cli.fish
+complete -c cli -f -a '(cli --generate-bash-completion (commandline -cop))'
 `

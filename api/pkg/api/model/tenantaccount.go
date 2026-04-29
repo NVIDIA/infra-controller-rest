@@ -109,15 +109,15 @@ type APITenantAccount struct {
 
 // APITenantAccountStats is a data structure to capture information about a TenantAccount stats at the API layer
 type APITenantAccountStats struct {
-	// Total is the total number of the TenantAccount object in Forge Cloud
+	// Total is the total number of the TenantAccount object in NICo Cloud
 	Total int `json:"total"`
-	// Pending is the total number of pending TenantAccount object in Forge Cloud
+	// Pending is the total number of pending TenantAccount object in NICo Cloud
 	Pending int `json:"pending"`
-	// Invited is the total number of provisioning TenantAccount object in Forge Cloud
+	// Invited is the total number of provisioning TenantAccount object in NICo Cloud
 	Invited int `json:"invited"`
-	// Ready is the total number of ready TenantAccount object in Forge Cloud
+	// Ready is the total number of ready TenantAccount object in NICo Cloud
 	Ready int `json:"ready"`
-	// Error is the total number of error TenantAccount object in Forge Cloud
+	// Error is the total number of error TenantAccount object in NICo Cloud
 	Error int `json:"error"`
 }
 

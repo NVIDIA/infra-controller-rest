@@ -38,7 +38,7 @@ import (
 var (
 	// Mock responses for Keycloak endpoints
 	mockAdminLoginResponse = `{"access_token":"admin-access-token","expires_in":300,"refresh_expires_in":1800,"refresh_token":"admin-refresh-token","token_type":"Bearer","not-before-policy":0,"session_state":"test-session-state","scope":"profile email"}`
-	mockIDPsResponse       = `[{"alias":"testorg-idp","displayName":"TestOrg OIDC","providerId":"oidc","enabled":true,"config":{"kc.org.domain":"testorg.com"}},{"alias":"nvidia-idp","displayName":"NVIDIA OIDC","providerId":"oidc","enabled":true,"config":{"kc.org.domain":"nvidia.com"}},{"alias":"forge-idp","displayName":"Forge OIDC","providerId":"oidc","enabled":true,"config":{"kc.org.domain":"forge.nvidia.com"}}]`
+	mockIDPsResponse       = `[{"alias":"testorg-idp","displayName":"TestOrg OIDC","providerId":"oidc","enabled":true,"config":{"kc.org.domain":"testorg.com"}},{"alias":"nvidia-idp","displayName":"NVIDIA OIDC","providerId":"oidc","enabled":true,"config":{"kc.org.domain":"nvidia.com"}},{"alias":"nico-idp","displayName":"NICo OIDC","providerId":"oidc","enabled":true,"config":{"kc.org.domain":"nico.nvidia.com"}}]`
 	mockTokenResponse      = `{"access_token":"test-access-token","token_type":"Bearer","expires_in":3600}`
 )
 
@@ -283,7 +283,7 @@ func TestLoginHandler_Handle_ClientCredentials(t *testing.T) {
 		ExternalBaseURL:       mockServer.URL,
 		ClientID:              "test-client",
 		ClientSecret:          "test-secret",
-		Realm:                 "forge",
+		Realm:                 "nico",
 		ServiceAccountEnabled: true,
 	}
 
@@ -380,7 +380,7 @@ func TestLoginHandler_Handle_ClientCredentials_ServiceAccountsDisabled(t *testin
 		ExternalBaseURL:       mockServer.URL,
 		ClientID:              "test-client",
 		ClientSecret:          "test-secret",
-		Realm:                 "forge",
+		Realm:                 "nico",
 		ServiceAccountEnabled: false, // Service accounts disabled
 	}
 
@@ -490,18 +490,18 @@ func TestLoginHandler_Handle_IDPAndDomainHandling(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "successful email authentication with forge.nvidia.com domain",
+			name: "successful email authentication with nico.nvidia.com domain",
 			requestBody: cam.APILoginRequest{
-				Email:       stringPtr("developer@forge.nvidia.com"),
-				RedirectURI: stringPtr("http://localhost:3000/forge-callback"),
+				Email:       stringPtr("developer@nico.nvidia.com"),
+				RedirectURI: stringPtr("http://localhost:3000/nico-callback"),
 			},
 			expectedStatus: http.StatusOK,
 			validateResp: func(t *testing.T, resp *cam.APILoginResponse) {
-				assert.Contains(t, resp.AuthURL, "forge-idp")
-				assert.Contains(t, resp.AuthURL, "developer%40forge.nvidia.com")
-				assert.Equal(t, "forge-idp", resp.IDP)
+				assert.Contains(t, resp.AuthURL, "nico-idp")
+				assert.Contains(t, resp.AuthURL, "developer%40nico.nvidia.com")
+				assert.Equal(t, "nico-idp", resp.IDP)
 				assert.Equal(t, "test-realm", resp.RealmName)
-				assert.Contains(t, resp.AuthURL, "redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fforge-callback")
+				assert.Contains(t, resp.AuthURL, "redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fnico-callback")
 			},
 			wantErr: false,
 		},
@@ -614,10 +614,10 @@ func TestKeycloakAuthService_IDPListing(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:        "forge.nvidia.com domain maps to forge-idp",
-			email:       "dev@forge.nvidia.com",
+			name:        "nico.nvidia.com domain maps to nico-idp",
+			email:       "dev@nico.nvidia.com",
 			redirectURI: "http://localhost:3000/callback",
-			expectedIDP: "forge-idp",
+			expectedIDP: "nico-idp",
 			expectError: false,
 		},
 		{
@@ -681,7 +681,7 @@ func TestCallbackHandler_Handle(t *testing.T) {
 		ExternalBaseURL:       mockServer.URL,
 		ClientID:              "test-client",
 		ClientSecret:          "test-secret",
-		Realm:                 "forge",
+		Realm:                 "nico",
 		ServiceAccountEnabled: true,
 	}
 
