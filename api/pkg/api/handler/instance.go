@@ -3059,7 +3059,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 			}
 		}
 
-		// If the number of pending/ready/deeleting NVLink interfaces is unchanged, do nothing
+		// If the number of pending/ready/deleting NVLink interfaces is unchanged, do nothing
 		// because existing NVLink interfaces includes pending/ready/deleting NVLink interfaces on the same logical partition and device instance
 		// hence we need to verify if incoming request contains the same number of pending/ready/deleting NVLink interfaces
 		if len(apiRequest.NVLinkInterfaces) == existingPendingNvlIfcsCount {
