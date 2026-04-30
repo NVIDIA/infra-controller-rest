@@ -45,8 +45,8 @@ type ExpectedPowerShelf struct {
 	BmcMacAddress *string `json:"bmcMacAddress,omitempty" validate:"regexp=^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"`
 	// Serial number of the Expected Power Shelf
 	ShelfSerialNumber *string `json:"shelfSerialNumber,omitempty"`
-	// IP address of the Expected Power Shelf
-	IpAddress NullableString `json:"ipAddress,omitempty"`
+	// Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
+	BmcIpAddress NullableString `json:"bmcIpAddress,omitempty"`
 	// Optional rack identifier for this component
 	RackId NullableString `json:"rackId,omitempty"`
 	// Display name for this component
@@ -218,47 +218,47 @@ func (o *ExpectedPowerShelf) SetShelfSerialNumber(v string) {
 	o.ShelfSerialNumber = &v
 }
 
-// GetIpAddress returns the IpAddress field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *ExpectedPowerShelf) GetIpAddress() string {
-	if o == nil || IsNil(o.IpAddress.Get()) {
+// GetBmcIpAddress returns the BmcIpAddress field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ExpectedPowerShelf) GetBmcIpAddress() string {
+	if o == nil || IsNil(o.BmcIpAddress.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.IpAddress.Get()
+	return *o.BmcIpAddress.Get()
 }
 
-// GetIpAddressOk returns a tuple with the IpAddress field value if set, nil otherwise
+// GetBmcIpAddressOk returns a tuple with the BmcIpAddress field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ExpectedPowerShelf) GetIpAddressOk() (*string, bool) {
+func (o *ExpectedPowerShelf) GetBmcIpAddressOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.IpAddress.Get(), o.IpAddress.IsSet()
+	return o.BmcIpAddress.Get(), o.BmcIpAddress.IsSet()
 }
 
-// HasIpAddress returns a boolean if a field has been set.
-func (o *ExpectedPowerShelf) HasIpAddress() bool {
-	if o != nil && o.IpAddress.IsSet() {
+// HasBmcIpAddress returns a boolean if a field has been set.
+func (o *ExpectedPowerShelf) HasBmcIpAddress() bool {
+	if o != nil && o.BmcIpAddress.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetIpAddress gets a reference to the given NullableString and assigns it to the IpAddress field.
-func (o *ExpectedPowerShelf) SetIpAddress(v string) {
-	o.IpAddress.Set(&v)
+// SetBmcIpAddress gets a reference to the given NullableString and assigns it to the BmcIpAddress field.
+func (o *ExpectedPowerShelf) SetBmcIpAddress(v string) {
+	o.BmcIpAddress.Set(&v)
 }
 
-// SetIpAddressNil sets the value for IpAddress to be an explicit nil
-func (o *ExpectedPowerShelf) SetIpAddressNil() {
-	o.IpAddress.Set(nil)
+// SetBmcIpAddressNil sets the value for BmcIpAddress to be an explicit nil
+func (o *ExpectedPowerShelf) SetBmcIpAddressNil() {
+	o.BmcIpAddress.Set(nil)
 }
 
-// UnsetIpAddress ensures that no value is present for IpAddress, not even an explicit nil
-func (o *ExpectedPowerShelf) UnsetIpAddress() {
-	o.IpAddress.Unset()
+// UnsetBmcIpAddress ensures that no value is present for BmcIpAddress, not even an explicit nil
+func (o *ExpectedPowerShelf) UnsetBmcIpAddress() {
+	o.BmcIpAddress.Unset()
 }
 
 // GetRackId returns the RackId field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -766,8 +766,8 @@ func (o ExpectedPowerShelf) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.ShelfSerialNumber) {
 		toSerialize["shelfSerialNumber"] = o.ShelfSerialNumber
 	}
-	if o.IpAddress.IsSet() {
-		toSerialize["ipAddress"] = o.IpAddress.Get()
+	if o.BmcIpAddress.IsSet() {
+		toSerialize["bmcIpAddress"] = o.BmcIpAddress.Get()
 	}
 	if o.RackId.IsSet() {
 		toSerialize["rackId"] = o.RackId.Get()

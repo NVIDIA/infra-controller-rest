@@ -28921,6 +28921,9 @@ type ExpectedMachine struct {
 	// Deprecated: Marked as deprecated in forge_carbide.proto.
 	DpfEnabled   bool  `protobuf:"varint,12,opt,name=dpf_enabled,json=dpfEnabled,proto3" json:"dpf_enabled,omitempty"`
 	IsDpfEnabled *bool `protobuf:"varint,13,opt,name=is_dpf_enabled,json=isDpfEnabled,proto3,oneof" json:"is_dpf_enabled,omitempty"`
+	// Static BMC IP (optional). Pre-allocates a machine_interface like expected
+	// switches and power shelves; external IPs use the static-assignments segment.
+	BmcIpAddress *string `protobuf:"bytes,14,opt,name=bmc_ip_address,json=bmcIpAddress,proto3,oneof" json:"bmc_ip_address,omitempty"`
 	// WARNING: Following fields are not present in Core, but added directly in REST snapshot
 	Name            *string `protobuf:"bytes,21,opt,name=name,proto3,oneof" json:"name,omitempty"`
 	Manufacturer    *string `protobuf:"bytes,22,opt,name=manufacturer,proto3,oneof" json:"manufacturer,omitempty"`
@@ -29054,6 +29057,13 @@ func (x *ExpectedMachine) GetIsDpfEnabled() bool {
 		return *x.IsDpfEnabled
 	}
 	return false
+}
+
+func (x *ExpectedMachine) GetBmcIpAddress() string {
+	if x != nil && x.BmcIpAddress != nil {
+		return *x.BmcIpAddress
+	}
+	return ""
 }
 
 func (x *ExpectedMachine) GetName() string {
@@ -51576,7 +51586,7 @@ const file_forge_carbide_proto_rawDesc = "" +
 	"\t_nic_typeB\v\n" +
 	"\t_fixed_ipB\r\n" +
 	"\v_fixed_maskB\x10\n" +
-	"\x0e_fixed_gateway\"\xbb\b\n" +
+	"\x0e_fixed_gateway\"\xf9\b\n" +
 	"\x0fExpectedMachine\x12&\n" +
 	"\x0fbmc_mac_address\x18\x01 \x01(\tR\rbmcMacAddress\x12!\n" +
 	"\fbmc_username\x18\x02 \x01(\tR\vbmcUsername\x12!\n" +
@@ -51592,22 +51602,24 @@ const file_forge_carbide_proto_rawDesc = "" +
 	"#default_pause_ingestion_and_poweron\x18\v \x01(\bH\x03R\x1fdefaultPauseIngestionAndPoweron\x88\x01\x01\x12#\n" +
 	"\vdpf_enabled\x18\f \x01(\bB\x02\x18\x01R\n" +
 	"dpfEnabled\x12)\n" +
-	"\x0eis_dpf_enabled\x18\r \x01(\bH\x04R\fisDpfEnabled\x88\x01\x01\x12\x17\n" +
-	"\x04name\x18\x15 \x01(\tH\x05R\x04name\x88\x01\x01\x12'\n" +
-	"\fmanufacturer\x18\x16 \x01(\tH\x06R\fmanufacturer\x88\x01\x01\x12\x19\n" +
-	"\x05model\x18\x17 \x01(\tH\aR\x05model\x88\x01\x01\x12%\n" +
-	"\vdescription\x18\x18 \x01(\tH\bR\vdescription\x88\x01\x01\x12.\n" +
-	"\x10firmware_version\x18\x19 \x01(\tH\tR\x0ffirmwareVersion\x88\x01\x01\x12\x1c\n" +
-	"\aslot_id\x18\x1a \x01(\x05H\n" +
-	"R\x06slotId\x88\x01\x01\x12\x1e\n" +
-	"\btray_idx\x18\x1b \x01(\x05H\vR\atrayIdx\x88\x01\x01\x12\x1c\n" +
-	"\ahost_id\x18\x1c \x01(\x05H\fR\x06hostId\x88\x01\x01B\t\n" +
+	"\x0eis_dpf_enabled\x18\r \x01(\bH\x04R\fisDpfEnabled\x88\x01\x01\x12)\n" +
+	"\x0ebmc_ip_address\x18\x0e \x01(\tH\x05R\fbmcIpAddress\x88\x01\x01\x12\x17\n" +
+	"\x04name\x18\x15 \x01(\tH\x06R\x04name\x88\x01\x01\x12'\n" +
+	"\fmanufacturer\x18\x16 \x01(\tH\aR\fmanufacturer\x88\x01\x01\x12\x19\n" +
+	"\x05model\x18\x17 \x01(\tH\bR\x05model\x88\x01\x01\x12%\n" +
+	"\vdescription\x18\x18 \x01(\tH\tR\vdescription\x88\x01\x01\x12.\n" +
+	"\x10firmware_version\x18\x19 \x01(\tH\n" +
+	"R\x0ffirmwareVersion\x88\x01\x01\x12\x1c\n" +
+	"\aslot_id\x18\x1a \x01(\x05H\vR\x06slotId\x88\x01\x01\x12\x1e\n" +
+	"\btray_idx\x18\x1b \x01(\x05H\fR\atrayIdx\x88\x01\x01\x12\x1c\n" +
+	"\ahost_id\x18\x1c \x01(\x05H\rR\x06hostId\x88\x01\x01B\t\n" +
 	"\a_sku_idB\x05\n" +
 	"\x03_idB\n" +
 	"\n" +
 	"\b_rack_idB&\n" +
 	"$_default_pause_ingestion_and_poweronB\x11\n" +
-	"\x0f_is_dpf_enabledB\a\n" +
+	"\x0f_is_dpf_enabledB\x11\n" +
+	"\x0f_bmc_ip_addressB\a\n" +
 	"\x05_nameB\x0f\n" +
 	"\r_manufacturerB\b\n" +
 	"\x06_modelB\x0e\n" +

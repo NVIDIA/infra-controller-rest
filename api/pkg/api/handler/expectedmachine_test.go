@@ -337,6 +337,7 @@ func TestCreateExpectedMachineHandler_Handle(t *testing.T) {
 				DefaultBmcPassword:  cdb.GetStrPtr("password"),
 				ChassisSerialNumber: "CHASSIS-RACK-001",
 				RackID:              cdb.GetStrPtr("test-rack-001"),
+				BmcIpAddress:        cdb.GetStrPtr("192.168.1.10"),
 				Labels:              map[string]string{"env": "rack-test"},
 			},
 			setupContext: func(c echo.Context) {
@@ -404,6 +405,11 @@ func TestCreateExpectedMachineHandler_Handle(t *testing.T) {
 				if tt.requestBody.RackID != nil {
 					if assert.NotNil(t, response.RackID, "RackID should not be nil in response") {
 						assert.Equal(t, *tt.requestBody.RackID, *response.RackID, "RackID in response should match request")
+					}
+				}
+				if tt.requestBody.BmcIpAddress != nil {
+					if assert.NotNil(t, response.BmcIpAddress, "BmcIpAddress should not be nil in response") {
+						assert.Equal(t, *tt.requestBody.BmcIpAddress, *response.BmcIpAddress, "BmcIpAddress in response should match request")
 					}
 				}
 			}

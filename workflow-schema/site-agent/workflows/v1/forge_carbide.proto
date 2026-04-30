@@ -5018,6 +5018,9 @@ message ExpectedMachine {
   // deprecated
   bool dpf_enabled = 12 [deprecated = true];
   optional bool is_dpf_enabled = 13;
+  // Static BMC IP (optional). Pre-allocates a machine_interface like expected
+  // switches and power shelves; external IPs use the static-assignments segment.
+  optional string bmc_ip_address = 14;
 
   // WARNING: Following fields are not present in Core, but added directly in REST snapshot
   optional string name = 21;

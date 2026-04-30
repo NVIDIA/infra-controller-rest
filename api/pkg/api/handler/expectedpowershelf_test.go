@@ -161,7 +161,7 @@ func TestCreateExpectedPowerShelfHandler_Handle(t *testing.T) {
 		}
 	}
 
-	validIpAddress := "192.168.1.100"
+	validBmcIpAddress := "192.168.1.100"
 
 	tests := []struct {
 		name           string
@@ -177,7 +177,7 @@ func TestCreateExpectedPowerShelfHandler_Handle(t *testing.T) {
 				DefaultBmcUsername: cdb.GetStrPtr("admin"),
 				DefaultBmcPassword: cdb.GetStrPtr("password"),
 				ShelfSerialNumber:  "SHELF123",
-				IpAddress:          &validIpAddress,
+				BmcIpAddress:       &validBmcIpAddress,
 				Labels:             map[string]string{"env": "test"},
 			},
 			setupContext: func(c echo.Context) {

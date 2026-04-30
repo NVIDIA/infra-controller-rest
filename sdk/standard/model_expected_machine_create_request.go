@@ -54,6 +54,8 @@ type ExpectedMachineCreateRequest struct {
 	SkuId NullableString `json:"skuId,omitempty"`
 	// Optional rack identifier for this component
 	RackId NullableString `json:"rackId,omitempty"`
+	// Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
+	BmcIpAddress NullableString `json:"bmcIpAddress,omitempty"`
 	// Display name for this component
 	Name NullableString `json:"name,omitempty"`
 	// Manufacturer of this component
@@ -371,6 +373,49 @@ func (o *ExpectedMachineCreateRequest) SetRackIdNil() {
 // UnsetRackId ensures that no value is present for RackId, not even an explicit nil
 func (o *ExpectedMachineCreateRequest) UnsetRackId() {
 	o.RackId.Unset()
+}
+
+// GetBmcIpAddress returns the BmcIpAddress field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *ExpectedMachineCreateRequest) GetBmcIpAddress() string {
+	if o == nil || IsNil(o.BmcIpAddress.Get()) {
+		var ret string
+		return ret
+	}
+	return *o.BmcIpAddress.Get()
+}
+
+// GetBmcIpAddressOk returns a tuple with the BmcIpAddress field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *ExpectedMachineCreateRequest) GetBmcIpAddressOk() (*string, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.BmcIpAddress.Get(), o.BmcIpAddress.IsSet()
+}
+
+// HasBmcIpAddress returns a boolean if a field has been set.
+func (o *ExpectedMachineCreateRequest) HasBmcIpAddress() bool {
+	if o != nil && o.BmcIpAddress.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetBmcIpAddress gets a reference to the given NullableString and assigns it to the BmcIpAddress field.
+func (o *ExpectedMachineCreateRequest) SetBmcIpAddress(v string) {
+	o.BmcIpAddress.Set(&v)
+}
+
+// SetBmcIpAddressNil sets the value for BmcIpAddress to be an explicit nil
+func (o *ExpectedMachineCreateRequest) SetBmcIpAddressNil() {
+	o.BmcIpAddress.Set(nil)
+}
+
+// UnsetBmcIpAddress ensures that no value is present for BmcIpAddress, not even an explicit nil
+func (o *ExpectedMachineCreateRequest) UnsetBmcIpAddress() {
+	o.BmcIpAddress.Unset()
 }
 
 // GetName returns the Name field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -776,6 +821,9 @@ func (o ExpectedMachineCreateRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if o.RackId.IsSet() {
 		toSerialize["rackId"] = o.RackId.Get()
+	}
+	if o.BmcIpAddress.IsSet() {
+		toSerialize["bmcIpAddress"] = o.BmcIpAddress.Get()
 	}
 	if o.Name.IsSet() {
 		toSerialize["name"] = o.Name.Get()

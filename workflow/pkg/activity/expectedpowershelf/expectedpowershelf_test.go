@@ -121,18 +121,18 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 				"position": fmt.Sprintf("pos-%d", i),
 			}
 		}
-		// Set IpAddress for every 3rd entry
-		var ipAddress *string
+		// Set BmcIpAddress for every 3rd entry
+		var bmcIpAddress *string
 		if i%3 == 0 {
 			ip := fmt.Sprintf("10.0.0.%d", i)
-			ipAddress = &ip
+			bmcIpAddress = &ip
 		}
 		eps, cerr := epsDAO.Create(ctx, nil, cdbm.ExpectedPowerShelfCreateInput{
 			ExpectedPowerShelfID: epsID,
 			SiteID:               st.ID,
 			BmcMacAddress:        fmt.Sprintf("00:11:22:33:44:%02d", i),
 			ShelfSerialNumber:    fmt.Sprintf("SHELF-SN-%d", i),
-			IpAddress:            ipAddress,
+			BmcIpAddress:         bmcIpAddress,
 			Labels:               labels,
 			CreatedBy:            ipu.ID,
 		})
@@ -153,17 +153,17 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 	pagedCtrlExpectedPowerShelves := []*cwssaws.ExpectedPowerShelf{}
 
 	for i := 0; i < 34; i++ {
-		// Convert DB IpAddress (*string) to proto IpAddress (string)
-		protoIpAddress := ""
-		if pagedExpectedPowerShelves[i].IpAddress != nil {
-			protoIpAddress = *pagedExpectedPowerShelves[i].IpAddress
+		// Convert DB BmcIpAddress (*string) to proto BmcIpAddress (string)
+		protoBmcIpAddress := ""
+		if pagedExpectedPowerShelves[i].BmcIpAddress != nil {
+			protoBmcIpAddress = *pagedExpectedPowerShelves[i].BmcIpAddress
 		}
 
 		ctrlExpectedPowerShelf := &cwssaws.ExpectedPowerShelf{
 			ExpectedPowerShelfId: &cwssaws.UUID{Value: pagedExpectedPowerShelves[i].ID.String()},
 			BmcMacAddress:        pagedExpectedPowerShelves[i].BmcMacAddress,
 			ShelfSerialNumber:    pagedExpectedPowerShelves[i].ShelfSerialNumber,
-			BmcIpAddress:         protoIpAddress,
+			BmcIpAddress:         protoBmcIpAddress,
 		}
 
 		// Add labels to controller expected power shelves
@@ -184,7 +184,7 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 			}
 		}
 
-		// Test IpAddress updates: change IpAddress for some entries
+		// Test BmcIpAddress updates: change BmcIpAddress for some entries
 		if i == 2 {
 			ctrlExpectedPowerShelf.BmcIpAddress = "192.168.1.100" // Add IP to entry that didn't have one
 			expectedPowerShelvesToUpdate = append(expectedPowerShelvesToUpdate, pagedExpectedPowerShelves[i])
@@ -451,6 +451,18 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 					assert.Equal(t, ctrlEPS.BmcMacAddress, updated.BmcMacAddress,
 						fmt.Sprintf("ExpectedPowerShelf %v should have been updated", eps.ID))
 
+					// Verify BmcIpAddress is updated correctly
+					if ctrlEPS.BmcIpAddress == "" {
+						assert.Nil(t, updated.BmcIpAddress,
+							fmt.Sprintf("ExpectedPowerShelf %v should have nil BmcIpAddress", eps.ID))
+					} else {
+						if assert.NotNil(t, updated.BmcIpAddress,
+							fmt.Sprintf("ExpectedPowerShelf %v should have BmcIpAddress set", eps.ID)) {
+							assert.Equal(t, ctrlEPS.BmcIpAddress, *updated.BmcIpAddress,
+								fmt.Sprintf("ExpectedPowerShelf %v BmcIpAddress should match", eps.ID))
+						}
+					}
+
 					// Verify labels are updated correctly
 					expectedLabels := getLabelsMapFromProto(ctrlEPS)
 					// Both nil and empty maps should be treated as equivalent (no labels)
@@ -469,7 +481,7 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 				assert.Nil(t, deleted, fmt.Sprintf("ExpectedPowerShelf %v should have been deleted", eps.ID))
 			}
 
-			// Verify newly created power shelves have correct labels
+			// Verify newly created power shelves have correct labels and BmcIpAddress
 			for _, ceps := range tt.args.expectedPowerShelfInventory.ExpectedPowerShelves {
 				epsID, perr := uuid.Parse(ceps.ExpectedPowerShelfId.Value)
 				assert.NoError(t, perr)

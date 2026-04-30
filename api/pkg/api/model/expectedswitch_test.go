@@ -225,6 +225,67 @@ func TestAPIExpectedSwitchCreateRequest_Validate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedSwitchCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				SwitchSerialNumber: validSwitchSerial,
+				BmcIpAddress:       cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedSwitchCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				SwitchSerialNumber: validSwitchSerial,
+				BmcIpAddress:       cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedSwitchCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				SwitchSerialNumber: validSwitchSerial,
+				BmcIpAddress:       cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedSwitchCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				SwitchSerialNumber: validSwitchSerial,
+				BmcIpAddress:       &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedSwitchCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				SwitchSerialNumber: validSwitchSerial,
+				BmcIpAddress:       nil,
+			},
+			expectErr: false,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -238,9 +299,11 @@ func TestAPIExpectedSwitchCreateRequest_Validate(t *testing.T) {
 }
 
 func TestNewAPIExpectedSwitch(t *testing.T) {
+	bmcIP := "192.168.1.10"
 	dbES := &cdbm.ExpectedSwitch{
 		BmcMacAddress:      "00:11:22:33:44:55",
 		SwitchSerialNumber: "SWITCH123",
+		BmcIpAddress:       &bmcIP,
 		Labels:             map[string]string{"env": "test", "zone": "us-west-1"},
 		Created:            cdb.GetCurTime(),
 		Updated:            cdb.GetCurTime(),
@@ -263,6 +326,7 @@ func TestNewAPIExpectedSwitch(t *testing.T) {
 			// Verify all fields are properly mapped
 			assert.Equal(t, tc.dbObj.BmcMacAddress, got.BmcMacAddress)
 			assert.Equal(t, tc.dbObj.SwitchSerialNumber, got.SwitchSerialNumber)
+			assert.Equal(t, tc.dbObj.BmcIpAddress, got.BmcIpAddress)
 			assert.Equal(t, tc.dbObj.Labels, got.Labels)
 			assert.Equal(t, tc.dbObj.Created, got.Created)
 			assert.Equal(t, tc.dbObj.Updated, got.Updated)
@@ -427,6 +491,47 @@ func TestAPIExpectedSwitchUpdateRequest_Validate(t *testing.T) {
 				Labels:             map[string]string{"env": "test"},
 			},
 			expectErr: true,
+		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedSwitchUpdateRequest{
+				SwitchSerialNumber: &validSwitchSerial,
+				BmcIpAddress:       cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedSwitchUpdateRequest{
+				SwitchSerialNumber: &validSwitchSerial,
+				BmcIpAddress:       cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedSwitchUpdateRequest{
+				SwitchSerialNumber: &validSwitchSerial,
+				BmcIpAddress:       cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedSwitchUpdateRequest{
+				SwitchSerialNumber: &validSwitchSerial,
+				BmcIpAddress:       &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedSwitchUpdateRequest{
+				SwitchSerialNumber: &validSwitchSerial,
+				BmcIpAddress:       nil,
+			},
+			expectErr: false,
 		},
 	}
 

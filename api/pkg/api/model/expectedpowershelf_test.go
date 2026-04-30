@@ -34,7 +34,7 @@ func TestAPIExpectedPowerShelfCreateRequest_Validate(t *testing.T) {
 	validShelfSerial := "SHELF123"
 	validUsername := "admin"
 	validPassword := "password123"
-	validIpAddress := "192.168.1.100"
+	validBmcIpAddress := "192.168.1.100"
 
 	tests := []struct {
 		desc      string
@@ -60,7 +60,7 @@ func TestAPIExpectedPowerShelfCreateRequest_Validate(t *testing.T) {
 				DefaultBmcUsername: &validUsername,
 				DefaultBmcPassword: &validPassword,
 				ShelfSerialNumber:  validShelfSerial,
-				IpAddress:          &validIpAddress,
+				BmcIpAddress:       &validBmcIpAddress,
 				Labels:             map[string]string{"env": "test", "zone": "us-west-1"},
 			},
 			expectErr: false,
@@ -225,6 +225,67 @@ func TestAPIExpectedPowerShelfCreateRequest_Validate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedPowerShelfCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				ShelfSerialNumber:  validShelfSerial,
+				BmcIpAddress:       cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedPowerShelfCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				ShelfSerialNumber:  validShelfSerial,
+				BmcIpAddress:       cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedPowerShelfCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				ShelfSerialNumber:  validShelfSerial,
+				BmcIpAddress:       cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedPowerShelfCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				ShelfSerialNumber:  validShelfSerial,
+				BmcIpAddress:       &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedPowerShelfCreateRequest{
+				SiteID:             "550e8400-e29b-41d4-a716-446655440000",
+				BmcMacAddress:      "00:11:22:33:44:55",
+				DefaultBmcUsername: &validUsername,
+				DefaultBmcPassword: &validPassword,
+				ShelfSerialNumber:  validShelfSerial,
+				BmcIpAddress:       nil,
+			},
+			expectErr: false,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -238,11 +299,11 @@ func TestAPIExpectedPowerShelfCreateRequest_Validate(t *testing.T) {
 }
 
 func TestNewAPIExpectedPowerShelf(t *testing.T) {
-	ipAddress := "192.168.1.100"
+	bmcIpAddress := "192.168.1.100"
 	dbEPS := &cdbm.ExpectedPowerShelf{
 		BmcMacAddress:     "00:11:22:33:44:55",
 		ShelfSerialNumber: "SHELF123",
-		IpAddress:         &ipAddress,
+		BmcIpAddress:      &bmcIpAddress,
 		Labels:            map[string]string{"env": "test", "zone": "us-west-1"},
 		Created:           cdb.GetCurTime(),
 		Updated:           cdb.GetCurTime(),
@@ -266,7 +327,7 @@ func TestNewAPIExpectedPowerShelf(t *testing.T) {
 			// Note: BmcUsername and BmcPassword are not included as they're not stored in DB
 			assert.Equal(t, tc.dbObj.BmcMacAddress, got.BmcMacAddress)
 			assert.Equal(t, tc.dbObj.ShelfSerialNumber, got.ShelfSerialNumber)
-			assert.Equal(t, tc.dbObj.IpAddress, got.IpAddress)
+			assert.Equal(t, tc.dbObj.BmcIpAddress, got.BmcIpAddress)
 			assert.Equal(t, tc.dbObj.Labels, got.Labels)
 			assert.Equal(t, tc.dbObj.Created, got.Created)
 			assert.Equal(t, tc.dbObj.Updated, got.Updated)
@@ -278,7 +339,7 @@ func TestNewAPIExpectedPowerShelfWithNilFields(t *testing.T) {
 	dbEPS := &cdbm.ExpectedPowerShelf{
 		BmcMacAddress:     "00:11:22:33:44:55",
 		ShelfSerialNumber: "SHELF123",
-		IpAddress:         nil,
+		BmcIpAddress:      nil,
 		Labels:            nil,
 		Created:           time.Now(),
 		Updated:           time.Now(),
@@ -289,7 +350,7 @@ func TestNewAPIExpectedPowerShelfWithNilFields(t *testing.T) {
 	// Verify fields are properly handled when empty or nil
 	assert.Equal(t, dbEPS.BmcMacAddress, got.BmcMacAddress)
 	assert.Equal(t, dbEPS.ShelfSerialNumber, got.ShelfSerialNumber)
-	assert.Nil(t, got.IpAddress)
+	assert.Nil(t, got.BmcIpAddress)
 	assert.Nil(t, got.Labels)
 }
 
@@ -308,7 +369,7 @@ func TestAPIExpectedPowerShelfUpdateRequest_Validate(t *testing.T) {
 			desc: "ok when all fields are provided",
 			obj: APIExpectedPowerShelfUpdateRequest{
 				ShelfSerialNumber: &validShelfSerial,
-				IpAddress:         cdb.GetStrPtr("192.168.1.100"),
+				BmcIpAddress:      cdb.GetStrPtr("192.168.1.100"),
 				Labels:            map[string]string{"env": "production", "zone": "us-east-1"},
 			},
 			expectErr: false,
@@ -332,7 +393,7 @@ func TestAPIExpectedPowerShelfUpdateRequest_Validate(t *testing.T) {
 			desc: "ok with nil values for all optional fields",
 			obj: APIExpectedPowerShelfUpdateRequest{
 				ShelfSerialNumber:  nil,
-				IpAddress:          nil,
+				BmcIpAddress:       nil,
 				DefaultBmcUsername: nil,
 				DefaultBmcPassword: nil,
 				Labels:             nil,
@@ -438,6 +499,47 @@ func TestAPIExpectedPowerShelfUpdateRequest_Validate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedPowerShelfUpdateRequest{
+				ShelfSerialNumber: &validShelfSerial,
+				BmcIpAddress:      cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedPowerShelfUpdateRequest{
+				ShelfSerialNumber: &validShelfSerial,
+				BmcIpAddress:      cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedPowerShelfUpdateRequest{
+				ShelfSerialNumber: &validShelfSerial,
+				BmcIpAddress:      cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedPowerShelfUpdateRequest{
+				ShelfSerialNumber: &validShelfSerial,
+				BmcIpAddress:      &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedPowerShelfUpdateRequest{
+				ShelfSerialNumber: &validShelfSerial,
+				BmcIpAddress:      nil,
+			},
+			expectErr: false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -456,7 +558,7 @@ func TestNewAPIExpectedPowerShelfEdgeCases(t *testing.T) {
 		dbEPS := &cdbm.ExpectedPowerShelf{
 			BmcMacAddress:     "",
 			ShelfSerialNumber: "",
-			IpAddress:         cdb.GetStrPtr(""),
+			BmcIpAddress:      cdb.GetStrPtr(""),
 			Labels:            map[string]string{"": ""},
 			Created:           time.Now(),
 			Updated:           time.Now(),
@@ -543,7 +645,7 @@ func TestNewAPIExpectedPowerShelfWithSite(t *testing.T) {
 			SiteID:            siteID,
 			BmcMacAddress:     "00:11:22:33:44:55",
 			ShelfSerialNumber: "SHELF123",
-			IpAddress:         cdb.GetStrPtr("192.168.1.100"),
+			BmcIpAddress:      cdb.GetStrPtr("192.168.1.100"),
 			Labels:            map[string]string{},
 			Site:              site,
 			Created:           time.Now(),

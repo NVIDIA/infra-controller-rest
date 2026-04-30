@@ -153,10 +153,10 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 		reportedIDs[epsID] = true
 		reportedLabels := getLabelsMapFromProto(reps)
 
-		// Convert proto IpAddress (string) to *string for DB
-		var ipAddress *string
+		// Convert proto BmcIpAddress (string) to *string for DB
+		var bmcIpAddress *string
 		if reps.BmcIpAddress != "" {
-			ipAddress = &reps.BmcIpAddress
+			bmcIpAddress = &reps.BmcIpAddress
 		}
 
 		// Create a new Expected Power Shelf if it doesn't already exist in DB
@@ -167,7 +167,7 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 				SiteID:               siteID,
 				BmcMacAddress:        reps.BmcMacAddress,
 				ShelfSerialNumber:    reps.ShelfSerialNumber,
-				IpAddress:            ipAddress,
+				BmcIpAddress:         bmcIpAddress,
 				Labels:               reportedLabels,
 				CreatedBy:            siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
 			})
@@ -180,7 +180,7 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 		// update if any field differs
 		if cur.BmcMacAddress != reps.BmcMacAddress ||
 			cur.ShelfSerialNumber != reps.ShelfSerialNumber ||
-			!util.PtrsEqual(cur.IpAddress, ipAddress) ||
+			!util.PtrsEqual(cur.BmcIpAddress, bmcIpAddress) ||
 			!reflect.DeepEqual(cur.Labels, reportedLabels) {
 			// nil labels in carbide can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
@@ -192,7 +192,7 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 				ExpectedPowerShelfID: cur.ID,
 				BmcMacAddress:        &reps.BmcMacAddress,
 				ShelfSerialNumber:    &reps.ShelfSerialNumber,
-				IpAddress:            ipAddress,
+				BmcIpAddress:         bmcIpAddress,
 				Labels:               reportedLabels,
 			})
 			if uerr != nil {

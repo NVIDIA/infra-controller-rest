@@ -164,6 +164,7 @@ func (cesh CreateExpectedSwitchHandler) Handle(c echo.Context) error {
 				ExpectedSwitchID:   uuid.New(),
 				SiteID:             site.ID,
 				BmcMacAddress:      apiRequest.BmcMacAddress,
+				BmcIpAddress:       apiRequest.BmcIpAddress,
 				SwitchSerialNumber: apiRequest.SwitchSerialNumber,
 				RackID:             apiRequest.RackID,
 				Name:               apiRequest.Name,
@@ -603,6 +604,7 @@ func (uesh UpdateExpectedSwitchHandler) Handle(c echo.Context) error {
 			cdbm.ExpectedSwitchUpdateInput{
 				ExpectedSwitchID:   expectedSwitch.ID,
 				BmcMacAddress:      apiRequest.BmcMacAddress,
+				BmcIpAddress:       apiRequest.BmcIpAddress,
 				SwitchSerialNumber: apiRequest.SwitchSerialNumber,
 				RackID:             apiRequest.RackID,
 				Name:               apiRequest.Name,

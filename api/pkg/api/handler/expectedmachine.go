@@ -228,6 +228,7 @@ func (cemh CreateExpectedMachineHandler) Handle(c echo.Context) error {
 				ExpectedMachineID:        uuid.New(),
 				SiteID:                   site.ID,
 				BmcMacAddress:            apiRequest.BmcMacAddress,
+				BmcIpAddress:             apiRequest.BmcIpAddress,
 				ChassisSerialNumber:      apiRequest.ChassisSerialNumber,
 				SkuID:                    apiRequest.SkuID,
 				FallbackDpuSerialNumbers: apiRequest.FallbackDPUSerialNumbers,
@@ -681,6 +682,7 @@ func (uemh UpdateExpectedMachineHandler) Handle(c echo.Context) error {
 			cdbm.ExpectedMachineUpdateInput{
 				ExpectedMachineID:        expectedMachine.ID,
 				BmcMacAddress:            apiRequest.BmcMacAddress,
+				BmcIpAddress:             apiRequest.BmcIpAddress,
 				ChassisSerialNumber:      apiRequest.ChassisSerialNumber,
 				SkuID:                    apiRequest.SkuID,
 				FallbackDpuSerialNumbers: apiRequest.FallbackDPUSerialNumbers,
@@ -1099,6 +1101,7 @@ func (cemh CreateExpectedMachinesHandler) Handle(c echo.Context) error {
 			ExpectedMachineID:        id,
 			SiteID:                   site.ID,
 			BmcMacAddress:            machineReq.BmcMacAddress,
+			BmcIpAddress:             machineReq.BmcIpAddress,
 			ChassisSerialNumber:      machineReq.ChassisSerialNumber,
 			SkuID:                    machineReq.SkuID,
 			FallbackDpuSerialNumbers: machineReq.FallbackDPUSerialNumbers,
@@ -1539,6 +1542,7 @@ func (uemh UpdateExpectedMachinesHandler) Handle(c echo.Context) error {
 		updateInputs = append(updateInputs, cdbm.ExpectedMachineUpdateInput{
 			ExpectedMachineID:        emID,
 			BmcMacAddress:            machineReq.BmcMacAddress,
+			BmcIpAddress:             machineReq.BmcIpAddress,
 			ChassisSerialNumber:      machineReq.ChassisSerialNumber,
 			SkuID:                    machineReq.SkuID,
 			FallbackDpuSerialNumbers: machineReq.FallbackDPUSerialNumbers,

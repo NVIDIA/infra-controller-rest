@@ -177,6 +177,7 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 				SwitchSerialNumber: "SWITCH123",
 				NvOsUsername:       cdb.GetStrPtr("nvos-admin"),
 				NvOsPassword:       cdb.GetStrPtr("nvos-password"),
+				BmcIpAddress:       cdb.GetStrPtr("192.168.1.10"),
 				Labels:             map[string]string{"env": "test"},
 			},
 			setupContext: func(c echo.Context) {
@@ -290,12 +291,19 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 				t.Errorf("Response: %v", rec.Body.String())
 			}
 
-			if tt.expectedStatus == http.StatusCreated && tt.requestBody.Labels != nil {
+			if tt.expectedStatus == http.StatusCreated {
 				var response model.APIExpectedSwitch
 				err := json.Unmarshal(rec.Body.Bytes(), &response)
 				assert.Nil(t, err)
-				assert.NotNil(t, response.Labels, "Labels should not be nil in response")
-				assert.Equal(t, tt.requestBody.Labels, response.Labels, "Labels in response should match request")
+				if tt.requestBody.Labels != nil {
+					assert.NotNil(t, response.Labels, "Labels should not be nil in response")
+					assert.Equal(t, tt.requestBody.Labels, response.Labels, "Labels in response should match request")
+				}
+				if tt.requestBody.BmcIpAddress != nil {
+					if assert.NotNil(t, response.BmcIpAddress, "BmcIpAddress should not be nil in response") {
+						assert.Equal(t, *tt.requestBody.BmcIpAddress, *response.BmcIpAddress, "BmcIpAddress in response should match request")
+					}
+				}
 			}
 		})
 	}
@@ -736,6 +744,19 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
+			name: "successful update with BmcIpAddress",
+			id:   testES.ID.String(),
+			requestBody: model.APIExpectedSwitchUpdateRequest{
+				BmcIpAddress: cdb.GetStrPtr("192.168.1.42"),
+			},
+			setupContext: func(c echo.Context) {
+				c.Set("user", createMockUser(org))
+				c.SetParamNames("orgName", "id")
+				c.SetParamValues(org, testES.ID.String())
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
 			name: "body ID mismatch with URL should return 400",
 			id:   testES.ID.String(),
 			requestBody: model.APIExpectedSwitchUpdateRequest{
@@ -786,6 +807,16 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 			if tt.expectedStatus != rec.Code {
 				t.Errorf("Response: %v", rec.Body.String())
+			}
+
+			// Verify BmcIpAddress round-trips through the update response when set
+			if tt.expectedStatus == http.StatusOK && tt.requestBody.BmcIpAddress != nil {
+				var response model.APIExpectedSwitch
+				err := json.Unmarshal(rec.Body.Bytes(), &response)
+				assert.Nil(t, err)
+				if assert.NotNil(t, response.BmcIpAddress, "BmcIpAddress should not be nil in response") {
+					assert.Equal(t, *tt.requestBody.BmcIpAddress, *response.BmcIpAddress, "BmcIpAddress in response should match request")
+				}
 			}
 		})
 	}

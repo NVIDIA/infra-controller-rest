@@ -79,7 +79,7 @@ func TestExpectedPowerShelfSQLDAO_Create(t *testing.T) {
 					SiteID:               site.ID,
 					BmcMacAddress:        "00:1B:44:11:3A:B7",
 					ShelfSerialNumber:    "SHELF123",
-					IpAddress:            db.GetStrPtr("192.168.1.100"),
+					BmcIpAddress:         db.GetStrPtr("192.168.1.100"),
 					Labels: map[string]string{
 						"environment": "test",
 						"location":    "datacenter1",
@@ -98,7 +98,7 @@ func TestExpectedPowerShelfSQLDAO_Create(t *testing.T) {
 					SiteID:               site.ID,
 					BmcMacAddress:        "00:1B:44:11:3A:B8",
 					ShelfSerialNumber:    "SHELF789",
-					IpAddress:            db.GetStrPtr("10.0.0.1"),
+					BmcIpAddress:         db.GetStrPtr("10.0.0.1"),
 					Labels: map[string]string{
 						"environment": "production",
 					},
@@ -109,7 +109,7 @@ func TestExpectedPowerShelfSQLDAO_Create(t *testing.T) {
 					SiteID:               site.ID,
 					BmcMacAddress:        "00:1B:44:11:3A:B9",
 					ShelfSerialNumber:    "SHELF456",
-					IpAddress:            nil,
+					BmcIpAddress:         nil,
 					Labels:               nil,
 					CreatedBy:            user.ID,
 				},
@@ -146,7 +146,7 @@ func TestExpectedPowerShelfSQLDAO_Create(t *testing.T) {
 					assert.NotNil(t, eps)
 					assert.Equal(t, input.BmcMacAddress, eps.BmcMacAddress)
 					assert.Equal(t, input.ShelfSerialNumber, eps.ShelfSerialNumber)
-					assert.Equal(t, input.IpAddress, eps.IpAddress)
+					assert.Equal(t, input.BmcIpAddress, eps.BmcIpAddress)
 					assert.Equal(t, input.Labels, eps.Labels)
 				}
 
@@ -180,7 +180,7 @@ func testExpectedPowerShelfSQLDAOCreateExpectedPowerShelves(ctx context.Context,
 			SiteID:               site.ID,
 			BmcMacAddress:        "00:1B:44:11:3A:B7",
 			ShelfSerialNumber:    "SHELF123",
-			IpAddress:            db.GetStrPtr("192.168.1.100"),
+			BmcIpAddress:         db.GetStrPtr("192.168.1.100"),
 			Labels: map[string]string{
 				"environment": "test",
 				"location":    "datacenter1",
@@ -194,7 +194,7 @@ func testExpectedPowerShelfSQLDAOCreateExpectedPowerShelves(ctx context.Context,
 			SiteID:               site.ID,
 			BmcMacAddress:        "00:1B:44:11:3A:B8",
 			ShelfSerialNumber:    "SHELF789",
-			IpAddress:            db.GetStrPtr("10.0.0.1"),
+			BmcIpAddress:         db.GetStrPtr("10.0.0.1"),
 			Labels: map[string]string{
 				"environment": "production",
 			},
@@ -207,7 +207,7 @@ func testExpectedPowerShelfSQLDAOCreateExpectedPowerShelves(ctx context.Context,
 			SiteID:               site.ID,
 			BmcMacAddress:        "00:1B:44:11:3A:B9",
 			ShelfSerialNumber:    "SHELF456",
-			IpAddress:            nil,
+			BmcIpAddress:         nil,
 			Labels:               nil,
 			CreatedBy:            user.ID,
 		})
@@ -275,7 +275,7 @@ func TestExpectedPowerShelfSQLDAO_GetByID(t *testing.T) {
 				assert.Equal(t, tc.eps.ID, tmp.ID)
 				assert.Equal(t, tc.eps.BmcMacAddress, tmp.BmcMacAddress)
 				assert.Equal(t, tc.eps.ShelfSerialNumber, tmp.ShelfSerialNumber)
-				assert.Equal(t, tc.eps.IpAddress, tmp.IpAddress)
+				assert.Equal(t, tc.eps.BmcIpAddress, tmp.BmcIpAddress)
 				assert.Equal(t, tc.eps.Labels, tmp.Labels)
 			} else {
 				t.Logf("%s", err.Error())
@@ -495,7 +495,7 @@ func TestExpectedPowerShelfSQLDAO_Update(t *testing.T) {
 			desc: "Update IP address",
 			input: ExpectedPowerShelfUpdateInput{
 				ExpectedPowerShelfID: epsExp[2].ID,
-				IpAddress:            db.GetStrPtr("172.16.0.1"),
+				BmcIpAddress:         db.GetStrPtr("172.16.0.1"),
 			},
 			expectedError: false,
 		},
@@ -527,8 +527,8 @@ func TestExpectedPowerShelfSQLDAO_Update(t *testing.T) {
 				if tc.input.ShelfSerialNumber != nil {
 					assert.Equal(t, *tc.input.ShelfSerialNumber, got.ShelfSerialNumber)
 				}
-				if tc.input.IpAddress != nil {
-					assert.Equal(t, tc.input.IpAddress, got.IpAddress)
+				if tc.input.BmcIpAddress != nil {
+					assert.Equal(t, tc.input.BmcIpAddress, got.BmcIpAddress)
 				}
 				if tc.input.Labels != nil {
 					assert.Equal(t, tc.input.Labels, got.Labels)
@@ -566,10 +566,10 @@ func TestExpectedPowerShelfSQLDAO_Clear(t *testing.T) {
 		verifyChildSpanner bool
 	}{
 		{
-			desc: "can clear IpAddress",
+			desc: "can clear BmcIpAddress",
 			eps:  epsExp[1],
 			input: ExpectedPowerShelfClearInput{
-				IpAddress: true,
+				BmcIpAddress: true,
 			},
 			expectedUpdate: true,
 		},
@@ -585,8 +585,8 @@ func TestExpectedPowerShelfSQLDAO_Clear(t *testing.T) {
 			desc: "can clear multiple fields",
 			eps:  epsExp[0],
 			input: ExpectedPowerShelfClearInput{
-				IpAddress: true,
-				Labels:    true,
+				BmcIpAddress: true,
+				Labels:       true,
 			},
 			expectedUpdate: true,
 		},
@@ -603,8 +603,8 @@ func TestExpectedPowerShelfSQLDAO_Clear(t *testing.T) {
 			tmp, err := epsd.Clear(ctx, nil, tc.input)
 			assert.Nil(t, err)
 			assert.NotNil(t, tmp)
-			if tc.input.IpAddress {
-				assert.Nil(t, tmp.IpAddress)
+			if tc.input.BmcIpAddress {
+				assert.Nil(t, tmp.BmcIpAddress)
 			}
 			if tc.input.Labels {
 				assert.Nil(t, tmp.Labels)

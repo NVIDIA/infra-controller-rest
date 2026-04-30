@@ -42,8 +42,8 @@ type APIExpectedPowerShelfCreateRequest struct {
 	DefaultBmcPassword *string `json:"defaultBmcPassword"`
 	// ShelfSerialNumber is the serial number of the expected power shelf
 	ShelfSerialNumber string `json:"shelfSerialNumber"`
-	// IpAddress is the IP address of the expected power shelf
-	IpAddress *string `json:"ipAddress"`
+	// BmcIpAddress is the BMC IP address of the expected power shelf
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
 	// Name is the optional name of the expected power shelf
@@ -85,6 +85,10 @@ func (epcr *APIExpectedPowerShelfCreateRequest) Validate() error {
 			validation.Length(1, 32).Error("Shelf serial number must be 32 characters or less")),
 		validation.Field(&epcr.RackID,
 			validation.NilOrNotEmpty.Error("RackID cannot be empty")),
+		validation.Field(&epcr.BmcIpAddress,
+			validation.NilOrNotEmpty.Error("BmcIpAddress cannot be empty"),
+			validation.When(epcr.BmcIpAddress != nil && *epcr.BmcIpAddress != "",
+				validationis.IP.Error("BmcIpAddress must be a valid IPv4 or IPv6 address"))),
 		validation.Field(&epcr.Name,
 			validation.NilOrNotEmpty.Error("Name cannot be empty")),
 		validation.Field(&epcr.Manufacturer,
@@ -120,8 +124,8 @@ type APIExpectedPowerShelfUpdateRequest struct {
 	DefaultBmcPassword *string `json:"defaultBmcPassword"`
 	// ShelfSerialNumber is the serial number of the expected power shelf
 	ShelfSerialNumber *string `json:"shelfSerialNumber"`
-	// IpAddress is the IP address of the expected power shelf
-	IpAddress *string `json:"ipAddress"`
+	// BmcIpAddress is the BMC IP address of the expected power shelf
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
 	// Name is the optional name of the expected power shelf
@@ -177,6 +181,10 @@ func (epur *APIExpectedPowerShelfUpdateRequest) Validate() error {
 			validation.Length(1, 32).Error("Shelf Serial Number must be 1-32 characters")),
 		validation.Field(&epur.RackID,
 			validation.NilOrNotEmpty.Error("RackID cannot be empty")),
+		validation.Field(&epur.BmcIpAddress,
+			validation.NilOrNotEmpty.Error("BmcIpAddress cannot be empty"),
+			validation.When(epur.BmcIpAddress != nil && *epur.BmcIpAddress != "",
+				validationis.IP.Error("BmcIpAddress must be a valid IPv4 or IPv6 address"))),
 		validation.Field(&epur.Name,
 			validation.NilOrNotEmpty.Error("Name cannot be empty")),
 		validation.Field(&epur.Manufacturer,
@@ -212,8 +220,8 @@ type APIExpectedPowerShelf struct {
 	Site *APISite `json:"site,omitempty"`
 	// ShelfSerialNumber is the serial number of the expected power shelf
 	ShelfSerialNumber string `json:"shelfSerialNumber"`
-	// IpAddress is the IP address of the expected power shelf
-	IpAddress *string `json:"ipAddress"`
+	// BmcIpAddress is the BMC IP address of the expected power shelf
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
 	// Name is the optional name of the expected power shelf
@@ -247,7 +255,7 @@ func NewAPIExpectedPowerShelf(dbModel *cdbm.ExpectedPowerShelf) *APIExpectedPowe
 		BmcMacAddress:     dbModel.BmcMacAddress,
 		SiteID:            dbModel.SiteID,
 		ShelfSerialNumber: dbModel.ShelfSerialNumber,
-		IpAddress:         dbModel.IpAddress,
+		BmcIpAddress:      dbModel.BmcIpAddress,
 		RackID:            dbModel.RackID,
 		Name:              dbModel.Name,
 		Manufacturer:      dbModel.Manufacturer,

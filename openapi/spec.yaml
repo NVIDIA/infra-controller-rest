@@ -3777,7 +3777,7 @@ paths:
                   defaultBmcUsername: admin
                   defaultBmcPassword: password123
                   shelfSerialNumber: SHELF-12345
-                  ipAddress: '192.168.1.100'
+                  bmcIpAddress: '192.168.1.100'
                   labels:
                     environment: production
                     rack: A1
@@ -3939,7 +3939,7 @@ paths:
                   defaultBmcUsername: newadmin
                   defaultBmcPassword: newpassword123
                   shelfSerialNumber: SHELF-54321
-                  ipAddress: '192.168.1.200'
+                  bmcIpAddress: '192.168.1.200'
                   labels:
                     environment: staging
                     rack: B2
@@ -17374,6 +17374,7 @@ components:
         - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
           siteId: f97df110-f4de-492e-8849-4a6af68026b0
           bmcMacAddress: '00:1A:2B:3C:4D:5E'
+          bmcIpAddress: '192.168.1.100'
           chassisSerialNumber: CHASSIS-12345
           fallbackDPUSerialNumbers:
             - DPU-001
@@ -17431,6 +17432,11 @@ components:
             - string
             - 'null'
           description: Optional rack identifier for this component
+        bmcIpAddress:
+          type:
+            - string
+            - 'null'
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         name:
           type:
             - string
@@ -17497,6 +17503,7 @@ components:
       examples:
         - siteId: f97df110-f4de-492e-8849-4a6af68026b0
           bmcMacAddress: '00:1A:2B:3C:4D:5E'
+          bmcIpAddress: '192.168.1.100'
           defaultBmcUsername: admin
           defaultBmcPassword: password123
           chassisSerialNumber: CHASSIS-12345
@@ -17552,6 +17559,11 @@ components:
             - string
             - 'null'
           description: Optional rack identifier for this component
+        bmcIpAddress:
+          type:
+            - string
+            - 'null'
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         name:
           type:
             - string
@@ -17677,6 +17689,11 @@ components:
             - string
             - 'null'
           description: Optional rack identifier for this component
+        bmcIpAddress:
+          type:
+            - string
+            - 'null'
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         name:
           type:
             - string
@@ -17735,7 +17752,7 @@ components:
           siteId: f97df110-f4de-492e-8849-4a6af68026b0
           bmcMacAddress: '00:1A:2B:3C:4D:5E'
           shelfSerialNumber: SHELF-12345
-          ipAddress: '192.168.1.100'
+          bmcIpAddress: '192.168.1.100'
           rackId: rack-01
           manufacturer: Delta
           labels:
@@ -17761,11 +17778,11 @@ components:
         shelfSerialNumber:
           type: string
           description: Serial number of the Expected Power Shelf
-        ipAddress:
+        bmcIpAddress:
           type:
             - string
             - 'null'
-          description: IP address of the Expected Power Shelf
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         rackId:
           type:
             - string
@@ -17840,7 +17857,7 @@ components:
           defaultBmcUsername: admin
           defaultBmcPassword: password123
           shelfSerialNumber: SHELF-12345
-          ipAddress: '192.168.1.100'
+          bmcIpAddress: '192.168.1.100'
           rackId: rack-01
           manufacturer: Delta
           labels:
@@ -17872,11 +17889,11 @@ components:
           minLength: 1
           maxLength: 32
           description: Serial number of the Expected Power Shelf
-        ipAddress:
+        bmcIpAddress:
           type:
             - string
             - 'null'
-          description: IP address of the Expected Power Shelf
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         rackId:
           type:
             - string
@@ -17943,7 +17960,7 @@ components:
         - defaultBmcUsername: newadmin
           defaultBmcPassword: newpassword123
           shelfSerialNumber: SHELF-54321
-          ipAddress: '192.168.1.200'
+          bmcIpAddress: '192.168.1.200'
           rackId: rack-02
           manufacturer: Delta
           labels:
@@ -17981,11 +17998,11 @@ components:
           minLength: 1
           maxLength: 32
           description: Serial number of the Expected Power Shelf
-        ipAddress:
+        bmcIpAddress:
           type:
             - string
             - 'null'
-          description: IP address of the Expected Power Shelf
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         rackId:
           type:
             - string
@@ -18048,6 +18065,7 @@ components:
         - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
           siteId: f97df110-f4de-492e-8849-4a6af68026b0
           bmcMacAddress: '00:1A:2B:3C:4D:5E'
+          bmcIpAddress: '192.168.1.100'
           switchSerialNumber: SWITCH-12345
           rackId: rack-01
           manufacturer: NVIDIA
@@ -18079,6 +18097,11 @@ components:
             - string
             - 'null'
           description: Optional rack identifier for this component
+        bmcIpAddress:
+          type:
+            - string
+            - 'null'
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         name:
           type:
             - string
@@ -18145,6 +18168,7 @@ components:
       examples:
         - siteId: f97df110-f4de-492e-8849-4a6af68026b0
           bmcMacAddress: '00:1A:2B:3C:4D:5E'
+          bmcIpAddress: '192.168.1.100'
           defaultBmcUsername: admin
           defaultBmcPassword: password123
           switchSerialNumber: SWITCH-12345
@@ -18196,6 +18220,11 @@ components:
             - string
             - 'null'
           description: Optional rack identifier for this component
+        bmcIpAddress:
+          type:
+            - string
+            - 'null'
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         name:
           type:
             - string
@@ -18311,6 +18340,11 @@ components:
             - string
             - 'null'
           description: Optional rack identifier for this component
+        bmcIpAddress:
+          type:
+            - string
+            - 'null'
+          description: Optional BMC IP address (IPv4 or IPv6). When set, pre-allocates a reserved IP for the BMC.
         name:
           type:
             - string

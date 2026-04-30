@@ -111,6 +111,7 @@ func TestExpectedMachineSQLDAO_Create(t *testing.T) {
 					BmcMacAddress:            "00:1B:44:11:3A:B7",
 					ChassisSerialNumber:      "CHASSIS123",
 					FallbackDpuSerialNumbers: []string{"DPU001", "DPU002"},
+					BmcIpAddress:             db.GetStrPtr("192.168.1.10"),
 					Labels: map[string]string{
 						"environment": "test",
 						"location":    "datacenter1",
@@ -191,6 +192,7 @@ func TestExpectedMachineSQLDAO_Create(t *testing.T) {
 					assert.Equal(t, input.BmcMacAddress, em.BmcMacAddress)
 					assert.Equal(t, input.ChassisSerialNumber, em.ChassisSerialNumber)
 					assert.Equal(t, input.FallbackDpuSerialNumbers, em.FallbackDpuSerialNumbers)
+					assert.Equal(t, input.BmcIpAddress, em.BmcIpAddress)
 					assert.Equal(t, input.Labels, em.Labels)
 				}
 

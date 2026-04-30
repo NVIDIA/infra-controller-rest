@@ -221,6 +221,62 @@ func TestAPIExpectedMachineCreateRequest_Validate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        nil,
+			},
+			expectErr: false,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -507,6 +563,47 @@ func TestAPIExpectedMachineUpdateRequest_Validate(t *testing.T) {
 				Labels:              map[string]string{"env": "test"},
 			},
 			expectErr: true,
+		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        nil,
+			},
+			expectErr: false,
 		},
 	}
 

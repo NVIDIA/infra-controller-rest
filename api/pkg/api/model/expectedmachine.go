@@ -53,6 +53,8 @@ type APIExpectedMachineCreateRequest struct {
 	SkuID *string `json:"skuId"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
+	// BmcIpAddress is the optional BMC IP address of the expected machine
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// Name is the optional name of the expected machine
 	Name *string `json:"name"`
 	// Manufacturer is the optional manufacturer of the expected machine
@@ -93,6 +95,10 @@ func (emcr *APIExpectedMachineCreateRequest) Validate() error {
 			validation.NilOrNotEmpty.Error("SkuID cannot be empty")),
 		validation.Field(&emcr.RackID,
 			validation.NilOrNotEmpty.Error("RackID cannot be empty")),
+		validation.Field(&emcr.BmcIpAddress,
+			validation.NilOrNotEmpty.Error("BmcIpAddress cannot be empty"),
+			validation.When(emcr.BmcIpAddress != nil && *emcr.BmcIpAddress != "",
+				validationis.IP.Error("BmcIpAddress must be a valid IPv4 or IPv6 address"))),
 		validation.Field(&emcr.Name,
 			validation.NilOrNotEmpty.Error("Name cannot be empty")),
 		validation.Field(&emcr.Manufacturer,
@@ -134,6 +140,8 @@ type APIExpectedMachineUpdateRequest struct {
 	SkuID *string `json:"skuId"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
+	// BmcIpAddress is the optional BMC IP address of the expected machine
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// Name is the optional name of the expected machine
 	Name *string `json:"name"`
 	// Manufacturer is the optional manufacturer of the expected machine
@@ -189,6 +197,10 @@ func (emur *APIExpectedMachineUpdateRequest) Validate() error {
 			validation.NilOrNotEmpty.Error("SkuID cannot be empty")),
 		validation.Field(&emur.RackID,
 			validation.NilOrNotEmpty.Error("RackID cannot be empty")),
+		validation.Field(&emur.BmcIpAddress,
+			validation.NilOrNotEmpty.Error("BmcIpAddress cannot be empty"),
+			validation.When(emur.BmcIpAddress != nil && *emur.BmcIpAddress != "",
+				validationis.IP.Error("BmcIpAddress must be a valid IPv4 or IPv6 address"))),
 		validation.Field(&emur.Name,
 			validation.NilOrNotEmpty.Error("Name cannot be empty")),
 		validation.Field(&emur.Manufacturer,
@@ -236,6 +248,8 @@ type APIExpectedMachine struct {
 	Machine *APIMachineSummary `json:"machine,omitempty"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
+	// BmcIpAddress is the optional BMC IP address of the expected machine
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// Name is the optional name of the expected machine
 	Name *string `json:"name"`
 	// Manufacturer is the optional manufacturer of the expected machine
@@ -271,6 +285,7 @@ func NewAPIExpectedMachine(dibp *cdbm.ExpectedMachine) *APIExpectedMachine {
 		SkuID:                    dibp.SkuID,
 		MachineID:                dibp.MachineID,
 		RackID:                   dibp.RackID,
+		BmcIpAddress:             dibp.BmcIpAddress,
 		Name:                     dibp.Name,
 		Manufacturer:             dibp.Manufacturer,
 		Model:                    dibp.Model,

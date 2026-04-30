@@ -71,6 +71,7 @@ type ExpectedMachine struct {
 	MachineID                *string           `bun:"machine_id"`
 	Machine                  *Machine          `bun:"rel:belongs-to,join:machine_id=id"`
 	FallbackDpuSerialNumbers []string          `bun:"fallback_dpu_serial_numbers,array"`
+	BmcIpAddress             *string           `bun:"bmc_ip_address"`
 	RackID                   *string           `bun:"rack_id"`
 	Name                     *string           `bun:"name"`
 	Manufacturer             *string           `bun:"manufacturer"`
@@ -106,6 +107,9 @@ func (em *ExpectedMachine) ToProto(creds ExpectedMachineCredentials) *cwssaws.Ex
 		SkuId:                    em.SkuID,
 	}
 
+	if em.BmcIpAddress != nil {
+		proto.BmcIpAddress = em.BmcIpAddress
+	}
 	if em.RackID != nil {
 		proto.RackId = &cwssaws.RackId{Id: *em.RackID}
 	}
@@ -166,6 +170,7 @@ type ExpectedMachineCreateInput struct {
 	SkuID                    *string
 	MachineID                *string
 	FallbackDpuSerialNumbers []string
+	BmcIpAddress             *string
 	RackID                   *string
 	Name                     *string
 	Manufacturer             *string
@@ -187,6 +192,7 @@ type ExpectedMachineUpdateInput struct {
 	SkuID                    *string
 	MachineID                *string
 	FallbackDpuSerialNumbers []string
+	BmcIpAddress             *string
 	RackID                   *string
 	Name                     *string
 	Manufacturer             *string
@@ -205,6 +211,7 @@ type ExpectedMachineClearInput struct {
 	SkuID                    bool
 	MachineID                bool
 	FallbackDpuSerialNumbers bool
+	BmcIpAddress             bool
 	RackID                   bool
 	Name                     bool
 	Manufacturer             bool
@@ -328,6 +335,7 @@ func (emsd ExpectedMachineSQLDAO) CreateMultiple(ctx context.Context, tx *db.Tx,
 			SkuID:                    input.SkuID,
 			MachineID:                input.MachineID,
 			FallbackDpuSerialNumbers: input.FallbackDpuSerialNumbers,
+			BmcIpAddress:             input.BmcIpAddress,
 			RackID:                   input.RackID,
 			Name:                     input.Name,
 			Manufacturer:             input.Manufacturer,
@@ -599,6 +607,10 @@ func (emsd ExpectedMachineSQLDAO) UpdateMultiple(ctx context.Context, tx *db.Tx,
 			em.MachineID = input.MachineID
 			columnsSet["machine_id"] = true
 		}
+		if input.BmcIpAddress != nil {
+			em.BmcIpAddress = input.BmcIpAddress
+			columnsSet["bmc_ip_address"] = true
+		}
 		if input.RackID != nil {
 			em.RackID = input.RackID
 			columnsSet["rack_id"] = true
@@ -714,6 +726,10 @@ func (emsd ExpectedMachineSQLDAO) Clear(ctx context.Context, tx *db.Tx, input Ex
 	if input.FallbackDpuSerialNumbers {
 		em.FallbackDpuSerialNumbers = nil
 		updatedFields = append(updatedFields, "fallback_dpu_serial_numbers")
+	}
+	if input.BmcIpAddress {
+		em.BmcIpAddress = nil
+		updatedFields = append(updatedFields, "bmc_ip_address")
 	}
 	if input.RackID {
 		em.RackID = nil
