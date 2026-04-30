@@ -164,6 +164,11 @@ tags:
     description: |-
       Expected Power Shelf identifies a Power Shelf that is expected to be discovered at a Site. Infrastructure Providers can pre-register Expected Power Shelves using BMC
       credentials and serial numbers to help with Power Shelf discovery and ingestion.
+  - name: Expected Rack
+    description: |-
+      Expected Rack identifies a Rack that is expected to be discovered at a Site. Infrastructure Providers can pre-register Expected Racks with an operator-supplied
+      rack identifier and a Rack Profile reference to help with Rack discovery and ingestion. Chassis identity and physical location information are conveyed via
+      well-known label keys (`chassis.manufacturer`, `chassis.serial-number`, `chassis.model`, `location.region`, `location.datacenter`, `location.room`, `location.position`).
   - name: Expected Switch
     description: |-
       Expected Switch identifies a Switch that is expected to be discovered at a Site. Infrastructure Providers can pre-register Expected Switches using BMC, NvOS credentials
@@ -3984,6 +3989,347 @@ paths:
           $ref: '#/components/responses/NotFoundError'
       tags:
         - Expected Power Shelf
+  '/v2/org/{org}/nico/expected-rack':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+    post:
+      summary: Create Expected Rack
+      operationId: create-expected-rack
+      description: |-
+        Create an Expected Rack to pre-register a rack expected to be discovered at a Site. The `rackId` is an operator-supplied string identifier (not a UUID) that uniquely identifies the rack within the Site.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Racks if they have an account with the Site's Infrastructure Provider.
+
+        Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpectedRackCreateRequest'
+            examples:
+              example-1:
+                value:
+                  siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                  rackId: rack-01
+                  rackProfileId: rp-standard-42u
+                  name: Rack 01
+                  description: Production rack in row A
+                  labels:
+                    chassis.manufacturer: NVIDIA
+                    chassis.serial-number: NVRK0001001
+                    chassis.model: GB200-NVL72
+                    location.region: us-west-2
+                    location.datacenter: phx-dc01
+                    location.room: room-1
+                    location.position: A1
+        description: Expected Rack creation request
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+    get:
+      summary: Retrieve all Expected Racks
+      operationId: get-all-expected-rack
+      description: |-
+        Retrieve all Expected Racks.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_PROVIDER_VIEWER` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Racks if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          description: ID of the Site to filter Expected Racks by
+        - schema:
+            type: string
+            enum:
+              - Site
+          in: query
+          name: includeRelation
+          description: Related entity to expand
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+        - schema:
+            type: string
+            enum:
+              - RACK_ID_ASC
+              - RACK_ID_DESC
+              - RACK_PROFILE_ID_ASC
+              - RACK_PROFILE_ID_DESC
+              - CREATED_ASC
+              - CREATED_DESC
+              - UPDATED_ASC
+              - UPDATED_DESC
+          in: query
+          name: orderBy
+          description: Ordering for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpectedRack'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":30,"orderBy": "CREATED_DESC"}'
+              description: Pagination result in JSON format
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+    put:
+      summary: Replace all Expected Racks
+      operationId: replace-all-expected-rack
+      description: |-
+        Replace the full set of Expected Racks for a Site with the provided list. All existing Expected Racks for the Site that are not in the request body will be deleted, and any new Expected Racks in the request will be created. Existing Expected Racks with matching `rackId` values will be updated.
+
+        Every entry in `expectedRacks` must reference the same `siteId` as the top-level `siteId`. `rackId` values must be unique within the request. The `expectedRacks` array may be empty to clear all Expected Racks for the Site.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also replace Expected Racks if they have an account with the Site's Infrastructure Provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpectedRackList'
+            examples:
+              example-1:
+                value:
+                  siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                  expectedRacks:
+                    - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                      rackId: rack-01
+                      rackProfileId: rp-standard-42u
+                      name: Rack 01
+                      description: Production rack in row A
+                      labels:
+                        chassis.manufacturer: NVIDIA
+                        chassis.serial-number: NVRK0001001
+                        chassis.model: GB200-NVL72
+                        location.datacenter: phx-dc01
+                        location.position: A1
+                    - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                      rackId: rack-02
+                      rackProfileId: rp-standard-42u
+                      name: Rack 02
+                      description: Production rack in row A
+                      labels:
+                        chassis.manufacturer: NVIDIA
+                        chassis.serial-number: NVRK0001002
+                        chassis.model: GB200-NVL72
+                        location.datacenter: phx-dc01
+                        location.position: A2
+        description: Replace-all Expected Racks request
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+  '/v2/org/{org}/nico/expected-rack/all':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+    delete:
+      summary: Delete all Expected Racks
+      operationId: delete-all-expected-rack
+      description: |-
+        Delete all Expected Racks for a Site.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Infrastructure Provider must own the Expected Racks.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also delete Expected Racks if they have an account with the Site's Infrastructure Provider.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site whose Expected Racks should be deleted
+      responses:
+        '204':
+          description: All Expected Racks deleted successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+  '/v2/org/{org}/nico/expected-rack/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: ID of the Expected Rack
+    get:
+      summary: Retrieve Expected Rack
+      operationId: get-expected-rack
+      description: |-
+        Retrieve a specific Expected Rack by its `id`.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_PROVIDER_VIEWER` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Racks if they have an account with the Site's Infrastructure Provider.
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - Site
+          in: query
+          name: includeRelation
+          description: Related entity to expand
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Expected Rack
+    patch:
+      summary: Update Expected Rack
+      operationId: update-expected-rack
+      description: |-
+        Update an existing Expected Rack identified by its `id`.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Infrastructure Provider must own the Expected Rack.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also update Expected Racks if they have an account with the Site's Infrastructure Provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpectedRackUpdateRequest'
+            examples:
+              example-1:
+                value:
+                  rackProfileId: rp-standard-48u
+                  name: Rack 01 (updated)
+                  description: Production rack in row A, upgraded chassis
+                  labels:
+                    chassis.manufacturer: NVIDIA
+                    chassis.serial-number: NVRK0001001
+                    chassis.model: GB200-NVL72
+                    location.datacenter: phx-dc01
+                    location.position: A1
+        description: Expected Rack update request
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Expected Rack
+    delete:
+      summary: Delete Expected Rack
+      operationId: delete-expected-rack
+      description: |-
+        Delete an existing Expected Rack identified by its `id`.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Infrastructure Provider must own the Expected Rack.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also delete Expected Racks if they have an account with the Site's Infrastructure Provider.
+      responses:
+        '204':
+          description: Expected Rack deleted successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Expected Rack
   '/v2/org/{org}/nico/expected-switch':
     parameters:
       - schema:
@@ -18282,6 +18628,227 @@ components:
         labels:
           $ref: '#/components/schemas/Labels'
           description: User-defined key-value pairs for organizing and categorizing Expected Power Shelves
+    ExpectedRack:
+      title: ExpectedRack
+      type: object
+      description: |-
+        An Expected Rack represents a rack that is expected to be discovered at a Site. The `rackId` is an operator-supplied string identifier (not a UUID) that uniquely identifies the rack within the Site. Each Expected Rack references a Rack Profile that describes the rack's expected layout and capabilities.
+
+        Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      examples:
+        - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+          rackId: rack-01
+          siteId: f97df110-f4de-492e-8849-4a6af68026b0
+          rackProfileId: rp-standard-42u
+          name: Rack 01
+          description: Production rack in row A
+          labels:
+            chassis.manufacturer: NVIDIA
+            chassis.serial-number: NVRK0001001
+            chassis.model: GB200-NVL72
+            location.region: us-west-2
+            location.datacenter: phx-dc01
+            location.room: room-1
+            location.position: A1
+          created: '2019-08-24T14:15:22Z'
+          updated: '2019-08-24T14:15:22Z'
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier (UUID) for the Expected Rack
+          readOnly: true
+        rackId:
+          type: string
+          description: Operator-supplied identifier for the rack (string, not UUID). Unique within a Site.
+          readOnly: true
+        siteId:
+          type: string
+          format: uuid
+          description: ID of the Site the Expected Rack belongs to
+          readOnly: true
+        rackProfileId:
+          type: string
+          description: Identifier of the Rack Profile this rack conforms to
+        name:
+          type: string
+          description: Human-readable name of the Expected Rack
+        description:
+          type: string
+          description: Human-readable description of the Expected Rack
+        labels:
+          $ref: '#/components/schemas/Labels'
+          description: |-
+            User-defined key-value pairs for organizing and categorizing Expected Racks. Well-known keys (`chassis.*`, `location.*`) are used to convey chassis identity and physical location.
+        created:
+          type: string
+          format: date-time
+          description: ISO 8601 datetime when the Expected Rack was created
+          readOnly: true
+        updated:
+          type: string
+          format: date-time
+          description: ISO 8601 datetime when the Expected Rack was last updated
+          readOnly: true
+    ExpectedRackCreateRequest:
+      title: ExpectedRackCreateRequest
+      type: object
+      description: |-
+        Request data to create a new Expected Rack.
+
+        The `rackId` is an operator-supplied string identifier (not a UUID) that must be unique within the Site. Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      examples:
+        - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+          rackId: rack-01
+          rackProfileId: rp-standard-42u
+          name: Rack 01
+          description: Production rack in row A
+          labels:
+            chassis.manufacturer: NVIDIA
+            chassis.serial-number: NVRK0001001
+            chassis.model: GB200-NVL72
+            location.region: us-west-2
+            location.datacenter: phx-dc01
+            location.room: room-1
+            location.position: A1
+      properties:
+        siteId:
+          type: string
+          format: uuid
+          description: ID of the Site the Expected Rack belongs to
+        rackId:
+          type: string
+          minLength: 1
+          description: Operator-supplied identifier for the rack (string, not UUID). Must be non-empty and unique within the Site.
+        rackProfileId:
+          type: string
+          minLength: 1
+          description: Identifier of the Rack Profile this rack conforms to. Must be non-empty.
+        name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable name of the Expected Rack
+        description:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable description of the Expected Rack
+        labels:
+          $ref: '#/components/schemas/Labels'
+          description: |-
+            User-defined key-value pairs for organizing and categorizing Expected Racks. Well-known keys (`chassis.*`, `location.*`) are used to convey chassis identity and physical location.
+      required:
+        - siteId
+        - rackId
+        - rackProfileId
+    ExpectedRackList:
+      title: ExpectedRackList
+      type: object
+      description: |-
+        Replace-all request body for Expected Racks. The `expectedRacks` array contains the full desired set of Expected Racks for the Site identified by `siteId`. All entries must reference the same `siteId` as the top-level field, and `rackId` values must be unique within the request. The array may be empty to clear all Expected Racks for the Site.
+      examples:
+        - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+          expectedRacks:
+            - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+              rackId: rack-01
+              rackProfileId: rp-standard-42u
+              name: Rack 01
+              description: Production rack in row A
+              labels:
+                chassis.manufacturer: NVIDIA
+                chassis.serial-number: NVRK0001001
+                chassis.model: GB200-NVL72
+                location.datacenter: phx-dc01
+                location.position: A1
+            - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+              rackId: rack-02
+              rackProfileId: rp-standard-42u
+              name: Rack 02
+              description: Production rack in row A
+              labels:
+                chassis.manufacturer: NVIDIA
+                chassis.serial-number: NVRK0001002
+                chassis.model: GB200-NVL72
+                location.datacenter: phx-dc01
+                location.position: A2
+      properties:
+        siteId:
+          type: string
+          format: uuid
+          description: ID of the Site whose Expected Racks should be replaced
+        expectedRacks:
+          type: array
+          description: |-
+            The full desired set of Expected Racks for the Site. Every entry must reference the same `siteId` as the top-level field, and `rackId` values must be unique within the request. May be empty to clear all Expected Racks for the Site.
+          items:
+            $ref: '#/components/schemas/ExpectedRackCreateRequest'
+      required:
+        - siteId
+        - expectedRacks
+    ExpectedRackUpdateRequest:
+      title: ExpectedRackUpdateRequest
+      type: object
+      description: |-
+        Request data to update an existing Expected Rack.
+
+        For single updates (PATCH /expected-rack/{id}), the `id` field is optional in the body and will be ignored if provided (the `id` from the URL path is used).
+
+        Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      examples:
+        - rackProfileId: rp-standard-48u
+          name: Rack 01 (updated)
+          description: Production rack in row A, upgraded chassis
+          labels:
+            chassis.manufacturer: NVIDIA
+            chassis.serial-number: NVRK0001001
+            chassis.model: GB200-NVL72
+            location.datacenter: phx-dc01
+            location.position: A1
+      properties:
+        id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: |-
+            Unique identifier (UUID) of the Expected Rack to update. Optional for single Expected Rack update (must be empty or match the id from the URL path).
+        rackId:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Optional new operator-supplied rack identifier. If provided, must be non-empty and unique within the Site.
+        rackProfileId:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Optional new Rack Profile identifier. If provided, must be non-empty.
+        name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable name of the Expected Rack
+        description:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable description of the Expected Rack
+        labels:
+          $ref: '#/components/schemas/Labels'
+          description: |-
+            User-defined key-value pairs for organizing and categorizing Expected Racks. Well-known keys (`chassis.*`, `location.*`) are used to convey chassis identity and physical location.
     ExpectedSwitch:
       title: ExpectedSwitch
       type: object

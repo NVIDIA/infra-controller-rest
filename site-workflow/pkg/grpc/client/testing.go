@@ -1208,6 +1208,98 @@ func (c *MockNICoClient) GetAllExpectedSwitchesLinked(ctx context.Context, in *e
 	return out, nil
 }
 
+/* Expected Rack mock methods */
+func (c *MockNICoClient) AddExpectedRack(ctx context.Context, in *wflows.ExpectedRack, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	if in.RackId == nil || in.RackId.Id == "" {
+		return nil, status.Error(codes.Internal, "ID not provided for AddExpectedRack")
+	}
+	if in.RackType == "" {
+		return nil, status.Error(codes.Internal, "Rack Profile ID not provided for AddExpectedRack")
+	}
+	out := new(emptypb.Empty)
+	return out, nil
+}
+
+func (c *MockNICoClient) UpdateExpectedRack(ctx context.Context, in *wflows.ExpectedRack, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	if in.RackId == nil || in.RackId.Id == "" {
+		return nil, status.Error(codes.Internal, "ID not provided for UpdateExpectedRack")
+	}
+	if in.RackType == "" {
+		return nil, status.Error(codes.Internal, "Rack Profile ID not provided for UpdateExpectedRack")
+	}
+	out := new(emptypb.Empty)
+	return out, nil
+}
+
+func (c *MockNICoClient) DeleteExpectedRack(ctx context.Context, in *wflows.ExpectedRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	if in.RackId == "" {
+		return nil, status.Error(codes.Internal, "ID not provided for DeleteExpectedRack")
+	}
+	out := new(emptypb.Empty)
+	return out, nil
+}
+
+func (c *MockNICoClient) GetExpectedRack(ctx context.Context, in *wflows.ExpectedRackRequest, opts ...grpc.CallOption) (*wflows.ExpectedRack, error) {
+	if in.RackId == "" {
+		return nil, status.Error(codes.Internal, "ID not provided for GetExpectedRack")
+	}
+	err, ok := ctx.Value("wantError").(error)
+	if ok {
+		if status.Code(err) == codes.Internal {
+			return nil, status.Error(codes.Internal, "failed to retrieve expected rack")
+		}
+	}
+	out := &wflows.ExpectedRack{
+		RackId:   &wflows.RackId{Id: in.RackId},
+		RackType: uuid.NewString(),
+	}
+	return out, nil
+}
+
+func (c *MockNICoClient) GetAllExpectedRacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*wflows.ExpectedRackList, error) {
+	err, ok := ctx.Value("wantError").(error)
+	if ok {
+		if status.Code(err) == codes.Internal {
+			return nil, status.Error(codes.Internal, "failed to retrieve expected racks")
+		}
+	}
+
+	out := &wflows.ExpectedRackList{}
+
+	count, ok := ctx.Value("wantCount").(int)
+	if ok {
+		for i := 0; i < count; i++ {
+			out.ExpectedRacks = append(out.ExpectedRacks, &wflows.ExpectedRack{
+				RackId:   &wflows.RackId{Id: uuid.NewString()},
+				RackType: uuid.NewString(),
+			})
+		}
+	}
+
+	return out, nil
+}
+
+func (c *MockNICoClient) ReplaceAllExpectedRacks(ctx context.Context, in *wflows.ExpectedRackList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	if in == nil {
+		return nil, status.Error(codes.Internal, "Invalid request argument")
+	}
+	for _, er := range in.ExpectedRacks {
+		if er == nil || er.RackId == nil || er.RackId.Id == "" {
+			return nil, status.Error(codes.Internal, "ID not provided for ReplaceAllExpectedRacks")
+		}
+		if er.RackType == "" {
+			return nil, status.Error(codes.Internal, "Rack Profile ID not provided for ReplaceAllExpectedRacks")
+		}
+	}
+	out := new(emptypb.Empty)
+	return out, nil
+}
+
+func (c *MockNICoClient) DeleteAllExpectedRacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	return out, nil
+}
+
 /* SKU mock methods */
 func (c *MockNICoClient) FindSkusByIds(ctx context.Context, in *wflows.SkusByIdsRequest, opts ...grpc.CallOption) (*wflows.SkuList, error) {
 	err, ok := ctx.Value("wantError").(error)

@@ -32,6 +32,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedrack"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instance"
@@ -79,6 +80,7 @@ func NewAPIHandlers() {
 		NetworkSecurityGroup:   &networksecuritygroup.API{},
 		ExpectedMachine:        &expectedmachine.API{},
 		ExpectedPowerShelf:     &expectedpowershelf.API{},
+		ExpectedRack:           &expectedrack.API{},
 		ExpectedSwitch:         &expectedswitch.API{},
 		SKU:                    &sku.API{},
 		DpuExtensionService:    &dpuextensionservice.API{},
@@ -123,6 +125,7 @@ func (Managers *Manager) NewInstance() {
 	Managers.NetworkSecurityGroup()
 	Managers.ExpectedMachine()
 	Managers.ExpectedPowerShelf()
+	Managers.ExpectedRack()
 	Managers.ExpectedSwitch()
 	Managers.SKU()
 	Managers.DpuExtensionService()
@@ -171,6 +174,7 @@ func (Managers *Manager) Init() {
 	Managers.NetworkSecurityGroup().Init()
 	Managers.ExpectedMachine().Init()
 	Managers.ExpectedPowerShelf().Init()
+	Managers.ExpectedRack().Init()
 	Managers.ExpectedSwitch().Init()
 	Managers.SKU().Init()
 	Managers.DpuExtensionService().Init()

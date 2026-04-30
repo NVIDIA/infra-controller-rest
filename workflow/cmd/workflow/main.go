@@ -83,6 +83,9 @@ import (
 	expectedPowerShelfActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/expectedpowershelf"
 	expectedPowerShelfWorkflow "github.com/NVIDIA/infra-controller-rest/workflow/pkg/workflow/expectedpowershelf"
 
+	expectedRackActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/expectedrack"
+	expectedRackWorkflow "github.com/NVIDIA/infra-controller-rest/workflow/pkg/workflow/expectedrack"
+
 	expectedSwitchActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/expectedswitch"
 	expectedSwitchWorkflow "github.com/NVIDIA/infra-controller-rest/workflow/pkg/workflow/expectedswitch"
 
@@ -315,6 +318,9 @@ func main() {
 		// ExpectedPowerShelf workflow
 		w.RegisterWorkflow(expectedPowerShelfWorkflow.UpdateExpectedPowerShelfInventory)
 
+		// ExpectedRack workflow
+		w.RegisterWorkflow(expectedRackWorkflow.UpdateExpectedRackInventory)
+
 		// ExpectedSwitch workflow
 		w.RegisterWorkflow(expectedSwitchWorkflow.UpdateExpectedSwitchInventory)
 
@@ -376,6 +382,10 @@ func main() {
 	// ExpectedPowerShelf activities
 	expectedPowerShelfManager := expectedPowerShelfActivity.NewManageExpectedPowerShelf(dbSession, siteClientPool)
 	w.RegisterActivity(&expectedPowerShelfManager)
+
+	// ExpectedRack activities
+	expectedRackManager := expectedRackActivity.NewManageExpectedRack(dbSession, siteClientPool)
+	w.RegisterActivity(&expectedRackManager)
 
 	// ExpectedSwitch activities
 	expectedSwitchManager := expectedSwitchActivity.NewManageExpectedSwitch(dbSession, siteClientPool)
