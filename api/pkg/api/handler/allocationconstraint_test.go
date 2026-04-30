@@ -85,8 +85,10 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 		"description": "Test Instance Type 2 Description",
 	}, ipu)
 
-	// build some machines, and map the machines to the instancetypes
-	for i := 1; i <= 30; i++ {
+	// Build enough Machines for Instance Type it1 so global reserved Allocation Constraints
+	// (this test's allocations plus tenant2's it1 allocation) stay below the Machine count when
+	// CheckMachinesForInstanceTypeAllocation adds an increase delta.
+	for i := 1; i <= 40; i++ {
 		mc := testInstanceBuildMachine(t, dbSession, ip.ID, site.ID, cdb.GetBoolPtr(false), nil)
 		assert.NotNil(t, mc)
 		mcinst1 := testInstanceBuildMachineInstanceType(t, dbSession, mc, it1)
@@ -101,6 +103,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 	// Setup IP Blocks
 	ipb1 := testIPBlockBuildIPBlock(t, dbSession, "testipb", site, ip, &tenant1.ID, cdbm.IPBlockRoutingTypeDatacenterOnly, "192.168.0.0", 16, cdbm.IPBlockProtocolVersionV4, false, cdbm.IPBlockStatusReady, ipu)
 	ipb2 := testIPBlockBuildIPBlock(t, dbSession, "testipb2", site, ip, &tenant1.ID, cdbm.IPBlockRoutingTypeDatacenterOnly, "192.167.0.0", 16, cdbm.IPBlockProtocolVersionV4, false, cdbm.IPBlockStatusReady, ipu)
+	ipb3 := testIPBlockBuildIPBlock(t, dbSession, "testipb3", site, ip, &tenant1.ID, cdbm.IPBlockRoutingTypeDatacenterOnly, "10.100.0.0", 16, cdbm.IPBlockProtocolVersionV4, false, cdbm.IPBlockStatusReady, ipu)
 
 	parentPref1, err := ipam.CreateIpamEntryForIPBlock(ctx, ipamStorage, ipb1.Prefix, ipb1.PrefixLength, ipb1.RoutingType, ipb1.InfrastructureProviderID.String(), ipb1.SiteID.String())
 	assert.Nil(t, err)
@@ -109,6 +112,10 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 	parentPref, err := ipam.CreateIpamEntryForIPBlock(ctx, ipamStorage, ipb2.Prefix, ipb2.PrefixLength, ipb2.RoutingType, ipb2.InfrastructureProviderID.String(), ipb2.SiteID.String())
 	assert.Nil(t, err)
 	assert.NotNil(t, parentPref)
+
+	parentPref3, err := ipam.CreateIpamEntryForIPBlock(ctx, ipamStorage, ipb3.Prefix, ipb3.PrefixLength, ipb3.RoutingType, ipb3.InfrastructureProviderID.String(), ipb3.SiteID.String())
+	assert.Nil(t, err)
+	assert.NotNil(t, parentPref3)
 
 	// Setup Allocation/Constraints
 	acGoodIT1 := model.APIAllocationConstraintCreateRequest{ResourceType: cdbm.AllocationResourceTypeInstanceType, ResourceTypeID: it1.ID.String(), ConstraintType: cdbm.AllocationConstraintTypeReserved, ConstraintValue: 22}
@@ -121,11 +128,14 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 
 	acGoodIT2 := model.APIAllocationConstraintCreateRequest{ResourceType: cdbm.AllocationResourceTypeInstanceType, ResourceTypeID: it2.ID.String(), ConstraintType: cdbm.AllocationConstraintTypeReserved, ConstraintValue: 22}
 	acGoodIPB2 := model.APIAllocationConstraintCreateRequest{ResourceType: cdbm.AllocationResourceTypeIPBlock, ResourceTypeID: ipb2.ID.String(), ConstraintType: cdbm.AllocationConstraintTypeReserved, ConstraintValue: 24}
+	acGoodIPB3 := model.APIAllocationConstraintCreateRequest{ResourceType: cdbm.AllocationResourceTypeIPBlock, ResourceTypeID: ipb3.ID.String(), ConstraintType: cdbm.AllocationConstraintTypeReserved, ConstraintValue: 24}
 	acGoodITTenant2 := model.APIAllocationConstraintCreateRequest{ResourceType: cdbm.AllocationResourceTypeInstanceType, ResourceTypeID: it1.ID.String(), ConstraintType: cdbm.AllocationConstraintTypeReserved, ConstraintValue: 7}
 
 	okABodyIT2, err := json.Marshal(model.APIAllocationCreateRequest{Name: "okit2", Description: cdb.GetStrPtr(""), TenantID: tenant1.ID.String(), SiteID: site.ID.String(), AllocationConstraints: []model.APIAllocationConstraintCreateRequest{acGoodIT2}})
 	assert.Nil(t, err)
 	okABodyIPB2, err := json.Marshal(model.APIAllocationCreateRequest{Name: "okipb2", Description: cdb.GetStrPtr(""), TenantID: tenant1.ID.String(), SiteID: site.ID.String(), AllocationConstraints: []model.APIAllocationConstraintCreateRequest{acGoodIPB2}})
+	assert.Nil(t, err)
+	okABodyIPB3, err := json.Marshal(model.APIAllocationCreateRequest{Name: "okipb3", Description: cdb.GetStrPtr(""), TenantID: tenant1.ID.String(), SiteID: site.ID.String(), AllocationConstraints: []model.APIAllocationConstraintCreateRequest{acGoodIPB3}})
 	assert.Nil(t, err)
 	okABodyITTenant2, err := json.Marshal(model.APIAllocationCreateRequest{Name: "okit-tenant-2", Description: cdb.GetStrPtr(""), TenantID: tenant2.ID.String(), SiteID: site.ID.String(), AllocationConstraints: []model.APIAllocationConstraintCreateRequest{acGoodITTenant2}})
 	assert.Nil(t, err)
@@ -156,6 +166,10 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 	acipID2 := uuid.MustParse(aIPB2.AllocationConstraints[0].ID)
 	assert.NotNil(t, acipID2)
 
+	aIPB3 := testCreateAllocation(t, dbSession, ipamStorage, ipu, ipOrg1, string(okABodyIPB3))
+	aipID3, _ := uuid.Parse(aIPB3.ID)
+	assert.NotNil(t, aipID3)
+
 	aITTenant2 := testCreateAllocation(t, dbSession, ipamStorage, ipu, ipOrg1, string(okABodyITTenant2))
 	assert.NotNil(t, aITTenant2)
 
@@ -173,11 +187,14 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 	acsip2, _, _ := acDAO.GetAll(ctx, nil, []uuid.UUID{aipID2}, nil, nil, nil, nil, nil, nil, nil, nil)
 	assert.NotNil(t, acsip2)
 
+	acsip3, _, _ := acDAO.GetAll(ctx, nil, []uuid.UUID{aipID3}, nil, nil, nil, nil, nil, nil, nil, nil)
+	assert.NotNil(t, acsip3)
+
 	// Setup test data for Allocation Constraint Update
 	okBodyIT1, err := json.Marshal(model.APIAllocationConstraintUpdateRequest{ConstraintValue: 23})
 	assert.Nil(t, err)
 
-	errBodyIT1, err := json.Marshal(model.APIAllocationConstraintUpdateRequest{ConstraintValue: 26})
+	errBodyIT1, err := json.Marshal(model.APIAllocationConstraintUpdateRequest{ConstraintValue: 50})
 	assert.Nil(t, err)
 
 	okBodyIP1, err := json.Marshal(model.APIAllocationConstraintUpdateRequest{ConstraintValue: 26})
@@ -237,6 +254,12 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 		assert.NotNil(t, subnet)
 	}
 
+	childIPB3UUID := uuid.MustParse(*aIPB3.AllocationConstraints[0].DerivedResourceID)
+	childIPB3, err := ipbDAO.GetByID(ctx, nil, childIPB3UUID, nil)
+	assert.Nil(t, err)
+	vpcPrefixForAC := testAllocationBuildVpcPrefix(t, dbSession, tenant1, vpc1, "testVPCPrefix-ac-update", childIPB3)
+	assert.NotNil(t, vpcPrefixForAC)
+
 	// OTEL Spanner configuration
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
@@ -280,7 +303,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 		tmc                     *tmocks.Client
 	}{
 		{
-			name:           "error when user not found in request context",
+			name:           "error when User is not found in Request Context",
 			reqOrgName:     ipOrg1,
 			reqBody:        string(okBodyIT1),
 			user:           nil,
@@ -291,7 +314,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 		},
 		{
-			name:           "error when user not found in org",
+			name:           "error when User does not belong to Organization",
 			reqOrgName:     "SomeOrg",
 			reqBody:        string(okBodyIT1),
 			user:           ipu,
@@ -302,7 +325,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusForbidden,
 		},
 		{
-			name:           "error when reqBody doesnt bind",
+			name:           "error when Request Body does not bind",
 			reqOrgName:     ipOrg1,
 			reqBody:        "BadBody",
 			user:           ipu,
@@ -313,7 +336,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "error when specified org does not have infrastructure provider",
+			name:           "error when specified Organization has no Infrastructure Provider",
 			reqOrgName:     ipOrg3,
 			reqBody:        string(okBodyIT1),
 			user:           ipu,
@@ -321,10 +344,10 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			requestedACS:   acsit1[0],
 			acID:           acsit1[0].ID.String(),
 			expectedErr:    true,
-			expectedStatus: http.StatusNotFound,
+			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "error when specified org does not have infrastructure provider matching the one in allocation",
+			name:           "error when Organization's Infrastructure Provider does not match Allocation's",
 			reqOrgName:     ipOrg2,
 			reqBody:        string(okBodyIT1),
 			user:           ipu,
@@ -335,7 +358,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "error when specified allocation constraint id is invalid uuid",
+			name:           "error when Allocation Constraint ID is not a valid UUID",
 			reqOrgName:     ipOrg1,
 			reqBody:        string(okBodyIT1),
 			user:           ipu,
@@ -346,7 +369,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:           "error when specified allocation constraint doesnt exist",
+			name:           "error when Allocation Constraint does not exist",
 			reqOrgName:     ipOrg1,
 			reqBody:        string(okBodyIT1),
 			user:           ipu,
@@ -357,7 +380,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:           "error when user doesn't have the right role",
+			name:           "error when User does not have the required role",
 			reqOrgName:     tnOrg1,
 			reqBody:        string(okBodyIT1),
 			user:           tnu,
@@ -368,7 +391,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusForbidden,
 		},
 		{
-			name:               "error when specified allocation and allocation constraint doesnt match",
+			name:               "error when Allocation ID does not match Allocation Constraint",
 			reqOrgName:         ipOrg1,
 			reqBody:            string(okBodyIT1),
 			user:               ipu,
@@ -380,7 +403,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedErrMessage: "Allocation Constraint does not belong to Allocation specified in request",
 		},
 		{
-			name:                    "successfully update InstaceType allocation constraint value",
+			name:                    "success updating Allocation Constraint value for Instance Type resource",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIT1),
 			user:                    ipu,
@@ -393,7 +416,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			verifyChildSpanner:      true,
 		},
 		{
-			name:           "error when machines not available for updating allocation constraint",
+			name:           "error when Machines are not available for Allocation Constraint update",
 			reqOrgName:     ipOrg1,
 			reqBody:        string(errBodyIT1),
 			user:           ipu,
@@ -404,7 +427,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:                    "successfully update IPBlock allocation constraint value",
+			name:                    "successfully updating Allocation Constraint value for IP Block resource",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIP1),
 			user:                    ipu,
@@ -417,7 +440,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			tmc:                     tmc1,
 		},
 		{
-			name:                    "successfully update IPBlock allocation constraint value to fullgrant",
+			name:                    "successfully updating Allocation Constraint value for IP Block resource with full grant",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIP1ToFG),
 			user:                    ipu,
@@ -430,7 +453,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			checkFullGrant:          cdb.GetBoolPtr(true),
 		},
 		{
-			name:                    "successfully update IPBlock allocation constraint value away from fullgrant",
+			name:                    "successfully updating Allocation Constraint value for IP Block resource away from full grant",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIP1),
 			user:                    ipu,
@@ -443,7 +466,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			checkFullGrant:          cdb.GetBoolPtr(false),
 		},
 		{
-			name:                    "successfully update allocation constraint when number of instances less than updated value",
+			name:                    "success updating Allocation Constraint when Instance count is below new value",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIT2),
 			user:                    ipu,
@@ -455,7 +478,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedConstraintValue: 24,
 		},
 		{
-			name:                    "successfully update allocation constraint when number of instances is same as updated value",
+			name:                    "success updating Allocation Constraint when Instance count equals new value",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIT4),
 			user:                    ipu,
@@ -467,7 +490,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedConstraintValue: 22,
 		},
 		{
-			name:                    "error when when number of instances greater than updated value",
+			name:                    "error when Instance count exceeds new Allocation Constraint value",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIT3),
 			user:                    ipu,
@@ -480,7 +503,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			expectedConstraintValue: 0,
 		},
 		{
-			name:                    "error when allocation attached to subnet ",
+			name:                    "error when Subnets exist for Allocation Constraint IP Block",
 			reqOrgName:              ipOrg1,
 			reqBody:                 string(okBodyIP2),
 			user:                    ipu,
@@ -488,12 +511,25 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			requestedACS:            acsip2[0],
 			acID:                    acsip2[0].ID.String(),
 			expectedErr:             true,
-			expectedErrMessage:      "Subnets exist for allocation constraint in allocation",
+			expectedErrMessage:      "Subnets exist for Allocation Constraint, cannot update constraint value",
 			expectedStatus:          http.StatusBadRequest,
 			expectedConstraintValue: 0,
 		},
 		{
-			name:               "error update IPBlock allocation constraint value, ipam error",
+			name:                    "error when VPC Prefix exists for Allocation Constraint child IP Block",
+			reqOrgName:              ipOrg1,
+			reqBody:                 string(okBodyIP2),
+			user:                    ipu,
+			requestedAID:            acsip3[0].AllocationID,
+			requestedACS:            acsip3[0],
+			acID:                    acsip3[0].ID.String(),
+			expectedErr:             true,
+			expectedErrMessage:      "VPC Prefixes exist for Allocation Constraint, cannot update constraint value",
+			expectedStatus:          http.StatusBadRequest,
+			expectedConstraintValue: 0,
+		},
+		{
+			name:               "error updating IP Block Allocation Constraint value due to IPAM error",
 			reqOrgName:         ipOrg1,
 			reqBody:            string(errBodyIP1),
 			user:               ipu,
@@ -502,7 +538,7 @@ func TestAllocationConstraintHandler_Update(t *testing.T) {
 			acID:               acsip1[0].ID.String(),
 			expectedErr:        true,
 			expectedStatus:     http.StatusBadRequest,
-			expectedIpamErrMsg: "Could not create child IPAM entry for updated Allocation Constraint. Details: unable to persist created child:unable to parse cidr:invalid Prefix netip.ParsePrefix(\\\"invalid Prefix\\\")",
+			expectedIpamErrMsg: "Failed to create updated IPAM entry for Allocation Constraint's Tenant IP Block. Details: unable to persist created child:unable to parse cidr:invalid Prefix",
 		},
 	}
 	for _, tc := range tests {
