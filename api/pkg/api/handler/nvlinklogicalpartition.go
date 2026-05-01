@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -204,141 +203,126 @@ func (cibph CreateNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// start a db tx
-	tx, err := cdb.BeginTx(ctx, cibph.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create NVLink Logical Partition", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// create the db record for NVLink Logical Partition
-	nvllp, err := nvllpDAO.Create(
-		ctx,
-		tx,
-		cdbm.NVLinkLogicalPartitionCreateInput{
-			Name:        apiRequest.Name,
-			Description: apiRequest.Description,
-			TenantOrg:   org,
-			SiteID:      site.ID,
-			TenantID:    orgTenant.ID,
-			Status:      cdbm.NVLinkLogicalPartitionStatusPending,
-			CreatedBy:   dbUser.ID,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to create NVLink Logical Partition record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create NVLink Logical Partition, DB error", nil)
-	}
-
-	// create the status detail record
 	sdDAO := cdbm.NewStatusDetailDAO(cibph.dbSession)
-	ssd, err := sdDAO.CreateFromParams(ctx, tx, nvllp.ID.String(), *cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusPending),
-		cdb.GetStrPtr("received NVLink Logical Partition creation request, pending"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for NVLink Logical Partition", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for NVLink Logical Partition", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := cibph.scp.GetClientByID(site.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	createRequest := &cwssaws.NVLinkLogicalPartitionCreationRequest{
-		Id: &cwssaws.NVLinkLogicalPartitionId{Value: nvllp.ID.String()},
-		Config: &cwssaws.NVLinkLogicalPartitionConfig{
-			Metadata: &cwssaws.Metadata{
-				Name: nvllp.Name,
-			},
-			TenantOrganizationId: orgTenant.Org,
-		},
-	}
-
-	// Include description if it is present
-	if nvllp.Description != nil {
-		createRequest.Config.Metadata.Description = *nvllp.Description
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "nvlink-logical-partition-create-" + nvllp.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering NVLink Logical Partition creation")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateNVLinkLogicalPartition", createRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to schedule NVLink Logical Partition creation workflow")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to schedule NVLink Logical Partition creation workflow on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("scheduled NVLink Logical Partition creation workflow")
-
-	// Block until the workflow has completed and returned success/error.
+	var nvllp *cdbm.NVLinkLogicalPartition
+	var ssd *cdbm.StatusDetail
 	var protoNvllp *cwssaws.NVLinkLogicalPartition
-	err = we.Get(ctx, &protoNvllp)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			logger.Error().Err(err).Msg("failed to create NVLink Logical Partition, timeout occurred executing creation workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing NVLink Logical Partition creation workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to terminate timed out NVLink Logical Partition creation workflow")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate timed out NVLink Logical Partition creation workflow, Cloud and Site data may be de-synced: %s", serr), nil)
-			}
-
-			logger.Info().Str("Workflow ID", wid).Msg("initiated termination of timed out NVLink Logical Partition creation workflow")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to create NVLink Logical Partition, timeout occurred executing creation on Site: %s", err), nil)
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	err = cdb.WithTx(ctx, cibph.dbSession, func(tx *cdb.Tx) error {
+		// create the db record for NVLink Logical Partition
+		var derr error
+		nvllp, derr = nvllpDAO.Create(
+			ctx,
+			tx,
+			cdbm.NVLinkLogicalPartitionCreateInput{
+				Name:        apiRequest.Name,
+				Description: apiRequest.Description,
+				TenantOrg:   org,
+				SiteID:      site.ID,
+				TenantID:    orgTenant.ID,
+				Status:      cdbm.NVLinkLogicalPartitionStatusPending,
+				CreatedBy:   dbUser.ID,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to create NVLink Logical Partition record in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create NVLink Logical Partition, DB error", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to create NVLink Logical Partition on Site")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to create NVLink Logical Partition on Site: %s", err), nil)
+		// create the status detail record
+		ssd, derr = sdDAO.CreateFromParams(ctx, tx, nvllp.ID.String(), *cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusPending),
+			cdb.GetStrPtr("received NVLink Logical Partition creation request, pending"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for NVLink Logical Partition", nil)
+		}
+		if ssd == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for NVLink Logical Partition", nil)
+		}
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := cibph.scp.GetClientByID(site.ID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		createRequest := &cwssaws.NVLinkLogicalPartitionCreationRequest{
+			Id: &cwssaws.NVLinkLogicalPartitionId{Value: nvllp.ID.String()},
+			Config: &cwssaws.NVLinkLogicalPartitionConfig{
+				Metadata: &cwssaws.Metadata{
+					Name: nvllp.Name,
+				},
+				TenantOrganizationId: orgTenant.Org,
+			},
+		}
+
+		// Include description if it is present
+		if nvllp.Description != nil {
+			createRequest.Config.Metadata.Description = *nvllp.Description
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "nvlink-logical-partition-create-" + nvllp.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering NVLink Logical Partition creation")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "CreateNVLinkLogicalPartition", createRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to schedule NVLink Logical Partition creation workflow")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to schedule NVLink Logical Partition creation workflow on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("scheduled NVLink Logical Partition creation workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr := we.Get(wfCtx, &protoNvllp)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to create NVLink Logical Partition, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "NVLinkLogicalPartition", "Create")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "NVLink Logical Partition create workflow timed out", nil)
+			}
+
+			code, wferr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(wferr).Msg("failed to create NVLink Logical Partition on Site")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to create NVLink Logical Partition on Site: %s", wferr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed NVLink Logical Partition creation workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed NVLink Logical Partition creation workflow")
-
-	// commit transaction - must commit once NVLink Logical Partition has been created
-	// If we don't commit before status update, we would end up rolling back REST layer DB
-	// entry while object remains on Site
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing NVLink Logical Partition transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create NVLink Logical Partition, DB error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create NVLink Logical Partition, DB transaction error")
 	}
-
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	// update the db record for NVLink Logical Partition with the status from the workflow
 	// If we run into an error, we'll log it but won't return error
 	unvllp := nvllp
 	ssds := []cdbm.StatusDetail{*ssd}
 	if protoNvllp != nil {
-		logger.Info().Str("Workflow ID", wid).Msg("received NVLink Logical Partition info from workflow")
+		logger.Info().Msg("received NVLink Logical Partition info from workflow")
 
 		status, statusMessage := wfutil.GetNVLinkLogicalPartitionStatus(protoNvllp.Status.State)
 		// if status is nil, then default is pending and inventory will be updating status from workflow
@@ -1025,112 +1009,98 @@ func (uibph UpdateNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// start a database transaction
-	tx, err := cdb.BeginTx(ctx, uibph.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating NVLink Logical Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update NVLink Logical Partition", nil)
-	}
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	unvllp, err := cdb.WithTxResult(ctx, uibph.dbSession, func(tx *cdb.Tx) (*cdbm.NVLinkLogicalPartition, error) {
+		updated, derr := nvllpDAO.Update(
+			ctx,
+			tx,
+			cdbm.NVLinkLogicalPartitionUpdateInput{
+				NVLinkLogicalPartitionID: nvllpID,
+				Name:                     apiRequest.Name,
+				Description:              apiRequest.Description,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating NVLink Logical Partition in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to update NVLink Logical Partition", nil)
+		}
+		logger.Info().Msg("done updating NVLink Logical Partition in DB")
 
-	unvllp, err := nvllpDAO.Update(
-		ctx,
-		tx,
-		cdbm.NVLinkLogicalPartitionUpdateInput{
-			NVLinkLogicalPartitionID: nvllpID,
-			Name:                     apiRequest.Name,
-			Description:              apiRequest.Description,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating NVLink Logical Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update NVLink Logical Partition", nil)
-	}
-	logger.Info().Msg("done updating NVLink Logical Partition in DB")
-
-	// Get the Temporal client for the site we are working with
-	stc, err := uibph.scp.GetClientByID(unvllp.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	updateRequest := &cwssaws.NVLinkLogicalPartitionUpdateRequest{
-		Id: &cwssaws.NVLinkLogicalPartitionId{Value: unvllp.ID.String()},
-		Config: &cwssaws.NVLinkLogicalPartitionConfig{
-			TenantOrganizationId: orgTenant.Org,
-			Metadata:             &cwssaws.Metadata{},
-		},
-	}
-
-	// Site Controller (NICo) requires metadata.name on every update. When the client
-	// sends only description, apiRequest.Name is nil but we must still send the
-	// current partition name from the DB.
-	updateRequest.Config.Metadata.Name = unvllp.Name
-	if unvllp.Description != nil {
-		updateRequest.Config.Metadata.Description = *unvllp.Description
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "nvlink-logical-partition-update-" + unvllp.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering NVLink Logical Partition update")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpdateNVLinkLogicalPartition", updateRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to schedule NVLink Logical Partition update workflow")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to schedule NVLink Logical Partition update on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("scheduled NVLink Logical Partition update workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			logger.Error().Err(err).Msg("failed to update NVLink Logical Partition, timeout occurred executing workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing NVLink Logical Partition update workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to terminate timed out NVLink Logical Partition update workflow")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate timed out NVLink Logical Partition update workflow, Cloud and Site data may be de-synced: %s", serr), nil)
-			}
-
-			logger.Info().Str("Workflow ID", wid).Msg("initiated termination of timed out NVLink Logical Partition update workflow")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to update NVLink Logical Partition, timeout occurred executing update on Site: %s", err), nil)
+		// Get the Temporal client for the site we are working with
+		stc, derr := uibph.scp.GetClientByID(updated.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to execute NVLink Logical Partition update workflow")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to update NVLink Logical Partition on Site: %s", err), nil)
+		updateRequest := &cwssaws.NVLinkLogicalPartitionUpdateRequest{
+			Id: &cwssaws.NVLinkLogicalPartitionId{Value: updated.ID.String()},
+			Config: &cwssaws.NVLinkLogicalPartitionConfig{
+				TenantOrganizationId: orgTenant.Org,
+				Metadata:             &cwssaws.Metadata{},
+			},
+		}
+
+		// Site Controller (NICo) requires metadata.name on every update. When the client
+		// sends only description, apiRequest.Name is nil but we must still send the
+		// current partition name from the DB.
+		updateRequest.Config.Metadata.Name = updated.Name
+		if updated.Description != nil {
+			updateRequest.Config.Metadata.Description = *updated.Description
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "nvlink-logical-partition-update-" + updated.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering NVLink Logical Partition update")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "UpdateNVLinkLogicalPartition", updateRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to schedule NVLink Logical Partition update workflow")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to schedule NVLink Logical Partition update on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("scheduled NVLink Logical Partition update workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr := we.Get(wfCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to update NVLink Logical Partition, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "NVLinkLogicalPartition", "Update")
+				}
+				return nil, cutil.NewAPIError(http.StatusInternalServerError, "NVLink Logical Partition update workflow timed out", nil)
+			}
+
+			code, wferr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(wferr).Msg("failed to execute NVLink Logical Partition update workflow")
+			return nil, cutil.NewAPIError(code, fmt.Sprintf("Failed to update NVLink Logical Partition on Site: %s", wferr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed NVLink Logical Partition update workflow")
+		return updated, nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed NVLink Logical Partition update workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error updating NVLink Logical Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update NVLink Logical Partition", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update NVLink Logical Partition, DB transaction error")
 	}
-	txCommitted = true
 
 	// send response
 	apiNvllp := model.NewAPINVLinkLogicalPartition(unvllp, nil, nil, ssds)
@@ -1291,120 +1261,109 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, dibph.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete NVLink Logical Partition", nil)
-	}
-
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update NVLink Logical Partition and set status to Deleting
-	_, err = nvllpDAO.Update(
-		ctx,
-		tx,
-		cdbm.NVLinkLogicalPartitionUpdateInput{
-			NVLinkLogicalPartitionID: nvllpID,
-			Status:                   cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusDeleting),
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating NVLink Logical Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete NVLink Logical Partition, DB error", nil)
-	}
-
-	// Create status detail
 	sdDAO := cdbm.NewStatusDetailDAO(dibph.dbSession)
-	_, err = sdDAO.CreateFromParams(ctx, tx, nvllp.ID.String(), *cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusDeleting),
-		cdb.GetStrPtr("Received request for deletion, pending processing"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dibph.scp.GetClientByID(nvllp.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	deleteNvllpRequest := &cwssaws.NVLinkLogicalPartitionDeletionRequest{
-		Id: &cwssaws.NVLinkLogicalPartitionId{Value: nvllp.ID.String()},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "nvlink-logical-partition-delete-" + nvllp.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering NVLink Logical Partition deletion workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteNVLinkLogicalPartition", deleteNvllpRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to schedule NVLink Logical Partition deletion workflow")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to schedule NVLink Logical Partition deletion on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("scheduled NVLink Logical Partition deletion workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-			// Reset error to nil
-			err = nil
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	err = cdb.WithTx(ctx, dibph.dbSession, func(tx *cdb.Tx) error {
+		// Update NVLink Logical Partition and set status to Deleting
+		if _, derr := nvllpDAO.Update(
+			ctx,
+			tx,
+			cdbm.NVLinkLogicalPartitionUpdateInput{
+				NVLinkLogicalPartitionID: nvllpID,
+				Status:                   cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusDeleting),
+			},
+		); derr != nil {
+			logger.Error().Err(derr).Msg("error updating NVLink Logical Partition in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete NVLink Logical Partition, DB error", nil)
 		}
-	}
 
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			logger.Error().Err(err).Msg("failed to delete NVLink Logical Partition, timeout occurred executing workflow on Site.")
+		// Create status detail
+		ssd, derr := sdDAO.CreateFromParams(ctx, tx, nvllp.ID.String(), *cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusDeleting),
+			cdb.GetStrPtr("Received request for deletion, pending processing"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for NVLink Logical Partition deletion", nil)
+		}
+		if ssd == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for NVLink Logical Partition deletion", nil)
+		}
 
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
+		// Get the temporal client for the site we are working with.
+		stc, derr := dibph.scp.GetClientByID(nvllp.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
 
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing NVLink Logical Partition deletion workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to terminate timed out NVLink Logical Partition deletion workflow")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate timed out NVLink Logical Partition deletion workflow, Cloud and Site data may be de-synced: %s", serr), nil)
+		deleteNvllpRequest := &cwssaws.NVLinkLogicalPartitionDeletionRequest{
+			Id: &cwssaws.NVLinkLogicalPartitionId{Value: nvllp.ID.String()},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "nvlink-logical-partition-delete-" + nvllp.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering NVLink Logical Partition deletion workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "DeleteNVLinkLogicalPartition", deleteNvllpRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to schedule NVLink Logical Partition deletion workflow")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to schedule NVLink Logical Partition deletion on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("scheduled NVLink Logical Partition deletion workflow")
+
+		// Execute the workflow synchronously
+		wferr := we.Get(wfCtx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+				// Reset error to nil
+				wferr = nil
+			}
+		}
+
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to delete NVLink Logical Partition, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "NVLinkLogicalPartition", "Delete")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "NVLink Logical Partition delete workflow timed out", nil)
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated termination of timed out NVLink Logical Partition deletion workflow")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to delete NVLink Logical Partition, timeout occurred executing deletion on Site: %s", err), nil)
+			code, wferr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(wferr).Msg("failed to execute Temporal workflow to delete NVLink Logical Partition")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to delete NVLink Logical Partition on Site: %s", wferr), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to execute Temporal workflow to delete NVLink Logical Partition")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to delete NVLink Logical Partition on Site: %s", err), nil)
+		logger.Info().Str("Workflow ID", wid).Msg("completed NVLink Logical Partition deletion workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed NVLink Logical Partition deletion workflow")
-
-	// Commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete NVLink Logical Partition, DB error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete NVLink Logical Partition, DB transaction error")
 	}
-	txCommitted = true
 
 	// Create response
 	logger.Info().Msg("finishing API handler")
