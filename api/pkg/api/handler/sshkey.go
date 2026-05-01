@@ -18,7 +18,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -221,101 +220,90 @@ func (cskh CreateSSHKeyHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// start a transaction
-	tx, err := cdb.BeginTx(ctx, cskh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create SSH Key due to data store error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// create the ssh key
-	// NOTE: Remove `expires` from DB model
-	dbsk, err := skDAO.Create(
-		ctx,
-		tx,
-		cdbm.SSHKeyCreateInput{
-			Name:        apiRequest.Name,
-			TenantOrg:   org,
-			TenantID:    tenant.ID,
-			PublicKey:   apiRequest.PublicKey,
-			Fingerprint: &fingerprint,
-			CreatedBy:   dbUser.ID,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to create the SSH Key record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating SSH Key due to data store error", nil)
-	}
-
+	var dbsk *cdbm.SSHKey
 	var skgsas []cdbm.SSHKeyGroupSiteAssociation
-	var serr error
 
-	if dbskg != nil {
-		// Create SSH Key Association for SSH Key Group
-		skgDAO := cdbm.NewSSHKeyGroupDAO(cskh.dbSession)
-
-		// Acquire an advisory lock on the SSH Key Group on which there could be contention
-		// this lock is released when the transaction commits or rollsback
-		serr = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(dbskg.ID.String()), nil)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("Failed to acquire advisory lock on sshkey group")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to associate SSH Key with SSH Key Group, could not acquire data store lock on Group", nil)
-		}
-
-		skaDAO := cdbm.NewSSHKeyAssociationDAO(cskh.dbSession)
-		_, serr = skaDAO.CreateFromParams(ctx, tx, dbsk.ID, dbskg.ID, dbUser.ID)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("unable to create the SSH Key Association record in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to associate SSH Key with SSH Key Group due to data store error", nil)
-		}
-
-		// Calculate and set new versions
-		_, serr = skgDAO.GenerateAndUpdateVersion(ctx, tx, dbskg.ID)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error updating current version for SSH Key Group")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to set updated version for SSH Key Group", nil)
-		}
-
-		// Update SSH Key Group status to Syncing
-		_, serr = skgDAO.Update(
+	err = cdb.WithTx(ctx, cskh.dbSession, func(tx *cdb.Tx) error {
+		// create the ssh key
+		// NOTE: Remove `expires` from DB model
+		var derr error
+		dbsk, derr = skDAO.Create(
 			ctx,
 			tx,
-			cdbm.SSHKeyGroupUpdateInput{
-				SSHKeyGroupID: dbskg.ID,
-				Status:        cdb.GetStrPtr(cdbm.SSHKeyGroupStatusSyncing),
+			cdbm.SSHKeyCreateInput{
+				Name:        apiRequest.Name,
+				TenantOrg:   org,
+				TenantID:    tenant.ID,
+				PublicKey:   apiRequest.PublicKey,
+				Fingerprint: &fingerprint,
+				CreatedBy:   dbUser.ID,
 			},
 		)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error updating SSH Key Group in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete SSH Key Groups", nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to create the SSH Key record in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Error creating SSH Key due to data store error", nil)
 		}
 
-		// Create a status detail record for the SSH Key Group
-		sdDAO := cdbm.NewStatusDetailDAO(cskh.dbSession)
-		_, serr = sdDAO.CreateFromParams(ctx, tx, dbskg.ID.String(), cdbm.SSHKeyGroupStatusSyncing, cdb.GetStrPtr("Sync required due to SSH Key creation, pending processing"))
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for SSH Key Group", nil)
-		}
+		if dbskg != nil {
+			// Create SSH Key Association for SSH Key Group
+			skgDAO := cdbm.NewSSHKeyGroupDAO(cskh.dbSession)
 
-		skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(cskh.dbSession)
-		skgsas, _, serr = skgsaDAO.GetAll(ctx, tx, []uuid.UUID{dbskg.ID}, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error retrieving SSH Key Group Association from DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve SSH Key Group Association from DB", nil)
-		}
-	}
+			// Acquire an advisory lock on the SSH Key Group on which there could be contention
+			// this lock is released when the transaction commits or rollsback
+			derr = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(dbskg.ID.String()), nil)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("Failed to acquire advisory lock on sshkey group")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to associate SSH Key with SSH Key Group, could not acquire data store lock on Group", nil)
+			}
 
-	// commit transaction
-	err = tx.Commit()
+			skaDAO := cdbm.NewSSHKeyAssociationDAO(cskh.dbSession)
+			_, derr = skaDAO.CreateFromParams(ctx, tx, dbsk.ID, dbskg.ID, dbUser.ID)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("unable to create the SSH Key Association record in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to associate SSH Key with SSH Key Group due to data store error", nil)
+			}
+
+			// Calculate and set new versions
+			_, derr = skgDAO.GenerateAndUpdateVersion(ctx, tx, dbskg.ID)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error updating current version for SSH Key Group")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to set updated version for SSH Key Group", nil)
+			}
+
+			// Update SSH Key Group status to Syncing
+			_, derr = skgDAO.Update(
+				ctx,
+				tx,
+				cdbm.SSHKeyGroupUpdateInput{
+					SSHKeyGroupID: dbskg.ID,
+					Status:        cdb.GetStrPtr(cdbm.SSHKeyGroupStatusSyncing),
+				},
+			)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error updating SSH Key Group in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update SSH Key Group status", nil)
+			}
+
+			// Create a status detail record for the SSH Key Group
+			sdDAO := cdbm.NewStatusDetailDAO(cskh.dbSession)
+			_, derr = sdDAO.CreateFromParams(ctx, tx, dbskg.ID.String(), cdbm.SSHKeyGroupStatusSyncing, cdb.GetStrPtr("Sync required due to SSH Key creation, pending processing"))
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for SSH Key Group", nil)
+			}
+
+			skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(cskh.dbSession)
+			skgsas, _, derr = skgsaDAO.GetAll(ctx, tx, []uuid.UUID{dbskg.ID}, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error retrieving SSH Key Group Association from DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve SSH Key Group Association from DB", nil)
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create SSH Key due to data store error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create SSH Key due to DB transaction error")
 	}
-	txCommitted = true
 
 	// If SSH Key Group was specified then trigger SyncSSHKeyGroup workflow
 	for _, skgsa := range skgsas {
@@ -479,44 +467,35 @@ func (uskh UpdateSSHKeyHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// Start a database transaction
-	tx, err := cdb.BeginTx(ctx, uskh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating SSH Key due to data store error", nil)
-	}
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update SSHKey
-	sk, err = skDAO.Update(
-		ctx,
-		tx,
-		cdbm.SSHKeyUpdateInput{
-			SSHKeyID: sk.ID,
-			Name:     apiRequest.Name,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating SSH Key")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update SSH Key due to data store error", nil)
-	}
-
 	skaDAO := cdbm.NewSSHKeyAssociationDAO(uskh.dbSession)
-	skas, _, err := skaDAO.GetAll(ctx, tx, []uuid.UUID{sk.ID}, nil, nil, nil, cdb.GetIntPtr(paginator.TotalLimit), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving SSH Key association from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve SSH Key Association from DB", nil)
-	}
+	var skas []cdbm.SSHKeyAssociation
 
-	// commit transaction
-	err = tx.Commit()
+	err = cdb.WithTx(ctx, uskh.dbSession, func(tx *cdb.Tx) error {
+		// Update SSHKey
+		var derr error
+		sk, derr = skDAO.Update(
+			ctx,
+			tx,
+			cdbm.SSHKeyUpdateInput{
+				SSHKeyID: sk.ID,
+				Name:     apiRequest.Name,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating SSH Key")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update SSH Key due to data store error", nil)
+		}
+
+		skas, _, derr = skaDAO.GetAll(ctx, tx, []uuid.UUID{sk.ID}, nil, nil, nil, cdb.GetIntPtr(paginator.TotalLimit), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving SSH Key association from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve SSH Key Association from DB", nil)
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update SSH Key due to data store error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update SSH Key due to DB transaction error")
 	}
-	txCommitted = true
 
 	// Create response
 	apiSSHKey := model.NewAPISSHKey(sk, skas)
@@ -921,105 +900,102 @@ func (dskh DeleteSSHKeyHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "SSHKey does not belong to current Tenant", nil)
 	}
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, dskh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete SSH Key due to data store error", nil)
-	}
-
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
 	skaDAO := cdbm.NewSSHKeyAssociationDAO(dskh.dbSession)
 	skgDAO := cdbm.NewSSHKeyGroupDAO(dskh.dbSession)
 	sdDAO := cdbm.NewStatusDetailDAO(dskh.dbSession)
-
-	skas, _, err := skaDAO.GetAll(ctx, tx, []uuid.UUID{sk.ID}, nil, []string{cdbm.SSHKeyGroupRelationName}, nil, cdb.GetIntPtr(paginator.TotalLimit), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving SSH Key association from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve SSH Key Association from DB", nil)
-	}
-
-	// Delete all SSH Key Associations
-	skgIDs := []uuid.UUID{}
-	for _, ska := range skas {
-		// acquire an advisory lock on the SSH Key Group on which there could be contention
-		// this lock is released when the transaction commits or rollsback
-		serr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(ska.SSHKeyGroupID.String()), nil)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("Failed to acquire advisory lock on sshkey group")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update dissociate SSH Key from one or more SSH Key Groups, could not acquire data store lock on Group", nil)
-		}
-
-		// Delete Key Association
-		serr = skaDAO.DeleteByID(ctx, tx, ska.ID)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("unable to delete SSH Key Association record in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete SSH Key Association due to data store error", nil)
-		}
-
-		// Only allow to update SSHKeyGroup if it is not in Deleting State
-		if ska.SSHKeyGroup != nil && ska.SSHKeyGroup.Status == cdbm.SSHKeyGroupStatusDeleting {
-			continue
-		}
-
-		// Calculate and set new versions
-		_, serr = skgDAO.GenerateAndUpdateVersion(ctx, tx, ska.SSHKeyGroupID)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error calculating current version for SSH Key Group")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to calculate current version for SSH Key Group", nil)
-		}
-
-		skgIDs = append(skgIDs, ska.SSHKeyGroupID)
-	}
-
-	// Delete SSH Key in DB
-	err = skDAO.Delete(ctx, tx, sk.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("error deleting SSHKey in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete SSH Key due to data store error", nil)
-	}
-
 	skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(dskh.dbSession)
-	skgsasToSync, _, err := skgsaDAO.GetAll(ctx, tx, skgIDs, nil, nil, nil, []string{cdbm.SSHKeyGroupRelationName}, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving SSH Key Group Associations related to SSH Key from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve SSH Key Group Associations from DB", nil)
-	}
 
-	// If SSH Key Group is present in the list of Groups to sync to Sites, update the status
-	for _, skgsa := range skgsasToSync {
-		// Update SSH Key Group version and status to Syncing
-		_, serr := skgDAO.Update(
-			ctx,
-			tx,
-			cdbm.SSHKeyGroupUpdateInput{
-				SSHKeyGroupID: skgsa.SSHKeyGroupID,
-				Status:        cdb.GetStrPtr(cdbm.SSHKeyGroupStatusSyncing),
-			},
-		)
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error updating SSH Key Group in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete SSH Key Groups", nil)
+	var skgsasToSync []cdbm.SSHKeyGroupSiteAssociation
+
+	err = cdb.WithTx(ctx, dskh.dbSession, func(tx *cdb.Tx) error {
+		skas, _, derr := skaDAO.GetAll(ctx, tx, []uuid.UUID{sk.ID}, nil, []string{cdbm.SSHKeyGroupRelationName}, nil, cdb.GetIntPtr(paginator.TotalLimit), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving SSH Key association from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve SSH Key Association from DB", nil)
 		}
 
-		// Create a status detail record for the SSH Key Group
-		_, serr = sdDAO.CreateFromParams(ctx, tx, skgsa.SSHKeyGroupID.String(), cdbm.SSHKeyGroupStatusSyncing, cdb.GetStrPtr("Sync required due to SSH Key deletion, pending processing"))
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for SSH Key Group", nil)
-		}
-	}
+		// Delete all SSH Key Associations
+		skgIDs := []uuid.UUID{}
+		for _, ska := range skas {
+			// acquire an advisory lock on the SSH Key Group on which there could be contention
+			// this lock is released when the transaction commits or rollsback
+			derr = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(ska.SSHKeyGroupID.String()), nil)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("Failed to acquire advisory lock on sshkey group")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update dissociate SSH Key from one or more SSH Key Groups, could not acquire data store lock on Group", nil)
+			}
 
-	// Commit transaction
-	err = tx.Commit()
+			// Delete Key Association
+			derr = skaDAO.DeleteByID(ctx, tx, ska.ID)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("unable to delete SSH Key Association record in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete SSH Key Association due to data store error", nil)
+			}
+
+			// Only allow to update SSHKeyGroup if it is not in Deleting State
+			if ska.SSHKeyGroup != nil && ska.SSHKeyGroup.Status == cdbm.SSHKeyGroupStatusDeleting {
+				continue
+			}
+
+			// Calculate and set new versions
+			_, derr = skgDAO.GenerateAndUpdateVersion(ctx, tx, ska.SSHKeyGroupID)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error calculating current version for SSH Key Group")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to calculate current version for SSH Key Group", nil)
+			}
+
+			skgIDs = append(skgIDs, ska.SSHKeyGroupID)
+		}
+
+		// Delete SSH Key in DB
+		derr = skDAO.Delete(ctx, tx, sk.ID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error deleting SSHKey in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete SSH Key due to data store error", nil)
+		}
+
+		skgsasToSync, _, derr = skgsaDAO.GetAll(ctx, tx, skgIDs, nil, nil, nil, []string{cdbm.SSHKeyGroupRelationName}, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving SSH Key Group Associations related to SSH Key from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve SSH Key Group Associations from DB", nil)
+		}
+
+		// Update group-level status once per unique SSH Key Group. Without
+		// this dedup, groups attached to multiple sites would have the same
+		// status row written once per site, bloating status history.
+		seenGroups := make(map[uuid.UUID]struct{}, len(skgsasToSync))
+		for _, skgsa := range skgsasToSync {
+			if _, seen := seenGroups[skgsa.SSHKeyGroupID]; seen {
+				continue
+			}
+			seenGroups[skgsa.SSHKeyGroupID] = struct{}{}
+
+			// Update SSH Key Group version and status to Syncing
+			_, derr = skgDAO.Update(
+				ctx,
+				tx,
+				cdbm.SSHKeyGroupUpdateInput{
+					SSHKeyGroupID: skgsa.SSHKeyGroupID,
+					Status:        cdb.GetStrPtr(cdbm.SSHKeyGroupStatusSyncing),
+				},
+			)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error updating SSH Key Group in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update SSH Key Group status", nil)
+			}
+
+			// Create a status detail record for the SSH Key Group
+			_, derr = sdDAO.CreateFromParams(ctx, tx, skgsa.SSHKeyGroupID.String(), cdbm.SSHKeyGroupStatusSyncing, cdb.GetStrPtr("Sync required due to SSH Key deletion, pending processing"))
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for SSH Key Group", nil)
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete SSH Key due to data store error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete SSH Key due to DB transaction error")
 	}
-	txCommitted = true
 
 	// Trigger SyncSSHKeyGroup workflow for each SSH Key Group
 	for _, skgsa := range skgsasToSync {
