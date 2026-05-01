@@ -33,9 +33,9 @@ import (
 // ManageVPC is an activity wrapper for VPC management
 // TODO: Do we really need a distinction between general management and inventory?
 // The pattern is elsewhere as well, but it seems like we could condense them since
-// Manage*Inventory.config has a property that holds a *client.NICoAtomicClient.
+// Manage*Inventory.config has a property that holds a *client.NICoCoreAtomicClient.
 type ManageVPC struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // ManageVPCInventory is an activity wrapper for VPC inventory collection and publishing
@@ -44,9 +44,9 @@ type ManageVPCInventory struct {
 }
 
 // NewManageVPC returns a new ManageVPC client
-func NewManageVPC(nicoClient *cClient.NICoAtomicClient) ManageVPC {
+func NewManageVPC(nicoClient *cClient.NICoCoreAtomicClient) ManageVPC {
 	return ManageVPC{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -72,7 +72,7 @@ func NewManageVPCInventory(config ManageInventoryConfig) ManageVPCInventory {
 	}
 }
 
-func vpcFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.VpcId, error) {
+func vpcFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.VpcId, error) {
 	idList, err := nicoClient.NICo().FindVpcIds(ctx, &cwssaws.VpcSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func vpcFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws
 	return idList.GetVpcIds(), nil
 }
 
-func vpcFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.VpcId) ([]*cwssaws.Vpc, error) {
+func vpcFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.VpcId) ([]*cwssaws.Vpc, error) {
 	list, err := nicoClient.NICo().FindVpcsByIds(ctx, &cwssaws.VpcsByIdsRequest{
 		VpcIds: ids,
 	})
@@ -94,7 +94,7 @@ func vpcFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cw
 // instancePagedInventoryPostProcess will attach NSG propagation
 // information for the inventory page of VPCs.
 // This will only be called for pages with inventory.
-func vpcPagedInventoryPostProcess(ctx context.Context, nicoClient *cClient.NICoClient, inventory *cwssaws.VPCInventory) (*cwssaws.VPCInventory, error) {
+func vpcPagedInventoryPostProcess(ctx context.Context, nicoClient *cClient.NICoCoreClient, inventory *cwssaws.VPCInventory) (*cwssaws.VPCInventory, error) {
 
 	vpcIds := make([]string, len(inventory.GetVpcs()))
 
@@ -164,7 +164,7 @@ func (mv *ManageVPC) CreateVpcOnSite(ctx context.Context, request *cwssaws.VpcCr
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mv.NICoAtomicClient.GetClient()
+	nicoClient := mv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cClient.ErrClientNotConnected
 	}
@@ -204,7 +204,7 @@ func (mv *ManageVPC) UpdateVpcOnSite(ctx context.Context, request *cwssaws.VpcUp
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mv.NICoAtomicClient.GetClient()
+	nicoClient := mv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -243,7 +243,7 @@ func (mv *ManageVPC) DeleteVpcOnSite(ctx context.Context, request *cwssaws.VpcDe
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mv.NICoAtomicClient.GetClient()
+	nicoClient := mv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -281,7 +281,7 @@ func (mv *ManageVPC) UpdateVpcVirtualizationOnSite(ctx context.Context, request 
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mv.NICoAtomicClient.GetClient()
+	nicoClient := mv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}

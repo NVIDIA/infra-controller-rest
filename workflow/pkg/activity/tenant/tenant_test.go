@@ -44,7 +44,6 @@ import (
 	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -98,7 +97,7 @@ func TestManageTenant_UpdateTenantsInDB(t *testing.T) {
 	testTenantSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)

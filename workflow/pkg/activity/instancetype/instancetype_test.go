@@ -47,7 +47,6 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -199,13 +198,13 @@ func TestManageInstanceType_UpdateInstanceTypesInDB(t *testing.T) {
 	macCapDAO := cdbm.NewMachineCapabilityDAO(dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := testInstanceTypeBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := testInstanceTypeSiteBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := testInstanceTypeBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 

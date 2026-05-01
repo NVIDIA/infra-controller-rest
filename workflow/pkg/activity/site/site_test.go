@@ -35,14 +35,12 @@ import (
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/config"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
 	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
 	"github.com/golang/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/uptrace/bun/extra/bundebug"
-	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/testsuite"
 
@@ -53,9 +51,6 @@ import (
 	tosv1mock "go.temporal.io/api/operatorservicemock/v1"
 	twsv1mock "go.temporal.io/api/workflowservicemock/v1"
 	tmocks "go.temporal.io/sdk/mocks"
-
-	cwsv1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -94,13 +89,13 @@ func TestManageSite_DeleteSiteComponentsFromDB(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org-1"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg}, tnRoles)
 	tncfg := cdbm.TenantConfig{
@@ -445,7 +440,7 @@ func TestManageSite_MonitorInventoryReceiptForAllSites(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
@@ -546,7 +541,7 @@ func TestManageSite_MonitorInventoryReceiptForAllSites_PagerDutyEnabled(t *testi
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
@@ -622,7 +617,7 @@ func TestManageSite_MonitorInventoryReceiptForAllSites_PagerDutyDisabled(t *test
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
@@ -667,363 +662,6 @@ func (m *mockPagerDutyTransport) RoundTrip(req *http.Request) (*http.Response, e
 	return m.original.RoundTrip(req)
 }
 
-func TestManageSite_CheckHealthForAllSitesViaSiteAgent(t *testing.T) {
-	ctx := context.Background()
-
-	dbSession := testSiteInitDB(t)
-	defer dbSession.Close()
-
-	util.TestSetupSchema(t, dbSession)
-
-	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
-
-	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
-	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
-
-	site1 := util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusPending, nil, ipu)
-	site2 := util.TestBuildSite(t, dbSession, ip, "test-site-2", cdbm.SiteStatusError, cdb.GetTimePtr(time.Now()), ipu)
-	site3 := util.TestBuildSite(t, dbSession, ip, "test-site-3", cdbm.SiteStatusRegistered, cdb.GetTimePtr(time.Now()), ipu)
-
-	// Mock GetHealth workflow from site-agent
-	wrun1 := &tmocks.WorkflowRun{}
-	wid1 := "test-workflow-id-1"
-
-	var healthStatus1 *cwsv1.HealthStatus
-	result := &cwsv1.HealthStatus{
-		SiteInventoryCollection: &cwsv1.HealthStatusMsg{
-			State: 1,
-		},
-		SiteControllerConnection: &cwsv1.HealthStatusMsg{
-			State: 1,
-		},
-		SiteAgentHighAvailability: &cwsv1.HealthStatusMsg{
-			State: 1,
-		},
-	}
-
-	wrun1.On("Get", mock.Anything, &healthStatus1).Return(nil, result)
-	wrun1.On("GetID").Return(wid1)
-
-	wrun2 := &tmocks.WorkflowRun{}
-	var healthStatus2 *cwsv1.HealthStatus
-	wid2 := "test-workflow-id-2"
-	wrun2.On("Get", mock.Anything, &healthStatus2).Return(nil)
-	wrun2.On("GetID").Return(wid2)
-
-	wrun3 := &tmocks.WorkflowRun{}
-	var healthStatus3 *cwsv1.HealthStatus
-	wid3 := "test-workflow-id-3"
-	wrun3.On("Get", mock.Anything, &healthStatus3).Return(serviceerror.NewNotFound("NotFound"))
-	wrun3.On("GetID").Return(wid3)
-
-	workflowOptions1 := client.StartWorkflowOptions{
-		ID:        "get-health-site-agent-" + site1.ID.String(),
-		TaskQueue: queue.SiteTaskQueue,
-	}
-	workflowOptions2 := client.StartWorkflowOptions{
-		ID:        "get-health-site-agent-" + site2.ID.String(),
-		TaskQueue: queue.SiteTaskQueue,
-	}
-	workflowOptions3 := client.StartWorkflowOptions{
-		ID:        "get-health-site-agent-" + site3.ID.String(),
-		TaskQueue: queue.SiteTaskQueue,
-	}
-
-	mtc1 := &tmocks.Client{}
-	mtc1.Mock.On("ExecuteWorkflow", context.Background(), workflowOptions1, "GetHealth",
-		mock.Anything).Return(wrun1, nil)
-
-	mtc2 := &tmocks.Client{}
-	mtc2.Mock.On("ExecuteWorkflow", context.Background(), workflowOptions2, "GetHealth",
-		mock.Anything).Return(wrun2, nil)
-
-	mtc3 := &tmocks.Client{}
-	mtc3.Mock.On("ExecuteWorkflow", context.Background(), workflowOptions3, "GetHealth",
-		mock.Anything).Return(wrun3, nil)
-
-	tSiteClientPool := testTemporalSiteClientPool(t)
-	assert.NotNil(t, tSiteClientPool)
-
-	temporalsuit := testsuite.WorkflowTestSuite{}
-	temporalsuit.NewTestWorkflowEnvironment()
-
-	type fields struct {
-		dbSession        *cdb.Session
-		siteClientPool   *sc.ClientPool
-		clientPoolSiteID uuid.UUID
-		clientPoolClient *tmocks.Client
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name       string
-		fields     fields
-		args       args
-		wantStatus map[uuid.UUID]string
-	}{
-		{
-			name: "test monitor inventory receipt for all sites, site status pending to registered",
-			fields: fields{
-				dbSession:        dbSession,
-				siteClientPool:   tSiteClientPool,
-				clientPoolSiteID: site1.ID,
-				clientPoolClient: mtc1,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			wantStatus: map[uuid.UUID]string{
-				site1.ID: cdbm.SiteStatusRegistered,
-			},
-		},
-		{
-			name: "test monitor inventory receipt for all sites, site status error to registered",
-			fields: fields{
-				dbSession:        dbSession,
-				siteClientPool:   tSiteClientPool,
-				clientPoolSiteID: site2.ID,
-				clientPoolClient: mtc2,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			wantStatus: map[uuid.UUID]string{
-				site2.ID: cdbm.SiteStatusRegistered,
-			},
-		},
-		{
-			name: "test monitor inventory receipt for all sites, site status registered to error",
-			fields: fields{
-				dbSession:        dbSession,
-				siteClientPool:   tSiteClientPool,
-				clientPoolSiteID: site3.ID,
-				clientPoolClient: mtc3,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			wantStatus: map[uuid.UUID]string{
-				site3.ID: cdbm.SiteStatusError,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mst := ManageSite{
-				dbSession:      tt.fields.dbSession,
-				siteClientPool: tt.fields.siteClientPool,
-			}
-			mst.siteClientPool.IDClientMap[tt.fields.clientPoolSiteID.String()] = tt.fields.clientPoolClient
-
-			err := mst.CheckHealthForSiteViaSiteAgent(tt.args.ctx, tt.fields.clientPoolSiteID)
-			assert.NoError(t, err)
-
-			for siteID, wantStatus := range tt.wantStatus {
-				siteDAO := cdbm.NewSiteDAO(dbSession)
-				site, err := siteDAO.GetByID(ctx, nil, siteID, nil, false)
-				assert.NoError(t, err)
-				assert.Equal(t, wantStatus, site.Status)
-			}
-		})
-	}
-}
-
-func TestManageSite_CheckHealthForGetAllSites(t *testing.T) {
-	ctx := context.Background()
-
-	dbSession := testSiteInitDB(t)
-	defer dbSession.Close()
-
-	util.TestSetupSchema(t, dbSession)
-
-	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
-
-	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
-	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
-
-	util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusPending, nil, ipu)
-	util.TestBuildSite(t, dbSession, ip, "test-site-2", cdbm.SiteStatusError, cdb.GetTimePtr(time.Now()), ipu)
-	util.TestBuildSite(t, dbSession, ip, "test-site-3", cdbm.SiteStatusRegistered, cdb.GetTimePtr(time.Now()), ipu)
-
-	type fields struct {
-		dbSession      *cdb.Session
-		siteClientPool *sc.ClientPool
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name               string
-		fields             fields
-		args               args
-		expectSiteIDCounts int
-	}{
-		{
-			name: "test get all site IDs",
-			fields: fields{
-				dbSession: dbSession,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			expectSiteIDCounts: 3,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mst := ManageSite{
-				dbSession:      tt.fields.dbSession,
-				siteClientPool: tt.fields.siteClientPool,
-			}
-			siteIDs, err := mst.GetAllSiteIDs(tt.args.ctx)
-			assert.NoError(t, err)
-			assert.Equal(t, len(siteIDs), tt.expectSiteIDCounts)
-		})
-	}
-}
-
-func TestManageSite_OnCheckHealthForSiteViaSiteAgentError(t *testing.T) {
-	ctx := context.Background()
-
-	dbSession := testSiteInitDB(t)
-	defer dbSession.Close()
-
-	util.TestSetupSchema(t, dbSession)
-
-	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
-
-	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
-	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
-
-	site1 := util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusPending, nil, ipu)
-	util.TestBuildSite(t, dbSession, ip, "test-site-2", cdbm.SiteStatusError, cdb.GetTimePtr(time.Now()), ipu)
-	util.TestBuildSite(t, dbSession, ip, "test-site-3", cdbm.SiteStatusRegistered, cdb.GetTimePtr(time.Now()), ipu)
-
-	type fields struct {
-		dbSession      *cdb.Session
-		siteClientPool *sc.ClientPool
-	}
-	type args struct {
-		ctx context.Context
-	}
-	tests := []struct {
-		name       string
-		fields     fields
-		args       args
-		siteID     uuid.UUID
-		wantStatus string
-	}{
-		{
-			name: "set site status error successfully",
-			fields: fields{
-				dbSession: dbSession,
-			},
-			args: args{
-				ctx: ctx,
-			},
-			siteID:     site1.ID,
-			wantStatus: cdbm.SiteStatusError,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mst := ManageSite{
-				dbSession:      tt.fields.dbSession,
-				siteClientPool: tt.fields.siteClientPool,
-			}
-			err := mst.OnCheckHealthForSiteViaSiteAgentError(tt.args.ctx, tt.siteID, nil)
-			assert.NoError(t, err)
-
-			siteDAO := cdbm.NewSiteDAO(dbSession)
-			site, err := siteDAO.GetByID(ctx, nil, tt.siteID, nil, false)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.wantStatus, site.Status)
-		})
-	}
-}
-
-func TestManageSite_GetSiteStatusFromSiteAgentHealthStatus(t *testing.T) {
-	type fields struct {
-		healthStatus *cwsv1.HealthStatus
-	}
-	tests := []struct {
-		name                string
-		fields              fields
-		expectStatus        string
-		expectStatusMessage string
-	}{
-		{
-			name: "test site status success site registered",
-			fields: fields{
-				healthStatus: &cwsv1.HealthStatus{
-					SiteInventoryCollection: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-					SiteControllerConnection: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-					SiteAgentHighAvailability: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-				},
-			},
-			expectStatus:        cdbm.SiteStatusRegistered,
-			expectStatusMessage: "Received health check from Site Agent",
-		},
-		{
-			name: "test site status success site error inventory collection down",
-			fields: fields{
-				healthStatus: &cwsv1.HealthStatus{
-					SiteInventoryCollection: &cwsv1.HealthStatusMsg{
-						State: 2,
-					},
-					SiteControllerConnection: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-					SiteAgentHighAvailability: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-				},
-			},
-			expectStatus:        cdbm.SiteStatusError,
-			expectStatusMessage: "Site Agent inventory collection is suspended due to errors",
-		},
-		{
-			name: "test site status success site error controller collection down",
-			fields: fields{
-				healthStatus: &cwsv1.HealthStatus{
-					SiteInventoryCollection: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-					SiteControllerConnection: &cwsv1.HealthStatusMsg{
-						State: 2,
-					},
-					SiteAgentHighAvailability: &cwsv1.HealthStatusMsg{
-						State: 1,
-					},
-				},
-			},
-			expectStatus:        cdbm.SiteStatusError,
-			expectStatusMessage: "Site Agent is unable to reach Site Controller",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mst := ManageSite{
-				dbSession:      nil,
-				siteClientPool: nil,
-			}
-			status, statusMessage := mst.getSiteStatusFromSiteAgentHealthStatus(tt.fields.healthStatus)
-			assert.Equal(t, status, tt.expectStatus)
-			assert.Equal(t, statusMessage, tt.expectStatusMessage)
-		})
-	}
-}
-
 // MockTemporalClient is a mock for Temporal Client
 type MockTemporalClient struct {
 	mock.Mock
@@ -1044,7 +682,7 @@ func TestManageSite_CheckOTPExpirationAndRenewForAllSites(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
@@ -1140,7 +778,7 @@ func TestManageSite_CheckOTPExpirationAndRenewForAllSites_MoreThanDefaultPageSiz
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
@@ -1213,7 +851,7 @@ func TestManageSite_UpdateAgentCertExpiry_Activity(t *testing.T) {
 
 	// Create infrastructure provider org and user
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 
 	// Create infrastructure provider with a valid user
@@ -1254,7 +892,7 @@ func TestManageSite_DeleteOrphanedSiteTemporalNamespaces_Activity(t *testing.T) 
 
 	// Create infrastructure provider org and user
 	ipOrg := "test-provider-org-1"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
 
 	// Create infrastructure provider with a valid user

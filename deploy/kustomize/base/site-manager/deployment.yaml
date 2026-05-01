@@ -13,36 +13,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# nico-rest-site-manager Deployment
+# carbide-rest-site-manager Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nico-rest-site-manager
+  name: carbide-rest-site-manager
   labels:
-    app: nico-rest-site-manager
+    app: carbide-rest-site-manager
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: nico-rest-site-manager
+      app: carbide-rest-site-manager
   template:
     metadata:
       labels:
-        app: nico-rest-site-manager
+        app: carbide-rest-site-manager
     spec:
       imagePullSecrets:
         - name: image-pull-secret
-      serviceAccountName: nico-rest-site-manager
+      serviceAccountName: carbide-rest-site-manager
       containers:
         - name: site-manager
-          image: nico-rest-site-manager
+          image: carbide-rest-site-manager
           imagePullPolicy: IfNotPresent
           args:
             - --listen-port=8100
-            - --creds-manager-url=https://nico-rest-cert-manager.nico-rest:8000
+            - --creds-manager-url=https://carbide-rest-cert-manager.carbide-rest:8000
             - --tls-cert-path=/etc/tls/tls.crt
             - --tls-key-path=/etc/tls/tls.key
-            - --namespace=nico-rest
+            - --namespace=carbide-rest
             - --debug
           ports:
             - containerPort: 8100

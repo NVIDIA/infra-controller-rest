@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Package nicoapi abstracts the GRPC interface used to communicate with nico-api.  New connection pools can be created with
+// Package nicoapi abstracts the GRPC interface used to communicate with nico-core-api.  New connection pools can be created with
 // NewClient to create a real client or NewMockClient which fakes everything for unit tests.
 
 package nicoapi
@@ -34,7 +34,7 @@ type Client interface {
 	GetLeakingMachineIds(ctx context.Context) ([]string, error)
 	GetPowerStates(ctx context.Context, machineIds []string) (ret []MachinePowerState, err error)
 	SetFirmwareUpdateTimeWindow(ctx context.Context, machineIds []string, startTime, endTime time.Time) error
-	// FindInterfaces returns all machine interfaces known by nico-api, keyed by MAC address
+	// FindInterfaces returns all machine interfaces known by nico-core-api, keyed by MAC address
 	FindInterfaces(ctx context.Context) (map[string]MachineInterface, error)
 
 	// AdminPowerControl performs power control operations on a machine

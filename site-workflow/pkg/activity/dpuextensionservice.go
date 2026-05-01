@@ -58,7 +58,7 @@ func NewManageDpuExtensionServiceInventory(config ManageInventoryConfig) ManageD
 	}
 }
 
-func dpuExtensionServiceFindIDs(ctx context.Context, nicoClient *cclient.NICoClient) ([]string, error) {
+func dpuExtensionServiceFindIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient) ([]string, error) {
 	rpcClient := nicoClient.NICo()
 	result, err := rpcClient.FindDpuExtensionServiceIds(ctx, &cwssaws.DpuExtensionServiceSearchFilter{})
 	if err != nil {
@@ -68,7 +68,7 @@ func dpuExtensionServiceFindIDs(ctx context.Context, nicoClient *cclient.NICoCli
 	return result.ServiceIds, nil
 }
 
-func dpuExtensionServiceFindByIDs(ctx context.Context, nicoClient *cclient.NICoClient, ids []string) ([]*cwssaws.DpuExtensionService, error) {
+func dpuExtensionServiceFindByIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient, ids []string) ([]*cwssaws.DpuExtensionService, error) {
 	rpcClient := nicoClient.NICo()
 	result, err := rpcClient.FindDpuExtensionServicesByIds(ctx, &cwssaws.DpuExtensionServicesByIdsRequest{
 		ServiceIds: ids,
@@ -104,7 +104,7 @@ func dpuExtensionServicePagedInventory(allItemIDs []string, pagedItems []*cwssaw
 
 // ManageDpuExtensionService is an activity wrapper for DPU Extension Service management
 type ManageDpuExtensionService struct {
-	NICoAtomicClient *cclient.NICoAtomicClient
+	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
 }
 
 // CreateDpuExtensionServiceOnSite is an activity to create a new DPU Extension Service on Site
@@ -131,7 +131,7 @@ func (mdes *ManageDpuExtensionService) CreateDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mdes.NICoAtomicClient.GetClient()
+	nicoClient := mdes.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cclient.ErrClientNotConnected
 	}
@@ -168,7 +168,7 @@ func (mdes *ManageDpuExtensionService) UpdateDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mdes.NICoAtomicClient.GetClient()
+	nicoClient := mdes.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cclient.ErrClientNotConnected
 	}
@@ -205,7 +205,7 @@ func (mdes *ManageDpuExtensionService) DeleteDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mdes.NICoAtomicClient.GetClient()
+	nicoClient := mdes.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cclient.ErrClientNotConnected
 	}
@@ -242,7 +242,7 @@ func (mdes *ManageDpuExtensionService) GetDpuExtensionServiceVersionsInfoOnSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mdes.NICoAtomicClient.GetClient()
+	nicoClient := mdes.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cclient.ErrClientNotConnected
 	}
@@ -260,8 +260,8 @@ func (mdes *ManageDpuExtensionService) GetDpuExtensionServiceVersionsInfoOnSite(
 }
 
 // NewManageDpuExtensionService returns a new ManageDpuExtensionService activity
-func NewManageDpuExtensionService(nicoClient *cclient.NICoAtomicClient) ManageDpuExtensionService {
+func NewManageDpuExtensionService(nicoClient *cclient.NICoCoreAtomicClient) ManageDpuExtensionService {
 	return ManageDpuExtensionService{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }

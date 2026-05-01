@@ -38,7 +38,7 @@ type State struct {
 
 // NICo represents the gRPC client for NICo and state
 type NICo struct {
-	Client *client.NICoAtomicClient
+	Client *client.NICoCoreAtomicClient
 	State  *State
 }
 
@@ -46,13 +46,13 @@ type NICo struct {
 func NewNICoInstance() *NICo {
 	nico := &NICo{
 		State:  &State{},
-		Client: client.NewNICoAtomicClient(&client.NICoClientConfig{}),
+		Client: client.NewNICoCoreAtomicClient(&client.NICoCoreClientConfig{}),
 	}
 
 	return nico
 }
 
 // GetClient returns the NICo client
-func (c *NICo) GetClient() *client.NICoClient {
+func (c *NICo) GetClient() *client.NICoCoreClient {
 	return c.Client.GetClient()
 }

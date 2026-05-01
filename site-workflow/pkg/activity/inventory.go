@@ -35,7 +35,7 @@ import (
 
 type ManageInventoryConfig struct {
 	SiteID                uuid.UUID
-	NICoAtomicClient   *cClient.NICoAtomicClient
+	NICoCoreAtomicClient   *cClient.NICoCoreAtomicClient
 	TemporalPublishClient tClient.Client
 	TemporalPublishQueue  string
 	SitePageSize          int
@@ -45,14 +45,14 @@ type ManageInventoryConfig struct {
 type manageInventoryImpl[K any, R any, P any] struct {
 	itemType               string
 	config                 ManageInventoryConfig
-	internalFindIDs        func(context.Context, *cClient.NICoClient) ([]K, error)
-	internalFindByIDs      func(context.Context, *cClient.NICoClient, []K) ([]R, error)
+	internalFindIDs        func(context.Context, *cClient.NICoCoreClient) ([]K, error)
+	internalFindByIDs      func(context.Context, *cClient.NICoCoreClient, []K) ([]R, error)
 	internalPagedInventory func([]K, []R, *pagedInventoryInput) P
 	// post-processing function that can optionally be used to attach additional inventory data
 	// based on the data in the inventory.  This will only be called for pages with inventory.
-	internalPagedInventoryPostProcess func(context.Context, *cClient.NICoClient, P) (P, error)
+	internalPagedInventoryPostProcess func(context.Context, *cClient.NICoCoreClient, P) (P, error)
 	// fallback function to get all the items when pagination is not supported
-	internalFindFallback func(ctx context.Context, client *cClient.NICoClient) ([]K, []R, error)
+	internalFindFallback func(ctx context.Context, client *cClient.NICoCoreClient) ([]K, []R, error)
 }
 
 type pagedInventoryInput struct {
@@ -104,7 +104,7 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 	// define workflow name
 	workflowName := fmt.Sprintf("Update%sInventory", impl.itemType)
 	// get nico client
-	nicoClient := impl.config.NICoAtomicClient.GetClient()
+	nicoClient := impl.config.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -203,7 +203,7 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 }
 
 func (impl *manageInventoryImpl[K, R, P]) collectAndPublishFallback(ctx context.Context, logger *zerolog.Logger,
-	nicoClient *cClient.NICoClient, workflowName string, workflowOptions tClient.StartWorkflowOptions) error {
+	nicoClient *cClient.NICoCoreClient, workflowName string, workflowOptions tClient.StartWorkflowOptions) error {
 	if impl.internalFindFallback == nil {
 		return errors.New("no fallback find function defined")
 	}

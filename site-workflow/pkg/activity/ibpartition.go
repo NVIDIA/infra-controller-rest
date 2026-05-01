@@ -57,7 +57,7 @@ func NewManageInfiniBandPartitionInventory(config ManageInventoryConfig) ManageI
 	}
 }
 
-func ibpFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.IBPartitionId, error) {
+func ibpFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.IBPartitionId, error) {
 	idList, err := nicoClient.NICo().FindIBPartitionIds(ctx, &cwssaws.IBPartitionSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func ibpFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws
 	return idList.GetIbPartitionIds(), nil
 }
 
-func ibpFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.IBPartitionId) ([]*cwssaws.IBPartition, error) {
+func ibpFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.IBPartitionId) ([]*cwssaws.IBPartition, error) {
 	list, err := nicoClient.NICo().FindIBPartitionsByIds(ctx, &cwssaws.IBPartitionsByIdsRequest{
 		IbPartitionIds: ids,
 	})
@@ -99,13 +99,13 @@ func ibpPagedInventory(allItemIDs []*cwssaws.IBPartitionId, pagedItems []*cwssaw
 
 // ManageInfiniBandPartition is an activity wrapper for InfiniBand Partition management
 type ManageInfiniBandPartition struct {
-	NICoAtomicClient *client.NICoAtomicClient
+	NICoCoreAtomicClient *client.NICoCoreAtomicClient
 }
 
 // NewManageInfiniBandPartition returns a new ManageInfiniBandPartition client
-func NewManageInfiniBandPartition(nicoClient *client.NICoAtomicClient) ManageInfiniBandPartition {
+func NewManageInfiniBandPartition(nicoClient *client.NICoCoreAtomicClient) ManageInfiniBandPartition {
 	return ManageInfiniBandPartition{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -136,7 +136,7 @@ func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mibp.NICoAtomicClient.GetClient()
+	nicoClient := mibp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -174,7 +174,7 @@ func (mibp *ManageInfiniBandPartition) UpdateInfiniBandPartitionOnSite(ctx conte
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	nicoClient := mibp.NICoAtomicClient.GetClient()
+	nicoClient := mibp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -211,7 +211,7 @@ func (mipb *ManageInfiniBandPartition) DeleteInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mipb.NICoAtomicClient.GetClient()
+	nicoClient := mipb.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}

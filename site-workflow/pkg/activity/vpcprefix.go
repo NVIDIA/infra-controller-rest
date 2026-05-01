@@ -33,13 +33,13 @@ import (
 
 // ManageVpcPrefix is an activity wrapper for VpcPrefix management
 type ManageVpcPrefix struct {
-	NICoAtomicClient *client.NICoAtomicClient
+	NICoCoreAtomicClient *client.NICoCoreAtomicClient
 }
 
 // NewManageVpcPrefix returns a new ManageVpcPrefix client
-func NewManageVpcPrefix(nicoClient *client.NICoAtomicClient) ManageVpcPrefix {
+func NewManageVpcPrefix(nicoClient *client.NICoCoreAtomicClient) ManageVpcPrefix {
 	return ManageVpcPrefix{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -65,7 +65,7 @@ func (mvp *ManageVpcPrefix) CreateVpcPrefixOnSite(ctx context.Context, request *
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mvp.NICoAtomicClient.GetClient()
+	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -102,7 +102,7 @@ func (mvp *ManageVpcPrefix) UpdateVpcPrefixOnSite(ctx context.Context, request *
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mvp.NICoAtomicClient.GetClient()
+	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -139,7 +139,7 @@ func (mvp *ManageVpcPrefix) DeleteVpcPrefixOnSite(ctx context.Context, request *
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mvp.NICoAtomicClient.GetClient()
+	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -184,7 +184,7 @@ func (moii *ManageVpcPrefixInventory) DiscoverVpcPrefixInventory(ctx context.Con
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func VpcPrefixFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.VpcPrefixId, error) {
+func VpcPrefixFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.VpcPrefixId, error) {
 	idList, err := nicoClient.NICo().SearchVpcPrefixes(ctx, &cwssaws.VpcPrefixSearchQuery{})
 	if err != nil {
 		return nil, err
@@ -192,7 +192,7 @@ func VpcPrefixFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*c
 	return idList.VpcPrefixIds, nil
 }
 
-func VpcPrefixFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.VpcPrefixId) ([]*cwssaws.VpcPrefix, error) {
+func VpcPrefixFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.VpcPrefixId) ([]*cwssaws.VpcPrefix, error) {
 	list, err := nicoClient.NICo().GetVpcPrefixes(ctx, &cwssaws.VpcPrefixGetRequest{
 		VpcPrefixIds: ids,
 	})
@@ -225,7 +225,7 @@ func VpcPrefixPagedInventory(allItemIDs []*cwssaws.VpcPrefixId, pagedItems []*cw
 	return inventory
 }
 
-func VpcPrefixFindFallback(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.VpcPrefixId, []*cwssaws.VpcPrefix, error) {
+func VpcPrefixFindFallback(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.VpcPrefixId, []*cwssaws.VpcPrefix, error) {
 	request := &cwssaws.VpcPrefixGetRequest{}
 	items, err := nicoClient.NICo().GetVpcPrefixes(ctx, request)
 	if err != nil {

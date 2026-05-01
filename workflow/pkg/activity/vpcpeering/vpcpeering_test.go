@@ -41,7 +41,6 @@ import (
 	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testTemporalSiteClientPool(t *testing.T) *sc.ClientPool {
@@ -226,7 +225,7 @@ func TestManageVpcPeering_UpdateVpcPeeringsInDB(t *testing.T) {
 
 	// Setup users, site, tenant, vpcs
 	org := "test-org"
-	roles := []string{authz.ProviderAdminRole}
+	roles := []string{"FORGE_PROVIDER_ADMIN"}
 	user := testVpcPeeringBuildUser(t, dbSession, uuid.NewString(), org, roles)
 	ip := testVpcPeeringSiteBuildInfrastructureProvider(t, dbSession, "test-provider", org, user)
 	site := testVpcPeeringBuildSite(t, dbSession, ip, "test-site", user)

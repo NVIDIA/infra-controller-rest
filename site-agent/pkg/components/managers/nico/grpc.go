@@ -31,13 +31,13 @@ import (
 // kicked off once even if creategRPC gets called multiple times
 var checkCertsOnce sync.Once
 
-func creategRPC() (conn *client.NICoClient, err error) {
+func creategRPC() (conn *client.NICoCoreClient, err error) {
 	// Initialize contextual logger
-	logger := log.With().Str("Method", "NICoClient.creategRPC").Logger()
+	logger := log.With().Str("Method", "CarbideClient.creategRPC").Logger()
 	logger.Info().Msg("GRPC: Starting GRPC client")
 
 	// Initialize the GRPC client configuration
-	ManagerAccess.Data.EB.Managers.NICo.Client.Config = &client.NICoClientConfig{
+	ManagerAccess.Data.EB.Managers.NICo.Client.Config = &client.NICoCoreClientConfig{
 		Address:        ManagerAccess.Conf.EB.NICo.Address,
 		Secure:         ManagerAccess.Conf.EB.NICo.Secure,
 		ServerCAPath:   ManagerAccess.Conf.EB.NICo.ServerCAPath,
@@ -55,7 +55,7 @@ func creategRPC() (conn *client.NICoClient, err error) {
 		logger.Error().Err(err).Msg("Failed to get initial certificate MD5 hashes")
 		return nil, err
 	}
-	newClient, err := client.NewNICoClient(ManagerAccess.Data.EB.Managers.NICo.Client.Config)
+	newClient, err := client.NewNICoCoreClient(ManagerAccess.Data.EB.Managers.NICo.Client.Config)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize GRPC client")
 		return nil, err
@@ -75,7 +75,7 @@ func creategRPC() (conn *client.NICoClient, err error) {
 }
 
 // CreateGRPCClient - creates the grpc connection handle
-func (NICo *API) CreateGRPCClient() error {
+func (Carbide *API) CreateGRPCClient() error {
 	// Initialize the GRPC client
 	// We can handle advanced features later
 	_, err := creategRPC()
@@ -89,7 +89,7 @@ func (NICo *API) CreateGRPCClient() error {
 }
 
 // GetGRPCClient - gets the grpc connection handle
-func (NICo *API) GetGRPCClient() *client.NICoClient {
+func (Carbide *API) GetGRPCClient() *client.NICoCoreClient {
 	return ManagerAccess.Data.EB.Managers.NICo.GetClient()
 }
 
@@ -102,8 +102,8 @@ func isGRPCUp(c codes.Code) bool {
 	return true
 }
 
-// UpdateGRPCClientState - updates nico state
-func (NICo *API) UpdateGRPCClientState(err error) {
+// UpdateGRPCClientState - updates carbide state
+func (Carbide *API) UpdateGRPCClientState(err error) {
 	defer computils.UpdateState(ManagerAccess.Data.EB)
 	if err == nil {
 		ManagerAccess.Data.EB.Managers.NICo.State.GrpcSucc.Inc()

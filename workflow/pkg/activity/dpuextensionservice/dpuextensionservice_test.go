@@ -42,7 +42,6 @@ import (
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
 	"go.temporal.io/sdk/testsuite"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -104,7 +103,7 @@ func TestManageDpuExtensionService_UpdateDpuExtensionServicesInDB(t *testing.T) 
 	testDpuExtensionServiceSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)

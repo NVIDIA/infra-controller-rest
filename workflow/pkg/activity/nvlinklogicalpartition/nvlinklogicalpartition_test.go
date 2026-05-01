@@ -44,7 +44,6 @@ import (
 	tmocks "go.temporal.io/sdk/mocks"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -102,13 +101,13 @@ func TestManageNVLinkLogicalPartition_UpdateNVLinkLogicalPartitionsInDB(t *testi
 	testNVLinkLogicalPartitionSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 

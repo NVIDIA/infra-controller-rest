@@ -54,7 +54,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 	serverCAMD5 := serverCAMD5Hash[:]
 
 	type fields struct {
-		Config *NICoClientConfig
+		Config *NICoCoreClientConfig
 	}
 	tests := []struct {
 		name              string
@@ -66,7 +66,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 		{
 			name: "test that we can get the initial cert md5s",
 			fields: fields{
-				Config: &NICoClientConfig{
+				Config: &NICoCoreClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -77,7 +77,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cac := &NICoAtomicClient{
+			cac := &NICoCoreAtomicClient{
 				Config: tt.fields.Config,
 			}
 			gotClientCertMD5, gotServerCAMD5, err := cac.GetInitialCertMD5()
@@ -94,7 +94,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 }
 
 func TestNICoAtomicClient_GetClient_ReturnsNilWhenUninitialized(t *testing.T) {
-	cac := &NICoAtomicClient{
+	cac := &NICoCoreAtomicClient{
 		value: &atomic.Value{},
 	}
 	// GetClient should return nil without panicking when no client has been stored
@@ -102,11 +102,11 @@ func TestNICoAtomicClient_GetClient_ReturnsNilWhenUninitialized(t *testing.T) {
 }
 
 func TestNICoAtomicClient_GetClient_ReturnsClientAfterSwap(t *testing.T) {
-	cac := &NICoAtomicClient{
+	cac := &NICoCoreAtomicClient{
 		value: &atomic.Value{},
 	}
 	// Simulate storing a client via SwapClient
-	testClient := &NICoClient{}
+	testClient := &NICoCoreClient{}
 	cac.value.Store(testClient)
 	assert.Equal(t, testClient, cac.GetClient())
 }
@@ -143,7 +143,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 	lastServerCAMD5 := val[:]
 
 	type fields struct {
-		Config *NICoClientConfig
+		Config *NICoCoreClientConfig
 	}
 	type args struct {
 		lastClientCertMD5 []byte
@@ -159,7 +159,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns true when the certificates have changed",
 			fields: fields{
-				Config: &NICoClientConfig{
+				Config: &NICoCoreClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -173,7 +173,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns false when the certificates have not changed",
 			fields: fields{
-				Config: &NICoClientConfig{
+				Config: &NICoCoreClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -187,7 +187,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cac := &NICoAtomicClient{
+			cac := &NICoCoreAtomicClient{
 				Config: tt.fields.Config,
 			}
 			got, _, _, err := cac.CheckCertificates(tt.args.lastClientCertMD5, tt.args.lastServerCAMD5)

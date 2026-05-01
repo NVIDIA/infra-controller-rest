@@ -98,7 +98,7 @@ If `nico-rest-common.enabled=false`, you must pre-create the following resources
 ### Umbrella Chart (cloud-side services)
 
 ```bash
-REPO=nvcr.io/0837451325059433/nico-dev
+REPO=nvcr.io/0837451325059433/carbide-dev
 TAG=latest
 NS=nico-rest
 
@@ -143,7 +143,7 @@ Global values are passed to all sub-charts:
 ```yaml
 global:
   image:
-    repository: nvcr.io/0837451325059433/nico-dev
+    repository: nvcr.io/0837451325059433/carbide-dev
     tag: "1.0.6"
     pullPolicy: IfNotPresent
   imagePullSecrets:

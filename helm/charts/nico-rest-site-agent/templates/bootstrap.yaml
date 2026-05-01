@@ -42,7 +42,7 @@ rules:
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "create", "delete"]
-  - apiGroups: ["nico.nvidia.io"]
+  - apiGroups: ["forge.nvidia.io"]
     resources: ["sites"]
     verbs: ["get"]
 ---

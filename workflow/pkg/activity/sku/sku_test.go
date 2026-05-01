@@ -32,7 +32,6 @@ import (
 	cwu "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
 
 	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestManageSku_Reconcile_CreateUpdateDelete(t *testing.T) {
@@ -45,7 +44,7 @@ func TestManageSku_Reconcile_CreateUpdateDelete(t *testing.T) {
 
 	// Build basic graph: provider, tenant, site
 	ipOrg := "test-ip-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 	site := cwu.TestBuildSite(t, dbSession, ip, "test-site", cdbm.SiteStatusRegistered, nil, ipu)
@@ -96,7 +95,7 @@ func TestManageSku_InventoryStatusFailed_Skip(t *testing.T) {
 
 	// Build site
 	ipOrg := "test-ip-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 	site := cwu.TestBuildSite(t, dbSession, ip, "test-site", cdbm.SiteStatusRegistered, nil, ipu)
@@ -131,7 +130,7 @@ func TestManageSku_PagedDeletion(t *testing.T) {
 
 	// Build site
 	ipOrg := "test-ip-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 	ipu := cwu.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := cwu.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 	site := cwu.TestBuildSite(t, dbSession, ip, "test-site", cdbm.SiteStatusRegistered, nil, ipu)

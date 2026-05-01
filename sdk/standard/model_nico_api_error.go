@@ -36,7 +36,7 @@ var _ MappedNullable = &NICoAPIError{}
 
 // NICoAPIError Describes the error response from NCX Infra Controller REST API
 type NICoAPIError struct {
-	// Source of the error. Only 'nico' is supported
+	// Source of the error.
 	Source *string `json:"source,omitempty"`
 	// Message describing the error
 	Message *string `json:"message,omitempty"`

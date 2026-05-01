@@ -39,7 +39,7 @@ import (
 
 // ManageMachine is an activity wrapper for Machine management tasks that allows injecting DB access
 type ManageMachine struct {
-	nicoAtomicClient *cClient.NICoAtomicClient
+	nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // SetMachineMaintenanceOnSite is an activity to set Machine maintenance mode using Site Controller API
@@ -62,7 +62,7 @@ func (mm *ManageMachine) SetMachineMaintenanceOnSite(ctx context.Context, reques
 	}
 
 	// Call Site Controller gRPC endpoint to set SetMaintenance request
-	nicoClient := mm.nicoAtomicClient.GetClient()
+	nicoClient := mm.nicoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -99,7 +99,7 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	}
 
 	// Call Site Controller gRPC endpoint to update Machine metadata
-	nicoClient := mm.nicoAtomicClient.GetClient()
+	nicoClient := mm.nicoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -131,7 +131,7 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 	}
 
 	// Call Site Controller gRPC endpoint to get DPU Machines by IDs
-	nicoClient := mm.nicoAtomicClient.GetClient()
+	nicoClient := mm.nicoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cClient.ErrClientNotConnected
 	}
@@ -180,16 +180,16 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 }
 
 // NewManageMachine returns a new ManageMachine activity
-func NewManageMachine(nicoAtomicClient *cClient.NICoAtomicClient) ManageMachine {
+func NewManageMachine(nicoCoreAtomicClient *cClient.NICoCoreAtomicClient) ManageMachine {
 	return ManageMachine{
-		nicoAtomicClient: nicoAtomicClient,
+		nicoCoreAtomicClient: nicoCoreAtomicClient,
 	}
 }
 
 // ManageMachineInventory is an activity wrapper for Machine inventory collection and publishing
 type ManageMachineInventory struct {
 	siteID                uuid.UUID
-	nicoAtomicClient   *cClient.NICoAtomicClient
+	nicoCoreAtomicClient   *cClient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	sitePageSize          int
@@ -209,7 +209,7 @@ func (mmi *ManageMachineInventory) CollectAndPublishMachineInventory(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint to get available Machine IDs
-	nicoClient := mmi.nicoAtomicClient.GetClient()
+	nicoClient := mmi.nicoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -359,10 +359,10 @@ func getPagedMachineInventory(pagedMachines []*cwssaws.Machine, machineIDs []*cw
 }
 
 // NewManageMachineInventory returns a new ManageMachineInventory activity
-func NewManageMachineInventory(siteID uuid.UUID, nicoAtomicClient *cClient.NICoAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, sitePageSize int, cloudPageSize int) ManageMachineInventory {
+func NewManageMachineInventory(siteID uuid.UUID, nicoCoreAtomicClient *cClient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, sitePageSize int, cloudPageSize int) ManageMachineInventory {
 	return ManageMachineInventory{
 		siteID:                siteID,
-		nicoAtomicClient:   nicoAtomicClient,
+		nicoCoreAtomicClient:   nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		sitePageSize:          sitePageSize,

@@ -48,7 +48,7 @@ type grpcClient struct {
 
 var testingMsgOnce sync.Once
 
-// NewClient creates a GRPC connection pool to nico-api.  Returning success does not mean that we have yet made an actual connection;
+// NewClient creates a GRPC connection pool to nico-core-api.  Returning success does not mean that we have yet made an actual connection;
 // that happens when making an actual request.
 func NewClient(grpcTimeout time.Duration) (Client, error) {
 	if testing.Testing() {
@@ -58,28 +58,28 @@ func NewClient(grpcTimeout time.Duration) (Client, error) {
 		return NewMockClient(), nil
 	}
 
-	nicoURL := os.Getenv("NICO_API_URL")
+	nicoURL := os.Getenv("NICO_CORE_API_URL")
 	if nicoURL == "" {
-		return nil, errors.New("NICO_API_URL not set, cannot make connections to nico-api")
+		return nil, errors.New("NICO_CORE_API_URL not set, cannot make connections to NICo Core")
 	}
 
 	tlsConfig, _, err := certs.TLSConfig()
 	if err != nil {
 		if err == certs.ErrNotPresent {
-			return nil, errors.New("Certificates not present, unable to authenticate with nico-api")
+			return nil, errors.New("Certificates not present, unable to authenticate with nico-core-api")
 		}
 		return nil, err
 	}
 
 	conn, err := grpc.NewClient(nicoURL, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
 	if err != nil {
-		return nil, fmt.Errorf("Unable to connect to nico-api: %w", err)
+		return nil, fmt.Errorf("Unable to connect to nico-core-api: %w", err)
 	}
 
 	return &grpcClient{gclient: pb.NewNICoClient(conn), grpcTimeout: grpcTimeout}, nil
 }
 
-// GetMachines retrieves all machines known by nico-api
+// GetMachines retrieves all machines known by nico-core-api
 // (FindMachineIds + FindMachinesByIds).
 func (c *grpcClient) GetMachines(ctx context.Context) ([]MachineDetail, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
@@ -111,7 +111,7 @@ func (c *grpcClient) GetMachines(ctx context.Context) ([]MachineDetail, error) {
 	return result, nil
 }
 
-// GetMachines retrieves all machines known by nico-api
+// GetMachines retrieves all machines known by nico-core-api
 // (FindMachineIds + FindMachinesByIds).
 func (c *grpcClient) GetLeakingMachineIds(ctx context.Context) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
@@ -136,7 +136,7 @@ func (c *grpcClient) GetLeakingMachineIds(ctx context.Context) ([]string, error)
 	return ids, nil
 }
 
-// Version returns the version string of nico-api, mainly as a "ping"
+// Version returns the version string of nico-core-api, mainly as a "ping"
 func (c *grpcClient) Version(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
 	defer cancel()
@@ -220,7 +220,7 @@ func (c *grpcClient) UpdatePowerOption(ctx context.Context, machineID string, de
 	return nil
 }
 
-// FindInterfaces returns all machine interfaces known by nico-api, keyed by MAC address
+// FindInterfaces returns all machine interfaces known by nico-core-api, keyed by MAC address
 func (c *grpcClient) FindInterfaces(ctx context.Context) (map[string]MachineInterface, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
 	defer cancel()

@@ -248,9 +248,9 @@ type SharedInformerFactory interface {
 	// client.
 	InformerFor(obj runtime.Object, newFunc internalinterfaces.NewInformerFunc) cache.SharedIndexInformer
 
-	NICo() crds.Interface
+	Forge() crds.Interface
 }
 
-func (f *sharedInformerFactory) NICo() crds.Interface {
+func (f *sharedInformerFactory) Forge() crds.Interface {
 	return crds.New(f, f.namespace, f.tweakListOptions)
 }

@@ -15,15 +15,15 @@
 
 openapi: 3.1.0
 info:
-  title: NVIDIA Infrastructure Controller (NICo) REST API
+  title: NVIDIA Infra Controller REST API
   version: 1.4.0
-  summary: NVIDIA Infrastructure Controller (NICo) REST API is the centralized RESTful gateway to access NVIDIA Infrastructure Controller service
-  description: 'NVIDIA Infrastructure Controller (NICo) REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infrastructure Controller datacenters, also referred to as Sites.'
+  summary: NVIDIA Infra Controller REST API is the centralized RESTful gateway to access NVIDIA Infra Controller service
+  description: 'NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.'
   license:
     name: Apache-2.0
     url: 'https://www.apache.org/licenses/LICENSE-2.0'
   contact:
-    name: NVIDIA Infrastructure Controller Dev Team
+    name: NVIDIA Infra Controller Dev Team
 servers:
   - url: 'https://nico-rest-api.nico.svc.cluster.local'
     description: Kubernetes Cluster
@@ -332,7 +332,7 @@ paths:
       description: |-
         Retrieve Infrastructure Provider entity for current Org.
 
-        User must have `PROVIDER_ADMIN` authorization role.
+        User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters: []
       tags:
         - Infrastructure Provider
@@ -359,7 +359,7 @@ paths:
       description: |-
         Retrieve stats for current Infrastructure Provider.
 
-        User must have `PROVIDER_ADMIN` authorization role.
+        User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters: []
       tags:
         - Infrastructure Provider
@@ -398,7 +398,7 @@ paths:
       description: |-
         Retrieve Tenant entity for current Org.
 
-        User must have `TENANT_ADMIN` authorization role.
+        User must have authorization role with `TENANT_ADMIN` suffix.
       parameters: []
   '/v2/org/{org}/nico/tenant/current/stats':
     parameters:
@@ -425,7 +425,7 @@ paths:
       description: |-
         Retrieve stats for current Tenant.
 
-        User must have `TENANT_ADMIN` authorization role.
+        User must have authorization role with `TENANT_ADMIN` suffix.
       parameters: []
   '/v2/org/{org}/nico/tenant/account':
     parameters:
@@ -486,9 +486,9 @@ paths:
 
         Either `infrastructureProviderId` or `tenantId` query param must be specified.
 
-        If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have `PROVIDER_ADMIN` role.
+        If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have `TENANT_ADMIN` role.
+        If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -594,7 +594,7 @@ paths:
       description: |-
         Create a Tenant Account.
 
-        Org must have an Infrastructure Provider entity and its ID must match the Infrastructure Provider ID in request data. User must have `PROVIDER_ADMIN` authorization role
+        Org must have an Infrastructure Provider entity and its ID must match the Infrastructure Provider ID in request data. User must have authorization role with `PROVIDER_ADMIN` suffix
 
         Infrastructure Provider can create a Tenant Account by specifying the Tenant's UUID or Tenant's org name. This will set the status of the Tenant Account to "Invited". Then the Tenant can view this account information and are able to confirm/accept the account by updating the Tenant Account.
       requestBody:
@@ -671,9 +671,9 @@ paths:
 
         Either `infrastructureProviderId` or `tenantId` query param must be specified.
 
-        If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have `PROVIDER_ADMIN` role.
+        If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have `TENANT_ADMIN` role.
+        If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -744,7 +744,7 @@ paths:
 
         Can be used to accept an invitation sent by Infrastructure Provider.
 
-        Org must have a tenant entity whose ID matches the `tenantId` of the Tenant Account object. User must have `TENANT_ADMIN` role. Can only update a TenantAccount that has `Invited` status.
+        Org must have a tenant entity whose ID matches the `tenantId` of the Tenant Account object. User must have authorization role with `TENANT_ADMIN` suffix. Can only update a TenantAccount that has `Invited` status.
       requestBody:
         content:
           application/json:
@@ -803,7 +803,7 @@ paths:
       description: |-
         Retrieve all Sites for org.
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
       parameters:
         - schema:
             type: string
@@ -912,7 +912,7 @@ paths:
       description: |-
         Create a Site for the org.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Tenants cannot create Sites.
       requestBody:
@@ -965,7 +965,7 @@ paths:
       description: |-
         Retrieve a specific Site by ID.
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
         Access is granted if:
         - The Site is owned by the org's Infrastructure Provider
@@ -987,7 +987,7 @@ paths:
       description: |-
         Update a specific Site
 
-        User must have `PROVIDER_ADMIN` role.
+        User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no Site specific configuration modifiable by Tenant.
       requestBody:
@@ -1024,7 +1024,7 @@ paths:
       description: |-
         Delete a specific Site
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Site can only be deleted if all Allocations have been deleted.
       parameters:
@@ -1079,7 +1079,7 @@ paths:
       description: |-
         Retrieve a specific Site status history
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
         Access is granted if:
         - The Site is owned by the org's Infrastructure Provider
@@ -1166,7 +1166,7 @@ paths:
       description: |-
         Retrieve all Allocations for the org.
 
-        Provider and Tenant roles are inferred from the org's membership. User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+        Provider and Tenant roles are inferred from the org's membership. User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
         Results are returned from both Provider and Tenant perspectives when the org has both roles.
       parameters:
@@ -1324,7 +1324,7 @@ paths:
       description: |-
         Create an Allocation for the org.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Tenant management of Allocation is not supported in MVP.
       requestBody:
@@ -1412,7 +1412,7 @@ paths:
 
         Provider and Tenant roles are inferred from the org's membership. Allocation must belong to the Provider or Tenant associated with the org.
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -1491,7 +1491,7 @@ paths:
       description: |-
         Update an existing Allocation
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role. Provider must own the Allocation.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix. Provider must own the Allocation.
 
         Tenant management of Allocation is not supported in MVP.
       tags:
@@ -1629,7 +1629,7 @@ paths:
       description: |-
         Create an Allocation Constraint for a given Allocation ID.
 
-        Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -1819,7 +1819,7 @@ paths:
       description: |-
         Retrieve all IP blocks for the org.
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
       parameters:
         - schema:
             type: string
@@ -1933,7 +1933,7 @@ paths:
       description: |-
         Create an IP block for the org.
 
-        Only Infrastructure Providers can create a root IP Block. User must have `PROVIDER_ADMIN` role.
+        Only Infrastructure Providers can create a root IP Block. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Tenant IP Blocks are created via Allocation.
       requestBody:
@@ -2012,7 +2012,7 @@ paths:
       description: |-
         Retrieve an IP Block by ID.
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -2053,7 +2053,7 @@ paths:
       description: |-
         Delete an IP block
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role. Only root IP Blocks can be deleted if there are no allocations associated with it.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix. Only root IP Blocks can be deleted if there are no allocations associated with it.
 
         Tenant IP Blocks are managed via Allocation.
       tags:
@@ -2169,7 +2169,7 @@ paths:
 
         The IP Block in URL must belong to the Infrastructure Provider associated with the Org.
 
-        User must have `PROVIDER_ADMIN` role.
+        User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -2294,7 +2294,7 @@ paths:
       description: |-
         Retrieve all VPCs for the org.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
       parameters:
         - schema:
             type: string
@@ -2405,7 +2405,7 @@ paths:
       description: |-
         Create a VPC for the org.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
       requestBody:
         content:
           application/json:
@@ -2498,7 +2498,7 @@ paths:
       description: |-
         Retrieve a specific VPC by ID.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -2521,7 +2521,7 @@ paths:
       description: |-
         Delete a specific VPC by ID.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - VPC
     patch:
@@ -2568,7 +2568,7 @@ paths:
       description: |-
         Update an existing VPC
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
       requestBody:
         content:
           application/json:
@@ -2641,7 +2641,7 @@ paths:
       description: |-
         Update network virtualization type for a VPC
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
 
         Tenant must own the VPC
         Request is rejected if the VPC already has Subnets or Instances
@@ -2690,7 +2690,7 @@ paths:
         Get all VPC peerings.
         Tenant Admin can get all peerings where the tenant owns at least one VPC.
         Provider Admin can get all peerings in a site.
-        User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+        User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -2747,7 +2747,7 @@ paths:
         Tenant Admin can create single-tenant peerings (both VPCs belong to their tenant).
         Provider Admin can create multi-tenant peerings (VPCs from different tenants).
 
-        User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+        User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -2799,7 +2799,7 @@ paths:
         Tenant Admin can get a peering if at least one VPC belongs to their tenant.
         Provider Admin can get a peering if it is in a site provided by their org.
 
-        User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+        User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
       responses:
         '200':
           description: OK
@@ -2835,7 +2835,7 @@ paths:
         Tenant Admin can delete only peerings where both VPCs belong to their tenant.
         Provider Admin can delete only multi-tenant peerings in sites they provide.
 
-        User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+        User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
       responses:
         '204':
           description: No Content
@@ -2878,7 +2878,7 @@ paths:
       description: |-
         Retrieve all VPC Prefixes for the org
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -2958,7 +2958,7 @@ paths:
       description: |-
         Create a VPC Prefix for the org.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -2998,7 +2998,7 @@ paths:
       description: |-
         Retrieve a specific VPC Prefix
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -3020,7 +3020,7 @@ paths:
       description: |-
         Delete a specific VPC Prefix by ID.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - VPC Prefix
     patch:
@@ -3042,7 +3042,7 @@ paths:
       description: |
         Update an existing VPC Prefix
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -3110,7 +3110,7 @@ paths:
       description: |-
         Retrieve all Subnets for the org
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -3216,7 +3216,7 @@ paths:
       description: |-
         Create a Subnet for the org.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
         At least 1 IPv4 IP block or 1 IPv6 IP block must be specified.
       requestBody:
@@ -3294,7 +3294,7 @@ paths:
       description: |-
         Retrieve a specific Subnet
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -3317,7 +3317,7 @@ paths:
       description: |-
         Delete a specific Subnet by ID.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - Subnet
     patch:
@@ -3365,7 +3365,7 @@ paths:
       description: |
         Update an existing Subnet
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -3390,7 +3390,7 @@ paths:
       description: |-
         Create an Expected Machine to pre-register Machines expected to be discovered at a Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Machines if they have an account with the Site's Infrastructure Provider.
       requestBody:
@@ -3433,7 +3433,7 @@ paths:
       description: |-
         Retrieve all Expected Machines.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Machines if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
       parameters:
@@ -3522,7 +3522,7 @@ paths:
       description: |-
         Retrieve a specific Expected Machine by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Machines if they have an account with the Site's Infrastructure Provider.
       parameters:
@@ -3555,7 +3555,7 @@ paths:
       description: |-
         Update an existing Expected Machine by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Machine.
 
@@ -3598,7 +3598,7 @@ paths:
       description: |-
         Delete an existing Expected Machine by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Machine.
 
@@ -3629,7 +3629,7 @@ paths:
       description: |-
         Create multiple Expected Machines in a single request. All machines must belong to the same site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Machines if they have an account with the Site's Infrastructure Provider.
 
@@ -3691,7 +3691,7 @@ paths:
       description: |-
         Update multiple Expected Machines in a single request. All machines must belong to the same site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Machines.
 
@@ -3761,7 +3761,7 @@ paths:
       description: |-
         Create an Expected Power Shelf to pre-register power shelves expected to be discovered at a Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Power Shelves if they have an account with the Site's Infrastructure Provider.
       requestBody:
@@ -3802,7 +3802,7 @@ paths:
       description: |-
         Retrieve all Expected Power Shelves.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Power Shelves if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
       parameters:
@@ -3890,7 +3890,7 @@ paths:
       description: |-
         Retrieve a specific Expected Power Shelf by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Power Shelves if they have an account with the Site's Infrastructure Provider.
       parameters:
@@ -3922,7 +3922,7 @@ paths:
       description: |-
         Update an existing Expected Power Shelf by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Power Shelf.
 
@@ -3966,7 +3966,7 @@ paths:
       description: |-
         Delete an existing Expected Power Shelf by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Power Shelf.
 
@@ -3997,7 +3997,7 @@ paths:
       description: |-
         Create an Expected Switch to pre-register network switches expected to be discovered at a Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Switches if they have an account with the Site's Infrastructure Provider.
       requestBody:
@@ -4039,7 +4039,7 @@ paths:
       description: |-
         Retrieve all Expected Switches.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Switches if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
       parameters:
@@ -4127,7 +4127,7 @@ paths:
       description: |-
         Retrieve a specific Expected Switch by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
         Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Switches if they have an account with the Site's Infrastructure Provider.
       parameters:
@@ -4159,7 +4159,7 @@ paths:
       description: |-
         Update an existing Expected Switch by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Switch.
 
@@ -4204,7 +4204,7 @@ paths:
       description: |-
         Delete an existing Expected Switch by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         Infrastructure Provider must own the Expected Switch.
 
@@ -4239,9 +4239,9 @@ paths:
 
         A `siteId` query parameter is required for all requests.
 
-        For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
-        For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have `TENANT_ADMIN` role. The Tenant must have an account with the Site's Infrastructure Provider.
+        For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have authorization role with `TENANT_ADMIN` suffix. The Tenant must have an account with the Site's Infrastructure Provider.
       parameters:
         - schema:
             type: string
@@ -4354,9 +4354,9 @@ paths:
 
         SKUs represent unique hardware configurations discovered at sites. They are automatically derived from machine characteristics.
 
-        For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+        For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
-        For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have `TENANT_ADMIN` role. The Tenant must have an account with the SKU's Site's Infrastructure Provider.
+        For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have authorization role with `TENANT_ADMIN` suffix. The Tenant must have an account with the SKU's Site's Infrastructure Provider.
       responses:
         '200':
           description: OK
@@ -4462,7 +4462,7 @@ paths:
       description: |-
         Retrieve all InfiniBand Partitions for the org
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -4564,7 +4564,7 @@ paths:
       description: |-
         Create an InfiniBand Partition for the org.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -4635,7 +4635,7 @@ paths:
       description: |-
         Retrieve a specific InfiniBand Partition
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
         Tenant must own the Partition.
       parameters:
@@ -4661,7 +4661,7 @@ paths:
       description: |-
         Delete a specific InfiniBand Partition by ID.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
         Tenant must own the Partition.
       tags:
@@ -4709,7 +4709,7 @@ paths:
       description: |-
         Update an existing InfiniBand Partition
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
         Tenant must own the Partition.
       requestBody:
@@ -4774,7 +4774,7 @@ paths:
       description: |-
         Retrieve all NVLink Logical Partitions for the org
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -4878,7 +4878,7 @@ paths:
       description: |-
         Create an NVLink Logical Partition for the org.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -4920,7 +4920,7 @@ paths:
       description: |-
         Retrieve a specific NVLink Logical Partition by ID
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - NVLink Logical Partition
       parameters:
@@ -4964,7 +4964,7 @@ paths:
       description: |-
         Update a specific NVLink Logical Partition
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -4983,7 +4983,7 @@ paths:
       description: |-
         Delete an NVLink Logical Partition by ID
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - NVLink Logical Partition
   '/v2/org/{org}/nico/instance/type':
@@ -5117,7 +5117,7 @@ paths:
       description: |
         Get all Instance Types for the org.
 
-        Provider and Tenant roles are inferred from the org's membership. User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+        Provider and Tenant roles are inferred from the org's membership. User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
         Results are returned from both Provider and Tenant perspectives when the org has both roles.
       parameters:
@@ -5261,7 +5261,7 @@ paths:
       description: |
         Create an Instance Type for Infrastructure Provider.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -5376,9 +5376,9 @@ paths:
       description: |-
         Get an Instance Type by ID.
 
-        If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have `PROVIDER_ADMIN` role.
+        If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If the org has a Tenant entity and it has a Tenant Account with the Infrastructure Provider of the Instance Type, then the Instance Type detail is returned. User must have `TENANT_ADMIN` role.
+        If the org has a Tenant entity and it has a Tenant Account with the Infrastructure Provider of the Instance Type, then the Instance Type detail is returned. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: boolean
@@ -5409,7 +5409,7 @@ paths:
       description: |-
         Delete an Instance Type by ID.
 
-        Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity that owns the Instance Type. User must have authorization role with `PROVIDER_ADMIN` suffix.
       tags:
         - Instance Type
     patch:
@@ -5461,7 +5461,7 @@ paths:
       description: |-
         Update an Instance Type by ID.
 
-        Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity that owns the Instance Type. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -5537,7 +5537,7 @@ paths:
       description: |-
         Get all Machines for a given Instance Type
 
-        Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: integer
@@ -5604,7 +5604,7 @@ paths:
       description: |-
         Associate a Machine to an Instance Type
 
-        Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -5651,7 +5651,7 @@ paths:
 
         `machineAssociationId` path parameter has been renamed to `machineId`. The path parameter will continue to accept both Machine ID and Machine/Instance Type ID until July 9th, 2026 00:00 UTC. After that time, Machine/Instance Type ID will no longer be accepted.
 
-        Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
       tags:
         - Instance Type
   '/v2/org/{org}/nico/instance':
@@ -5979,7 +5979,7 @@ paths:
       description: |
         Get all Instances for Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -6263,7 +6263,7 @@ paths:
       description: |
         Create an Instance for Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -6452,7 +6452,7 @@ paths:
 
         Instance names are automatically generated using the `namePrefix` with a random 6-character suffix (e.g., "worker" becomes "worker-abc123", "worker-def456").
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -6662,7 +6662,7 @@ paths:
       description: |
         Get an Instance by ID
 
-        Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -6687,7 +6687,7 @@ paths:
       description: |-
         Delete an Instance by ID
 
-        Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - Instance
       requestBody:
@@ -6844,7 +6844,7 @@ paths:
       description: |-
         Update an Instance by ID
 
-        Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -6954,7 +6954,7 @@ paths:
       description: |
         Get Instance status history
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: integer
@@ -7035,7 +7035,7 @@ paths:
       description: |-
         Get all Interfaces for an Instance
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7142,7 +7142,7 @@ paths:
       description: |-
         Get all InfiniBand Interfaces for an Instance
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7245,7 +7245,7 @@ paths:
       description: |-
         Get all NVLink Interfaces for an Instance
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7336,7 +7336,7 @@ paths:
       description: |-
         Get all InfiniBand Interfaces
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7440,7 +7440,7 @@ paths:
       description: |-
         Get all NVLink Interfaces
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7646,9 +7646,9 @@ paths:
       description: |-
         Get an Operating System by ID
 
-        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have `PROVIDER_ADMIN` authorization role.
+        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have `TENANT_ADMIN` role.
+        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7777,9 +7777,9 @@ paths:
 
         Either `infrastructureProviderId` or `tenantId` must be provided in request data. Both cannot be provided at the same time.
 
-        If `infrastructureProviderId` is provided in request data, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have `PROVIDER_ADMIN` role.
+        If `infrastructureProviderId` is provided in request data, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If `tenantId` is provided in request data, then org must have a Tenant entity and its ID should match the query param value. User must have `TENANT_ADMIN` role.
+        If `tenantId` is provided in request data, then org must have a Tenant entity and its ID should match the query param value. User must have authorization role with `TENANT_ADMIN` suffix.
 
         Only Tenants are allowed to create Operating System for MVP.
       requestBody:
@@ -7976,9 +7976,9 @@ paths:
       description: |-
         Get an Operating System by ID
 
-        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have `PROVIDER_ADMIN` authorization role.
+        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have `TENANT_ADMIN` role.
+        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -7999,9 +7999,9 @@ paths:
       description: |-
         Delete an Operating System by ID
 
-        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have `PROVIDER_ADMIN` authorization role.
+        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have `TENANT_ADMIN` authorization role.
+        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - Operating System
     patch:
@@ -8068,9 +8068,9 @@ paths:
       description: |-
         Update an Operating System by ID
 
-        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have `PROVIDER_ADMIN` authorization role. Provider must own the Operating System.
+        If the Operating System has `infrastructureProviderId` set, then org must have an Infrastructure Provider entity and its ID should match the Operating System Infrastructure Provider ID. User must have authorization role with `PROVIDER_ADMIN` suffix. Provider must own the Operating System.
 
-        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have `TENANT_ADMIN` role. Tenant must own the Operating System.
+        If the Operating System has `tenantId` set, then org must have a Tenant entity and its ID should match the Operating System Tenant ID. User must have authorization role with `TENANT_ADMIN` suffix. Tenant must own the Operating System.
       tags:
         - Operating System
       requestBody:
@@ -8193,7 +8193,7 @@ paths:
       description: |
         Get all Machines for Infrastructure Provider.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -8831,7 +8831,7 @@ paths:
         '500':
           description: Describes an error response for 500 Internal Server Error
           $ref: '#/components/responses/GenericHttpError'
-      description: Org must have an Infrastructure Provider entity. Machine must belong to the Provider. User must have PROVIDER_ADMIN authorization role. Machine must meet certain criteria to be eligible for deletion.
+      description: Org must have an Infrastructure Provider entity. Machine must belong to the Provider. User must have authorization role with `PROVIDER_ADMIN` suffix. Machine must meet certain criteria to be eligible for deletion.
   '/v2/org/{org}/nico/machine/{machineId}/status-history':
     parameters:
       - schema:
@@ -8923,7 +8923,7 @@ paths:
       description: |-
         Returns GPU summary stats grouped by GPU name for machines at the specified site.
 
-        User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+        User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
       parameters:
         - schema:
             type: string
@@ -8957,7 +8957,7 @@ paths:
       description: |-
         Returns machine counts grouped by assigned (has instance type) vs unassigned, broken down by status.
 
-        User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+        User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
       parameters:
         - schema:
             type: string
@@ -8993,7 +8993,7 @@ paths:
       description: |-
         Returns machine stats for each instance type including allocation details and tenant breakdown.
 
-        User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+        User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
       parameters:
         - schema:
             type: string
@@ -9029,7 +9029,7 @@ paths:
       description: |-
         Returns instance type allocation stats grouped by tenant for the specified site.
 
-        User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+        User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
       parameters:
         - schema:
             type: string
@@ -9098,7 +9098,7 @@ paths:
       description: |
         Get all distinct Machine Capabilities across all Machines
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -9188,7 +9188,7 @@ paths:
       description: |-
         Get all Racks for the specified Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -9310,7 +9310,7 @@ paths:
       description: |-
         Get a Rack by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -9385,7 +9385,7 @@ paths:
 
         Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -9485,7 +9485,7 @@ paths:
 
         Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -9566,7 +9566,7 @@ paths:
 
         Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -9628,7 +9628,7 @@ paths:
 
         Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -9680,7 +9680,7 @@ paths:
       description: |-
         Update firmware on Racks with optional name filter. If no filter is specified, targets all racks in the Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -9738,7 +9738,7 @@ paths:
       description: |-
         Update firmware on a Rack identified by Rack UUID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -9785,7 +9785,7 @@ paths:
       description: |-
         Bring up Racks with optional name filter. If no filter is specified, targets all racks in the Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -9843,7 +9843,7 @@ paths:
       description: |-
         Bring up a Rack identified by Rack UUID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -9898,7 +9898,7 @@ paths:
         Get a Task by UUID.
 
         Tasks are site-scoped; `siteId` must be the Site where the task was created.
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -9943,7 +9943,7 @@ paths:
       description: |-
         Get all Trays (components) for the specified Site.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
         **Filter constraints:**
         - `rackId` and `rackName` are mutually exclusive
@@ -10076,7 +10076,7 @@ paths:
       description: |-
         Get a Tray by ID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -10134,7 +10134,7 @@ paths:
 
         Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -10229,7 +10229,7 @@ paths:
 
         Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -10281,7 +10281,7 @@ paths:
         - `rackId`/`rackName` cannot be combined with `ids`/`componentIds` (rack-level vs component-level targeting)
         - `componentIds` requires `type` to be specified
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -10340,7 +10340,7 @@ paths:
 
         Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -10397,7 +10397,7 @@ paths:
         - `rackId`/`rackName` cannot be combined with `ids`/`componentIds` (rack-level vs component-level targeting)
         - `componentIds` requires `type` to be specified
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -10453,7 +10453,7 @@ paths:
       description: |-
         Update firmware on a Tray identified by Tray UUID.
 
-        Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -10527,7 +10527,7 @@ paths:
       description: |
         Get all Network Security Groups for Tenant
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -10619,7 +10619,7 @@ paths:
       description: |
         Create a Network Security Group for Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -10667,7 +10667,7 @@ paths:
       description: |
         Get a Network Security Group by ID
 
-        Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -10705,7 +10705,7 @@ paths:
       description: |-
         Update a Network Security Group by ID
 
-        Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
         After a group has been created, policy updates are absolute.  The complete desired policy set must be specified.
       requestBody:
@@ -10741,7 +10741,7 @@ paths:
       description: |-
         Delete a Network Security Group by ID
 
-        Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
         Deleting a Network Security Group will also delete all the associations and all policies.
       tags:
@@ -10777,7 +10777,7 @@ paths:
       description: |-
         Retrieve all DPU Extension Services for the current Tenant
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -10856,7 +10856,7 @@ paths:
       description: |-
         Create a DPU Extension Service for the current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -10895,7 +10895,7 @@ paths:
 
         DPU Extension Service must be owned by current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - DPU Extension Service
     delete:
@@ -10911,7 +10911,7 @@ paths:
 
         DPU Extension Service must be owned by current Tenant. No versions of the DPU Extension Service can have active deployments.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - DPU Extension Service
     patch:
@@ -10935,7 +10935,7 @@ paths:
 
         DPU Extension Service must be owned by current Tenant. A new version will be created if data or credentials are modified.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -10982,7 +10982,7 @@ paths:
 
         DPU Extension Service must be owned by current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - DPU Extension Service
     delete:
@@ -10998,7 +10998,7 @@ paths:
 
         DPU Extension Service must be owned by current Tenant. The version being deleted cannot have active deployments.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - DPU Extension Service
   '/v2/org/{org}/nico/sshkeygroup':
@@ -11069,7 +11069,7 @@ paths:
       description: |-
         Retrieve all SSH Key Groups for the current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: string
@@ -11192,7 +11192,7 @@ paths:
       description: |-
         Create an SSH Key Group for the current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -11283,7 +11283,7 @@ paths:
 
         SSH Key Group must be owned by current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - SSH Key Group
     delete:
@@ -11299,7 +11299,7 @@ paths:
 
         SSH Key Group must be owned by current Tenant. All Sites associated must be online to proceed.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - SSH Key Group
     patch:
@@ -11382,7 +11382,7 @@ paths:
 
         SSH Key Group must be owned by current Tenant. All Sites being added or removed must be online to proceed.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -11437,7 +11437,7 @@ paths:
       description: |-
         Retrieve all SSH Keys for the current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - SSH Key
       parameters:
@@ -11517,7 +11517,7 @@ paths:
       description: |-
         Create an SSH Key for the current Tenant. If an SSH Key Group is specified, all Sites associated with the SSH Key Group must be online.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       requestBody:
         content:
           application/json:
@@ -11570,7 +11570,7 @@ paths:
 
         SSH Key must be owned by current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - SSH Key
     delete:
@@ -11586,7 +11586,7 @@ paths:
 
         SSH Key must be owned by current Tenant. All Site associated with the SSH Key Groups this SSH Key is part of must be online to proceed.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
       tags:
         - SSH Key
     patch:
@@ -11618,7 +11618,7 @@ paths:
 
         SSH Key must be owned by current Tenant.
 
-        Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+        Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
         To add this SSH Key to various SSH Key Groups or remove it from an SSH Key Group, please use SSH Key Group update endpoint.
       requestBody:
@@ -11753,7 +11753,7 @@ paths:
       description: |
         Get all Audit Log entries
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` authorization role.
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
       parameters:
         - schema:
             type: boolean
@@ -11835,7 +11835,7 @@ paths:
       description: |-
         Retrieve a specific Audit Log Entry by ID
 
-        User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` authorization role
+        User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix
 components:
   schemas:
     InfrastructureProvider:
@@ -12228,7 +12228,7 @@ components:
     Site:
       title: Site
       type: object
-      description: Site is a datacenter that is running NVIDIA Infrastructure Controller (NICo) services
+      description: Site is a datacenter that is running NVIDIA Infra Controller (NICo) services
       examples:
         - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
           name: San Jose Central 4
@@ -19975,7 +19975,7 @@ components:
     Deprecation:
       title: Deprecation
       type: object
-      description: Details of a particular deprecation in NVIDIA Infrastructure Controller (NICo) API
+      description: Details of a particular deprecation in NVIDIA Infra Controller (NICo) API
       examples:
         - attribute: blockSize
           replacedBy: prefixLength
@@ -20006,11 +20006,11 @@ components:
     NICoAPIError:
       title: NICoAPIError
       type: object
-      description: Describes the error response from NVIDIA Infrastructure Controller (NICo) REST API
+      description: Describes the error response from NVIDIA Infra Controller REST API
       properties:
         source:
           type: string
-          description: Source of the error. Only 'nico' is supported
+          description: Source of the error.
           enum:
             - nico
         message:

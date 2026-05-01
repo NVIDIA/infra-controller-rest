@@ -224,7 +224,7 @@ func (s SystemPowerControl) toPb() pb.AdminPowerControlRequest_SystemPowerContro
 	}
 }
 
-// MachineInterface represents a network interface from nico-api
+// MachineInterface represents a network interface from nico-core-api
 type MachineInterface struct {
 	MacAddress string
 	Addresses  []string // IP addresses assigned to this interface

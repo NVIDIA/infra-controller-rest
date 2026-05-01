@@ -24,7 +24,7 @@ Code is generated
 package fake
 
 import (
-	nicov1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/crds/v1"
+	forgev1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/crds/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -36,7 +36,7 @@ var scheme = runtime.NewScheme()
 var codecs = serializer.NewCodecFactory(scheme)
 
 var localSchemeBuilder = runtime.SchemeBuilder{
-	nicov1.AddToScheme,
+	forgev1.AddToScheme,
 }
 
 // AddToScheme adds all types of this clientset into the given scheme. This allows composition

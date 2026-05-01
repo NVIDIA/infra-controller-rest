@@ -48,7 +48,6 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testTemporalSiteClientPool Building site client pool
@@ -190,13 +189,13 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupsInDB(t *testing.T
 	testNetworkSecurityGroupSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := testNetworkSecurityGroupBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := testNetworkSecurityGroupSiteBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := testNetworkSecurityGroupBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
 

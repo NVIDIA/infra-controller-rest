@@ -83,7 +83,7 @@ func (m *Manager) VpcPeering() *vpcpeering.API {
 	return vpcpeering.NewVpcPeeringManager(m.Data.EB, m.API, m.Conf)
 }
 
-// NICo manager instance here
+// Carbide manager instance here
 func (m *Manager) NICo() *nico.API {
 	return nico.NewNICoManager(m.Data.EB, m.API, m.Conf)
 }
@@ -172,4 +172,3 @@ func (m *Manager) NVLinkLogicalPartition() *nvlinklogicalpartition.API {
 func (m *Manager) RLA() *rla.API {
 	return rla.NewRLAManager(m.Data.EB, m.API, m.Conf)
 }
-

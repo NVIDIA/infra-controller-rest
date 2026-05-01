@@ -40,7 +40,7 @@ import (
 // ManageExpectedPowerShelfInventory is an activity wrapper for Expected Power Shelf inventory collection and publishing
 type ManageExpectedPowerShelfInventory struct {
 	siteID                uuid.UUID
-	nicoAtomicClient   *cclient.NICoAtomicClient
+	nicoCoreAtomicClient   *cclient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -63,7 +63,7 @@ func (mepsi *ManageExpectedPowerShelfInventory) DiscoverExpectedPowerShelfInvent
 	}
 
 	// Get Site Controller gRPC client
-	nicoClient := mepsi.nicoAtomicClient.GetClient()
+	nicoClient := mepsi.nicoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	// Call GetAllExpectedPowerShelves to get full list of ExpectedPowerShelves on Site
@@ -241,10 +241,10 @@ func getPagedExpectedPowerShelfInventory(
 }
 
 // NewManageExpectedPowerShelfInventory returns a ManageInventory implementation for Expected Power Shelf activity
-func NewManageExpectedPowerShelfInventory(siteID uuid.UUID, nicoAtomicClient *cclient.NICoAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedPowerShelfInventory {
+func NewManageExpectedPowerShelfInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedPowerShelfInventory {
 	return ManageExpectedPowerShelfInventory{
 		siteID:                siteID,
-		nicoAtomicClient:   nicoAtomicClient,
+		nicoCoreAtomicClient:   nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -253,14 +253,14 @@ func NewManageExpectedPowerShelfInventory(siteID uuid.UUID, nicoAtomicClient *cc
 
 // ManageExpectedPowerShelf is an activity wrapper for Expected Power Shelf management
 type ManageExpectedPowerShelf struct {
-	NICoAtomicClient *cclient.NICoAtomicClient
+	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
 	RlaAtomicClient     *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedPowerShelf returns a new ManageExpectedPowerShelf client
-func NewManageExpectedPowerShelf(nicoClient *cclient.NICoAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedPowerShelf {
+func NewManageExpectedPowerShelf(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedPowerShelf {
 	return ManageExpectedPowerShelf{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 		RlaAtomicClient:     rlaClient,
 	}
 }
@@ -287,7 +287,7 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := meps.NICoAtomicClient.GetClient()
+	nicoClient := meps.NICoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	// Call NICo gRPC endpoint
@@ -324,7 +324,7 @@ func (meps *ManageExpectedPowerShelf) UpdateExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := meps.NICoAtomicClient.GetClient()
+	nicoClient := meps.NICoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	_, err = rpcClient.UpdateExpectedPowerShelf(ctx, request)
@@ -455,7 +455,7 @@ func (meps *ManageExpectedPowerShelf) DeleteExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := meps.NICoAtomicClient.GetClient()
+	nicoClient := meps.NICoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	_, err = rpcClient.DeleteExpectedPowerShelf(ctx, request)

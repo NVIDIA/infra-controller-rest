@@ -36,7 +36,7 @@ import (
 
 // ManageTenant is activity to manage a Tenant on Site
 type ManageTenant struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // CreateTenantOnSite creates a Tenant by calling Site Controller gRPC API
@@ -59,7 +59,7 @@ func (mt *ManageTenant) CreateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mt.NICoAtomicClient.GetClient()
+	nicoClient := mt.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -96,7 +96,7 @@ func (mt *ManageTenant) UpdateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mt.NICoAtomicClient.GetClient()
+	nicoClient := mt.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -114,9 +114,9 @@ func (mt *ManageTenant) UpdateTenantOnSite(ctx context.Context, request *cwssaws
 }
 
 // NewManageTenant returns a new ManageTenant activity
-func NewManageTenant(nicoClient *cClient.NICoAtomicClient) ManageTenant {
+func NewManageTenant(nicoClient *cClient.NICoCoreAtomicClient) ManageTenant {
 	return ManageTenant{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -146,7 +146,7 @@ func NewManageTenantInventory(config ManageInventoryConfig) ManageTenantInventor
 	}
 }
 
-func tenantFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]string, error) {
+func tenantFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]string, error) {
 	idList, err := nicoClient.NICo().FindTenantOrganizationIds(ctx, &cwssaws.TenantSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -154,7 +154,7 @@ func tenantFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]strin
 	return idList.GetTenantOrganizationIds(), nil
 }
 
-func tenantFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []string) ([]*cwssaws.Tenant, error) {
+func tenantFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []string) ([]*cwssaws.Tenant, error) {
 	list, err := nicoClient.NICo().FindTenantsByOrganizationIds(ctx, &cwssaws.TenantByOrganizationIdsRequest{
 		OrganizationIds: ids,
 	})

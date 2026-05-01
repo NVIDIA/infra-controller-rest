@@ -35,7 +35,7 @@ import (
 
 // ManageSubnet is an activity wrapper for Subnet management tasks that allows injecting DB access
 type ManageSubnet struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // Function to Create Subnets with the Site Controller
@@ -74,7 +74,7 @@ func (mm *ManageSubnet) CreateSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -114,7 +114,7 @@ func (mm *ManageSubnet) DeleteSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -132,9 +132,9 @@ func (mm *ManageSubnet) DeleteSubnetOnSite(ctx context.Context, request *cwssaws
 }
 
 // NewManageSubnet returns a new ManageSubnet client
-func NewManageSubnet(nicoClient *cClient.NICoAtomicClient) ManageSubnet {
+func NewManageSubnet(nicoClient *cClient.NICoCoreAtomicClient) ManageSubnet {
 	return ManageSubnet{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -164,7 +164,7 @@ func NewManageSubnetInventory(config ManageInventoryConfig) ManageSubnetInventor
 	}
 }
 
-func subnetFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.NetworkSegmentId, error) {
+func subnetFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.NetworkSegmentId, error) {
 	idList, err := nicoClient.NICo().FindNetworkSegmentIds(ctx, &cwssaws.NetworkSegmentSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -172,7 +172,7 @@ func subnetFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwss
 	return idList.GetNetworkSegmentsIds(), nil
 }
 
-func subnetFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.NetworkSegmentId) ([]*cwssaws.NetworkSegment, error) {
+func subnetFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.NetworkSegmentId) ([]*cwssaws.NetworkSegment, error) {
 	list, err := nicoClient.NICo().FindNetworkSegmentsByIds(ctx, &cwssaws.NetworkSegmentsByIdsRequest{
 		NetworkSegmentsIds: ids,
 	})

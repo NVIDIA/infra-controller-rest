@@ -351,7 +351,7 @@ func syncPowerStates(
 ) {
 	machines, err := nicoClient.GetPowerStates(ctx, machineIDs)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve power states from nico-api: %v", err)
+		log.Error().Msgf("Unable to retrieve power states from nico-core-api: %v", err)
 		return
 	}
 
@@ -559,14 +559,14 @@ func syncNVSwitches(
 	// Step 3: Get expected switches from NICo for NVOS MAC metadata
 	nicoByBmcMac, err := nicoClient.GetAllExpectedSwitches(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve expected switches from nico-api: %v", err)
+		log.Error().Msgf("Unable to retrieve expected switches from nico-core-api: %v", err)
 		return nil
 	}
 
 	// Step 4: Get machine interfaces from NICo to check DHCP status
 	interfacesByMac, err := nicoClient.FindInterfaces(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve interfaces from nico-api: %v", err)
+		log.Error().Msgf("Unable to retrieve interfaces from nico-core-api: %v", err)
 		return nil
 	}
 
@@ -791,7 +791,7 @@ func syncPowershelves(
 	// Step 3: Get machine interfaces from NICo to check DHCP status
 	interfacesByMac, err := nicoClient.FindInterfaces(ctx)
 	if err != nil {
-		log.Error().Msgf("Unable to retrieve interfaces from nico-api: %v", err)
+		log.Error().Msgf("Unable to retrieve interfaces from nico-core-api: %v", err)
 		return nil
 	}
 

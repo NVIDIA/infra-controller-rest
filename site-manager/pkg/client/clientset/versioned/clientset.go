@@ -27,7 +27,7 @@ import (
 	"fmt"
 	"net/http"
 
-	nicov1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1"
+	forgev1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"
@@ -35,30 +35,18 @@ import (
 
 type Interface interface {
 	Discovery() discovery.DiscoveryInterface
-	NICoV1() nicov1.NICoV1Interface
-	// ForgeLegacyV1 provides access to Sites still registered under the legacy forge.nvidia.io group.
-	// TODO: remove once all site agents have migrated to nico.nvidia.io.
-	ForgeLegacyV1() nicov1.ForgeLegacyV1Interface
+	ForgeV1() forgev1.ForgeV1Interface
 }
 
 // Clientset contains the clients for groups.
 type Clientset struct {
 	*discovery.DiscoveryClient
-	nicoV1 *nicov1.NICoV1Client
-	// TODO: remove forgeLegacyV1 once all site agents migrated to nico.nvidia.io.
-	forgeLegacyV1 *nicov1.ForgeLegacyV1Client
+	forgeV1 *forgev1.ForgeV1Client
 }
 
-// NICoV1 retrieves the NICoV1Client
-func (c *Clientset) NICoV1() nicov1.NICoV1Interface {
-	return c.nicoV1
-}
-
-// ForgeLegacyV1 retrieves the ForgeLegacyV1Client for backward-compatible access to
-// Sites created under the legacy forge.nvidia.io group by pre-NICo site agents.
-// TODO: remove once all site agents have migrated to nico.nvidia.io.
-func (c *Clientset) ForgeLegacyV1() nicov1.ForgeLegacyV1Interface {
-	return c.forgeLegacyV1
+// ForgeV1 retrieves the ForgeV1Client
+func (c *Clientset) ForgeV1() forgev1.ForgeV1Interface {
+	return c.forgeV1
 }
 
 // Discovery retrieves the DiscoveryClient
@@ -105,13 +93,7 @@ func NewForConfigAndClient(c *rest.Config, httpClient *http.Client) (*Clientset,
 
 	var cs Clientset
 	var err error
-	cs.nicoV1, err = nicov1.NewForConfigAndClient(&configShallowCopy, httpClient)
-	if err != nil {
-		return nil, err
-	}
-
-	// TODO: remove forgeLegacyV1 init once all site agents migrated to nico.nvidia.io.
-	cs.forgeLegacyV1, err = nicov1.NewForgeLegacyForConfigAndClient(&configShallowCopy, httpClient)
+	cs.forgeV1, err = forgev1.NewForConfigAndClient(&configShallowCopy, httpClient)
 	if err != nil {
 		return nil, err
 	}
@@ -136,9 +118,8 @@ func NewForConfigOrDie(c *rest.Config) *Clientset {
 // New creates a new Clientset for the given RESTClient.
 func New(c rest.Interface) *Clientset {
 	var cs Clientset
-	cs.nicoV1 = nicov1.New(c)
-	// TODO: remove once all site agents migrated to nico.nvidia.io.
-	cs.forgeLegacyV1 = nicov1.NewForgeLegacy(c)
+	cs.forgeV1 = forgev1.New(c)
+
 	cs.DiscoveryClient = discovery.NewDiscoveryClient(c)
 	return &cs
 }

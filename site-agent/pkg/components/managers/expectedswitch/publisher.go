@@ -38,7 +38,7 @@ func (api *API) RegisterPublisher() error {
 		ManagerAccess.Data.EB.Managers.NICo.Client,
 		ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
-		InventoryNICoPageSize,
+		InventoryCarbidePageSize,
 	)
 
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(inventoryManager.DiscoverExpectedSwitchInventory)

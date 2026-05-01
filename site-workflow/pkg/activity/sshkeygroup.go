@@ -57,7 +57,7 @@ func NewManageSSHKeyGroupInventory(config ManageInventoryConfig) ManageSSHKeyGro
 	}
 }
 
-func sshKeyGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.TenantKeysetIdentifier, error) {
+func sshKeyGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.TenantKeysetIdentifier, error) {
 	idList, err := nicoClient.NICo().FindTenantKeysetIds(ctx, &cwssaws.TenantKeysetSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -65,7 +65,7 @@ func sshKeyGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]
 	return idList.GetKeysetIds(), nil
 }
 
-func sshKeyGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.TenantKeysetIdentifier) ([]*cwssaws.TenantKeyset, error) {
+func sshKeyGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.TenantKeysetIdentifier) ([]*cwssaws.TenantKeyset, error) {
 	list, err := nicoClient.NICo().FindTenantKeysetsByIds(ctx, &cwssaws.TenantKeysetsByIdsRequest{
 		KeysetIds: ids,
 	})
@@ -99,13 +99,13 @@ func sshKeyGroupPagedInventory(allItemIDs []*cwssaws.TenantKeysetIdentifier, pag
 
 // ManageSSHKeyGroup is an activity wrapper for SSHKeyGroup management
 type ManageSSHKeyGroup struct {
-	NICoAtomicClient *client.NICoAtomicClient
+	NICoCoreAtomicClient *client.NICoCoreAtomicClient
 }
 
 // NewManageSSHKeyGroup returns a new ManageSSHKeyGroup client
-func NewManageSSHKeyGroup(nicoClient *client.NICoAtomicClient) ManageSSHKeyGroup {
+func NewManageSSHKeyGroup(nicoClient *client.NICoCoreAtomicClient) ManageSSHKeyGroup {
 	return ManageSSHKeyGroup{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -133,7 +133,7 @@ func (mmi *ManageSSHKeyGroup) CreateSSHKeyGroupOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmi.NICoAtomicClient.GetClient()
+	nicoClient := mmi.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -174,7 +174,7 @@ func (mmi *ManageSSHKeyGroup) UpdateSSHKeyGroupOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmi.NICoAtomicClient.GetClient()
+	nicoClient := mmi.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -213,7 +213,7 @@ func (mmi *ManageSSHKeyGroup) DeleteSSHKeyGroupOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmi.NICoAtomicClient.GetClient()
+	nicoClient := mmi.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}

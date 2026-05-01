@@ -22,38 +22,38 @@ import (
 	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
 )
 
-// RegisterSubscriber registers the NVLinkLogicalPartitionWorkflows with the Temporal client
+// RegisterSubscriber registers NVLinkLogicalPartition CRUD workflows and activities with Temporal
 func (api *API) RegisterSubscriber() error {
-	// Register the subscribers here
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Registering the subscribers")
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Registering CRUD workflows and activities")
 
 	// Register workflows
+
 	// Register CreateNVLinkLogicalPartition workflow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CreateNVLinkLogicalPartition)
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: successfully registered the CreateNVLinkLogicalPartition workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered CreateNVLinkLogicalPartition workflow")
 
 	// Register UpdateNVLinkLogicalPartition workflow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateNVLinkLogicalPartition)
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: successfully registered the UpdateNVLinkLogicalPartition workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered UpdateNVLinkLogicalPartition workflow")
 
 	// Register DeleteNVLinkLogicalPartition workflow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.DeleteNVLinkLogicalPartition)
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: successfully registered the DeleteNVLinkLogicalPartition workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered DeleteNVLinkLogicalPartition workflow")
 
 	// Register activities
-	nvlinkLogicalPartitionManager := swa.NewManageNVLinkLogicalPartition(ManagerAccess.Data.EB.Managers.NICo.Client)
+	nvLinkLogicalPartitionManager := swa.NewManageNVLinkLogicalPartition(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateNVLinkLogicalPartitionOnSite activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvlinkLogicalPartitionManager.CreateNVLinkLogicalPartitionOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: successfully registered the CreateNVLinkLogicalPartitionOnSite activity")
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvLinkLogicalPartitionManager.CreateNVLinkLogicalPartitionOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered CreateNVLinkLogicalPartitionOnSite activity")
 
 	// Register UpdateNVLinkLogicalPartitionOnSite activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvlinkLogicalPartitionManager.UpdateNVLinkLogicalPartitionOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: successfully registered the UpdateNVLinkLogicalPartitionOnSite activity")
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvLinkLogicalPartitionManager.UpdateNVLinkLogicalPartitionOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered UpdateNVLinkLogicalPartitionOnSite activity")
 
 	// Register DeleteNVLinkLogicalPartitionOnSite activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvlinkLogicalPartitionManager.DeleteNVLinkLogicalPartitionOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: successfully registered the DeleteNVLinkLogicalPartitionOnSite activity")
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvLinkLogicalPartitionManager.DeleteNVLinkLogicalPartitionOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered DeleteNVLinkLogicalPartitionOnSite activity")
 
 	return nil
 }

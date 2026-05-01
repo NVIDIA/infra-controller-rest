@@ -3048,8 +3048,8 @@ func TestGetAllVPCHandler_Handle(t *testing.T) {
 
 				for _, apivpc := range resp {
 					if tt.expectedNetworkSecurityGroupName != nil {
-						assert.NotNil(t, apivpc.NetworkSecurityGroupID, "NetworkSecurityGroupID for VPC in api response was unexpectedly nil.  Did you nicot to set it for this test?")
-						assert.NotNil(t, apivpc.NetworkSecurityGroup, "NetworkSecurityGroup for VPC in api response was unexpectedly nil.  Did you nicot to include the relation for this test?")
+						assert.NotNil(t, apivpc.NetworkSecurityGroupID, "NetworkSecurityGroupID for VPC in api response was unexpectedly nil.  Did you forget to set it for this test?")
+						assert.NotNil(t, apivpc.NetworkSecurityGroup, "NetworkSecurityGroup for VPC in api response was unexpectedly nil.  Did you forget to include the relation for this test?")
 						assert.Equal(t, *tt.expectedNetworkSecurityGroupName, apivpc.NetworkSecurityGroup.Name)
 					}
 					assert.Equal(t, 0, len(apivpc.StatusHistory))

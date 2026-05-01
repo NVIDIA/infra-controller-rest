@@ -56,7 +56,7 @@ func NewManageNVLinkLogicalPartitionInventory(config ManageInventoryConfig) Mana
 	}
 }
 
-func nvllpFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.NVLinkLogicalPartitionId, error) {
+func nvllpFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.NVLinkLogicalPartitionId, error) {
 	resp, err := nicoClient.NICo().FindNVLinkLogicalPartitionIds(ctx, &cwssaws.NVLinkLogicalPartitionSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func nvllpFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssa
 	return ids, nil
 }
 
-func nvllpFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.NVLinkLogicalPartitionId) ([]*cwssaws.NVLinkLogicalPartition, error) {
+func nvllpFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.NVLinkLogicalPartitionId) ([]*cwssaws.NVLinkLogicalPartition, error) {
 	req := &cwssaws.NVLinkLogicalPartitionsByIdsRequest{
 		PartitionIds: ids,
 	}
@@ -105,13 +105,13 @@ func nvllpPagedInventory(allItemIDs []*cwssaws.NVLinkLogicalPartitionId, pagedIt
 
 // ManageNVLinkLogicalPartition is an activity wrapper for NVLinkLogical Partition management
 type ManageNVLinkLogicalPartition struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // NewManageNVLinkLogicalPartition returns a new ManageNVLinkLogicalPartition client
-func NewManageNVLinkLogicalPartition(nicoClient *cClient.NICoAtomicClient) ManageNVLinkLogicalPartition {
+func NewManageNVLinkLogicalPartition(nicoClient *cClient.NICoCoreAtomicClient) ManageNVLinkLogicalPartition {
 	return ManageNVLinkLogicalPartition{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -143,7 +143,7 @@ func (mnvllp *ManageNVLinkLogicalPartition) CreateNVLinkLogicalPartitionOnSite(c
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mnvllp.NICoAtomicClient.GetClient()
+	nicoClient := mnvllp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cClient.ErrClientNotConnected
 	}
@@ -186,7 +186,7 @@ func (mnvllp *ManageNVLinkLogicalPartition) UpdateNVLinkLogicalPartitionOnSite(c
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mnvllp.NICoAtomicClient.GetClient()
+	nicoClient := mnvllp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -224,7 +224,7 @@ func (mnvllp *ManageNVLinkLogicalPartition) DeleteNVLinkLogicalPartitionOnSite(c
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mnvllp.NICoAtomicClient.GetClient()
+	nicoClient := mnvllp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}

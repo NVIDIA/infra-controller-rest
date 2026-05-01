@@ -36,7 +36,7 @@ import (
 
 // ManageInstance is an activity wrapper for Instance management tasks that allows injecting DB access
 type ManageInstance struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // Function Update NICo Instance with the Site Controller
@@ -59,7 +59,7 @@ func (mm *ManageInstance) UpdateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -96,7 +96,7 @@ func (mm *ManageInstance) CreateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -138,7 +138,7 @@ func (mm *ManageInstance) CreateInstancesOnSite(ctx context.Context, request *cw
 		}
 	}
 
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -174,7 +174,7 @@ func (mm *ManageInstance) RebootInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -211,7 +211,7 @@ func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -229,9 +229,9 @@ func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cws
 }
 
 // NewManageInstance returns a new ManageInstance activity
-func NewManageInstance(nicoClient *cClient.NICoAtomicClient) ManageInstance {
+func NewManageInstance(nicoClient *cClient.NICoCoreAtomicClient) ManageInstance {
 	return ManageInstance{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -262,7 +262,7 @@ func NewManageInstanceInventory(config ManageInventoryConfig) ManageInstanceInve
 	}
 }
 
-func instanceFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.InstanceId, error) {
+func instanceFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.InstanceId, error) {
 	instanceIdList, err := nicoClient.NICo().FindInstanceIds(ctx, &cwssaws.InstanceSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -270,7 +270,7 @@ func instanceFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cw
 	return instanceIdList.GetInstanceIds(), nil
 }
 
-func instanceFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.InstanceId) ([]*cwssaws.Instance, error) {
+func instanceFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.InstanceId) ([]*cwssaws.Instance, error) {
 	instanceList, err := nicoClient.NICo().FindInstancesByIds(ctx, &cwssaws.InstancesByIdsRequest{
 		InstanceIds: ids,
 	})
@@ -284,7 +284,7 @@ func instanceFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids 
 // instancePagedInventoryPostProcess will attach NSG propagation
 // information for the inventory page of instances.
 // This will only be called for pages with inventory.
-func instancePagedInventoryPostProcess(ctx context.Context, nicoClient *cClient.NICoClient, inventory *cwssaws.InstanceInventory) (*cwssaws.InstanceInventory, error) {
+func instancePagedInventoryPostProcess(ctx context.Context, nicoClient *cClient.NICoCoreClient, inventory *cwssaws.InstanceInventory) (*cwssaws.InstanceInventory, error) {
 
 	instanceIds := make([]string, len(inventory.GetInstances()))
 

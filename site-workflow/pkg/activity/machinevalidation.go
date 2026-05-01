@@ -30,13 +30,13 @@ import (
 
 // ManageMachineValidation is an activity wrapper for Machine Validation management
 type ManageMachineValidation struct {
-	NICoAtomicClient *client.NICoAtomicClient
+	NICoCoreAtomicClient *client.NICoCoreAtomicClient
 }
 
 // NewManageMachineValidation returns a new ManageMachineValidation client
-func NewManageMachineValidation(nicoClient *client.NICoAtomicClient) ManageMachineValidation {
+func NewManageMachineValidation(nicoClient *client.NICoCoreAtomicClient) ManageMachineValidation {
 	return ManageMachineValidation{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -61,7 +61,7 @@ func (mmv *ManageMachineValidation) EnableDisableMachineValidationTestOnSite(ctx
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -96,7 +96,7 @@ func (mmv *ManageMachineValidation) PersistValidationResultOnSite(ctx context.Co
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -129,7 +129,7 @@ func (mmv *ManageMachineValidation) GetMachineValidationResultsFromSite(ctx cont
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, client.ErrClientNotConnected
 	}
@@ -164,7 +164,7 @@ func (mmv *ManageMachineValidation) GetMachineValidationRunsFromSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, client.ErrClientNotConnected
 	}
@@ -197,7 +197,7 @@ func (mmv *ManageMachineValidation) GetMachineValidationTestsFromSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, client.ErrClientNotConnected
 	}
@@ -236,7 +236,7 @@ func (mmv *ManageMachineValidation) AddMachineValidationTestOnSite(ctx context.C
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, client.ErrClientNotConnected
 	}
@@ -275,7 +275,7 @@ func (mmv *ManageMachineValidation) UpdateMachineValidationTestOnSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -308,7 +308,7 @@ func (mmv *ManageMachineValidation) GetMachineValidationExternalConfigsFromSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, client.ErrClientNotConnected
 	}
@@ -343,7 +343,7 @@ func (mmv *ManageMachineValidation) AddUpdateMachineValidationExternalConfigOnSi
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -378,7 +378,7 @@ func (mmv *ManageMachineValidation) RemoveMachineValidationExternalConfigOnSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoAtomicClient.GetClient()
+	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}

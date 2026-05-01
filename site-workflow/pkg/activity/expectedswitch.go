@@ -40,7 +40,7 @@ import (
 // ManageExpectedSwitchInventory is an activity wrapper for Expected Switch inventory collection and publishing
 type ManageExpectedSwitchInventory struct {
 	siteID                uuid.UUID
-	nicoAtomicClient   *cclient.NICoAtomicClient
+	nicoCoreAtomicClient   *cclient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -63,7 +63,7 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Get Site Controller gRPC client
-	nicoClient := mesi.nicoAtomicClient.GetClient()
+	nicoClient := mesi.nicoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	// Call GetAllExpectedSwitches to get full list of ExpectedSwitches on Site
@@ -241,10 +241,10 @@ func getPagedExpectedSwitchInventory(
 }
 
 // NewManageExpectedSwitchInventory returns a ManageInventory implementation for Expected Switch activity
-func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoAtomicClient *cclient.NICoAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
+func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
 	return ManageExpectedSwitchInventory{
 		siteID:                siteID,
-		nicoAtomicClient:   nicoAtomicClient,
+		nicoCoreAtomicClient:   nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -253,14 +253,14 @@ func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoAtomicClient *cclien
 
 // ManageExpectedSwitch is an activity wrapper for Expected Switch management
 type ManageExpectedSwitch struct {
-	NICoAtomicClient *cclient.NICoAtomicClient
+	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
 	RlaAtomicClient     *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedSwitch returns a new ManageExpectedSwitch client
-func NewManageExpectedSwitch(nicoClient *cclient.NICoAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedSwitch {
+func NewManageExpectedSwitch(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedSwitch {
 	return ManageExpectedSwitch{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 		RlaAtomicClient:     rlaClient,
 	}
 }
@@ -287,7 +287,7 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mes.NICoAtomicClient.GetClient()
+	nicoClient := mes.NICoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	// Call NICo gRPC endpoint
@@ -324,7 +324,7 @@ func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mes.NICoAtomicClient.GetClient()
+	nicoClient := mes.NICoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	_, err = rpcClient.UpdateExpectedSwitch(ctx, request)
@@ -450,7 +450,7 @@ func (mes *ManageExpectedSwitch) DeleteExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mes.NICoAtomicClient.GetClient()
+	nicoClient := mes.NICoCoreAtomicClient.GetClient()
 	rpcClient := nicoClient.NICo()
 
 	_, err = rpcClient.DeleteExpectedSwitch(ctx, request)

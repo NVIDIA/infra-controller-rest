@@ -29,10 +29,10 @@ var ManagerAccess *Manager.ManagerAccess
 type API struct{}
 
 // NewNVLinkLogicalPartitionManager - returns a new instance of NVLinkLogicalPartition manager
-func NewNVLinkLogicalPartitionManager(superNICo *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
+func NewNVLinkLogicalPartitionManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
 	ManagerAccess = &Manager.ManagerAccess{
 		Data: &Manager.ManagerData{
-			EB: superNICo,
+			EB: superForge,
 		},
 		API:  superAPI,
 		Conf: superConf,

@@ -672,22 +672,32 @@ func NewClient(config ClientConfig) (*Client, error) {
 	}, nil
 }
 
-// NewClientFromEnv creates a new client from environment variables
+// NewClientFromEnv creates a new client from environment variables.
+// NICO_* variables are preferred; the legacy CARBIDE_* variables are
+// honoured as a fallback so callers can migrate gradually.
 func NewClientFromEnv() (*Client, error) {
 	config := ClientConfig{
-		BaseURL: os.Getenv("NICO_BASE_URL"),
-		Org:     os.Getenv("NICO_ORG"),
-		APIName: os.Getenv("NICO_API_NAME"),
-		Token:   os.Getenv("NICO_TOKEN"),
+		BaseURL: envWithFallback("NICO_BASE_URL", "CARBIDE_BASE_URL"),
+		Org:     envWithFallback("NICO_ORG", "CARBIDE_ORG"),
+		APIName: envWithFallback("NICO_API_NAME", "CARBIDE_API_NAME"),
+		Token:   envWithFallback("NICO_TOKEN", "CARBIDE_TOKEN"),
 	}
 	if config.Token == "" {
-		if os.Getenv("NICO_API_KEY") != "" {
-			config.Token = os.Getenv("NICO_API_KEY")
+		if apiKey := envWithFallback("NICO_API_KEY", "CARBIDE_API_KEY"); apiKey != "" {
+			config.Token = apiKey
 		} else {
 			return nil, errors.New("NICO_TOKEN env var (or alternatively NICO_API_KEY) must be set")
 		}
 	}
 	return NewClient(config)
+}
+
+// envWithFallback returns the value of primary if set, else fallback.
+func envWithFallback(primary, fallback string) string {
+	if v := os.Getenv(primary); v != "" {
+		return v
+	}
+	return os.Getenv(fallback)
 }
 
 // NewClientFromEnvWithLogger creates a new client from environment variables with the specified logger

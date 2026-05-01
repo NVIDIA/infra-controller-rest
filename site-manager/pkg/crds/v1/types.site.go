@@ -29,7 +29,7 @@ const (
 	SiteRegistrationComplete = "RegistrationComplete"
 )
 
-// Site represents one NICo Site
+// Site represents one Forge Site
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 // +k8s:openapi-gen=true

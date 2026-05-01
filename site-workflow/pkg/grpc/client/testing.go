@@ -1423,9 +1423,9 @@ func (c *MockNICoClient) NVLinkLogicalPartitionsForTenant(ctx context.Context, i
 	return out, nil
 }
 
-// NewMockNICoClient creates a new mock NICoClient
-func NewMockNICoClient() *NICoClient {
-	return &NICoClient{
+// NewMockNICoClient creates a new mock NICoCoreClient
+func NewMockNICoClient() *NICoCoreClient {
+	return &NICoCoreClient{
 		nico: &MockNICoClient{},
 	}
 }

@@ -25,19 +25,19 @@ import (
 )
 
 const (
-	// MetricNICoStatus - Metric NICo Status
-	MetricNICoStatus = "nico_health_status"
+	// MetricCarbideStatus - Metric Carbide Status
+	MetricCarbideStatus = "carbide_health_status"
 )
 
-// Init - initialize nico manager
-func (nico *API) Init() {
-	ManagerAccess.Data.EB.Log.Info().Msg("NICo: Initializing the nico")
+// Init - initialize carbide manager
+func (carbide *API) Init() {
+	ManagerAccess.Data.EB.Log.Info().Msg("Carbide: Initializing the carbide")
 
 	prometheus.MustRegister(
 		prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 			Namespace: "elektra_site_agent",
-			Name:      MetricNICoStatus,
-			Help:      "NICo gRPC health status",
+			Name:      MetricCarbideStatus,
+			Help:      "Carbide gRPC health status",
 		},
 			func() float64 {
 				return float64(ManagerAccess.Data.EB.Managers.NICo.State.HealthStatus.Load())
@@ -48,19 +48,19 @@ func (nico *API) Init() {
 	ManagerAccess.Data.EB.Managers.NICo.State.WflowMetrics = newWorkflowMetrics()
 }
 
-// Start - start nico manager
-func (nico *API) Start() {
-	ManagerAccess.Data.EB.Log.Info().Msg("NICo: Starting the nico")
+// Start - start carbide manager
+func (carbide *API) Start() {
+	ManagerAccess.Data.EB.Log.Info().Msg("Carbide: Starting the carbide")
 
 	// Create the client here
 	// Each workflow will check and reinitialize the client if needed
-	if err := nico.CreateGRPCClient(); err != nil {
-		ManagerAccess.Data.EB.Log.Error().Msgf("NICo: failed to create GRPC client: %v", err)
+	if err := carbide.CreateGRPCClient(); err != nil {
+		ManagerAccess.Data.EB.Log.Error().Msgf("Carbide: failed to create GRPC client: %v", err)
 	}
 }
 
 // GetState Machine
-func (nico *API) GetState() []string {
+func (carbide *API) GetState() []string {
 	state := ManagerAccess.Data.EB.Managers.NICo.State
 	var strs []string
 	strs = append(strs, fmt.Sprintln(" GRPC Succeeded:", state.GrpcSucc.Load()))
@@ -72,6 +72,6 @@ func (nico *API) GetState() []string {
 }
 
 // GetGRPCClientVersion returns the current version of the GRPC client
-func (nico *API) GetGRPCClientVersion() int64 {
+func (carbide *API) GetGRPCClientVersion() int64 {
 	return ManagerAccess.Data.EB.Managers.NICo.Client.Version()
 }

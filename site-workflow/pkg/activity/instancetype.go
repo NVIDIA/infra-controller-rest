@@ -37,7 +37,7 @@ import (
 
 // ManageInstanceType is an activity wrapper for InstanceType management tasks that allows injecting DB access
 type ManageInstanceType struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // Function to Create NICo InstanceType with the Site Controller
@@ -60,7 +60,7 @@ func (mm *ManageInstanceType) CreateInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -97,7 +97,7 @@ func (mm *ManageInstanceType) UpdateInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -134,7 +134,7 @@ func (mm *ManageInstanceType) DeleteInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -174,7 +174,7 @@ func (mm *ManageInstanceType) AssociateMachinesWithInstanceTypeOnSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -212,7 +212,7 @@ func (mm *ManageInstanceType) RemoveMachineInstanceTypeAssociationOnSite(ctx con
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -230,9 +230,9 @@ func (mm *ManageInstanceType) RemoveMachineInstanceTypeAssociationOnSite(ctx con
 }
 
 // NewManageInstanceType returns a new ManageInstanceType activity
-func NewManageInstanceType(nicoClient *cClient.NICoAtomicClient) ManageInstanceType {
+func NewManageInstanceType(nicoClient *cClient.NICoCoreAtomicClient) ManageInstanceType {
 	return ManageInstanceType{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -262,7 +262,7 @@ func NewManageInstanceTypeInventory(config ManageInventoryConfig) ManageInstance
 	}
 }
 
-func instanceTypeFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, error) {
+func instanceTypeFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, error) {
 	// Call Site Controller gRPC endpoint
 	rpcClient := nicoClient.NICo()
 	instanceTypeIdList, err := rpcClient.FindInstanceTypeIds(ctx, &cwssaws.FindInstanceTypeIdsRequest{})
@@ -272,7 +272,7 @@ func instanceTypeFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([
 	return util.StringsToProtobufUUIDList(instanceTypeIdList.GetInstanceTypeIds()), nil
 }
 
-func instanceTypeFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.UUID) ([]*cwssaws.InstanceType, error) {
+func instanceTypeFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.UUID) ([]*cwssaws.InstanceType, error) {
 	// Call Site Controller gRPC endpoint
 	rpcClient := nicoClient.NICo()
 	instanceTypeList, err := rpcClient.FindInstanceTypesByIds(ctx, &cwssaws.FindInstanceTypesByIdsRequest{

@@ -32,13 +32,13 @@ import (
 
 // ManageVpcPeering is an activity wrapper for VpcPeering management
 type ManageVpcPeering struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // NewManageVpcPeering returns a new ManageVpcPeering client
-func NewManageVpcPeering(nicoClient *cClient.NICoAtomicClient) ManageVpcPeering {
+func NewManageVpcPeering(nicoClient *cClient.NICoCoreAtomicClient) ManageVpcPeering {
 	return ManageVpcPeering{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -68,7 +68,7 @@ func (mvp *ManageVpcPeering) CreateVpcPeeringOnSite(ctx context.Context, request
 	}
 
 	// Call Site Controller API
-	nicoClient := mvp.NICoAtomicClient.GetClient()
+	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -105,7 +105,7 @@ func (mvp *ManageVpcPeering) DeleteVpcPeeringOnSite(ctx context.Context, request
 	}
 
 	// Call Site Controller API
-	nicoClient := mvp.NICoAtomicClient.GetClient()
+	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -148,7 +148,7 @@ func (mvi *ManageVpcPeeringInventory) DiscoverVpcPeeringInventory(ctx context.Co
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func VpcPeeringFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.VpcPeeringId, error) {
+func VpcPeeringFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.VpcPeeringId, error) {
 	resp, err := nicoClient.NICo().FindVpcPeeringIds(ctx, &cwssaws.VpcPeeringSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -156,7 +156,7 @@ func VpcPeeringFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*
 	return resp.VpcPeeringIds, nil
 }
 
-func VpcPeeringFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
+func VpcPeeringFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
 	req := &cwssaws.VpcPeeringsByIdsRequest{
 		VpcPeeringIds: ids,
 	}

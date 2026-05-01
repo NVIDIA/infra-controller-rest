@@ -124,23 +124,23 @@ See **[Deployment QuickStart Guide](deploy/README.md)** for a concise bring-up g
 
 ## CLI
 
-`cli` is a command-line client that wraps the full REST API. Install it and set up configs for each environment you work with:
+`nicocli` is a command-line client that wraps the full REST API. Install it and set up configs for each environment you work with:
 
 ```bash
 make nico-cli             # build and install to $GOPATH/bin
-cli init              # generate ~/.nico/config.yaml
+nicocli init              # generate ~/.nico/config.yaml
 ```
 
 Create a config per environment (`~/.nico/config.yaml`, `~/.nico/config.staging.yaml`, `~/.nico/config.prod.yaml`), then launch the interactive TUI which handles environment selection, login, and token refresh automatically:
 
 ```bash
-cli tui
+nicocli tui
 ```
 
 All commands are also available directly for scripting and one-off use:
 
 ```bash
-cli --config ~/.nico/config.staging.yaml site list
+nicocli --config ~/.nico/config.staging.yaml site list
 ```
 
 See [cli/README.md](cli/README.md) for configuration, authentication, shell completion, and the full command reference.
@@ -253,7 +253,7 @@ done
 | nico-rest-site-agent | `site-agent` | On-site agent |
 | nico-rest-site-manager | `sitemgr` | Site management service |
 | nico-rest-cert-manager | `credsmgr` | Native PKI certificate manager |
-| nico-cli | `cli` | [CLI client](cli/README.md) for the REST API |
+| nico-cli | `nicocli` | [CLI client](cli/README.md) for the REST API |
 
 Supporting modules:
 - **common** - Shared utilities and configurations

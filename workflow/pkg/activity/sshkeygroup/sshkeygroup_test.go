@@ -46,7 +46,6 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestManageSSHKeyGroup_SyncSSHKeyGroupViaSiteAgent(t *testing.T) {
@@ -76,13 +75,13 @@ func TestManageSSHKeyGroup_SyncSSHKeyGroupViaSiteAgent(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 
@@ -605,364 +604,6 @@ func TestManageSSHKeyGroup_SyncSSHKeyGroupViaSiteAgent(t *testing.T) {
 	}
 }
 
-func TestManageSSHKeyGroup_UpdateSSHKeyGroupInDB(t *testing.T) {
-	dbSession := util.TestInitDB(t)
-	defer dbSession.Close()
-
-	util.TestSetupSchema(t, dbSession)
-
-	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
-
-	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
-	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
-
-	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
-
-	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
-
-	tn := util.TestBuildTenant(t, dbSession, tnOrg, "Test Tenant", nil, tnu)
-	assert.NotNil(t, tn)
-
-	st1 := util.TestBuildSite(t, dbSession, ip, "test-site-1", cdbm.SiteStatusRegistered, nil, ipu)
-	assert.NotNil(t, st1)
-
-	st2 := util.TestBuildSite(t, dbSession, ip, "test-site-2", cdbm.SiteStatusRegistered, nil, ipu)
-	assert.NotNil(t, st2)
-
-	st3 := util.TestBuildSite(t, dbSession, ip, "test-site-3", cdbm.SiteStatusRegistered, nil, ipu)
-	assert.NotNil(t, st3)
-
-	st4 := util.TestBuildSite(t, dbSession, ip, "test-site-4", cdbm.SiteStatusRegistered, nil, ipu)
-	assert.NotNil(t, st4)
-
-	st5 := util.TestBuildSite(t, dbSession, ip, "test-site-5", cdbm.SiteStatusRegistered, nil, ipu)
-	assert.NotNil(t, st5)
-
-	// Build SSHKeyGroup1
-	skg1 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-1", tnOrg, cdb.GetStrPtr("test1"), tn.ID, cdb.GetStrPtr("122345"), cdbm.SSHKeyGroupSiteAssociationStatusSyncing, tnu.ID)
-	assert.NotNil(t, skg1)
-
-	// Build SSHKeyGroupSiteAssociation1
-	skgsa1 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg1.ID, st1.ID, cdb.GetStrPtr("1134"), cdbm.SSHKeyGroupSiteAssociationStatusSyncing, tnu.ID)
-	assert.NotNil(t, skgsa1)
-
-	// Build SSHKeyGroup2
-	skg2 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-2", tnOrg, cdb.GetStrPtr("test2"), tn.ID, cdb.GetStrPtr("122345"), cdbm.SSHKeyGroupStatusSynced, tnu.ID)
-	assert.NotNil(t, skg2)
-
-	// Build SSHKeyGroupSiteAssociation2
-	skgsa2 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg2.ID, st2.ID, cdb.GetStrPtr("1134"), cdbm.SSHKeyGroupSiteAssociationStatusSyncing, tnu.ID)
-	assert.NotNil(t, skgsa2)
-
-	// Build SSHKeyGroup3
-	skg3 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-3", tnOrg, cdb.GetStrPtr("test3"), tn.ID, cdb.GetStrPtr("122345"), cdbm.SSHKeyGroupStatusSynced, tnu.ID)
-	assert.NotNil(t, skg3)
-
-	// Build SSHKeyGroupSiteAssociation3
-	skgsa3 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg3.ID, st3.ID, cdb.GetStrPtr("1135"), cdbm.SSHKeyGroupSiteAssociationStatusDeleting, tnu.ID)
-	assert.NotNil(t, skgsa3)
-
-	// Build SSHKeyGroup4
-	skg4 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-4", tnOrg, cdb.GetStrPtr("test4"), tn.ID, cdb.GetStrPtr("122346"), cdbm.SSHKeyGroupStatusSynced, tnu.ID)
-	assert.NotNil(t, skg4)
-
-	// Build SSHKeyGroupSiteAssociation4
-	skgsa4 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg4.ID, st4.ID, cdb.GetStrPtr("1135"), cdbm.SSHKeyGroupSiteAssociationStatusSyncing, tnu.ID)
-	assert.NotNil(t, skgsa4)
-
-	// Build SSHKeyGroup5
-	skg5 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-5", tnOrg, cdb.GetStrPtr("test5"), tn.ID, cdb.GetStrPtr("122569"), cdbm.SSHKeyGroupStatusSyncing, tnu.ID)
-	assert.NotNil(t, skg5)
-
-	// Build SSHKeyGroupSiteAssociation5
-	skgsa5 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg5.ID, st1.ID, cdb.GetStrPtr("113085"), cdbm.SSHKeyGroupSiteAssociationStatusSyncing, tnu.ID)
-	assert.NotNil(t, skgsa5)
-
-	// Build SSHKeyGroupSiteAssociation6
-	skgsa6 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg5.ID, st1.ID, cdb.GetStrPtr("115675"), cdbm.SSHKeyGroupSiteAssociationStatusSyncing, tnu.ID)
-	assert.NotNil(t, skgsa6)
-
-	// Build SSHKeyGroup6
-	skg6 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-6", tnOrg, cdb.GetStrPtr("test6"), tn.ID, cdb.GetStrPtr("12234578"), cdbm.SSHKeyGroupSiteAssociationStatusDeleting, tnu.ID)
-	assert.NotNil(t, skg6)
-
-	// Build SSHKeyGroupSiteAssociation7
-	skgsa7 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg6.ID, st1.ID, cdb.GetStrPtr("11343423"), cdbm.SSHKeyGroupSiteAssociationStatusDeleting, tnu.ID)
-	assert.NotNil(t, skgsa7)
-
-	// Build SSHKeyGroup6
-	skg7 := util.TestBuildSSHKeyGroup(t, dbSession, "test-sshkeygroup-7", tnOrg, cdb.GetStrPtr("test7"), tn.ID, cdb.GetStrPtr("12234578"), cdbm.SSHKeyGroupSiteAssociationStatusDeleting, tnu.ID)
-	assert.NotNil(t, skg7)
-
-	// Build SSHKeyGroupSiteAssociation8
-	skgsa8 := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg7.ID, st1.ID, cdb.GetStrPtr("11343423"), cdbm.SSHKeyGroupSiteAssociationStatusDeleting, tnu.ID)
-	assert.NotNil(t, skgsa8)
-
-	tSiteClientPool := util.TestTemporalSiteClientPool(t)
-	assert.NotNil(t, tSiteClientPool)
-
-	temporalsuit := testsuite.WorkflowTestSuite{}
-	env := temporalsuit.NewTestWorkflowEnvironment()
-
-	type fields struct {
-		dbSession      *cdb.Session
-		siteClientPool *sc.ClientPool
-		env            *testsuite.TestWorkflowEnvironment
-	}
-
-	type args struct {
-		ctx                                      context.Context
-		skgsa                                    *cdbm.SSHKeyGroupSiteAssociation
-		transactionID                            *cwssaws.TransactionID
-		sshKeyGroupInfo                          *cwssaws.SSHKeyGroupInfo
-		site                                     *cdbm.Site
-		expectSSHKeyGroupSiteAssociationDeletion bool
-	}
-
-	tests := []struct {
-		name   string
-		fields fields
-		args   args
-	}{
-		{
-			name: "test SSHKeyGroupupdate on creation with sshkey group synced",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa1,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa1.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
-					StatusMsg: "SSH Key Group was successfully synced",
-					TenantKeyset: &cwssaws.TenantKeyset{
-						Version: "123132155",
-					},
-					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_CREATED,
-				},
-				site: st1,
-			},
-		},
-		{
-			name: "test SSHKeyGroupupdate on updation with sshkey group synced",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa1,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa1.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
-					StatusMsg: "SSH Key Group was successfully synced",
-					TenantKeyset: &cwssaws.TenantKeyset{
-						Version: "123132155",
-					},
-					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_UPDATED,
-				},
-				site: st1,
-			},
-		},
-		{
-			name: "test SSHKeyGroupupdate on deletion",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa7,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa7.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
-					StatusMsg: "SSH Key Group was successfully deleted",
-					TenantKeyset: &cwssaws.TenantKeyset{
-						Version: "123132155",
-					},
-					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_DELETED,
-				},
-				site: st1,
-			},
-		},
-		{
-			name: "test SSHKeyGroup update on error",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa2,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa2.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE,
-					StatusMsg: "error creating sshkeygroup",
-				},
-				site: st2,
-			},
-		},
-		{
-			name: "test SSHKeyGroupdeletion on error while deleting, row not found on Site",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa3,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa3.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE,
-					StatusMsg: "rpc error: code = Internal desc = Database Error: no rows returned by a query that expected to return at least one row",
-				},
-				expectSSHKeyGroupSiteAssociationDeletion: true,
-				site:                                     st3,
-			},
-		},
-		{
-			name: "test SSHKeyGroupupdate on error while deleting, arbitrary error on Site",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa4,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa4.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE,
-					StatusMsg: "arbitrary error",
-				},
-				site: st4,
-			},
-		},
-		{
-			name: "test SSHKeyGroup update on creation with sshkey group syncing",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa5,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa5.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
-					StatusMsg: "SSH Key Group was successfully synced",
-					TenantKeyset: &cwssaws.TenantKeyset{
-						Version: "113085",
-					},
-					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_CREATED,
-				},
-				site: st1,
-			},
-		},
-		{
-			name: "test SSHKeyGroup update after deletion is in progress",
-			fields: fields{
-				dbSession:      dbSession,
-				siteClientPool: tSiteClientPool,
-				env:            env,
-			},
-			args: args{
-				ctx:   context.Background(),
-				skgsa: skgsa8,
-				transactionID: &cwssaws.TransactionID{
-					ResourceId: skgsa8.SSHKeyGroupID.String(),
-					Timestamp:  timestamppb.Now(),
-				},
-				sshKeyGroupInfo: &cwssaws.SSHKeyGroupInfo{
-					Status:    cwssaws.WorkflowStatus_WORKFLOW_STATUS_SUCCESS,
-					StatusMsg: "SSH Key Group was successfully synced",
-					TenantKeyset: &cwssaws.TenantKeyset{
-						Version: "113085",
-					},
-					ObjectStatus: cwssaws.ObjectStatus_OBJECT_STATUS_CREATED,
-				},
-				site: st1,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mv := ManageSSHKeyGroup{
-				dbSession:      tt.fields.dbSession,
-				siteClientPool: tSiteClientPool,
-			}
-
-			// Mock the "UpdateSSHKeyGroup" workflow
-			mtc := &tmocks.Client{}
-			mv.siteClientPool.IDClientMap[tt.args.site.ID.String()] = mtc
-
-			skgIDStr, err := mv.UpdateSSHKeyGroupInDB(tt.args.ctx, tt.args.site.ID, tt.args.transactionID, tt.args.sshKeyGroupInfo)
-			assert.NoError(t, err)
-
-			skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(dbSession)
-			uskgsa, err := skgsaDAO.GetByID(context.Background(), nil, tt.args.skgsa.ID, nil)
-
-			// Verify statuses
-			if tt.args.sshKeyGroupInfo.ObjectStatus == cwssaws.ObjectStatus_OBJECT_STATUS_CREATED {
-				assert.Nil(t, err)
-				if tt.args.skgsa.Status == cdbm.SSHKeyGroupSiteAssociationStatusDeleting {
-					assert.Equal(t, cdbm.SSHKeyGroupSiteAssociationStatusDeleting, uskgsa.Status)
-				} else {
-					assert.Equal(t, cdbm.SSHKeyGroupSiteAssociationStatusSynced, uskgsa.Status)
-					assert.Equal(t, *skgIDStr, uskgsa.SSHKeyGroupID.String())
-				}
-			} else if tt.args.sshKeyGroupInfo.ObjectStatus == cwssaws.ObjectStatus_OBJECT_STATUS_DELETED {
-				assert.Error(t, cdb.ErrDoesNotExist)
-				assert.Nil(t, uskgsa)
-				assert.NotNil(t, skgIDStr)
-			} else if tt.args.sshKeyGroupInfo.Status == cwssaws.WorkflowStatus_WORKFLOW_STATUS_FAILURE {
-				if tt.args.expectSSHKeyGroupSiteAssociationDeletion {
-					assert.Error(t, cdb.ErrDoesNotExist)
-					assert.Nil(t, uskgsa)
-				} else if tt.args.skgsa.Status == cdbm.SSHKeyGroupSiteAssociationStatusDeleting {
-					assert.Equal(t, cdbm.SSHKeyGroupSiteAssociationStatusDeleting, uskgsa.Status)
-					assert.Nil(t, err)
-				} else {
-					assert.Equal(t, cdbm.SSHKeyGroupSiteAssociationStatusError, uskgsa.Status)
-					assert.Nil(t, err)
-				}
-				assert.NotNil(t, skgIDStr)
-			}
-		})
-	}
-}
-
 func TestManageSSHKeyGroup_UpdateSSHKeyGroupStatusInDB(t *testing.T) {
 	dbSession := util.TestInitDB(t)
 	defer dbSession.Close()
@@ -970,13 +611,13 @@ func TestManageSSHKeyGroup_UpdateSSHKeyGroupStatusInDB(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 
@@ -1215,13 +856,13 @@ func TestManageSSHKeyGroup_UpdateSSHKeyGroupsInDB(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 
@@ -1574,13 +1215,13 @@ func TestManageSSHKeyGroup_DeleteSSHKeyGroupViaSiteAgent(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 
@@ -1732,13 +1373,13 @@ func TestSSHKeyAssociationNoPaginator(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
 
 	tnu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg}, tnRoles)
 	assert.NotNil(t, tnu)

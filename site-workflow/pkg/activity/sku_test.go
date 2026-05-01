@@ -32,8 +32,8 @@ import (
 func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
-	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
-	nicoAtomicClient.SwapClient(mockNICo)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -41,7 +41,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoAtomicClient  *cClient.NICoAtomicClient
+		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -58,7 +58,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 			name: "test collecting and publishing sku inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoAtomicClient:  nicoAtomicClient,
+				nicoCoreAtomicClient:  nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -71,7 +71,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 			name: "test collecting and publishing sku inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoAtomicClient:  nicoAtomicClient,
+				nicoCoreAtomicClient:  nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -91,7 +91,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 
 			manageInstance := NewManageSkuInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoAtomicClient:   tt.fields.nicoAtomicClient,
+				NICoCoreAtomicClient:   tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

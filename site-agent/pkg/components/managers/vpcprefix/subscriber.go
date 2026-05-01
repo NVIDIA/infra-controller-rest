@@ -22,42 +22,38 @@ import (
 	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
 )
 
-// RegisterSubscriber registers the VpcPrefixWorkflows with the Temporal client
+// RegisterSubscriber registers VpcPrefix CRUD workflows and activities with Temporal
 func (api *API) RegisterSubscriber() error {
-	// Register the subscribers here
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Registering the subscribers")
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Registering CRUD workflows and activities")
 
+	// Register workflows
+
+	// Register CreateVpcPrefix workflow
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CreateVpcPrefix)
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered CreateVpcPrefix workflow")
+
+	// Register UpdateVpcPrefix workflow
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateVpcPrefix)
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered UpdateVpcPrefix workflow")
+
+	// Register DeleteVpcPrefix workflow
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.DeleteVpcPrefix)
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered DeleteVpcPrefix workflow")
+
+	// Register activities
 	vpcPrefixManager := swa.NewManageVpcPrefix(ManagerAccess.Data.EB.Managers.NICo.Client)
 
-	//  Register Workflows
-
-	// Sync workflows
-	// Register CreateVpcPrefix worfklow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CreateVpcPrefix)
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: successfully registered Create VpcPrefix workflow")
-
-	// Register UpdateVpcPrefix worfklow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateVpcPrefix)
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: successfully registered Update VpcPrefix workflow")
-
-	// Register DeleteVpcPrefix worfklow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.DeleteVpcPrefix)
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: successfully registered Delete VpcPrefix workflow")
-
-	// Regsiter Activities
-
-	// Sync workflow activities
-	// Register CreateVpcPrefixOnSite
+	// Register CreateVpcPrefixOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcPrefixManager.CreateVpcPrefixOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: successfully registered Create VpcPrefix activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered CreateVpcPrefixOnSite activity")
 
-	// Register UpdateVpcPrefixOnSite
+	// Register UpdateVpcPrefixOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcPrefixManager.UpdateVpcPrefixOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: successfully registered Update VpcPrefix activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered UpdateVpcPrefixOnSite activity")
 
-	// Register DeleteVpcPrefixOnSite
+	// Register DeleteVpcPrefixOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcPrefixManager.DeleteVpcPrefixOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: successfully registered Delete VpcPrefix activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered DeleteVpcPrefixOnSite activity")
 
 	return nil
 }

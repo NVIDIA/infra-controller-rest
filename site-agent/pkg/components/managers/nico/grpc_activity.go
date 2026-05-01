@@ -27,27 +27,27 @@ import (
 )
 
 // CreateGRPCClientActivity - Create GRPC client Activity
-func (NICo *API) CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.NICoClient, err error) {
+func (Carbide *API) CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.NICoCoreClient, err error) {
 	// Create the VPC
-	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("NICo: Starting  the gRPC connection Activity")
+	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Carbide: Starting  the gRPC connection Activity")
 
 	// Use temporal logger for temporal logs
 	logger := activity.GetLogger(ctx)
 	withLogger := log.With(logger, "Activity", "CreateGRPCClientActivity", "ResourceReq", ResourceID)
-	withLogger.Info("NICo: Starting  the gRPC connection Activity")
+	withLogger.Info("Carbide: Starting  the gRPC connection Activity")
 
 	// Create the client
-	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("NICo: Creating  grpc client")
+	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Carbide: Creating  grpc client")
 
-	err = NICo.CreateGRPCClient()
+	err = Carbide.CreateGRPCClient()
 	if err != nil {
 		return nil, err
 	}
-	return NICo.GetGRPCClient(), nil
+	return Carbide.GetGRPCClient(), nil
 }
 
 // RegisterGRPC - Register GRPC
-func (NICo *API) RegisterGRPC() {
+func (Carbide *API) RegisterGRPC() {
 	// Register activity
 	activityRegisterOptions := activity.RegisterOptions{
 		Name: "CreateGRPCClientActivity",
@@ -56,5 +56,5 @@ func (NICo *API) RegisterGRPC() {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivityWithOptions(
 		ManagerAccess.API.NICo.CreateGRPCClientActivity, activityRegisterOptions,
 	)
-	ManagerAccess.Data.EB.Log.Info().Msg("NICo: successfully registered GRPC client activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("Carbide: successfully registered GRPC client activity")
 }

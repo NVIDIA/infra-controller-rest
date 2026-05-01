@@ -17,7 +17,7 @@ syntax = "proto3";
 
 package nico;
 
-// Don't nicot to update build.rs to add the Serialize annotation for any new
+// Don't forget to update build.rs to add the Serialize annotation for any new
 // message types!
 
 import "common.proto";
@@ -139,7 +139,7 @@ service NICo {
   rpc FindInstancesByIds(InstancesByIdsRequest) returns (InstanceList);
   rpc FindInstanceByMachineID(common.MachineId) returns (InstanceList);
 
-  // nico-dpu-agent -> nico-api
+  // nico-dpu-agent -> nico-core-api
   rpc GetManagedHostNetworkConfig(ManagedHostNetworkConfigRequest) returns (ManagedHostNetworkConfigResponse);
   rpc RecordDpuNetworkStatus(DpuNetworkStatus) returns (google.protobuf.Empty);
   // Lists all overrides that have been placed on a Machine health status
@@ -750,7 +750,7 @@ service NICo {
   rpc GetOpenIDConfiguration(OpenIdConfigRequest) returns (OpenIdConfiguration);
 
   // ScoutStream establishes a bidirectional streaming connection between
-  // scout agents and nico-api. The initial use-case for this is for
+  // scout agents and nico-core-api. The initial use-case for this is for
   // Mellanox device management using nico-admin-cli, but there's an
   // opportunity to pull the NICoAgentControl flow into here as well.
   rpc ScoutStream(stream ScoutStreamApiBoundMessage) returns (stream ScoutStreamScoutBoundMessage);
@@ -774,12 +774,12 @@ service NICo {
   // MlxAdminProfileSync is used to sync an MlxConfigProfile to a given device.
   rpc MlxAdminProfileSync(mlx_device.MlxAdminProfileSyncRequest) returns (mlx_device.MlxAdminProfileSyncResponse);
   // MlxAdminProfileShow shows the configuration of a specific MlxConfigProfile
-  // loaded into nico-api.
+  // loaded into nico-core-api.
   rpc MlxAdminProfileShow(mlx_device.MlxAdminProfileShowRequest) returns (mlx_device.MlxAdminProfileShowResponse);
   // MlxAdminProfileCompare compares the running config of a device to
   // the values of a given MlxConfigProfile.
   rpc MlxAdminProfileCompare(mlx_device.MlxAdminProfileCompareRequest) returns (mlx_device.MlxAdminProfileCompareResponse);
-  // MlxAdminProfileList lists all configured MlxConfigProfiles in nico-api.
+  // MlxAdminProfileList lists all configured MlxConfigProfiles in nico-core-api.
   rpc MlxAdminProfileList(mlx_device.MlxAdminProfileListRequest) returns (mlx_device.MlxAdminProfileListResponse);
 
   // Mellanox administrative endpoints for lockdown management, which are called by
@@ -4787,7 +4787,7 @@ enum IpType {
   IpTypeNetworkSegment = 7;
   IpTypeExploredEndpoint = 8;
   // IpTypeRouteServerFromConfigFile are IPs from the route_servers
-  // table that have been synced via the nico-api config file
+  // table that have been synced via the nico-core-api config file
   // at startup (see setup.rs and db_init.rs). Their DB records
   // specifically say their source type is `config_file`.
   IpTypeRouteServerFromConfigFile = 9;
@@ -6821,7 +6821,7 @@ message DpuExtensionServiceObservability {
 }
 
 // ScoutStreamApiBoundMessage is sent as part of scout initiating a new
-// streaming gRPC connection with nico-api. The agent will connect
+// streaming gRPC connection with nico-core-api. The agent will connect
 // and sent an InitRequest, and then wait for control messages from
 // the API. For example, the API will send down a MlxDeviceLockdownStatusRequest,
 // and scout will populate an MlxDeviceLockdownStatusResponse and send
@@ -6835,8 +6835,8 @@ message ScoutStreamApiBoundMessage {
 
   oneof payload {
     // ScoutStreamInitRequest is sent as the first message to establish
-    // a connection between a scout agent and nico-api. After this,
-    // nico-api will populate a "request" within a ScoutStreamScoutBoundMessage,
+    // a connection between a scout agent and nico-core-api. After this,
+    // nico-core-api will populate a "request" within a ScoutStreamScoutBoundMessage,
     // send it to the scout agent, and expect the scout agent to respond
     // with a "response" from the oneof ScoutStreamApiBoundMessage options below.
     //
@@ -6858,7 +6858,7 @@ message ScoutStreamApiBoundMessage {
   }
 }
 
-// ScoutStreamScoutBoundMessage contains the requests from nico-api
+// ScoutStreamScoutBoundMessage contains the requests from nico-core-api
 // that a connected scout agent should process and respond to,
 // populating a response from one of the ScoutStreamApiBoundMessages.
 message ScoutStreamScoutBoundMessage {
@@ -6888,7 +6888,7 @@ message ScoutStreamScoutBoundMessage {
 }
 
 // ScoutStreamInitRequest is sent by the scout agent to identify itself
-// and establish a connection to nico-api.
+// and establish a connection to nico-core-api.
 message ScoutStreamInitRequest {
   common.MachineId machine_id = 1;
 }

@@ -40,7 +40,7 @@ import (
 // ManageExpectedMachineInventory is an activity wrapper for Expected Machine inventory collection and publishing
 type ManageExpectedMachineInventory struct {
 	siteID                uuid.UUID
-	nicoAtomicClient   *cclient.NICoAtomicClient
+	nicoCoreAtomicClient   *cclient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -63,7 +63,7 @@ func (memi *ManageExpectedMachineInventory) DiscoverExpectedMachineInventory(ctx
 	}
 
 	// Get Site Controller gRPC client
-	nicoClient := memi.nicoAtomicClient.GetClient()
+	nicoClient := memi.nicoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cclient.ErrClientNotConnected
 	}
@@ -244,10 +244,10 @@ func getPagedExpectedMachineInventory(
 }
 
 // NewManageExpectedMachineInventory returns a ManageInventory implementation for Expected Machine activity
-func NewManageExpectedMachineInventory(siteID uuid.UUID, nicoAtomicClient *cclient.NICoAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedMachineInventory {
+func NewManageExpectedMachineInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedMachineInventory {
 	return ManageExpectedMachineInventory{
 		siteID:                siteID,
-		nicoAtomicClient:   nicoAtomicClient,
+		nicoCoreAtomicClient:   nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -256,14 +256,14 @@ func NewManageExpectedMachineInventory(siteID uuid.UUID, nicoAtomicClient *cclie
 
 // ManageExpectedMachine is an activity wrapper for Expected Machine management
 type ManageExpectedMachine struct {
-	NICoAtomicClient *cclient.NICoAtomicClient
+	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
 	RlaAtomicClient     *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedMachine returns a new ManageExpectedMachine client
-func NewManageExpectedMachine(nicoClient *cclient.NICoAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedMachine {
+func NewManageExpectedMachine(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedMachine {
 	return ManageExpectedMachine{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 		RlaAtomicClient:     rlaClient,
 	}
 }
@@ -290,7 +290,7 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnSite(ctx context.Contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mem.NICoAtomicClient.GetClient()
+	nicoClient := mem.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cclient.ErrClientNotConnected
 	}
@@ -330,7 +330,7 @@ func (mem *ManageExpectedMachine) UpdateExpectedMachineOnSite(ctx context.Contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mem.NICoAtomicClient.GetClient()
+	nicoClient := mem.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cclient.ErrClientNotConnected
 	}
@@ -367,7 +367,7 @@ func (mem *ManageExpectedMachine) DeleteExpectedMachineOnSite(ctx context.Contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mem.NICoAtomicClient.GetClient()
+	nicoClient := mem.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cclient.ErrClientNotConnected
 	}
@@ -404,7 +404,7 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnSite(ctx context.Conte
 	}
 
 	// Call Site Controller gRPC batch endpoint
-	nicoClient := mem.NICoAtomicClient.GetClient()
+	nicoClient := mem.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cclient.ErrClientNotConnected
 	}
@@ -593,7 +593,7 @@ func (mem *ManageExpectedMachine) UpdateExpectedMachinesOnSite(ctx context.Conte
 	}
 
 	// Call Site Controller gRPC batch endpoint
-	nicoClient := mem.NICoAtomicClient.GetClient()
+	nicoClient := mem.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return nil, cclient.ErrClientNotConnected
 	}

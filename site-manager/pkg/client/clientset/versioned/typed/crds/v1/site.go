@@ -62,16 +62,7 @@ type sites struct {
 }
 
 // newSites returns a Sites
-func newSites(c *NICoV1Client, namespace string) *sites {
-	return &sites{
-		client: c.RESTClient(),
-		ns:     namespace,
-	}
-}
-
-// newForgeLegacySites returns a Sites backed by the legacy forge.nvidia.io REST client.
-// TODO: remove once all site agents migrated to nico.nvidia.io.
-func newForgeLegacySites(c *ForgeLegacyV1Client, namespace string) *sites {
+func newSites(c *ForgeV1Client, namespace string) *sites {
 	return &sites{
 		client: c.RESTClient(),
 		ns:     namespace,

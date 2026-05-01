@@ -38,8 +38,8 @@ var (
 // NewCommand creates a new cli command
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "NICo Site Manager Service",
-		Usage: "NICo Site Manager Service",
+		Name:  "Forge Site Manager Service",
+		Usage: "Forge Site Manager Service",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "debug",
@@ -53,7 +53,7 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:  "ingress-host",
-				Value: "sitemgr.nico.nvidia.com",
+				Value: "sitemgr.forge.nvidia.com",
 				Usage: "Ingress host name for self signed certs",
 			},
 			&cli.StringFlag{
@@ -73,7 +73,7 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:    "namespace",
-				Value:   "nico-rest",
+				Value:   "carbide-rest",
 				EnvVars: []string{"SITE_MANAGER_NS"},
 				Usage:   "Namespace where service is deployed",
 			},

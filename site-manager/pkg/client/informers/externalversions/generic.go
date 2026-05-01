@@ -57,9 +57,9 @@ func (f *genericInformer) Lister() cache.GenericLister {
 // TODO extend this to unknown resources with a client pool
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
-	// Group=nico.nvidia.io, Version=v1
+	// Group=forge.nvidia.io, Version=v1
 	case v1.SchemeGroupVersion.WithResource("sites"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.NICo().V1().Sites().Informer()}, nil
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Forge().V1().Sites().Informer()}, nil
 
 	}
 

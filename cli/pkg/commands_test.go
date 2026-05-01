@@ -342,7 +342,7 @@ func TestBuildCommands_NoDuplicateFlags(t *testing.T) {
 			}
 		}
 	}
-	visit("cli", cmds)
+	visit("nicocli", cmds)
 }
 
 // TestBuildActionCommand_ReservedBodyPropertyPrefixed verifies that when a
@@ -422,7 +422,7 @@ func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
 	require.NoError(t, err, "NewApp failed")
 
 	require.NotPanics(t, func() {
-		require.NoError(t, app.Run([]string{"cli", "dpu-extension-service", "create", "--help"}))
+		require.NoError(t, app.Run([]string{"nicocli", "dpu-extension-service", "create", "--help"}))
 	})
 }
 

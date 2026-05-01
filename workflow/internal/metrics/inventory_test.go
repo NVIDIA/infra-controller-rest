@@ -29,7 +29,6 @@ import (
 
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestManageInventoryMetrics_RecordLatency(t *testing.T) {
@@ -39,7 +38,7 @@ func TestManageInventoryMetrics_RecordLatency(t *testing.T) {
 	util.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
 
 	ipu := util.TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := util.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)

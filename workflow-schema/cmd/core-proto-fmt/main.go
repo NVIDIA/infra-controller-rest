@@ -85,7 +85,7 @@ func normalizeProtoFile(protoFile string) {
 		content = normalizeSiteExplorer(content)
 	case "dns_nico.proto":
 		content = normalizeDns(content)
-	case "nico_nico.proto":
+	case "core.proto":
 		content = normalizeNICo(content)
 	}
 
@@ -186,7 +186,7 @@ func normalizeSiteExplorer(content string) string {
 	re := regexp.MustCompile(`\bPowerState\b`)
 	content = replaceOutsideComments(content, re, "ComputerSystemPowerState")
 
-	warning := "// WARNING: This enum conflicts with PowerState in nico_nico.proto and must be renamed to ComputerSystemPowerState\n"
+	warning := "// WARNING: This enum conflicts with PowerState in core.proto and must be renamed to ComputerSystemPowerState\n"
 	target := "enum ComputerSystemPowerState {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -199,7 +199,7 @@ func normalizeDns(content string) string {
 	re := regexp.MustCompile(`\bMetadata\b`)
 	content = replaceOutsideComments(content, re, "DomainMetadata")
 
-	warning := "// WARNING: This type conflicts with Metadata in nico_nico.proto and must be renamed to DomainMetadata\n"
+	warning := "// WARNING: This type conflicts with Metadata in core.proto and must be renamed to DomainMetadata\n"
 	target := "message DomainMetadata {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -224,7 +224,7 @@ func nicoRenameMachineInventory(content string) string {
 	re := regexp.MustCompile(`\bMachineInventory\b`)
 	content = replaceOutsideComments(content, re, "MachineComponentInventory")
 
-	warning := "// WARNING: This type conflicts with MachineInventory in nico_nico.proto and must be renamed to MachineComponentInventory\n"
+	warning := "// WARNING: This type conflicts with MachineInventory in core.proto and must be renamed to MachineComponentInventory\n"
 	target := "message MachineComponentInventory {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -234,7 +234,7 @@ func nicoRenameMachineInventory(content string) string {
 }
 
 func nicoUpdateInterfaceFunctionType(content string) string {
-	warning := "// WARNING: This enum was changed in a non-backwards compatible way in nico_nico.proto to drop _FUNCTION suffix\n"
+	warning := "// WARNING: This enum was changed in a non-backwards compatible way in core.proto to drop _FUNCTION suffix\n"
 	target := "enum InterfaceFunctionType {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)

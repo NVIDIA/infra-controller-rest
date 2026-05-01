@@ -36,13 +36,13 @@ import (
 
 // ManageOperatingSystem is an activity wrapper for Operating System management
 type ManageOperatingSystem struct {
-	NICoAtomicClient *client.NICoAtomicClient
+	NICoCoreAtomicClient *client.NICoCoreAtomicClient
 }
 
 // NewManageOperatingSystem returns a new ManageOperatingSystem client
-func NewManageOperatingSystem(nicoClient *client.NICoAtomicClient) ManageOperatingSystem {
+func NewManageOperatingSystem(nicoClient *client.NICoCoreAtomicClient) ManageOperatingSystem {
 	return ManageOperatingSystem{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -70,7 +70,7 @@ func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mos.NICoAtomicClient.GetClient()
+	nicoClient := mos.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -111,7 +111,7 @@ func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mos.NICoAtomicClient.GetClient()
+	nicoClient := mos.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -150,7 +150,7 @@ func (mos *ManageOperatingSystem) DeleteOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mos.NICoAtomicClient.GetClient()
+	nicoClient := mos.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return client.ErrClientNotConnected
 	}
@@ -195,11 +195,11 @@ func (moii *ManageOsImageInventory) DiscoverOsImageInventory(ctx context.Context
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func osImageFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, error) {
+func osImageFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
-func osImageFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
+func osImageFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
@@ -225,7 +225,7 @@ func osImagePagedInventory(allItemIDs []*cwssaws.UUID, pagedItems []*cwssaws.OsI
 	return inventory
 }
 
-func osImageFindFallback(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
+func osImageFindFallback(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
 	request := &cwssaws.ListOsImageRequest{}
 	items, err := nicoClient.NICo().ListOsImage(ctx, request)
 	if err != nil {

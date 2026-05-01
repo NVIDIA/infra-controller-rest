@@ -23,7 +23,7 @@ for on-site hardware operations.
 - IP address management (IPAM)
 - Authentication and authorization (Keycloak, JWT, service accounts)
 - Native PKI certificate management
-- CLI client (`cli`) with interactive TUI
+- CLI client (`nicocli`) with interactive TUI
 
 ## Repository Structure
 
@@ -32,7 +32,7 @@ ncx-infra-controller-rest/
 ├── api/                  # Main REST API server (Echo-based)
 ├── auth/                 # Authentication (Keycloak, JWT, service accounts)
 ├── cert-manager/         # Native PKI certificate management (credsmgr)
-├── cli/                  # CLI client (cli) with TUI
+├── cli/                  # CLI client (nicocli) with TUI
 ├── common/               # Shared utilities and configuration
 ├── db/                   # Database layer (Bun ORM, pgx, migrations)
 ├── deploy/               # Kubernetes deployment (Kind, Kustomize, Helm)

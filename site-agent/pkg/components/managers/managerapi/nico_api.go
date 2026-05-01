@@ -23,20 +23,20 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
 )
 
-// NICoExpansion - NICo Expansion
-type NICoExpansion interface{}
+// CarbideExpansion - Carbide Expansion
+type CarbideExpansion interface{}
 
 // NICoInterface - interface to NICo
 type NICoInterface interface {
-	// List all the apis of NICo here
+	// List all the apis of Carbide here
 	Init()
 	Start()
 	CreateGRPCClient() error
-	GetGRPCClient() *client.NICoClient
+	GetGRPCClient() *client.NICoCoreClient
 	UpdateGRPCClientState(err error)
-	CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.NICoClient, err error)
+	CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.NICoCoreClient, err error)
 	RegisterGRPC()
 	GetState() []string
 	GetGRPCClientVersion() int64
-	NICoExpansion
+	CarbideExpansion
 }

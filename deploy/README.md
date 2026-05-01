@@ -156,4 +156,4 @@ curl http://<node-ip>:30388/healthz
 
 - **Site agent bootstrap** — register a site via the API and configure the site agent with the resulting UUID and OTP. See [INSTALLATION.md — Step 13](INSTALLATION.md#step-13--deploy-nico-rest-site-agent).
 - **Production hardening** — change default credentials, replace `start-dev` Keycloak mode, tune Temporal resource limits. See [INSTALLATION.md](INSTALLATION.md) for per-component configuration details.
-- **CLI** — install `cli` to interact with the deployed cluster. See [cli/README.md](cli/README.md).
+- **CLI** — install `nicocli` to interact with the deployed cluster. See [cli/README.md](cli/README.md).

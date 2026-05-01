@@ -35,14 +35,14 @@ import (
 func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
-	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
-	nicoAtomicClient.SwapClient(mockNICo)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	labelKey := "key1"
 	labelValue := "value1"
 
 	type fields struct {
-		NICoAtomicClient *cClient.NICoAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -57,7 +57,7 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test NetworkSecurityGroup update success",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -81,7 +81,7 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test NetworkSecurityGroup update missing id in request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -105,7 +105,7 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test NetworkSecurityGroup update missing tenant id in request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -129,7 +129,7 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test NetworkSecurityGroup update nil request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -140,7 +140,7 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageNetworkSecurityGroup(tt.fields.NICoAtomicClient)
+			mm := NewManageNetworkSecurityGroup(tt.fields.NICoCoreAtomicClient)
 			err := mm.UpdateNetworkSecurityGroupOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -154,14 +154,14 @@ func TestManageNetworkSecurityGroup_UpdateNetworkSecurityGroupOnSite(t *testing.
 func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
-	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
-	nicoAtomicClient.SwapClient(mockNICo)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	labelKey := "key1"
 	labelValue := "value1"
 
 	type fields struct {
-		NICoAtomicClient *cClient.NICoAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -176,7 +176,7 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 		{
 			name: "test create NetworkSecurityGroup success",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -201,7 +201,7 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 		{
 			name: "test create NetworkSecurityGroup nil request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -213,7 +213,7 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 		{
 			name: "test create NetworkSecurityGroup missing id in request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -238,7 +238,7 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 		{
 			name: "test create NetworkSecurityGroup missing tenant id in request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -262,7 +262,7 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 		{
 			name: "test create NetworkSecurityGroup nil id in request fail",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -286,7 +286,7 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageNetworkSecurityGroup(tt.fields.NICoAtomicClient)
+			mm := NewManageNetworkSecurityGroup(tt.fields.NICoCoreAtomicClient)
 			err := mm.CreateNetworkSecurityGroupOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -300,8 +300,8 @@ func TestManageNetworkSecurityGroup_CreateNetworkSecurityGroupOnSiteOnSite(t *te
 func TestManageNetworkSecurityGroupInventory_DiscoverNetworkSecurityGroupInventory(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
-	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
-	nicoAtomicClient.SwapClient(mockNICo)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -309,7 +309,7 @@ func TestManageNetworkSecurityGroupInventory_DiscoverNetworkSecurityGroupInvento
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoAtomicClient  *cClient.NICoAtomicClient
+		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -326,7 +326,7 @@ func TestManageNetworkSecurityGroupInventory_DiscoverNetworkSecurityGroupInvento
 			name: "test collecting and publishing networkSecurityGroup inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoAtomicClient:  nicoAtomicClient,
+				nicoCoreAtomicClient:  nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -339,7 +339,7 @@ func TestManageNetworkSecurityGroupInventory_DiscoverNetworkSecurityGroupInvento
 			name: "test collecting and publishing networkSecurityGroup inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoAtomicClient:  nicoAtomicClient,
+				nicoCoreAtomicClient:  nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -359,7 +359,7 @@ func TestManageNetworkSecurityGroupInventory_DiscoverNetworkSecurityGroupInvento
 
 			manageNetworkSecurityGroup := NewManageNetworkSecurityGroupInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoAtomicClient:   tt.fields.nicoAtomicClient,
+				NICoCoreAtomicClient:   tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,
@@ -405,11 +405,11 @@ func TestManageNetworkSecurityGroupInventory_DiscoverNetworkSecurityGroupInvento
 func TestManageNetworkSecurityGroup_DeleteNetworkSecurityGroupOnSite(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
-	nicoAtomicClient := cClient.NewNICoAtomicClient(&cClient.NICoClientConfig{})
-	nicoAtomicClient.SwapClient(mockNICo)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		NICoAtomicClient *cClient.NICoAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -424,7 +424,7 @@ func TestManageNetworkSecurityGroup_DeleteNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test delete NetworkSecurityGroup success",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -438,7 +438,7 @@ func TestManageNetworkSecurityGroup_DeleteNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test delete NetworkSecurityGroup with nil ID failure",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -452,7 +452,7 @@ func TestManageNetworkSecurityGroup_DeleteNetworkSecurityGroupOnSite(t *testing.
 		{
 			name: "test delete NetworkSecurityGroup with missing tenant ID failure",
 			fields: fields{
-				NICoAtomicClient: nicoAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -466,7 +466,7 @@ func TestManageNetworkSecurityGroup_DeleteNetworkSecurityGroupOnSite(t *testing.
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageNetworkSecurityGroup(tt.fields.NICoAtomicClient)
+			mm := NewManageNetworkSecurityGroup(tt.fields.NICoCoreAtomicClient)
 			err := mm.DeleteNetworkSecurityGroupOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

@@ -44,13 +44,13 @@ import (
 
 // Errors
 var (
-	ErrNICoClientInvalidAddress    = errors.New("NICoClient: invalid address")
-	ErrNICoClientInvalidDialOpts   = errors.New("NICoClient: invalid dial options")
-	ErrNICoClientInvalidSecureOpts = errors.New("NICoClient: invalid secure options")
-	ErrNICoClientInvalidServerCA   = errors.New("NICoClient: invalid server CA")
-	ErrNICoClientInvalidClientCA   = errors.New("NICoClient: invalid client CA")
-	ErrNICoClientInvalidClientKey  = errors.New("NICoClient: invalid client key")
-	ErrNICoClientInvalidClientCert = errors.New("NICoClient: invalid client cert")
+	ErrNICoCoreClientInvalidAddress    = errors.New("NICoCoreClient: invalid address")
+	ErrNICoCoreClientInvalidDialOpts   = errors.New("NICoCoreClient: invalid dial options")
+	ErrNICoCoreClientInvalidSecureOpts = errors.New("NICoCoreClient: invalid secure options")
+	ErrNICoCoreClientInvalidServerCA   = errors.New("NICoCoreClient: invalid server CA")
+	ErrNICoCoreClientInvalidClientCA   = errors.New("NICoCoreClient: invalid client CA")
+	ErrNICoCoreClientInvalidClientKey  = errors.New("NICoCoreClient: invalid client key")
+	ErrNICoCoreClientInvalidClientCert = errors.New("NICoCoreClient: invalid client cert")
 	ErrClientNotConnected             = errors.New("gRPC client is not connected to the server")
 )
 
@@ -68,8 +68,8 @@ const (
 	defaultCheckCertificateIntervalSeconds = 15 * 60 // 15 minutes in seconds
 )
 
-// NICoClientConfig is the data structure for the client configuration
-type NICoClientConfig struct {
+// NICoCoreClientConfig is the data structure for the client configuration
+type NICoCoreClientConfig struct {
 	// The address of the server <host>:<port>
 	Address string
 	// Secure flag
@@ -86,40 +86,40 @@ type NICoClientConfig struct {
 	ClientMetrics Metrics
 }
 
-// NewNICoClient creates a new NICoClient
-func NewNICoClient(config *NICoClientConfig) (client *NICoClient, err error) {
+// NewNICoCoreClient creates a new NICoCoreClient
+func NewNICoCoreClient(config *NICoCoreClientConfig) (client *NICoCoreClient, err error) {
 	// Validate the config
 	if config.Address == "" {
-		log.Error().Err(ErrNICoClientInvalidAddress).Msg("NICoClient: no address provided")
-		return nil, ErrNICoClientInvalidAddress
+		log.Error().Err(ErrNICoCoreClientInvalidAddress).Msg("NICoCoreClient: no address provided")
+		return nil, ErrNICoCoreClientInvalidAddress
 	}
-	client = &NICoClient{}
+	client = &NICoCoreClient{}
 
 	switch config.Secure {
 	case InsecuregRPC:
 		// No secure options
 		// Default option
 		// connect with plain TCP
-		log.Debug().Msg("NICoClient: insecure gRPC")
+		log.Debug().Msg("NICoCoreClient: insecure gRPC")
 		client.dialOpts = append(client.dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	case ServerTLS:
-		log.Debug().Msg("NICoClient: server TLS")
+		log.Debug().Msg("NICoCoreClient: server TLS")
 		// Validate the config contains server ca path
 		if config.ServerCAPath == "" {
-			log.Error().Err(ErrNICoClientInvalidServerCA).Msg("NICoClient: no server ca path provided")
-			return nil, ErrNICoClientInvalidServerCA
+			log.Error().Err(ErrNICoCoreClientInvalidServerCA).Msg("NICoCoreClient: no server ca path provided")
+			return nil, ErrNICoCoreClientInvalidServerCA
 		}
 		if config.SkipServerAuth {
 			// Server TLS
 			// connect with TLS but not mutual TLS
-			log.Info().Msg("NICoClient: skipping server auth in TLS ( Warn: This shouldn't be used in Prod)")
+			log.Info().Msg("NICoCoreClient: skipping server auth in TLS ( Warn: This shouldn't be used in Prod)")
 			tlsConfig := &tls.Config{
 				InsecureSkipVerify: true,
 			}
 			// Load the server ca
 			_, err := credentials.NewClientTLSFromFile(config.ServerCAPath, "")
 			if err != nil {
-				log.Error().Err(err).Msg("NICoClient: failed to load server ca")
+				log.Error().Err(err).Msg("NICoCoreClient: failed to load server ca")
 				return nil, err
 			}
 
@@ -133,7 +133,7 @@ func NewNICoClient(config *NICoClientConfig) (client *NICoClient, err error) {
 			// Load the server ca
 			creds, err := credentials.NewClientTLSFromFile(config.ServerCAPath, "")
 			if err != nil {
-				log.Error().Err(err).Msg("NICoClient: failed to load server ca")
+				log.Error().Err(err).Msg("NICoCoreClient: failed to load server ca")
 				return nil, err
 			}
 			// Append the dial option
@@ -142,23 +142,23 @@ func NewNICoClient(config *NICoClientConfig) (client *NICoClient, err error) {
 	case MutualTLS:
 		// Mutual TLS
 		// connect with mutual TLS
-		log.Debug().Msg("NICoClient: mutual TLS")
+		log.Debug().Msg("NICoCoreClient: mutual TLS")
 		// 1. Load the client certificates
 		clientCert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
 		if err != nil {
-			log.Error().Err(err).Msg("NICoClient: failed to load client certificates")
+			log.Error().Err(err).Msg("NICoCoreClient: failed to load client certificates")
 			return nil, err
 		}
 		// 2. Load the Trust chain, root ca
 		cabytes, err := os.ReadFile(config.ServerCAPath)
 		if err != nil {
-			log.Error().Err(err).Msg("NICoClient: failed to load Root CA certificates")
+			log.Error().Err(err).Msg("NICoCoreClient: failed to load Root CA certificates")
 
 			return nil, err
 		}
 		capool := x509.NewCertPool()
 		if !capool.AppendCertsFromPEM(cabytes) {
-			return nil, fmt.Errorf("NICoClient: failed to append ca certificates to ca pool")
+			return nil, fmt.Errorf("NICoCoreClient: failed to append ca certificates to ca pool")
 		}
 		mutualTLSConfig := &tls.Config{
 			Certificates: []tls.Certificate{clientCert},
@@ -170,8 +170,8 @@ func NewNICoClient(config *NICoClientConfig) (client *NICoClient, err error) {
 		client.dialOpts = append(client.dialOpts, grpc.WithTransportCredentials(creds))
 
 	default:
-		log.Error().Err(ErrNICoClientInvalidSecureOpts).Msg("NICoClient: invalid dial options")
-		return nil, ErrNICoClientInvalidSecureOpts
+		log.Error().Err(ErrNICoCoreClientInvalidSecureOpts).Msg("NICoCoreClient: invalid dial options")
+		return nil, ErrNICoCoreClientInvalidSecureOpts
 	}
 
 	// configure interceptors
@@ -197,31 +197,31 @@ func NewNICoClient(config *NICoClientConfig) (client *NICoClient, err error) {
 	// Create the client connection
 	client.conn, err = grpc.NewClient(config.Address, client.dialOpts...)
 	if err != nil {
-		log.Error().Err(err).Msg("NICoClient: failed to initialize gRPC client")
+		log.Error().Err(err).Msg("NICoCoreClient: failed to initialize gRPC client")
 		return nil, err
 	}
-	log.Info().Msg("NICoClient: gRPC client initialized")
+	log.Info().Msg("NICoCoreClient: gRPC client initialized")
 
 	// Create nico client
 	client.nico = wflows.NewNICoClient(client.conn)
-	log.Info().Msg("NICoClient: client created")
+	log.Info().Msg("NICoCoreClient: client created")
 
 	// Check the version of the server
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(5000)*time.Millisecond))
 	defer cancel()
 	_, err = client.nico.Version(ctx, &wflows.VersionRequest{})
 	if err != nil {
-		log.Error().Err(err).Msg("NICoClient: failed to get version from server")
-		return nil, fmt.Errorf("NICoClient: failed to get version from server: %w", err)
+		log.Error().Err(err).Msg("NICoCoreClient: failed to get version from server")
+		return nil, fmt.Errorf("NICoCoreClient: failed to get version from server: %w", err)
 	}
 
-	log.Info().Msg("NICoClient: successfully connected to server")
+	log.Info().Msg("NICoCoreClient: successfully connected to server")
 
 	return client, nil
 }
 
-// NICoClient is the data structure for the client
-type NICoClient struct {
+// NICoCoreClient is the data structure for the client
+type NICoCoreClient struct {
 	// The client connection
 	conn *grpc.ClientConn
 	// gRPC dial options
@@ -231,7 +231,7 @@ type NICoClient struct {
 }
 
 // Close gracefully shuts down the client's gRPC connection.
-func (cc *NICoClient) Close() error {
+func (cc *NICoCoreClient) Close() error {
 	if cc.conn != nil {
 		// Close the grpc.ClientConn.
 		return cc.conn.Close()
@@ -240,32 +240,32 @@ func (cc *NICoClient) Close() error {
 }
 
 // NICo client getter
-func (client *NICoClient) NICo() wflows.NICoClient {
+func (client *NICoCoreClient) NICo() wflows.NICoClient {
 	return client.nico
 }
 
-// NICoAtomicClient is an atomic wrapper around the NICoClient
-type NICoAtomicClient struct {
-	Config  *NICoClientConfig
+// NICoCoreAtomicClient is an atomic wrapper around the NICoCoreClient
+type NICoCoreAtomicClient struct {
+	Config  *NICoCoreClientConfig
 	value   *atomic.Value
 	version atomic.Int64
 }
 
-// Version returns the current version of the NICoClient
-func (cac *NICoAtomicClient) Version() int64 {
+// Version returns the current version of the NICoCoreClient
+func (cac *NICoCoreAtomicClient) Version() int64 {
 	return cac.version.Load()
 }
 
-// SwapClient atomically replaces the current NICoClient with a new one,
+// SwapClient atomically replaces the current NICoCoreClient with a new one,
 // returning the old client for the caller to manage.
-func (cac *NICoAtomicClient) SwapClient(newClient *NICoClient) *NICoClient {
+func (cac *NICoCoreAtomicClient) SwapClient(newClient *NICoCoreClient) *NICoCoreClient {
 
 	// Atomically replace the current client with the new one and return the old client.
 	oldClientInterface := cac.value.Swap(newClient)
 
-	// Type assert the returned value to *NICoClient.
+	// Type assert the returned value to *NICoCoreClient.
 	// This should always succeed if the correct type was stored initially.
-	oldClient, ok := oldClientInterface.(*NICoClient)
+	oldClient, ok := oldClientInterface.(*NICoCoreClient)
 	if !ok {
 		log.Error().Msg("SwapClient: Type assertion failed for the old client")
 		return nil
@@ -279,19 +279,19 @@ func (cac *NICoAtomicClient) SwapClient(newClient *NICoClient) *NICoClient {
 
 // GetClient returns the current version of NICo client from the atomic value.
 // Returns nil if the client has not been initialized yet.
-func (cac *NICoAtomicClient) GetClient() *NICoClient {
+func (cac *NICoCoreAtomicClient) GetClient() *NICoCoreClient {
 	v := cac.value.Load()
 	if v == nil {
 		return nil
 	}
-	client, _ := v.(*NICoClient)
+	client, _ := v.(*NICoCoreClient)
 
 	return client
 }
 
 // CheckAndReloadCerts continuously monitors the TLS certificates for changes.
-// If a change is detected, it reinitializes the NICoClient with the new certificates to ensure secure communication.
-func (cac *NICoAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {
+// If a change is detected, it reinitializes the NICoCoreClient with the new certificates to ensure secure communication.
+func (cac *NICoCoreAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {
 	// Initialize contextual logger
 	logger := log.With().Str("Component", "NICo").Str("Operation", "CheckAndReloadCerts").Logger()
 
@@ -308,7 +308,7 @@ func (cac *NICoAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSe
 		}
 
 		if changed {
-			newClient, err := NewNICoClient(cac.Config)
+			newClient, err := NewNICoCoreClient(cac.Config)
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to reinitialize gRPC client with new certificates")
 				continue
@@ -318,14 +318,14 @@ func (cac *NICoAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSe
 			oldClient := cac.SwapClient(newClient)
 
 			// Delayed closure of the old client.
-			go func(clientToClose *NICoClient) {
+			go func(clientToClose *NICoCoreClient) {
 				// Delay the closure to allow ongoing client requests to complete.
 				time.Sleep(10 * time.Second) // Adjust the delay as needed.
 
 				// Ensure the client exists and has a connection to close.
 				if clientToClose != nil {
 					if err := clientToClose.Close(); err != nil {
-						log.Error().Err(err).Msg("Error closing old NICoClient connection")
+						log.Error().Err(err).Msg("Error closing old NICoCoreClient connection")
 					}
 				}
 			}(oldClient)
@@ -339,7 +339,7 @@ func (cac *NICoAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSe
 }
 
 // GetInitialCertMD5 retrieves the MD5 hash of the initial set of certificate that the client is Using
-func (cac *NICoAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []byte, err error) {
+func (cac *NICoCoreAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []byte, err error) {
 	// Load and hash the client certificate
 	clientCertBytes, err := os.ReadFile(cac.Config.ClientCertPath)
 	if err != nil {
@@ -360,7 +360,7 @@ func (cac *NICoAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []b
 }
 
 // CheckCertificates checks if the client and server CA certificates have changed
-func (cac *NICoAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5 []byte) (bool, []byte, []byte, error) {
+func (cac *NICoCoreAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5 []byte) (bool, []byte, []byte, error) {
 	// Load and hash the client certificate using os.ReadFile
 	clientCertBytes, err := os.ReadFile(cac.Config.ClientCertPath)
 	if err != nil {
@@ -383,10 +383,10 @@ func (cac *NICoAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD
 	return false, lastClientCertMD5, lastServerCAMD5, nil
 }
 
-// NewNICoAtomicClient creates a new NICoAtomicClient
-func NewNICoAtomicClient(config *NICoClientConfig) *NICoAtomicClient {
+// NewNICoCoreAtomicClient creates a new NICoCoreAtomicClient
+func NewNICoCoreAtomicClient(config *NICoCoreClientConfig) *NICoCoreAtomicClient {
 	// Create the atomic value
-	atomicClient := &NICoAtomicClient{
+	atomicClient := &NICoCoreAtomicClient{
 		Config:  config,
 		value:   &atomic.Value{},
 		version: atomic.Int64{},

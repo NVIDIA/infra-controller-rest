@@ -27,7 +27,7 @@ spec:
   subject:
     organizations:
       - Nvidia
-  commonName: nico-rest-site-manager
+  commonName: carbide-rest-site-manager
   isCA: false
   privateKey:
     algorithm: RSA
@@ -37,11 +37,11 @@ spec:
     - server auth
     - client auth
   dnsNames:
-    - nico-rest-site-manager
-    - nico-rest-site-manager.nico-rest
-    - nico-rest-site-manager.nico-rest.svc.cluster.local
+    - carbide-rest-site-manager
+    - carbide-rest-site-manager.carbide-rest
+    - carbide-rest-site-manager.carbide-rest.svc.cluster.local
     - localhost
   issuerRef:
-    name: nico-rest-ca-issuer
+    name: carbide-rest-ca-issuer
     kind: ClusterIssuer
     group: cert-manager.io

@@ -871,25 +871,25 @@ kubectl kustomize --load-restrictor LoadRestrictionsNone \
 
 ## Interacting with a Deployed Cluster
 
-### CLI (`cli`)
+### CLI (`nicocli`)
 
-`cli` is a command-line client that wraps the full REST API. It handles environment selection, Keycloak login, and token refresh automatically.
+`nicocli` is a command-line client that wraps the full REST API. It handles environment selection, Keycloak login, and token refresh automatically.
 
 ```bash
 make nico-cli             # build and install to $GOPATH/bin
-cli init              # generate ~/.nico/config.yaml
+nicocli init              # generate ~/.nico/config.yaml
 ```
 
 Create a config per environment (`~/.nico/config.yaml`, `~/.nico/config.staging.yaml`, `~/.nico/config.prod.yaml`), then use the interactive TUI:
 
 ```bash
-cli tui
+nicocli tui
 ```
 
 Or run commands directly for scripting:
 
 ```bash
-cli --config ~/.nico/config.yaml site list
+nicocli --config ~/.nico/config.yaml site list
 ```
 
 See [cli/README.md](cli/README.md) for the full configuration reference and command list.

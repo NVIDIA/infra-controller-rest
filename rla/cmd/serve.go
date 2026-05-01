@@ -278,7 +278,7 @@ func doServe() {
 	ctx := context.Background()
 
 	if os.Getenv("REPORT_NICO_API_VERSION") != "" {
-		// Do some basic nico-api requests, mainly for early testing; this code can be removed when we're doing actual communication
+		// Do some basic nico-core-api requests, mainly for early testing; this code can be removed when we're doing actual communication
 		go func() {
 			client, err := nicoapi.NewClient(time.Minute)
 			if err != nil {
@@ -287,20 +287,20 @@ func doServe() {
 			for {
 				time.Sleep(time.Second * 10)
 				if version, err := client.Version(ctx); err != nil {
-					log.Error().Msgf("Unable to retrieve version from nico-api: %v", err)
+					log.Error().Msgf("Unable to retrieve version from nico-core-api: %v", err)
 					continue
 				} else {
-					log.Info().Msgf("nico-api version: %s", version)
+					log.Info().Msgf("nico-core-api version: %s", version)
 					break
 				}
 			}
 			for {
 				time.Sleep(time.Second * 10)
 				if machines, err := client.GetMachines(ctx); err != nil {
-					log.Error().Msgf("Unable to retrieve machines from nico-api: %v", err)
+					log.Error().Msgf("Unable to retrieve machines from nico-core-api: %v", err)
 					continue
 				} else {
-					log.Info().Msgf("nico-api machines: %v", machines)
+					log.Info().Msgf("nico-core-api machines: %v", machines)
 					break
 				}
 			}

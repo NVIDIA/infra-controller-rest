@@ -68,7 +68,7 @@ func NewAPIHandlers() {
 		Subnet:                 &subnet.API{},
 		Instance:               &instance.API{},
 		Machine:                &machine.API{},
-		NICo:                &nico.API{},
+		NICo:                   &nico.API{},
 		Bootstrap:              &bootstrap.BoostrapAPI{},
 		SSHKeyGroup:            &sshkeygroup.API{},
 		InfiniBandPartition:    &infinibandpartition.API{},
@@ -88,15 +88,15 @@ func NewAPIHandlers() {
 }
 
 // NewInstance - new instance with the parent datastruct
-func NewInstance(supernico *elektratypes.Elektra) (*Manager, error) {
+func NewInstance(superforge *elektratypes.Elektra) (*Manager, error) {
 	NewAPIHandlers()
 	ManagerAccess = &Manager{
 		Data: &managerapi.ManagerData{
-			EB: supernico,
+			EB: superforge,
 		},
 		API: &managerapi.ManagerHdl,
 		Conf: &managerapi.ManagerConf{
-			EB: supernico.Conf,
+			EB: superforge.Conf,
 		},
 	}
 	ManagerAccess.NewInstance()

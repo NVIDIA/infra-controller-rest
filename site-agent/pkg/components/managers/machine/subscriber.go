@@ -22,32 +22,30 @@ import (
 	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
 )
 
-// RegisterSubscriber registers the Machine workflows/activities with the Temporal client
+// RegisterSubscriber registers Machine CRUD workflows and activities with Temporal
 func (api *API) RegisterSubscriber() error {
-	// Register subscriber workflows
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Registering the subscribers")
-
-	machineManager := swa.NewManageMachine(ManagerAccess.Data.EB.Managers.NICo.Client)
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Registering CRUD workflows and activities")
 
 	// Register workflows
 
-	// Sync workflows
-	// Set Maintenance Mode workflow
+	// Register SetMachineMaintenance workflow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.SetMachineMaintenance)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Set Machine Maintenance workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered SetMachineMaintenance workflow")
 
+	// Register UpdateMachineMetadata workflow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateMachineMetadata)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Update Machine Metadata workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered UpdateMachineMetadata workflow")
 
 	// Register activities
+	machineManager := swa.NewManageMachine(ManagerAccess.Data.EB.Managers.NICo.Client)
 
-	// Sync workflow activities
-	// Register Machine activities
+	// Register SetMachineMaintenanceOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.SetMachineMaintenanceOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Set Machine Maintenance activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered SetMachineMaintenanceOnSite activity")
 
+	// Register UpdateMachineMetadataOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.UpdateMachineMetadataOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Update Machine Metadata activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered UpdateMachineMetadataOnSite activity")
 
 	return nil
 }

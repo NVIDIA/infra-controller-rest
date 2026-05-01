@@ -20,7 +20,7 @@ modules:
 lint:
   use:
     - STANDARD
-# Ignore the real nico-api stuff, which doesn't match the lint definitions at all
+# Ignore the real nico-core-api stuff, which doesn't match the lint definitions at all
   ignore:
     - nicoproto/common.proto
     - nicoproto/nico.proto

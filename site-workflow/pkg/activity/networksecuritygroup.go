@@ -37,7 +37,7 @@ import (
 
 // ManageNetworkSecurityGroup is an activity wrapper for NetworkSecurityGroup management tasks that allows injecting DB access
 type ManageNetworkSecurityGroup struct {
-	NICoAtomicClient *cClient.NICoAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // Function to Create NICo NetworkSecurityGroup with the Site Controller
@@ -64,7 +64,7 @@ func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -104,7 +104,7 @@ func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -144,7 +144,7 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoAtomicClient.GetClient()
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
 	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
@@ -162,9 +162,9 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 }
 
 // NewManageNetworkSecurityGroup returns a new ManageNetworkSecurityGroup activity
-func NewManageNetworkSecurityGroup(nicoClient *cClient.NICoAtomicClient) ManageNetworkSecurityGroup {
+func NewManageNetworkSecurityGroup(nicoClient *cClient.NICoCoreAtomicClient) ManageNetworkSecurityGroup {
 	return ManageNetworkSecurityGroup{
-		NICoAtomicClient: nicoClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -194,7 +194,7 @@ func NewManageNetworkSecurityGroupInventory(config ManageInventoryConfig) Manage
 	}
 }
 
-func networkSecurityGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoClient) ([]*cwssaws.UUID, error) {
+func networkSecurityGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, error) {
 	// Call Site Controller gRPC endpoint
 	rpcClient := nicoClient.NICo()
 	networkSecurityGroupIdList, err := rpcClient.FindNetworkSecurityGroupIds(ctx, &cwssaws.FindNetworkSecurityGroupIdsRequest{})
@@ -204,7 +204,7 @@ func networkSecurityGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoCl
 	return util.StringsToProtobufUUIDList(networkSecurityGroupIdList.GetNetworkSecurityGroupIds()), nil
 }
 
-func networkSecurityGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
+func networkSecurityGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
 	nsgIDs := make([]string, len(ids))
 
 	for i, id := range ids {
