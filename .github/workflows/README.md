@@ -89,8 +89,8 @@ target_registry="nvcr.io/dsx/your-team/nico"
 ```
 
 Replace `your-team` with appropriate NGC team name. Available options are:
-- *nico-dev*: For all development images
-- *nico*: Production promoted images
+- *carbide-dev*: For all development images
+- *carbide*: Production promoted images
 
 ### Customize Runner
 
@@ -178,13 +178,13 @@ docker login nvcr.io
 # Password: <your-ngc-api-key>
 
 # Pull by SHA (recommended for production)
-docker pull nvcr.io/dsx/your-team/nico/nico-rest-api:1.2.3-abc1234
+docker pull nvcr.io/dsx/your-team/nico-rest-api:1.2.3-abc1234
 
 # Pull by version
-docker pull nvcr.io/dsx/your-team/nico/nico-rest-api:v1.2.3
+docker pull nvcr.io/dsx/your-team/nico-rest-api:v1.2.3
 
 # Pull latest
-docker pull nvcr.io/dsx/your-team/nico/nico-rest-api:latest
+docker pull nvcr.io/dsx/your-team/nico-rest-api:latest
 ```
 
 ## Build Cache

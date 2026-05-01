@@ -96,7 +96,7 @@ jobs:
 
           # Set target registry - replace with your NVCR org/team
           # Format: nvcr.io/<org>/<project>
-          target_registry="nvcr.io/0837451325059433/nico-dev"
+          target_registry="nvcr.io/0837451325059433/carbide-dev"
 
           # Get branch name and sanitize it for use in image tags
           # Replace slashes and other invalid characters with dashes

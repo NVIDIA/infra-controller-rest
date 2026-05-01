@@ -184,7 +184,6 @@ type APIMachine struct {
 	// Status represents the status of the machine
 	Status string `json:"status"`
 	// IsUsableByTenant indicates whether the machine is usable by or currently in use by a tenant.
-	// See: https://jirasw.nvidia.com/browse/NICO-7530
 	IsUsableByTenant bool `json:"isUsableByTenant"`
 	// StatusHistory is the history of statuses for the Machine
 	StatusHistory []APIStatusDetail `json:"statusHistory"`

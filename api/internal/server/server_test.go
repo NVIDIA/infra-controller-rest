@@ -126,7 +126,8 @@ func Test_InitTemporalClients(t *testing.T) {
 
 func Test_InitMetricsServer(t *testing.T) {
 	type args struct {
-		e *echo.Echo
+		e   *echo.Echo
+		cfg *config.Config
 	}
 	tests := []struct {
 		name string
@@ -135,13 +136,14 @@ func Test_InitMetricsServer(t *testing.T) {
 		{
 			name: "test initMetricsServer success",
 			args: args{
-				e: echo.New(),
+				e:   echo.New(),
+				cfg: &config.Config{},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			InitMetricsServer(tt.args.e)
+			InitMetricsServer(tt.args.e, tt.args.cfg)
 		})
 	}
 }

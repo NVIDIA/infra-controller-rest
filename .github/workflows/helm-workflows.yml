@@ -147,5 +147,5 @@ jobs:
           app-version: ${{ inputs.app_version }}
           lint: 'false'
           ngc-key: ${{ secrets.NVCR_STG_TOKEN }}
-          ngc-path: 0837451325059433/nico-dev
+          ngc-path: 0837451325059433/carbide-dev
           ngc-duplicate: fail

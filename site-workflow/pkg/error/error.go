@@ -33,6 +33,12 @@ var (
 	ErrTypeNICoAlreadyExists      = "NICoAlreadyExists"
 	ErrTypeNICoFailedPrecondition = "NICoFailedPrecondition"
 	ErrTypeNICoInvalidArgument    = "NICoInvalidArgument"
+
+	// Legacy Carbide error type names. Retained so a newer REST can still
+	// recognise errors emitted by an older site-workflow version that has
+	// not yet been upgraded. Remove once the rollout window has closed.
+	ErrTypeCarbideUnimplemented = "CarbideUnimplemented"
+	ErrTypeCarbideDenied        = "CarbideDenied"
 )
 
 // WrapError accepts an error and checks if it

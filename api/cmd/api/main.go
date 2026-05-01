@@ -43,12 +43,10 @@ const (
 	ZerologLevelFieldName = "type"
 )
 
-// @title NVIDIA NICo Cloud API
+// @title NVIDIA NICo REST API
 // @version 1.0
-// @description NICo Cloud API allows you to manage datacenter resources from Cloud
+// @description NICo REST API allows you to manage datacenter resources from Cloud
 // @termsOfService https://ngc.nvidia.com/legal/terms
-
-// @contact.name NVIDIA NICo Cloud
 
 // @license.name Proprietary
 
@@ -107,7 +105,7 @@ func main() {
 	mconfig := cfg.GetMetricsConfig()
 	if mconfig.Enabled {
 		// Initialize Prometheus Echo instance
-		ep := capis.InitMetricsServer(e)
+		ep := capis.InitMetricsServer(e, cfg)
 
 		// Start Prometheus server
 		log.Info().Msg("starting Metrics server")

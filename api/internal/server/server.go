@@ -293,12 +293,12 @@ func InitAPIServer(cfg *config.Config, dbSession *cdb.Session, tc tsdkClient.Cli
 	return e
 }
 
-func InitMetricsServer(e *echo.Echo) *echo.Echo {
+func InitMetricsServer(e *echo.Echo, cfg *config.Config) *echo.Echo {
 	ep := echo.New()
 	ep.HideBanner = true
 
 	conf := echoPrometheus.MiddlewareConfig{
-		Subsystem: "nico_api",
+		Subsystem: fmt.Sprintf("%s_api", cfg.GetAPIName()),
 		Skipper:   api.MetricsURLSkipper,
 	}
 

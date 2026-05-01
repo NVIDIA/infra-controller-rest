@@ -427,7 +427,7 @@ func (cith CreateInstanceTypeHandler) Handle(c echo.Context) error {
 		// likely to respond with a PermissionDenied because the permission
 		// for the path isn't there either, but we can watch for both just to
 		// be safe.
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied) {
+		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
 			logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
 			// Reset error to nil because we'll want to ignore while
 			// NICo is being rolled out.
@@ -1438,7 +1438,7 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
-			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied {
+			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied {
 				// NICo _could_ respond with an unimplemented if it's an
 				// older NICo that doesn't have the endpoint yet, but it's more
 				// likely to respond with a PermissionDenied because the permission
@@ -1697,7 +1697,7 @@ func (dith DeleteInstanceTypeHandler) Handle(c echo.Context) error {
 				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
-			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied {
+			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied {
 				// NICo _could_ respond with an unimplemented if it's an
 				// older NICo that doesn't have the endpoint yet, but it's more
 				// likely to respond with a PermissionDenied because the permission
