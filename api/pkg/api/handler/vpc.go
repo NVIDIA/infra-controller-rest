@@ -1017,8 +1017,8 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Failed to parse request data, potentially invalid structure", nil)
 	}
 
-	// Check that VPC exists
-	vpc, err := common.GetVpcFromIDString(ctx, nil, vpcStrID, nil, uvvh.dbSession)
+	// Check that VPC exists (load Site for status and native networking / FNN eligibility checks)
+	vpc, err := common.GetVpcFromIDString(ctx, nil, vpcStrID, []string{cdbm.SiteRelationName}, uvvh.dbSession)
 	if err != nil {
 		// Check if it's a UUID parsing error (happens before DB call)
 		if err == common.ErrInvalidID {
@@ -1055,6 +1055,36 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "VPC does not belong to current Tenant", nil)
 	}
 
+	// Ensure that Tenant has access to Site
+	tsDAO := cdbm.NewTenantSiteDAO(uvvh.dbSession)
+	_, err = tsDAO.GetByTenantIDAndSiteID(ctx, nil, tenant.ID, vpc.SiteID, nil)
+	if err != nil {
+		if err == cdb.ErrDoesNotExist {
+			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant does not have access to Site, VPC cannot be updated", nil)
+		}
+
+		logger.Error().Err(err).Msg("error retrieving Tenant Site association")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to determine Tenant/Site association, DB error", nil)
+	}
+
+	// Verify that the VPC Site is in a valid state
+	if vpc.Site.Status != cdbm.SiteStatusRegistered {
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Site that VPC belongs to must be in Registered state in order to update virtualization type", nil)
+	}
+
+	// Get site config
+	siteConfig := &cdbm.SiteConfig{}
+	if vpc.Site.Config != nil {
+		siteConfig = vpc.Site.Config
+	}
+
+	// Verify if site has been enabled for FNN type
+	// No need to check for FNN type, as the request validator guarantees that
+	if !siteConfig.NativeNetworking {
+		logger.Warn().Msg(fmt.Sprintf("Site: %v that VPC belongs to does not have native networking enabled, unable to update virtualization type to FNN", vpc.SiteID))
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Site that VPC belongs to does not have native networking enabled, unable to update virtualization type to FNN", nil)
+	}
+
 	subnetDAO := cdbm.NewSubnetDAO(uvvh.dbSession)
 	_, subnetCount, err := subnetDAO.GetAll(ctx, nil, cdbm.SubnetFilterInput{VpcIDs: []uuid.UUID{vpc.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(0)}, nil)
 	if err != nil {
@@ -1075,18 +1105,6 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 
 	if instanceCount > 0 {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Virtualization Type cannot be changed while VPC contains one or more Instances", nil)
-	}
-
-	// Ensure that Tenant has access to Site
-	tsDAO := cdbm.NewTenantSiteDAO(uvvh.dbSession)
-	_, err = tsDAO.GetByTenantIDAndSiteID(ctx, nil, tenant.ID, vpc.SiteID, nil)
-	if err != nil {
-		if err == cdb.ErrDoesNotExist {
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant does not have access to Site, VPC cannot be updated", nil)
-		}
-
-		logger.Error().Err(err).Msg("error retrieving Tenant Site association")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Tenant Site association", nil)
 	}
 
 	// Start a database transaction

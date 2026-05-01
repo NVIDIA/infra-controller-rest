@@ -1599,14 +1599,15 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 	tnu := testVPCBuildUser(t, dbSession, "test-starfleet-id-2", tnOrg, tnOrgRoles)
 	tn := testVPCBuildTenant(t, dbSession, "test-tenant", tnOrg, tnu)
 
-	st := testVPCBuildSite(t, dbSession, ip, "test-site-1", false, true, cdbm.SiteStatusRegistered, ipu)
+	// Native networking must be enabled on Site for FNN virtualization updates once VPC loads Site relation.
+	st := testVPCBuildSite(t, dbSession, ip, "test-site-1", true, true, cdbm.SiteStatusRegistered, ipu)
 	assert.NotNil(t, st)
 
 	ts1 := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st.ID, tnu.ID)
 	assert.NotNil(t, ts1)
 
 	// Site with no allocations
-	st2 := testVPCBuildSite(t, dbSession, ip, "test-site-2", false, false, cdbm.SiteStatusRegistered, ipu)
+	st2 := testVPCBuildSite(t, dbSession, ip, "test-site-2", true, false, cdbm.SiteStatusRegistered, ipu)
 	assert.NotNil(t, st2)
 
 	ts2 := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st2.ID, tnu.ID)
@@ -1645,6 +1646,25 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 	allocationConstraint := testInstanceSiteBuildAllocationContraints(t, dbSession, al, cdbm.AllocationResourceTypeInstanceType, instanceType.ID, cdbm.AllocationConstraintTypeReserved, 1, tnu)
 	assert.NotNil(t, allocationConstraint)
 	assert.NotNil(t, testInstanceBuildInstance(t, dbSession, "test-instance", tn.ID, ip.ID, st.ID, &instanceType.ID, vpcWithInstance.ID, nil, nil, nil, cdbm.InstanceStatusReady))
+
+	// Site not Registered — native networking enabled so failure is due to status, not FNN config
+	stPending := testVPCBuildSite(t, dbSession, ip, "test-site-pending-reg", true, true, cdbm.SiteStatusPending, ipu)
+	assert.NotNil(t, stPending)
+	tsPending := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, stPending.ID, tnu.ID)
+	assert.NotNil(t, tsPending)
+	_ = testVPCSiteBuildAllocation(t, dbSession, stPending, tn, "test-allocation-pending-site", ipu)
+	vpcPendingSite := testVPCBuildVPC(t, dbSession, "test-vpc-pending-site", ip, tn, stPending, cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), nil, map[string]string{"zone": "west-pending"}, cdbm.VpcStatusReady, tnu)
+	assert.NotNil(t, vpcPendingSite)
+
+	// Registered site without native networking (FNN not enabled at site) — eligible otherwise (no subnets / instances)
+	stNoNativeNet := testVPCBuildSite(t, dbSession, ip, "test-site-no-native-net", false, true, cdbm.SiteStatusRegistered, ipu)
+	assert.NotNil(t, stNoNativeNet)
+	tsNoNative := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, stNoNativeNet.ID, tnu.ID)
+	assert.NotNil(t, tsNoNative)
+	alNoNative := testVPCSiteBuildAllocation(t, dbSession, stNoNativeNet, tn, "test-allocation-no-native", ipu)
+	assert.NotNil(t, alNoNative)
+	vpcNoNativeNet := testVPCBuildVPC(t, dbSession, "test-vpc-no-native-net", ip, tn, stNoNativeNet, cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), nil, map[string]string{"zone": "west-nonative"}, cdbm.VpcStatusReady, tnu)
+	assert.NotNil(t, vpcNoNativeNet)
 
 	e := echo.New()
 	cfg := common.GetTestConfig()
@@ -1833,6 +1853,48 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 				reqUser:     tnu,
 				respCode:    http.StatusBadRequest,
 				respMessage: "Virtualization Type cannot be changed while VPC contains one or more Instances",
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
+		{
+			name: "test VPC virtualization update API endpoint fail when Site is not Registered",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIVpcVirtualizationUpdateRequest{
+					NetworkVirtualizationType: "FNN",
+				},
+				reqOrg:      tnOrg,
+				reqVPCID:    vpcPendingSite.ID.String(),
+				reqVPC:      vpcPendingSite,
+				reqUser:     tnu,
+				respCode:    http.StatusBadRequest,
+				respMessage: "Site that VPC belongs to must be in Registered state in order to update virtualization type",
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
+		{
+			name: "test VPC virtualization update API endpoint fail when Site does not have native networking enabled for FNN",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIVpcVirtualizationUpdateRequest{
+					NetworkVirtualizationType: "FNN",
+				},
+				reqOrg:      tnOrg,
+				reqVPCID:    vpcNoNativeNet.ID.String(),
+				reqVPC:      vpcNoNativeNet,
+				reqUser:     tnu,
+				respCode:    http.StatusBadRequest,
+				respMessage: "Site that VPC belongs to does not have native networking enabled, unable to update virtualization type to FNN",
 			},
 			wantErr:            false,
 			verifyChildSpanner: true,
