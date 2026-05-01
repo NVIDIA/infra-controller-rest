@@ -1502,7 +1502,7 @@ func TestUpdateVPCHandler_Handle(t *testing.T) {
 				reqVPC:      vpc3,
 				reqUser:     tnu,
 				respCode:    http.StatusInternalServerError,
-				respMessage: "Failed to update VPC, timeout occurred executing workflow on Site: Test timeout",
+				respMessage: "Failed to perform VPC Update - timeout occurred executing workflow on Site",
 			},
 			wantErr:            false,
 			verifyChildSpanner: true,

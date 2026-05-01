@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -313,180 +312,169 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		labels = apiRequest.Labels
 	}
 
-	// Start a database transaction
-	tx, err := cdb.BeginTx(ctx, cvh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating vpc", nil)
-	}
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Create VPC
-	vpcInput := cdbm.VpcCreateInput{
-		ID:                        apiRequest.ID,
-		Name:                      apiRequest.Name,
-		Description:               apiRequest.Description,
-		Org:                       org,
-		InfrastructureProviderID:  site.InfrastructureProviderID,
-		NetworkSecurityGroupID:    apiRequest.NetworkSecurityGroupID,
-		TenantID:                  tenant.ID,
-		SiteID:                    site.ID,
-		NetworkVirtualizationType: networkVirtualizationType,
-		RoutingProfile:            routingProfile,
-		NVLinkLogicalPartitionID:  defaultNvllPartitionId,
-		Labels:                    labels,
-		Status:                    cdbm.VpcStatusProvisioning,
-		CreatedBy:                 *dbUser,
-		Vni:                       apiRequest.Vni,
-	}
-
-	vpc, err := vpcDAO.Create(ctx, tx, vpcInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating VPC DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed creating new VPC record, DB error", nil)
-	}
-
-	// Update the controller ID
-	// We need this to match the VPC ID.  This was previously handled
-	// by the async cloud workflow after successful creation on site.
-	uvpcInput := cdbm.VpcUpdateInput{
-		VpcID:           vpc.ID,
-		ControllerVpcID: cdb.GetUUIDPtr(vpc.ID),
-	}
-	vpc, err = vpcDAO.Update(ctx, tx, uvpcInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating VPC DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed updating new VPC record, DB error", nil)
-	}
-
-	// Create status detail
 	sdDAO := cdbm.NewStatusDetailDAO(cvh.dbSession)
-	ssd, err := sdDAO.CreateFromParams(ctx, tx, vpc.ID.String(), cdbm.VpcStatusProvisioning,
-		cdb.GetStrPtr("VPC provisioning has been initiated on Site"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for VPC", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for VPC", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := cvh.scp.GetClientByID(vpc.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	// Get network virtulization type
-	nwvt := cwssaws.VpcVirtualizationType_ETHERNET_VIRTUALIZER
-	if *vpc.NetworkVirtualizationType == cwssaws.VpcVirtualizationType_FNN.String() {
-		nwvt = cwssaws.VpcVirtualizationType_FNN
-	}
-
-	vni, err := wutil.GetIntPtrToUint32Ptr(apiRequest.Vni)
-	// We already validate the VNI value in the model validate call, so no err
-	// is ever expected by this point, but we still need to handle it.
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to convert vni to uint32 pointer after validated passed")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "VNI value conversion failed despite passed validation", nil)
-	}
-
-	createVpcRequest := &cwssaws.VpcCreationRequest{
-		Id:                        &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
-		Name:                      vpc.Name,
-		TenantOrganizationId:      tenant.Org,
-		NetworkVirtualizationType: &nwvt,
-		RoutingProfileType:        routingProfile,
-		NetworkSecurityGroupId:    vpc.NetworkSecurityGroupID,
-		Vni:                       vni,
-	}
-
-	// Add default NVLinkLogicalPartition ID if it is present
-	if vpc.NVLinkLogicalPartitionID != nil {
-		createVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "vpc-create-" + vpc.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	// Vpc metadata info
-	metadata := &cwssaws.Metadata{
-		Name:        vpc.Name,
-		Description: "",
-	}
-
-	// Include descripotion if it is present
-	if vpc.Description != nil {
-		metadata.Description = *vpc.Description
-	}
-
-	metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
-	createVpcRequest.Metadata = metadata
-
-	logger.Info().Msg("triggering VPC create workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateVPCV2", createVpcRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create VPC on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create VPC workflow")
-
-	// Block until the workflow has completed and returned success/error.
+	var vpc *cdbm.Vpc
+	var ssd *cdbm.StatusDetail
 	controllerVpc := &cwssaws.Vpc{}
 
-	err = we.Get(ctx, controllerVpc)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-			logger.Error().Err(err).Msg("failed to create VPC, timeout occurred executing workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing create VPC workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for creating VPC")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous VPC creation workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
-			}
-
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous create VPC workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to create VPC, timeout occurred executing workflow on Site: %s", err), nil)
+	err = cdb.WithTx(ctx, cvh.dbSession, func(tx *cdb.Tx) error {
+		// Create VPC
+		vpcInput := cdbm.VpcCreateInput{
+			ID:                        apiRequest.ID,
+			Name:                      apiRequest.Name,
+			Description:               apiRequest.Description,
+			Org:                       org,
+			InfrastructureProviderID:  site.InfrastructureProviderID,
+			NetworkSecurityGroupID:    apiRequest.NetworkSecurityGroupID,
+			TenantID:                  tenant.ID,
+			SiteID:                    site.ID,
+			NetworkVirtualizationType: networkVirtualizationType,
+			RoutingProfile:            routingProfile,
+			NVLinkLogicalPartitionID:  defaultNvllPartitionId,
+			Labels:                    labels,
+			Status:                    cdbm.VpcStatusProvisioning,
+			CreatedBy:                 *dbUser,
+			Vni:                       apiRequest.Vni,
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to create VPC")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to create VPC on Site: %s", err), nil)
+		createdVpc, derr := vpcDAO.Create(ctx, tx, vpcInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating VPC DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed creating new VPC record, DB error", nil)
+		}
+
+		// Update the controller ID
+		// We need this to match the VPC ID.  This was previously handled
+		// by the async cloud workflow after successful creation on site.
+		uvpcInput := cdbm.VpcUpdateInput{
+			VpcID:           createdVpc.ID,
+			ControllerVpcID: cdb.GetUUIDPtr(createdVpc.ID),
+		}
+		updatedVpc, derr := vpcDAO.Update(ctx, tx, uvpcInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating VPC DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed updating new VPC record, DB error", nil)
+		}
+		vpc = updatedVpc
+
+		// Create status detail
+		createdSsd, derr := sdDAO.CreateFromParams(ctx, tx, vpc.ID.String(), cdbm.VpcStatusProvisioning,
+			cdb.GetStrPtr("VPC provisioning has been initiated on Site"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for VPC", nil)
+		}
+		if createdSsd == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for VPC", nil)
+		}
+		ssd = createdSsd
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := cvh.scp.GetClientByID(vpc.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		// Get network virtulization type
+		nwvt := cwssaws.VpcVirtualizationType_ETHERNET_VIRTUALIZER
+		if *vpc.NetworkVirtualizationType == cwssaws.VpcVirtualizationType_FNN.String() {
+			nwvt = cwssaws.VpcVirtualizationType_FNN
+		}
+
+		vni, derr := wutil.GetIntPtrToUint32Ptr(apiRequest.Vni)
+		// We already validate the VNI value in the model validate call, so no err
+		// is ever expected by this point, but we still need to handle it.
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to convert vni to uint32 pointer after validated passed")
+			return cutil.NewAPIError(http.StatusInternalServerError, "VNI value conversion failed despite passed validation", nil)
+		}
+
+		createVpcRequest := &cwssaws.VpcCreationRequest{
+			Id:                        &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+			Name:                      vpc.Name,
+			TenantOrganizationId:      tenant.Org,
+			NetworkVirtualizationType: &nwvt,
+			RoutingProfileType:        routingProfile,
+			NetworkSecurityGroupId:    vpc.NetworkSecurityGroupID,
+			Vni:                       vni,
+		}
+
+		// Add default NVLinkLogicalPartition ID if it is present
+		if vpc.NVLinkLogicalPartitionID != nil {
+			createVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "vpc-create-" + vpc.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		// Vpc metadata info
+		metadata := &cwssaws.Metadata{
+			Name:        vpc.Name,
+			Description: "",
+		}
+
+		// Include descripotion if it is present
+		if vpc.Description != nil {
+			metadata.Description = *vpc.Description
+		}
+
+		metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
+		createVpcRequest.Metadata = metadata
+
+		logger.Info().Msg("triggering VPC create workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "CreateVPCV2", createVpcRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to create VPC")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create VPC on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create VPC workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, controllerVpc)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to create VPC, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPC", "Create")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC create workflow timed out", nil)
+			}
+
+			code, unwrapped := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to create VPC")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to create VPC on Site: %s", unwrapped), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create VPC workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create VPC workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create VPC, DB transaction error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create VPC due to DB transaction error")
 	}
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	statusDetails := []cdbm.StatusDetail{*ssd}
 
@@ -778,174 +766,163 @@ func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// Start a database transaction
-	tx, err := cdb.BeginTx(ctx, uvh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating vpc", nil)
-	}
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update VPC
-	uvpcInput := cdbm.VpcUpdateInput{
-		VpcID:                  vpc.ID,
-		Name:                   apiRequest.Name,
-		Description:            apiRequest.Description,
-		Labels:                 labels,
-		NetworkSecurityGroupID: nsgID,
-	}
-
-	if defaultNvllPartitionId != nil {
-		uvpcInput.NVLinkLogicalPartitionID = defaultNvllPartitionId
-	}
-
-	vpc, err = vpcDAO.Update(ctx, tx, uvpcInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC", nil)
-	}
-
-	clearInput := cdbm.VpcClearInput{VpcID: vpc.ID}
-	shouldClear := false
-	// If this request is attempting to clear the OS for the instance, set it.
-	if apiRequest.NetworkSecurityGroupID != nil && *apiRequest.NetworkSecurityGroupID == "" {
-		clearInput.NetworkSecurityGroupID = true
-		shouldClear = true
-	}
-
-	// If this request is attempting to clear NSG for the VPC, set it.
-	if apiRequest.NetworkSecurityGroupID != nil {
-		if *apiRequest.NetworkSecurityGroupID == "" {
-			clearInput.NetworkSecurityGroupID = true
-		}
-
-		// We should always clear details for any NSG change so that users don't see stale
-		// status.
-		clearInput.NetworkSecurityGroupPropagationDetails = true
-		shouldClear = true
-	}
-
-	// If this request is attempting to clear the NVLink Logical Partition ID, set it.
-	if apiRequest.NVLinkLogicalPartitionID != nil && *apiRequest.NVLinkLogicalPartitionID == "" {
-		clearInput.NVLinkLogicalPartitionID = true
-		shouldClear = true
-	}
-
-	// Clear it in the db if something should be cleared.
-	if shouldClear {
-		vpc, err = vpcDAO.Clear(ctx, tx, clearInput)
-		if err != nil {
-			logger.Error().Err(err).Msg("error clearing requested VPC properties")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to clear requested VPC properties", nil)
-		}
-	}
-
-	// Get status details
 	sdDAO := cdbm.NewStatusDetailDAO(uvh.dbSession)
+	var ssds []cdbm.StatusDetail
 
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, vpc.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for VPC from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for VPC", nil)
-	}
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-	// Get the temporal client for the site we are working with.
-	stc, err := uvh.scp.GetClientByID(vpc.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	updateVpcRequest := &cwssaws.VpcUpdateRequest{
-		Id:                     &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
-		NetworkSecurityGroupId: vpc.NetworkSecurityGroupID,
-	}
-
-	// Propagate the NVLink Logical Partition ID change to the site controller
-	if apiRequest.NVLinkLogicalPartitionID != nil {
-		if *apiRequest.NVLinkLogicalPartitionID != "" {
-			updateVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
-		} else {
-			updateVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: ""}
+	err = cdb.WithTx(ctx, uvh.dbSession, func(tx *cdb.Tx) error {
+		// Update VPC
+		uvpcInput := cdbm.VpcUpdateInput{
+			VpcID:                  vpc.ID,
+			Name:                   apiRequest.Name,
+			Description:            apiRequest.Description,
+			Labels:                 labels,
+			NetworkSecurityGroupID: nsgID,
 		}
-	}
 
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "vpc-update-" + vpc.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
+		if defaultNvllPartitionId != nil {
+			uvpcInput.NVLinkLogicalPartitionID = defaultNvllPartitionId
+		}
 
-	// Vpc metadata info
-	metadata := &cwssaws.Metadata{
-		Name:        vpc.Name,
-		Description: "",
-	}
+		updatedVpc, derr := vpcDAO.Update(ctx, tx, uvpcInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating VPC")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update VPC", nil)
+		}
+		vpc = updatedVpc
 
-	// Include description
-	if vpc.Description != nil {
-		metadata.Description = *vpc.Description
-	}
+		clearInput := cdbm.VpcClearInput{VpcID: vpc.ID}
+		shouldClear := false
+		// If this request is attempting to clear the OS for the instance, set it.
+		if apiRequest.NetworkSecurityGroupID != nil && *apiRequest.NetworkSecurityGroupID == "" {
+			clearInput.NetworkSecurityGroupID = true
+			shouldClear = true
+		}
 
-	metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
-	updateVpcRequest.Metadata = metadata
-
-	logger.Info().Msg("triggering VPC update workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpdateVPC", updateVpcRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update VPC on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update VPC workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || ctx.Err() != nil {
-
-			logger.Error().Err(err).Msg("failed to update VPC, timeout occurred executing workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing update VPC workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for updating VPC")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous VPC updating workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		// If this request is attempting to clear NSG for the VPC, set it.
+		if apiRequest.NetworkSecurityGroupID != nil {
+			if *apiRequest.NetworkSecurityGroupID == "" {
+				clearInput.NetworkSecurityGroupID = true
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous update VPC workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to update VPC, timeout occurred executing workflow on Site: %s", err), nil)
+			// We should always clear details for any NSG change so that users don't see stale
+			// status.
+			clearInput.NetworkSecurityGroupPropagationDetails = true
+			shouldClear = true
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update VPC")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update VPC on Site: %s", err), nil)
+		// If this request is attempting to clear the NVLink Logical Partition ID, set it.
+		if apiRequest.NVLinkLogicalPartitionID != nil && *apiRequest.NVLinkLogicalPartitionID == "" {
+			clearInput.NVLinkLogicalPartitionID = true
+			shouldClear = true
+		}
+
+		// Clear it in the db if something should be cleared.
+		if shouldClear {
+			clearedVpc, derr := vpcDAO.Clear(ctx, tx, clearInput)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error clearing requested VPC properties")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to clear requested VPC properties", nil)
+			}
+			vpc = clearedVpc
+		}
+
+		// Get status details
+		fetchedSsds, _, derr := sdDAO.GetAllByEntityID(ctx, tx, vpc.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Status Details for VPC from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Status Details for VPC", nil)
+		}
+		ssds = fetchedSsds
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := uvh.scp.GetClientByID(vpc.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		updateVpcRequest := &cwssaws.VpcUpdateRequest{
+			Id:                     &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+			NetworkSecurityGroupId: vpc.NetworkSecurityGroupID,
+		}
+
+		// Propagate the NVLink Logical Partition ID change to the site controller
+		if apiRequest.NVLinkLogicalPartitionID != nil {
+			if *apiRequest.NVLinkLogicalPartitionID != "" {
+				updateVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
+			} else {
+				updateVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: ""}
+			}
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "vpc-update-" + vpc.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		// Vpc metadata info
+		metadata := &cwssaws.Metadata{
+			Name:        vpc.Name,
+			Description: "",
+		}
+
+		// Include description
+		if vpc.Description != nil {
+			metadata.Description = *vpc.Description
+		}
+
+		metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
+		updateVpcRequest.Metadata = metadata
+
+		logger.Info().Msg("triggering VPC update workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "UpdateVPC", updateVpcRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to update VPC")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update VPC on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update VPC workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to update VPC, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPC", "Update")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC update workflow timed out", nil)
+			}
+
+			code, unwrapped := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to update VPC")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update VPC on Site: %s", unwrapped), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update VPC due to DB transaction error")
 	}
-	txCommitted = true
 
 	// Create response
 	apiVpc := model.NewAPIVpc(*vpc, ssds)
@@ -1119,95 +1096,95 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Virtualization Type cannot be changed while VPC contains one or more Instances", nil)
 	}
 
-	// Start a database transaction
-	tx, err := cdb.BeginTx(ctx, uvvh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating vpc", nil)
-	}
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update VPC
 	vpcDAO := cdbm.NewVpcDAO(uvvh.dbSession)
-	uvpcInput := cdbm.VpcUpdateInput{
-		VpcID:                     vpc.ID,
-		NetworkVirtualizationType: &apiRequest.NetworkVirtualizationType,
-	}
-	uv, err := vpcDAO.Update(ctx, tx, uvpcInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC virtualization, DB error", nil)
-	}
-
-	// Get status details
 	sdDAO := cdbm.NewStatusDetailDAO(uvvh.dbSession)
 
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, uv.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for VPC from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve status history for VPC", nil)
-	}
+	var uv *cdbm.Vpc
+	var ssds []cdbm.StatusDetail
+	var timeoutResp func() error
 
-	// Get the temporal client for the site we are working with.
-	stc, err := uvvh.scp.GetClientByID(vpc.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	// VPC virtualization type can only be updated to FNN, the request validator guarantees that
-	siteVirtualizationType := cwssaws.VpcVirtualizationType_FNN
-	siteRequest := &cwssaws.VpcUpdateVirtualizationRequest{
-		Id:                        &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
-		NetworkVirtualizationType: &siteVirtualizationType,
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "vpc-update-virtualzation-" + uv.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering VPC virtualization update workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpdateVPCVirtualization", siteRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update VPC virtualization")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update VPC on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update VPC virtualization workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || errors.Is(err, context.DeadlineExceeded) || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "VPC", "UpdateVirtualization")
+	err = cdb.WithTx(ctx, uvvh.dbSession, func(tx *cdb.Tx) error {
+		// Update VPC
+		uvpcInput := cdbm.VpcUpdateInput{
+			VpcID:                     vpc.ID,
+			NetworkVirtualizationType: &apiRequest.NetworkVirtualizationType,
 		}
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update VPC virtualization")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update VPC virtualization on Site: %s", err), nil)
+		updatedVpc, derr := vpcDAO.Update(ctx, tx, uvpcInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating VPC")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update VPC virtualization, DB error", nil)
+		}
+		uv = updatedVpc
+
+		// Get status details
+		fetchedSsds, _, derr := sdDAO.GetAllByEntityID(ctx, tx, uv.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Status Details for VPC from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve status history for VPC", nil)
+		}
+		ssds = fetchedSsds
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := uvvh.scp.GetClientByID(vpc.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		// VPC virtualization type can only be updated to FNN, the request validator guarantees that
+		siteVirtualizationType := cwssaws.VpcVirtualizationType_FNN
+		siteRequest := &cwssaws.VpcUpdateVirtualizationRequest{
+			Id:                        &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+			NetworkVirtualizationType: &siteVirtualizationType,
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "vpc-update-virtualzation-" + uv.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering VPC virtualization update workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "UpdateVPCVirtualization", siteRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to update VPC virtualization")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update VPC on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update VPC virtualization workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, nil)
+
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || errors.Is(wferr, context.DeadlineExceeded) || wfCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPC", "UpdateVirtualization")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC virtualization update workflow timed out", nil)
+			}
+			code, unwrapped := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to update VPC virtualization")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update VPC virtualization on Site: %s", unwrapped), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update VPC virtualization due to DB transaction error")
 	}
-	txCommitted = true
 
 	// Create response
 	apiVpc := model.NewAPIVpc(*uv, ssds)
@@ -1790,118 +1767,101 @@ func (dvh DeleteVPCHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Cannot delete VPC, one or more instances for this VPC", nil)
 	}
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, dvh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC", nil)
-	}
-
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update VPC to set status to Deleting
-	uvpcInput := cdbm.VpcUpdateInput{
-		VpcID:  vpc.ID,
-		Status: cdb.GetStrPtr(cdbm.VpcStatusDeleting),
-	}
-	_, err = vpcDAO.Update(ctx, tx, uvpcInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating VPC in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC", nil)
-	}
-
-	// Create status detail
 	sdDAO := cdbm.NewStatusDetailDAO(dvh.dbSession)
-	_, err = sdDAO.CreateFromParams(ctx, tx, vpc.ID.String(), *cdb.GetStrPtr(cdbm.VpcStatusDeleting),
-		cdb.GetStrPtr("received request for deletion, pending processing"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dvh.scp.GetClientByID(vpc.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-	deleteVpcRequest := &cwssaws.VpcDeletionRequest{
-		Id: &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "vpc-delete-" + vpc.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering VPC delete workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteVPCV2", deleteVpcRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to delete VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete VPC on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete VPC workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-			// Reset error to nil
-			err = nil
+	err = cdb.WithTx(ctx, dvh.dbSession, func(tx *cdb.Tx) error {
+		// Update VPC to set status to Deleting
+		uvpcInput := cdbm.VpcUpdateInput{
+			VpcID:  vpc.ID,
+			Status: cdb.GetStrPtr(cdbm.VpcStatusDeleting),
 		}
-	}
+		if _, derr := vpcDAO.Update(ctx, tx, uvpcInput); derr != nil {
+			logger.Error().Err(derr).Msg("error updating VPC in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete VPC", nil)
+		}
 
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
+		// Create status detail (best-effort: original code only logs on error)
+		if _, derr := sdDAO.CreateFromParams(ctx, tx, vpc.ID.String(), *cdb.GetStrPtr(cdbm.VpcStatusDeleting),
+			cdb.GetStrPtr("received request for deletion, pending processing")); derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+		}
 
-			logger.Error().Err(err).Msg("failed to delete VPC, timeout occurred executing workflow on Site.")
+		// Get the temporal client for the site we are working with.
+		stc, derr := dvh.scp.GetClientByID(vpc.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
 
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
+		deleteVpcRequest := &cwssaws.VpcDeletionRequest{
+			Id: &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+		}
 
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing delete VPC workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for creating VPC")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous VPC deletion workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "vpc-delete-" + vpc.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering VPC delete workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "DeleteVPCV2", deleteVpcRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to delete VPC")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete VPC on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete VPC workflow")
+
+		// Execute the workflow synchronously
+		wferr = we.Get(wfCtx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+				// Reset error to nil
+				wferr = nil
+			}
+		}
+
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to delete VPC, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPC", "Delete")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC delete workflow timed out", nil)
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous delete VPC workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to delete VPC, timeout occurred executing workflow on Site: %s", err), nil)
+			code, unwrapped := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to delete VPC")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to delete VPC on Site: %s", unwrapped), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to delete VPC")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to delete VPC on Site: %s", err), nil)
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete VPC workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete VPC workflow")
-
-	// Commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete VPC due to DB transaction error")
 	}
-	txCommitted = true
 
 	// Return response
 	logger.Info().Msg("finishing API handler")
