@@ -30,6 +30,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
@@ -40,7 +41,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/uptrace/bun/extra/bundebug"
 	tmocks "go.temporal.io/sdk/mocks"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // testExpectedMachineInitDB initializes a test database session

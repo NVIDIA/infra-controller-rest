@@ -42,7 +42,7 @@ func TestManageExpectedPowerShelfInventory_DiscoverExpectedPowerShelfInventory(t
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -59,7 +59,7 @@ func TestManageExpectedPowerShelfInventory_DiscoverExpectedPowerShelfInventory(t
 			name: "test collecting and publishing expected power shelf inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -72,7 +72,7 @@ func TestManageExpectedPowerShelfInventory_DiscoverExpectedPowerShelfInventory(t
 			name: "test collecting and publishing expected power shelf inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,

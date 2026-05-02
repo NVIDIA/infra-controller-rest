@@ -42,7 +42,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -59,7 +59,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 			name: "test collecting and publishing expected switch inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -72,7 +72,7 @@ func TestManageExpectedSwitchInventory_DiscoverExpectedSwitchInventory(t *testin
 			name: "test collecting and publishing expected switch inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,

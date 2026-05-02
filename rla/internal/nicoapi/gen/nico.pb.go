@@ -153,17 +153,17 @@ func (MachineIngestionState) EnumDescriptor() ([]byte, []int) {
 type CredentialType int32
 
 const (
-	CredentialType_HostBMC                   CredentialType = 0
-	CredentialType_DPUBMC                    CredentialType = 1
-	CredentialType_UFM                       CredentialType = 2
-	CredentialType_DpuUefi                   CredentialType = 3
-	CredentialType_HostUefi                  CredentialType = 4
-	CredentialType_HostBMCFactoryDefault     CredentialType = 5
-	CredentialType_DpuBMCFactoryDefault      CredentialType = 6
-	CredentialType_SiteWideBmcRoot           CredentialType = 7
-	CredentialType_RootBmcByMacAddress       CredentialType = 8
+	CredentialType_HostBMC                  CredentialType = 0
+	CredentialType_DPUBMC                   CredentialType = 1
+	CredentialType_UFM                      CredentialType = 2
+	CredentialType_DpuUefi                  CredentialType = 3
+	CredentialType_HostUefi                 CredentialType = 4
+	CredentialType_HostBMCFactoryDefault    CredentialType = 5
+	CredentialType_DpuBMCFactoryDefault     CredentialType = 6
+	CredentialType_SiteWideBmcRoot          CredentialType = 7
+	CredentialType_RootBmcByMacAddress      CredentialType = 8
 	CredentialType_BmcNICoAdminByMacAddress CredentialType = 9
-	CredentialType_NmxM                      CredentialType = 10
+	CredentialType_NmxM                     CredentialType = 10
 )
 
 // Enum value maps for CredentialType.
@@ -182,17 +182,17 @@ var (
 		10: "NmxM",
 	}
 	CredentialType_value = map[string]int32{
-		"HostBMC":                   0,
-		"DPUBMC":                    1,
-		"UFM":                       2,
-		"DpuUefi":                   3,
-		"HostUefi":                  4,
-		"HostBMCFactoryDefault":     5,
-		"DpuBMCFactoryDefault":      6,
-		"SiteWideBmcRoot":           7,
-		"RootBmcByMacAddress":       8,
+		"HostBMC":                  0,
+		"DPUBMC":                   1,
+		"UFM":                      2,
+		"DpuUefi":                  3,
+		"HostUefi":                 4,
+		"HostBMCFactoryDefault":    5,
+		"DpuBMCFactoryDefault":     6,
+		"SiteWideBmcRoot":          7,
+		"RootBmcByMacAddress":      8,
 		"BmcNICoAdminByMacAddress": 9,
-		"NmxM":                      10,
+		"NmxM":                     10,
 	}
 )
 
@@ -15611,8 +15611,8 @@ func (x *InstancePhoneHomeLastContactResponse) GetTimestamp() *timestamppb.Times
 type Issue struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Category      IssueCategory          `protobuf:"varint,1,opt,name=category,proto3,enum=nico.IssueCategory" json:"category,omitempty"` // Category of issue
-	Summary       string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`                             // User-friendly summary of the issue
-	Details       string                 `protobuf:"bytes,3,opt,name=details,proto3" json:"details,omitempty"`                             // Additional context about the issue
+	Summary       string                 `protobuf:"bytes,2,opt,name=summary,proto3" json:"summary,omitempty"`                            // User-friendly summary of the issue
+	Details       string                 `protobuf:"bytes,3,opt,name=details,proto3" json:"details,omitempty"`                            // Additional context about the issue
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -22979,8 +22979,8 @@ func (x *NICoAgentControlRequest) GetMachineId() *MachineId {
 }
 
 type NICoAgentControlResponse struct {
-	state         protoimpl.MessageState                                `protogen:"open.v1"`
-	Action        NICoAgentControlResponse_Action                      `protobuf:"varint,1,opt,name=action,proto3,enum=nico.NICoAgentControlResponse_Action" json:"action,omitempty"`
+	state         protoimpl.MessageState                              `protogen:"open.v1"`
+	Action        NICoAgentControlResponse_Action                     `protobuf:"varint,1,opt,name=action,proto3,enum=nico.NICoAgentControlResponse_Action" json:"action,omitempty"`
 	Data          *NICoAgentControlResponse_NICoAgentControlExtraInfo `protobuf:"bytes,2,opt,name=data,proto3,oneof" json:"data,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -39594,7 +39594,7 @@ func (x *DeleteRackRequest) GetId() string {
 
 type RackManagerNICoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cmd           RackManagerNICoCmd    `protobuf:"varint,1,opt,name=cmd,proto3,enum=nico.RackManagerNICoCmd" json:"cmd,omitempty"`
+	Cmd           RackManagerNICoCmd     `protobuf:"varint,1,opt,name=cmd,proto3,enum=nico.RackManagerNICoCmd" json:"cmd,omitempty"`
 	NodeId        *string                `protobuf:"bytes,2,opt,name=node_id,json=nodeId,proto3,oneof" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -43058,7 +43058,7 @@ type CreateDpuExtensionServiceRequest struct {
 	ServiceName          string                  `protobuf:"bytes,2,opt,name=service_name,json=serviceName,proto3" json:"service_name,omitempty"`
 	Description          *string                 `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
 	ServiceType          DpuExtensionServiceType `protobuf:"varint,4,opt,name=service_type,json=serviceType,proto3,enum=nico.DpuExtensionServiceType" json:"service_type,omitempty"` // Immutable
-	TenantOrganizationId string                  `protobuf:"bytes,5,opt,name=tenant_organization_id,json=tenantOrganizationId,proto3" json:"tenant_organization_id,omitempty"`        // Immutable
+	TenantOrganizationId string                  `protobuf:"bytes,5,opt,name=tenant_organization_id,json=tenantOrganizationId,proto3" json:"tenant_organization_id,omitempty"`       // Immutable
 	// Versioned extension service spec
 	Data       string                         `protobuf:"bytes,6,opt,name=data,proto3" json:"data,omitempty"`
 	Credential *DpuExtensionServiceCredential `protobuf:"bytes,7,opt,name=credential,proto3,oneof" json:"credential,omitempty"`
@@ -48740,7 +48740,7 @@ func (x *MachineCredentialsUpdateRequest_Credentials) GetCredentialPurpose() Mac
 }
 
 type NICoAgentControlResponse_NICoAgentControlExtraInfo struct {
-	state         protoimpl.MessageState                                               `protogen:"open.v1"`
+	state         protoimpl.MessageState                                             `protogen:"open.v1"`
 	Pair          []*NICoAgentControlResponse_NICoAgentControlExtraInfo_KeyValuePair `protobuf:"bytes,1,rep,name=pair,proto3" json:"pair,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -54063,7 +54063,7 @@ var file_nico_proto_goTypes = []any{
 	(NetworkSecurityGroupRuleProtocol)(0),                    // 42: nico.NetworkSecurityGroupRuleProtocol
 	(NetworkSecurityGroupRuleAction)(0),                      // 43: nico.NetworkSecurityGroupRuleAction
 	(PowerState)(0),                                          // 44: nico.PowerState
-	(RackManagerNICoCmd)(0),                                 // 45: nico.RackManagerNICoCmd
+	(RackManagerNICoCmd)(0),                                  // 45: nico.RackManagerNICoCmd
 	(TrimTableTarget)(0),                                     // 46: nico.TrimTableTarget
 	(DpuExtensionServiceType)(0),                             // 47: nico.DpuExtensionServiceType
 	(DpuExtensionServiceDeploymentStatus)(0),                 // 48: nico.DpuExtensionServiceDeploymentStatus
@@ -54077,7 +54077,7 @@ var file_nico_proto_goTypes = []any{
 	(InstancePowerRequest_Operation)(0),                      // 56: nico.InstancePowerRequest.Operation
 	(InstanceUpdateStatus_Module)(0),                         // 57: nico.InstanceUpdateStatus.Module
 	(MachineCredentialsUpdateRequest_CredentialPurpose)(0),   // 58: nico.MachineCredentialsUpdateRequest.CredentialPurpose
-	(NICoAgentControlResponse_Action)(0),                    // 59: nico.NICoAgentControlResponse.Action
+	(NICoAgentControlResponse_Action)(0),                     // 59: nico.NICoAgentControlResponse.Action
 	(MachineCleanupInfo_CleanupResult)(0),                    // 60: nico.MachineCleanupInfo.CleanupResult
 	(DpuReprovisioningRequest_Mode)(0),                       // 61: nico.DpuReprovisioningRequest.Mode
 	(HostReprovisioningRequest_Mode)(0),                      // 62: nico.HostReprovisioningRequest.Mode
@@ -54390,8 +54390,8 @@ var file_nico_proto_goTypes = []any{
 	(*BMCMetaDataGetResponse)(nil),                           // 369: nico.BMCMetaDataGetResponse
 	(*MachineCredentialsUpdateRequest)(nil),                  // 370: nico.MachineCredentialsUpdateRequest
 	(*MachineCredentialsUpdateResponse)(nil),                 // 371: nico.MachineCredentialsUpdateResponse
-	(*NICoAgentControlRequest)(nil),                         // 372: nico.NICoAgentControlRequest
-	(*NICoAgentControlResponse)(nil),                        // 373: nico.NICoAgentControlResponse
+	(*NICoAgentControlRequest)(nil),                          // 372: nico.NICoAgentControlRequest
+	(*NICoAgentControlResponse)(nil),                         // 373: nico.NICoAgentControlResponse
 	(*MachineDiscoveryInfo)(nil),                             // 374: nico.MachineDiscoveryInfo
 	(*MachineDiscoveryCompletedRequest)(nil),                 // 375: nico.MachineDiscoveryCompletedRequest
 	(*MachineCleanupInfo)(nil),                               // 376: nico.MachineCleanupInfo
@@ -54401,8 +54401,8 @@ var file_nico_proto_goTypes = []any{
 	(*MachineDiscoveryResult)(nil),                           // 380: nico.MachineDiscoveryResult
 	(*MachineDiscoveryCompletedResponse)(nil),                // 381: nico.MachineDiscoveryCompletedResponse
 	(*MachineCleanupResult)(nil),                             // 382: nico.MachineCleanupResult
-	(*NICoScoutErrorReport)(nil),                            // 383: nico.NICoScoutErrorReport
-	(*NICoScoutErrorReportResult)(nil),                      // 384: nico.NICoScoutErrorReportResult
+	(*NICoScoutErrorReport)(nil),                             // 383: nico.NICoScoutErrorReport
+	(*NICoScoutErrorReportResult)(nil),                       // 384: nico.NICoScoutErrorReportResult
 	(*PxeInstructionRequest)(nil),                            // 385: nico.PxeInstructionRequest
 	(*PxeInstructions)(nil),                                  // 386: nico.PxeInstructions
 	(*CloudInitDiscoveryInstructions)(nil),                   // 387: nico.CloudInitDiscoveryInstructions
@@ -54673,8 +54673,8 @@ var file_nico_proto_goTypes = []any{
 	(*RackStateHistories)(nil),                               // 652: nico.RackStateHistories
 	(*RackStateHistoryRecords)(nil),                          // 653: nico.RackStateHistoryRecords
 	(*DeleteRackRequest)(nil),                                // 654: nico.DeleteRackRequest
-	(*RackManagerNICoRequest)(nil),                          // 655: nico.RackManagerNICoRequest
-	(*RackManagerNICoResponse)(nil),                         // 656: nico.RackManagerNICoResponse
+	(*RackManagerNICoRequest)(nil),                           // 655: nico.RackManagerNICoRequest
+	(*RackManagerNICoResponse)(nil),                          // 656: nico.RackManagerNICoResponse
 	(*MachineNVLinkInfo)(nil),                                // 657: nico.MachineNVLinkInfo
 	(*UpdateMachineNvLinkInfoRequest)(nil),                   // 658: nico.UpdateMachineNvLinkInfoRequest
 	(*NVLinkGpu)(nil),                                        // 659: nico.NVLinkGpu
@@ -54831,13 +54831,13 @@ var file_nico_proto_goTypes = []any{
 	nil,                                  // 810: nico.SwitchStateHistories.HistoriesEntry
 	nil,                                  // 811: nico.MachineStateHistories.HistoriesEntry
 	nil,                                  // 812: nico.HealthHistories.HistoriesEntry
-	(*MachineCredentialsUpdateRequest_Credentials)(nil),                       // 813: nico.MachineCredentialsUpdateRequest.Credentials
+	(*MachineCredentialsUpdateRequest_Credentials)(nil),                     // 813: nico.MachineCredentialsUpdateRequest.Credentials
 	(*NICoAgentControlResponse_NICoAgentControlExtraInfo)(nil),              // 814: nico.NICoAgentControlResponse.NICoAgentControlExtraInfo
 	(*NICoAgentControlResponse_NICoAgentControlExtraInfo_KeyValuePair)(nil), // 815: nico.NICoAgentControlResponse.NICoAgentControlExtraInfo.KeyValuePair
-	(*MachineCleanupInfo_CleanupStepResult)(nil),                              // 816: nico.MachineCleanupInfo.CleanupStepResult
-	(*DpuReprovisioningListResponse_DpuReprovisioningListItem)(nil),           // 817: nico.DpuReprovisioningListResponse.DpuReprovisioningListItem
-	(*HostReprovisioningListResponse_HostReprovisioningListItem)(nil),         // 818: nico.HostReprovisioningListResponse.HostReprovisioningListItem
-	(*MachineValidationTestUpdateRequest_Payload)(nil),                        // 819: nico.MachineValidationTestUpdateRequest.Payload
+	(*MachineCleanupInfo_CleanupStepResult)(nil),                            // 816: nico.MachineCleanupInfo.CleanupStepResult
+	(*DpuReprovisioningListResponse_DpuReprovisioningListItem)(nil),         // 817: nico.DpuReprovisioningListResponse.DpuReprovisioningListItem
+	(*HostReprovisioningListResponse_HostReprovisioningListItem)(nil),       // 818: nico.HostReprovisioningListResponse.HostReprovisioningListItem
+	(*MachineValidationTestUpdateRequest_Payload)(nil),                      // 819: nico.MachineValidationTestUpdateRequest.Payload
 	nil,                                                  // 820: nico.RedfishBrowseResponse.HeadersEntry
 	nil,                                                  // 821: nico.RedfishActionResult.HeadersEntry
 	nil,                                                  // 822: nico.UfmBrowseResponse.HeadersEntry

@@ -23,6 +23,7 @@ import (
 	"testing"
 	"time"
 
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
@@ -33,7 +34,6 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/extra/bundebug"
 	"github.com/uptrace/bun/migrate"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestMigrations(t *testing.T) {

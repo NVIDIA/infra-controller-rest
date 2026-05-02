@@ -35,6 +35,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/api/model"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/config"
 	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/core/claim"
 	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/processors"
@@ -43,7 +44,6 @@ import (
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 	tmocks "go.temporal.io/sdk/mocks"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // Valid bearer tokens for integration and mock tests
@@ -1209,7 +1209,7 @@ func TestKeycloakClaimsProcessing_RealData(t *testing.T) {
 						"offline_access",
 						"NICo-Prime-Provider:PROVIDER_ADMIN",
 						"uma_authorization",
-						"malformed-role",              // Ignored (no colon)
+						"malformed-role",             // Ignored (no colon)
 						"NICo-Test:INVALID_ROLE",     // Now included
 						"NICo-Another:REGISTRY_READ", // Now included
 					},

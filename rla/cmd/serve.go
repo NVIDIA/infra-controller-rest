@@ -31,8 +31,8 @@ import (
 	"go.temporal.io/sdk/worker"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	svc "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/service"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
 	computenico "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/compute/nico"

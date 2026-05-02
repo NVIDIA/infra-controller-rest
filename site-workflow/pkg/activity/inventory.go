@@ -35,7 +35,7 @@ import (
 
 type ManageInventoryConfig struct {
 	SiteID                uuid.UUID
-	NICoCoreAtomicClient   *cClient.NICoCoreAtomicClient
+	NICoCoreAtomicClient  *cClient.NICoCoreAtomicClient
 	TemporalPublishClient tClient.Client
 	TemporalPublishQueue  string
 	SitePageSize          int

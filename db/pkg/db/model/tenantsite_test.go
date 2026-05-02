@@ -29,7 +29,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	otrace "go.opentelemetry.io/otel/trace"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestNewTenantSiteDAO(t *testing.T) {
@@ -71,9 +70,9 @@ func TestTenantSiteSQLDAO_GetByID(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"PROVIDER_ADMIN"}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"TENANT_ADMIN"}
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 
@@ -175,9 +174,9 @@ func TestTenantSiteSQLDAO_GetByTenantIDAndSiteID(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"PROVIDER_ADMIN"}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"TENANT_ADMIN"}
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 
@@ -282,10 +281,10 @@ func TestTenantSiteSQLDAO_GetAll(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"PROVIDER_ADMIN"}
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"TENANT_ADMIN"}
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 
@@ -508,9 +507,9 @@ func TestTenantSiteSQLDAO_Create(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"PROVIDER_ADMIN"}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"TENANT_ADMIN"}
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 
@@ -623,9 +622,9 @@ func TestTenantSiteSQLDAO_Update(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"PROVIDER_ADMIN"}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"TENANT_ADMIN"}
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 
@@ -724,9 +723,9 @@ func TestTenantSiteSQLDAO_Delete(t *testing.T) {
 
 	// Create initial data
 	ipOrg := "test-provider-org"
-	ipRoles := []string{authz.ProviderAdminRole}
+	ipRoles := []string{"PROVIDER_ADMIN"}
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{authz.TenantAdminRole}
+	tnRoles := []string{"TENANT_ADMIN"}
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "Test Provider", ipOrg, ipu)
 

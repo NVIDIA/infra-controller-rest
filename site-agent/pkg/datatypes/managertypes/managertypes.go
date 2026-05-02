@@ -29,7 +29,7 @@ type Managers struct {
 	Version string
 	// All the datastructures of Managers below
 	Workflow  *workflowtypes.Workflow
-	NICo   *nicotypes.NICo
+	NICo      *nicotypes.NICo
 	RLA       *rlatypes.RLA
 	Bootstrap *bootstraptypes.Bootstrap
 }
@@ -40,7 +40,7 @@ func NewManagerType() *Managers {
 		Version: "0.0.1",
 		// All the managers below
 		Workflow:  workflowtypes.NewWorkflowInstance(),
-		NICo:   nicotypes.NewNICoInstance(),
+		NICo:      nicotypes.NewNICoInstance(),
 		RLA:       rlatypes.NewRLAInstance(),
 		Bootstrap: bootstraptypes.NewBootstrapInstance(),
 	}

@@ -59,7 +59,7 @@ type Manager struct {
 func New(nicoClient nicoapi.Client, powerDelay time.Duration) *Manager {
 	return &Manager{
 		nicoClient: nicoClient,
-		powerDelay:    powerDelay,
+		powerDelay: powerDelay,
 	}
 }
 

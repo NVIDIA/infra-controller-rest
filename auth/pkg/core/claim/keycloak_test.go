@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	testutil "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/testing"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestKeycloakClaims_GetClientId(t *testing.T) {

@@ -41,7 +41,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -58,7 +58,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 			name: "test collecting and publishing ib partition inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -71,7 +71,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 			name: "test collecting and publishing ib partition inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -91,7 +91,7 @@ func TestManageIBPartitionInventory_DiscoverInfiniBandPartitionInventory(t *test
 
 			manageInstance := NewManageInfiniBandPartitionInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoCoreAtomicClient:   tt.fields.nicoCoreAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

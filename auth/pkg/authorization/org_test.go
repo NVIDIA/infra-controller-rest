@@ -747,10 +747,10 @@ func TestKeycloakRealmAccessEdgeCases(t *testing.T) {
 			name: "Mixed valid and invalid role formats",
 			realmAccessRoles: []string{
 				"valid-org:TENANT_ADMIN",       // Valid
-				"invalid-format",                     // Invalid - no colon (ignored)
+				"invalid-format",               // Invalid - no colon (ignored)
 				"another-valid:PROVIDER_ADMIN", // Valid
-				":EMPTY_ORG",                         // Invalid - empty org name (skipped)
-				"EMPTY_ROLE:",                        // Invalid - empty role (skipped)
+				":EMPTY_ORG",                   // Invalid - empty org name (skipped)
+				"EMPTY_ROLE:",                  // Invalid - empty role (skipped)
 			},
 			expectedOrgCount: 2, // Only valid roles with non-empty org and role names
 			description:      "Only valid role formats with non-empty parts create org memberships",

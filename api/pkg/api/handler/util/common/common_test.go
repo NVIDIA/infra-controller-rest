@@ -37,11 +37,11 @@ import (
 	"google.golang.org/grpc/status"
 
 	cam "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	cerr "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testCommonInitDB(t *testing.T) *cdb.Session {

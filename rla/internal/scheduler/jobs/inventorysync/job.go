@@ -24,25 +24,25 @@ import (
 	"github.com/rs/zerolog/log"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	nicoprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                 //nolint
+	nicoprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                       //nolint
 	nvswitchmanagerprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager" //nolint
 	psmprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"                         //nolint
 )
 
 // Job implements scheduler.Job for the inventory sync task.
 type Job struct {
-	dbConf        *cdb.Config
+	dbConf     *cdb.Config
 	nicoClient nicoapi.Client
-	psmClient     psmapi.Client
-	nsmClient     nsmapi.Client
-	pool          *cdb.Session
-	cmConfig      componentmanager.Config
+	psmClient  psmapi.Client
+	nsmClient  nsmapi.Client
+	pool       *cdb.Session
+	cmConfig   componentmanager.Config
 }
 
 // New constructs an inventory sync Job using clients sourced from the provider
@@ -121,12 +121,12 @@ func New(
 	//    ready-to-use domain clients instead of low-level provider handles.
 
 	return &Job{
-		dbConf:        dbConf,
+		dbConf:     dbConf,
 		nicoClient: nicoProvider.Client(),
-		psmClient:     psmClient,
-		nsmClient:     nsmClient,
-		pool:          pool,
-		cmConfig:      cmConfig,
+		psmClient:  psmClient,
+		nsmClient:  nsmClient,
+		pool:       pool,
+		cmConfig:   cmConfig,
 	}, nil
 }
 

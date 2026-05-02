@@ -44,7 +44,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -62,7 +62,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -75,7 +75,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -88,7 +88,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory fallback, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -102,7 +102,7 @@ func TestManageExpectedMachineInventory_DiscoverExpectedMachineInventory(t *test
 			name: "test collecting and publishing expected machine inventory fallback, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,

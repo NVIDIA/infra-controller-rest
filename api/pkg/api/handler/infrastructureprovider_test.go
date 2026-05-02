@@ -35,11 +35,11 @@ import (
 	"github.com/stretchr/testify/require"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 	tmocks "go.temporal.io/sdk/mocks"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func setupSessionAndInfrastructureProviderTables(t *testing.T) *cdb.Session {

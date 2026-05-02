@@ -29,6 +29,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
@@ -39,7 +40,6 @@ import (
 	"github.com/stretchr/testify/require"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	tmocks "go.temporal.io/sdk/mocks"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestGetTaskHandler_Handle(t *testing.T) {

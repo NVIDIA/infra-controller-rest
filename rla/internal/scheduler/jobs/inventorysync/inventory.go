@@ -27,10 +27,10 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi/gen"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/common/utils"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
+	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi/gen"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"

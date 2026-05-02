@@ -25,7 +25,7 @@ import (
 
 var (
 	// ErrTypeInvalidRequest is returned when the request is invalid
-	ErrTypeInvalidRequest            = "InvalidRequest"
+	ErrTypeInvalidRequest         = "InvalidRequest"
 	ErrTypeNICoObjectNotFound     = "NICoObjectNotFound"
 	ErrTypeNICoUnimplemented      = "NICoUnimplemented"
 	ErrTypeNICoUnavailable        = "NICoUnavailable"

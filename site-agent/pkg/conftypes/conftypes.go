@@ -110,7 +110,7 @@ type RLAConfig struct {
 // Config for Site Agent
 type Config struct {
 	Temporal         TemporalConfig
-	NICo          NICoConfig
+	NICo             NICoConfig
 	RLA              RLAConfig
 	IsMasterPod      bool          `json:"isMasterPod"`
 	EnableDebug      bool          `json:"enableDebug"`
@@ -142,7 +142,7 @@ func NewConfType() *Config {
 	// We can set the default config here
 	return &Config{
 		Temporal: TemporalConfig{},
-		NICo:  NICoConfig{},
+		NICo:     NICoConfig{},
 		RLA:      RLAConfig{},
 	}
 }

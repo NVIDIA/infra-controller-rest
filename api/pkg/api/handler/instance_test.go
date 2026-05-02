@@ -36,6 +36,7 @@ import (
 	cdmu "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
 	sutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
@@ -56,7 +57,6 @@ import (
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
 	"gopkg.in/yaml.v3"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testInstanceInitDB(t *testing.T) *cdb.Session {

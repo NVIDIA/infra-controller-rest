@@ -32,6 +32,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
 	cdmu "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
@@ -48,7 +49,6 @@ import (
 	"go.temporal.io/api/enums/v1"
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func TestOperatingSystemHandler_Create(t *testing.T) {

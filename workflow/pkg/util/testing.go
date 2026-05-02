@@ -34,9 +34,9 @@ import (
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
 
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/config"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 // TestInitDB init DB

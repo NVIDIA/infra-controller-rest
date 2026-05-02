@@ -318,7 +318,7 @@ func TestManageOsImageInventory_DiscoverOsImageInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -336,7 +336,7 @@ func TestManageOsImageInventory_DiscoverOsImageInventory(t *testing.T) {
 			name: "test collecting and publishing os image inventory fallback, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -349,7 +349,7 @@ func TestManageOsImageInventory_DiscoverOsImageInventory(t *testing.T) {
 			name: "test collecting and publishing os image inventory fallback, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -369,7 +369,7 @@ func TestManageOsImageInventory_DiscoverOsImageInventory(t *testing.T) {
 
 			manageOsImage := NewManageOsImageInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoCoreAtomicClient:   tt.fields.nicoCoreAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

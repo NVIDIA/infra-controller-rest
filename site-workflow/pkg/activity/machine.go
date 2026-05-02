@@ -189,7 +189,7 @@ func NewManageMachine(nicoCoreAtomicClient *cClient.NICoCoreAtomicClient) Manage
 // ManageMachineInventory is an activity wrapper for Machine inventory collection and publishing
 type ManageMachineInventory struct {
 	siteID                uuid.UUID
-	nicoCoreAtomicClient   *cClient.NICoCoreAtomicClient
+	nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	sitePageSize          int
@@ -362,7 +362,7 @@ func getPagedMachineInventory(pagedMachines []*cwssaws.Machine, machineIDs []*cw
 func NewManageMachineInventory(siteID uuid.UUID, nicoCoreAtomicClient *cClient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, sitePageSize int, cloudPageSize int) ManageMachineInventory {
 	return ManageMachineInventory{
 		siteID:                siteID,
-		nicoCoreAtomicClient:   nicoCoreAtomicClient,
+		nicoCoreAtomicClient:  nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		sitePageSize:          sitePageSize,

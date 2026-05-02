@@ -54,8 +54,8 @@ import (
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
 	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 func testVPCInitDB(t *testing.T) *cdb.Session {

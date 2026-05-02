@@ -51,11 +51,11 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	tOperatorv1 "go.temporal.io/api/operatorservice/v1"
 	tosv1mock "go.temporal.io/api/operatorservicemock/v1"
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testUpdateSite(t *testing.T, dbSession *cdb.Session, site *cdbm.Site) *cdbm.Site {

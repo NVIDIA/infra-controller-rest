@@ -33,6 +33,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
@@ -49,7 +50,6 @@ import (
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 )
 
 func testBuildNVLinkLogicalPartition(t *testing.T, dbSession *cdb.Session, name string, description *string, org string, site *cdbm.Site, tenant *cdbm.Tenant, status *string, isMissingOnSite bool) *cdbm.NVLinkLogicalPartition {
@@ -538,17 +538,17 @@ func TestNVLinkLogicalPartitionHandler_Update(t *testing.T) {
 	tsc2.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	tests := []struct {
-		fields                           fields
-		name                             string
-		reqOrgName                       string
-		reqBody                          string
-		reqBodyModel                     *model.APINVLinkLogicalPartitionUpdateRequest
-		nvllpID                          string
-		user                             *cdbm.User
-		expectedStatus                   int
-		expectedName                     bool
-		verifyChildSpanner               bool
-		verifyTemporalCall               bool
+		fields                          fields
+		name                            string
+		reqOrgName                      string
+		reqBody                         string
+		reqBodyModel                    *model.APINVLinkLogicalPartitionUpdateRequest
+		nvllpID                         string
+		user                            *cdbm.User
+		expectedStatus                  int
+		expectedName                    bool
+		verifyChildSpanner              bool
+		verifyTemporalCall              bool
 		expectedNICoMetadataName        string  // Metadata.Name on the site workflow request (always from DB after update)
 		expectedNICoMetadataDescription *string // Metadata.Description when asserting NICo payload (DB snapshot after update)
 	}{
@@ -684,17 +684,17 @@ func TestNVLinkLogicalPartitionHandler_Update(t *testing.T) {
 				tc:        tsc,
 				cfg:       cfg,
 			},
-			name:                             "success case description-only update request sends current name to NICo",
-			nvllpID:                          nvllp2.ID.String(),
-			reqOrgName:                       tnOrg1,
-			reqBody:                          string(descOnlyBody),
-			reqBodyModel:                     &descOnlyObj,
-			user:                             tnu1,
-			expectedStatus:                   http.StatusOK,
-			verifyChildSpanner:               true,
+			name:                            "success case description-only update request sends current name to NICo",
+			nvllpID:                         nvllp2.ID.String(),
+			reqOrgName:                      tnOrg1,
+			reqBody:                         string(descOnlyBody),
+			reqBodyModel:                    &descOnlyObj,
+			user:                            tnu1,
+			expectedStatus:                  http.StatusOK,
+			verifyChildSpanner:              true,
 			expectedNICoMetadataName:        "test-nvllp-2",
 			expectedNICoMetadataDescription: cdb.GetStrPtr("updated description without name in body"),
-			verifyTemporalCall:               true,
+			verifyTemporalCall:              true,
 		},
 		{
 			fields: fields{
@@ -702,17 +702,17 @@ func TestNVLinkLogicalPartitionHandler_Update(t *testing.T) {
 				tc:        tsc,
 				cfg:       cfg,
 			},
-			name:                             "success case name-only update request sends DB name and preserved description to NICo",
-			nvllpID:                          nvllp5.ID.String(),
-			reqOrgName:                       tnOrg1,
-			reqBody:                          string(nameOnlyBody),
-			reqBodyModel:                     &nameOnlyObj,
-			user:                             tnu1,
-			expectedStatus:                   http.StatusOK,
-			verifyChildSpanner:               true,
+			name:                            "success case name-only update request sends DB name and preserved description to NICo",
+			nvllpID:                         nvllp5.ID.String(),
+			reqOrgName:                      tnOrg1,
+			reqBody:                         string(nameOnlyBody),
+			reqBodyModel:                    &nameOnlyObj,
+			user:                            tnu1,
+			expectedStatus:                  http.StatusOK,
+			verifyChildSpanner:              true,
 			expectedNICoMetadataName:        "test-nvllp-5-renamed",
 			expectedNICoMetadataDescription: cdb.GetStrPtr("preserved-for-nico"),
-			verifyTemporalCall:               true,
+			verifyTemporalCall:              true,
 		},
 		{
 			fields: fields{

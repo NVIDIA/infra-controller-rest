@@ -387,7 +387,7 @@ func TestManageInstanceInventory_DiscoverInstanceInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -404,7 +404,7 @@ func TestManageInstanceInventory_DiscoverInstanceInventory(t *testing.T) {
 			name: "test collecting and publishing instance inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -417,7 +417,7 @@ func TestManageInstanceInventory_DiscoverInstanceInventory(t *testing.T) {
 			name: "test collecting and publishing instance inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -437,7 +437,7 @@ func TestManageInstanceInventory_DiscoverInstanceInventory(t *testing.T) {
 
 			manageInstance := NewManageInstanceInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoCoreAtomicClient:   tt.fields.nicoCoreAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

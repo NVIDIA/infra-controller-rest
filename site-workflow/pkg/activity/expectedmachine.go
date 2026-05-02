@@ -40,7 +40,7 @@ import (
 // ManageExpectedMachineInventory is an activity wrapper for Expected Machine inventory collection and publishing
 type ManageExpectedMachineInventory struct {
 	siteID                uuid.UUID
-	nicoCoreAtomicClient   *cclient.NICoCoreAtomicClient
+	nicoCoreAtomicClient  *cclient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -247,7 +247,7 @@ func getPagedExpectedMachineInventory(
 func NewManageExpectedMachineInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedMachineInventory {
 	return ManageExpectedMachineInventory{
 		siteID:                siteID,
-		nicoCoreAtomicClient:   nicoCoreAtomicClient,
+		nicoCoreAtomicClient:  nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -257,14 +257,14 @@ func NewManageExpectedMachineInventory(siteID uuid.UUID, nicoCoreAtomicClient *c
 // ManageExpectedMachine is an activity wrapper for Expected Machine management
 type ManageExpectedMachine struct {
 	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	RlaAtomicClient     *cclient.RlaAtomicClient
+	RlaAtomicClient      *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedMachine returns a new ManageExpectedMachine client
 func NewManageExpectedMachine(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedMachine {
 	return ManageExpectedMachine{
 		NICoCoreAtomicClient: nicoClient,
-		RlaAtomicClient:     rlaClient,
+		RlaAtomicClient:      rlaClient,
 	}
 }
 

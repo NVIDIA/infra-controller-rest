@@ -42,10 +42,10 @@ const (
 	AdminClientID    = "admin-cli"
 
 	// Organization names
-	TestOrgName      = "test-org"
+	TestOrgName     = "test-org"
 	NICoDevOrgName  = "nico-tenant-dev"
 	NICoProviderOrg = "nico-prime-provider"
-	NvidiaOrgName    = "nvidia"
+	NvidiaOrgName   = "nvidia"
 
 	// User identifiers
 	TestUserEmail     = "john.doe@testorg.com"
@@ -156,7 +156,7 @@ var TestRealmRoles = struct {
 	InvalidFormat: []string{
 		"invalid-role-format",
 		":" + NICoProviderAdminRole, // Empty org
-		TestOrgName + ":",            // Empty role
-		"",                           // Empty string
+		TestOrgName + ":",           // Empty role
+		"",                          // Empty string
 	},
 }

@@ -51,7 +51,7 @@ var (
 	ErrNICoCoreClientInvalidClientCA   = errors.New("NICoCoreClient: invalid client CA")
 	ErrNICoCoreClientInvalidClientKey  = errors.New("NICoCoreClient: invalid client key")
 	ErrNICoCoreClientInvalidClientCert = errors.New("NICoCoreClient: invalid client cert")
-	ErrClientNotConnected             = errors.New("gRPC client is not connected to the server")
+	ErrClientNotConnected              = errors.New("gRPC client is not connected to the server")
 )
 
 // SecureOptions is the enum for the secure options

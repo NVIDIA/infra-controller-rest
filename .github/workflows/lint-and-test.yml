@@ -291,7 +291,7 @@ jobs:
       - name: Tune PostgreSQL for faster tests
         run: |
           docker exec ${{ job.services.postgres.id }} \
-            psql -U postgres -d forgetest -v ON_ERROR_STOP=1 \
+            psql -U postgres -d nicotest -v ON_ERROR_STOP=1 \
               -c "ALTER SYSTEM SET fsync = 'off'" \
               -c "ALTER SYSTEM SET synchronous_commit = 'off'" \
               -c "ALTER SYSTEM SET full_page_writes = 'off'" \

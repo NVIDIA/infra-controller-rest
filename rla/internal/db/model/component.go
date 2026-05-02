@@ -25,8 +25,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/utils"
@@ -35,23 +35,23 @@ import (
 type Component struct {
 	bun.BaseModel `bun:"table:component,alias:c"`
 
-	ID              uuid.UUID              `bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	Name            string                 `bun:"name"`
-	Type            string                 `bun:"type,type:varchar(16),default:'Compute'"`
-	Manufacturer    string                 `bun:"manufacturer,notnull,unique:component_manufacturer_serial_idx"`
-	Model           string                 `bun:"model"`
-	SerialNumber    string                 `bun:"serial_number,notnull,notnull,unique:component_manufacturer_serial_idx"`
-	Description     map[string]any         `bun:"description,type:jsonb,json_use_number"`
-	FirmwareVersion string                 `bun:"firmware_version,nullzero"`
-	RackID          uuid.UUID              `bun:"rack_id,type:uuid,notnull"`
-	SlotID          int                    `bun:"slot_id"`
-	TrayIndex       int                    `bun:"tray_index"`
-	HostID          int                    `bun:"host_id"`
-	IngestedAt      *time.Time             `bun:"ingested_at"`
-	DeletedAt       *time.Time             `bun:"deleted_at,soft_delete"`
-	Rack            *Rack                  `bun:"rel:belongs-to,join:rack_id=id"`
-	BMCs            []BMC                  `bun:"rel:has-many,join:id=component_id"`
-	ComponentID     *string                `bun:"external_id"`
+	ID              uuid.UUID           `bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Name            string              `bun:"name"`
+	Type            string              `bun:"type,type:varchar(16),default:'Compute'"`
+	Manufacturer    string              `bun:"manufacturer,notnull,unique:component_manufacturer_serial_idx"`
+	Model           string              `bun:"model"`
+	SerialNumber    string              `bun:"serial_number,notnull,notnull,unique:component_manufacturer_serial_idx"`
+	Description     map[string]any      `bun:"description,type:jsonb,json_use_number"`
+	FirmwareVersion string              `bun:"firmware_version,nullzero"`
+	RackID          uuid.UUID           `bun:"rack_id,type:uuid,notnull"`
+	SlotID          int                 `bun:"slot_id"`
+	TrayIndex       int                 `bun:"tray_index"`
+	HostID          int                 `bun:"host_id"`
+	IngestedAt      *time.Time          `bun:"ingested_at"`
+	DeletedAt       *time.Time          `bun:"deleted_at,soft_delete"`
+	Rack            *Rack               `bun:"rel:belongs-to,join:rack_id=id"`
+	BMCs            []BMC               `bun:"rel:has-many,join:id=component_id"`
+	ComponentID     *string             `bun:"external_id"`
 	PowerState      *nicoapi.PowerState `bun:"power_state"`
 }
 

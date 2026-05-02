@@ -22,8 +22,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
 	nicoprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico" //nolint
@@ -33,7 +33,7 @@ import (
 // Job implements scheduler.Job for the leak detection task.
 type Job struct {
 	nicoClient nicoapi.Client
-	taskMgr       taskmanager.Manager
+	taskMgr    taskmanager.Manager
 }
 
 // New constructs a leak detection Job using the NICo provider from the
@@ -60,7 +60,7 @@ func New(
 
 	return &Job{
 		nicoClient: nicoProvider.Client(),
-		taskMgr:       taskMgr,
+		taskMgr:    taskMgr,
 	}, nil
 }
 

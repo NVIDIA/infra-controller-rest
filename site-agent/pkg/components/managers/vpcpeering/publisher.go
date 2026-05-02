@@ -34,7 +34,7 @@ func (api *API) RegisterPublisher() error {
 	// Register DiscoverVpcPeeringInventory activity
 	inventoryManager := swa.NewManageVpcPeeringInventory(swa.ManageInventoryConfig{
 		SiteID:                uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		NICoCoreAtomicClient:   ManagerAccess.Data.EB.Managers.NICo.Client,
+		NICoCoreAtomicClient:  ManagerAccess.Data.EB.Managers.NICo.Client,
 		TemporalPublishClient: ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		TemporalPublishQueue:  ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
 		SitePageSize:          InventoryCarbidePageSize,

@@ -408,7 +408,7 @@ func TestManageDpuExtensionServiceInventory_DiscoverDpuExtensionServiceInventory
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient  *cClient.NICoCoreAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -425,7 +425,7 @@ func TestManageDpuExtensionServiceInventory_DiscoverDpuExtensionServiceInventory
 			name: "test collecting and publishing dpu extension service inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -438,7 +438,7 @@ func TestManageDpuExtensionServiceInventory_DiscoverDpuExtensionServiceInventory
 			name: "test collecting and publishing dpu extension service inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient:  nicoCoreAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -458,7 +458,7 @@ func TestManageDpuExtensionServiceInventory_DiscoverDpuExtensionServiceInventory
 
 			manageDpuExtensionService := NewManageDpuExtensionServiceInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoCoreAtomicClient:   tt.fields.nicoCoreAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

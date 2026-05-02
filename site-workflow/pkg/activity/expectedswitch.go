@@ -40,7 +40,7 @@ import (
 // ManageExpectedSwitchInventory is an activity wrapper for Expected Switch inventory collection and publishing
 type ManageExpectedSwitchInventory struct {
 	siteID                uuid.UUID
-	nicoCoreAtomicClient   *cclient.NICoCoreAtomicClient
+	nicoCoreAtomicClient  *cclient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -244,7 +244,7 @@ func getPagedExpectedSwitchInventory(
 func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
 	return ManageExpectedSwitchInventory{
 		siteID:                siteID,
-		nicoCoreAtomicClient:   nicoCoreAtomicClient,
+		nicoCoreAtomicClient:  nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -254,14 +254,14 @@ func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoCoreAtomicClient *cc
 // ManageExpectedSwitch is an activity wrapper for Expected Switch management
 type ManageExpectedSwitch struct {
 	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	RlaAtomicClient     *cclient.RlaAtomicClient
+	RlaAtomicClient      *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedSwitch returns a new ManageExpectedSwitch client
 func NewManageExpectedSwitch(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedSwitch {
 	return ManageExpectedSwitch{
 		NICoCoreAtomicClient: nicoClient,
-		RlaAtomicClient:     rlaClient,
+		RlaAtomicClient:      rlaClient,
 	}
 }
 

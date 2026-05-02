@@ -43,8 +43,8 @@ import (
 	temporalClient "go.temporal.io/sdk/client"
 	tmocks "go.temporal.io/sdk/mocks"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
+	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // TestCreateDpuExtensionServiceHandler_Handle tests the Create DPU Extension Service handler

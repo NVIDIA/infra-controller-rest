@@ -40,7 +40,7 @@ import (
 // ManageExpectedPowerShelfInventory is an activity wrapper for Expected Power Shelf inventory collection and publishing
 type ManageExpectedPowerShelfInventory struct {
 	siteID                uuid.UUID
-	nicoCoreAtomicClient   *cclient.NICoCoreAtomicClient
+	nicoCoreAtomicClient  *cclient.NICoCoreAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -244,7 +244,7 @@ func getPagedExpectedPowerShelfInventory(
 func NewManageExpectedPowerShelfInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedPowerShelfInventory {
 	return ManageExpectedPowerShelfInventory{
 		siteID:                siteID,
-		nicoCoreAtomicClient:   nicoCoreAtomicClient,
+		nicoCoreAtomicClient:  nicoCoreAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -254,14 +254,14 @@ func NewManageExpectedPowerShelfInventory(siteID uuid.UUID, nicoCoreAtomicClient
 // ManageExpectedPowerShelf is an activity wrapper for Expected Power Shelf management
 type ManageExpectedPowerShelf struct {
 	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	RlaAtomicClient     *cclient.RlaAtomicClient
+	RlaAtomicClient      *cclient.RlaAtomicClient
 }
 
 // NewManageExpectedPowerShelf returns a new ManageExpectedPowerShelf client
 func NewManageExpectedPowerShelf(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedPowerShelf {
 	return ManageExpectedPowerShelf{
 		NICoCoreAtomicClient: nicoClient,
-		RlaAtomicClient:     rlaClient,
+		RlaAtomicClient:      rlaClient,
 	}
 }
 

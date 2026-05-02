@@ -41,8 +41,8 @@ import (
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
 
-	tmocks "go.temporal.io/sdk/mocks"
 	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
+	tmocks "go.temporal.io/sdk/mocks"
 )
 
 func testFabricInitDB(t *testing.T) *cdb.Session {
