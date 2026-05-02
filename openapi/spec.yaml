@@ -989,7 +989,7 @@ paths:
 
         User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no Site specific configuration modifiable by Tenant.
+        Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no other Site specific configurations modifiable by Tenant.
       requestBody:
         content:
           application/json:
@@ -12580,6 +12580,36 @@ components:
           $ref: '#/components/schemas/SiteContact'
       required:
         - name
+    SiteCapabilitiesUpdateRequest:
+      title: SiteCapabilitiesUpdateRequest
+      type: object
+      description: Request to modify Site's capabilities. Partial update allowed, only specify capabilities that should be updated.
+      properties:
+        nativeNetworking:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable native networking for the Site
+        networkSecurityGroup:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable network security groups for the Site
+        nvLinkPartition:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable NVLink partition support for the Site
+        rackLevelAdministration:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable rack-level administration for the Site
+        imageBasedOperatingSystem:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable image-based operating system support for the Site
     SiteUpdateRequest:
       title: SiteUpdateRequest
       type: object
@@ -12635,6 +12665,9 @@ components:
           $ref: '#/components/schemas/SiteLocation'
         contact:
           $ref: '#/components/schemas/SiteContact'
+        capabilities:
+          $ref: '#/components/schemas/SiteCapabilitiesUpdateRequest'
+          description: Modify Site capabilities. Can only be updated by Provider. Partial update allowed, only specify capabilities that should be updated.
     SiteLocation:
       title: SiteLocation
       type: object

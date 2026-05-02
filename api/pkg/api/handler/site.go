@@ -495,6 +495,16 @@ func (ush UpdateSiteHandler) Handle(c echo.Context) error {
 			}
 		}
 
+		if apiRequest.Capabilities != nil {
+			siteUpdateInput.Config = &cdbm.SiteConfigUpdateInput{
+				NativeNetworking:          apiRequest.Capabilities.NativeNetworking,
+				NetworkSecurityGroup:      apiRequest.Capabilities.NetworkSecurityGroup,
+				NVLinkPartition:           apiRequest.Capabilities.NVLinkPartition,
+				RackLevelAdministration:   apiRequest.Capabilities.RackLevelAdministration,
+				ImageBasedOperatingSystem: apiRequest.Capabilities.ImageBasedOperatingSystem,
+			}
+		}
+
 		// Update Site
 		us, err = stDAO.Update(ctx, tx, siteUpdateInput)
 		if err != nil {
