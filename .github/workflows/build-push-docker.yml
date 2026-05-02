@@ -407,15 +407,15 @@ jobs:
     name: Container Scan Summary
     runs-on: ${{ inputs.runner }}
     needs:
-      - build-carbide-rest-api
-      - build-carbide-rest-db
-      - build-carbide-rest-site-manager
-      - build-carbide-rest-workflow
-      - build-carbide-rest-site-agent
-      - build-carbide-rest-cert-manager
-      - build-carbide-rla
-      - build-carbide-psm
-      - build-carbide-nsm
+      - build-nico-rest-api
+      - build-nico-rest-db
+      - build-nico-rest-site-manager
+      - build-nico-rest-workflow
+      - build-nico-rest-site-agent
+      - build-nico-rest-cert-manager
+      - build-nico-rla
+      - build-nico-psm
+      - build-nico-nsm
     if: always()
     permissions:
       contents: read
