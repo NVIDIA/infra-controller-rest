@@ -748,10 +748,11 @@ func (rs *RLAServerImpl) BringUpRack(
 	}, nil
 }
 
-// BringDownRack reuses the BringUp workflow with the bring-down rule to
-// gracefully take a rack offline: power off compute, pause the per-machine
-// power-on gate (so the power manager will not auto-revive it), then power
-// off NVLSwitch and PowerShelf.
+// BringDownRack gracefully takes a rack offline: verify no compute node has an
+// allocated instance, place compute into maintenance, power off compute, pause
+// the per-machine power-on gate (PowerManagerDisabled), then power off
+// NVLSwitch and PowerShelf. Runs as the dedicated bring-down workflow so it
+// can diverge from bring-up over time (e.g. instance teardown, data cleanup).
 func (rs *RLAServerImpl) BringDownRack(
 	ctx context.Context,
 	req *pb.BringDownRackRequest,

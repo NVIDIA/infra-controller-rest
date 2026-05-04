@@ -1277,19 +1277,15 @@ func buildForceRestartRule() *OperationRule {
 //  1. Compute    — verify no allocated instance (fail fast)
 //  2. Compute    — enter maintenance (long-lived health-report override)
 //  3. Compute    — graceful power off, verify off
-//  4. Compute    — pause power-on gate (PowerManagerDisabled) so a stale
-//     reconcile pass cannot bring the machine back up
+//  4. Compute    — pause power-on gate (desired state → PowerManagerDisabled),
+//     removing the machine from Carbide's power-manager control so it stays
+//     down until explicitly re-enabled
 //  5. NVLSwitch  — graceful power off, verify off
 //  6. PowerShelf — graceful power off, verify off
 //
-// The component order mirrors `power_off` (Compute → NVLSwitch → PowerShelf)
-// but is distinct from it. Two pre-stages run before any power op so we
-// never power off a machine that still serves workload, and so the machine
-// is locked out of the allocator before its state changes. Stage 4
-// explicitly disables the power-on gate after compute is down, marking
-// intent that the machine should stay down — a plain `power_off` only sets
-// desired state to Off and leaves the machine under power-manager
-// supervision, which means an automatic recovery loop could re-power it.
+// Stages 1–2 run before any power op so we never power off a machine that
+// still serves workload, and so the machine is locked out of the allocator
+// before its state changes.
 func buildBringDownRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Bring-Down",
