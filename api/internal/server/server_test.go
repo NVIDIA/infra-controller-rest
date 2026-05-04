@@ -137,7 +137,7 @@ func Test_InitMetricsServer(t *testing.T) {
 			name: "test initMetricsServer success",
 			args: args{
 				e:   echo.New(),
-				cfg: &config.Config{},
+				cfg: common.GetTestConfig(),
 			},
 		},
 	}
