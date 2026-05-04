@@ -1265,8 +1265,8 @@ message EchoResponse {
 message DNSMessage {
 
   message DNSQuestion {
-    optional string q_name = 1;  // FQDN including trailing dot
-    optional uint32 q_type = 2;  //
+    optional string q_name = 1; // FQDN including trailing dot
+    optional uint32 q_type = 2;
     optional uint32 q_class = 3; // Usually 1 (IN)
   }
   message DNSResponse {
