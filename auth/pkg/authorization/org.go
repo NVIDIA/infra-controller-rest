@@ -20,17 +20,22 @@ package authz
 import (
 	"strings"
 
+	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/roles"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 )
 
+// Role-name constants are sourced from common/pkg/roles so they can be
+// referenced from packages that cannot import auth/pkg/authorization
+// (e.g. db model tests, which would create an import cycle, and the
+// workflow production image, which does not ship the auth module).
 const (
 	// ProviderAdminRole is the role that gives Provider Admin access to an org
-	ProviderAdminRole = "PROVIDER_ADMIN"
+	ProviderAdminRole = roles.ProviderAdminRole
 	// ProviderViewerRole is the role that gives Provider Viewer access to an org
-	ProviderViewerRole = "PROVIDER_VIEWER"
+	ProviderViewerRole = roles.ProviderViewerRole
 	// TenantAdminRole is the role that gives Tenant Admin access to an org
-	TenantAdminRole = "TENANT_ADMIN"
+	TenantAdminRole = roles.TenantAdminRole
 )
 
 // ValidateOrgMembership validates if a given user is member of an org
