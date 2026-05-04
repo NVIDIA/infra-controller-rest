@@ -10,16 +10,16 @@ Each release lists pull requests grouped by category, with the most recent versi
 ### Features
 
 - **Add support for filtering VPCs by NVLink Logical Partition** ([#380](https://github.com/NVIDIA/infra-controller-rest/pull/380))
-  VPCs can now be filtered by their associated default NVLink Logical Partition ID. Other VPC filters have also been enhanced to accept multiple values, and network security group filter validation has been improved. See the updated query parameters on [Retrieve all VPCs](https://nvidia.github.io/ncx-infra-controller-rest/#tag/VPC/operation/get-all-vpc).
+  VPCs can now be filtered by their associated default NVLink Logical Partition ID. Other VPC filters have also been enhanced to accept multiple values, and network security group filter validation has been improved. See the updated query parameters on [Retrieve all VPCs](https://nvidia.github.io/infra-controller-rest/#tag/VPC/operation/get-all-vpc).
 
 - **Allow setting routing profile when creating VPCs** ([#350](https://github.com/NVIDIA/infra-controller-rest/pull/350))
-  Callers can now include `routingProfile` when creating a VPC with FNN network virtualization. The field is only accepted for FNN-type VPCs and is reflected in the API response accordingly. See the `routingProfile` field on [Create VPC](https://nvidia.github.io/ncx-infra-controller-rest/#tag/VPC/operation/create-vpc).
+  Callers can now include `routingProfile` when creating a VPC with FNN network virtualization. The field is only accepted for FNN-type VPCs and is reflected in the API response accordingly. See the `routingProfile` field on [Create VPC](https://nvidia.github.io/infra-controller-rest/#tag/VPC/operation/create-vpc).
 
 - **Allow power control to NSM and PSM without registration** ([#368](https://github.com/NVIDIA/infra-controller-rest/pull/368))
   NVSwitch Manager and PowerShelf Manager can now receive power control commands (on/off/cycle) without requiring prior component registration, simplifying initial rack bring-up workflows.
 
 - **Update Site Agent Helm chart to adopt Core prereqs for installation** ([#416](https://github.com/NVIDIA/infra-controller-rest/pull/416))
-  Updates the README and Helm chart to reference the `helm-prereqs` chart from ncx-infra-controller-core as the recommended installation path for bare-metal cluster setup. Also adds username keys to the common DB credentials secret template.
+  Updates the README and Helm chart to reference the `helm-prereqs` chart from infra-controller-core as the recommended installation path for bare-metal cluster setup. Also adds username keys to the common DB credentials secret template.
 
 - **Hint at label filter syntax after TUI list output** ([#406](https://github.com/NVIDIA/infra-controller-rest/pull/406))
   After running a list command in the TUI, a context-sensitive hint now displays available label keys and the syntax for `--label`, `--sort-label`, and `scope label` filtering. The hint is suppressed once any label filter is active.
@@ -42,7 +42,7 @@ Each release lists pull requests grouped by category, with the most recent versi
   Adds the missing VPC Peering manager to the Site Agent and fixes VPC Peering workflows to correctly require the VPC Peering ID during creation on Site.
 
 - **Mark ipBlockId as required in VPC Prefix create request** ([#414](https://github.com/NVIDIA/infra-controller-rest/pull/414))
-  Corrects the OpenAPI schema and CLI/TUI to reflect that `ipBlockId` is a required field when creating a VPC Prefix, matching the server-side validation that already enforced this. See [Create VPC Prefix](https://nvidia.github.io/ncx-infra-controller-rest/#tag/VPC-Prefix/operation/create-vpc-prefix).
+  Corrects the OpenAPI schema and CLI/TUI to reflect that `ipBlockId` is a required field when creating a VPC Prefix, matching the server-side validation that already enforced this. See [Create VPC Prefix](https://nvidia.github.io/infra-controller-rest/#tag/VPC-Prefix/operation/create-vpc-prefix).
 
 - **Prompt for allocation constraints in TUI allocation create** ([#413](https://github.com/NVIDIA/infra-controller-rest/pull/413))
   Fixes the TUI allocation creation flow to properly prompt for the required constraint (resource type, IP block selection, constraint type, and value), which was previously missing.
@@ -51,7 +51,7 @@ Each release lists pull requests grouped by category, with the most recent versi
   Fixes IP Block creation in the CLI/TUI by including the `protocolVersion` and `routingType` parameters that were previously omitted from the request, causing creation failures.
 
 - **Fix Expected Machine OpenAPI misnamed fields for BMC default credentials** ([#421](https://github.com/NVIDIA/infra-controller-rest/pull/421))
-  Corrects field names for BMC default username and password in the Expected Machine OpenAPI schema, resolving mismatches between the spec and the actual API behavior. See [Expected Machine](https://nvidia.github.io/ncx-infra-controller-rest/#tag/Expected-Machine) endpoints.
+  Corrects field names for BMC default username and password in the Expected Machine OpenAPI schema, resolving mismatches between the spec and the actual API behavior. See [Expected Machine](https://nvidia.github.io/infra-controller-rest/#tag/Expected-Machine) endpoints.
 
 - **Resolve RLA inventory component manager ID sync issue** ([#409](https://github.com/NVIDIA/infra-controller-rest/pull/409))
   Ensures machine IDs are synced on every inventory loop iteration, removing a conditional skip that could leave `external_id` stale and cause leak detection to fail. Also updates default operation timeouts and fixes misleading error messages in component target resolution.
@@ -69,7 +69,7 @@ Each release lists pull requests grouped by category, with the most recent versi
   Adds detection of misordered flags placed after positional arguments in `carbidecli`, providing a clear error message instead of sending a malformed HTTP request.
 
 - **Remove deprecated Instance/Allocation relationships** ([#371](https://github.com/NVIDIA/infra-controller-rest/pull/371))
-  Completes the transition from per-instance allocation linkage to aggregate allocation enforcement. Instance creation now validates against total reserved capacity for a tenant's instance type at a site, and allocation constraint updates check against total instance usage. See the updated [Allocation](https://nvidia.github.io/ncx-infra-controller-rest/#tag/Allocation) schema.
+  Completes the transition from per-instance allocation linkage to aggregate allocation enforcement. Instance creation now validates against total reserved capacity for a tenant's instance type at a site, and allocation constraint updates check against total instance usage. See the updated [Allocation](https://nvidia.github.io/infra-controller-rest/#tag/Allocation) schema.
 
 - **Move machine ID lock acquisition before record pull** ([#405](https://github.com/NVIDIA/infra-controller-rest/pull/405))
   Fixes a race condition in instance creation where the machine record could become stale between initial read and lock acquisition. The lock is now acquired before pulling the record, ensuring all subsequent checks operate on current data.
@@ -78,10 +78,10 @@ Each release lists pull requests grouped by category, with the most recent versi
   Corrects 20 URL path segments in the TUI that were using hyphenated display names instead of the actual API paths (e.g., `ip-block` instead of `ipblock`), fixing silent 404s on list, get, create, update, and delete operations for these four resource types.
 
 - **Revise Allocation status enum and attribute descriptions in OpenAPI spec** ([#395](https://github.com/NVIDIA/infra-controller-rest/pull/395))
-  Aligns the Allocation status enum values in the OpenAPI schema with database constants (e.g., `Registered` was missing), fixing deserialization errors when listing Allocations. Adds comprehensive attribute descriptions across Allocation models. See the updated [Allocation](https://nvidia.github.io/ncx-infra-controller-rest/#tag/Allocation) schema.
+  Aligns the Allocation status enum values in the OpenAPI schema with database constants (e.g., `Registered` was missing), fixing deserialization errors when listing Allocations. Adds comprehensive attribute descriptions across Allocation models. See the updated [Allocation](https://nvidia.github.io/infra-controller-rest/#tag/Allocation) schema.
 
 - **Infer Provider/Tenant from org for Site update and Fabric retrieval endpoints** ([#372](https://github.com/NVIDIA/infra-controller-rest/pull/372))
-  Extends org-based identity inference to Site update and Fabric retrieval endpoints, removing the need to pass `infrastructureProviderId` or `tenantId` query parameters. See updated parameters on [Update Site](https://nvidia.github.io/ncx-infra-controller-rest/#tag/Site/operation/update-site) and [Retrieve all Sites](https://nvidia.github.io/ncx-infra-controller-rest/#tag/Site/operation/get-all-site).
+  Extends org-based identity inference to Site update and Fabric retrieval endpoints, removing the need to pass `infrastructureProviderId` or `tenantId` query parameters. See updated parameters on [Update Site](https://nvidia.github.io/infra-controller-rest/#tag/Site/operation/update-site) and [Retrieve all Sites](https://nvidia.github.io/infra-controller-rest/#tag/Site/operation/get-all-site).
 
 - **Support reflashing the same firmware version in PSM** ([#393](https://github.com/NVIDIA/infra-controller-rest/pull/393))
   Allows PowerShelf Manager to re-apply the same firmware version that is already installed, enabling recovery scenarios where a re-flash is needed without a version change.
@@ -97,7 +97,7 @@ Each release lists pull requests grouped by category, with the most recent versi
 ### Documentation
 
 - **Add Getting Started section in OpenAPI schema** ([#402](https://github.com/NVIDIA/infra-controller-rest/pull/402))
-  Adds a [Getting Started](https://nvidia.github.io/ncx-infra-controller-rest/#section/Getting-Started) section to the API documentation, providing a clear onboarding path for new users. HTTP 200 and 201 responses are now auto-expanded for better discoverability of response schemas.
+  Adds a [Getting Started](https://nvidia.github.io/infra-controller-rest/#section/Getting-Started) section to the API documentation, providing a clear onboarding path for new users. HTTP 200 and 201 responses are now auto-expanded for better discoverability of response schemas.
 
 ### CI/CD
 

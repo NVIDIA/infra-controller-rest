@@ -26,11 +26,11 @@ gen-pb: ## Generate protobuf files
 	@echo "Successfully generated protobuf"
 
 gen-nicoapi-pb: ## Generate protobuf files for nico-api access, only needed for new messages or fields that we will actually use
-	rm -rf ncx-infra-controller-core
+	rm -rf infra-controller-core
 	git clone https://github.com/NVIDIA/infra-controller-core.git
 	rm -f internal/nicoapi/nicoproto/*.proto
-	cp ncx-infra-controller-core/crates/rpc/proto/*.proto internal/nicoapi/nicoproto/
-	rm -rf ncx-infra-controller-core
+	cp infra-controller-core/crates/rpc/proto/*.proto internal/nicoapi/nicoproto/
+	rm -rf infra-controller-core
 # The protodefs are a bit unclean, and we need to make some tweaks to make them usable.
 	cd internal/nicoapi && ./tweak_protodefs.sh
 # Specify version of buf for consistency in pipeline builds

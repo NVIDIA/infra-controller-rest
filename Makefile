@@ -235,7 +235,7 @@ core-proto-clean:
 	rm -rf workflow-schema/site-agent/workflows/v1/*_nico.proto
 	rm -rf workflow-schema/schema/site-agent/workflows/v1/*.pb.go
 
-core-proto-repo ?= NVIDIA/ncx-infra-controller-core
+core-proto-repo ?= NVIDIA/infra-controller-core
 core-proto-repo-ssh:=ssh://git@github.com/$(core-proto-repo).git
 core-proto-ref ?= origin/main
 core-proto-fetch:

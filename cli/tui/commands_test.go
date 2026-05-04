@@ -972,10 +972,10 @@ func TestBuildTenantSelectItems_SelfTenantPinnedFirstWithSuffix(t *testing.T) {
 	// Admin for the same org, so there are zero tenant-accounts but their
 	// own tenant id is known. Must appear as the first picker entry with
 	// a "(self)" suffix so the label is unambiguous.
-	items := buildTenantSelectItems(nil, "11111111-2222-3333-4444-555566667777", "ncx")
+	items := buildTenantSelectItems(nil, "11111111-2222-3333-4444-555566667777", "nico")
 	require.Len(t, items, 2, "self entry plus manual-entry sentinel")
 	assert.Equal(t, "11111111-2222-3333-4444-555566667777", items[0].ID)
-	assert.Equal(t, "ncx (self)", items[0].Label)
+	assert.Equal(t, "nico (self)", items[0].Label)
 	assert.Equal(t, tenantManualEntrySentinel, items[1].ID)
 }
 
@@ -991,9 +991,9 @@ func TestBuildTenantSelectItems_SelfTenantStaysFirstWhenAccountsSort(t *testing.
 		{Name: "zeta", Extra: map[string]string{"tenantId": "tenant-z"}},
 		{Name: "alpha", Extra: map[string]string{"tenantId": "tenant-a"}},
 	}
-	items := buildTenantSelectItems(accounts, "self-tenant", "ncx")
+	items := buildTenantSelectItems(accounts, "self-tenant", "nico")
 	require.Len(t, items, 4, "self + 2 tenant-accounts + sentinel")
-	assert.Equal(t, "ncx (self)", items[0].Label, "self always pinned first even if it sorts after")
+	assert.Equal(t, "nico (self)", items[0].Label, "self always pinned first even if it sorts after")
 	assert.Equal(t, "alpha", items[1].Label, "remaining items sort alphabetically")
 	assert.Equal(t, "zeta", items[2].Label)
 	assert.Equal(t, tenantManualEntrySentinel, items[3].ID)
@@ -1004,16 +1004,16 @@ func TestBuildTenantSelectItems_SelfTenantDedupesWithAccount(t *testing.T) {
 	// only the self entry is shown (inserted first, so the account-row
 	// copy is dropped by the dedupe map).
 	accounts := []NamedItem{
-		{Name: "ncx", Extra: map[string]string{"tenantId": "self-tenant"}},
+		{Name: "nico", Extra: map[string]string{"tenantId": "self-tenant"}},
 	}
-	items := buildTenantSelectItems(accounts, "self-tenant", "ncx")
+	items := buildTenantSelectItems(accounts, "self-tenant", "nico")
 	require.Len(t, items, 2, "one entry (self) plus manual-entry sentinel")
-	assert.Equal(t, "ncx (self)", items[0].Label)
+	assert.Equal(t, "nico (self)", items[0].Label)
 	assert.Equal(t, "self-tenant", items[0].ID)
 }
 
 func TestBuildTenantSelectItems_EmptySelfTenantIgnored(t *testing.T) {
-	items := buildTenantSelectItems(nil, "", "ncx")
+	items := buildTenantSelectItems(nil, "", "nico")
 	assert.Nil(t, items, "no self id and no accounts means no picker")
 }
 

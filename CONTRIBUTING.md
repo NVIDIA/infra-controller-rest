@@ -116,8 +116,8 @@ Developers must first fork the upstream [NVIDIA Infrastructure Controller REST r
 ### 2. Clone Your Fork
 
 ```bash
-git clone https://github.com/<your-username>/ncx-infra-controller-rest.git
-cd ncx-infra-controller-rest
+git clone https://github.com/<your-username>/infra-controller-rest.git
+cd infra-controller-rest
 ```
 
 ### 3. Add Upstream Remote

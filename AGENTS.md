@@ -1,7 +1,7 @@
 # AGENTS.md
 
 This file provides guidance for AI coding agents working in the
-`ncx-infra-controller-rest` repository.
+`infra-controller-rest` repository.
 
 ## Project Overview
 
@@ -28,7 +28,7 @@ for on-site hardware operations.
 ## Repository Structure
 
 ```text
-ncx-infra-controller-rest/
+infra-controller-rest/
 ├── api/                  # Main REST API server (Echo-based)
 ├── auth/                 # Authentication (Keycloak, JWT, service accounts)
 ├── cert-manager/         # Native PKI certificate management (credsmgr)
