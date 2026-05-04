@@ -3177,6 +3177,13 @@ paths:
           name: includeRelation
           description: Related entity to expand
         - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: >-
+            When true, includes IPAM usage for each Subnet's IPv4 space (`usageStats`), same shape as IP Block usage.
+            Loads the parent IPv4 IP Block relation internally if needed.
+        - schema:
             type: integer
             example: 1
             default: 1
@@ -3338,6 +3345,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: >-
+            When true, includes IPAM usage for this Subnet's IPv4 space (`usageStats`), same shape as IP Block usage.
+            Loads the parent IPv4 IP Block relation internally if needed.
     delete:
       summary: Delete Subnet
       operationId: delete-subnet
@@ -14188,6 +14202,12 @@ components:
         status:
           $ref: '#/components/schemas/SubnetStatus'
           readOnly: true
+        usageStats:
+          $ref: '#/components/schemas/IpBlockUsageStats'
+          readOnly: true
+          description: >-
+            Present when query param `includeUsageStats=true`. IPAM IPv4 usage within this Subnet (available/acquired
+            IPs and child prefixes used by Instances and other allocations).
         statusHistory:
           type: array
           items:

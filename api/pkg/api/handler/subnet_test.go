@@ -1161,9 +1161,11 @@ func TestSubnetHandler_Get(t *testing.T) {
 		queryIncludeRelations1 *string
 		queryIncludeRelations2 *string
 		queryIncludeRelations3 *string
+		queryIncludeUsageStats *string
 		expectedVpcName        *string
 		expectetIPv4Name       *string
 		expectedIPv6Name       *string
+		expectUsageStatsNonNil bool
 		verifyChildSpanner     bool
 	}{
 		{
@@ -1243,6 +1245,25 @@ func TestSubnetHandler_Get(t *testing.T) {
 			queryIncludeRelations1: cdb.GetStrPtr(cdbm.IPv4BlockRelationName),
 			expectetIPv4Name:       &ipb1.Name,
 		},
+		{
+			name:                   "error when includeUsageStats query invalid",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     subnet.ID,
+			expectedErr:            true,
+			expectedStatus:         http.StatusBadRequest,
+			queryIncludeUsageStats: cdb.GetStrPtr("not-a-bool"),
+		},
+		{
+			name:                   "success case when includeUsageStats true",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     subnet.ID,
+			expectedErr:            false,
+			expectedStatus:         http.StatusOK,
+			queryIncludeUsageStats: cdb.GetStrPtr("true"),
+			expectUsageStatsNonNil: true,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1251,6 +1272,9 @@ func TestSubnetHandler_Get(t *testing.T) {
 			e := echo.New()
 
 			q := url.Values{}
+			if tc.queryIncludeUsageStats != nil {
+				q.Set("includeUsageStats", *tc.queryIncludeUsageStats)
+			}
 			if tc.queryIncludeRelations1 != nil {
 				q.Add("includeRelation", *tc.queryIncludeRelations1)
 			}
@@ -1294,7 +1318,8 @@ func TestSubnetHandler_Get(t *testing.T) {
 
 				assert.Equal(t, cdbm.IPBlockRoutingTypeDatacenterOnly, *rsp.RoutingType)
 
-				if tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil {
+				expanded := tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil || tc.expectUsageStatsNonNil
+				if expanded {
 					if tc.expectedVpcName != nil {
 						assert.Equal(t, *tc.expectedVpcName, rsp.Vpc.Name)
 					}
@@ -1304,10 +1329,18 @@ func TestSubnetHandler_Get(t *testing.T) {
 					if tc.expectedIPv6Name != nil {
 						assert.Equal(t, *tc.expectedIPv6Name, rsp.IPv6Block.Name)
 					}
+					if tc.expectUsageStatsNonNil {
+						require.NotNil(t, rsp.IPv4Block)
+					}
 				} else {
 					assert.Nil(t, rsp.Vpc)
 					assert.Nil(t, rsp.IPv4Block)
 					assert.Nil(t, rsp.IPv6Block)
+				}
+				if tc.expectUsageStatsNonNil {
+					require.NotNil(t, rsp.UsageStats)
+				} else {
+					assert.Nil(t, rsp.UsageStats)
 				}
 			}
 

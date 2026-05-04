@@ -38,6 +38,10 @@ var (
 	ErrNilIPBlock = errors.New("ipblock parameter is nil")
 	// ErrNilVpcPrefix is the error when a nil VpcPrefix was passed
 	ErrNilVpcPrefix = errors.New("vpcPrefix parameter is nil")
+	// ErrNilSubnet is the error when a nil Subnet was passed
+	ErrNilSubnet = errors.New("subnet parameter is nil")
+	// ErrSubnetNoIPv4Prefix is returned when a Subnet has no IPv4 prefix to resolve IPAM CIDR
+	ErrSubnetNoIPv4Prefix = errors.New("subnet has no IPv4 prefix")
 )
 
 // ~~~~~ IPAM Utilities ~~~~~ //
@@ -197,6 +201,62 @@ func GetIpamUsageForVpcPrefix(ctx context.Context, ipamDB cipam.Storage, vpcPref
 	ipamPrefix := ipamer.PrefixFrom(ctx, vpcCidr)
 	if ipamPrefix == nil {
 		return nil, fmt.Errorf("did not find prefix for VPC prefix: %s", vpcPrefix.ID.String())
+	}
+	u := ipamPrefix.Usage()
+	return &cipam.Usage{
+		AvailableIPs:              u.AvailableIPs,
+		AcquiredIPs:               u.AcquiredIPs,
+		AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
+		AvailablePrefixes:         u.AvailablePrefixes,
+		AcquiredPrefixes:          u.AcquiredPrefixes,
+	}, nil
+}
+
+func getSubnetIPv4Cidr(ctx context.Context, subnet *cdbm.Subnet) (string, error) {
+	if subnet == nil {
+		return "", ErrNilSubnet
+	}
+	if subnet.IPv4Prefix == nil || *subnet.IPv4Prefix == "" {
+		return "", ErrSubnetNoIPv4Prefix
+	}
+	p := *subnet.IPv4Prefix
+	if strings.Contains(p, "/") {
+		return p, nil
+	}
+	return GetCidrForIPBlock(ctx, p, subnet.PrefixLength), nil
+}
+
+// GetIpamUsageForSubnet returns IPAM usage for the Subnet's IPv4 CIDR subtree within the parent IPv4 IP Block namespace.
+func GetIpamUsageForSubnet(ctx context.Context, ipamDB cipam.Storage, subnet *cdbm.Subnet, ipBlock *cdbm.IPBlock) (*cipam.Usage, error) {
+	if subnet == nil {
+		return nil, ErrNilSubnet
+	}
+	if ipBlock == nil {
+		return nil, ErrNilIPBlock
+	}
+
+	subnetCidr, err := getSubnetIPv4Cidr(ctx, subnet)
+	if err != nil {
+		return nil, err
+	}
+	parentCidr := GetCidrForIPBlock(ctx, ipBlock.Prefix, ipBlock.PrefixLength)
+
+	if ipBlock.FullGrant && cidrPrefixesEqual(subnetCidr, parentCidr) {
+		return &cipam.Usage{
+			AvailableIPs:              0,
+			AcquiredIPs:               0,
+			AvailableSmallestPrefixes: 0,
+			AvailablePrefixes:         nil,
+			AcquiredPrefixes:          1,
+		}, nil
+	}
+
+	ipamer := cipam.NewWithStorage(ipamDB)
+	namespace := GetIpamNamespaceForIPBlock(ctx, ipBlock.RoutingType, ipBlock.InfrastructureProviderID.String(), ipBlock.SiteID.String())
+	ipamer.SetNamespace(namespace)
+	ipamPrefix := ipamer.PrefixFrom(ctx, subnetCidr)
+	if ipamPrefix == nil {
+		return nil, fmt.Errorf("did not find prefix for Subnet: %s", subnet.ID.String())
 	}
 	u := ipamPrefix.Usage()
 	return &cipam.Usage{

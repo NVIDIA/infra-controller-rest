@@ -25,8 +25,11 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
+
+	cip "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
 
 	"go.opentelemetry.io/otel/attribute"
 	temporalClient "go.temporal.io/sdk/client"
@@ -399,7 +402,7 @@ func (csh CreateSubnetHandler) Handle(c echo.Context) error {
 	txCommitted = true
 
 	// create response
-	apiInstance := model.NewAPISubnet(subnet, []cdbm.StatusDetail{*ssd})
+	apiInstance := model.NewAPISubnet(subnet, []cdbm.StatusDetail{*ssd}, nil)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusCreated, apiInstance)
 }
@@ -437,6 +440,7 @@ func NewGetAllSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param status query string false "Filter by status" e.g. 'Pending', 'Error'"
 // @Param query query string false "Query input for full text search"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
+// @Param includeUsageStats query boolean false "Subnet IPv4 IPAM usage stats (same shape as IP Block usage)"
 // @Param pageNumber query integer false "Page number of results returned"
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
@@ -499,6 +503,20 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 	if errMsg != "" {
 		logger.Warn().Msg(errMsg)
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
+	}
+
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPv4BlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPv4BlockRelationName)
 	}
 
 	// Get site ID from query param
@@ -570,10 +588,28 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 		Limit:   pageRequest.Limit,
 		Offset:  pageRequest.Offset,
 		OrderBy: pageRequest.OrderBy,
-	}, qIncludeRelations)
+	}, queryIncludeRelations)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting subnets from db")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Subnets", nil)
+	}
+
+	puSubnetMap := map[uuid.UUID]*cip.Usage{}
+	if includeUsageStats {
+		ipamStorage := ipam.NewIpamStorage(gash.dbSession.DB, nil)
+		for i := range subnets {
+			sn := &subnets[i]
+			if sn.IPv4Block == nil {
+				logger.Error().Str("subnetId", sn.ID.String()).Msg("Subnet missing IPv4 Block relation for usage stats")
+				continue
+			}
+			prefixUsage, serr := ipam.GetIpamUsageForSubnet(ctx, ipamStorage, sn, sn.IPv4Block)
+			if serr != nil {
+				logger.Error().Err(serr).Str("subnetId", sn.ID.String()).Msg("error retrieving ipam usage stats for Subnet")
+				continue
+			}
+			puSubnetMap[sn.ID] = prefixUsage
+		}
 	}
 
 	// Get status details
@@ -600,7 +636,8 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 	// get status details
 	for _, sn := range subnets {
 		cursn := sn
-		apiSubnet := model.NewAPISubnet(&cursn, ssdMap[sn.ID.String()])
+		cipu := puSubnetMap[sn.ID]
+		apiSubnet := model.NewAPISubnet(&cursn, ssdMap[sn.ID.String()], cipu)
 		apiSubnets = append(apiSubnets, apiSubnet)
 	}
 
@@ -649,6 +686,7 @@ func NewGetSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Subnet"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
+// @Param includeUsageStats query boolean false "Subnet IPv4 IPAM usage stats (same shape as IP Block usage)"
 // @Success 200 {object} model.APISubnet
 // @Router /v2/org/{org}/nico/subnet/{id} [get]
 func (gsh GetSubnetHandler) Handle(c echo.Context) error {
@@ -686,6 +724,20 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPv4BlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPv4BlockRelationName)
+	}
+
 	// Get subnet ID from URL param
 	sStrID := c.Param("id")
 
@@ -707,7 +759,7 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 	}
 
 	// Check that subnet exists
-	subnet, err := sDAO.GetByID(ctx, nil, sID, qIncludeRelations)
+	subnet, err := sDAO.GetByID(ctx, nil, sID, queryIncludeRelations)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving Subnet DB entity")
 		if err == cdb.ErrDoesNotExist {
@@ -730,8 +782,22 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for subnet", nil)
 	}
 
+	var puSubnet *cip.Usage
+	if includeUsageStats {
+		if subnet.IPv4Block == nil {
+			logger.Error().Str("subnetId", subnet.ID.String()).Msg("Subnet missing IPv4 Block relation for usage stats")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for Subnet", nil)
+		}
+		ipamStorage := ipam.NewIpamStorage(gsh.dbSession.DB, nil)
+		puSubnet, err = ipam.GetIpamUsageForSubnet(ctx, ipamStorage, subnet, subnet.IPv4Block)
+		if err != nil {
+			logger.Error().Err(err).Msg("error retrieving ipam usage stats details for Subnet")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for Subnet", nil)
+		}
+	}
+
 	// Send response
-	apiInstance := model.NewAPISubnet(subnet, ssds)
+	apiInstance := model.NewAPISubnet(subnet, ssds, puSubnet)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiInstance)
 }
@@ -890,7 +956,7 @@ func (ush UpdateSubnetHandler) Handle(c echo.Context) error {
 	txCommitted = true
 
 	// Send response
-	apiInstance := model.NewAPISubnet(subnet, ssds)
+	apiInstance := model.NewAPISubnet(subnet, ssds, nil)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiInstance)
 }
