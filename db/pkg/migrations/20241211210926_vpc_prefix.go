@@ -23,7 +23,7 @@ import (
 
 	"database/sql"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/uptrace/bun"
 )
 

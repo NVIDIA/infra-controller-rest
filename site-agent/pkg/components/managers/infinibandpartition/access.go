@@ -18,8 +18,8 @@
 package infinibandpartition
 
 import (
-	Manager "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/managerapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
+	Manager "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
 )
 
 // ManagerAccess - access to all managers

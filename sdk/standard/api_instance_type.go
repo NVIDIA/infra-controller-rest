@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateInstanceType Create an Instance Type
 
 Create an Instance Type for Infrastructure Provider.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -196,7 +196,7 @@ CreateInstanceTypeMachineAssociation Create a Machine/Instance Type association
 
 # Associate a Machine to an Instance Type
 
-Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -329,7 +329,7 @@ DeleteInstanceType Delete Instance Type
 
 Delete an Instance Type by ID.
 
-Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -440,7 +440,7 @@ Delete a Machine's association with an Instance Type.
 
 `machineAssociationId` path parameter has been renamed to `machineId`. The path parameter will continue to accept both Machine ID and Machine/Instance Type ID until July 9th, 2026 00:00 UTC. After that time, Machine/Instance Type ID will no longer be accepted.
 
-Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -636,7 +636,7 @@ GetAllInstanceType Retrieve all Instance Types
 
 Get all Instance Types for the org.
 
-Provider and Tenant roles are inferred from the org's membership. User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+Provider and Tenant roles are inferred from the org's membership. User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 Results are returned from both Provider and Tenant perspectives when the org has both roles.
 
@@ -816,9 +816,9 @@ GetInstanceType Retrieve an Instance Type
 
 Get an Instance Type by ID.
 
-If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have `PROVIDER_ADMIN` role.
+If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-If the org has a Tenant entity and it has a Tenant Account with the Infrastructure Provider of the Instance Type, then the Instance Type detail is returned. User must have `TENANT_ADMIN` role.
+If the org has a Tenant entity and it has a Tenant Account with the Infrastructure Provider of the Instance Type, then the Instance Type detail is returned. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -968,7 +968,7 @@ GetInstanceTypeMachineAssociation Retrieve all Machines/Instance Type associatio
 
 # Get all Machines for a given Instance Type
 
-Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1107,7 +1107,7 @@ UpdateInstanceType Update Instance Type
 
 Update an Instance Type by ID.
 
-Org must have an Infrastructure Provider entity that owns the Instance Type. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity that owns the Instance Type. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

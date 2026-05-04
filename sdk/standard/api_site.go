@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateSite Create Site
 
 Create a Site for the org.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Tenants cannot create Sites.
 
@@ -199,7 +199,7 @@ DeleteSite Delete Site
 
 # Delete a specific Site
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Site can only be deleted if all Allocations have been deleted.
 
@@ -392,7 +392,7 @@ GetAllSite Retrieve all Sites
 
 Retrieve all Sites for org.
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -552,7 +552,7 @@ GetSite Retrieve Site
 
 Retrieve a specific Site by ID.
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 Access is granted if:
 - The Site is owned by the org's Infrastructure Provider
@@ -698,7 +698,7 @@ GetSiteStatusHistory Retrieve Site status history
 
 # Retrieve a specific Site status history
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 Access is granted if:
 - The Site is owned by the org's Infrastructure Provider
@@ -838,7 +838,7 @@ UpdateSite Update Site
 
 # Update a specific Site
 
-User must have `PROVIDER_ADMIN` role.
+User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no Site specific configuration modifiable by Tenant.
 

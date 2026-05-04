@@ -26,8 +26,8 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	subnetActivity "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	subnetActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // DeleteSubnetByID is a helper Temporal workflow to delete an existing Subnet by ID

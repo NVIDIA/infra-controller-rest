@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateSubnet Create Subnet
 
 Create a Subnet for the org.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 At least 1 IPv4 IP block or 1 IPv6 IP block must be specified.
 
@@ -192,7 +192,7 @@ DeleteSubnet Delete Subnet
 
 Delete a specific Subnet by ID.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -355,7 +355,7 @@ GetAllSubnet Retrieve all Subnets
 
 # Retrieve all Subnets for the org
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -507,7 +507,7 @@ GetSubnet Retrieve Subnet
 
 # Retrieve a specific Subnet
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -636,7 +636,7 @@ UpdateSubnet Update Subnet
 
 # Update an existing Subnet
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

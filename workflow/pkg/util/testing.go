@@ -30,13 +30,13 @@ import (
 
 	"github.com/uptrace/bun/extra/bundebug"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/roles"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/roles"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/workflow/internal/config"
 )
 
 // TestInitDB init DB

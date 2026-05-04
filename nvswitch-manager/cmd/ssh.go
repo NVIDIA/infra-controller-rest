@@ -20,10 +20,10 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/secretstring"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/sshclient"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/secretstring"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/sshclient"
 	"strings"
 
 	log "github.com/sirupsen/logrus"

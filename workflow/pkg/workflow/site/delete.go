@@ -29,8 +29,8 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	siteActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	siteActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/site"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 )
 
 // DeleteSiteComponents is a Temporal workflow to initiate delete workflow if exists Instance/InstanceType/Machine/Subnet/VPC via Site Agent

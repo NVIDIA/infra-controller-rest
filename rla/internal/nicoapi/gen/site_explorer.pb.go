@@ -2258,7 +2258,7 @@ const file_site_explorer_proto_rawDesc = "" +
 	"\aENABLED\x10\x00\x12\v\n" +
 	"\aPARTIAL\x10\x01\x12\f\n" +
 	"\bDISABLED\x10\x02B\xbc\x01\n" +
-	"\x11com.site_explorerB\x11SiteExplorerProtoP\x01ZDgithub.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03SXX\xaa\x02\fSiteExplorer\xca\x02\fSiteExplorer\xe2\x02\x18SiteExplorer\\GPBMetadata\xea\x02\fSiteExplorerb\x06proto3"
+	"\x11com.site_explorerB\x11SiteExplorerProtoP\x01ZDgithub.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03SXX\xaa\x02\fSiteExplorer\xca\x02\fSiteExplorer\xe2\x02\x18SiteExplorer\\GPBMetadata\xea\x02\fSiteExplorerb\x06proto3"
 
 var (
 	file_site_explorer_proto_rawDescOnce sync.Once

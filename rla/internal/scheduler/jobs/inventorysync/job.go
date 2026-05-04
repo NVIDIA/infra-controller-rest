@@ -23,16 +23,16 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	nicoprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                       //nolint
-	nvswitchmanagerprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager" //nolint
-	psmprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"                         //nolint
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                       //nolint
+	nvswitchmanagerprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager" //nolint
+	psmprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"                         //nolint
 )
 
 // Job implements scheduler.Job for the inventory sync task.

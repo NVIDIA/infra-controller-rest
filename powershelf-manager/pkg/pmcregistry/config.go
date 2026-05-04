@@ -16,7 +16,7 @@
  */
 package pmcregistry
 
-import cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+import cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 
 // PmcRegisterType enumerates registry backends.
 type PmcRegisterType string

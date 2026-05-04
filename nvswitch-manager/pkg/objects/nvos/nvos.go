@@ -19,7 +19,7 @@ package nvos
 
 import (
 	"fmt"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 	"net"
 	"regexp"
 	"strings"

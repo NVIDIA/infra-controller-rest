@@ -25,9 +25,9 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
 )
 
 // CreateSubnetV2 is a workflow to create new Subnets using the CreateSubnetOnSite activity

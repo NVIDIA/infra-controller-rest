@@ -24,7 +24,7 @@ import (
 	"encoding/pem"
 	"errors"
 
-	cloudutils "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cloudutils "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"

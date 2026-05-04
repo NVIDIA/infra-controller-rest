@@ -13,7 +13,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-module github.com/NVIDIA/ncx-infra-controller-rest
+module github.com/NVIDIA/infra-controller-rest
 
 go 1.25.4
 
@@ -23,7 +23,7 @@ require (
 	connectrpc.com/grpcreflect v1.3.0
 	connectrpc.com/otelconnect v0.9.0
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard v0.0.0-00010101000000-000000000000
+	github.com/NVIDIA/infra-controller-rest/sdk/standard v0.0.0-00010101000000-000000000000
 	github.com/Nerzal/gocloak/v13 v13.9.0
 	github.com/PagerDuty/go-pagerduty v1.8.0
 	github.com/avast/retry-go/v4 v4.7.0
@@ -111,7 +111,7 @@ require (
 	logur.dev/logur v0.17.0
 )
 
-replace github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard => ./sdk/standard
+replace github.com/NVIDIA/infra-controller-rest/sdk/standard => ./sdk/standard
 
 require (
 	dario.cat/mergo v1.0.2 // indirect

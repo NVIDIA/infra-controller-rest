@@ -20,8 +20,8 @@ package rla
 import (
 	"time"
 
-	rlatypes "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/datatypes/managertypes/rla"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
+	rlatypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/rla"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

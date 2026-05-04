@@ -20,7 +20,7 @@ package client
 import (
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
 )
 
 // UpgradeFirmwareResult represents the result of a firmware upgrade operation.

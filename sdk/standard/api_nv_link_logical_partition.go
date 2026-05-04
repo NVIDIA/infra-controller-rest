@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateNvlinkLogicalPartition Create NVLink Logical Partition
 
 Create an NVLink Logical Partition for the org.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the NGC Org
@@ -190,7 +190,7 @@ DeleteNvlinkLogicalPartition Delete NVLink Logical Partition
 
 # Delete an NVLink Logical Partition by ID
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the NGC Org
@@ -360,7 +360,7 @@ GetAllNvlinkInterface Retrieve all NVLink Interfaces
 
 # Get all NVLink Interfaces
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the NGC Org
@@ -577,7 +577,7 @@ GetAllNvlinkLogicalPartition Retrieve all NVLink Logical Partitions
 
 # Retrieve all NVLink Logical Partitions for the org
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the NGC Org
@@ -756,7 +756,7 @@ GetNvlinkLogicalPartition Retrieve NVLink Logical Partition
 
 # Retrieve a specific NVLink Logical Partition by ID
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the NGC Org
@@ -894,7 +894,7 @@ UpdateNvlinkLogicalPartition Update NVLink Logical Partition
 
 # Update a specific NVLink Logical Partition
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` NGC role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the NGC Org

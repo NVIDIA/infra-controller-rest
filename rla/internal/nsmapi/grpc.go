@@ -27,8 +27,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/types/known/emptypb"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/certs"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi/gen"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/certs"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi/gen"
 )
 
 type grpcClient struct {

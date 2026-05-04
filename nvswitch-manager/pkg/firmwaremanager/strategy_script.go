@@ -26,8 +26,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/firmwaremanager/packages"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/firmwaremanager/packages"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
 
 	log "github.com/sirupsen/logrus"
 )

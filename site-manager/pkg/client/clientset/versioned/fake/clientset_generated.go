@@ -24,9 +24,9 @@ Code is generated
 package fake
 
 import (
-	clientset "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned"
-	forgev1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1"
-	fakeforgev1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1/fake"
+	clientset "github.com/NVIDIA/infra-controller-rest/site-manager/pkg/client/clientset/versioned"
+	forgev1 "github.com/NVIDIA/infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1"
+	fakeforgev1 "github.com/NVIDIA/infra-controller-rest/site-manager/pkg/client/clientset/versioned/typed/crds/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

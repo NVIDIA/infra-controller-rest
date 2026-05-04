@@ -25,7 +25,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	cconfig "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/config"
+	cconfig "github.com/NVIDIA/infra-controller-rest/common/pkg/config"
 )
 
 func TestNewTemporalConfig(t *testing.T) {

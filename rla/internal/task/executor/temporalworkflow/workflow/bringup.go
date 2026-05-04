@@ -23,9 +23,9 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operations"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 // init registers the BringUp workflow descriptor with the package registry.

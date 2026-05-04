@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateVpc Create VPC
 
 Create a VPC for the org.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -190,7 +190,7 @@ DeleteVpc Delete a VPC
 
 Delete a specific VPC by ID.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -360,7 +360,7 @@ GetAllVpc Retrieve all VPCs
 
 Retrieve all VPCs for the org.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -515,7 +515,7 @@ GetVpc Retrieve a VPC
 
 Retrieve a specific VPC by ID.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -644,7 +644,7 @@ UpdateVpc Update VPC
 
 # Update an existing VPC
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -783,7 +783,7 @@ UpdateVpcVirtualization Update VPC Virtualization
 
 # Update network virtualization type for a VPC
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix
 
 Tenant must own the VPC
 Request is rejected if the VPC already has Subnets or Instances

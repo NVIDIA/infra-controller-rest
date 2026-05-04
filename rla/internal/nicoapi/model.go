@@ -20,7 +20,7 @@ package nicoapi
 import (
 	"time"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi/gen"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
 )
 
 // model.go abstracts the raw grpc definitions away.  Don't bother implementing fields you don't think you'll use.

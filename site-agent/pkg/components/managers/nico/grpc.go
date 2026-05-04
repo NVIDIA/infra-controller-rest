@@ -20,8 +20,8 @@ package nico
 import (
 	"sync"
 
-	computils "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/utils"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
+	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"github.com/gogo/status"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc/codes"

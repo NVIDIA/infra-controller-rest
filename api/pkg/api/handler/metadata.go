@@ -22,7 +22,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
 )
 
 // MetadataHandler is an API handler to return system information about the API

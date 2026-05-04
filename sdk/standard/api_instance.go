@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -68,7 +68,7 @@ When `topologyOptimized` is false, instances can be spread across different NVLi
 
 Instance names are automatically generated using the `namePrefix` with a random 6-character suffix (e.g., "worker" becomes "worker-abc123", "worker-def456").
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -203,7 +203,7 @@ CreateInstance Create an Instance
 
 Create an Instance for Tenant.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -340,7 +340,7 @@ DeleteInstance Delete Instance
 
 # Delete an Instance by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -544,7 +544,7 @@ GetAllInstance Retrieve all Instances
 
 Get all Instances for Tenant.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -745,7 +745,7 @@ GetAllInstanceInfinibandInterface Retrieve all Instance InfiniBand Interfaces
 
 # Get all InfiniBand Interfaces for an Instance
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -919,7 +919,7 @@ GetAllInstanceNvlinkInterface Retrieve all Instance NVLink Interfaces
 
 # Get all NVLink Interfaces for an Instance
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1093,7 +1093,7 @@ GetAllInterface Retrieve all Interfaces
 
 # Get all Interfaces for an Instance
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1239,7 +1239,7 @@ GetInstance Retrieve Instance
 
 # Get an Instance by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1383,7 +1383,7 @@ GetInstanceStatusHistory Retrieve Instance status history
 
 # Get Instance status history
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1518,7 +1518,7 @@ UpdateInstance Update Instance
 
 # Update an Instance by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

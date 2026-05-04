@@ -26,7 +26,7 @@ package fake
 import (
 	"context"
 
-	v1 "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/crds/v1"
+	v1 "github.com/NVIDIA/infra-controller-rest/site-manager/pkg/crds/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
 	types "k8s.io/apimachinery/pkg/types"

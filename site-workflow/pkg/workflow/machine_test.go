@@ -28,10 +28,10 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	mActivity "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/util"
+	mActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/util"
 )
 
 type MachineWorkflowTestSuite struct {

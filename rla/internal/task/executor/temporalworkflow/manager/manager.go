@@ -27,14 +27,14 @@ import (
 	"go.temporal.io/sdk/worker"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/clients/temporal"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/activity"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/workflow"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/clients/temporal"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/activity"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/workflow"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 const (

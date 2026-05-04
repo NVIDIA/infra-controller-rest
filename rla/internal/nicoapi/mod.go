@@ -24,7 +24,7 @@ import (
 	"context"
 	"time"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi/gen"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
 )
 
 // Client allow us to have both a real implemenation and a mock implementation for unit tests which can be switched transparently

@@ -6817,7 +6817,7 @@ const file_measured_boot_proto_rawDesc = "" +
 	"\rPendingBundle\x10\x01\x12\f\n" +
 	"\bMeasured\x10\x02\x12\x13\n" +
 	"\x0fMeasuringFailed\x10\x03B\xbc\x01\n" +
-	"\x11com.measured_bootB\x11MeasuredBootProtoP\x01ZDgithub.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03MXX\xaa\x02\fMeasuredBoot\xca\x02\fMeasuredBoot\xe2\x02\x18MeasuredBoot\\GPBMetadata\xea\x02\fMeasuredBootb\x06proto3"
+	"\x11com.measured_bootB\x11MeasuredBootProtoP\x01ZDgithub.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03MXX\xaa\x02\fMeasuredBoot\xca\x02\fMeasuredBoot\xe2\x02\x18MeasuredBoot\\GPBMetadata\xea\x02\fMeasuredBootb\x06proto3"
 
 var (
 	file_measured_boot_proto_rawDescOnce sync.Once

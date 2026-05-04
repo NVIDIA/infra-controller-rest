@@ -21,8 +21,8 @@ import (
 	"errors"
 	"testing"
 
-	cwm "github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/metrics"
-	vpcActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/vpc"
+	cwm "github.com/NVIDIA/infra-controller-rest/workflow/internal/metrics"
+	vpcActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/vpc"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
@@ -30,7 +30,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 type UpdateVpcTestSuite struct {

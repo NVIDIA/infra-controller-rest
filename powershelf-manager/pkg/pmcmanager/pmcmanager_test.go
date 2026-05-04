@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/redfish"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/redfish"
 
 	"github.com/stretchr/testify/assert"
 )

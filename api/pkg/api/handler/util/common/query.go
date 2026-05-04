@@ -18,7 +18,7 @@
 package common
 
 import (
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/labstack/echo/v4"
 )
 

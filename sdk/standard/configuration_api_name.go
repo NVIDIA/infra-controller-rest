@@ -20,7 +20,7 @@ package standard
 import (
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard/helpers"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard/helpers"
 )
 
 // NewConfigurationWithAPIName returns a generated configuration with an

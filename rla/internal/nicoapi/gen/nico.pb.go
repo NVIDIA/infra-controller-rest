@@ -53947,7 +53947,7 @@ const file_nico_proto_rawDesc = "" +
 	"\x17UpdateComponentFirmware\x12$.nico.UpdateComponentFirmwareRequest\x1a%.nico.UpdateComponentFirmwareResponse\x12o\n" +
 	"\x1aGetComponentFirmwareStatus\x12'.nico.GetComponentFirmwareStatusRequest\x1a(.nico.GetComponentFirmwareStatusResponse\x12x\n" +
 	"\x1dListComponentFirmwareVersions\x12*.nico.ListComponentFirmwareVersionsRequest\x1a+.nico.ListComponentFirmwareVersionsResponseB\x8b\x01\n" +
-	"\bcom.nicoB\tNicoProtoP\x01ZDgithub.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03NXX\xaa\x02\x04Nico\xca\x02\x04Nico\xe2\x02\x10Nico\\GPBMetadata\xea\x02\x04Nicob\x06proto3"
+	"\bcom.nicoB\tNicoProtoP\x01ZDgithub.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03NXX\xaa\x02\x04Nico\xca\x02\x04Nico\xe2\x02\x10Nico\\GPBMetadata\xea\x02\x04Nicob\x06proto3"
 
 var (
 	file_nico_proto_rawDescOnce sync.Once

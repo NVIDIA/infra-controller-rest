@@ -25,7 +25,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 )
 
 // InMemoryCredentialManager implements the CredentialManager interface with an in-memory store.

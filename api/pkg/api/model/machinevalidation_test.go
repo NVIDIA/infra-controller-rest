@@ -19,7 +19,7 @@ package model
 
 import (
 	"fmt"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

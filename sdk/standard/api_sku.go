@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -86,9 +86,9 @@ SKUs represent unique hardware configurations discovered at sites. They are auto
 
 A `siteId` query parameter is required for all requests.
 
-For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
-For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have `TENANT_ADMIN` role. The Tenant must have an account with the Site's Infrastructure Provider.
+For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have authorization role with `TENANT_ADMIN` suffix. The Tenant must have an account with the Site's Infrastructure Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -235,9 +235,9 @@ Retrieve a specific SKU (Stock Keeping Unit) by ID.
 
 SKUs represent unique hardware configurations discovered at sites. They are automatically derived from machine characteristics.
 
-For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+For Infrastructure Providers: Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
-For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have `TENANT_ADMIN` role. The Tenant must have an account with the SKU's Site's Infrastructure Provider.
+For Tenants: Org must have a Tenant with `TargetedInstanceCreation` capability enabled. User must have authorization role with `TENANT_ADMIN` suffix. The Tenant must have an account with the SKU's Site's Infrastructure Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

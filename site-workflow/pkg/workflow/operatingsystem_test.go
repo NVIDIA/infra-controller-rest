@@ -21,9 +21,9 @@ import (
 	"errors"
 	"testing"
 
-	iActivity "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/util"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	iActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/util"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"

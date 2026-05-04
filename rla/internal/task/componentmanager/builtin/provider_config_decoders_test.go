@@ -23,9 +23,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 )
 
 func TestNewServiceProviderConfigDecoderRegistry(t *testing.T) {

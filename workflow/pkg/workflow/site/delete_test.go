@@ -29,7 +29,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	siteActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/site"
+	siteActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/site"
 	tmocks "go.temporal.io/sdk/mocks"
 )
 

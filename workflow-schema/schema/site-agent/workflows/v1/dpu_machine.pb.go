@@ -100,7 +100,7 @@ const file_dpu_machine_proto_rawDesc = "" +
 	"\n" +
 	"DpuMachine\x12'\n" +
 	"\amachine\x18\x01 \x01(\v2\r.nico.MachineR\amachine\x12T\n" +
-	"\x12dpu_network_config\x18\x02 \x01(\v2&.nico.ManagedHostNetworkConfigResponseR\x10dpuNetworkConfigBCZAgithub.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/protob\x06proto3"
+	"\x12dpu_network_config\x18\x02 \x01(\v2&.nico.ManagedHostNetworkConfigResponseR\x10dpuNetworkConfigBCZAgithub.com/NVIDIA/infra-controller-rest/workflow-schema/protob\x06proto3"
 
 var (
 	file_dpu_machine_proto_rawDescOnce sync.Once

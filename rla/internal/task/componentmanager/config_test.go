@@ -29,12 +29,12 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
-	cmbuiltin "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/builtin"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	cmbuiltin "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/builtin"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 type customProviderConfig struct {

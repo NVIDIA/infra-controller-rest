@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateIpblock Create IP Block
 
 Create an IP block for the org.
 
-Only Infrastructure Providers can create a root IP Block. User must have `PROVIDER_ADMIN` role.
+Only Infrastructure Providers can create a root IP Block. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Tenant IP Blocks are created via Allocation.
 
@@ -192,7 +192,7 @@ DeleteIpblock Delete IP Block
 
 # Delete an IP block
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role. Only root IP Blocks can be deleted if there are no allocations associated with it.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix. Only root IP Blocks can be deleted if there are no allocations associated with it.
 
 Tenant IP Blocks are managed via Allocation.
 
@@ -357,7 +357,7 @@ Retrieve all child IP Blocks allocated to Tenants from a specific Provider super
 
 The IP Block in URL must belong to the Infrastructure Provider associated with the Org.
 
-User must have `PROVIDER_ADMIN` role.
+User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -568,7 +568,7 @@ GetAllIpblock Retrieve all IP Blocks
 
 Retrieve all IP blocks for the org.
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -747,7 +747,7 @@ GetIpblock Retrieve IP Block
 
 Retrieve an IP Block by ID.
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -25,10 +25,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/location"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/location"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
 )
 
 // Rack represents a hardware rack with various properties and components

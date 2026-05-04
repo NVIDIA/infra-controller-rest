@@ -22,10 +22,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/google/uuid"
 
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
 	"github.com/uptrace/bun"
 )
 

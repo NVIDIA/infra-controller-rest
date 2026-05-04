@@ -25,9 +25,9 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	ipam "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	ipam "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 const (

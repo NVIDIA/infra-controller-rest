@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi/gen"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi/gen"
 )
 
 // PMCVendor enumerates supported PMC vendors.

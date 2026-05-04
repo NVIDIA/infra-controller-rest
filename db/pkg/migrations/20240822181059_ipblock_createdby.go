@@ -24,7 +24,7 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 )
 
 func init() {

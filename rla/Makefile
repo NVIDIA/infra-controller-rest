@@ -27,7 +27,7 @@ gen-pb: ## Generate protobuf files
 
 gen-nicoapi-pb: ## Generate protobuf files for nico-api access, only needed for new messages or fields that we will actually use
 	rm -rf ncx-infra-controller-core
-	git clone https://github.com/NVIDIA/ncx-infra-controller-core.git
+	git clone https://github.com/NVIDIA/infra-controller-core.git
 	rm -f internal/nicoapi/nicoproto/*.proto
 	cp ncx-infra-controller-core/crates/rpc/proto/*.proto internal/nicoapi/nicoproto/
 	rm -rf ncx-infra-controller-core
@@ -66,9 +66,9 @@ rla:
 	BUILD_TIME=$$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
 	GIT_COMMIT=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") && \
 	go build -C build \
-		-ldflags "-X 'github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/metadata.Version=$${VERSION}' \
-		          -X 'github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/metadata.BuildTime=$${BUILD_TIME}' \
-		          -X 'github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/metadata.GitCommit=$${GIT_COMMIT}'" \
+		-ldflags "-X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.Version=$${VERSION}' \
+		          -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.BuildTime=$${BUILD_TIME}' \
+		          -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.GitCommit=$${GIT_COMMIT}'" \
 		..
 
 container: rla

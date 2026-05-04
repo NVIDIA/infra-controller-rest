@@ -21,7 +21,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/secretstring"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/secretstring"
 )
 
 // Credential holds authentication information with password protection

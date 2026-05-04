@@ -25,15 +25,15 @@ import (
 
 	tClient "go.temporal.io/sdk/client"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	capis "github.com/NVIDIA/ncx-infra-controller-rest/api/internal/server"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	capis "github.com/NVIDIA/infra-controller-rest/api/internal/server"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 
 	// Imports for API doc generation
-	_ "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	_ "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
 )
 
 const (

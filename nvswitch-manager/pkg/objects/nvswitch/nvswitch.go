@@ -18,9 +18,9 @@
 package nvswitch
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/vendor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
 
 	"github.com/google/uuid"
 	gofish "github.com/stmcginnis/gofish/redfish"

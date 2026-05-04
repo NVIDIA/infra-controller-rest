@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -54,7 +54,7 @@ GetCurrentTenant Retrieve Tenant for current Org
 
 Retrieve Tenant entity for current Org.
 
-User must have `TENANT_ADMIN` authorization role.
+User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -170,7 +170,7 @@ GetCurrentTenantStats Retrieve Stats for current Tenant
 
 Retrieve stats for current Tenant.
 
-User must have `TENANT_ADMIN` authorization role.
+User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -293,7 +293,7 @@ GetTenantInstanceTypeStats Retrieve per-tenant instance type allocation stats fo
 
 Returns instance type allocation stats grouped by tenant for the specified site.
 
-User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -26,12 +26,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	dbtestutil "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/testutil"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/vendor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/db/migrations"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/pmc"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	dbtestutil "github.com/NVIDIA/infra-controller-rest/db/pkg/db/testutil"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/db/migrations"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/pmc"
 )
 
 // skipIfNoDatabase skips the test if database environment is not configured

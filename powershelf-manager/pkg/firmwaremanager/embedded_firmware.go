@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/vendor"
 	log "github.com/sirupsen/logrus"
 )
 

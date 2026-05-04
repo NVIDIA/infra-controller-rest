@@ -173,7 +173,7 @@ The powershelf component manager (`internal/componentmanager/powershelf/`) uses 
 ### Usage
 
 ```go
-import "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi"
+import "github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
 
 // Create a client
 client, err := psmapi.NewClient(30 * time.Second)

@@ -20,7 +20,7 @@ package scheduler
 import (
 	"context"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
 )
 
 // maxQueueSize is the default upper limit for the relay's in-memory queue.

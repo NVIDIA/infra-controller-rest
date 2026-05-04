@@ -18,7 +18,7 @@
 package rlatypes
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"go.uber.org/atomic"
 )
 

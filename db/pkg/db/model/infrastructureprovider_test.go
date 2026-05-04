@@ -21,9 +21,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

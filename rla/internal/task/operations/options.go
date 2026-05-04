@@ -20,7 +20,7 @@ package operations
 import (
 	"time"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
 )
 
 type OperationOptions struct {

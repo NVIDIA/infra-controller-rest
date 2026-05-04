@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
 
 	"github.com/google/uuid"
 )

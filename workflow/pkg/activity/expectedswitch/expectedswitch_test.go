@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 	"go.temporal.io/sdk/testsuite"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -32,16 +32,16 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/uptrace/bun/extra/bundebug"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/config"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
-	cwu "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/workflow/internal/config"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
+	cwu "github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 
-	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // testTemporalSiteClientPool Building site client pool

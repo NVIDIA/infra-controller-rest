@@ -22,10 +22,10 @@ package builtin
 import (
 	"fmt"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 )
 
 // NewServiceProviderConfigDecoderRegistry creates the provider config decoder

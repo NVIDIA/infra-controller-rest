@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateAllocation Create Allocation
 
 Create an Allocation for the org.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Tenant management of Allocation is not supported in MVP.
 
@@ -198,7 +198,7 @@ CreateAllocationConstraint Create Allocation Constraint
 
 Create an Allocation Constraint for a given Allocation ID.
 
-Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -631,7 +631,7 @@ GetAllAllocation Retrieve all Allocations
 
 Retrieve all Allocations for the org.
 
-Provider and Tenant roles are inferred from the org's membership. User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+Provider and Tenant roles are inferred from the org's membership. User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 Results are returned from both Provider and Tenant perspectives when the org has both roles.
 
@@ -977,7 +977,7 @@ GetAllocation Retrieve Allocation
 
 Provider and Tenant roles are inferred from the org's membership. Allocation must belong to the Provider or Tenant associated with the org.
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` role.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1238,7 +1238,7 @@ UpdateAllocation Update Allocation
 
 # Update an existing Allocation
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role. Provider must own the Allocation.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix. Provider must own the Allocation.
 
 Tenant management of Allocation is not supported in MVP.
 

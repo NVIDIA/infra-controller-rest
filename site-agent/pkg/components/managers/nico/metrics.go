@@ -20,8 +20,8 @@ package nico
 import (
 	"time"
 
-	carbidetypes "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/datatypes/managertypes/nico"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
+	carbidetypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/nico"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

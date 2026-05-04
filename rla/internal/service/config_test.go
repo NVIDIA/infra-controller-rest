@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	pkgcerts "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/certs"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
 
 // tlsConfig creates stub certificate files in t.TempDir() and returns a

@@ -18,7 +18,7 @@
 package db
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

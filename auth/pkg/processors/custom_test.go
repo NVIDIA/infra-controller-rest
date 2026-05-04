@@ -33,10 +33,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/core"
-	testutil "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/testing"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/config"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/core"
+	testutil "github.com/NVIDIA/infra-controller-rest/auth/pkg/testing"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 )
 
 // setupTestEnvironment creates a test environment with mock JWKS server and database

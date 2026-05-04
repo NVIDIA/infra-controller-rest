@@ -28,9 +28,9 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	sshKeyGroupActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/sshkeygroup"
+	sshKeyGroupActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/sshkeygroup"
 )
 
 type UpdateSSHKeyGroupTestSuite struct {

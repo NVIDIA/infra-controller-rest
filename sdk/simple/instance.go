@@ -21,7 +21,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard"
 )
 
 // InstanceCreateRequest represents a simplified request to create an Instance

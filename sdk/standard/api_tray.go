@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -61,7 +61,7 @@ FirmwareUpdateTray Firmware update a Tray
 
 Update firmware on a Tray identified by Tray UUID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -207,7 +207,7 @@ Update firmware on Trays with optional filters. If no filter is specified, targe
 - `rackId`/`rackName` cannot be combined with `ids`/`componentIds` (rack-level vs component-level targeting)
 - `componentIds` requires `type` to be specified
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -402,7 +402,7 @@ GetAllTray Retrieve all Trays
 
 Get all Trays (components) for the specified Site.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 **Filter constraints:**
 - `rackId` and `rackName` are mutually exclusive
@@ -563,7 +563,7 @@ GetTray Retrieve a Tray
 
 Get a Tray by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -706,7 +706,7 @@ Power control a Tray identified by Tray UUID.
 
 Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -854,7 +854,7 @@ Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 - `rackId`/`rackName` cannot be combined with `ids`/`componentIds` (rack-level vs component-level targeting)
 - `componentIds` requires `type` to be specified
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -996,7 +996,7 @@ Validate a Tray by comparing expected vs actual state.
 
 Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1183,7 +1183,7 @@ If no filter is specified, validates all trays in the Site. Use rackId/rackName 
 
 Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi/gen"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi/gen"
 )
 
 // PowerAction enumerates the power actions supported by NV-Switch Manager.

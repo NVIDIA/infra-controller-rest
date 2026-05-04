@@ -24,7 +24,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationIs "github.com/go-ozzo/ozzo-validation/v4/is"
 
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 )
 
 // APIInfiniBandInterfaceCreateRequest is the data structure to capture user request to create a new InfiniBandInterface

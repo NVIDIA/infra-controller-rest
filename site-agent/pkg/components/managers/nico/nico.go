@@ -20,7 +20,7 @@ package nico
 import (
 	"fmt"
 
-	computils "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/utils"
+	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

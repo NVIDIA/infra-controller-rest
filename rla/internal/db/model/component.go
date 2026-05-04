@@ -25,11 +25,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/utils"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/utils"
 )
 
 type Component struct {

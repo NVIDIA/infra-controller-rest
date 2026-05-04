@@ -138,7 +138,7 @@ package myapi
 import (
     "time"
     "github.com/rs/zerolog/log"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/myapi"  // Your API client
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/myapi"  // Your API client
 )
 
 const (
@@ -189,7 +189,7 @@ Update `internal/task/componentmanager/config.go`:
 ```go
 import (
     // ... existing imports
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
 )
 
 type ProviderConfig struct {
@@ -217,7 +217,7 @@ Update `cmd/serve.go` in `initProviderRegistry()`:
 
 ```go
 import (
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
 )
 
 func initProviderRegistry(config componentmanager.Config) (...) {
@@ -252,11 +252,11 @@ import (
     "context"
     "fmt"
 
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-    myapiprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operations"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+    myapiprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
+    "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 const ImplementationName = "myimpl"
@@ -315,7 +315,7 @@ Update `cmd/serve.go` in `initComponentManagerRegistry()`:
 
 ```go
 import (
-    myimpl "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/compute/myimpl"
+    myimpl "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/myimpl"
 )
 
 func initComponentManagerRegistry(...) (*componentmanager.Registry, error) {

@@ -21,8 +21,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 // Executor is the engine-agnostic interface for executing tasks. Implementations

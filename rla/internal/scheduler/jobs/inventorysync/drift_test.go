@@ -22,8 +22,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
 )
 
 // ptr is a generic helper that returns a pointer to the given value.

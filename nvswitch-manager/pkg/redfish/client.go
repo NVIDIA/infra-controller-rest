@@ -29,7 +29,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/stmcginnis/gofish"

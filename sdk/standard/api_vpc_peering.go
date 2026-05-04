@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -63,7 +63,7 @@ Create a VPC peering between two VPCs on the same site.
 Tenant Admin can create single-tenant peerings (both VPCs belong to their tenant).
 Provider Admin can create multi-tenant peerings (VPCs from different tenants).
 
-User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -210,7 +210,7 @@ Delete a VPC peering by ID.
 Tenant Admin can delete only peerings where both VPCs belong to their tenant.
 Provider Admin can delete only multi-tenant peerings in sites they provide.
 
-User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -382,7 +382,7 @@ GetAllVpcPeering Retrieve all VPC peerings
 Get all VPC peerings.
 Tenant Admin can get all peerings where the tenant owns at least one VPC.
 Provider Admin can get all peerings in a site.
-User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -542,7 +542,7 @@ Get details of a VPC peering by ID.
 Tenant Admin can get a peering if at least one VPC belongs to their tenant.
 Provider Admin can get a peering if it is in a site provided by their org.
 
-User must have `TENANT_ADMIN` or `PROVIDER_ADMIN` role.
+User must have authorization role with `TENANT_ADMIN` or `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -30,10 +30,10 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"google.golang.org/grpc"
 
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/util"
 )
 
 func TestManageMachine_SetMachineMaintenanceOnSite(t *testing.T) {

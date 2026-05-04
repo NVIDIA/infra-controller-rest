@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateVpcPrefix Create VPC Prefix
 
 Create a VPC Prefix for the org.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -190,7 +190,7 @@ DeleteVpcPrefix Delete VPC Prefix
 
 Delete a specific VPC Prefix by ID.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -353,7 +353,7 @@ GetAllVpcPrefix Retrieve all VPC Prefixes
 
 # Retrieve all VPC Prefixes for the org
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -505,7 +505,7 @@ GetVpcPrefix Retrieve VPC Prefix
 
 # Retrieve a specific VPC Prefix
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -634,7 +634,7 @@ UpdateVpcPrefix Update VPC Prefix
 
 # Update an existing VPC Prefix
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

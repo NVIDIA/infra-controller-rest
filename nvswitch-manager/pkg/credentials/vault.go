@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 
 	vault "github.com/hashicorp/vault/api"
 	log "github.com/sirupsen/logrus"

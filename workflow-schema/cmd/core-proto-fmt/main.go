@@ -29,7 +29,7 @@ const (
  */
 `
 
-	goPackageOption = `option go_package = "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/proto";`
+	goPackageOption = `option go_package = "github.com/NVIDIA/infra-controller-rest/workflow-schema/proto";`
 
 	additionalExpectedMachineAttributes = `
 // WARNING: Following fields are not present in Core, but added directly in REST snapshot

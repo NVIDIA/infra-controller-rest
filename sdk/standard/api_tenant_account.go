@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateTenantAccount Create Tenant Account
 
 Create a Tenant Account.
 
-Org must have an Infrastructure Provider entity and its ID must match the Infrastructure Provider ID in request data. User must have `PROVIDER_ADMIN` authorization role
+Org must have an Infrastructure Provider entity and its ID must match the Infrastructure Provider ID in request data. User must have authorization role with `PROVIDER_ADMIN` suffix
 
 Infrastructure Provider can create a Tenant Account by specifying the Tenant's UUID or Tenant's org name. This will set the status of the Tenant Account to "Invited". Then the Tenant can view this account information and are able to confirm/accept the account by updating the Tenant Account.
 
@@ -352,9 +352,9 @@ Retrieve all Tenant Accounts.
 
 Either `infrastructureProviderId` or `tenantId` query param must be specified.
 
-If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have `PROVIDER_ADMIN` role.
+If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have `TENANT_ADMIN` role.
+If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -519,9 +519,9 @@ GetTenantAccount Retrieve Tenant Account
 
 Either `infrastructureProviderId` or `tenantId` query param must be specified.
 
-If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have `PROVIDER_ADMIN` role.
+If `infrastructureProviderId` query param is provided, then org must have an Infrastructure Provider entity and its ID should match the query param value. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have `TENANT_ADMIN` role.
+If `tenantId` query param is provided, then org must have a Tenant entity and its ID should match the query param value. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -659,7 +659,7 @@ Update a Tenant Account.
 
 Can be used to accept an invitation sent by Infrastructure Provider.
 
-Org must have a tenant entity whose ID matches the `tenantId` of the Tenant Account object. User must have `TENANT_ADMIN` role. Can only update a TenantAccount that has `Invited` status.
+Org must have a tenant entity whose ID matches the `tenantId` of the Tenant Account object. User must have authorization role with `TENANT_ADMIN` suffix. Can only update a TenantAccount that has `Invited` status.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -369,7 +369,7 @@ const file_fmds_nico_proto_rawDesc = "" +
 	"\n" +
 	"\b_ib_guid2Z\n" +
 	"\x11FmdsConfigService\x12E\n" +
-	"\fUpdateConfig\x12\x19.fmds.UpdateConfigRequest\x1a\x1a.fmds.UpdateConfigResponseBCZAgithub.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/protob\x06proto3"
+	"\fUpdateConfig\x12\x19.fmds.UpdateConfigRequest\x1a\x1a.fmds.UpdateConfigResponseBCZAgithub.com/NVIDIA/infra-controller-rest/workflow-schema/protob\x06proto3"
 
 var (
 	file_fmds_nico_proto_rawDescOnce sync.Once

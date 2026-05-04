@@ -21,7 +21,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/uptrace/bun"
 )
 

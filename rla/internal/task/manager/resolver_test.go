@@ -26,13 +26,13 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	identifier "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/location"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/component"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/rack"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/location"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/rack"
 )
 
 // mockTargetFetcher is a mock implementation of TargetFetcher for testing.

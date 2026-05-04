@@ -22,9 +22,9 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cwma "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/machine"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cwma "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/machine"
 )
 
 // APIMachineCapability is the datastructure to capture API representation of a MachineCapability

@@ -27,7 +27,7 @@ import (
 	"os"
 	"testing"
 
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -36,12 +36,12 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	cam "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cerr "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	cam "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cerr "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 )
 
 func testCommonInitDB(t *testing.T) *cdb.Session {

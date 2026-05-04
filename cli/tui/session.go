@@ -24,7 +24,7 @@ import (
 	"strconv"
 	"strings"
 
-	cli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
+	cli "github.com/NVIDIA/infra-controller-rest/cli/pkg"
 )
 
 // LoginFunc is a callback to perform login and return a new token.

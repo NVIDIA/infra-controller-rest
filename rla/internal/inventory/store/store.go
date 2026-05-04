@@ -26,12 +26,12 @@ import (
 
 	"github.com/google/uuid"
 
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	identifier "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/component"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/nvldomain"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/rack"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/nvldomain"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/rack"
 )
 
 // ComponentDrift represents a drift detected between expected (local DB) and actual (source system) data.

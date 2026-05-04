@@ -22,11 +22,11 @@ import (
 
 	tClient "go.temporal.io/sdk/client"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	apiHandler "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	apiHandler "github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 )
 
 // NewAPIRoutes returns all API routes

@@ -21,8 +21,8 @@ import (
 	"context"
 	"time"
 
-	sshKeyGroupActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/sshkeygroup"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	sshKeyGroupActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/sshkeygroup"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 

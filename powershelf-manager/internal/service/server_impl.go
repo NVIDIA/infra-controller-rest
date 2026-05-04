@@ -24,12 +24,12 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/internal/proto/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/vendor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/converter/protobuf"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/pmc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/powershelfmanager"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	pb "github.com/NVIDIA/infra-controller-rest/powershelf-manager/internal/proto/v1"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/converter/protobuf"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/pmc"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/powershelfmanager"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

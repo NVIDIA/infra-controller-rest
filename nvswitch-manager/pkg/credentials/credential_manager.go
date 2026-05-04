@@ -20,7 +20,7 @@ package credentials
 import (
 	"context"
 	"fmt"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 	"net"
 
 	log "github.com/sirupsen/logrus"

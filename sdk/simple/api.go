@@ -27,7 +27,7 @@ import (
 
 	"golang.org/x/mod/semver"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard"
 )
 
 // StatusClientClosedRequest is the HTTP status code (499) used when the client closes the connection before the server responds.

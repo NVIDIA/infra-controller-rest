@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateNetworkSecurityGroup Create Network Security Group
 
 Create a Network Security Group for Tenant.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -234,7 +234,7 @@ DeleteNetworkSecurityGroup Delete Network Security Group
 
 # Delete a Network Security Group by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
 Deleting a Network Security Group will also delete all the associations and all policies.
 
@@ -454,7 +454,7 @@ GetAllNetworkSecurityGroup Retrieve all Network Security Groups
 
 # Get all Network Security Groups for Tenant
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -639,7 +639,7 @@ GetNetworkSecurityGroup Retrieve Network Security Group
 
 # Get a Network Security Group by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -812,7 +812,7 @@ UpdateNetworkSecurityGroup Update Network Security Group
 
 # Update a Network Security Group by ID
 
-Org must have a Tenant entity. Instance must belong to Tenant. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. Instance must belong to Tenant. User must have authorization role with `TENANT_ADMIN` suffix.
 
 After a group has been created, policy updates are absolute.  The complete desired policy set must be specified.
 

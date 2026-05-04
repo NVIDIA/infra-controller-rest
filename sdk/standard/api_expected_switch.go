@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -61,7 +61,7 @@ CreateExpectedSwitch Create Expected Switch
 
 Create an Expected Switch to pre-register network switches expected to be discovered at a Site.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Switches if they have an account with the Site's Infrastructure Provider.
 
@@ -196,7 +196,7 @@ DeleteExpectedSwitch Delete Expected Switch
 
 Delete an existing Expected Switch by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Infrastructure Provider must own the Expected Switch.
 
@@ -364,7 +364,7 @@ GetAllExpectedSwitch Retrieve all Expected Switches
 
 Retrieve all Expected Switches.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Switches if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
 
@@ -520,7 +520,7 @@ GetExpectedSwitch Retrieve Expected Switch
 
 Retrieve a specific Expected Switch by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Switches if they have an account with the Site's Infrastructure Provider.
 
@@ -674,7 +674,7 @@ UpdateExpectedSwitch Update Expected Switch
 
 Update an existing Expected Switch by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Infrastructure Provider must own the Expected Switch.
 

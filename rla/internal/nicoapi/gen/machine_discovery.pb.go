@@ -1534,7 +1534,7 @@ const file_machine_discovery_proto_rawDesc = "" +
 	"\n" +
 	"\x06X86_64\x10\x01\x12\v\n" +
 	"\aUNKNOWN\x10\x02B\xd4\x01\n" +
-	"\x15com.machine_discoveryB\x15MachineDiscoveryProtoP\x01ZDgithub.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03MXX\xaa\x02\x10MachineDiscovery\xca\x02\x10MachineDiscovery\xe2\x02\x1cMachineDiscovery\\GPBMetadata\xea\x02\x10MachineDiscoveryb\x06proto3"
+	"\x15com.machine_discoveryB\x15MachineDiscoveryProtoP\x01ZDgithub.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03MXX\xaa\x02\x10MachineDiscovery\xca\x02\x10MachineDiscovery\xe2\x02\x1cMachineDiscovery\\GPBMetadata\xea\x02\x10MachineDiscoveryb\x06proto3"
 
 var (
 	file_machine_discovery_proto_rawDescOnce sync.Once

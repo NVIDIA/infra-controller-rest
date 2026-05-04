@@ -27,8 +27,8 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	rActivity "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	rActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 )
 
 // GetRackTestSuite tests the GetRack workflow

@@ -19,7 +19,7 @@
 package certs
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/cert-manager/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/cert-manager/pkg/types"
 )
 
 // CertificateIssuer is an alias for types.CertificateIssuer for backward compatibility

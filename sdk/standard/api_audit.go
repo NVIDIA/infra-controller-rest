@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -82,7 +82,7 @@ GetAllAuditEntry Retrieve all Audit Log Entries
 
 # Get all Audit Log entries
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` authorization role.
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -215,7 +215,7 @@ GetAuditEntry Retrieve Audit Log Entry
 
 # Retrieve a specific Audit Log Entry by ID
 
-User must have `PROVIDER_ADMIN` or `TENANT_ADMIN` authorization role
+User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

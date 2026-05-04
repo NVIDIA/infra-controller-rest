@@ -20,7 +20,7 @@ package main
 import (
 	"flag"
 
-	gsv "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/server"
+	gsv "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/server"
 )
 
 // Test the nico grpc client

@@ -20,7 +20,7 @@ package claim
 import (
 	"strings"
 
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/rs/zerolog/log"
 
 	"github.com/golang-jwt/jwt/v5"

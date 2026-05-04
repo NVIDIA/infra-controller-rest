@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -53,7 +53,7 @@ func (r ApiDeleteMachineRequest) Execute() (*http.Response, error) {
 /*
 DeleteMachine Delete a Machine from a Site
 
-Org must have an Infrastructure Provider entity. Machine must belong to the Provider. User must have PROVIDER_ADMIN authorization role. Machine must meet certain criteria to be eligible for deletion.
+Org must have an Infrastructure Provider entity. Machine must belong to the Provider. User must have authorization role with `PROVIDER_ADMIN` suffix. Machine must meet certain criteria to be eligible for deletion.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -323,7 +323,7 @@ GetAllMachine Retrieve all Machines
 
 Get all Machines for Infrastructure Provider.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -578,7 +578,7 @@ GetAllMachineCapabilities Retrieve all Machine Capabilities
 
 # Get all distinct Machine Capabilities across all Machines
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -884,7 +884,7 @@ GetMachineGpuStats Retrieve GPU stats for machines at a site
 
 Returns GPU summary stats grouped by GPU name for machines at the specified site.
 
-User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1011,7 +1011,7 @@ GetMachineInstanceTypeStats Retrieve detailed per-instance-type machine stats fo
 
 Returns machine stats for each instance type including allocation details and tenant breakdown.
 
-User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1138,7 +1138,7 @@ GetMachineInstanceTypeStatsSummary Retrieve machine instance type assignment sum
 
 Returns machine counts grouped by assigned (has instance type) vs unassigned, broken down by status.
 
-User must have `PROVIDER_ADMIN` authorization role. The specified site must belong to the Provider.
+User must have authorization role with `PROVIDER_ADMIN` suffix. The specified site must belong to the Provider.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

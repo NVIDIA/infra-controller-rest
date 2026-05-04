@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -54,7 +54,7 @@ GetCurrentInfrastructureProvider Retrieve Infrastructure Provider for current Or
 
 Retrieve Infrastructure Provider entity for current Org.
 
-User must have `PROVIDER_ADMIN` authorization role.
+User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -170,7 +170,7 @@ GetCurrentInfrastructureProviderStats Retrieve Stats for current Infrastructure 
 
 Retrieve stats for current Infrastructure Provider.
 
-User must have `PROVIDER_ADMIN` authorization role.
+User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -19,9 +19,9 @@ package inventorymanager
 import (
 	"context"
 	"fmt"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/runner"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/powershelf"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/pmcmanager"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/runner"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/powershelf"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/pmcmanager"
 	"net"
 	"sync"
 

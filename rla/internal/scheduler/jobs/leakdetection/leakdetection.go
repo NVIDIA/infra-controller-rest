@@ -23,11 +23,11 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskmanager "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/manager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operations"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskmanager "github.com/NVIDIA/infra-controller-rest/rla/internal/task/manager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 func runLeakDetectionOne(

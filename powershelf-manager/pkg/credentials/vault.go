@@ -28,7 +28,7 @@ import (
 	vault "github.com/hashicorp/vault/api"
 	log "github.com/sirupsen/logrus"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 )
 
 // The mount path for the secrets engine

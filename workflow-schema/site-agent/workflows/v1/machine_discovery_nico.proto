@@ -19,7 +19,7 @@ syntax = "proto3";
 
 package machine_discovery;
 
-option go_package = "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/proto";
+option go_package = "github.com/NVIDIA/infra-controller-rest/workflow-schema/proto";
 
 // Carries information about a host that was discovered by the NICo system
 message DiscoveryInfo {

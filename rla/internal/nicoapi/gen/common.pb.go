@@ -1239,7 +1239,7 @@ const file_common_proto_rawDesc = "" +
 	"\"SYSTEM_POWER_CONTROL_FORCE_RESTART\x10\x05\x12&\n" +
 	"\"SYSTEM_POWER_CONTROL_AC_POWERCYCLE\x10\x06B\x97\x01\n" +
 	"\n" +
-	"com.commonB\vCommonProtoP\x01ZDgithub.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03CXX\xaa\x02\x06Common\xca\x02\x06Common\xe2\x02\x12Common\\GPBMetadata\xea\x02\x06Commonb\x06proto3"
+	"com.commonB\vCommonProtoP\x01ZDgithub.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03CXX\xaa\x02\x06Common\xca\x02\x06Common\xe2\x02\x12Common\\GPBMetadata\xea\x02\x06Commonb\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once

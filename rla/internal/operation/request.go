@@ -24,9 +24,9 @@ import (
 
 	"github.com/google/uuid"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	identifier "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // Wrapper wraps the operation type and its serialized information.

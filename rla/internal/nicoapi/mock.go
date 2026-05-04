@@ -21,8 +21,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/common/utils"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi/gen"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/common/utils"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
 )
 
 type mockClient struct {

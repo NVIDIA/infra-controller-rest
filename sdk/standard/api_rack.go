@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -61,7 +61,7 @@ BringupRack Bring up a Rack
 
 Bring up a Rack identified by Rack UUID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -202,7 +202,7 @@ BringupRacks Bring up Racks
 
 Bring up Racks with optional name filter. If no filter is specified, targets all racks in the Site.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -341,7 +341,7 @@ FirmwareUpdateRack Firmware update a Rack
 
 Update firmware on a Rack identified by Rack UUID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -482,7 +482,7 @@ FirmwareUpdateRacks Firmware update Racks
 
 Update firmware on Racks with optional name filter. If no filter is specified, targets all racks in the Site.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -663,7 +663,7 @@ GetAllRack Retrieve all Racks
 
 Get all Racks for the specified Site.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -820,7 +820,7 @@ GetRack Retrieve a Rack
 
 Get a Rack by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -966,7 +966,7 @@ GetRackTask Retrieve a Task
 Get a Task by UUID.
 
 Tasks are site-scoped; `siteId` must be the Site where the task was created.
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1120,7 +1120,7 @@ Power control a Rack identified by Rack UUID.
 
 Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1263,7 +1263,7 @@ Power control Racks with optional filters. If no filter is specified, targets al
 
 Supported power states: `on`, `off`, `cycle`, `forceoff`, `forcecycle`.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1405,7 +1405,7 @@ Validate a Rack's components by comparing expected vs actual state.
 
 Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1564,7 +1564,7 @@ If no filter is specified, validates all racks in the Site. Filters can narrow t
 
 Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` authorization role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // actionSpec defines validation rules for each action type

@@ -22,9 +22,9 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"

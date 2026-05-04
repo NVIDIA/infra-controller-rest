@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/internal/proto/v1"
+	pb "github.com/NVIDIA/infra-controller-rest/nvswitch-manager/internal/proto/v1"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

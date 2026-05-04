@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgconn"
@@ -32,9 +32,9 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
 )
 
 const (

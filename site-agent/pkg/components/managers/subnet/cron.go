@@ -22,7 +22,7 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 const (

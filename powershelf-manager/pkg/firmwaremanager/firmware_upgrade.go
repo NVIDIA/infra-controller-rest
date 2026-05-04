@@ -17,7 +17,7 @@
 package firmwaremanager
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/vendor"
 )
 
 // FirmwareUpgrade represents a single directed edge from a source firmware version to a target version, with the artifact path.

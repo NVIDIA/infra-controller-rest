@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -60,7 +60,7 @@ CreateInfinibandPartition Create InfiniBand Partition
 
 Create an InfiniBand Partition for the org.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -190,7 +190,7 @@ DeleteInfinibandPartition Delete InfiniBand Partition
 
 Delete a specific InfiniBand Partition by ID.
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 Tenant must own the Partition.
 
@@ -355,7 +355,7 @@ GetAllInfinibandInterface Retrieve all InfiniBand Interfaces
 
 # Get all InfiniBand Interfaces
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -548,7 +548,7 @@ GetAllInfinibandPartition Retrieve all InfiniBand Partitions
 
 # Retrieve all InfiniBand Partitions for the org
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -697,7 +697,7 @@ GetInfinibandPartition Retrieve InfiniBand Partition
 
 # Retrieve a specific InfiniBand Partition
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 Tenant must own the Partition.
 
@@ -828,7 +828,7 @@ UpdateInfinibandPartition Update InfiniBand Partition
 
 # Update an existing InfiniBand Partition
 
-Org must have a Tenant entity. User must have `TENANT_ADMIN` authorization role.
+Org must have a Tenant entity. User must have authorization role with `TENANT_ADMIN` suffix.
 
 Tenant must own the Partition.
 

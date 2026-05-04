@@ -28,14 +28,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbmodel "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskschedule "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/taskschedule"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/inventoryobjects/component"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/proto/v1"
+	dbmodel "github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskschedule "github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/taskschedule"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/pkg/proto/v1"
 )
 
 // ─── enum converters ─────────────────────────────────────────────────────────

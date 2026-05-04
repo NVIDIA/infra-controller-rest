@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"os"
 
-	appcli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
-	"github.com/NVIDIA/ncx-infra-controller-rest/cli/tui"
-	"github.com/NVIDIA/ncx-infra-controller-rest/openapi"
+	appcli "github.com/NVIDIA/infra-controller-rest/cli/pkg"
+	"github.com/NVIDIA/infra-controller-rest/cli/tui"
+	"github.com/NVIDIA/infra-controller-rest/openapi"
 	"github.com/urfave/cli/v2"
 )
 

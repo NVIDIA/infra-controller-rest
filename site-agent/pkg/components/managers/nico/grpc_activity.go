@@ -20,7 +20,7 @@ package nico
 import (
 	"context"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/log"

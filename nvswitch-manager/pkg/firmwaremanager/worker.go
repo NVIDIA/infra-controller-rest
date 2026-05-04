@@ -24,8 +24,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/firmwaremanager/packages"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/nvswitchmanager"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/firmwaremanager/packages"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/nvswitchmanager"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"

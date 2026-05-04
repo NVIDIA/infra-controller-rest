@@ -28,7 +28,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
 
 	"golang.org/x/crypto/ssh"
 )

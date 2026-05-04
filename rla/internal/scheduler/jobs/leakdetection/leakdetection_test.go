@@ -26,9 +26,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // --- mock taskmanager.Manager ---

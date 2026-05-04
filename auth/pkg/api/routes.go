@@ -21,10 +21,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authentication"
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/config"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/authentication"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/config"
 
-	cah "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/api/handler"
+	cah "github.com/NVIDIA/infra-controller-rest/auth/pkg/api/handler"
 )
 
 // AuthRoute represents an authentication route

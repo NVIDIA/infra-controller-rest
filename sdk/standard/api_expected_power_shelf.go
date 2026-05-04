@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -61,7 +61,7 @@ CreateExpectedPowerShelf Create Expected Power Shelf
 
 Create an Expected Power Shelf to pre-register power shelves expected to be discovered at a Site.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Power Shelves if they have an account with the Site's Infrastructure Provider.
 
@@ -196,7 +196,7 @@ DeleteExpectedPowerShelf Delete Expected Power Shelf
 
 Delete an existing Expected Power Shelf by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Infrastructure Provider must own the Expected Power Shelf.
 
@@ -364,7 +364,7 @@ GetAllExpectedPowerShelf Retrieve all Expected Power Shelves
 
 Retrieve all Expected Power Shelves.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Power Shelves if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
 
@@ -520,7 +520,7 @@ GetExpectedPowerShelf Retrieve Expected Power Shelf
 
 Retrieve a specific Expected Power Shelf by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` or `PROVIDER_VIEWER` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` or `PROVIDER_VIEWER` suffix.
 
 Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Power Shelves if they have an account with the Site's Infrastructure Provider.
 
@@ -674,7 +674,7 @@ UpdateExpectedPowerShelf Update Expected Power Shelf
 
 Update an existing Expected Power Shelf by ID.
 
-Org must have an Infrastructure Provider entity. User must have `PROVIDER_ADMIN` role.
+Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
 Infrastructure Provider must own the Expected Power Shelf.
 

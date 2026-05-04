@@ -22,8 +22,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	cconfig "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/config"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	cconfig "github.com/NVIDIA/infra-controller-rest/common/pkg/config"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 

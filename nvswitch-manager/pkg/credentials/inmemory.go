@@ -24,7 +24,7 @@ import (
 	"net"
 	"sync"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
 	log "github.com/sirupsen/logrus"
 )
 

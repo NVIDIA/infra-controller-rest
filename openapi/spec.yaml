@@ -34,7 +34,7 @@ tags:
 
       ### Authentication
       The first step is to authenticate using a JWT bearer token. Organization structures and roles depend on the authentication configuration used. For details on authentication, please consult the
-      NICo REST `auth` module [README](https://github.com/NVIDIA/ncx-infra-controller-rest/tree/main/auth).
+      NICo REST `auth` module [README](https://github.com/NVIDIA/infra-controller-rest/tree/main/auth).
 
       ### API Version
       The next step is to be aware of the API version being used. The API version can be retrieved by calling the [Retrieve Metadata endpoint](#tag/Metadata/operation/get-metadata). In general, the API maintains backward
@@ -54,7 +54,7 @@ tags:
       Once the Provider and the Tenant are initialized, the user can create resources by making calls to the appropriate endpoints.
 
       ### Creating Site Level IP Blocks
-      To utilize a NICo Site, the Provider or Service Account holder must create IP Blocks for each network overlay defined in NICo Core [Site configuration toml file](https://github.com/NVIDIA/ncx-infra-controller-core/blob/v0.5.8/deploy/files/nico-api/nico-api-site-config.toml#L30).
+      To utilize a NICo Site, the Provider or Service Account holder must create IP Blocks for each network overlay defined in NICo Core [Site configuration toml file](https://github.com/NVIDIA/infra-controller-core/blob/v0.5.8/deploy/files/nico-api/nico-api-site-config.toml#L30).
 
       To create an IP Block, the user must make a call to the [Create IP Block endpoint](#tag/IP-Block/operation/create-ipblock).
 
