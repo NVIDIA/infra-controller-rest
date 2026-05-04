@@ -1106,8 +1106,10 @@ func TestVpcPrefixHandler_Get(t *testing.T) {
 		queryIncludeRelations1 *string
 		queryIncludeRelations2 *string
 		queryIncludeRelations3 *string
+		queryIncludeUsageStats *string
 		expectedVpcName        *string
 		expectetIPName         *string
+		expectUsageStatsNonNil bool
 		verifyChildSpanner     bool
 	}{
 		{
@@ -1187,6 +1189,25 @@ func TestVpcPrefixHandler_Get(t *testing.T) {
 			queryIncludeRelations1: cdb.GetStrPtr(cdbm.IPBlockRelationName),
 			expectetIPName:         &ipb1.Name,
 		},
+		{
+			name:                   "error when includeUsageStats query invalid",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     vpcprefix.ID,
+			expectedErr:            true,
+			expectedStatus:         http.StatusBadRequest,
+			queryIncludeUsageStats: cdb.GetStrPtr("not-a-bool"),
+		},
+		{
+			name:                   "success case when includeUsageStats true",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     vpcprefix.ID,
+			expectedErr:            false,
+			expectedStatus:         http.StatusOK,
+			queryIncludeUsageStats: cdb.GetStrPtr("true"),
+			expectUsageStatsNonNil: true,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1195,6 +1216,9 @@ func TestVpcPrefixHandler_Get(t *testing.T) {
 			e := echo.New()
 
 			q := url.Values{}
+			if tc.queryIncludeUsageStats != nil {
+				q.Set("includeUsageStats", *tc.queryIncludeUsageStats)
+			}
 			if tc.queryIncludeRelations1 != nil {
 				q.Add("includeRelation", *tc.queryIncludeRelations1)
 			}
@@ -1236,16 +1260,24 @@ func TestVpcPrefixHandler_Get(t *testing.T) {
 				// validate response fields
 				assert.Equal(t, 1, len(rsp.StatusHistory))
 
-				if tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil {
+				expanded := tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil || tc.expectUsageStatsNonNil
+				if expanded {
 					if tc.expectedVpcName != nil {
 						assert.Equal(t, *tc.expectedVpcName, rsp.Vpc.Name)
 					}
 					if tc.expectetIPName != nil {
 						assert.Equal(t, *tc.expectetIPName, rsp.IPBlock.Name)
 					}
+					if tc.expectUsageStatsNonNil {
+						require.NotNil(t, rsp.IPBlock)
+						require.NotNil(t, rsp.UsageStats)
+					}
 				} else {
 					assert.Nil(t, rsp.Vpc)
 					assert.Nil(t, rsp.IPBlock)
+				}
+				if !expanded && !tc.expectedErr {
+					assert.Nil(t, rsp.UsageStats)
 				}
 			}
 

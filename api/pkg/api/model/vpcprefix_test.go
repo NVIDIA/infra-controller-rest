@@ -210,7 +210,7 @@ func TestAPIVpcPrefixNew(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			got := NewAPIVpcPrefix(tc.dbObj, tc.sdObj)
+			got := NewAPIVpcPrefix(tc.dbObj, tc.sdObj, nil)
 			assert.Equal(t, tc.dbObj.ID.String(), got.ID)
 			assert.NotNil(t, tc.dbObj.SiteID)
 			assert.NotNil(t, tc.dbObj.VpcID)

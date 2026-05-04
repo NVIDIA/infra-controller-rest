@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -49,6 +50,8 @@ import (
 
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
+
+	cip "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -325,7 +328,7 @@ func (csh CreateVpcPrefixHandler) Handle(c echo.Context) error {
 	}
 
 	// create response
-	apiVpcPrefix := model.NewAPIVpcPrefix(createdVpcPrefix, []cdbm.StatusDetail{*ssd})
+	apiVpcPrefix := model.NewAPIVpcPrefix(createdVpcPrefix, []cdbm.StatusDetail{*ssd}, nil)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusCreated, apiVpcPrefix)
 }
@@ -361,7 +364,8 @@ func NewGetAllVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param siteId query string false "Site ID"
 // @Param vpcId query string true "ID of Vpc"
 // @Param query query string false "Query input for full text search"
-// @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'IPv4Block'"
+// @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'IPBlock'"
+// @Param includeUsageStats query boolean false "VPC prefix IPAM usage stats (same shape as IP Block usage)"
 // @Param pageNumber query integer false "Page number of results returned"
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
@@ -422,6 +426,20 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 	if errMsg != "" {
 		logger.Warn().Msg(errMsg)
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
+	}
+
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPBlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPBlockRelationName)
 	}
 
 	// Get site ID from query param
@@ -485,11 +503,29 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 			Limit:   pageRequest.Limit,
 			OrderBy: pageRequest.OrderBy,
 		},
-		qIncludeRelations,
+		queryIncludeRelations,
 	)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting VPC Prefixes from db")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve VPC Prefixes", nil)
+	}
+
+	puVpMap := map[uuid.UUID]*cip.Usage{}
+	if includeUsageStats {
+		ipamStorage := ipam.NewIpamStorage(gash.dbSession.DB, nil)
+		for i := range vpcPrefixes {
+			vp := &vpcPrefixes[i]
+			if vp.IPBlock == nil {
+				logger.Error().Str("vpcPrefixId", vp.ID.String()).Msg("VPC prefix missing IP Block relation for usage stats")
+				continue
+			}
+			prefixUsage, serr := ipam.GetIpamUsageForVpcPrefix(ctx, ipamStorage, vp, vp.IPBlock)
+			if serr != nil {
+				logger.Error().Err(serr).Msg("error retrieving ipam usage stats for VPC prefix")
+				continue
+			}
+			puVpMap[vp.ID] = prefixUsage
+		}
 	}
 
 	// Get status details
@@ -516,7 +552,8 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 	// get status details
 	for _, sn := range vpcPrefixes {
 		cursn := sn
-		apiVpcPrefix := model.NewAPIVpcPrefix(&cursn, ssdMap[sn.ID.String()])
+		cipu := puVpMap[sn.ID]
+		apiVpcPrefix := model.NewAPIVpcPrefix(&cursn, ssdMap[sn.ID.String()], cipu)
 		apiVpcPrefixes = append(apiVpcPrefixes, apiVpcPrefix)
 	}
 
@@ -565,6 +602,7 @@ func NewGetVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of VPC prefix"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
+// @Param includeUsageStats query boolean false "VPC prefix IPAM usage stats (same shape as IP Block usage)"
 // @Success 200 {object} model.APIVpcPrefix
 // @Router /v2/org/{org}/nico/vpcprefix/{id} [get]
 func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
@@ -602,6 +640,20 @@ func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPBlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPBlockRelationName)
+	}
+
 	// Get VPC prefix ID from URL param
 	sStrID := c.Param("id")
 
@@ -623,7 +675,7 @@ func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
 	}
 
 	// Check that VPC prefix exists
-	vpcPrefix, err := vpDAO.GetByID(ctx, nil, sID, qIncludeRelations)
+	vpcPrefix, err := vpDAO.GetByID(ctx, nil, sID, queryIncludeRelations)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving VPC prefix DB entity")
 		if err == cdb.ErrDoesNotExist {
@@ -646,8 +698,22 @@ func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for VPC prefix", nil)
 	}
 
+	var puVPC *cip.Usage
+	if includeUsageStats {
+		if vpcPrefix.IPBlock == nil {
+			logger.Error().Str("vpcPrefixId", vpcPrefix.ID.String()).Msg("VPC prefix missing IP Block relation for usage stats")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for VPC prefix", nil)
+		}
+		ipamStorage := ipam.NewIpamStorage(gsh.dbSession.DB, nil)
+		puVPC, err = ipam.GetIpamUsageForVpcPrefix(ctx, ipamStorage, vpcPrefix, vpcPrefix.IPBlock)
+		if err != nil {
+			logger.Error().Err(err).Msg("error retrieving ipam usage stats details for VPC prefix")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for VPC prefix", nil)
+		}
+	}
+
 	// Send response
-	apiVpcPrefix := model.NewAPIVpcPrefix(vpcPrefix, ssds)
+	apiVpcPrefix := model.NewAPIVpcPrefix(vpcPrefix, ssds, puVPC)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiVpcPrefix)
 }
@@ -866,7 +932,7 @@ func (ush UpdateVpcPrefixHandler) Handle(c echo.Context) error {
 	}
 
 	// Send response
-	apiVpcPrefix := model.NewAPIVpcPrefix(updatedVpcPrefix, ssds)
+	apiVpcPrefix := model.NewAPIVpcPrefix(updatedVpcPrefix, ssds, nil)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiVpcPrefix)
 }

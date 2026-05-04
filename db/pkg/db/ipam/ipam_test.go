@@ -846,3 +846,93 @@ func TestGetFirstIPFromCidr(t *testing.T) {
 		})
 	}
 }
+
+func TestGetIpamUsageForVpcPrefix(t *testing.T) {
+	dbSession := cdbutil.GetTestDBSession(t, false)
+	defer dbSession.Close()
+	ipamDB := getTestIpamDB(t, dbSession, true)
+	ctx := context.Background()
+	testIpamSetupSchema(t, dbSession)
+
+	ip := testIpamBuildInfrastructureProvider(t, dbSession, "testvpcprefixip")
+	site := testIpamBuildSite(t, dbSession, ip, "testvpcprefixsite")
+
+	parent := &cdbm.IPBlock{
+		ID:                       uuid.New(),
+		Name:                     "parent",
+		RoutingType:              cdbm.IPBlockRoutingTypeDatacenterOnly,
+		InfrastructureProviderID: ip.ID,
+		SiteID:                   site.ID,
+		Prefix:                   "10.88.0.0",
+		PrefixLength:             16,
+		ProtocolVersion:          cdbm.IPBlockProtocolVersionV4,
+		Status:                   cdbm.IPBlockStatusReady,
+		CreatedBy:                cdb.GetUUIDPtr(uuid.New()),
+	}
+	testIpamBuildIPBlock(t, dbSession, parent)
+
+	_, err := CreateIpamEntryForIPBlock(ctx, ipamDB, parent.Prefix, parent.PrefixLength, parent.RoutingType, parent.InfrastructureProviderID.String(), parent.SiteID.String())
+	assert.Nil(t, err)
+
+	childPrefix, err := CreateChildIpamEntryForIPBlock(ctx, nil, dbSession, ipamDB, parent, 24)
+	assert.Nil(t, err)
+
+	ipamer := cipam.NewWithStorage(ipamDB)
+	ns := GetIpamNamespaceForIPBlock(ctx, parent.RoutingType, parent.InfrastructureProviderID.String(), parent.SiteID.String())
+	ipamer.SetNamespace(ns)
+	_, err = ipamer.AcquireIP(ctx, childPrefix.Cidr)
+	assert.Nil(t, err)
+
+	pfxNet, bits, parseErr := ParseCidrIntoPrefixAndBlockSize(childPrefix.Cidr)
+	assert.Nil(t, parseErr)
+
+	vpFullCidr := &cdbm.VpcPrefix{
+		ID:           uuid.New(),
+		Prefix:       childPrefix.Cidr,
+		PrefixLength: bits,
+	}
+	vpBareNetwork := &cdbm.VpcPrefix{
+		ID:           uuid.New(),
+		Prefix:       pfxNet,
+		PrefixLength: bits,
+	}
+
+	uNil, err := GetIpamUsageForVpcPrefix(ctx, ipamDB, nil, parent)
+	assert.Nil(t, uNil)
+	assert.ErrorIs(t, err, ErrNilVpcPrefix)
+
+	u1, err := GetIpamUsageForVpcPrefix(ctx, ipamDB, vpFullCidr, parent)
+	assert.Nil(t, err)
+	assert.NotNil(t, u1)
+	assert.GreaterOrEqual(t, u1.AcquiredIPs, uint64(1))
+
+	u2, err := GetIpamUsageForVpcPrefix(ctx, ipamDB, vpBareNetwork, parent)
+	assert.Nil(t, err)
+	assert.Equal(t, u1.AcquiredIPs, u2.AcquiredIPs)
+
+	fullGrantParent := &cdbm.IPBlock{
+		ID:                       uuid.New(),
+		Name:                     "fullgrant",
+		RoutingType:              cdbm.IPBlockRoutingTypeDatacenterOnly,
+		InfrastructureProviderID: ip.ID,
+		SiteID:                   site.ID,
+		Prefix:                   "10.87.10.0",
+		PrefixLength:             24,
+		ProtocolVersion:          cdbm.IPBlockProtocolVersionV4,
+		Status:                   cdbm.IPBlockStatusReady,
+		CreatedBy:                cdb.GetUUIDPtr(uuid.New()),
+		FullGrant:                true,
+	}
+	testIpamBuildIPBlock(t, dbSession, fullGrantParent)
+	_, err = CreateIpamEntryForIPBlock(ctx, ipamDB, fullGrantParent.Prefix, fullGrantParent.PrefixLength, fullGrantParent.RoutingType, fullGrantParent.InfrastructureProviderID.String(), fullGrantParent.SiteID.String())
+	assert.Nil(t, err)
+	vpFullGrant := &cdbm.VpcPrefix{
+		ID:           uuid.New(),
+		Prefix:       fmt.Sprintf("%s/%d", fullGrantParent.Prefix, fullGrantParent.PrefixLength),
+		PrefixLength: fullGrantParent.PrefixLength,
+	}
+	uFg, err := GetIpamUsageForVpcPrefix(ctx, ipamDB, vpFullGrant, fullGrantParent)
+	assert.Nil(t, err)
+	assert.Equal(t, uint64(1), uFg.AcquiredPrefixes)
+	assert.Equal(t, uint64(0), uFg.AcquiredIPs)
+}

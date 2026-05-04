@@ -2930,6 +2930,13 @@ paths:
           name: includeRelation
           description: Related entity to expand
         - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: >-
+            When true, includes IPAM usage for each VPC prefix (`usageStats`), same shape as IP Block usage
+            (available/acquired IPs and child prefixes). Loads the parent IP Block relation internally if needed.
+        - schema:
             type: integer
             example: 1
             default: 1
@@ -3027,6 +3034,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: >-
+            When true, includes IPAM usage for this VPC prefix (`usageStats`), same shape as IP Block usage.
+            Loads the parent IP Block relation internally if needed.
     delete:
       summary: Delete VPC Prefix
       operationId: delete-vpc-prefix
@@ -13994,6 +14008,12 @@ components:
           $ref: '#/components/schemas/VpcPrefixStatus'
           readOnly: true
           description: Status of the VPC Prefix
+        usageStats:
+          $ref: '#/components/schemas/IpBlockUsageStats'
+          readOnly: true
+          description: >-
+            Present when query param `includeUsageStats=true`. IPAM usage within this VPC prefix
+            (available/acquired IPs and child prefixes consumed by Instances and other allocations).
         statusHistory:
           type: array
           items:
