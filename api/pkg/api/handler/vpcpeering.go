@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -368,7 +369,7 @@ func (cvph CreateVpcPeeringHandler) Handle(c echo.Context) error {
 	err = workflowRun.Get(workflowCtx, nil)
 	if err != nil {
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}
@@ -912,7 +913,7 @@ func (dvph DeleteVpcPeeringHandler) Handle(c echo.Context) error {
 	err = we.Get(workflowCtx, nil)
 	if err != nil {
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
 			logger.Error().Msg("feature not yet implemented on target Site")
 			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
 		}

@@ -427,7 +427,7 @@ func (cith CreateInstanceTypeHandler) Handle(c echo.Context) error {
 		// likely to respond with a PermissionDenied because the permission
 		// for the path isn't there either, but we can watch for both just to
 		// be safe.
-		if errors.As(err, &applicationErr) && (applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied) {
+		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
 			logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
 			// Reset error to nil because we'll want to ignore while
 			// NICo is being rolled out.
@@ -1434,11 +1434,11 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 		// instance type that the site does not know about.
 		var applicationErr *tp.ApplicationError
 		if errors.As(err, &applicationErr) {
-			if applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
 				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
-			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied {
+			} else if slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
 				// NICo _could_ respond with an unimplemented if it's an
 				// older NICo that doesn't have the endpoint yet, but it's more
 				// likely to respond with a PermissionDenied because the permission
@@ -1693,11 +1693,11 @@ func (dith DeleteInstanceTypeHandler) Handle(c echo.Context) error {
 		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
 		if errors.As(err, &applicationErr) {
-			if applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
 				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
-			} else if applicationErr.Type() == swe.ErrTypeNICoUnimplemented || applicationErr.Type() == swe.ErrTypeNICoDenied || applicationErr.Type() == swe.ErrTypeCarbideUnimplemented || applicationErr.Type() == swe.ErrTypeCarbideDenied {
+			} else if slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
 				// NICo _could_ respond with an unimplemented if it's an
 				// older NICo that doesn't have the endpoint yet, but it's more
 				// likely to respond with a PermissionDenied because the permission

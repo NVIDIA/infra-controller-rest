@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"go.opentelemetry.io/otel/attribute"
 	temporalClient "go.temporal.io/sdk/client"
@@ -724,7 +725,7 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
 		if errors.As(err, &applicationErr) {
-			if applicationErr.Type() == swe.ErrTypeNICoObjectNotFound {
+			if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
 				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil

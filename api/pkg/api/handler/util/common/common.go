@@ -1167,19 +1167,19 @@ func UnwrapWorkflowError(err error) (code int, unwrappedError error) {
 	switch tpError.Type() {
 	case swe.ErrTypeInvalidRequest:
 		code = http.StatusBadRequest
-	case swe.ErrTypeNICoObjectNotFound:
+	case swe.ErrTypeNICoObjectNotFound, swe.ErrTypeCarbideObjectNotFound:
 		code = http.StatusNotFound
-	case swe.ErrTypeNICoUnimplemented:
+	case swe.ErrTypeNICoUnimplemented, swe.ErrTypeCarbideUnimplemented:
 		code = http.StatusNotImplemented
-	case swe.ErrTypeNICoDenied:
+	case swe.ErrTypeNICoDenied, swe.ErrTypeCarbideDenied:
 		code = http.StatusForbidden
-	case swe.ErrTypeNICoUnavailable:
+	case swe.ErrTypeNICoUnavailable, swe.ErrTypeCarbideUnavailable:
 		code = http.StatusServiceUnavailable
-	case swe.ErrTypeNICoAlreadyExists:
+	case swe.ErrTypeNICoAlreadyExists, swe.ErrTypeCarbideAlreadyExists:
 		code = http.StatusConflict
-	case swe.ErrTypeNICoFailedPrecondition:
+	case swe.ErrTypeNICoFailedPrecondition, swe.ErrTypeCarbideFailedPrecondition:
 		code = http.StatusPreconditionFailed
-	case swe.ErrTypeNICoInvalidArgument:
+	case swe.ErrTypeNICoInvalidArgument, swe.ErrTypeCarbideInvalidArgument:
 		code = http.StatusBadRequest
 	}
 

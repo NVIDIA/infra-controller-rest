@@ -152,7 +152,7 @@ type HealthProbeAlert struct {
 	// combination are calculated individually when reports are merged.
 	Target *string `protobuf:"bytes,6,opt,name=target,proto3,oneof" json:"target,omitempty"`
 	// The first time the probe raised an alert
-	// If this field is empty while the HealthReport is sent to nico-api
+	// If this field is empty while the HealthReport is sent to nico-core-api
 	// the behavior is as follows:
 	// - If an alert of the same `id` was reported before, the timestamp of the
 	// previous alert will be retained.

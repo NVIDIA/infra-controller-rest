@@ -1850,7 +1850,7 @@ const (
 	IpType_IpTypeNetworkSegment        IpType = 7
 	IpType_IpTypeExploredEndpoint      IpType = 8
 	// IpTypeRouteServerFromConfigFile are IPs from the route_servers
-	// table that have been synced via the nico-api config file
+	// table that have been synced via the nico-core-api config file
 	// at startup (see setup.rs and db_init.rs). Their DB records
 	// specifically say their source type is `config_file`.
 	IpType_IpTypeRouteServerFromConfigFile IpType = 9
@@ -43938,7 +43938,7 @@ func (x *DpuExtensionServiceObservability) GetConfigs() []*DpuExtensionServiceOb
 }
 
 // ScoutStreamApiBoundMessage is sent as part of scout initiating a new
-// streaming gRPC connection with nico-api. The agent will connect
+// streaming gRPC connection with nico-core-api. The agent will connect
 // and sent an InitRequest, and then wait for control messages from
 // the API. For example, the API will send down a MlxDeviceLockdownStatusRequest,
 // and scout will populate an MlxDeviceLockdownStatusResponse and send
@@ -44137,8 +44137,8 @@ type isScoutStreamApiBoundMessage_Payload interface {
 
 type ScoutStreamApiBoundMessage_Init struct {
 	// ScoutStreamInitRequest is sent as the first message to establish
-	// a connection between a scout agent and nico-api. After this,
-	// nico-api will populate a "request" within a ScoutStreamScoutBoundMessage,
+	// a connection between a scout agent and nico-core-api. After this,
+	// nico-core-api will populate a "request" within a ScoutStreamScoutBoundMessage,
 	// send it to the scout agent, and expect the scout agent to respond
 	// with a "response" from the oneof ScoutStreamApiBoundMessage options below.
 	//
@@ -44232,7 +44232,7 @@ func (*ScoutStreamApiBoundMessage_MlxDeviceConfigCompareResponse) isScoutStreamA
 func (*ScoutStreamApiBoundMessage_ScoutStreamAgentPingResponse) isScoutStreamApiBoundMessage_Payload() {
 }
 
-// ScoutStreamScoutBoundMessage contains the requests from nico-api
+// ScoutStreamScoutBoundMessage contains the requests from nico-core-api
 // that a connected scout agent should process and respond to,
 // populating a response from one of the ScoutStreamApiBoundMessages.
 type ScoutStreamScoutBoundMessage struct {
@@ -44538,7 +44538,7 @@ func (*ScoutStreamScoutBoundMessage_ScoutStreamAgentPingRequest) isScoutStreamSc
 }
 
 // ScoutStreamInitRequest is sent by the scout agent to identify itself
-// and establish a connection to nico-api.
+// and establish a connection to nico-core-api.
 type ScoutStreamInitRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MachineId     *MachineId             `protobuf:"bytes,1,opt,name=machine_id,json=machineId,proto3" json:"machine_id,omitempty"`

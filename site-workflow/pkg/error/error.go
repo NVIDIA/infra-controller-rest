@@ -37,9 +37,45 @@ var (
 	// Legacy Carbide error type names. Retained so a newer REST can still
 	// recognise errors emitted by an older site-workflow version that has
 	// not yet been upgraded. Remove once the rollout window has closed.
-	ErrTypeCarbideUnimplemented = "CarbideUnimplemented"
-	ErrTypeCarbideDenied        = "CarbideDenied"
+	ErrTypeCarbideObjectNotFound     = "CarbideObjectNotFound"
+	ErrTypeCarbideUnimplemented      = "CarbideUnimplemented"
+	ErrTypeCarbideUnavailable        = "CarbideUnavailable"
+	ErrTypeCarbideDenied             = "CarbideDenied"
+	ErrTypeCarbideAlreadyExists      = "CarbideAlreadyExists"
+	ErrTypeCarbideFailedPrecondition = "CarbideFailedPrecondition"
+	ErrTypeCarbideInvalidArgument    = "CarbideInvalidArgument"
 )
+
+// ObjectNotFoundErrTypes returns the error types treated as "object not found"
+// from a Site Agent gRPC call. Both NICo and legacy Carbide names are listed
+// so that REST can recognise errors from older site-workflow deployments.
+// Remove the Carbide entry once the rollout window has closed.
+func ObjectNotFoundErrTypes() []string {
+	return []string{ErrTypeNICoObjectNotFound, ErrTypeCarbideObjectNotFound}
+}
+
+// UnimplementedOrDeniedErrTypes returns the error types treated as
+// "unimplemented or restricted" from a Site Agent gRPC call. Both NICo and
+// legacy Carbide names are listed so that REST can recognise errors from
+// older site-workflow deployments. Remove the Carbide entries once the
+// rollout window has closed.
+func UnimplementedOrDeniedErrTypes() []string {
+	return []string{
+		ErrTypeNICoUnimplemented,
+		ErrTypeNICoDenied,
+		ErrTypeCarbideUnimplemented,
+		ErrTypeCarbideDenied,
+	}
+}
+
+// FailedPreconditionErrTypes returns the error types treated as
+// "failed precondition" from a Site Agent gRPC call. Both NICo and legacy
+// Carbide names are listed so that REST can recognise errors from older
+// site-workflow deployments. Remove the Carbide entry once the rollout
+// window has closed.
+func FailedPreconditionErrTypes() []string {
+	return []string{ErrTypeNICoFailedPrecondition, ErrTypeCarbideFailedPrecondition}
+}
 
 // WrapError accepts an error and checks if it
 // can be converted to a gRPC status.
