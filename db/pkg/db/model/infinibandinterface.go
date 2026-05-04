@@ -291,18 +291,18 @@ func (ibisd InfiniBandInterfaceSQLDAO) GetAll(ctx context.Context, tx *db.Tx, fi
 		ibisd.tracerSpan.SetAttribute(InfiniBandInterfaceDAOSpan, "ids", filter.InfiniBandInterfaceIDs)
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(ibi.device, ' ') || ' ' || coalesce(ibi.vendor, ' ') || ' ' || coalesce(ibi.physical_guid, ' ') || ' ' || coalesce(ibi.guid, ' ') || ' ' || coalesce(ibi.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("ibi.device ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibi.vendor ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibi.physical_guid ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibi.guid ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibi.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(ibi.device, ' ') || ' ' || coalesce(ibi.vendor, ' ') || ' ' || coalesce(ibi.physical_guid, ' ') || ' ' || coalesce(ibi.guid, ' ') || ' ' || coalesce(ibi.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("ibi.device ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibi.vendor ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibi.physical_guid ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibi.guid ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibi.status ILIKE ?", "%"+searchQuery+"%")
 		})
-		ibisd.tracerSpan.SetAttribute(InfiniBandInterfaceDAOSpan, "search_query", *filter.SearchQuery)
+		ibisd.tracerSpan.SetAttribute(InfiniBandInterfaceDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

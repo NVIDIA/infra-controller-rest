@@ -1,14 +1,14 @@
 # AGENTS.md
 
 This file provides guidance for AI coding agents working in the
-`ncx-infra-controller-rest` repository.
+`infra-controller-rest` repository.
 
 ## Project Overview
 
-**NCX Infra Controller REST** is a collection of Go microservices that comprise
-the management backend for NCX Infra Controller, exposed as a REST API. It
+**NVIDIA Infra Controller REST** is a collection of Go microservices that comprise
+the management backend for NVIDIA Infra Controller, exposed as a REST API. It
 provides multi-tenant, API-driven bare-metal lifecycle management, working in
-concert with [NCX Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core)
+concert with [NVIDIA Infra Controller Core](https://github.com/NVIDIA/infra-controller-core)
 for on-site hardware operations.
 
 > **Status:** Experimental/Preview. APIs, configurations, and features may
@@ -28,7 +28,7 @@ for on-site hardware operations.
 ## Repository Structure
 
 ```text
-ncx-infra-controller-rest/
+infra-controller-rest/
 ├── api/                  # Main REST API server (Echo-based)
 ├── auth/                 # Authentication (Keycloak, JWT, service accounts)
 ├── cert-manager/         # Native PKI certificate management (credsmgr)

@@ -52,6 +52,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
 	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
@@ -487,10 +488,10 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 	}
 
 	// Get query text for full text search from query param
-	searchQueryStr := c.QueryParam("query")
-	if searchQueryStr != "" {
-		filterInput.SearchQuery = &searchQueryStr
-		gamh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", searchQueryStr), logger)
+	searchQuery := common.GetSearchQuery(c)
+	if searchQuery != nil {
+		filterInput.SearchQuery = searchQuery
+		gamh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", *searchQuery), logger)
 	}
 
 	// Get status from query param
@@ -1320,10 +1321,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			TaskQueue:                queue.SiteTaskQueue,
 		}
 
-		labels := []*cwssaws.Label{}
-		for key, value := range apiRequest.Labels {
-			labels = append(labels, &cwssaws.Label{Key: key, Value: cdb.GetStrPtr(value)})
-		}
+		labels := util.ProtobufLabelsFromAPILabels(apiRequest.Labels)
 
 		machineName := machine.ID
 		if machine.Metadata != nil && machine.Metadata.Metadata != nil {

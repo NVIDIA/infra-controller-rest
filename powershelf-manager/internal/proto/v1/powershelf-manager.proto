@@ -171,6 +171,21 @@ message PowerTarget {
     PMCVendor pmc_vendor = 3;
 }
 
+// FirmwareTarget allows firmware updates against a device without prior registration.
+// PMC MAC, IP, and credentials are required; the device is auto-registered before update.
+message FirmwareTarget {
+    string pmc_mac_address = 1;
+    string pmc_ip_address = 2;
+    Credentials pmc_credentials = 3;
+    PMCVendor pmc_vendor = 4;
+}
+
+// UpdateFirmwareTargetRequest pairs a FirmwareTarget with the components to upgrade.
+message UpdateFirmwareTargetRequest {
+    FirmwareTarget target = 1;
+    repeated UpdateComponentFirmwareRequest components = 2;
+}
+
 message GetPowershelvesResponse {
     repeated PowerShelf powershelves = 1;
 }
@@ -185,21 +200,54 @@ message UpdatePowershelfFirmwareRequest {
     repeated UpdateComponentFirmwareRequest components = 2;
 }
 
+// UpdateFirmwareRequest queues firmware updates for one or more powershelves.
+// Registered powershelves are identified by PMC MAC; unregistered devices use FirmwareTarget.
+//
+// `upgrades` and `targets` are mutually exclusive: a single request must
+// populate exactly one of them. The handler does not deduplicate across the
+// two lists, so allowing both would risk queuing duplicate updates for any
+// device whose PMC MAC and FirmwareTarget are both supplied. Callers with
+// mixed inventory should issue one RPC per registration state. A request
+// that populates neither is rejected for the same reason it would be a no-op.
+//
+// Whichever list is populated is processed best-effort, per item: a failure
+// for one powershelf (validation, auto-registration, per-component upgrade
+// failure) does not abort processing of the remaining items and does not
+// produce a non-OK gRPC status. Outcomes are reported at two nested levels:
+// `UpdateFirmwareResponse.responses[i]` for per-powershelf results and
+// `responses[i].components[j].status` for per-component results within each
+// powershelf. The RPC only returns a top-level error on global failures
+// (powershelf manager uninitialized, or violation of the mutual-exclusivity
+// contract above).
 message UpdateFirmwareRequest {
-    repeated UpdatePowershelfFirmwareRequest upgrades = 1;
+    repeated UpdatePowershelfFirmwareRequest upgrades = 1; // Registered powershelves to update; mutually exclusive with `targets`. Processed best-effort.
+    repeated UpdateFirmwareTargetRequest targets = 2;      // Unregistered devices (auto-registered before update); mutually exclusive with `upgrades`. Processed best-effort.
 }
 
+// UpdateComponentFirmwareResponse is the per-component result for one
+// powershelf. See UpdateFirmwareRequest for the best-effort contract.
 message UpdateComponentFirmwareResponse {
     PowershelfComponent component = 1;
-    StatusCode status = 2;
+    StatusCode status = 2; // SUCCESS or error; per-component outcome under UpdateFirmwareRequest's best-effort contract
     string error = 3;
 }
 
+// UpdatePowershelfFirmwareResponse is the per-powershelf result. The
+// outer-level outcome is conveyed by `components[*].status`; there is no
+// separate top-level status field. Validation/registration failures fan out
+// across all requested components in this slice with the same status/error
+// (see fanOutComponentError in the service implementation).
 message UpdatePowershelfFirmwareResponse {
     string pmc_mac_address = 1;
     repeated UpdateComponentFirmwareResponse components = 2;
+    string pmc_ip = 3;  // Set for FirmwareTarget responses; empty for registered shelves
 }
 
+// UpdateFirmwareResponse returns the results for each powershelf. Length and
+// ordering correspond to whichever of `upgrades` or `targets` was populated
+// in the originating request (the two are mutually exclusive). Each entry
+// reports its own outcome via its nested `components` slice; see
+// UpdateFirmwareRequest for the best-effort contract.
 message UpdateFirmwareResponse {
     repeated UpdatePowershelfFirmwareResponse responses = 1;
 }

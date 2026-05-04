@@ -59,11 +59,10 @@ func (mt *ManageTenant) CreateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mt.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mt.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.CreateTenant(ctx, request)
 	if err != nil {
@@ -96,11 +95,10 @@ func (mt *ManageTenant) UpdateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mt.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mt.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateTenant(ctx, request)
 	if err != nil {

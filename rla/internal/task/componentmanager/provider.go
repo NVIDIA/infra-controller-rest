@@ -18,18 +18,27 @@
 package componentmanager
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/rs/zerolog/log"
+
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 )
 
 // Provider is a marker interface for API client providers.
 // Each provider wraps an API client and exposes it to component manager implementations.
-type Provider interface {
-	// Name returns the unique identifier for this provider type.
-	Name() string
-}
+type Provider = providerapi.Provider
+
+// ProviderConfig is a decoded provider-specific configuration that can create
+// its provider.
+type ProviderConfig = providerapi.ProviderConfig
+
+// ProviderConfigDecoder owns provider-specific config defaults and YAML
+// decoding.
+type ProviderConfigDecoder = providerapi.ProviderConfigDecoder
+
+// ProviderConfigDecoderRegistry manages provider config decoders by provider name.
+type ProviderConfigDecoderRegistry = providerapi.ProviderConfigDecoderRegistry
 
 // ProviderRegistry manages API providers for component manager implementations.
 // It allows implementations to request their required providers by name.
@@ -78,14 +87,18 @@ func (pr *ProviderRegistry) Get(name string) Provider {
 // Returns an error if the provider is not found or cannot be cast to the expected type.
 func GetTyped[T Provider](pr *ProviderRegistry, name string) (T, error) {
 	var zero T
+	if pr == nil {
+		return zero, ErrProviderRegistryNotConfigured
+	}
+
 	provider := pr.Get(name)
 	if provider == nil {
-		return zero, fmt.Errorf("provider '%s' not found", name)
+		return zero, UnknownProviderError{Name: name}
 	}
 
 	typed, ok := provider.(T)
 	if !ok {
-		return zero, fmt.Errorf("provider '%s' is not of expected type", name)
+		return zero, ProviderTypeMismatchError{Name: name}
 	}
 
 	return typed, nil

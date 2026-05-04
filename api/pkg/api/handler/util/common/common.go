@@ -606,6 +606,30 @@ func RollbackTx(ctx context.Context, tx *cdb.Tx, committed *bool) {
 	}
 }
 
+// HandleTxError translates an error returned by cdb.WithTx / cdb.WithTxResult
+// into an Echo API response. The lookups happen in this order:
+//  1. If the error wraps a *cutil.APIError (the closure chose its own
+//     Code/Message/Data), those are preserved.
+//  2. If the error is cdb.ErrTransactionInitiation or cdb.ErrTransactionCommit,
+//     a 500 is returned with a message that names the transaction phase.
+//  3. Otherwise the caller-supplied fallback message is used with a 500.
+func HandleTxError(c echo.Context, logger zerolog.Logger, err error, fallback string) error {
+	var apiErr *cutil.APIError
+	if errors.As(err, &apiErr) {
+		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
+	}
+	if errors.Is(err, cdb.ErrTransactionInitiation) {
+		logger.Error().Err(err).Msg("DB transaction initiation failed")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to complete request, DB transaction initiation error", nil)
+	}
+	if errors.Is(err, cdb.ErrTransactionCommit) {
+		logger.Error().Err(err).Msg("DB transaction commit failed")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to complete request, DB transaction commit error", nil)
+	}
+	logger.Error().Err(err).Msg(fallback)
+	return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fallback, nil)
+}
+
 // GetAndValidateQueryRelations is a utility function to get and validate the query parameters for include relations get/getall request
 func GetAndValidateQueryRelations(qParams url.Values, relatedEntities map[string]bool) ([]string, string) {
 	qIncludeRelations := qParams["includeRelation"]

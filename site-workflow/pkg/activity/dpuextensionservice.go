@@ -131,11 +131,10 @@ func (mdes *ManageDpuExtensionService) CreateDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mdes.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, cclient.ErrClientNotConnected
+	forgeClient, err := mdes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	createdDpuExtensionService, err := forgeClient.CreateDpuExtensionService(ctx, request)
 	if err != nil {
@@ -168,11 +167,10 @@ func (mdes *ManageDpuExtensionService) UpdateDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mdes.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, cclient.ErrClientNotConnected
+	forgeClient, err := mdes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	updatedDpuExtensionService, err := forgeClient.UpdateDpuExtensionService(ctx, request)
 	if err != nil {
@@ -205,11 +203,10 @@ func (mdes *ManageDpuExtensionService) DeleteDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mdes.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cclient.ErrClientNotConnected
+	forgeClient, err := mdes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteDpuExtensionService(ctx, request)
 	if err != nil {
@@ -242,11 +239,10 @@ func (mdes *ManageDpuExtensionService) GetDpuExtensionServiceVersionsInfoOnSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mdes.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, cclient.ErrClientNotConnected
+	forgeClient, err := mdes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	versionInfos, err := forgeClient.GetDpuExtensionServiceVersionsInfo(ctx, request)
 	if err != nil {

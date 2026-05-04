@@ -93,7 +93,9 @@ Factory functions create component manager instances. They receive the `Provider
 The `Registry` stores factories and active managers:
 - `RegisterFactory()` - Register a factory for a component type + implementation name
 - `Initialize()` - Create managers based on configuration
-- `GetManager()` - Retrieve active manager for a component type
+- `GetManager()` - Retrieve active manager for a component type, returning a
+  descriptive error when the registry is not configured or no manager is active
+- `FindManager()` - Probe for an active manager, returning nil when absent
 
 ## Directory Structure
 

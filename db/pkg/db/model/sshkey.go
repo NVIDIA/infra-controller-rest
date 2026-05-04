@@ -254,14 +254,14 @@ func (sksd SSHKeySQLDAO) GetAll(ctx context.Context, tx *db.Tx, filter SSHKeyFil
 		query = query.Where("sk.fingerprint IN (?)", bun.In(filter.Fingerprints))
 		sksd.tracerSpan.SetAttribute(sshKeyDAOSpan, "fingerprint", filter.Fingerprints)
 	}
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', sk.name) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("sk.name ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', sk.name) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("sk.name ILIKE ?", "%"+searchQuery+"%")
 		})
-		sksd.tracerSpan.SetAttribute(sshKeyDAOSpan, "search_query", *filter.SearchQuery)
+		sksd.tracerSpan.SetAttribute(sshKeyDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

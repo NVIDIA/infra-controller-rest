@@ -274,14 +274,14 @@ func (skgsd SSHKeyGroupSQLDAO) GetAll(ctx context.Context, tx *db.Tx, filter SSH
 		query = query.Where("skg.status IN (?)", bun.In(filter.Statuses))
 		skgsd.tracerSpan.SetAttribute(SSHKeyGroupDAOSpan, "status", filter.Statuses)
 	}
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', skg.name) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("skg.name ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', skg.name) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("skg.name ILIKE ?", "%"+searchQuery+"%")
 		})
-		skgsd.tracerSpan.SetAttribute(SSHKeyGroupDAOSpan, "search_query", *filter.SearchQuery)
+		skgsd.tracerSpan.SetAttribute(SSHKeyGroupDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

@@ -22,10 +22,15 @@ import (
 	"net"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
+	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func newCredential(user, password string) *credential.Credential {
+	c := credential.New(user, password)
+	return &c
+}
 
 func parseMAC(t *testing.T, s string) net.HardwareAddr {
 	t.Helper()
@@ -56,19 +61,20 @@ func TestInMemoryStartStop(t *testing.T) {
 
 func TestInMemoryBMCPutGet(t *testing.T) {
 	testCases := map[string]struct {
-		initialPut bool
-		putMAC     string
-		putCred    *credential.Credential
-		getMAC     string
-		wantErr    bool
-		wantUser   string
-		wantPass   string
-		samePtr    bool
+		initialPut   bool
+		putMAC       string
+		putCred      *credential.Credential
+		putSameAgain bool // if true, immediately re-put a fresh-but-equal credential to exercise the idempotent skip path
+		getMAC       string
+		wantErr      bool
+		wantUser     string
+		wantPass     string
+		samePtr      bool
 	}{
 		"get existing valid BMC credential": {
 			initialPut: true,
 			putMAC:     "00:11:22:33:44:55",
-			putCred:    credential.New("admin", "secret"),
+			putCred:    newCredential("admin", "secret"),
 			getMAC:     "00:11:22:33:44:55",
 			wantErr:    false,
 			wantUser:   "admin",
@@ -78,7 +84,7 @@ func TestInMemoryBMCPutGet(t *testing.T) {
 		"get existing invalid credential (empty user) returns not found": {
 			initialPut: true,
 			putMAC:     "00:11:22:33:44:66",
-			putCred:    credential.New("", "nopass"),
+			putCred:    newCredential("", "nopass"),
 			getMAC:     "00:11:22:33:44:66",
 			wantErr:    true,
 		},
@@ -87,15 +93,16 @@ func TestInMemoryBMCPutGet(t *testing.T) {
 			getMAC:     "66:77:88:99:00:11",
 			wantErr:    true,
 		},
-		"put overwrites existing value": {
-			initialPut: true,
-			putMAC:     "aa:bb:cc:dd:ee:ff",
-			putCred:    credential.New("user1", "p1"),
-			getMAC:     "aa:bb:cc:dd:ee:ff",
-			wantErr:    false,
-			wantUser:   "user2",
-			wantPass:   "p2",
-			samePtr:    true,
+		"put same credential is no-op": {
+			initialPut:   true,
+			putMAC:       "aa:bb:cc:dd:ee:ff",
+			putCred:      newCredential("user1", "p1"),
+			putSameAgain: true,
+			getMAC:       "aa:bb:cc:dd:ee:ff",
+			wantErr:      false,
+			wantUser:     "user1",
+			wantPass:     "p1",
+			samePtr:      true, // second put with equal-but-fresh pointer must be skipped, leaving original pointer in place
 		},
 	}
 
@@ -108,9 +115,12 @@ func TestInMemoryBMCPutGet(t *testing.T) {
 			if tc.initialPut {
 				mac := parseMAC(t, tc.putMAC)
 				assert.NoError(t, mgr.PutBMC(ctx, mac, tc.putCred))
-				// For the overwrite scenario, put a second credential to same MAC
-				if name == "put overwrites existing value" {
-					assert.NoError(t, mgr.PutBMC(ctx, mac, credential.New("user2", "p2")))
+				// Exercise the idempotent skip path with a fresh-but-equal
+				// credential pointer. samePtr below verifies the original
+				// pointer survived (i.e. the second Put was actually skipped,
+				// not just rewritten with the same values).
+				if tc.putSameAgain {
+					assert.NoError(t, mgr.PutBMC(ctx, mac, newCredential(tc.putCred.User, tc.putCred.Password.Value)))
 				}
 			}
 
@@ -127,12 +137,36 @@ func TestInMemoryBMCPutGet(t *testing.T) {
 			assert.Equal(t, tc.wantUser, got.User)
 			assert.Equal(t, tc.wantPass, got.Password.Value)
 
-			if tc.samePtr && tc.initialPut && name != "put overwrites existing value" {
-				// For non-overwrite cases, ensure returned pointer equals the one stored
+			if tc.samePtr && tc.initialPut {
 				assert.Same(t, tc.putCred, got)
 			}
 		})
 	}
+}
+
+func TestInMemoryPutDifferentCredentialOverwrites(t *testing.T) {
+	ctx := context.Background()
+	mgr := NewInMemoryCredentialManager()
+	mac := parseMAC(t, "00:11:22:33:44:55")
+
+	// Initial put succeeds
+	assert.NoError(t, mgr.PutBMC(ctx, mac, newCredential("admin", "secret")))
+	assert.NoError(t, mgr.PutNVOS(ctx, mac, newCredential("nvos", "nvos_secret")))
+
+	// Put with different credentials overwrites (no error for in-memory)
+	assert.NoError(t, mgr.PutBMC(ctx, mac, newCredential("admin", "different_pass")))
+	assert.NoError(t, mgr.PutNVOS(ctx, mac, newCredential("nvos", "different_pass")))
+
+	// Credentials are now the new values
+	bmcCred, err := mgr.GetBMC(ctx, mac)
+	assert.NoError(t, err)
+	assert.Equal(t, "admin", bmcCred.User)
+	assert.Equal(t, "different_pass", bmcCred.Password.Value)
+
+	nvosCred, err := mgr.GetNVOS(ctx, mac)
+	assert.NoError(t, err)
+	assert.Equal(t, "nvos", nvosCred.User)
+	assert.Equal(t, "different_pass", nvosCred.Password.Value)
 }
 
 func TestInMemoryNVOSPutGet(t *testing.T) {
@@ -148,7 +182,7 @@ func TestInMemoryNVOSPutGet(t *testing.T) {
 		"get existing valid NVOS credential": {
 			initialPut: true,
 			putMAC:     "00:11:22:33:44:55",
-			putCred:    credential.New("nvos_admin", "nvos_secret"),
+			putCred:    newCredential("nvos_admin", "nvos_secret"),
 			getMAC:     "00:11:22:33:44:55",
 			wantErr:    false,
 			wantUser:   "nvos_admin",
@@ -201,9 +235,9 @@ func TestInMemoryBMCPatch(t *testing.T) {
 	}{
 		"patch existing replaces value": {
 			setupMAC:      "00:11:22:33:44:55",
-			setupCred:     credential.New("admin", "old"),
+			setupCred:     newCredential("admin", "old"),
 			patchMAC:      "00:11:22:33:44:55",
-			patchCred:     credential.New("root", "new"),
+			patchCred:     newCredential("root", "new"),
 			wantErr:       false,
 			wantUser:      "root",
 			wantPass:      "new",
@@ -211,9 +245,9 @@ func TestInMemoryBMCPatch(t *testing.T) {
 		},
 		"patch missing returns error": {
 			setupMAC:  "aa:bb:cc:dd:ee:ff",
-			setupCred: credential.New("user", "pass"),
+			setupCred: newCredential("user", "pass"),
 			patchMAC:  "66:77:88:99:00:11",
-			patchCred: credential.New("root", "new"),
+			patchCred: newCredential("root", "new"),
 			wantErr:   true,
 		},
 	}
@@ -256,13 +290,13 @@ func TestInMemoryBMCDelete(t *testing.T) {
 	}{
 		"delete existing removes entry": {
 			putMAC:       "00:11:22:33:44:55",
-			putCred:      credential.New("admin", "secret"),
+			putCred:      newCredential("admin", "secret"),
 			delMAC:       "00:11:22:33:44:55",
 			expectErrGet: true,
 		},
 		"delete missing returns nil": {
 			putMAC:       "aa:bb:cc:dd:ee:ff",
-			putCred:      credential.New("user", "p"),
+			putCred:      newCredential("user", "p"),
 			delMAC:       "66:77:88:99:00:11",
 			expectErrGet: false, // original still present
 		},
@@ -308,16 +342,16 @@ func TestInMemoryKeys(t *testing.T) {
 		},
 		"one entry returns that MAC": {
 			putPairs: [][2]interface{}{
-				{"00:11:22:33:44:55", credential.New("admin", "secret")},
+				{"00:11:22:33:44:55", newCredential("admin", "secret")},
 			},
 			expectCount: 1,
 			expectSet:   map[string]bool{"00:11:22:33:44:55": true},
 		},
 		"multiple entries return all MACs": {
 			putPairs: [][2]interface{}{
-				{"00:11:22:33:44:55", credential.New("admin", "a")},
-				{"66:77:88:99:00:11", credential.New("root", "r")},
-				{"aa:bb:cc:dd:ee:ff", credential.New("user", "u")},
+				{"00:11:22:33:44:55", newCredential("admin", "a")},
+				{"66:77:88:99:00:11", newCredential("root", "r")},
+				{"aa:bb:cc:dd:ee:ff", newCredential("user", "u")},
 			},
 			expectCount: 3,
 			expectSet: map[string]bool{

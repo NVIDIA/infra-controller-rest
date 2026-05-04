@@ -68,6 +68,14 @@ func (cred *Credential) Patch(nc *Credential) bool {
 	return patched
 }
 
+// Equal returns true if both credentials have the same username and password.
+func (cred *Credential) Equal(other *Credential) bool {
+	if cred == nil || other == nil {
+		return cred == other
+	}
+	return cred.User == other.User && cred.Password.IsEqual(other.Password)
+}
+
 // IsValid returns true if the credential has a non-empty username
 // Note: Password validation is intentionally not included for flexibility
 func (cred *Credential) IsValid() bool {

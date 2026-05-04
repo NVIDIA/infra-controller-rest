@@ -24,6 +24,7 @@ import (
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
@@ -55,6 +56,37 @@ type Tenant struct {
 	Updated        time.Time     `bun:"updated,nullzero,notnull,default:current_timestamp"`
 	Deleted        *time.Time    `bun:"deleted,soft_delete"`
 	CreatedBy      uuid.UUID     `bun:"type:uuid,notnull"`
+}
+
+// ToCreateRequestProto builds a CreateTenantRequest proto for sending this Tenant
+// to a Site. Falls back to Org for the metadata Name when OrgDisplayName
+// isn't set.
+func (tn *Tenant) ToCreateRequestProto() *cwssaws.CreateTenantRequest {
+	name := tn.Org
+	if tn.OrgDisplayName != nil {
+		name = *tn.OrgDisplayName
+	}
+	return &cwssaws.CreateTenantRequest{
+		OrganizationId: tn.Org,
+		Metadata: &cwssaws.Metadata{
+			Name: name,
+		},
+	}
+}
+
+// ToUpdateRequestProto builds an UpdateTenantRequest proto for sending this Tenant
+// to a Site.
+func (tn *Tenant) ToUpdateRequestProto() *cwssaws.UpdateTenantRequest {
+	name := tn.Org
+	if tn.OrgDisplayName != nil {
+		name = *tn.OrgDisplayName
+	}
+	return &cwssaws.UpdateTenantRequest{
+		OrganizationId: tn.Org,
+		Metadata: &cwssaws.Metadata{
+			Name: name,
+		},
+	}
 }
 
 var _ bun.BeforeAppendModelHook = (*Tenant)(nil)

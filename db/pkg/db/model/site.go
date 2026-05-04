@@ -300,19 +300,19 @@ func (ssd SiteSQLDAO) setQueryWithFilter(filter SiteFilterInput, query *bun.Sele
 		ssd.tracerSpan.SetAttribute(siteDAOSpan, "status", filter.Statuses)
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("to_tsvector('english', (coalesce(st.name, ' ') || ' ' || coalesce(st.description, ' ') || ' ' || "+
-					"coalesce(st.status, ' ') || ' ' || coalesce(st.location::text, ' ') || ' ' || coalesce(st.contact::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("st.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("st.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("st.status ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("st.location::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("st.contact::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+					"coalesce(st.status, ' ') || ' ' || coalesce(st.location::text, ' ') || ' ' || coalesce(st.contact::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("st.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("st.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("st.status ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("st.location::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("st.contact::text ILIKE ?", "%"+searchQuery+"%")
 		})
-		ssd.tracerSpan.SetAttribute(siteDAOSpan, "search_query", *filter.SearchQuery)
+		ssd.tracerSpan.SetAttribute(siteDAOSpan, "search_query", searchQuery)
 	}
 	return query, nil
 }

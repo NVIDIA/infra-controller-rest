@@ -144,12 +144,10 @@ func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mibp.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mibp.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.CreateIBPartition(ctx, request)
 	if err != nil {
@@ -183,12 +181,10 @@ func (mibp *ManageInfiniBandPartition) UpdateInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mibp.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mibp.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateIBPartition(ctx, request)
 	if err != nil {
@@ -221,12 +217,10 @@ func (mipb *ManageInfiniBandPartition) DeleteInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mipb.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mipb.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteIBPartition(ctx, request)
 	if err != nil {

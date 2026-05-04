@@ -74,11 +74,10 @@ func (mm *ManageSubnet) CreateSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.CreateNetworkSegment(ctx, request)
 	if err != nil {
@@ -114,11 +113,10 @@ func (mm *ManageSubnet) DeleteSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteNetworkSegment(ctx, request)
 	if err != nil {

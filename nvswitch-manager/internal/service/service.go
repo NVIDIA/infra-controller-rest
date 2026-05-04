@@ -1,14 +1,20 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: LicenseRef-NvidiaProprietary
+ * SPDX-License-Identifier: Apache-2.0
  *
- * NVIDIA CORPORATION, its affiliates and licensors retain all intellectual
- * property and proprietary rights in and to this material, related
- * documentation and any modifications thereto. Any use, reproduction,
- * disclosure or distribution of this material and related documentation
- * without an express license agreement from NVIDIA CORPORATION or
- * its affiliates is strictly prohibited.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 package service
 
 import (
@@ -50,20 +56,20 @@ type Service struct {
 func New(ctx context.Context, c Config) (*Service, error) {
 	// Connect to database first if configured (needed for persistent registry)
 	var db *bun.DB
-	if c.DBConf.Host != "" {
+	if c.DataStoreType == nvswitchmanager.DatastoreTypePersistent {
+		if c.DBConf.Host == "" {
+			return nil, fmt.Errorf("DB host is required for persistent mode")
+		}
 		pg, err := postgres.New(ctx, c.DBConf)
 		if err != nil {
-			if c.DataStoreType == nvswitchmanager.DatastoreTypePersistent {
-				return nil, fmt.Errorf("database connection required for persistent mode: %w", err)
-			}
-			log.Warnf("Failed to connect to database: %v (firmware manager will be disabled)", err)
-		} else {
-			if err := migrations.Migrate(ctx, pg); err != nil {
-				return nil, fmt.Errorf("failed to run database migrations: %w", err)
-			}
-			db = pg.DB()
-			log.Info("Connected to database")
+			return nil, fmt.Errorf("database connection required for persistent mode: %w", err)
 		}
+
+		if err := migrations.Migrate(ctx, pg); err != nil {
+			return nil, fmt.Errorf("failed to run database migrations: %w", err)
+		}
+		db = pg.DB()
+		log.Info("Connected to database")
 	}
 
 	nsmConfig, err := c.ToNsmConf()

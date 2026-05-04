@@ -608,6 +608,16 @@ func TestTenantAccountSQLDAO_GetAll(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
+			desc: "GetAll with whitespace-only search query returns objects",
+			filter: TenantAccountFilterInput{
+				SearchQuery: db.GetStrPtr("   "),
+			},
+			includeRelations: []string{"TenantContact"},
+			expectedCount:    paginator.DefaultLimit,
+			expectedTotal:    &totalCount,
+			expectedError:    false,
+		},
+		{
 			desc: "GetAll with Tenant ID filter returns objects",
 			filter: TenantAccountFilterInput{
 				TenantIDs: []uuid.UUID{*tas[0].TenantID},

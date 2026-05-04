@@ -43,6 +43,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
 	common "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
@@ -335,7 +336,7 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		RoutingProfile:            routingProfile,
 		NVLinkLogicalPartitionID:  defaultNvllPartitionId,
 		Labels:                    labels,
-		Status:                    cdbm.VpcStatusReady,
+		Status:                    cdbm.VpcStatusProvisioning,
 		CreatedBy:                 *dbUser,
 		Vni:                       apiRequest.Vni,
 	}
@@ -361,8 +362,8 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 
 	// Create status detail
 	sdDAO := cdbm.NewStatusDetailDAO(cvh.dbSession)
-	ssd, err := sdDAO.CreateFromParams(ctx, tx, vpc.ID.String(), *cdb.GetStrPtr(cdbm.VpcStatusReady),
-		cdb.GetStrPtr("VPC successfully provisioned on Site"))
+	ssd, err := sdDAO.CreateFromParams(ctx, tx, vpc.ID.String(), cdbm.VpcStatusProvisioning,
+		cdb.GetStrPtr("VPC provisioning has been initiated on Site"))
 	if err != nil {
 		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for VPC", nil)
@@ -425,19 +426,7 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		metadata.Description = *vpc.Description
 	}
 
-	// Prepare labels for site controller
-	if len(vpc.Labels) > 0 {
-		var labels []*cwssaws.Label
-		for key, value := range vpc.Labels {
-			curVal := value
-			localLable := &cwssaws.Label{
-				Key:   key,
-				Value: &curVal,
-			}
-			labels = append(labels, localLable)
-		}
-		metadata.Labels = labels
-	}
+	metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
 	createVpcRequest.Metadata = metadata
 
 	logger.Info().Msg("triggering VPC create workflow")
@@ -457,7 +446,9 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create VPC workflow")
 
 	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
+	controllerVpc := &cwssaws.Vpc{}
+
+	err = we.Get(ctx, controllerVpc)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -495,8 +486,39 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 	}
 	// set committed so, deferred cleanup functions will do nothing
 	txCommitted = true
+
+	statusDetails := []cdbm.StatusDetail{*ssd}
+
+	// Make a best-effort attempt to return a response with the allocated VNI.
+	if controllerVpc.GetStatus() != nil {
+		activeVni := wutil.GetUint32PtrToIntPtr(controllerVpc.GetStatus().Vni)
+
+		uvpcInput := cdbm.VpcUpdateInput{
+			VpcID:     vpc.ID,
+			ActiveVni: activeVni,
+			Status:    cdb.GetStrPtr(cdbm.VpcStatusReady),
+		}
+		updatedVpc, err := vpcDAO.Update(ctx, nil, uvpcInput)
+		if err != nil {
+			logger.Error().Err(err).Msg("error while updating VPC DB entry for VNI")
+		} else {
+			// Update the vpc being returned if all went well.
+			vpc = updatedVpc
+
+			// Best effort create status detail
+			ssd, err = sdDAO.CreateFromParams(ctx, nil, vpc.ID.String(), cdbm.VpcStatusReady, cdb.GetStrPtr("VPC is ready for use"))
+			if err != nil {
+				logger.Error().Err(err).Msg("error creating Status Detail DB entry")
+			} else if ssd == nil {
+				logger.Error().Err(err).Msg("unexpected nil Status Detail returned from DB")
+			} else {
+				statusDetails = append(statusDetails, *ssd)
+			}
+		}
+	}
+
 	// Create response
-	apiVpc := model.NewAPIVpc(*vpc, []cdbm.StatusDetail{*ssd})
+	apiVpc := model.NewAPIVpc(*vpc, statusDetails)
 
 	logger.Info().Msg("finishing API handler")
 
@@ -866,18 +888,7 @@ func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 		metadata.Description = *vpc.Description
 	}
 
-	// Prepare the labels
-	clabels := []*cwssaws.Label{}
-	for key, value := range vpc.Labels {
-		curVal := value
-		localLable := &cwssaws.Label{
-			Key:   key,
-			Value: &curVal,
-		}
-		clabels = append(clabels, localLable)
-	}
-
-	metadata.Labels = clabels
+	metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
 	updateVpcRequest.Metadata = metadata
 
 	logger.Info().Msg("triggering VPC update workflow")
@@ -1017,8 +1028,8 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Failed to parse request data, potentially invalid structure", nil)
 	}
 
-	// Check that VPC exists
-	vpc, err := common.GetVpcFromIDString(ctx, nil, vpcStrID, nil, uvvh.dbSession)
+	// Check that VPC exists (load Site for status and native networking / FNN eligibility checks)
+	vpc, err := common.GetVpcFromIDString(ctx, nil, vpcStrID, []string{cdbm.SiteRelationName}, uvvh.dbSession)
 	if err != nil {
 		// Check if it's a UUID parsing error (happens before DB call)
 		if err == common.ErrInvalidID {
@@ -1055,6 +1066,36 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "VPC does not belong to current Tenant", nil)
 	}
 
+	// Ensure that Tenant has access to Site
+	tsDAO := cdbm.NewTenantSiteDAO(uvvh.dbSession)
+	_, err = tsDAO.GetByTenantIDAndSiteID(ctx, nil, tenant.ID, vpc.SiteID, nil)
+	if err != nil {
+		if err == cdb.ErrDoesNotExist {
+			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant does not have access to Site, VPC cannot be updated", nil)
+		}
+
+		logger.Error().Err(err).Msg("error retrieving Tenant Site association")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to determine Tenant/Site association, DB error", nil)
+	}
+
+	// Verify that the VPC Site is in a valid state
+	if vpc.Site.Status != cdbm.SiteStatusRegistered {
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Site that VPC belongs to must be in Registered state in order to update virtualization type", nil)
+	}
+
+	// Get site config
+	siteConfig := &cdbm.SiteConfig{}
+	if vpc.Site.Config != nil {
+		siteConfig = vpc.Site.Config
+	}
+
+	// Verify if site has been enabled for FNN type
+	// No need to check for FNN type, as the request validator guarantees that
+	if !siteConfig.NativeNetworking {
+		logger.Warn().Msg(fmt.Sprintf("Site: %v that VPC belongs to does not have native networking enabled, unable to update virtualization type to FNN", vpc.SiteID))
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Site that VPC belongs to does not have native networking enabled, unable to update virtualization type to FNN", nil)
+	}
+
 	subnetDAO := cdbm.NewSubnetDAO(uvvh.dbSession)
 	_, subnetCount, err := subnetDAO.GetAll(ctx, nil, cdbm.SubnetFilterInput{VpcIDs: []uuid.UUID{vpc.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(0)}, nil)
 	if err != nil {
@@ -1075,18 +1116,6 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 
 	if instanceCount > 0 {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Virtualization Type cannot be changed while VPC contains one or more Instances", nil)
-	}
-
-	// Ensure that Tenant has access to Site
-	tsDAO := cdbm.NewTenantSiteDAO(uvvh.dbSession)
-	_, err = tsDAO.GetByTenantIDAndSiteID(ctx, nil, tenant.ID, vpc.SiteID, nil)
-	if err != nil {
-		if err == cdb.ErrDoesNotExist {
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant does not have access to Site, VPC cannot be updated", nil)
-		}
-
-		logger.Error().Err(err).Msg("error retrieving Tenant Site association")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Tenant Site association", nil)
 	}
 
 	// Start a database transaction
@@ -1450,12 +1479,9 @@ func (gavh GetAllVPCHandler) Handle(c echo.Context) error {
 	}
 
 	// Get query text for full text search from query param
-	var searchQuery *string
-
-	searchQueryStr := c.QueryParam("query")
-	if searchQueryStr != "" {
-		searchQuery = &searchQueryStr
-		gavh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", searchQueryStr), logger)
+	searchQuery := common.GetSearchQuery(c)
+	if searchQuery != nil {
+		gavh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", *searchQuery), logger)
 	}
 
 	// Get status from query param

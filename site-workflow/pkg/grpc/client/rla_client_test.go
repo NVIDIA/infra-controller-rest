@@ -20,9 +20,13 @@ package client
 import (
 	"crypto/md5"
 	"os"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+
+	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
 )
 
 func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
@@ -86,6 +90,34 @@ func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
 			assert.Equal(t, tt.wantServerCAMD5, gotServerCAMD5)
 		})
 	}
+}
+
+func TestRlaAtomicClient_GetRLAClient_ReturnsErrWhenUninitialized(t *testing.T) {
+	rac := &RlaAtomicClient{
+		value: &atomic.Value{},
+	}
+	// GetRLAClient should return ErrClientNotConnected when no client has been stored,
+	// rather than panicking on a nil-pointer deref.
+	rla, err := rac.GetRLAClient()
+	assert.Nil(t, rla)
+	assert.ErrorIs(t, err, ErrClientNotConnected)
+}
+
+func TestRlaAtomicClient_GetRLAClient_ReturnsRLAAfterSwap(t *testing.T) {
+	rac := &RlaAtomicClient{
+		value: &atomic.Value{},
+	}
+	// Once a RlaClient with a populated rla field is stored, GetRLAClient
+	// should return that exact inner client. We construct a stub via
+	// rlav1.NewRLAClient(nil); it isn't usable for real RPCs but is a non-nil
+	// rlav1.RLAClient interface value, which is all we need to exercise the
+	// success path.
+	expected := rlav1.NewRLAClient((*grpc.ClientConn)(nil))
+	rac.value.Store(&RlaClient{rla: expected})
+	got, err := rac.GetRLAClient()
+	assert.NoError(t, err)
+	assert.NotNil(t, got)
+	assert.Equal(t, expected, got)
 }
 
 func TestRlaAtomicClient_CheckCertificates(t *testing.T) {

@@ -70,12 +70,10 @@ func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mos.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mos.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.CreateOsImage(ctx, request)
 	if err != nil {
@@ -112,11 +110,10 @@ func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mos.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mos.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateOsImage(ctx, request)
 	if err != nil {
@@ -151,11 +148,10 @@ func (mos *ManageOperatingSystem) DeleteOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mos.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mos.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteOsImage(ctx, request)
 	if err != nil {

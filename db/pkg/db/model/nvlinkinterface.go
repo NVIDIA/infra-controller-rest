@@ -265,15 +265,15 @@ func (nvlisd NVLinkInterfaceSQLDAO) GetAll(ctx context.Context, tx *db.Tx, filte
 		query = query.Where("nvli.device_instance IN (?)", bun.In(filter.DeviceInstances))
 		nvlisd.tracerSpan.SetAttribute(NVLinkInterfaceDAOSpan, "device_instance", filter.DeviceInstances)
 	}
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(nvli.device, ' ') || ' ' || coalesce(nvli.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("nvli.device ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("nvli.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(nvli.device, ' ') || ' ' || coalesce(nvli.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("nvli.device ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("nvli.status ILIKE ?", "%"+searchQuery+"%")
 		})
-		nvlisd.tracerSpan.SetAttribute(NVLinkInterfaceDAOSpan, "search_query", *filter.SearchQuery)
+		nvlisd.tracerSpan.SetAttribute(NVLinkInterfaceDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

@@ -61,12 +61,12 @@ func (mmv *ManageMachineValidation) EnableDisableMachineValidationTestOnSite(ctx
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
 
-	_, err = carbideClient.Carbide().MachineValidationTestEnableDisableTest(ctx, request)
+	_, err = forgeClient.MachineValidationTestEnableDisableTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to enable/disable machine validation test using Site Controller API")
 		return swe.WrapErr(err)
@@ -96,12 +96,12 @@ func (mmv *ManageMachineValidation) PersistValidationResultOnSite(ctx context.Co
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
 
-	_, err = carbideClient.Carbide().PersistValidationResult(ctx, request)
+	_, err = forgeClient.PersistValidationResult(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to persist validation results using Site Controller API")
 		return swe.WrapErr(err)
@@ -129,12 +129,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationResultsFromSite(ctx cont
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
 
-	result, err := carbideClient.Carbide().GetMachineValidationResults(ctx, request)
+	result, err := forgeClient.GetMachineValidationResults(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation results using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -164,12 +164,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationRunsFromSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
 
-	result, err := carbideClient.Carbide().GetMachineValidationRuns(ctx, request)
+	result, err := forgeClient.GetMachineValidationRuns(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation runs using Site Controller API")
 		return nil, err
@@ -197,12 +197,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationTestsFromSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
 
-	result, err := carbideClient.Carbide().GetMachineValidationTests(ctx, request)
+	result, err := forgeClient.GetMachineValidationTests(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation tests using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -236,12 +236,12 @@ func (mmv *ManageMachineValidation) AddMachineValidationTestOnSite(ctx context.C
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
 
-	response, err := carbideClient.Carbide().AddMachineValidationTest(ctx, request)
+	response, err := forgeClient.AddMachineValidationTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to add machine validation test using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -275,12 +275,12 @@ func (mmv *ManageMachineValidation) UpdateMachineValidationTestOnSite(ctx contex
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
 
-	_, err = carbideClient.Carbide().UpdateMachineValidationTest(ctx, request)
+	_, err = forgeClient.UpdateMachineValidationTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update machine validation test using Site Controller API")
 		return swe.WrapErr(err)
@@ -308,12 +308,12 @@ func (mmv *ManageMachineValidation) GetMachineValidationExternalConfigsFromSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
 
-	result, err := carbideClient.Carbide().GetMachineValidationExternalConfigs(ctx, request)
+	result, err := forgeClient.GetMachineValidationExternalConfigs(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation external configs using Site Controller API")
 		return nil, swe.WrapErr(err)
@@ -343,12 +343,12 @@ func (mmv *ManageMachineValidation) AddUpdateMachineValidationExternalConfigOnSi
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
 
-	_, err = carbideClient.Carbide().AddUpdateMachineValidationExternalConfig(ctx, request)
+	_, err = forgeClient.AddUpdateMachineValidationExternalConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to add/update machine validation external config using Site Controller API")
 		return swe.WrapErr(err)
@@ -378,12 +378,12 @@ func (mmv *ManageMachineValidation) RemoveMachineValidationExternalConfigOnSite(
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mmv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mmv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
 
-	_, err = carbideClient.Carbide().RemoveMachineValidationExternalConfig(ctx, request)
+	_, err = forgeClient.RemoveMachineValidationExternalConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to remove machine validation external config using Site Controller API")
 		return swe.WrapErr(err)

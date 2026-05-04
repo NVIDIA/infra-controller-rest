@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
+	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
 	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/credentials"
 	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/db"
 	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/firmwaremanager"

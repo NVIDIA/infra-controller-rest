@@ -1,6 +1,6 @@
 # Simple SDK
 
-The Simple SDK provides a simplified, high-level interface to the NCX Infra Controller REST API. It wraps the [standard SDK](../standard) with a cleaner API and automatic metadata management.
+The Simple SDK provides a simplified, high-level interface to the NVIDIA Infra Controller REST API. It wraps the [standard SDK](../standard) with a cleaner API and automatic metadata management.
 
 ## Features
 
@@ -42,7 +42,7 @@ go get github.com/NVIDIA/ncx-infra-controller-rest/sdk/simple
 For local development, use a `replace` directive:
 
 ```go
-replace github.com/NVIDIA/ncx-infra-controller-rest => /path/to/ncx-infra-controller-rest
+replace github.com/NVIDIA/ncx-infra-controller-rest => /path/to/infra-controller-rest
 ```
 
 ### Local development (kind)

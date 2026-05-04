@@ -25,6 +25,7 @@ import (
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
@@ -75,6 +76,83 @@ type ExpectedSwitch struct {
 	Created            time.Time         `bun:"created,nullzero,notnull,default:current_timestamp"`
 	Updated            time.Time         `bun:"updated,nullzero,notnull,default:current_timestamp"`
 	CreatedBy          uuid.UUID         `bun:"type:uuid,notnull"`
+}
+
+// ExpectedSwitchCredentials carries the BMC and NVOS credentials for one
+// ExpectedSwitch. They live in their own type because they aren't stored
+// in the DB record and have to be threaded through to ToProto separately.
+type ExpectedSwitchCredentials struct {
+	BmcUsername  *string
+	BmcPassword  *string
+	NvosUsername *string
+	NvosPassword *string
+}
+
+// ToProto builds the workflow proto for this ExpectedSwitch. BMC and NVOS
+// credentials are passed in because they aren't persisted on the record;
+// labels are read from es.Labels.
+func (es *ExpectedSwitch) ToProto(creds ExpectedSwitchCredentials) *cwssaws.ExpectedSwitch {
+	proto := &cwssaws.ExpectedSwitch{
+		ExpectedSwitchId:   &cwssaws.UUID{Value: es.ID.String()},
+		BmcMacAddress:      es.BmcMacAddress,
+		SwitchSerialNumber: es.SwitchSerialNumber,
+	}
+
+	if es.RackID != nil {
+		proto.RackId = &cwssaws.RackId{Id: *es.RackID}
+	}
+	if es.Name != nil {
+		proto.Name = es.Name
+	}
+	if es.Manufacturer != nil {
+		proto.Manufacturer = es.Manufacturer
+	}
+	if es.Model != nil {
+		proto.Model = es.Model
+	}
+	if es.Description != nil {
+		proto.Description = es.Description
+	}
+	if es.FirmwareVersion != nil {
+		proto.FirmwareVersion = es.FirmwareVersion
+	}
+	if es.SlotID != nil {
+		proto.SlotId = es.SlotID
+	}
+	if es.TrayIdx != nil {
+		proto.TrayIdx = es.TrayIdx
+	}
+	if es.HostID != nil {
+		proto.HostId = es.HostID
+	}
+
+	if creds.BmcUsername != nil {
+		proto.BmcUsername = *creds.BmcUsername
+	}
+	if creds.BmcPassword != nil {
+		proto.BmcPassword = *creds.BmcPassword
+	}
+	if creds.NvosUsername != nil {
+		proto.NvosUsername = creds.NvosUsername
+	}
+	if creds.NvosPassword != nil {
+		proto.NvosPassword = creds.NvosPassword
+	}
+
+	if es.Labels != nil {
+		protoLabels := make([]*cwssaws.Label, 0, len(es.Labels))
+		for k, v := range es.Labels {
+			protoLabels = append(protoLabels, &cwssaws.Label{
+				Key:   k,
+				Value: &v,
+			})
+		}
+		proto.Metadata = &cwssaws.Metadata{
+			Labels: protoLabels,
+		}
+	}
+
+	return proto
 }
 
 // ExpectedSwitchCreateInput input parameters for Create method
@@ -297,19 +375,19 @@ func (essd ExpectedSwitchSQLDAO) setQueryWithFilter(filter ExpectedSwitchFilterI
 		}
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(es.bmc_mac_address, ' ') || ' ' || coalesce(es.switch_serial_number, ' ') || ' ' || coalesce(es.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("es.bmc_mac_address ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("es.switch_serial_number ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("es.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("es.id::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("es.site_id::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(es.bmc_mac_address, ' ') || ' ' || coalesce(es.switch_serial_number, ' ') || ' ' || coalesce(es.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("es.bmc_mac_address ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("es.switch_serial_number ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("es.labels::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("es.id::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("es.site_id::text ILIKE ?", "%"+searchQuery+"%")
 		})
 		if expectedSwitchDAOSpan != nil {
-			essd.tracerSpan.SetAttribute(expectedSwitchDAOSpan, "search_query", *filter.SearchQuery)
+			essd.tracerSpan.SetAttribute(expectedSwitchDAOSpan, "search_query", searchQuery)
 		}
 	}
 

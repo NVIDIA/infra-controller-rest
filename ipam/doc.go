@@ -1,4 +1,10 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2020 The metal-stack Authors
+ * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: MIT AND Apache-2.0
+ */
+
+/*
 Package ipam is a ip address management library for ip's and prefixes (networks).
 
 It uses either memory or postgresql database to store the ip's and prefixes.

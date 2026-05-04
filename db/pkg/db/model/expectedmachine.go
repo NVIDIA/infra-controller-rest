@@ -26,6 +26,7 @@ import (
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
@@ -83,6 +84,77 @@ type ExpectedMachine struct {
 	Created                  time.Time         `bun:"created,nullzero,notnull,default:current_timestamp"`
 	Updated                  time.Time         `bun:"updated,nullzero,notnull,default:current_timestamp"`
 	CreatedBy                uuid.UUID         `bun:"type:uuid,notnull"`
+}
+
+// ExpectedMachineCredentials carries the BMC credentials for one
+// ExpectedMachine. They live in their own type because they aren't stored
+// in the DB record and have to be threaded through to ToProto separately.
+type ExpectedMachineCredentials struct {
+	Username *string
+	Password *string
+}
+
+// ToProto builds the workflow proto for this ExpectedMachine. BMC
+// credentials are passed in because they aren't persisted on the record;
+// labels are read from em.Labels.
+func (em *ExpectedMachine) ToProto(creds ExpectedMachineCredentials) *cwssaws.ExpectedMachine {
+	proto := &cwssaws.ExpectedMachine{
+		Id:                       &cwssaws.UUID{Value: em.ID.String()},
+		BmcMacAddress:            em.BmcMacAddress,
+		ChassisSerialNumber:      em.ChassisSerialNumber,
+		FallbackDpuSerialNumbers: em.FallbackDpuSerialNumbers,
+		SkuId:                    em.SkuID,
+	}
+
+	if em.RackID != nil {
+		proto.RackId = &cwssaws.RackId{Id: *em.RackID}
+	}
+	if em.Name != nil {
+		proto.Name = em.Name
+	}
+	if em.Manufacturer != nil {
+		proto.Manufacturer = em.Manufacturer
+	}
+	if em.Model != nil {
+		proto.Model = em.Model
+	}
+	if em.Description != nil {
+		proto.Description = em.Description
+	}
+	if em.FirmwareVersion != nil {
+		proto.FirmwareVersion = em.FirmwareVersion
+	}
+	if em.SlotID != nil {
+		proto.SlotId = em.SlotID
+	}
+	if em.TrayIdx != nil {
+		proto.TrayIdx = em.TrayIdx
+	}
+	if em.HostID != nil {
+		proto.HostId = em.HostID
+	}
+
+	if creds.Username != nil {
+		proto.BmcUsername = *creds.Username
+	}
+	if creds.Password != nil {
+		proto.BmcPassword = *creds.Password
+	}
+
+	if em.Labels != nil {
+		protoLabels := make([]*cwssaws.Label, 0, len(em.Labels))
+		for k, v := range em.Labels {
+			protoLabels = append(protoLabels, &cwssaws.Label{
+				Key:   k,
+				Value: &v,
+			})
+		}
+		proto.Metadata = &cwssaws.Metadata{
+			Labels: protoLabels,
+		}
+	}
+
+	return proto
 }
 
 // ExpectedMachineCreateInput input parameters for Create method
@@ -387,22 +459,22 @@ func (emsd ExpectedMachineSQLDAO) setQueryWithFilter(filter ExpectedMachineFilte
 		}
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(em.bmc_mac_address, ' ') || ' ' || coalesce(em.chassis_serial_number, ' ') || ' ' || coalesce(em.sku_id, ' ') || ' ' || coalesce(em.machine_id, ' ') || ' ' || coalesce(em.fallback_dpu_serial_numbers::text, ' ') || ' ' || coalesce(em.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("em.bmc_mac_address ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.chassis_serial_number ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.sku_id ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.machine_id ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.fallback_dpu_serial_numbers::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.id::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("em.site_id::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(em.bmc_mac_address, ' ') || ' ' || coalesce(em.chassis_serial_number, ' ') || ' ' || coalesce(em.sku_id, ' ') || ' ' || coalesce(em.machine_id, ' ') || ' ' || coalesce(em.fallback_dpu_serial_numbers::text, ' ') || ' ' || coalesce(em.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("em.bmc_mac_address ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.chassis_serial_number ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.sku_id ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.machine_id ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.fallback_dpu_serial_numbers::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.labels::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.id::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("em.site_id::text ILIKE ?", "%"+searchQuery+"%")
 		})
 		if expectedMachineDAOSpan != nil {
-			emsd.tracerSpan.SetAttribute(expectedMachineDAOSpan, "search_query", *filter.SearchQuery)
+			emsd.tracerSpan.SetAttribute(expectedMachineDAOSpan, "search_query", searchQuery)
 		}
 	}
 

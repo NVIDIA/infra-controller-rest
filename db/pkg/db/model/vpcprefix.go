@@ -305,15 +305,15 @@ func (vpsd VpcPrefixSQLDAO) GetAll(ctx context.Context, tx *db.Tx, filter VpcPre
 		query = query.Where("vp.status IN (?)", bun.In(filter.Statuses))
 		vpsd.tracerSpan.SetAttribute(vpDAOSpan, "status", filter.Statuses)
 	}
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, normalizedTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
 				Where("to_tsvector('english', (coalesce(vp.name, ' ') || ' ' || coalesce(vp.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("vp.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("vp.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				WhereOr("vp.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("vp.status ILIKE ?", "%"+searchQuery+"%")
 		})
-		vpsd.tracerSpan.SetAttribute(vpDAOSpan, "search_query", *filter.SearchQuery)
+		vpsd.tracerSpan.SetAttribute(vpDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

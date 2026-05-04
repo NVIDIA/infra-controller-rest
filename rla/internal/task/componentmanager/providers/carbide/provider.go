@@ -18,11 +18,14 @@
 package carbide
 
 import (
+	"context"
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/carbideapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 )
 
 const (
@@ -49,6 +52,79 @@ type Config struct {
 	ComputePowerDelay time.Duration
 }
 
+type rawConfig struct {
+	Timeout           string `yaml:"timeout"`
+	ComputePowerDelay string `yaml:"compute_power_delay"`
+}
+
+// Name returns the provider name for this config.
+func (*Config) Name() string {
+	return ProviderName
+}
+
+// NewProvider creates a Carbide provider from this config.
+func (c *Config) NewProvider(ctx context.Context) (providerapi.Provider, error) {
+	// TODO: Thread ctx into carbideapi client creation if provider construction
+	// starts performing cancellable work.
+	_ = ctx
+	return New(*c)
+}
+
+// ConfigDecoder owns Carbide provider config defaults and YAML decoding.
+type ConfigDecoder struct{}
+
+// Name returns the provider name handled by this decoder.
+func (ConfigDecoder) Name() string {
+	return ProviderName
+}
+
+// DefaultConfig returns the default Carbide provider config.
+func (ConfigDecoder) DefaultConfig() providerapi.ProviderConfig {
+	return &Config{
+		Timeout:           DefaultTimeout,
+		ComputePowerDelay: DefaultComputePowerDelay,
+	}
+}
+
+// DecodeYAML decodes Carbide provider YAML into a typed config.
+func (d ConfigDecoder) DecodeYAML(raw yaml.Node) (providerapi.ProviderConfig, error) {
+	config := d.DefaultConfig().(*Config)
+
+	var parsed rawConfig
+	if err := providerapi.DecodeYAMLStrict(raw, &parsed); err != nil {
+		return nil, providerapi.InvalidProviderConfigError{
+			Provider: ProviderName,
+			Err:      err,
+		}
+	}
+
+	if parsed.Timeout != "" {
+		timeout, err := time.ParseDuration(parsed.Timeout)
+		if err != nil {
+			return nil, providerapi.InvalidProviderConfigFieldError{
+				Provider: ProviderName,
+				Field:    "timeout",
+				Err:      err,
+			}
+		}
+		config.Timeout = timeout
+	}
+
+	if parsed.ComputePowerDelay != "" {
+		delay, err := time.ParseDuration(parsed.ComputePowerDelay)
+		if err != nil {
+			return nil, providerapi.InvalidProviderConfigFieldError{
+				Provider: ProviderName,
+				Field:    "compute_power_delay",
+				Err:      err,
+			}
+		}
+		config.ComputePowerDelay = delay
+	}
+
+	return config, nil
+}
+
 // Provider wraps a carbideapi.Client and provides it to component manager
 // implementations.
 type Provider struct {
@@ -68,9 +144,8 @@ func New(config Config) (*Provider, error) {
 
 // NewWithDefault creates a new Provider with the default configuration.
 func NewWithDefault() (*Provider, error) {
-	return New(Config{
-		Timeout: DefaultTimeout,
-	})
+	cfg := ConfigDecoder{}.DefaultConfig().(*Config)
+	return New(*cfg)
 }
 
 // NewFromClient creates a Provider from an existing client.

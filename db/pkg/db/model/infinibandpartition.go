@@ -288,19 +288,19 @@ func (ibpsd InfiniBandPartitionSQLDAO) GetAll(ctx context.Context, tx *db.Tx, fi
 		ibpsd.tracerSpan.SetAttribute(InfiniBandPartitionDAOSpan, "partition_name", filter.PartitionNames)
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(ibp.name, ' ') || ' ' || coalesce(ibp.description, ' ') || ' ' || coalesce(ibp.partition_key, ' ') || ' ' || coalesce(ibp.partition_name, ' ') || ' ' || coalesce(ibp.status, ' ') || ' ' || coalesce(ibp.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("ibp.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibp.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibp.partition_key ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibp.partition_name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibp.status ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ibp.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(ibp.name, ' ') || ' ' || coalesce(ibp.description, ' ') || ' ' || coalesce(ibp.partition_key, ' ') || ' ' || coalesce(ibp.partition_name, ' ') || ' ' || coalesce(ibp.status, ' ') || ' ' || coalesce(ibp.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("ibp.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibp.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibp.partition_key ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibp.partition_name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibp.status ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ibp.labels::text ILIKE ?", "%"+searchQuery+"%")
 		})
-		ibpsd.tracerSpan.SetAttribute(InfiniBandPartitionDAOSpan, "search_query", *filter.SearchQuery)
+		ibpsd.tracerSpan.SetAttribute(InfiniBandPartitionDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

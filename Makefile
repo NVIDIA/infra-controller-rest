@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean
+.PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers
 .PHONY: build docker-build docker-build-local
 .PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate carbide-mock-server-build carbide-mock-server-start carbide-mock-server-stop rla-mock-server-build rla-mock-server-start rla-mock-server-stop
 .PHONY: validate-openapi preview-openapi generate-client
@@ -81,6 +81,9 @@ clean:
 	-rm -rf build
 	-rm -f db/cmd/migrations/migrations
 	@echo "Clean complete"
+
+check-source-headers:
+	python3 scripts/check_source_headers.py
 
 ensure-postgres:
 	@docker inspect $(POSTGRES_CONTAINER_NAME) > /dev/null 2>&1 || $(MAKE) postgres-up
@@ -653,6 +656,7 @@ generate-sdk:
 		--additional-properties=isGoSubmodule=true,enumClassPrefix=true \
 		--global-property=apis,models,supportingFiles
 	rm -rf sdk/standard/docs sdk/standard/api sdk/standard/README.md sdk/standard/test sdk/standard/.openapi-generator
+	python3 scripts/check_source_headers.py --fix
 	@echo "Client generated in sdk/standard/"
 	cd sdk/standard && go build ./...
 	@echo "Client compiles successfully"

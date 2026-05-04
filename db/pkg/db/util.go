@@ -19,16 +19,12 @@ package db
 
 import (
 	"hash/fnv"
-	"regexp"
 	"slices"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 )
-
-var queryORRegex = regexp.MustCompile(`.\s\|\s.`)
-var queryANDRegex = regexp.MustCompile(`.\s\&\s.`)
 
 // GetStrPtr returns a pointer for the provided string
 func GetStrPtr(s string) *string {
@@ -86,29 +82,78 @@ func GetStringToUint64Hash(id string) uint64 {
 
 // GetStringToTsQuery returns a string into a to_tsquery format from the input string
 func GetStringToTsQuery(inputQuery string) string {
-
-	if inputQuery == "" {
-		return inputQuery
-	}
-
-	// make sure it doesn't have already " | " or " & "
-	// becuase to_tsquery uses those format to search queries
-	// by default we formatting " | " for all search text
-
-	alreadyOr := queryORRegex.MatchString(inputQuery)
-	alreadyAnd := queryANDRegex.MatchString(inputQuery)
-
-	// skip if already containts " | " or " & "
-	if alreadyOr || alreadyAnd {
-		return inputQuery
+	inputQuery, ok := TrimSearchQuery(inputQuery)
+	if !ok {
+		return ""
 	}
 
 	tokens := strings.Fields(inputQuery)
 	if len(tokens) == 0 {
-		return inputQuery
+		return ""
 	}
 
-	return strings.Join(tokens, " | ")
+	hasOperator := false
+	for _, token := range tokens {
+		switch token {
+		case "|", "&":
+			hasOperator = true
+		case "!":
+			return ""
+		default:
+			if strings.ContainsAny(token, "|&!") {
+				return ""
+			}
+		}
+	}
+	if !hasOperator {
+		return strings.Join(tokens, " | ")
+	}
+
+	expectTerm := true
+	for _, token := range tokens {
+		switch token {
+		case "|", "&":
+			if expectTerm {
+				return ""
+			}
+			expectTerm = true
+		default:
+			if !expectTerm {
+				return ""
+			}
+			expectTerm = false
+		}
+	}
+	if expectTerm {
+		return ""
+	}
+
+	return strings.Join(tokens, " ")
+}
+
+// normalizeSearchQuery normalizes a search query by trimming it and converting it to a to_tsquery format
+func NormalizeSearchQuery(input *string) (string, *string, bool) {
+	if input == nil {
+		return "", nil, false
+	}
+
+	searchQuery, ok := TrimSearchQuery(*input)
+	if !ok {
+		return "", nil, false
+	}
+
+	tsQuery := GetStringToTsQuery(searchQuery)
+	if tsQuery == "" {
+		return "", nil, false
+	}
+
+	return searchQuery, GetStrPtr(tsQuery), true
+}
+
+// TrimmedSearchQuery trims a search query and reports whether it is non-blank
+func TrimSearchQuery(input string) (string, bool) {
+	trimmed := strings.TrimSpace(input)
+	return trimmed, trimmed != ""
 }
 
 // CompareStringSlicesIgnoreOrder compares two string slices ignoring order

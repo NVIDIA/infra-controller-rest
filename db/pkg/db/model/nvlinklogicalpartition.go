@@ -239,16 +239,16 @@ func (nvllpsd NVLinkLogicalPartitionSQLDAO) GetAll(ctx context.Context, tx *db.T
 		query = query.Where("nvllp.id IN (?)", bun.In(filter.NVLinkLogicalPartitionIDs))
 		nvllpsd.tracerSpan.SetAttribute(NVLinkLogicalPartitionDAOSpan, "id", filter.NVLinkLogicalPartitionIDs)
 	}
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(nvllp.name, ' ') || ' ' || coalesce(nvllp.description, ' ') || ' ' || coalesce(nvllp.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("nvllp.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("nvllp.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("nvllp.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(nvllp.name, ' ') || ' ' || coalesce(nvllp.description, ' ') || ' ' || coalesce(nvllp.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("nvllp.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("nvllp.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("nvllp.status ILIKE ?", "%"+searchQuery+"%")
 		})
-		nvllpsd.tracerSpan.SetAttribute(NVLinkLogicalPartitionDAOSpan, "search_query", *filter.SearchQuery)
+		nvllpsd.tracerSpan.SetAttribute(NVLinkLogicalPartitionDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

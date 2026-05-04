@@ -42,4 +42,13 @@ var (
 	ErrInvalidPort = errors.New("failed to parse DB_PORT")
 	// ErrInvalidCredential indicates the credential is not valid.
 	ErrInvalidCredential = errors.New("invalid credential")
+
+	// ErrTransactionInitiation is returned by WithTx*/WithTxResult* when the
+	// underlying BeginTx call fails. HandleTxError detects this sentinel via
+	// errors.Is and renders a user-facing message about transaction initiation.
+	ErrTransactionInitiation = errors.New("DB transaction initiation error")
+	// ErrTransactionCommit is returned by WithTx*/WithTxResult* when the
+	// underlying tx.Commit call fails. HandleTxError detects this sentinel via
+	// errors.Is and renders a user-facing message about transaction commit.
+	ErrTransactionCommit = errors.New("DB transaction commit error")
 )

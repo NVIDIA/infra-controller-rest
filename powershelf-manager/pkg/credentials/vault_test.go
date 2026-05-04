@@ -354,6 +354,46 @@ func TestVaultManager_Delete(t *testing.T) {
 	}
 }
 
+// TestVaultManager_PutUpsertSemantics pins the upsert contract that Put
+// shares with the in-memory backend: identical credentials are a no-op,
+// differing credentials overwrite (with a warning log not asserted here),
+// and Patch unconditionally replaces.
+func TestVaultManager_PutUpsertSemantics(t *testing.T) {
+	fake := newFakeVaultKVServer()
+	fake.mountPresent = true
+	srv := httptest.NewServer(fake.handler())
+	defer srv.Close()
+
+	ctx := context.Background()
+	mgr := newManagerWithServer(t, srv)
+	mac := parseMAC(t, "00:11:22:33:44:55")
+
+	// First Put writes the credentials.
+	assert.NoError(t, mgr.Put(ctx, mac, newCred("admin", "secret")))
+
+	// Idempotent Put with identical credentials is skipped, not rewritten.
+	assert.NoError(t, mgr.Put(ctx, mac, newCred("admin", "secret")))
+
+	// Put with different credentials succeeds and overwrites the existing
+	// entry (warn-and-overwrite). This matches the in-memory backend so that
+	// callers like pmcmanager.Register get consistent semantics across
+	// datastore types.
+	assert.NoError(t, mgr.Put(ctx, mac, newCred("admin", "rotated")))
+
+	got, err := mgr.Get(ctx, mac)
+	assert.NoError(t, err)
+	assert.Equal(t, "admin", got.User)
+	assert.Equal(t, "rotated", got.Password.Value)
+
+	// Patch unconditionally replaces, even when the existing entry differs
+	// from the new value.
+	assert.NoError(t, mgr.Patch(ctx, mac, newCred("root", "newpass")))
+	got, err = mgr.Get(ctx, mac)
+	assert.NoError(t, err)
+	assert.Equal(t, "root", got.User)
+	assert.Equal(t, "newpass", got.Password.Value)
+}
+
 func TestVaultManager_Keys(t *testing.T) {
 	testCases := map[string]struct {
 		putPairs    [][2]interface{} // [mac string, *credential.Credential]

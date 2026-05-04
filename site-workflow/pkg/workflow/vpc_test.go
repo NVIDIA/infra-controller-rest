@@ -96,21 +96,35 @@ func (cvv2ts *CreateVpcV2TestSuite) AfterTest(suiteName, testName string) {
 
 func (cvv2ts *CreateVpcV2TestSuite) Test_CreateVpcV2_Success() {
 	var VpcManager iActivity.ManageVPC
+	activeVni := uint32(7301)
 
 	request := &cwssaws.VpcCreationRequest{
 		Id:                   &cwssaws.VpcId{Value: "b410867c-655a-11ef-bc4a-0393098e5d09"},
 		Name:                 "the_name",
 		TenantOrganizationId: "the_org",
 	}
+	controllerVpc := &cwssaws.Vpc{
+		Id:   request.Id,
+		Name: request.Name,
+		Status: &cwssaws.VpcStatus{
+			Vni: &activeVni,
+		},
+	}
 
 	// Mock CreateVpcOnSite activity
 	cvv2ts.env.RegisterActivity(VpcManager.CreateVpcOnSite)
-	cvv2ts.env.OnActivity(VpcManager.CreateVpcOnSite, mock.Anything, mock.Anything).Return(nil)
+	cvv2ts.env.OnActivity(VpcManager.CreateVpcOnSite, mock.Anything, mock.Anything).Return(controllerVpc, nil)
 
 	// Execute CreateVPCV2 workflow
 	cvv2ts.env.ExecuteWorkflow(CreateVPCV2, request)
 	cvv2ts.True(cvv2ts.env.IsWorkflowCompleted())
 	cvv2ts.NoError(cvv2ts.env.GetWorkflowError())
+
+	var result cwssaws.Vpc
+	cvv2ts.NoError(cvv2ts.env.GetWorkflowResult(&result))
+	cvv2ts.Equal(controllerVpc.Id.Value, result.Id.Value)
+	cvv2ts.Equal(controllerVpc.Name, result.Name)
+	cvv2ts.Equal(activeVni, result.GetStatus().GetVni())
 }
 
 func (cvv2ts *CreateVpcV2TestSuite) Test_CreateVpcV2_Failure() {
@@ -126,7 +140,7 @@ func (cvv2ts *CreateVpcV2TestSuite) Test_CreateVpcV2_Failure() {
 
 	// Mock CreateVpcOnSite activity
 	cvv2ts.env.RegisterActivity(VpcManager.CreateVpcOnSite)
-	cvv2ts.env.OnActivity(VpcManager.CreateVpcOnSite, mock.Anything, mock.Anything).Return(errors.New(errMsg))
+	cvv2ts.env.OnActivity(VpcManager.CreateVpcOnSite, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
 
 	// execute CreateVPCV2 workflow
 	cvv2ts.env.ExecuteWorkflow(CreateVPCV2, request)

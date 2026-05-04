@@ -374,20 +374,20 @@ func (itsd InstanceTypeSQLDAO) GetAll(ctx context.Context, tx *db.Tx, filter Ins
 		query = query.Distinct()
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(it.name, ' ') || ' ' || coalesce(it.display_name, ' ') || ' ' || coalesce(it.description, ' ') || ' ' || coalesce(it.labels::text, ' ') || ' ' || coalesce(it.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("it.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("it.display_name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("it.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("it.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("it.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(it.name, ' ') || ' ' || coalesce(it.display_name, ' ') || ' ' || coalesce(it.description, ' ') || ' ' || coalesce(it.labels::text, ' ') || ' ' || coalesce(it.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("it.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("it.display_name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("it.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("it.labels::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("it.status ILIKE ?", "%"+searchQuery+"%")
 		})
 
 		if instanceTypeDAOSpan != nil {
-			itsd.tracerSpan.SetAttribute(instanceTypeDAOSpan, "search_query", *filter.SearchQuery)
+			itsd.tracerSpan.SetAttribute(instanceTypeDAOSpan, "search_query", searchQuery)
 		}
 	}
 

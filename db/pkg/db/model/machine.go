@@ -621,20 +621,20 @@ func (msd MachineSQLDAO) setQueryWithFilter(filter MachineFilterInput, query *bu
 		}
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(m.id, ' ') || ' ' || coalesce(m.vendor, ' ') || ' ' || coalesce(m.product_name, ' ') || ' ' || coalesce(m.hostname, ' ') || ' ' || coalesce(m.status, ' ') || ' ' || coalesce(m.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("m.id ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("m.vendor ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("m.product_name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("m.hostname ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("m.status ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("m.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(m.id, ' ') || ' ' || coalesce(m.vendor, ' ') || ' ' || coalesce(m.product_name, ' ') || ' ' || coalesce(m.hostname, ' ') || ' ' || coalesce(m.status, ' ') || ' ' || coalesce(m.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("m.id ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("m.vendor ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("m.product_name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("m.hostname ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("m.status ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("m.labels::text ILIKE ?", "%"+searchQuery+"%")
 		})
 		if machineDAOSpan != nil {
-			msd.tracerSpan.SetAttribute(machineDAOSpan, "search_query", *filter.SearchQuery)
+			msd.tracerSpan.SetAttribute(machineDAOSpan, "search_query", searchQuery)
 		}
 	}
 

@@ -26,6 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	tmocks "go.temporal.io/sdk/mocks"
 )
 
@@ -155,6 +156,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 		fields  fields
 		args    args
 		wantErr bool
+		wantVpc bool
 	}{
 		{
 			name: "test create vpc success",
@@ -170,6 +172,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 				},
 			},
 			wantErr: false,
+			wantVpc: true,
 		},
 		{
 			name: "test create vpc fail on missing name",
@@ -231,11 +234,16 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mm := NewManageVPC(tt.fields.CarbideAtomicClient)
-			err := mm.CreateVpcOnSite(tt.args.ctx, tt.args.request)
+			vpc, err := mm.CreateVpcOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
+				assert.Nil(t, vpc)
 			} else {
 				assert.NoError(t, err)
+				if tt.wantVpc {
+					require.NotNil(t, vpc)
+					require.NotNil(t, vpc.Id)
+				}
 			}
 		})
 	}

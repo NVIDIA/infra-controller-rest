@@ -10,8 +10,8 @@ This is a **prescriptive, BYO-Kubernetes bring-up guide** for the Carbide REST c
 
 Carbide REST can be deployed in two ways:
 
-- **Co-located:** The REST layer and [NCX Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) run together in the same datacenter cluster.
-- **Cloud-hosted:** The REST layer runs anywhere (cloud, remote DC) and Site Agents running at each datacenter connect back to it. Multiple NCX Infra Controller Core instances in different datacenters can each connect through their own Site Agent.
+- **Co-located:** The REST layer and [NVIDIA Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) run together in the same datacenter cluster.
+- **Cloud-hosted:** The REST layer runs anywhere (cloud, remote DC) and Site Agents running at each datacenter connect back to it. Multiple NVIDIA Infra Controller Core instances in different datacenters can each connect through their own Site Agent.
 
 This guide covers the cloud-hosted topology — deploying the REST control plane components on a Kubernetes cluster that site agents will connect to from remote sites.
 
@@ -202,7 +202,7 @@ kubectl rollout status statefulset/postgres -n postgres
 
 Keycloak is the **reference OIDC identity provider** for the Carbide REST API. It handles authentication and issues JWTs that the API validates on every request. It is pre-loaded with the `carbide-dev` realm via an imported realm ConfigMap, which includes the `carbide-api` client, realm roles, and a set of pre-seeded dev users.
 
-Users of Carbide can also bring their own OpenID/OAuth JWT Provider, see [Auth docs](https://github.com/NVIDIA/ncx-infra-controller-rest/tree/main/auth) for more details.
+Users of Carbide can also bring their own OpenID/OAuth JWT Provider, see [Auth docs](https://github.com/NVIDIA/infra-controller-rest/tree/main/auth) for more details.
 
 ### Manifests
 
@@ -702,7 +702,7 @@ The site agent bootstrap flow is:
 
 | Variable | Default | Description |
 |---|---|---|
-| `CARBIDE_ADDRESS` | `carbide-rest-mock-core:11079` | Carbide/Forge gRPC endpoint — **set this to your [NCX Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) address in production** |
+| `CARBIDE_ADDRESS` | `carbide-rest-mock-core:11079` | Carbide/Forge gRPC endpoint — **set this to your [NVIDIA Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) address in production** |
 | `CLUSTER_ID` | `00000000-0000-4000-8000-000000000001` | Site UUID — **must match a registered site** |
 | `TEMPORAL_HOST` | `temporal-frontend.temporal` | Temporal frontend host |
 | `TEMPORAL_PORT` | `7233` | Temporal frontend port |

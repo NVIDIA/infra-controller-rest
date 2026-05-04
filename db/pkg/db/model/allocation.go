@@ -369,16 +369,16 @@ func (asd AllocationSQLDAO) setQueryWithFilter(filter AllocationFilterInput, que
 		asd.tracerSpan.SetAttribute(allocationDAOSpan, "id", filter.AllocationIDs)
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(a.name, ' ') || ' ' || coalesce(a.description, ' ') || ' ' || coalesce(a.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("a.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("a.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("a.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(a.name, ' ') || ' ' || coalesce(a.description, ' ') || ' ' || coalesce(a.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("a.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("a.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("a.status ILIKE ?", "%"+searchQuery+"%")
 		})
-		asd.tracerSpan.SetAttribute(allocationDAOSpan, "search_query", *filter.SearchQuery)
+		asd.tracerSpan.SetAttribute(allocationDAOSpan, "search_query", searchQuery)
 	}
 	return query, nil
 }

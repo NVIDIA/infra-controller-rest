@@ -18,7 +18,7 @@
 package db
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
+	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -36,7 +36,7 @@ func TestConfigValidate(t *testing.T) {
 				Host:       "localhost",
 				Port:       5432,
 				DBName:     "testdb",
-				Credential: *sharedCredential,
+				Credential: sharedCredential,
 			},
 			wantErr: false,
 		},
@@ -44,7 +44,7 @@ func TestConfigValidate(t *testing.T) {
 			config: Config{
 				Port:       5432,
 				DBName:     "testdb",
-				Credential: *sharedCredential,
+				Credential: sharedCredential,
 			},
 			wantErr: true,
 		},
@@ -53,7 +53,7 @@ func TestConfigValidate(t *testing.T) {
 				Host:       "localhost",
 				Port:       0,
 				DBName:     "testdb",
-				Credential: *sharedCredential,
+				Credential: sharedCredential,
 			},
 			wantErr: true,
 		},
@@ -61,7 +61,7 @@ func TestConfigValidate(t *testing.T) {
 			config: Config{
 				Host:       "localhost",
 				Port:       5432,
-				Credential: *sharedCredential,
+				Credential: sharedCredential,
 			},
 			wantErr: true,
 		},
@@ -102,7 +102,7 @@ func TestConfigBuildDSN(t *testing.T) {
 				Host:              "localhost",
 				Port:              5432,
 				DBName:            "testdb",
-				Credential:        *sharedCredential,
+				Credential:        sharedCredential,
 				CACertificatePath: "/path/to/ca.crt",
 			},
 			expected: "postgres://user:password@localhost:5432/testdb?sslmode=prefer&sslrootcert=/path/to/ca.crt",
@@ -112,7 +112,7 @@ func TestConfigBuildDSN(t *testing.T) {
 				Host:       "localhost",
 				Port:       5432,
 				DBName:     "testdb",
-				Credential: *sharedCredential,
+				Credential: sharedCredential,
 			},
 			expected: "postgres://user:password@localhost:5432/testdb?sslmode=disable",
 		},
@@ -121,7 +121,7 @@ func TestConfigBuildDSN(t *testing.T) {
 				Host:       "localhost",
 				Port:       5432,
 				DBName:     "testdb",
-				Credential: *credential.New("admin", "p@ss:word/1"),
+				Credential: credential.New("admin", "p@ss:word/1"),
 			},
 			expected: "postgres://admin:p%40ss%3Aword%2F1@localhost:5432/testdb?sslmode=disable",
 		},
@@ -130,7 +130,7 @@ func TestConfigBuildDSN(t *testing.T) {
 				Host:       "db.example.com",
 				Port:       5433,
 				DBName:     "mydb",
-				Credential: *credential.New("user@domain", "s3cr3t#!"),
+				Credential: credential.New("user@domain", "s3cr3t#!"),
 			},
 			expected: "postgres://user%40domain:s3cr3t%23%21@db.example.com:5433/mydb?sslmode=disable",
 		},

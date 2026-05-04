@@ -63,8 +63,10 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Get Site Controller gRPC client
-	carbideClient := mesi.carbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := mesi.carbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	// Call GetAllExpectedSwitches to get full list of ExpectedSwitches on Site
 	esList, err := forgeClient.GetAllExpectedSwitches(ctx, &emptypb.Empty{})
@@ -287,8 +289,10 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mes.CarbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := mes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	// Call Forge gRPC endpoint
 	_, err = forgeClient.AddExpectedSwitch(ctx, request)
@@ -324,8 +328,10 @@ func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mes.CarbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := mes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	_, err = forgeClient.UpdateExpectedSwitch(ctx, request)
 	if err != nil {
@@ -450,8 +456,10 @@ func (mes *ManageExpectedSwitch) DeleteExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mes.CarbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := mes.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	_, err = forgeClient.DeleteExpectedSwitch(ctx, request)
 	if err != nil {

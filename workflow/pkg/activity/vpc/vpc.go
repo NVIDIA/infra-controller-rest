@@ -232,7 +232,7 @@ func (mv ManageVpc) UpdateVpcsInDB(ctx context.Context, siteID uuid.UUID, vpcInv
 
 		// If VPC is not in Deleting state, then update status to Ready
 		if vpc.Status != cdbm.VpcStatusDeleting && vpc.Status != cdbm.VpcStatusReady {
-			err = mv.updateVpcStatusInDB(ctx, nil, vpc.ID, cdb.GetStrPtr(cdbm.VpcStatusReady), cdb.GetStrPtr("VPC has been re-detected on Site"))
+			err = mv.updateVpcStatusInDB(ctx, nil, vpc.ID, cdb.GetStrPtr(cdbm.VpcStatusReady), cdb.GetStrPtr("VPC is ready for use"))
 			if err != nil {
 				slogger.Error().Err(err).Msg("failed to update VPC status detail in DB")
 			}

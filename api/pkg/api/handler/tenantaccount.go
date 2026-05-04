@@ -340,9 +340,9 @@ func (gatah GetAllTenantAccountHandler) Handle(c echo.Context) error {
 		status = &statusQuery
 	}
 
-	searchQueryStr := c.QueryParam("query")
-	if searchQueryStr != "" {
-		gatah.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", searchQueryStr), logger)
+	searchQuery := common.GetSearchQuery(c)
+	if searchQuery != nil {
+		gatah.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", *searchQuery), logger)
 	}
 
 	var infrastructureProviderID *uuid.UUID
@@ -435,9 +435,7 @@ func (gatah GetAllTenantAccountHandler) Handle(c echo.Context) error {
 		InfrastructureProviderID: infrastructureProviderID,
 		TenantIDs:                tenantIDs,
 		Statuses:                 statuses,
-	}
-	if searchQueryStr != "" {
-		filter.SearchQuery = &searchQueryStr
+		SearchQuery:              searchQuery,
 	}
 
 	tas, total, err := taDAO.GetAll(ctx, nil, filter, cdbp.PageInput{

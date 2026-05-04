@@ -400,17 +400,17 @@ func (sgsd NetworkSecurityGroupSQLDAO) GetAll(ctx context.Context, tx *db.Tx, fi
 		sgsd.tracerSpan.SetAttribute(networkSecurityGroupDAOSpan, "tenant_organization_ids", filter.Statuses)
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(nsg.name, ' ') || ' ' || coalesce(nsg.status, ' ') || ' ' || coalesce(nsg.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("nsg.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("nsg.status ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("nsg.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("nsg.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(nsg.name, ' ') || ' ' || coalesce(nsg.status, ' ') || ' ' || coalesce(nsg.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("nsg.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("nsg.status ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("nsg.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("nsg.labels::text ILIKE ?", "%"+searchQuery+"%")
 		})
-		sgsd.tracerSpan.SetAttribute(networkSecurityGroupDAOSpan, "search_query", *filter.SearchQuery)
+		sgsd.tracerSpan.SetAttribute(networkSecurityGroupDAOSpan, "search_query", searchQuery)
 	}
 
 	for _, relation := range includeRelations {

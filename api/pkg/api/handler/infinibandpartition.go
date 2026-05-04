@@ -36,6 +36,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
@@ -283,19 +284,7 @@ func (cibph CreateInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		metadata.Description = *ibp.Description
 	}
 
-	// Prepare labels for site controller
-	if len(ibp.Labels) > 0 {
-		var labels []*cwssaws.Label
-		for key, value := range ibp.Labels {
-			curVal := value
-			localLable := &cwssaws.Label{
-				Key:   key,
-				Value: &curVal,
-			}
-			labels = append(labels, localLable)
-		}
-		metadata.Labels = labels
-	}
+	metadata.Labels = util.ProtobufLabelsFromAPILabels(ibp.Labels)
 
 	createIBPRequest.Metadata = metadata
 
@@ -468,12 +457,9 @@ func (gaibph GetAllInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	}
 
 	// Get query text for full text search from query param
-	var searchQuery *string
-
-	searchQueryStr := c.QueryParam("query")
-	if searchQueryStr != "" {
-		searchQuery = &searchQueryStr
-		gaibph.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", searchQueryStr), logger)
+	searchQuery := common.GetSearchQuery(c)
+	if searchQuery != nil {
+		gaibph.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", *searchQuery), logger)
 	}
 
 	// Get status from query param
@@ -875,14 +861,7 @@ func (uibph UpdateInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	if uipb.Description != nil {
 		metadata.Description = *uipb.Description
 	}
-	var clabels []*cwssaws.Label
-	if len(uipb.Labels) > 0 {
-		for key, value := range uipb.Labels {
-			curVal := value
-			clabels = append(clabels, &cwssaws.Label{Key: key, Value: &curVal})
-		}
-	}
-	metadata.Labels = clabels
+	metadata.Labels = util.ProtobufLabelsFromAPILabels(uipb.Labels)
 	updateIBPRequest.Metadata = metadata
 
 	workflowOptions := temporalClient.StartWorkflowOptions{

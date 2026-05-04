@@ -142,7 +142,7 @@ func vpcPagedInventory(allItemIDs []*cwssaws.VpcId, pagedItems []*cwssaws.Vpc, i
 }
 
 // Function to create VPCS with Carbide
-func (mv *ManageVPC) CreateVpcOnSite(ctx context.Context, request *cwssaws.VpcCreationRequest) error {
+func (mv *ManageVPC) CreateVpcOnSite(ctx context.Context, request *cwssaws.VpcCreationRequest) (*cwssaws.Vpc, error) {
 	logger := log.With().Str("Activity", "CreateVpcOnSite").Logger()
 
 	logger.Info().Msg("Starting activity")
@@ -164,25 +164,24 @@ func (mv *ManageVPC) CreateVpcOnSite(ctx context.Context, request *cwssaws.VpcCr
 	}
 
 	if err != nil {
-		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
+		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
-	forgeClient := carbideClient.Carbide()
 
-	_, err = forgeClient.CreateVpc(ctx, request)
+	controllerVpc, err := forgeClient.CreateVpc(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create VPC using Site Controller API")
-		return swe.WrapErr(err)
+		return nil, swe.WrapErr(err)
 	}
 
 	logger.Info().Msg("Completed activity")
 
-	return nil
+	return controllerVpc, nil
 }
 
 // Function to update VPCS with Carbide
@@ -208,11 +207,10 @@ func (mv *ManageVPC) UpdateVpcOnSite(ctx context.Context, request *cwssaws.VpcUp
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateVpc(ctx, request)
 	if err != nil {
@@ -247,11 +245,10 @@ func (mv *ManageVPC) DeleteVpcOnSite(ctx context.Context, request *cwssaws.VpcDe
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteVpc(ctx, request)
 	if err != nil {
@@ -285,11 +282,10 @@ func (mv *ManageVPC) UpdateVpcVirtualizationOnSite(ctx context.Context, request 
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mv.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mv.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateVpcVirtualization(ctx, request)
 	if err != nil {

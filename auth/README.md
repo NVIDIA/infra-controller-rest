@@ -218,7 +218,7 @@ Edit the `carbide-rest-api-config` ConfigMap in `carbide-rest` namespace:
 kubectl edit configmap carbide-rest-api-config -n carbide-rest
 ```
 
-If you applied the [kustomize manifests](https://github.com/NVIDIA/ncx-infra-controller-rest/blob/main/deploy/kustomize/base/api/configmap.yaml), there should already be a section for KeyCloak auth.
+If you applied the [kustomize manifests](https://github.com/NVIDIA/infra-controller-rest/blob/main/deploy/kustomize/base/api/configmap.yaml), there should already be a section for Keycloak auth.
 
 Edit the Keycloak configuration (or add if not present) section to match the following:
 
@@ -245,7 +245,7 @@ keycloak:
 
 Ensure the Carbide REST API Deployment mounts the Keycloak client secret.
 
-If you applied the [kustomize manifests](https://github.com/NVIDIA/ncx-infra-controller-rest/blob/main/deploy/kustomize/base/api/deployment.yaml) without any changes, this step should not be needed. Verify and edit as needed.
+If you applied the [kustomize manifests](https://github.com/NVIDIA/infra-controller-rest/blob/main/deploy/kustomize/base/api/deployment.yaml) without any changes, this step should not be needed. Verify and edit as needed.
 
 ```yaml
 spec:

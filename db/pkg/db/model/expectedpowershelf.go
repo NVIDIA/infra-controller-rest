@@ -25,6 +25,7 @@ import (
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
@@ -76,6 +77,79 @@ type ExpectedPowerShelf struct {
 	Created           time.Time         `bun:"created,nullzero,notnull,default:current_timestamp"`
 	Updated           time.Time         `bun:"updated,nullzero,notnull,default:current_timestamp"`
 	CreatedBy         uuid.UUID         `bun:"type:uuid,notnull"`
+}
+
+// ExpectedPowerShelfCredentials carries the BMC credentials for one
+// ExpectedPowerShelf. They live in their own type because they aren't
+// stored in the DB record and have to be threaded through to ToProto
+// separately.
+type ExpectedPowerShelfCredentials struct {
+	Username *string
+	Password *string
+}
+
+// ToProto builds the workflow proto for this ExpectedPowerShelf. BMC
+// credentials are passed in because they aren't persisted on the record;
+// labels are read from eps.Labels.
+func (eps *ExpectedPowerShelf) ToProto(creds ExpectedPowerShelfCredentials) *cwssaws.ExpectedPowerShelf {
+	proto := &cwssaws.ExpectedPowerShelf{
+		ExpectedPowerShelfId: &cwssaws.UUID{Value: eps.ID.String()},
+		BmcMacAddress:        eps.BmcMacAddress,
+		ShelfSerialNumber:    eps.ShelfSerialNumber,
+	}
+
+	if eps.IpAddress != nil {
+		proto.BmcIpAddress = *eps.IpAddress
+	}
+	if eps.RackID != nil {
+		proto.RackId = &cwssaws.RackId{Id: *eps.RackID}
+	}
+	if eps.Name != nil {
+		proto.Name = eps.Name
+	}
+	if eps.Manufacturer != nil {
+		proto.Manufacturer = eps.Manufacturer
+	}
+	if eps.Model != nil {
+		proto.Model = eps.Model
+	}
+	if eps.Description != nil {
+		proto.Description = eps.Description
+	}
+	if eps.FirmwareVersion != nil {
+		proto.FirmwareVersion = eps.FirmwareVersion
+	}
+	if eps.SlotID != nil {
+		proto.SlotId = eps.SlotID
+	}
+	if eps.TrayIdx != nil {
+		proto.TrayIdx = eps.TrayIdx
+	}
+	if eps.HostID != nil {
+		proto.HostId = eps.HostID
+	}
+
+	if creds.Username != nil {
+		proto.BmcUsername = *creds.Username
+	}
+	if creds.Password != nil {
+		proto.BmcPassword = *creds.Password
+	}
+
+	if eps.Labels != nil {
+		protoLabels := make([]*cwssaws.Label, 0, len(eps.Labels))
+		for k, v := range eps.Labels {
+			protoLabels = append(protoLabels, &cwssaws.Label{
+				Key:   k,
+				Value: &v,
+			})
+		}
+		proto.Metadata = &cwssaws.Metadata{
+			Labels: protoLabels,
+		}
+	}
+
+	return proto
 }
 
 // ExpectedPowerShelfCreateInput input parameters for Create method
@@ -302,20 +376,20 @@ func (epsd ExpectedPowerShelfSQLDAO) setQueryWithFilter(filter ExpectedPowerShel
 		}
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(eps.bmc_mac_address, ' ') || ' ' || coalesce(eps.shelf_serial_number, ' ') || ' ' || coalesce(eps.ip_address, ' ') || ' ' || coalesce(eps.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("eps.bmc_mac_address ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("eps.shelf_serial_number ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("eps.ip_address ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("eps.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("eps.id::text ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("eps.site_id::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(eps.bmc_mac_address, ' ') || ' ' || coalesce(eps.shelf_serial_number, ' ') || ' ' || coalesce(eps.ip_address, ' ') || ' ' || coalesce(eps.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("eps.bmc_mac_address ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("eps.shelf_serial_number ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("eps.ip_address ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("eps.labels::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("eps.id::text ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("eps.site_id::text ILIKE ?", "%"+searchQuery+"%")
 		})
 		if expectedPowerShelfDAOSpan != nil {
-			epsd.tracerSpan.SetAttribute(expectedPowerShelfDAOSpan, "search_query", *filter.SearchQuery)
+			epsd.tracerSpan.SetAttribute(expectedPowerShelfDAOSpan, "search_query", searchQuery)
 		}
 	}
 

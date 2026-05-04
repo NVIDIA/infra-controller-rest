@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 
 	wflows "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
@@ -109,6 +110,34 @@ func TestCarbideAtomicClient_GetClient_ReturnsClientAfterSwap(t *testing.T) {
 	testClient := &CarbideClient{}
 	cac.value.Store(testClient)
 	assert.Equal(t, testClient, cac.GetClient())
+}
+
+func TestCarbideAtomicClient_GetForgeClient_ReturnsErrWhenUninitialized(t *testing.T) {
+	cac := &CarbideAtomicClient{
+		value: &atomic.Value{},
+	}
+	// GetForgeClient should return ErrClientNotConnected when no client has been stored,
+	// rather than panicking on a nil-pointer deref.
+	forge, err := cac.GetForgeClient()
+	assert.Nil(t, forge)
+	assert.ErrorIs(t, err, ErrClientNotConnected)
+}
+
+func TestCarbideAtomicClient_GetForgeClient_ReturnsForgeAfterSwap(t *testing.T) {
+	cac := &CarbideAtomicClient{
+		value: &atomic.Value{},
+	}
+	// Once a CarbideClient with a populated carbide field is stored,
+	// GetForgeClient should return that exact inner client. We construct a
+	// stub via wflows.NewForgeClient(nil); it isn't usable for real RPCs but
+	// is a non-nil wflows.ForgeClient interface value, which is all we need
+	// to exercise the success path.
+	expected := wflows.NewForgeClient((*grpc.ClientConn)(nil))
+	cac.value.Store(&CarbideClient{carbide: expected})
+	got, err := cac.GetForgeClient()
+	assert.NoError(t, err)
+	assert.NotNil(t, got)
+	assert.Equal(t, expected, got)
 }
 
 func TestCarbideAtomicClient_CheckCertificates(t *testing.T) {

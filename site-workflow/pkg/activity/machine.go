@@ -62,11 +62,10 @@ func (mm *ManageMachine) SetMachineMaintenanceOnSite(ctx context.Context, reques
 	}
 
 	// Call Site Controller gRPC endpoint to set SetMaintenance request
-	carbideClient := mm.carbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.carbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.SetMaintenance(ctx, request)
 	if err != nil {
@@ -99,11 +98,10 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	}
 
 	// Call Site Controller gRPC endpoint to update Machine metadata
-	carbideClient := mm.carbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.carbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateMachineMetadata(ctx, request)
 	if err != nil {
@@ -131,11 +129,10 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 	}
 
 	// Call Site Controller gRPC endpoint to get DPU Machines by IDs
-	carbideClient := mm.carbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	forgeClient, err := mm.carbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return nil, err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	// Convert string IDs to MachineId objects
 	machineIDs := make([]*cwssaws.MachineId, 0, len(dpuMachineIDs))
@@ -209,11 +206,10 @@ func (mmi *ManageMachineInventory) CollectAndPublishMachineInventory(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint to get available Machine IDs
-	carbideClient := mmi.carbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mmi.carbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	machineIDList, err := forgeClient.FindMachineIds(ctx, &cwssaws.MachineSearchConfig{})
 	if err != nil {

@@ -19,7 +19,7 @@ package bmc
 
 import (
 	"fmt"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
+	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
 	"net"
 	"regexp"
 	"strings"

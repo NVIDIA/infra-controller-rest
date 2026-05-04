@@ -1262,6 +1262,18 @@ func TestTenantAccountHandler_GetAll(t *testing.T) {
 			expectedAllocationCount:       1,
 		},
 		{
+			name:                          "success with whitespace-only search query",
+			reqOrgName:                    ipOrg1,
+			user:                          ipUser,
+			queryInfrastructureProviderID: cdb.GetStrPtr(ip1.ID.String()),
+			querySearchQuery:              cdb.GetStrPtr("   "),
+			expectedErr:                   false,
+			expectedStatus:                http.StatusOK,
+			expectedCnt:                   totalCount / 2,
+			expectedTotal:                 cdb.GetIntPtr(totalCount / 2),
+			expectedAllocationCount:       1,
+		},
+		{
 			name:                          "success when tenant id is specified",
 			reqOrgName:                    tnOrgs[0],
 			user:                          tnUser,

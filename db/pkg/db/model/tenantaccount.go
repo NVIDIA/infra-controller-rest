@@ -357,16 +357,16 @@ func (tasd TenantAccountSQLDAO) setQueryWithFilter(filter TenantAccountFilterInp
 		tasd.tracerSpan.SetAttribute(tnaDAOSpan, "status", filter.Statuses)
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', ta.account_number || ' ' || ta.tenant_org) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("ta.account_number ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("ta.tenant_org ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("EXISTS (SELECT 1 FROM tenant WHERE tenant.id = ta.tenant_id AND tenant.deleted IS NULL AND tenant.org_display_name ILIKE ?)", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', ta.account_number || ' ' || ta.tenant_org) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("ta.account_number ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("ta.tenant_org ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("EXISTS (SELECT 1 FROM tenant WHERE tenant.id = ta.tenant_id AND tenant.deleted IS NULL AND tenant.org_display_name ILIKE ?)", "%"+searchQuery+"%")
 		})
-		tasd.tracerSpan.SetAttribute(tnaDAOSpan, "search_query", *filter.SearchQuery)
+		tasd.tracerSpan.SetAttribute(tnaDAOSpan, "search_query", searchQuery)
 	}
 
 	return query, nil

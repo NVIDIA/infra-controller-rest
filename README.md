@@ -3,15 +3,15 @@ SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All 
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# NCX Infra Controller REST API
+# NVIDIA Infra Controller REST API
 
-A collection of microservices that comprise the management backend for NCX Infra Controller, exposed as a REST API.
+A collection of microservices that comprise the management backend for NVIDIA Infra Controller, exposed as a REST API.
 
-In deployments, NCX Infra Controller REST requires [NCX Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) to function.
+In deployments, NVIDIA Infra Controller REST requires [NVIDIA Infra Controller Core](https://github.com/NVIDIA/ncx-infra-controller-core) to function.
 
-The REST layer can be deployed in the datacenter with NCX Infra Controller Core, or deployed anywhere in Cloud and allow Site Agent to connect from the datacenter. Multiple NCX Infra Controller Cores running in different datacenters can also connect to NCX Infra Controller REST through respective Site Agents.
+The REST layer can be deployed in the datacenter with NVIDIA Infra Controller Core, or deployed anywhere in Cloud and allow Site Agent to connect from the datacenter. Multiple NVIDIA Infra Controller Cores running in different datacenters can also connect to NVIDIA Infra Controller REST through respective Site Agents.
 
-View latest OpenAPI schema on [GitHub pages](https://nvidia.github.io/ncx-infra-controller-rest/).
+View latest OpenAPI schema on [GitHub pages](https://nvidia.github.io/infra-controller-rest/).
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ Test database configuration:
 
 ### Option A: Local Development with Kind
 
-The fastest path to a running stack on your laptop. Builds images locally, spins up a Kind cluster, and deploys a mock NCX Infra Controller Core automatically — no external registry or bare-metal cluster required.
+The fastest path to a running stack on your laptop. Builds images locally, spins up a Kind cluster, and deploys a mock NVIDIA Infra Controller Core automatically — no external registry or bare-metal cluster required.
 
 ```bash
 make kind-reset
@@ -51,7 +51,7 @@ This deploys the full stack via **Helm charts** (default). It:
 3. Sets up infrastructure (PostgreSQL, Temporal, Keycloak, cert-manager, etc.)
 4. Deploys app services via Helm umbrella chart
 5. Bootstraps and deploys site-agent
-6. Deploys a mock NCX Infra Controller Core
+6. Deploys a mock NVIDIA Infra Controller Core
 
 To deploy via **Kustomize overlays** instead:
 
@@ -83,7 +83,7 @@ make kind-down           # Tear down cluster
 
 ### Option B: Bare-Metal Cluster with helm-prereqs
 
-For deploying onto a real Kubernetes cluster alongside NCX Infra Controller Core. Uses `helm-prereqs/setup.sh` from the [ncx-infra-controller-core](https://github.com/NVIDIA/ncx-infra-controller-core) repo, which installs the full prerequisite stack (cert-manager, Vault, external-secrets, PostgreSQL, Temporal, Keycloak) and deploys both NCX Core and NCX REST in the correct order.
+For deploying onto a real Kubernetes cluster alongside NVIDIA Infra Controller Core. Uses `helm-prereqs/setup.sh` from the [ncx-infra-controller-core](https://github.com/NVIDIA/ncx-infra-controller-core) repo, which installs the full prerequisite stack (cert-manager, Vault, external-secrets, PostgreSQL, Temporal, Keycloak) and deploys both NCX Core and NCX REST in the correct order.
 
 ```bash
 # 1. Build and push images to your registry
@@ -98,7 +98,7 @@ done
 export KUBECONFIG=/path/to/kubeconfig
 export REGISTRY_PULL_SECRET=<pull-secret-or-api-key>
 export NCX_IMAGE_REGISTRY=my-registry.example.com/ncx
-export NCX_CORE_IMAGE_TAG=<ncx-core-tag>    # NCX Infra Controller Core image tag
+export NCX_CORE_IMAGE_TAG=<ncx-core-tag>    # NVIDIA Infra Controller Core image tag
 export NCX_REST_IMAGE_TAG=v1.0.4               # NCX REST image tag
 
 # 3. Clone ncx-infra-controller-core (if not already present as a sibling directory)
@@ -109,7 +109,7 @@ cd ../ncx-infra-controller-core/helm-prereqs
 ./setup.sh -y     # or ./setup.sh for interactive prompts
 ```
 
-The setup script auto-detects this repo from the sibling path `ncx-infra-controller-rest`. Set `NCX_REPO=/path/to/this/repo` to override.
+The setup script auto-detects this repo from the sibling path `infra-controller-rest`. Set `NCX_REPO=/path/to/this/repo` to override.
 
 To tear everything down:
 ```bash
@@ -221,7 +221,7 @@ az acr login --name myregistry
 2. Build and push:
 
 ```bash
-REGISTRY=my-registry.example.com/ncx-infra-controller-rest
+REGISTRY=my-registry.example.com/infra-controller-rest
 TAG=v1.0.0
 
 make docker-build IMAGE_REGISTRY=$REGISTRY IMAGE_TAG=$TAG

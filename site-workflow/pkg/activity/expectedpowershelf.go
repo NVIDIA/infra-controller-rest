@@ -63,8 +63,10 @@ func (mepsi *ManageExpectedPowerShelfInventory) DiscoverExpectedPowerShelfInvent
 	}
 
 	// Get Site Controller gRPC client
-	carbideClient := mepsi.carbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := mepsi.carbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	// Call GetAllExpectedPowerShelves to get full list of ExpectedPowerShelves on Site
 	epsList, err := forgeClient.GetAllExpectedPowerShelves(ctx, &emptypb.Empty{})
@@ -287,8 +289,10 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := meps.CarbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := meps.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	// Call Forge gRPC endpoint
 	_, err = forgeClient.AddExpectedPowerShelf(ctx, request)
@@ -324,8 +328,10 @@ func (meps *ManageExpectedPowerShelf) UpdateExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := meps.CarbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := meps.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	_, err = forgeClient.UpdateExpectedPowerShelf(ctx, request)
 	if err != nil {
@@ -455,8 +461,10 @@ func (meps *ManageExpectedPowerShelf) DeleteExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := meps.CarbideAtomicClient.GetClient()
-	forgeClient := carbideClient.Carbide()
+	forgeClient, err := meps.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
+	}
 
 	_, err = forgeClient.DeleteExpectedPowerShelf(ctx, request)
 	if err != nil {

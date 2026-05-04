@@ -39,6 +39,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
 	common "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
@@ -1603,14 +1604,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	for _, data := range createdInstancesData {
 		instance := data.instance
 
-		// Prepare labels for metadata
-		createLabels := []*cwssaws.Label{}
-		for k, v := range instance.Labels {
-			createLabels = append(createLabels, &cwssaws.Label{
-				Key:   k,
-				Value: &v,
-			})
-		}
+		createLabels := util.ProtobufLabelsFromAPILabels(instance.Labels)
 
 		description := ""
 		if instance.Description != nil {

@@ -64,11 +64,10 @@ func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.CreateNetworkSecurityGroup(ctx, request)
 	if err != nil {
@@ -104,11 +103,10 @@ func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateNetworkSecurityGroup(ctx, request)
 	if err != nil {
@@ -144,11 +142,10 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteNetworkSecurityGroup(ctx, request)
 	if err != nil {

@@ -5,12 +5,12 @@ SPDX-License-Identifier: Apache-2.0
 
 # Carbide CLI
 
-Command-line client for the NCX Infra Controller REST API. Commands are dynamically generated from the embedded OpenAPI spec at startup, so every API endpoint is available with zero manual command code.
+Command-line client for the NVIDIA Infra Controller REST API. Commands are dynamically generated from the embedded OpenAPI spec at startup, so every API endpoint is available with zero manual command code.
 
 ## Prerequisites
 
 - Go 1.25.4 or later
-- Access to a running NCX Infra Controller REST API instance (local via `make kind-reset` or remote)
+- Access to a running NVIDIA Infra Controller REST API instance (local via `make kind-reset` or remote)
 
 ## Installation
 

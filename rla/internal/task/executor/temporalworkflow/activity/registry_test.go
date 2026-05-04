@@ -18,12 +18,13 @@
 package activity
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
 )
 
 // TestActivities_All_ContainsAllActivities verifies that All() returns every
@@ -78,10 +79,11 @@ func TestActivities_Isolation(t *testing.T) {
 	assert.NotContains(t, m2, "isolation-sentinel", "mutations to one instance's map must not bleed into another instance's map")
 }
 
-// TestActivities_GetComponentManager_NilRegistry verifies that
-// getComponentManager returns nil gracefully when no registry is configured.
-func TestActivities_GetComponentManager_NilRegistry(t *testing.T) {
+// TestActivities_ValidAndGetComponentManager_NilRegistry verifies that manager
+// lookup returns a clear configuration error when no registry is configured.
+func TestActivities_ValidAndGetComponentManager_NilRegistry(t *testing.T) {
 	acts := New(nil, nil)
-	result := acts.getComponentManager(devicetypes.ComponentTypeCompute)
-	assert.Nil(t, result)
+	_, err := acts.validAndGetComponentManager(newActivityTestTarget())
+	assert.Error(t, err)
+	assert.True(t, errors.Is(err, componentmanager.ErrRegistryNotConfigured))
 }

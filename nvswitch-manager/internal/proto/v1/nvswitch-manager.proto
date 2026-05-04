@@ -175,6 +175,20 @@ message PowerTarget {
     int32 bmc_port = 3; // 0 = default (443)
 }
 
+// FirmwareTarget allows firmware updates against a device without prior registration.
+// BMC and NVOS MAC addresses, IPs, and credentials are all required.
+message FirmwareTarget {
+    string bmc_ip = 1;
+    Credentials bmc_credentials = 2;
+    int32 bmc_port = 3;          // 0 = default (443)
+    string nvos_ip = 4;          // NVOS SSH IP (can be same as bmc_ip)
+    Credentials nvos_credentials = 5;
+    int32 nvos_port = 6;         // 0 = default (22)
+    Vendor vendor = 7;           // Default: VENDOR_NVIDIA
+    string bmc_mac = 8;          // BMC MAC address (used as registration key)
+    string nvos_mac = 9;         // NVOS MAC address
+}
+
 // PowerControlRequest specifies the switches and the power action to perform.
 // Registered switches are identified by UUID; unregistered devices use PowerTarget.
 message PowerControlRequest {
@@ -263,23 +277,46 @@ message QueueUpdateResponse {
 }
 
 // QueueUpdatesRequest queues firmware updates for multiple switches.
+// Registered switches are identified by UUID; unregistered devices use FirmwareTarget.
+//
+// `switch_uuids` and `targets` are mutually exclusive: a single request must
+// populate exactly one of them. The handler does not deduplicate across the
+// two lists, so allowing both would risk queuing duplicate updates for any
+// device whose UUID and FirmwareTarget are both supplied. Callers with mixed
+// inventory should issue one RPC per registration state. A request that
+// populates neither is rejected for the same reason it would be a no-op.
+//
+// Whichever list is populated is processed best-effort, per item: a failure
+// for one switch (invalid UUID, validation, auto-registration, queue
+// rejection) does not abort processing of the remaining items and does not
+// produce a non-OK gRPC status. Callers must inspect each
+// `QueueUpdatesResponse.results[i].status` to determine per-item outcome.
+// The RPC only returns a top-level error on global failures (firmware
+// manager uninitialized, malformed `components` enum value, or violation of
+// the mutual-exclusivity contract above).
 message QueueUpdatesRequest {
-    repeated string switch_uuids = 1;     // UUIDs of NV-Switches to update
-    string bundle_version = 2;            // Version of the firmware bundle
+    repeated string switch_uuids = 1;          // UUIDs of registered NV-Switches to update; mutually exclusive with `targets`. Processed best-effort.
+    string bundle_version = 2;                 // Version of the firmware bundle
     repeated NVSwitchComponent components = 3; // Components to update (empty = all)
+    repeated FirmwareTarget targets = 4;       // Unregistered switches (auto-registered before update); mutually exclusive with `switch_uuids`. Processed best-effort.
 }
 
-// QueueUpdatesResponse returns the results for each switch.
+// QueueUpdatesResponse returns the results for each switch. Length and
+// ordering correspond to whichever of `switch_uuids` or `targets` was
+// populated in the originating request (the two are mutually exclusive).
+// Each entry reports its own outcome; see QueueUpdatesRequest for the
+// best-effort contract.
 message QueueUpdatesResponse {
     repeated QueueUpdateResult results = 1;
 }
 
 // QueueUpdateResult contains the result for a single switch update.
 message QueueUpdateResult {
-    string switch_uuid = 1;               // UUID of the switch
-    StatusCode status = 2;                // SUCCESS or error
-    string error = 3;                     // Error message if status != SUCCESS
+    string switch_uuid = 1;                  // UUID of the switch
+    StatusCode status = 2;                   // SUCCESS or error; per-item outcome under QueueUpdatesRequest's best-effort contract
+    string error = 3;                        // Error message if status != SUCCESS
     repeated FirmwareUpdateInfo updates = 4; // Queued updates if successful
+    string bmc_ip = 5;                       // Set for FirmwareTarget responses; empty for UUID-based
 }
 
 // GetUpdateRequest gets a specific update by ID.

@@ -19,7 +19,6 @@ package componentmanager
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -33,30 +32,46 @@ import (
 // components. Implementations handle component-specific operations like
 // power control, firmware management, and status monitoring.
 type ComponentManager interface {
+	// Type returns the component type this manager is responsible for.
 	Type() devicetypes.ComponentType
-	InjectExpectation(ctx context.Context, target common.Target, info operations.InjectExpectationTaskInfo) error //nolint
-	PowerControl(ctx context.Context, target common.Target, info operations.PowerControlTaskInfo) error           //nolint
-	GetPowerStatus(ctx context.Context, target common.Target) (map[string]operations.PowerStatus, error)          //nolint
 
-	// FirmwareControl initiates firmware update without waiting for completion.
+	// InjectExpectation registers expected component configurations with the
+	// component manager service for the target components.
+	InjectExpectation(ctx context.Context, target common.Target, info operations.InjectExpectationTaskInfo) error //nolint
+
+	// PowerControl applies a power state transition to the target components.
+	PowerControl(ctx context.Context, target common.Target, info operations.PowerControlTaskInfo) error //nolint
+
+	// GetPowerStatus queries the current power state of each component in the
+	// target. Returns a map of component ID to PowerStatus.
+	GetPowerStatus(ctx context.Context, target common.Target) (map[string]operations.PowerStatus, error) //nolint
+
+	// FirmwareControl initiates a firmware update without waiting for completion.
 	// Returns immediately after the update request is accepted.
 	FirmwareControl(ctx context.Context, target common.Target, info operations.FirmwareControlTaskInfo) error //nolint
 
-	// GetFirmwareStatus returns the current status of firmware updates for the target components.
-	// Returns a map of component ID to FirmwareUpdateStatus.
+	// GetFirmwareStatus returns the current firmware update state for each
+	// component in the target. Returns a map of component ID to FirmwareUpdateStatus.
 	GetFirmwareStatus(ctx context.Context, target common.Target) (map[string]operations.FirmwareUpdateStatus, error) //nolint
 }
 
 // BringUpController is an optional interface for component managers that support
 // bring-up operations.
 type BringUpController interface {
+	// BringUpControl opens the power-on gate for the target components, allowing
+	// them to proceed through the bring-up sequence.
 	BringUpControl(ctx context.Context, target common.Target) error
+
+	// GetBringUpStatus returns the current bring-up state for each component in
+	// the target. Returns a map of component ID to MachineBringUpState.
 	GetBringUpStatus(ctx context.Context, target common.Target) (map[string]operations.MachineBringUpState, error)
 }
 
 // FirmwareConsistencyChecker is an optional interface for component managers
 // that can verify firmware version consistency across a set of components.
 type FirmwareConsistencyChecker interface {
+	// VerifyFirmwareConsistency checks that all target components report the same
+	// firmware version set. Returns an error if versions diverge.
 	VerifyFirmwareConsistency(ctx context.Context, target common.Target) error
 }
 
@@ -119,10 +134,9 @@ func (r *Registry) Initialize(config Config, providers *ProviderRegistry) error 
 	for componentType, implName := range config.ComponentManagers {
 		factories, ok := r.factories[componentType]
 		if !ok {
-			return fmt.Errorf(
-				"no factories registered for component type: %s",
-				devicetypes.ComponentTypeToString(componentType),
-			)
+			return ComponentManagerFactoryNotRegisteredError{
+				ComponentType: componentType,
+			}
 		}
 
 		factory, ok := factories[implName]
@@ -131,22 +145,20 @@ func (r *Registry) Initialize(config Config, providers *ProviderRegistry) error 
 			for name := range factories {
 				available = append(available, name)
 			}
-			return fmt.Errorf(
-				"unknown implementation '%s' for component type %s, available: %v",
-				implName,
-				devicetypes.ComponentTypeToString(componentType),
-				available,
-			)
+			return UnknownComponentManagerImplementationError{
+				ComponentType:  componentType,
+				Implementation: implName,
+				Available:      available,
+			}
 		}
 
 		manager, err := factory(providers)
 		if err != nil {
-			return fmt.Errorf(
-				"failed to create manager for component type %s with implementation '%s': %w",
-				devicetypes.ComponentTypeToString(componentType),
-				implName,
-				err,
-			)
+			return ManagerCreationError{
+				ComponentType:  componentType,
+				Implementation: implName,
+				Err:            err,
+			}
 		}
 
 		r.active[componentType] = manager
@@ -159,12 +171,40 @@ func (r *Registry) Initialize(config Config, providers *ProviderRegistry) error 
 	return nil
 }
 
-// GetManager returns the active manager for the specified component type.
-// Returns nil if no manager is active for the type.
-func (r *Registry) GetManager(componentType devicetypes.ComponentType) ComponentManager {
+// FindManager returns the active manager for the specified component type.
+// It returns nil when the registry is nil or when no manager is active for the
+// type. Use GetManager when the caller needs a descriptive configuration error.
+func (r *Registry) FindManager(
+	componentType devicetypes.ComponentType,
+) ComponentManager {
+	if r == nil {
+		return nil
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.active[componentType]
+}
+
+// GetManager returns the active manager for the specified component type.
+// It returns a descriptive error when the registry is nil or when no manager is
+// active for the type.
+func (r *Registry) GetManager(
+	componentType devicetypes.ComponentType,
+) (ComponentManager, error) {
+	if r == nil {
+		return nil, ErrRegistryNotConfigured
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	manager := r.active[componentType]
+	if manager == nil {
+		return nil, ManagerNotConfiguredError{ComponentType: componentType}
+	}
+
+	return manager, nil
 }
 
 // GetAllManagers returns all active managers.

@@ -398,16 +398,16 @@ func (ossd OperatingSystemSQLDAO) GetAll(ctx context.Context, tx *db.Tx, filter 
 		query = query.Where("os.id IN (?)", bun.In(filter.OperatingSystemIds))
 		ossd.tracerSpan.SetAttribute(operatingSystemSQLDAOSpan, "ids", filter.OperatingSystemIds)
 	}
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(os.name, ' ') || ' ' || coalesce(os.description, ' ') || ' ' || coalesce(os.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("os.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("os.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("os.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(os.name, ' ') || ' ' || coalesce(os.description, ' ') || ' ' || coalesce(os.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("os.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("os.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("os.status ILIKE ?", "%"+searchQuery+"%")
 		})
-		ossd.tracerSpan.SetAttribute(operatingSystemSQLDAOSpan, "search_query", *filter.SearchQuery)
+		ossd.tracerSpan.SetAttribute(operatingSystemSQLDAOSpan, "search_query", searchQuery)
 	}
 	if filter.Statuses != nil {
 		query = query.Where("os.status IN (?)", bun.In(filter.Statuses))

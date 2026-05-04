@@ -53,11 +53,10 @@ func (mt *ManageTray) GetTray(ctx context.Context, request *rlav1.GetComponentIn
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mt.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mt.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.GetComponentInfoByID(ctx, request)
 	if err != nil {
@@ -81,11 +80,10 @@ func (mt *ManageTray) GetTrays(ctx context.Context, request *rlav1.GetComponents
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mt.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mt.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.GetComponents(ctx, request)
 	if err != nil {

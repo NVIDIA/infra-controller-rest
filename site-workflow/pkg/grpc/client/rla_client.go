@@ -289,6 +289,25 @@ func (rac *RlaAtomicClient) GetClient() *RlaClient {
 	return client
 }
 
+// GetRLAClient returns the underlying RLA gRPC client. Returns ErrClientNotConnected
+// if the client has not been initialized or is not currently connected.
+// Prefer this over GetClient() + manual nil-check + .Rla() at call sites.
+func (rac *RlaAtomicClient) GetRLAClient() (rlav1.RLAClient, error) {
+	client := rac.GetClient()
+	if client == nil {
+		return nil, ErrClientNotConnected
+	}
+	// It's true that NewRlaClient always populates the inner rla field, BUT,
+	// guard against zero-value RlaClient instances slipping in via direct
+	// construction. Without this, a misconstructed wrapper would yield (nil,
+	// nil) and break things.
+	rla := client.Rla()
+	if rla == nil {
+		return nil, ErrClientNotConnected
+	}
+	return rla, nil
+}
+
 // CheckAndReloadCerts continuously monitors the TLS certificates for changes.
 // If a change is detected, it reinitializes the RlaClient with the new certificates to ensure secure communication.
 func (rac *RlaAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {

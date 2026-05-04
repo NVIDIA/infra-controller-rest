@@ -3,9 +3,9 @@ SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All 
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# NVIDIA Bare Metal REST OpenAPI Schema
+# NVIDIA Infra Controller REST OpenAPI Schema
 
-This repo contains OpenAPI schema for NVIDIA Bare Metal REST endpoints. Redoc rendered latest version can be viewed at https://nvidia.github.io/ncx-infra-controller-rest/
+This repo contains OpenAPI schema for NVIDIA Infra Controller REST endpoints. The latest Redoc-rendered version is available at https://nvidia.github.io/infra-controller-rest/
 
 # Development
 

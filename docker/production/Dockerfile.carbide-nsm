@@ -39,6 +39,7 @@ COPY sdk/standard/go.mod ./sdk/standard/
 # Download dependencies
 RUN go mod download
 
+COPY common/ ./common/
 COPY nvswitch-manager/ ./nvswitch-manager/
 
 WORKDIR /workspace/nvswitch-manager

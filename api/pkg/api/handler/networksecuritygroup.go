@@ -33,6 +33,7 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
 	common "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
@@ -271,14 +272,7 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Prepare the labels for the metadata of the carbide call.
-	createLabels := []*cwssaws.Label{}
-	for k, v := range networkSecurityGroup.Labels {
-		createLabels = append(createLabels, &cwssaws.Label{
-			Key:   k,
-			Value: &v,
-		})
-	}
+	createLabels := util.ProtobufLabelsFromAPILabels(networkSecurityGroup.Labels)
 
 	description := ""
 	if networkSecurityGroup.Description != nil {
@@ -484,12 +478,9 @@ func (gansgh GetAllNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 	}
 
 	// Get query text for full text search from query param
-	var searchQuery *string
-
-	searchQueryStr := c.QueryParam("query")
-	if searchQueryStr != "" {
-		searchQuery = &searchQueryStr
-		gansgh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", searchQueryStr), logger)
+	searchQuery := common.GetSearchQuery(c)
+	if searchQuery != nil {
+		gansgh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", *searchQuery), logger)
 	}
 
 	var statuses []string
@@ -1253,14 +1244,7 @@ func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Prepare the labels for the metadata of the carbide call.
-	labels := []*cwssaws.Label{}
-	for k, v := range nsg.Labels {
-		labels = append(labels, &cwssaws.Label{
-			Key:   k,
-			Value: &v,
-		})
-	}
+	labels := util.ProtobufLabelsFromAPILabels(nsg.Labels)
 
 	description := ""
 	if nsg.Description != nil {

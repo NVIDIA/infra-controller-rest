@@ -20,7 +20,6 @@ package activity
 import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // Activities holds the per-manager-instance dependencies for all Temporal
@@ -62,13 +61,4 @@ func (a *Activities) All() map[string]any {
 		NameGetBringUpStatus:          a.GetBringUpStatus,
 		NameVerifyFirmwareConsistency: a.VerifyFirmwareConsistency,
 	}
-}
-
-// getComponentManager returns the component manager for typ, or nil if no
-// registry is configured or no manager is registered for that type.
-func (a *Activities) getComponentManager(typ devicetypes.ComponentType) componentmanager.ComponentManager {
-	if a.registry == nil {
-		return nil
-	}
-	return a.registry.GetManager(typ)
 }

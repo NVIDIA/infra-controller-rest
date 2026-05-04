@@ -64,11 +64,10 @@ func (mvp *ManageVpcPrefix) CreateVpcPrefixOnSite(ctx context.Context, request *
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mvp.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mvp.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.CreateVpcPrefix(ctx, request)
 	if err != nil {
@@ -101,11 +100,10 @@ func (mvp *ManageVpcPrefix) UpdateVpcPrefixOnSite(ctx context.Context, request *
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mvp.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mvp.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateVpcPrefix(ctx, request)
 	if err != nil {
@@ -138,11 +136,10 @@ func (mvp *ManageVpcPrefix) DeleteVpcPrefixOnSite(ctx context.Context, request *
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mvp.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return client.ErrClientNotConnected
+	forgeClient, err := mvp.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.DeleteVpcPrefix(ctx, request)
 	if err != nil {

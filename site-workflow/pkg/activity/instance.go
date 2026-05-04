@@ -59,12 +59,10 @@ func (mm *ManageInstance) UpdateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.UpdateInstanceConfig(ctx, request)
 	if err != nil {
@@ -97,12 +95,10 @@ func (mm *ManageInstance) CreateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.AllocateInstance(ctx, request)
 	if err != nil {
@@ -141,12 +137,10 @@ func (mm *ManageInstance) CreateInstancesOnSite(ctx context.Context, request *cw
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.AllocateInstances(ctx, request)
 	if err != nil {
@@ -178,12 +172,10 @@ func (mm *ManageInstance) RebootInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.InvokeInstancePower(ctx, request)
 	if err != nil {
@@ -216,12 +208,10 @@ func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Site Controller gRPC endpoint
-	carbideClient := mm.CarbideAtomicClient.GetClient()
-	if carbideClient == nil {
-		return cClient.ErrClientNotConnected
+	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
+	if err != nil {
+		return err
 	}
-
-	forgeClient := carbideClient.Carbide()
 
 	_, err = forgeClient.ReleaseInstance(ctx, request)
 	if err != nil {

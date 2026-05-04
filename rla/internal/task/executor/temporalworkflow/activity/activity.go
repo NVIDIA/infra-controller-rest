@@ -121,6 +121,7 @@ func (a *Activities) FirmwareControl(
 
 // GetFirmwareStatusResult is the result of GetFirmwareStatus activity.
 type GetFirmwareStatusResult struct {
+	// Statuses maps each component ID to its current firmware update state.
 	Statuses map[string]operations.FirmwareUpdateStatus
 }
 
@@ -163,6 +164,7 @@ func (a *Activities) BringUpControl(
 
 // GetBringUpStatusResult is the result of GetBringUpStatus activity.
 type GetBringUpStatusResult struct {
+	// States maps each component ID to its current bring-up state.
 	States map[string]operations.MachineBringUpState
 }
 
@@ -220,13 +222,5 @@ func (a *Activities) validAndGetComponentManager(
 		return nil, fmt.Errorf("target is invalid: %w", err)
 	}
 
-	cm := a.getComponentManager(target.Type)
-	if cm == nil {
-		return nil, fmt.Errorf(
-			"no component manager registered for type %s",
-			target.Type.String(),
-		)
-	}
-
-	return cm, nil
+	return a.registry.GetManager(target.Type)
 }

@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
+	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
 
 	vault "github.com/hashicorp/vault/api"
 	log "github.com/sirupsen/logrus"
@@ -42,6 +42,12 @@ const bmcCredentialSuffix = "root"
 // NVOS credentials are stored at switch_nvos/{bmc_mac}/admin.
 const nvosCredentialPath = mountPath + "/data/switch_nvos"
 const nvosCredentialSuffix = "admin"
+
+// errCredentialNotFound is the sentinel returned by get when a vault path
+// holds no secret. It lets Put* distinguish "definitely absent → safe to
+// write" from "couldn't determine state → log and write anyway", which is
+// important to avoid silently overwriting on transient Vault read failures.
+var errCredentialNotFound = errors.New("credential not found")
 
 // VaultConfig configures access to Vault (address and token). The token should be scoped minimally for KV operations.
 type VaultConfig struct {
@@ -157,7 +163,7 @@ func (m *VaultCredentialManager) get(ctx context.Context, key string) (*credenti
 		return nil, fmt.Errorf("vault read at %q: %w", key, err)
 	}
 	if secret == nil || secret.Data == nil {
-		return nil, fmt.Errorf("credential not found at vault path %q", key)
+		return nil, fmt.Errorf("vault path %q: %w", key, errCredentialNotFound)
 	}
 
 	credData, ok := secret.Data["data"].(map[string]interface{})
@@ -165,7 +171,7 @@ func (m *VaultCredentialManager) get(ctx context.Context, key string) (*credenti
 		return nil, fmt.Errorf("unexpected secret data format at vault path %q", key)
 	}
 
-	cred, err := credential.FromMap(credData)
+	cred, err := credentialFromMap(credData)
 	if err != nil {
 		return nil, fmt.Errorf("parsing credential at vault path %q: %w", key, err)
 	}
@@ -183,7 +189,7 @@ func (m *VaultCredentialManager) put(ctx context.Context, key string, cred *cred
 	}
 
 	payload := map[string]any{
-		"data": cred.ToMap(),
+		"data": credentialToMap(cred),
 	}
 
 	_, err := m.client.Logical().Write(key, payload)
@@ -195,19 +201,81 @@ func (m *VaultCredentialManager) delete(ctx context.Context, key string) error {
 	return err
 }
 
+func credentialToMap(cred *credential.Credential) map[string]interface{} {
+	if cred == nil {
+		return nil
+	}
+	return map[string]interface{}{
+		"UsernamePassword": map[string]interface{}{
+			"username": cred.User,
+			"password": cred.Password.Value,
+		},
+	}
+}
+
+func credentialFromMap(data map[string]interface{}) (*credential.Credential, error) {
+	nested, ok := data["UsernamePassword"].(map[string]interface{})
+	if !ok {
+		return nil, errors.New("missing or invalid UsernamePassword field")
+	}
+	user, ok := nested["username"].(string)
+	if !ok {
+		return nil, errors.New("invalid username value")
+	}
+	password, ok := nested["password"].(string)
+	if !ok {
+		return nil, errors.New("invalid password value")
+	}
+	c := credential.New(user, password)
+	return &c, nil
+}
+
 // GetBMC retrieves and validates BMC credentials for the given MAC from Vault.
 func (m *VaultCredentialManager) GetBMC(ctx context.Context, mac net.HardwareAddr) (*credential.Credential, error) {
 	return m.get(ctx, m.getBMCCredentialKey(mac))
 }
 
-// PutBMC writes the BMC credentials to Vault.
-func (m *VaultCredentialManager) PutBMC(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
-	return m.put(ctx, m.getBMCCredentialKey(mac), cred)
+// shouldSkipWrite reads the existing credential at key and decides whether
+// the caller can short-circuit the write. Returns true only when an identical
+// credential is already stored (idempotent re-register). For the differ and
+// read-failure cases it logs a warning and returns false so the caller
+// proceeds with an unconditional overwrite — matching the in-memory
+// CredentialManager's upsert semantics.
+//
+// kind is "BMC" or "NVOS" purely for log readability; mac is logged as the
+// MAC of the registering device.
+func (m *VaultCredentialManager) shouldSkipWrite(ctx context.Context, key, kind string, mac net.HardwareAddr, cred *credential.Credential) bool {
+	existing, err := m.get(ctx, key)
+	switch {
+	case err == nil && existing.Equal(cred):
+		log.Infof("%s credentials for %s already exist and match; skipping write", kind, mac)
+		return true
+	case err == nil:
+		log.Warnf("%s credentials for %s differ from existing; overwriting vault entry", kind, mac)
+	case errors.Is(err, errCredentialNotFound):
+		// No existing secret; fall through to write.
+	default:
+		log.Warnf("%s credentials for %s could not be read (%v); overwriting vault entry", kind, mac, err)
+	}
+	return false
 }
 
-// PatchBMC replaces the BMC's credentials in Vault (equivalent to Put).
+// PutBMC writes BMC credentials to Vault. If an identical entry exists this
+// is a no-op; if a different entry exists it is overwritten with a warning;
+// if the existing entry could not be read (transient Vault failure, corrupted
+// secret, etc.) the write proceeds with a warning so credential rotation is
+// not blocked. Use PatchBMC for the same effect without the existence check.
+func (m *VaultCredentialManager) PutBMC(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
+	key := m.getBMCCredentialKey(mac)
+	if m.shouldSkipWrite(ctx, key, "BMC", mac, cred) {
+		return nil
+	}
+	return m.put(ctx, key, cred)
+}
+
+// PatchBMC unconditionally replaces the BMC credentials in Vault.
 func (m *VaultCredentialManager) PatchBMC(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
-	return m.PutBMC(ctx, mac, cred)
+	return m.put(ctx, m.getBMCCredentialKey(mac), cred)
 }
 
 // DeleteBMC removes the BMC credential from Vault.
@@ -220,14 +288,20 @@ func (m *VaultCredentialManager) GetNVOS(ctx context.Context, mac net.HardwareAd
 	return m.get(ctx, m.getNVOSCredentialKey(mac))
 }
 
-// PutNVOS writes the NVOS credentials to Vault.
+// PutNVOS writes NVOS credentials to Vault. See PutBMC for the precise
+// upsert semantics (match → skip, differ → warn-and-overwrite,
+// unreadable → warn-and-overwrite).
 func (m *VaultCredentialManager) PutNVOS(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
-	return m.put(ctx, m.getNVOSCredentialKey(mac), cred)
+	key := m.getNVOSCredentialKey(mac)
+	if m.shouldSkipWrite(ctx, key, "NVOS", mac, cred) {
+		return nil
+	}
+	return m.put(ctx, key, cred)
 }
 
-// PatchNVOS replaces the NVOS credentials in Vault (equivalent to Put).
+// PatchNVOS unconditionally replaces the NVOS credentials in Vault.
 func (m *VaultCredentialManager) PatchNVOS(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
-	return m.PutNVOS(ctx, mac, cred)
+	return m.put(ctx, m.getNVOSCredentialKey(mac), cred)
 }
 
 // DeleteNVOS removes the NVOS credential from Vault.

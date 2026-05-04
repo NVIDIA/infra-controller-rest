@@ -82,7 +82,7 @@ func TestInventory(t *testing.T) {
 
 	psmMock := psmapi.NewMockClient()
 	nsmMock := nsmapi.NewMockClient()
-	runInventoryOne(ctx, pool, grpcMock, psmMock, nsmMock, componentmanager.DefaultTestConfig())
+	runInventoryOne(ctx, pool, grpcMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	rows, err := pool.DB.Query("SELECT serial_number, power_state FROM component;")
 	assert.NotNil(t, rows)
@@ -150,7 +150,7 @@ func TestSyncFirmwareVersion(t *testing.T) {
 
 	psmMock := psmapi.NewMockClient()
 	nsmMock := nsmapi.NewMockClient()
-	runInventoryOne(ctx, pool, grpcMock, psmMock, nsmMock, componentmanager.DefaultTestConfig())
+	runInventoryOne(ctx, pool, grpcMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	var updated1 model.Component
 	err = pool.DB.NewSelect().Model(&updated1).Where("id = ?", c1.ID).Scan(ctx)
@@ -419,7 +419,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 
 	// Run the inventory loop
 	nsmMock := nsmapi.NewMockClient()
-	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, componentmanager.DefaultTestConfig())
+	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	// Verify that only expected PMCs that have DHCPed were registered with PSM
 	registeredPowershelves, err := psmMock.GetPowershelves(ctx, []string{})
@@ -742,7 +742,7 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	assert.Equal(t, 1, len(preRegistered), "Should have 1 pre-registered switch (SW7)")
 
 	// Run the inventory loop
-	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, componentmanager.DefaultTestConfig())
+	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	// --- Verify NSM registrations ---
 	registeredSwitches, err := nsmMock.GetNVSwitches(ctx, nil)
@@ -808,7 +808,7 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	nsmMock.SetNVSwitchFirmware("aa:bb:cc:11:11:01", "3.0.0")
 	nsmMock.SetNVSwitchFirmware("aa:bb:cc:11:11:02", "3.1.0")
 
-	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, componentmanager.DefaultTestConfig())
+	runInventoryOne(ctx, pool, carbideMock, psmMock, nsmMock, defaultComponentManagerTestConfig())
 
 	// SW1: external_id and firmware_version should now be set
 	var updatedSw1 model.Component
@@ -862,5 +862,17 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 			assert.Equal(t, "sw-serial-007", sw7Drift.Diffs[0].ExpectedValue)
 			assert.Equal(t, "actual-serial-007", sw7Drift.Diffs[0].ActualValue)
 		}
+	}
+}
+
+func defaultComponentManagerTestConfig() componentmanager.Config {
+	return componentmanager.Config{
+		ComponentManagers: map[devicetypes.ComponentType]string{
+			devicetypes.ComponentTypeCompute:    "mock",
+			devicetypes.ComponentTypeNVLSwitch:  "mock",
+			devicetypes.ComponentTypePowerShelf: "mock",
+		},
+		Providers:       componentmanager.LegacyProviderConfig{},
+		ProviderConfigs: map[string]componentmanager.ProviderConfig{},
 	}
 }

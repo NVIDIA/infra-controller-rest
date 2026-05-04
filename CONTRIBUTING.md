@@ -3,9 +3,9 @@ SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All 
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Contributing to NCX Infra Controller
+# Contributing to NVIDIA Infra Controller
 
-Thank you for your interest in contributing to NCX Infra Controller! We welcome contributions from the community.
+Thank you for your interest in contributing to NVIDIA Infra Controller! We welcome contributions from the community.
 
 ## Table of Contents
 
@@ -16,7 +16,7 @@ Thank you for your interest in contributing to NCX Infra Controller! We welcome 
 
 ## Developer Certificate of Origin (DCO)
 
-NCX Infra Controller requires the Developer Certificate of Origin (DCO) process to be followed for all contributions.
+NVIDIA Infra Controller requires the Developer Certificate of Origin (DCO) process to be followed for all contributions.
 
 The DCO is a lightweight way for contributors to certify that they wrote or otherwise have the right to submit the code they are contributing. The full text of the DCO can be found at [developercertificate.org](https://developercertificate.org/):
 
@@ -105,19 +105,19 @@ All pull requests are automatically checked for DCO compliance via DCO bot. Pull
 
 ## Fork and Setup
 
-Developers must first fork the upstream [NCX Infra Controller REST repository](https://github.com/NVIDIA/ncx-infra-controller-rest).
+Developers must first fork the upstream [NVIDIA Infra Controller REST repository](https://github.com/NVIDIA/infra-controller-rest).
 
 ### 1. Fork the Repository
 
-1. Navigate to the [NCX Infra Controller REST repository](https://github.com/NVIDIA/ncx-infra-controller-rest) on GitHub.
+1. Navigate to the [NVIDIA Infra Controller REST repository](https://github.com/NVIDIA/infra-controller-rest) on GitHub.
 2. Click the **Fork** button in the upper right corner.
 3. Select your GitHub account as the destination.
 
 ### 2. Clone Your Fork
 
 ```bash
-git clone https://github.com/<your-username>/ncx-infra-controller-rest.git
-cd ncx-infra-controller-rest
+git clone https://github.com/<your-username>/infra-controller-rest.git
+cd infra-controller-rest
 ```
 
 ### 3. Add Upstream Remote
@@ -125,7 +125,7 @@ cd ncx-infra-controller-rest
 Add the original repository as an upstream remote to keep your fork in sync:
 
 ```bash
-git remote add upstream https://github.com/NVIDIA/ncx-infra-controller-rest.git
+git remote add upstream https://github.com/NVIDIA/infra-controller-rest.git
 git remote -v  # Verify remotes
 ```
 

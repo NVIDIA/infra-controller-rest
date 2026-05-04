@@ -191,12 +191,7 @@ func (mt ManageTenant) CreateOrUpdateTenantOnSite(ctx context.Context, siteID uu
 		}
 
 		// Trigger apporpriate workflow on Site
-		createTenantRequest := &cwssaws.CreateTenantRequest{
-			OrganizationId: tenant.Org,
-			Metadata: &cwssaws.Metadata{
-				Name: *tenant.OrgDisplayName,
-			},
-		}
+		createTenantRequest := tenant.ToCreateRequestProto()
 
 		we, err := tc.ExecuteWorkflow(ctx, workflowOptions, "CreateTenant", createTenantRequest)
 		if err != nil {
@@ -211,12 +206,7 @@ func (mt ManageTenant) CreateOrUpdateTenantOnSite(ctx context.Context, siteID uu
 		}
 
 		// Trigger apporpriate workflow on Site
-		updateTenantRequest := &cwssaws.UpdateTenantRequest{
-			OrganizationId: tenant.Org,
-			Metadata: &cwssaws.Metadata{
-				Name: *tenant.OrgDisplayName,
-			},
-		}
+		updateTenantRequest := tenant.ToUpdateRequestProto()
 
 		we, err := tc.ExecuteWorkflow(ctx, workflowOptions, "UpdateTenant", updateTenantRequest)
 		if err != nil {

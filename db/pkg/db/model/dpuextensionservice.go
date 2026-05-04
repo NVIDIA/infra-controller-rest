@@ -407,18 +407,18 @@ func (dessd DpuExtensionServiceSQLDAO) GetAll(ctx context.Context, tx *db.Tx, fi
 		}
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(des.name, ' ') || ' ' || coalesce(des.description, ' ') || ' ' || coalesce(des.status, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("des.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("des.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("des.status ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(des.name, ' ') || ' ' || coalesce(des.description, ' ') || ' ' || coalesce(des.status, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("des.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("des.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("des.status ILIKE ?", "%"+searchQuery+"%")
 		})
 
 		if desDAOSpan != nil {
-			dessd.tracerSpan.SetAttribute(desDAOSpan, "search_query", *filter.SearchQuery)
+			dessd.tracerSpan.SetAttribute(desDAOSpan, "search_query", searchQuery)
 		}
 	}
 

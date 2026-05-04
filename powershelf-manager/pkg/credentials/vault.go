@@ -39,6 +39,12 @@ const mountPath = "secrets"
 const bmcCredentialPath = mountPath + "/data/machines/bmc"
 const bmcCredentialSuffix = "root"
 
+// errCredentialNotFound is the sentinel returned by Get when a vault path
+// holds no secret. It lets Put distinguish "definitely absent → safe to
+// write" from "couldn't determine state → log and write anyway", which is
+// important to avoid silently overwriting on transient Vault read failures.
+var errCredentialNotFound = errors.New("credential not found")
+
 // VaultConfig configures access to Vault (address and token). The token should be scoped minimally for KV operations.
 type VaultConfig struct {
 	Address string
@@ -151,7 +157,7 @@ func (m *VaultCredentialManager) Get(ctx context.Context, mac net.HardwareAddr) 
 		return nil, fmt.Errorf("vault read at %q: %w", key, err)
 	}
 	if secret == nil || secret.Data == nil {
-		return nil, fmt.Errorf("credential not found at vault path %q", key)
+		return nil, fmt.Errorf("vault path %q: %w", key, errCredentialNotFound)
 	}
 
 	credData, ok := secret.Data["data"].(map[string]interface{})
@@ -171,12 +177,41 @@ func (m *VaultCredentialManager) Get(ctx context.Context, mac net.HardwareAddr) 
 	return cred, nil
 }
 
-// Put writes the credentials of a given PMC (specified by MAC) to Vault.
+// Put writes PMC credentials to Vault. If an identical entry exists this is
+// a no-op; if a different entry exists it is overwritten with a warning;
+// if the existing entry could not be read (transient Vault failure, corrupted
+// secret, etc.) the write proceeds with a warning so credential rotation is
+// not blocked. Use Patch for the same effect without the existence check.
 func (m *VaultCredentialManager) Put(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
 	if cred == nil || !cred.IsValid() {
 		return fmt.Errorf("valid credential not specified to Vault Manager")
 	}
 
+	existing, err := m.Get(ctx, mac)
+	switch {
+	case err == nil && existing.Equal(cred):
+		log.Infof("PMC credentials for %s already exist and match; skipping write", mac)
+		return nil
+	case err == nil:
+		log.Warnf("PMC credentials for %s differ from existing; overwriting vault entry", mac)
+	case errors.Is(err, errCredentialNotFound):
+		// No existing secret; fall through to write.
+	default:
+		log.Warnf("PMC credentials for %s could not be read (%v); overwriting vault entry", mac, err)
+	}
+
+	return m.write(ctx, mac, cred)
+}
+
+// Patch unconditionally replaces the PMC credentials in Vault.
+func (m *VaultCredentialManager) Patch(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
+	if cred == nil || !cred.IsValid() {
+		return fmt.Errorf("valid credential not specified to Vault Manager")
+	}
+	return m.write(ctx, mac, cred)
+}
+
+func (m *VaultCredentialManager) write(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
 	payload := map[string]any{
 		"data": credentialToMap(cred),
 	}
@@ -184,12 +219,6 @@ func (m *VaultCredentialManager) Put(ctx context.Context, mac net.HardwareAddr, 
 	key := m.getCredentialKey(mac)
 	_, err := m.client.Logical().Write(key, payload)
 	return err
-}
-
-// Patch replaces the PMC's credentials in Vault (equivalent to Put).
-func (m *VaultCredentialManager) Patch(ctx context.Context, mac net.HardwareAddr, cred *credential.Credential) error {
-	// Assuming Patch is similar to Put for simplicity
-	return m.Put(ctx, mac, cred)
 }
 
 // Delete removes the credential specified by the PMC mac (if it exists) from Vault.

@@ -18,7 +18,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -28,7 +27,6 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
 	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
@@ -157,143 +155,64 @@ func (cesh CreateExpectedSwitchHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// Start a db transaction
-	tx, err := cdb.BeginTx(ctx, cesh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Expected Switch due to DB transaction error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Create the ExpectedSwitch in DB
-	// Note: NvOsUsername and NvOsPassword are not stored in DB, only passed to workflow
-	expectedSwitch, err := esDAO.Create(
-		ctx,
-		tx,
-		cdbm.ExpectedSwitchCreateInput{
-			ExpectedSwitchID:   uuid.New(),
-			SiteID:             site.ID,
-			BmcMacAddress:      apiRequest.BmcMacAddress,
-			SwitchSerialNumber: apiRequest.SwitchSerialNumber,
-			RackID:             apiRequest.RackID,
-			Name:               apiRequest.Name,
-			Manufacturer:       apiRequest.Manufacturer,
-			Model:              apiRequest.Model,
-			Description:        apiRequest.Description,
-			FirmwareVersion:    apiRequest.FirmwareVersion,
-			SlotID:             apiRequest.SlotID,
-			TrayIdx:            apiRequest.TrayIdx,
-			HostID:             apiRequest.HostID,
-			Labels:             apiRequest.Labels,
-			CreatedBy:          dbUser.ID,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating ExpectedSwitch record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Expected Switch due to DB error", nil)
-	}
-
-	// Build the create request for workflow
-	// NVOS credentials come from API request since they're not stored in DB
-	createExpectedSwitchRequest := &cwssaws.ExpectedSwitch{
-		ExpectedSwitchId:   &cwssaws.UUID{Value: expectedSwitch.ID.String()},
-		BmcMacAddress:      expectedSwitch.BmcMacAddress,
-		SwitchSerialNumber: expectedSwitch.SwitchSerialNumber,
-	}
-
-	if expectedSwitch.RackID != nil {
-		createExpectedSwitchRequest.RackId = &cwssaws.RackId{Id: *expectedSwitch.RackID}
-	}
-
-	if expectedSwitch.Name != nil {
-		createExpectedSwitchRequest.Name = expectedSwitch.Name
-	}
-
-	if expectedSwitch.Manufacturer != nil {
-		createExpectedSwitchRequest.Manufacturer = expectedSwitch.Manufacturer
-	}
-
-	if expectedSwitch.Model != nil {
-		createExpectedSwitchRequest.Model = expectedSwitch.Model
-	}
-
-	if expectedSwitch.Description != nil {
-		createExpectedSwitchRequest.Description = expectedSwitch.Description
-	}
-
-	if expectedSwitch.FirmwareVersion != nil {
-		createExpectedSwitchRequest.FirmwareVersion = expectedSwitch.FirmwareVersion
-	}
-
-	if expectedSwitch.SlotID != nil {
-		createExpectedSwitchRequest.SlotId = expectedSwitch.SlotID
-	}
-
-	if expectedSwitch.TrayIdx != nil {
-		createExpectedSwitchRequest.TrayIdx = expectedSwitch.TrayIdx
-	}
-
-	if expectedSwitch.HostID != nil {
-		createExpectedSwitchRequest.HostId = expectedSwitch.HostID
-	}
-
-	if apiRequest.DefaultBmcUsername != nil {
-		createExpectedSwitchRequest.BmcUsername = *apiRequest.DefaultBmcUsername
-	}
-
-	if apiRequest.DefaultBmcPassword != nil {
-		createExpectedSwitchRequest.BmcPassword = *apiRequest.DefaultBmcPassword
-	}
-
-	if apiRequest.NvOsUsername != nil {
-		createExpectedSwitchRequest.NvosUsername = apiRequest.NvOsUsername
-	}
-
-	if apiRequest.NvOsPassword != nil {
-		createExpectedSwitchRequest.NvosPassword = apiRequest.NvOsPassword
-	}
-
-	protoLabels := util.ProtobufLabelsFromAPILabels(apiRequest.Labels)
-	if protoLabels != nil {
-		createExpectedSwitchRequest.Metadata = &cwssaws.Metadata{
-			Labels: protoLabels,
+	expectedSwitch, err := cdb.WithTxResult(ctx, cesh.dbSession, func(tx *cdb.Tx) (*cdbm.ExpectedSwitch, error) {
+		// Note: NvOsUsername and NvOsPassword are not stored in DB, only passed to workflow
+		es, err := esDAO.Create(
+			ctx,
+			tx,
+			cdbm.ExpectedSwitchCreateInput{
+				ExpectedSwitchID:   uuid.New(),
+				SiteID:             site.ID,
+				BmcMacAddress:      apiRequest.BmcMacAddress,
+				SwitchSerialNumber: apiRequest.SwitchSerialNumber,
+				RackID:             apiRequest.RackID,
+				Name:               apiRequest.Name,
+				Manufacturer:       apiRequest.Manufacturer,
+				Model:              apiRequest.Model,
+				Description:        apiRequest.Description,
+				FirmwareVersion:    apiRequest.FirmwareVersion,
+				SlotID:             apiRequest.SlotID,
+				TrayIdx:            apiRequest.TrayIdx,
+				HostID:             apiRequest.HostID,
+				Labels:             apiRequest.Labels,
+				CreatedBy:          dbUser.ID,
+			},
+		)
+		if err != nil {
+			logger.Error().Err(err).Msg("error creating ExpectedSwitch record in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Expected Switch due to DB error", nil)
 		}
-	}
 
-	logger.Info().Msg("triggering Expected Switch create workflow on Site")
+		createExpectedSwitchRequest := es.ToProto(cdbm.ExpectedSwitchCredentials{
+			BmcUsername:  apiRequest.DefaultBmcUsername,
+			BmcPassword:  apiRequest.DefaultBmcPassword,
+			NvosUsername: apiRequest.NvOsUsername,
+			NvosPassword: apiRequest.NvOsPassword,
+		})
 
-	// Create workflow options
-	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "expected-switch-create-" + expectedSwitch.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
+		logger.Info().Msg("triggering Expected Switch create workflow on Site")
 
-	// Get the temporal client for the site we are working with
-	stc, err := cesh.scp.GetClientByID(site.ID)
+		workflowOptions := tclient.StartWorkflowOptions{
+			ID:                       "expected-switch-create-" + es.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		stc, err := cesh.scp.GetClientByID(site.ID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		if apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "CreateExpectedSwitch", workflowOptions, createExpectedSwitchRequest); apiErr != nil {
+			return nil, apiErr
+		}
+		return es, nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create Expected Switch due to DB transaction error")
 	}
 
-	// Run workflow
-	apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "CreateExpectedSwitch", workflowOptions, createExpectedSwitchRequest)
-	if apiErr != nil {
-		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing ExpectedSwitch transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Expected Switch due to DB transaction error", nil)
-	}
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
-
-	// Create response
 	apiExpectedSwitch := model.NewAPIExpectedSwitch(expectedSwitch)
 
 	logger.Info().Msg("finishing API handler")
@@ -537,12 +456,15 @@ func (gesh GetExpectedSwitchHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Expected Switch due to DB error", nil)
 	}
 
-	// Get Site for the Expected Switch
-	siteDAO := cdbm.NewSiteDAO(gesh.dbSession)
-	site, err := siteDAO.GetByID(ctx, nil, expectedSwitch.SiteID, nil, false)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Site from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Site details for Expected Switch due to DB error", nil)
+	// Site is needed for the access check; reuse if loaded via includeRelation, else fetch.
+	site := expectedSwitch.Site
+	if site == nil {
+		siteDAO := cdbm.NewSiteDAO(gesh.dbSession)
+		site, err = siteDAO.GetByID(ctx, nil, expectedSwitch.SiteID, nil, false)
+		if err != nil {
+			logger.Error().Err(err).Msg("error retrieving Site from DB")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Site details for Expected Switch due to DB error", nil)
+		}
 	}
 
 	// Validate ProviderTenantSite relationship and site state
@@ -673,142 +595,62 @@ func (uesh UpdateExpectedSwitchHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Current org is not associated with the Site of the Expected Switch", nil)
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, uesh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Expected Switch due to DB transaction error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update ExpectedSwitch in DB
-	// Note: NvOsUsername and NvOsPassword are not stored in DB, only passed to workflow
-
-	updatedExpectedSwitch, err := esDAO.Update(
-		ctx,
-		tx,
-		cdbm.ExpectedSwitchUpdateInput{
-			ExpectedSwitchID:   expectedSwitch.ID,
-			BmcMacAddress:      apiRequest.BmcMacAddress,
-			SwitchSerialNumber: apiRequest.SwitchSerialNumber,
-			RackID:             apiRequest.RackID,
-			Name:               apiRequest.Name,
-			Manufacturer:       apiRequest.Manufacturer,
-			Model:              apiRequest.Model,
-			Description:        apiRequest.Description,
-			FirmwareVersion:    apiRequest.FirmwareVersion,
-			SlotID:             apiRequest.SlotID,
-			TrayIdx:            apiRequest.TrayIdx,
-			HostID:             apiRequest.HostID,
-			Labels:             apiRequest.Labels,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to update ExpectedSwitch record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Expected Switch due to DB error", nil)
-	}
-
-	// Build the update request for workflow
-	// NVOS credentials come from API request since they're not stored in DB
-	updateExpectedSwitchRequest := &cwssaws.ExpectedSwitch{
-		ExpectedSwitchId:   &cwssaws.UUID{Value: expectedSwitch.ID.String()},
-		BmcMacAddress:      updatedExpectedSwitch.BmcMacAddress,
-		SwitchSerialNumber: updatedExpectedSwitch.SwitchSerialNumber,
-	}
-
-	if updatedExpectedSwitch.RackID != nil {
-		updateExpectedSwitchRequest.RackId = &cwssaws.RackId{Id: *updatedExpectedSwitch.RackID}
-	}
-
-	if updatedExpectedSwitch.Name != nil {
-		updateExpectedSwitchRequest.Name = updatedExpectedSwitch.Name
-	}
-
-	if updatedExpectedSwitch.Manufacturer != nil {
-		updateExpectedSwitchRequest.Manufacturer = updatedExpectedSwitch.Manufacturer
-	}
-
-	if updatedExpectedSwitch.Model != nil {
-		updateExpectedSwitchRequest.Model = updatedExpectedSwitch.Model
-	}
-
-	if updatedExpectedSwitch.Description != nil {
-		updateExpectedSwitchRequest.Description = updatedExpectedSwitch.Description
-	}
-
-	if updatedExpectedSwitch.FirmwareVersion != nil {
-		updateExpectedSwitchRequest.FirmwareVersion = updatedExpectedSwitch.FirmwareVersion
-	}
-
-	if updatedExpectedSwitch.SlotID != nil {
-		updateExpectedSwitchRequest.SlotId = updatedExpectedSwitch.SlotID
-	}
-
-	if updatedExpectedSwitch.TrayIdx != nil {
-		updateExpectedSwitchRequest.TrayIdx = updatedExpectedSwitch.TrayIdx
-	}
-
-	if updatedExpectedSwitch.HostID != nil {
-		updateExpectedSwitchRequest.HostId = updatedExpectedSwitch.HostID
-	}
-
-	if apiRequest.DefaultBmcUsername != nil {
-		updateExpectedSwitchRequest.BmcUsername = *apiRequest.DefaultBmcUsername
-	}
-
-	if apiRequest.DefaultBmcPassword != nil {
-		updateExpectedSwitchRequest.BmcPassword = *apiRequest.DefaultBmcPassword
-	}
-
-	if apiRequest.NvOsUsername != nil {
-		updateExpectedSwitchRequest.NvosUsername = apiRequest.NvOsUsername
-	}
-
-	if apiRequest.NvOsPassword != nil {
-		updateExpectedSwitchRequest.NvosPassword = apiRequest.NvOsPassword
-	}
-
-	protoLabels := util.ProtobufLabelsFromAPILabels(apiRequest.Labels)
-	if protoLabels != nil {
-		updateExpectedSwitchRequest.Metadata = &cwssaws.Metadata{
-			Labels: protoLabels,
+	updatedExpectedSwitch, err := cdb.WithTxResult(ctx, uesh.dbSession, func(tx *cdb.Tx) (*cdbm.ExpectedSwitch, error) {
+		// Note: NvOsUsername and NvOsPassword are not stored in DB, only passed to workflow
+		es, err := esDAO.Update(
+			ctx,
+			tx,
+			cdbm.ExpectedSwitchUpdateInput{
+				ExpectedSwitchID:   expectedSwitch.ID,
+				BmcMacAddress:      apiRequest.BmcMacAddress,
+				SwitchSerialNumber: apiRequest.SwitchSerialNumber,
+				RackID:             apiRequest.RackID,
+				Name:               apiRequest.Name,
+				Manufacturer:       apiRequest.Manufacturer,
+				Model:              apiRequest.Model,
+				Description:        apiRequest.Description,
+				FirmwareVersion:    apiRequest.FirmwareVersion,
+				SlotID:             apiRequest.SlotID,
+				TrayIdx:            apiRequest.TrayIdx,
+				HostID:             apiRequest.HostID,
+				Labels:             apiRequest.Labels,
+			},
+		)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to update ExpectedSwitch record in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Expected Switch due to DB error", nil)
 		}
-	}
 
-	logger.Info().Msg("triggering ExpectedSwitch update workflow")
+		updateExpectedSwitchRequest := es.ToProto(cdbm.ExpectedSwitchCredentials{
+			BmcUsername:  apiRequest.DefaultBmcUsername,
+			BmcPassword:  apiRequest.DefaultBmcPassword,
+			NvosUsername: apiRequest.NvOsUsername,
+			NvosPassword: apiRequest.NvOsPassword,
+		})
 
-	// Create workflow options
-	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "expected-switch-update-" + expectedSwitch.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
+		logger.Info().Msg("triggering ExpectedSwitch update workflow")
 
-	// Get the Temporal client for the site we are working with
-	stc, err := uesh.scp.GetClientByID(site.ID)
+		workflowOptions := tclient.StartWorkflowOptions{
+			ID:                       "expected-switch-update-" + expectedSwitch.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		stc, err := uesh.scp.GetClientByID(site.ID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		if apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "UpdateExpectedSwitch", workflowOptions, updateExpectedSwitchRequest); apiErr != nil {
+			return nil, apiErr
+		}
+		return es, nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update Expected Switch due to DB transaction error")
 	}
 
-	// Run workflow
-	apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "UpdateExpectedSwitch", workflowOptions, updateExpectedSwitchRequest)
-	if apiErr != nil {
-		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing ExpectedSwitch update transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update ExpectedSwitch", nil)
-	}
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
-
-	// Create response
 	apiExpectedSwitch := model.NewAPIExpectedSwitch(updatedExpectedSwitch)
 
 	logger.Info().Msg("finishing API handler")
@@ -901,59 +743,39 @@ func (desh DeleteExpectedSwitchHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Current org is not associated with the Site of the Expected Switch", nil)
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, desh.dbSession, &sql.TxOptions{})
+	err = cdb.WithTx(ctx, desh.dbSession, func(tx *cdb.Tx) error {
+		if err := esDAO.Delete(ctx, tx, expectedSwitch.ID); err != nil {
+			logger.Error().Err(err).Msg("unable to delete ExpectedSwitch record from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Expected Switch due to DB error", nil)
+		}
+
+		deleteExpectedSwitchRequest := &cwssaws.ExpectedSwitchRequest{
+			ExpectedSwitchId: &cwssaws.UUID{Value: expectedSwitch.ID.String()},
+			BmcMacAddress:    expectedSwitch.BmcMacAddress,
+		}
+
+		logger.Info().Msg("triggering ExpectedSwitch delete workflow")
+
+		workflowOptions := tclient.StartWorkflowOptions{
+			ID:                       "expected-switch-delete-" + expectedSwitch.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		stc, err := desh.scp.GetClientByID(site.ID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		if apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "DeleteExpectedSwitch", workflowOptions, deleteExpectedSwitchRequest); apiErr != nil {
+			return apiErr
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Expected Switch due to DB error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete Expected Switch due to DB transaction error")
 	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Delete ExpectedSwitch from DB
-	err = esDAO.Delete(ctx, tx, expectedSwitch.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to delete ExpectedSwitch record from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Expected Switch due to DB error", nil)
-	}
-
-	// Build the delete request for workflow
-	deleteExpectedSwitchRequest := &cwssaws.ExpectedSwitchRequest{
-		ExpectedSwitchId: &cwssaws.UUID{Value: expectedSwitch.ID.String()},
-		BmcMacAddress:    expectedSwitch.BmcMacAddress,
-	}
-
-	logger.Info().Msg("triggering ExpectedSwitch delete workflow")
-
-	// Create workflow options
-	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "expected-switch-delete-" + expectedSwitch.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	// Get the temporal client for the site we are working with
-	stc, err := desh.scp.GetClientByID(site.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	// Run workflow
-	apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "DeleteExpectedSwitch", workflowOptions, deleteExpectedSwitchRequest)
-	if apiErr != nil {
-		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing ExpectedSwitch delete transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Expected Switch due to DB transaction error", nil)
-	}
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	logger.Info().Msg("finishing API handler")
 

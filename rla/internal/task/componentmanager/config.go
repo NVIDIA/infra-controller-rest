@@ -20,20 +20,23 @@ package componentmanager
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
-	"time"
 
 	"gopkg.in/yaml.v3"
 
+	cmbuiltin "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/builtin"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/carbide"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
-// ProviderConfig holds the configuration for API providers.
+// LegacyProviderConfig holds the typed configuration fields used by the
+// current bootstrap path.
 // A nil pointer means the provider is not enabled.
-type ProviderConfig struct {
+type LegacyProviderConfig struct {
 	// Carbide holds Carbide-specific configuration. Nil means disabled.
 	Carbide *carbide.Config
 
@@ -50,36 +53,17 @@ type Config struct {
 	ComponentManagers map[devicetypes.ComponentType]string
 
 	// Providers holds provider-specific configuration.
-	Providers ProviderConfig
+	Providers LegacyProviderConfig
+
+	// ProviderConfigs holds provider-specific typed configs keyed by provider
+	// name. It is the bridge to future generic provider bootstrap.
+	ProviderConfigs map[string]ProviderConfig
 }
 
 // rawConfig is the raw YAML structure before conversion.
 type rawConfig struct {
-	ComponentManagers map[string]string `yaml:"component_managers"`
-	Providers         rawProviderConfig `yaml:"providers"`
-}
-
-// rawProviderConfig is the raw YAML structure for provider configuration.
-type rawProviderConfig struct {
-	Carbide         *rawCarbideConfig         `yaml:"carbide"`
-	PSM             *rawPSMConfig             `yaml:"psm"`
-	NVSwitchManager *rawNVSwitchManagerConfig `yaml:"nvswitchmanager"`
-}
-
-// rawCarbideConfig is the raw YAML structure for Carbide configuration.
-type rawCarbideConfig struct {
-	Timeout           string `yaml:"timeout"`
-	ComputePowerDelay string `yaml:"compute_power_delay"`
-}
-
-// rawPSMConfig is the raw YAML structure for PSM configuration.
-type rawPSMConfig struct {
-	Timeout string `yaml:"timeout"`
-}
-
-// rawNVSwitchManagerConfig is the raw YAML structure for NV-Switch Manager configuration.
-type rawNVSwitchManagerConfig struct {
-	Timeout string `yaml:"timeout"`
+	ComponentManagers map[string]string    `yaml:"component_managers"`
+	Providers         map[string]yaml.Node `yaml:"providers"`
 }
 
 // LoadConfig loads the component manager configuration from a YAML file.
@@ -89,11 +73,28 @@ func LoadConfig(path string) (Config, error) {
 		return Config{}, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	return ParseConfig(data)
+	// TODO: In the provider bootstrap PR, pass the decoder registry into
+	// LoadConfig instead of constructing the built-in registry here.
+	decoders, err := cmbuiltin.NewServiceProviderConfigDecoderRegistry()
+	if err != nil {
+		return Config{}, fmt.Errorf(
+			"failed to create provider config decoder registry: %w", err,
+		)
+	}
+
+	return ParseConfig(data, decoders)
 }
 
-// ParseConfig parses the component manager configuration from YAML data.
-func ParseConfig(data []byte) (Config, error) {
+// ParseConfig parses the component manager configuration from YAML data using
+// the supplied provider config decoders.
+func ParseConfig(
+	data []byte,
+	decoders *ProviderConfigDecoderRegistry,
+) (Config, error) {
+	if decoders == nil {
+		return Config{}, providerapi.ErrProviderConfigDecoderRegistryNotConfigured
+	}
+
 	var raw rawConfig
 	if err := yaml.Unmarshal(data, &raw); err != nil {
 		return Config{}, fmt.Errorf("failed to parse config: %w", err)
@@ -101,110 +102,197 @@ func ParseConfig(data []byte) (Config, error) {
 
 	config := Config{
 		ComponentManagers: make(map[devicetypes.ComponentType]string),
+		ProviderConfigs:   make(map[string]ProviderConfig),
 	}
 
-	// Parse component managers
+	// Parse component managers.
 	for typeStr, implName := range raw.ComponentManagers {
 		componentType := devicetypes.ComponentTypeFromString(typeStr)
 		if componentType == devicetypes.ComponentTypeUnknown {
-			return Config{}, fmt.Errorf("unknown component type: %s", typeStr)
+			return Config{}, UnknownComponentTypeError{Name: typeStr}
 		}
 		config.ComponentManagers[componentType] = strings.TrimSpace(implName)
 	}
 
-	// Parse Carbide config if present in YAML
-	if raw.Providers.Carbide != nil {
-		carbideConfig := &carbide.Config{
-			Timeout:           carbide.DefaultTimeout,
-			ComputePowerDelay: carbide.DefaultComputePowerDelay,
+	if raw.Providers != nil {
+		// Preserve the current config semantics: when a providers section is
+		// present, it is treated as the complete explicit provider set. Missing
+		// providers are not auto-derived here; manager/provider requirement
+		// validation should report those missing dependencies in a later PR.
+		if err := decodeConfiguredProviders(&config, raw.Providers, decoders); err != nil {
+			return Config{}, err
 		}
-		if raw.Providers.Carbide.Timeout != "" {
-			timeout, err := time.ParseDuration(raw.Providers.Carbide.Timeout)
-			if err != nil {
-				return Config{}, fmt.Errorf("invalid carbide timeout: %w", err)
-			}
-			carbideConfig.Timeout = timeout
-		}
-		if raw.Providers.Carbide.ComputePowerDelay != "" {
-			delay, err := time.ParseDuration(raw.Providers.Carbide.ComputePowerDelay)
-			if err != nil {
-				return Config{}, fmt.Errorf(
-					"invalid carbide compute_power_delay: %w", err,
-				)
-			}
-			carbideConfig.ComputePowerDelay = delay
-		}
-		config.Providers.Carbide = carbideConfig
+		return config, nil
 	}
 
-	// Parse PSM config if present in YAML
-	if raw.Providers.PSM != nil {
-		psmConfig := &psm.Config{
-			Timeout: psm.DefaultTimeout,
-		}
-		if raw.Providers.PSM.Timeout != "" {
-			timeout, err := time.ParseDuration(raw.Providers.PSM.Timeout)
-			if err != nil {
-				return Config{}, fmt.Errorf("invalid psm timeout: %w", err)
-			}
-			psmConfig.Timeout = timeout
-		}
-		config.Providers.PSM = psmConfig
-	}
-
-	// Parse NV-Switch Manager config if present in YAML
-	if raw.Providers.NVSwitchManager != nil {
-		nsmConfig := &nvswitchmanager.Config{
-			Timeout: nvswitchmanager.DefaultTimeout,
-		}
-		if raw.Providers.NVSwitchManager.Timeout != "" {
-			timeout, err := time.ParseDuration(raw.Providers.NVSwitchManager.Timeout)
-			if err != nil {
-				return Config{}, fmt.Errorf("invalid nvswitchmanager timeout: %w", err)
-			}
-			nsmConfig.Timeout = timeout
-		}
-		config.Providers.NVSwitchManager = nsmConfig
-	}
-
-	// If no providers are explicitly configured, derive from component manager implementations
-	if config.Providers.Carbide == nil && config.Providers.PSM == nil && config.Providers.NVSwitchManager == nil {
-		deriveProviders(&config)
+	if err := deriveProviders(&config, decoders); err != nil {
+		return Config{}, err
 	}
 
 	return config, nil
 }
 
-// deriveProviders enables providers based on the component manager implementations configured.
-func deriveProviders(config *Config) {
+func decodeConfiguredProviders(
+	config *Config,
+	rawProviders map[string]yaml.Node,
+	decoders *ProviderConfigDecoderRegistry,
+) error {
+	providers, err := normalizeConfiguredProviders(rawProviders)
+	if err != nil {
+		return err
+	}
+
+	for _, provider := range providers {
+		name := provider.name
+		decoder, ok := decoders.Get(name)
+		if !ok {
+			return UnknownProviderError{Name: name}
+		}
+
+		decoded, err := decoder.DecodeYAML(provider.raw)
+		if err != nil {
+			return err
+		}
+
+		if err := applyProviderConfig(config, name, decoded); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+type configuredProvider struct {
+	name string
+	raw  yaml.Node
+}
+
+// normalizeConfiguredProviders trims provider names, rejects duplicate
+// normalized names, and returns providers in deterministic order before any
+// provider-specific decoding runs.
+func normalizeConfiguredProviders(
+	rawProviders map[string]yaml.Node,
+) ([]configuredProvider, error) {
+	providersByName := make(map[string]yaml.Node, len(rawProviders))
+	for rawName, rawNode := range rawProviders {
+		name := strings.TrimSpace(rawName)
+		if name == "" {
+			return nil, ErrProviderNameEmpty
+		}
+		if _, exists := providersByName[name]; exists {
+			return nil, DuplicateProviderConfigError{Name: name}
+		}
+		providersByName[name] = rawNode
+	}
+
+	names := make([]string, 0, len(providersByName))
+	for name := range providersByName {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	providers := make([]configuredProvider, 0, len(names))
+	for _, name := range names {
+		providers = append(providers, configuredProvider{
+			name: name,
+			raw:  providersByName[name],
+		})
+	}
+	return providers, nil
+}
+
+// deriveProviders enables providers based on the component manager
+// implementations configured.
+func deriveProviders(config *Config, decoders *ProviderConfigDecoderRegistry) error {
+	for _, name := range deriveProviderNames(*config) {
+		decoder, ok := decoders.Get(name)
+		if !ok {
+			return ProviderConfigDecoderNotRegisteredError{Name: name}
+		}
+
+		if err := applyProviderConfig(config, name, decoder.DefaultConfig()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deriveProviderNames(config Config) []string {
+	// Transitional compatibility shim. The final architecture should derive
+	// required providers from manager descriptors rather than assuming an
+	// implementation name maps directly to a provider name.
+	names := make(map[string]struct{})
 	for _, implName := range config.ComponentManagers {
 		switch implName {
 		case carbide.ProviderName:
-			if config.Providers.Carbide == nil {
-				config.Providers.Carbide = &carbide.Config{
-					Timeout:           carbide.DefaultTimeout,
-					ComputePowerDelay: carbide.DefaultComputePowerDelay,
-				}
-			}
+			names[carbide.ProviderName] = struct{}{}
 		case psm.ProviderName:
-			if config.Providers.PSM == nil {
-				config.Providers.PSM = &psm.Config{
-					Timeout: psm.DefaultTimeout,
-				}
-			}
+			names[psm.ProviderName] = struct{}{}
 		case nvswitchmanager.ProviderName:
-			if config.Providers.NVSwitchManager == nil {
-				config.Providers.NVSwitchManager = &nvswitchmanager.Config{
-					Timeout: nvswitchmanager.DefaultTimeout,
-				}
-			}
-			// mock implementations don't require any providers
+			names[nvswitchmanager.ProviderName] = struct{}{}
 		}
 	}
+
+	result := make([]string, 0, len(names))
+	for name := range names {
+		result = append(result, name)
+	}
+	sort.Strings(result)
+	return result
+}
+
+func applyProviderConfig(config *Config, name string, decoded ProviderConfig) error {
+	if config.ProviderConfigs == nil {
+		config.ProviderConfigs = make(map[string]ProviderConfig)
+	}
+	config.ProviderConfigs[name] = decoded
+	return applyLegacyProviderConfig(config, name, decoded)
+}
+
+func applyLegacyProviderConfig(config *Config, name string, decoded ProviderConfig) error {
+	switch name {
+	case carbide.ProviderName:
+		carbideConfig, ok := decoded.(*carbide.Config)
+		if !ok {
+			return ProviderConfigTypeMismatchError{
+				Name: name,
+				Got:  decoded,
+				Want: "*carbide.Config",
+			}
+		}
+		config.Providers.Carbide = carbideConfig
+	case psm.ProviderName:
+		psmConfig, ok := decoded.(*psm.Config)
+		if !ok {
+			return ProviderConfigTypeMismatchError{
+				Name: name,
+				Got:  decoded,
+				Want: "*psm.Config",
+			}
+		}
+		config.Providers.PSM = psmConfig
+	case nvswitchmanager.ProviderName:
+		nsmConfig, ok := decoded.(*nvswitchmanager.Config)
+		if !ok {
+			return ProviderConfigTypeMismatchError{
+				Name: name,
+				Got:  decoded,
+				Want: "*nvswitchmanager.Config",
+			}
+		}
+		config.Providers.NVSwitchManager = nsmConfig
+	}
+
+	return nil
 }
 
 // HasProvider checks if a provider is enabled in the configuration.
 func (c *Config) HasProvider(name string) bool {
+	if c.ProviderConfigs != nil {
+		if _, ok := c.ProviderConfigs[name]; ok {
+			return true
+		}
+	}
+
 	switch name {
 	case carbide.ProviderName:
 		return c.Providers.Carbide != nil
@@ -216,40 +304,32 @@ func (c *Config) HasProvider(name string) bool {
 	return false
 }
 
-// DefaultTestConfig returns the default configuration for testing/development.
-// Uses mock implementations that don't require external services.
-func DefaultTestConfig() Config {
-	return Config{
-		ComponentManagers: map[devicetypes.ComponentType]string{
-			devicetypes.ComponentTypeCompute:    "mock",
-			devicetypes.ComponentTypeNVLSwitch:  "mock",
-			devicetypes.ComponentTypePowerShelf: "mock",
-		},
-		Providers: ProviderConfig{
-			// No providers needed for mock - both nil
-		},
-	}
-}
-
 // DefaultProdConfig returns the embedded production configuration.
 // Used when no config file is specified. Connects to external services
 //
 // Timing parameters for operations are configured per-rule via action parameters.
 func DefaultProdConfig() Config {
+	carbideConfig := &carbide.Config{
+		Timeout:           carbide.DefaultTimeout,
+		ComputePowerDelay: carbide.DefaultComputePowerDelay,
+	}
+	psmConfig := &psm.Config{
+		Timeout: psm.DefaultTimeout,
+	}
+
 	return Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
 			devicetypes.ComponentTypeCompute:    carbide.ProviderName,
 			devicetypes.ComponentTypeNVLSwitch:  carbide.ProviderName,
 			devicetypes.ComponentTypePowerShelf: carbide.ProviderName,
 		},
-		Providers: ProviderConfig{
-			Carbide: &carbide.Config{
-				Timeout:           carbide.DefaultTimeout,
-				ComputePowerDelay: carbide.DefaultComputePowerDelay,
-			},
-			PSM: &psm.Config{
-				Timeout: psm.DefaultTimeout,
-			},
+		Providers: LegacyProviderConfig{
+			Carbide: carbideConfig,
+			PSM:     psmConfig,
+		},
+		ProviderConfigs: map[string]ProviderConfig{
+			carbide.ProviderName: carbideConfig,
+			psm.ProviderName:     psmConfig,
 		},
 	}
 }

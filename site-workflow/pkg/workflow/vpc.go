@@ -66,7 +66,7 @@ func DiscoverVPCInventory(ctx workflow.Context) error {
 // CreateVPCV2 is a workflow to create new VPCs using the CreateVpcOnSite activity
 // V1 (CreateVPC) is found in cloud-workflow and uses a different activity that does not speak
 // to carbide directly.
-func CreateVPCV2(ctx workflow.Context, request *cwssaws.VpcCreationRequest) error {
+func CreateVPCV2(ctx workflow.Context, request *cwssaws.VpcCreationRequest) (*cwssaws.Vpc, error) {
 	logger := log.With().Str("Workflow", "VPC").Str("Action", "Create").Str("VPC ID", request.GetId().GetValue()).Str("Name", request.Name).Logger()
 
 	logger.Info().Msg("starting workflow")
@@ -88,16 +88,17 @@ func CreateVPCV2(ctx workflow.Context, request *cwssaws.VpcCreationRequest) erro
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var vpcManager activity.ManageVPC
+	var controllerVpc cwssaws.Vpc
 
-	err := workflow.ExecuteActivity(ctx, vpcManager.CreateVpcOnSite, request).Get(ctx, nil)
+	err := workflow.ExecuteActivity(ctx, vpcManager.CreateVpcOnSite, request).Get(ctx, &controllerVpc)
 	if err != nil {
 		logger.Error().Err(err).Str("Activity", "CreateVpcOnSite").Msg("Failed to execute activity from workflow")
-		return err
+		return nil, err
 	}
 
 	logger.Info().Msg("completing workflow")
 
-	return nil
+	return &controllerVpc, nil
 }
 
 // UpdateVPC is a workflow to update VPCs using the UpdateVpcOnSite activity

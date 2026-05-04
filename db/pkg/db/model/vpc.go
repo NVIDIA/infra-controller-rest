@@ -406,19 +406,19 @@ func (vsd VpcSQLDAO) setQueryWithFilter(filter VpcFilterInput, query *bun.Select
 		}
 	}
 
-	if filter.SearchQuery != nil {
-		normalizedTokens := db.GetStrPtr(db.GetStringToTsQuery(*filter.SearchQuery))
+	searchQuery, searchTokens, ok := db.NormalizeSearchQuery(filter.SearchQuery)
+	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(v.name, ' ') || ' ' || coalesce(v.description, ' ') || ' ' || coalesce(v.network_virtualization_type, ' ') || ' ' || coalesce(v.status, ' ') || ' ' || coalesce(v.labels::text, ' '))) @@ to_tsquery('english', ?)", *normalizedTokens).
-				WhereOr("v.name ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("v.description ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("v.network_virtualization_type ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("v.status ILIKE ?", "%"+*filter.SearchQuery+"%").
-				WhereOr("v.labels::text ILIKE ?", "%"+*filter.SearchQuery+"%")
+				Where("to_tsvector('english', (coalesce(v.name, ' ') || ' ' || coalesce(v.description, ' ') || ' ' || coalesce(v.network_virtualization_type, ' ') || ' ' || coalesce(v.status, ' ') || ' ' || coalesce(v.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				WhereOr("v.name ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("v.description ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("v.network_virtualization_type ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("v.status ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("v.labels::text ILIKE ?", "%"+searchQuery+"%")
 		})
 		if vpcDAOSpan != nil {
-			vsd.tracerSpan.SetAttribute(vpcDAOSpan, "search_query", *filter.SearchQuery)
+			vsd.tracerSpan.SetAttribute(vpcDAOSpan, "search_query", searchQuery)
 		}
 	}
 	return query, nil

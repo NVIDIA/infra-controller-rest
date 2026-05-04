@@ -61,11 +61,10 @@ func (mr *ManageRack) GetRack(ctx context.Context, request *rlav1.GetRackInfoByI
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.GetRackInfoByID(ctx, request)
 	if err != nil {
@@ -89,11 +88,10 @@ func (mr *ManageRack) GetRacks(ctx context.Context, request *rlav1.GetListOfRack
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.GetListOfRacks(ctx, request)
 	if err != nil {
@@ -125,11 +123,10 @@ func (mr *ManageRack) ValidateRackComponents(ctx context.Context, request *rlav1
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.ValidateComponents(ctx, request)
 	if err != nil {
@@ -160,11 +157,10 @@ func (mr *ManageRack) PowerOnRack(ctx context.Context, request *rlav1.PowerOnRac
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.PowerOnRack(ctx, request)
 	if err != nil {
@@ -195,11 +191,10 @@ func (mr *ManageRack) PowerOffRack(ctx context.Context, request *rlav1.PowerOffR
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.PowerOffRack(ctx, request)
 	if err != nil {
@@ -230,11 +225,10 @@ func (mr *ManageRack) PowerResetRack(ctx context.Context, request *rlav1.PowerRe
 	}
 
 	// Call RLA gRPC endpoint
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.PowerResetRack(ctx, request)
 	if err != nil {
@@ -263,8 +257,10 @@ func (mr *ManageRack) BringUpRack(ctx context.Context, request *rlav1.BringUpRac
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	rla := rlaClient.Rla()
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
+	}
 
 	response, err := rla.BringUpRack(ctx, request)
 	if err != nil {
@@ -295,11 +291,10 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *rlav1.GetTasksBy
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.GetTasksByIDs(ctx, request)
 	if err != nil {
@@ -328,11 +323,10 @@ func (mr *ManageRack) UpgradeFirmware(ctx context.Context, request *rlav1.Upgrad
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rlaClient := mr.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		return nil, cClient.ErrClientNotConnected
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
 	}
-	rla := rlaClient.Rla()
 
 	response, err := rla.UpgradeFirmware(ctx, request)
 	if err != nil {

@@ -1229,12 +1229,9 @@ func (gaskgh GetAllSSHKeyGroupHandler) Handle(c echo.Context) error {
 	}
 
 	// Get query text for full text search from query param
-	var searchQuery *string
-
-	searchQueryStr := c.QueryParam("query")
-	if searchQueryStr != "" {
-		searchQuery = &searchQueryStr
-		gaskgh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", searchQueryStr), logger)
+	searchQuery := common.GetSearchQuery(c)
+	if searchQuery != nil {
+		gaskgh.tracerSpan.SetAttribute(handlerSpan, attribute.String("query", *searchQuery), logger)
 	}
 
 	// Get all SSH Key Group by Tenant

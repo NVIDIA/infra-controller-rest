@@ -63,11 +63,12 @@ func TestInMemoryPutGet(t *testing.T) {
 		initialPut bool
 		putMAC     string
 		putCred    *credential.Credential
+		putAgain   *credential.Credential // if non-nil, perform a second Put to the same MAC after the initial one
 		getMAC     string
 		wantErr    bool
 		wantUser   string
 		wantPass   string
-		samePtr    bool
+		samePtr    bool // expect Get to return the original tc.putCred pointer (i.e. no overwrite happened)
 	}{
 		"get existing valid credential": {
 			initialPut: true,
@@ -95,11 +96,12 @@ func TestInMemoryPutGet(t *testing.T) {
 			initialPut: true,
 			putMAC:     "aa:bb:cc:dd:ee:ff",
 			putCred:    newCred("user1", "p1"),
+			putAgain:   newCred("user2", "p2"),
 			getMAC:     "aa:bb:cc:dd:ee:ff",
 			wantErr:    false,
 			wantUser:   "user2",
 			wantPass:   "p2",
-			samePtr:    true,
+			// samePtr stays false: overwrite replaces the stored pointer.
 		},
 	}
 
@@ -108,17 +110,17 @@ func TestInMemoryPutGet(t *testing.T) {
 			ctx := context.Background()
 			mgr := NewInMemoryCredentialManager()
 
-			// Optional initial put
+			// Optional initial put, with an optional second Put to exercise
+			// either the idempotent-skip path (tc.putAgain semantically equal
+			// to tc.putCred) or the overwrite path (different values).
 			if tc.initialPut {
 				mac := parseMAC(t, tc.putMAC)
 				assert.NoError(t, mgr.Put(ctx, mac, tc.putCred))
-				// For the overwrite scenario, put a second credential to same MAC
-				if name == "put overwrites existing value" {
-					assert.NoError(t, mgr.Put(ctx, mac, newCred("user2", "p2")))
+				if tc.putAgain != nil {
+					assert.NoError(t, mgr.Put(ctx, mac, tc.putAgain))
 				}
 			}
 
-			// Get flow
 			got, err := mgr.Get(ctx, parseMAC(t, tc.getMAC))
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -131,8 +133,7 @@ func TestInMemoryPutGet(t *testing.T) {
 			assert.Equal(t, tc.wantUser, got.User)
 			assert.Equal(t, tc.wantPass, got.Password.Value)
 
-			if tc.samePtr && tc.initialPut && name != "put overwrites existing value" {
-				// For non-overwrite cases, ensure returned pointer equals the one stored
+			if tc.samePtr && tc.initialPut {
 				assert.Same(t, tc.putCred, got)
 			}
 		})
@@ -304,4 +305,25 @@ func TestInMemoryKeys(t *testing.T) {
 			assert.Equal(t, tc.expectSet, gotSet)
 		})
 	}
+}
+
+func TestInMemoryPutIdempotentAndOverwrite(t *testing.T) {
+	ctx := context.Background()
+	mgr := NewInMemoryCredentialManager()
+	mac := parseMAC(t, "00:11:22:33:44:55")
+
+	// First Put succeeds
+	assert.NoError(t, mgr.Put(ctx, mac, newCred("admin", "secret")))
+
+	// Idempotent Put with same credentials is a no-op
+	assert.NoError(t, mgr.Put(ctx, mac, newCred("admin", "secret")))
+
+	// Put with different credentials overwrites (no error for in-memory)
+	assert.NoError(t, mgr.Put(ctx, mac, newCred("admin", "different")))
+
+	// Credentials are now the new values
+	got, err := mgr.Get(ctx, mac)
+	assert.NoError(t, err)
+	assert.Equal(t, "admin", got.User)
+	assert.Equal(t, "different", got.Password.Value)
 }

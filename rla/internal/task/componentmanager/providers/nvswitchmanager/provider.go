@@ -17,11 +17,14 @@
 package nvswitchmanager
 
 import (
+	"context"
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v3"
 
 	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
+	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 )
 
 const (
@@ -36,6 +39,66 @@ const (
 type Config struct {
 	// Timeout is the gRPC call timeout for NV-Switch Manager operations.
 	Timeout time.Duration
+}
+
+type rawConfig struct {
+	Timeout string `yaml:"timeout"`
+}
+
+// Name returns the provider name for this config.
+func (*Config) Name() string {
+	return ProviderName
+}
+
+// NewProvider creates an NV-Switch Manager provider from this config.
+func (c *Config) NewProvider(ctx context.Context) (providerapi.Provider, error) {
+	// TODO: Thread ctx into nsmapi client creation if provider construction
+	// starts performing cancellable work.
+	_ = ctx
+	return New(*c)
+}
+
+// ConfigDecoder owns NV-Switch Manager provider config defaults and YAML
+// decoding.
+type ConfigDecoder struct{}
+
+// Name returns the provider name handled by this decoder.
+func (ConfigDecoder) Name() string {
+	return ProviderName
+}
+
+// DefaultConfig returns the default NV-Switch Manager provider config.
+func (ConfigDecoder) DefaultConfig() providerapi.ProviderConfig {
+	return &Config{
+		Timeout: DefaultTimeout,
+	}
+}
+
+// DecodeYAML decodes NV-Switch Manager provider YAML into a typed config.
+func (d ConfigDecoder) DecodeYAML(raw yaml.Node) (providerapi.ProviderConfig, error) {
+	config := d.DefaultConfig().(*Config)
+
+	var parsed rawConfig
+	if err := providerapi.DecodeYAMLStrict(raw, &parsed); err != nil {
+		return nil, providerapi.InvalidProviderConfigError{
+			Provider: ProviderName,
+			Err:      err,
+		}
+	}
+
+	if parsed.Timeout != "" {
+		timeout, err := time.ParseDuration(parsed.Timeout)
+		if err != nil {
+			return nil, providerapi.InvalidProviderConfigFieldError{
+				Provider: ProviderName,
+				Field:    "timeout",
+				Err:      err,
+			}
+		}
+		config.Timeout = timeout
+	}
+
+	return config, nil
 }
 
 // Provider wraps an nsmapi.Client and provides it to component manager implementations.
@@ -56,9 +119,8 @@ func New(config Config) (*Provider, error) {
 
 // NewWithDefault creates a new Provider with the default configuration.
 func NewWithDefault() (*Provider, error) {
-	return New(Config{
-		Timeout: DefaultTimeout,
-	})
+	cfg := ConfigDecoder{}.DefaultConfig().(*Config)
+	return New(*cfg)
 }
 
 // NewFromClient creates a Provider from an existing client.
