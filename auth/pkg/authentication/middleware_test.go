@@ -33,7 +33,6 @@ import (
 	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/processors"
 	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/config"
 
-	authz "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
 	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
 	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
@@ -244,7 +243,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			"test-org": cdbm.Org{
 				Name:        "test-org",
 				DisplayName: "Test Org",
-				Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
+				Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -276,7 +275,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			"test-org": cdbm.Org{
 				Name:        "test-org",
 				DisplayName: "Test Org",
-				Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
+				Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -323,7 +322,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Org",
-						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -350,7 +349,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Organization",
-						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -382,7 +381,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"sre-org": cdbm.Org{
 						Name:        "sre-org",
 						DisplayName: "SRE Org",
-						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -405,7 +404,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Organization",
-						Roles:       []string{authz.ProviderAdminRole, "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},

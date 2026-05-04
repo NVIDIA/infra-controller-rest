@@ -532,7 +532,7 @@ type NICoClient interface {
 	FindInstanceIds(ctx context.Context, in *InstanceSearchFilter, opts ...grpc.CallOption) (*InstanceIdList, error)
 	FindInstancesByIds(ctx context.Context, in *InstancesByIdsRequest, opts ...grpc.CallOption) (*InstanceList, error)
 	FindInstanceByMachineID(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*InstanceList, error)
-	// nico-dpu-agent -> nico-api
+	// nico-dpu-agent -> nico-core-api
 	GetManagedHostNetworkConfig(ctx context.Context, in *ManagedHostNetworkConfigRequest, opts ...grpc.CallOption) (*ManagedHostNetworkConfigResponse, error)
 	RecordDpuNetworkStatus(ctx context.Context, in *DpuNetworkStatus, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Lists all overrides that have been placed on a Machine health status
@@ -1021,7 +1021,7 @@ type NICoClient interface {
 	GetJWKS(ctx context.Context, in *JwksRequest, opts ...grpc.CallOption) (*Jwks, error)
 	GetOpenIDConfiguration(ctx context.Context, in *OpenIdConfigRequest, opts ...grpc.CallOption) (*OpenIdConfiguration, error)
 	// ScoutStream establishes a bidirectional streaming connection between
-	// scout agents and nico-api. The initial use-case for this is for
+	// scout agents and nico-core-api. The initial use-case for this is for
 	// Mellanox device management using nico-admin-cli, but there's an
 	// opportunity to pull the NICoAgentControl flow into here as well.
 	ScoutStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ScoutStreamApiBoundMessage, ScoutStreamScoutBoundMessage], error)
@@ -1041,12 +1041,12 @@ type NICoClient interface {
 	// MlxAdminProfileSync is used to sync an MlxConfigProfile to a given device.
 	MlxAdminProfileSync(ctx context.Context, in *MlxAdminProfileSyncRequest, opts ...grpc.CallOption) (*MlxAdminProfileSyncResponse, error)
 	// MlxAdminProfileShow shows the configuration of a specific MlxConfigProfile
-	// loaded into nico-api.
+	// loaded into nico-core-api.
 	MlxAdminProfileShow(ctx context.Context, in *MlxAdminProfileShowRequest, opts ...grpc.CallOption) (*MlxAdminProfileShowResponse, error)
 	// MlxAdminProfileCompare compares the running config of a device to
 	// the values of a given MlxConfigProfile.
 	MlxAdminProfileCompare(ctx context.Context, in *MlxAdminProfileCompareRequest, opts ...grpc.CallOption) (*MlxAdminProfileCompareResponse, error)
-	// MlxAdminProfileList lists all configured MlxConfigProfiles in nico-api.
+	// MlxAdminProfileList lists all configured MlxConfigProfiles in nico-core-api.
 	MlxAdminProfileList(ctx context.Context, in *MlxAdminProfileListRequest, opts ...grpc.CallOption) (*MlxAdminProfileListResponse, error)
 	// Mellanox administrative endpoints for lockdown management, which are called by
 	// the CLI (nico-admin-cli) and potentially the UI. These endpoints ultimately
@@ -1126,15 +1126,15 @@ type NICoClient interface {
 	ListComponentFirmwareVersions(ctx context.Context, in *ListComponentFirmwareVersionsRequest, opts ...grpc.CallOption) (*ListComponentFirmwareVersionsResponse, error)
 }
 
-type nicoClient struct {
+type nICoClient struct {
 	cc grpc.ClientConnInterface
 }
 
 func NewNICoClient(cc grpc.ClientConnInterface) NICoClient {
-	return &nicoClient{cc}
+	return &nICoClient{cc}
 }
 
-func (c *nicoClient) Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*BuildInfo, error) {
+func (c *nICoClient) Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*BuildInfo, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BuildInfo)
 	err := c.cc.Invoke(ctx, NICo_Version_FullMethodName, in, out, cOpts...)
@@ -1145,7 +1145,7 @@ func (c *nicoClient) Version(ctx context.Context, in *VersionRequest, opts ...gr
 }
 
 // Deprecated: Do not use.
-func (c *nicoClient) CreateDomainLegacy(ctx context.Context, in *DomainLegacy, opts ...grpc.CallOption) (*DomainLegacy, error) {
+func (c *nICoClient) CreateDomainLegacy(ctx context.Context, in *DomainLegacy, opts ...grpc.CallOption) (*DomainLegacy, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DomainLegacy)
 	err := c.cc.Invoke(ctx, NICo_CreateDomainLegacy_FullMethodName, in, out, cOpts...)
@@ -1156,7 +1156,7 @@ func (c *nicoClient) CreateDomainLegacy(ctx context.Context, in *DomainLegacy, o
 }
 
 // Deprecated: Do not use.
-func (c *nicoClient) UpdateDomainLegacy(ctx context.Context, in *DomainLegacy, opts ...grpc.CallOption) (*DomainLegacy, error) {
+func (c *nICoClient) UpdateDomainLegacy(ctx context.Context, in *DomainLegacy, opts ...grpc.CallOption) (*DomainLegacy, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DomainLegacy)
 	err := c.cc.Invoke(ctx, NICo_UpdateDomainLegacy_FullMethodName, in, out, cOpts...)
@@ -1167,7 +1167,7 @@ func (c *nicoClient) UpdateDomainLegacy(ctx context.Context, in *DomainLegacy, o
 }
 
 // Deprecated: Do not use.
-func (c *nicoClient) DeleteDomainLegacy(ctx context.Context, in *DomainDeletionLegacy, opts ...grpc.CallOption) (*DomainDeletionResultLegacy, error) {
+func (c *nICoClient) DeleteDomainLegacy(ctx context.Context, in *DomainDeletionLegacy, opts ...grpc.CallOption) (*DomainDeletionResultLegacy, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DomainDeletionResultLegacy)
 	err := c.cc.Invoke(ctx, NICo_DeleteDomainLegacy_FullMethodName, in, out, cOpts...)
@@ -1178,7 +1178,7 @@ func (c *nicoClient) DeleteDomainLegacy(ctx context.Context, in *DomainDeletionL
 }
 
 // Deprecated: Do not use.
-func (c *nicoClient) FindDomainLegacy(ctx context.Context, in *DomainSearchQueryLegacy, opts ...grpc.CallOption) (*DomainListLegacy, error) {
+func (c *nICoClient) FindDomainLegacy(ctx context.Context, in *DomainSearchQueryLegacy, opts ...grpc.CallOption) (*DomainListLegacy, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DomainListLegacy)
 	err := c.cc.Invoke(ctx, NICo_FindDomainLegacy_FullMethodName, in, out, cOpts...)
@@ -1188,7 +1188,7 @@ func (c *nicoClient) FindDomainLegacy(ctx context.Context, in *DomainSearchQuery
 	return out, nil
 }
 
-func (c *nicoClient) CreateVpc(ctx context.Context, in *VpcCreationRequest, opts ...grpc.CallOption) (*Vpc, error) {
+func (c *nICoClient) CreateVpc(ctx context.Context, in *VpcCreationRequest, opts ...grpc.CallOption) (*Vpc, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Vpc)
 	err := c.cc.Invoke(ctx, NICo_CreateVpc_FullMethodName, in, out, cOpts...)
@@ -1198,7 +1198,7 @@ func (c *nicoClient) CreateVpc(ctx context.Context, in *VpcCreationRequest, opts
 	return out, nil
 }
 
-func (c *nicoClient) UpdateVpc(ctx context.Context, in *VpcUpdateRequest, opts ...grpc.CallOption) (*VpcUpdateResult, error) {
+func (c *nICoClient) UpdateVpc(ctx context.Context, in *VpcUpdateRequest, opts ...grpc.CallOption) (*VpcUpdateResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcUpdateResult)
 	err := c.cc.Invoke(ctx, NICo_UpdateVpc_FullMethodName, in, out, cOpts...)
@@ -1208,7 +1208,7 @@ func (c *nicoClient) UpdateVpc(ctx context.Context, in *VpcUpdateRequest, opts .
 	return out, nil
 }
 
-func (c *nicoClient) UpdateVpcVirtualization(ctx context.Context, in *VpcUpdateVirtualizationRequest, opts ...grpc.CallOption) (*VpcUpdateVirtualizationResult, error) {
+func (c *nICoClient) UpdateVpcVirtualization(ctx context.Context, in *VpcUpdateVirtualizationRequest, opts ...grpc.CallOption) (*VpcUpdateVirtualizationResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcUpdateVirtualizationResult)
 	err := c.cc.Invoke(ctx, NICo_UpdateVpcVirtualization_FullMethodName, in, out, cOpts...)
@@ -1218,7 +1218,7 @@ func (c *nicoClient) UpdateVpcVirtualization(ctx context.Context, in *VpcUpdateV
 	return out, nil
 }
 
-func (c *nicoClient) DeleteVpc(ctx context.Context, in *VpcDeletionRequest, opts ...grpc.CallOption) (*VpcDeletionResult, error) {
+func (c *nICoClient) DeleteVpc(ctx context.Context, in *VpcDeletionRequest, opts ...grpc.CallOption) (*VpcDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteVpc_FullMethodName, in, out, cOpts...)
@@ -1228,7 +1228,7 @@ func (c *nicoClient) DeleteVpc(ctx context.Context, in *VpcDeletionRequest, opts
 	return out, nil
 }
 
-func (c *nicoClient) FindVpcIds(ctx context.Context, in *VpcSearchFilter, opts ...grpc.CallOption) (*VpcIdList, error) {
+func (c *nICoClient) FindVpcIds(ctx context.Context, in *VpcSearchFilter, opts ...grpc.CallOption) (*VpcIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcIdList)
 	err := c.cc.Invoke(ctx, NICo_FindVpcIds_FullMethodName, in, out, cOpts...)
@@ -1238,7 +1238,7 @@ func (c *nicoClient) FindVpcIds(ctx context.Context, in *VpcSearchFilter, opts .
 	return out, nil
 }
 
-func (c *nicoClient) FindVpcsByIds(ctx context.Context, in *VpcsByIdsRequest, opts ...grpc.CallOption) (*VpcList, error) {
+func (c *nICoClient) FindVpcsByIds(ctx context.Context, in *VpcsByIdsRequest, opts ...grpc.CallOption) (*VpcList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcList)
 	err := c.cc.Invoke(ctx, NICo_FindVpcsByIds_FullMethodName, in, out, cOpts...)
@@ -1248,7 +1248,7 @@ func (c *nicoClient) FindVpcsByIds(ctx context.Context, in *VpcsByIdsRequest, op
 	return out, nil
 }
 
-func (c *nicoClient) CreateVpcPrefix(ctx context.Context, in *VpcPrefixCreationRequest, opts ...grpc.CallOption) (*VpcPrefix, error) {
+func (c *nICoClient) CreateVpcPrefix(ctx context.Context, in *VpcPrefixCreationRequest, opts ...grpc.CallOption) (*VpcPrefix, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPrefix)
 	err := c.cc.Invoke(ctx, NICo_CreateVpcPrefix_FullMethodName, in, out, cOpts...)
@@ -1258,7 +1258,7 @@ func (c *nicoClient) CreateVpcPrefix(ctx context.Context, in *VpcPrefixCreationR
 	return out, nil
 }
 
-func (c *nicoClient) SearchVpcPrefixes(ctx context.Context, in *VpcPrefixSearchQuery, opts ...grpc.CallOption) (*VpcPrefixIdList, error) {
+func (c *nICoClient) SearchVpcPrefixes(ctx context.Context, in *VpcPrefixSearchQuery, opts ...grpc.CallOption) (*VpcPrefixIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPrefixIdList)
 	err := c.cc.Invoke(ctx, NICo_SearchVpcPrefixes_FullMethodName, in, out, cOpts...)
@@ -1268,7 +1268,7 @@ func (c *nicoClient) SearchVpcPrefixes(ctx context.Context, in *VpcPrefixSearchQ
 	return out, nil
 }
 
-func (c *nicoClient) GetVpcPrefixes(ctx context.Context, in *VpcPrefixGetRequest, opts ...grpc.CallOption) (*VpcPrefixList, error) {
+func (c *nICoClient) GetVpcPrefixes(ctx context.Context, in *VpcPrefixGetRequest, opts ...grpc.CallOption) (*VpcPrefixList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPrefixList)
 	err := c.cc.Invoke(ctx, NICo_GetVpcPrefixes_FullMethodName, in, out, cOpts...)
@@ -1278,7 +1278,7 @@ func (c *nicoClient) GetVpcPrefixes(ctx context.Context, in *VpcPrefixGetRequest
 	return out, nil
 }
 
-func (c *nicoClient) UpdateVpcPrefix(ctx context.Context, in *VpcPrefixUpdateRequest, opts ...grpc.CallOption) (*VpcPrefix, error) {
+func (c *nICoClient) UpdateVpcPrefix(ctx context.Context, in *VpcPrefixUpdateRequest, opts ...grpc.CallOption) (*VpcPrefix, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPrefix)
 	err := c.cc.Invoke(ctx, NICo_UpdateVpcPrefix_FullMethodName, in, out, cOpts...)
@@ -1288,7 +1288,7 @@ func (c *nicoClient) UpdateVpcPrefix(ctx context.Context, in *VpcPrefixUpdateReq
 	return out, nil
 }
 
-func (c *nicoClient) DeleteVpcPrefix(ctx context.Context, in *VpcPrefixDeletionRequest, opts ...grpc.CallOption) (*VpcPrefixDeletionResult, error) {
+func (c *nICoClient) DeleteVpcPrefix(ctx context.Context, in *VpcPrefixDeletionRequest, opts ...grpc.CallOption) (*VpcPrefixDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPrefixDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteVpcPrefix_FullMethodName, in, out, cOpts...)
@@ -1298,7 +1298,7 @@ func (c *nicoClient) DeleteVpcPrefix(ctx context.Context, in *VpcPrefixDeletionR
 	return out, nil
 }
 
-func (c *nicoClient) CreateVpcPeering(ctx context.Context, in *VpcPeeringCreationRequest, opts ...grpc.CallOption) (*VpcPeering, error) {
+func (c *nICoClient) CreateVpcPeering(ctx context.Context, in *VpcPeeringCreationRequest, opts ...grpc.CallOption) (*VpcPeering, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPeering)
 	err := c.cc.Invoke(ctx, NICo_CreateVpcPeering_FullMethodName, in, out, cOpts...)
@@ -1308,7 +1308,7 @@ func (c *nicoClient) CreateVpcPeering(ctx context.Context, in *VpcPeeringCreatio
 	return out, nil
 }
 
-func (c *nicoClient) FindVpcPeeringIds(ctx context.Context, in *VpcPeeringSearchFilter, opts ...grpc.CallOption) (*VpcPeeringIdList, error) {
+func (c *nICoClient) FindVpcPeeringIds(ctx context.Context, in *VpcPeeringSearchFilter, opts ...grpc.CallOption) (*VpcPeeringIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPeeringIdList)
 	err := c.cc.Invoke(ctx, NICo_FindVpcPeeringIds_FullMethodName, in, out, cOpts...)
@@ -1318,7 +1318,7 @@ func (c *nicoClient) FindVpcPeeringIds(ctx context.Context, in *VpcPeeringSearch
 	return out, nil
 }
 
-func (c *nicoClient) FindVpcPeeringsByIds(ctx context.Context, in *VpcPeeringsByIdsRequest, opts ...grpc.CallOption) (*VpcPeeringList, error) {
+func (c *nICoClient) FindVpcPeeringsByIds(ctx context.Context, in *VpcPeeringsByIdsRequest, opts ...grpc.CallOption) (*VpcPeeringList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPeeringList)
 	err := c.cc.Invoke(ctx, NICo_FindVpcPeeringsByIds_FullMethodName, in, out, cOpts...)
@@ -1328,7 +1328,7 @@ func (c *nicoClient) FindVpcPeeringsByIds(ctx context.Context, in *VpcPeeringsBy
 	return out, nil
 }
 
-func (c *nicoClient) DeleteVpcPeering(ctx context.Context, in *VpcPeeringDeletionRequest, opts ...grpc.CallOption) (*VpcPeeringDeletionResult, error) {
+func (c *nICoClient) DeleteVpcPeering(ctx context.Context, in *VpcPeeringDeletionRequest, opts ...grpc.CallOption) (*VpcPeeringDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(VpcPeeringDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteVpcPeering_FullMethodName, in, out, cOpts...)
@@ -1338,7 +1338,7 @@ func (c *nicoClient) DeleteVpcPeering(ctx context.Context, in *VpcPeeringDeletio
 	return out, nil
 }
 
-func (c *nicoClient) FindNetworkSegmentIds(ctx context.Context, in *NetworkSegmentSearchFilter, opts ...grpc.CallOption) (*NetworkSegmentIdList, error) {
+func (c *nICoClient) FindNetworkSegmentIds(ctx context.Context, in *NetworkSegmentSearchFilter, opts ...grpc.CallOption) (*NetworkSegmentIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkSegmentIdList)
 	err := c.cc.Invoke(ctx, NICo_FindNetworkSegmentIds_FullMethodName, in, out, cOpts...)
@@ -1348,7 +1348,7 @@ func (c *nicoClient) FindNetworkSegmentIds(ctx context.Context, in *NetworkSegme
 	return out, nil
 }
 
-func (c *nicoClient) FindNetworkSegmentsByIds(ctx context.Context, in *NetworkSegmentsByIdsRequest, opts ...grpc.CallOption) (*NetworkSegmentList, error) {
+func (c *nICoClient) FindNetworkSegmentsByIds(ctx context.Context, in *NetworkSegmentsByIdsRequest, opts ...grpc.CallOption) (*NetworkSegmentList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkSegmentList)
 	err := c.cc.Invoke(ctx, NICo_FindNetworkSegmentsByIds_FullMethodName, in, out, cOpts...)
@@ -1358,7 +1358,7 @@ func (c *nicoClient) FindNetworkSegmentsByIds(ctx context.Context, in *NetworkSe
 	return out, nil
 }
 
-func (c *nicoClient) CreateNetworkSegment(ctx context.Context, in *NetworkSegmentCreationRequest, opts ...grpc.CallOption) (*NetworkSegment, error) {
+func (c *nICoClient) CreateNetworkSegment(ctx context.Context, in *NetworkSegmentCreationRequest, opts ...grpc.CallOption) (*NetworkSegment, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkSegment)
 	err := c.cc.Invoke(ctx, NICo_CreateNetworkSegment_FullMethodName, in, out, cOpts...)
@@ -1368,7 +1368,7 @@ func (c *nicoClient) CreateNetworkSegment(ctx context.Context, in *NetworkSegmen
 	return out, nil
 }
 
-func (c *nicoClient) DeleteNetworkSegment(ctx context.Context, in *NetworkSegmentDeletionRequest, opts ...grpc.CallOption) (*NetworkSegmentDeletionResult, error) {
+func (c *nICoClient) DeleteNetworkSegment(ctx context.Context, in *NetworkSegmentDeletionRequest, opts ...grpc.CallOption) (*NetworkSegmentDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkSegmentDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteNetworkSegment_FullMethodName, in, out, cOpts...)
@@ -1378,7 +1378,7 @@ func (c *nicoClient) DeleteNetworkSegment(ctx context.Context, in *NetworkSegmen
 	return out, nil
 }
 
-func (c *nicoClient) NetworkSegmentsForVpc(ctx context.Context, in *VpcSearchQuery, opts ...grpc.CallOption) (*NetworkSegmentList, error) {
+func (c *nICoClient) NetworkSegmentsForVpc(ctx context.Context, in *VpcSearchQuery, opts ...grpc.CallOption) (*NetworkSegmentList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkSegmentList)
 	err := c.cc.Invoke(ctx, NICo_NetworkSegmentsForVpc_FullMethodName, in, out, cOpts...)
@@ -1388,7 +1388,7 @@ func (c *nicoClient) NetworkSegmentsForVpc(ctx context.Context, in *VpcSearchQue
 	return out, nil
 }
 
-func (c *nicoClient) FindIBPartitionIds(ctx context.Context, in *IBPartitionSearchFilter, opts ...grpc.CallOption) (*IBPartitionIdList, error) {
+func (c *nICoClient) FindIBPartitionIds(ctx context.Context, in *IBPartitionSearchFilter, opts ...grpc.CallOption) (*IBPartitionIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBPartitionIdList)
 	err := c.cc.Invoke(ctx, NICo_FindIBPartitionIds_FullMethodName, in, out, cOpts...)
@@ -1398,7 +1398,7 @@ func (c *nicoClient) FindIBPartitionIds(ctx context.Context, in *IBPartitionSear
 	return out, nil
 }
 
-func (c *nicoClient) FindIBPartitionsByIds(ctx context.Context, in *IBPartitionsByIdsRequest, opts ...grpc.CallOption) (*IBPartitionList, error) {
+func (c *nICoClient) FindIBPartitionsByIds(ctx context.Context, in *IBPartitionsByIdsRequest, opts ...grpc.CallOption) (*IBPartitionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBPartitionList)
 	err := c.cc.Invoke(ctx, NICo_FindIBPartitionsByIds_FullMethodName, in, out, cOpts...)
@@ -1408,7 +1408,7 @@ func (c *nicoClient) FindIBPartitionsByIds(ctx context.Context, in *IBPartitions
 	return out, nil
 }
 
-func (c *nicoClient) CreateIBPartition(ctx context.Context, in *IBPartitionCreationRequest, opts ...grpc.CallOption) (*IBPartition, error) {
+func (c *nICoClient) CreateIBPartition(ctx context.Context, in *IBPartitionCreationRequest, opts ...grpc.CallOption) (*IBPartition, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBPartition)
 	err := c.cc.Invoke(ctx, NICo_CreateIBPartition_FullMethodName, in, out, cOpts...)
@@ -1418,7 +1418,7 @@ func (c *nicoClient) CreateIBPartition(ctx context.Context, in *IBPartitionCreat
 	return out, nil
 }
 
-func (c *nicoClient) UpdateIBPartition(ctx context.Context, in *IBPartitionUpdateRequest, opts ...grpc.CallOption) (*IBPartition, error) {
+func (c *nICoClient) UpdateIBPartition(ctx context.Context, in *IBPartitionUpdateRequest, opts ...grpc.CallOption) (*IBPartition, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBPartition)
 	err := c.cc.Invoke(ctx, NICo_UpdateIBPartition_FullMethodName, in, out, cOpts...)
@@ -1428,7 +1428,7 @@ func (c *nicoClient) UpdateIBPartition(ctx context.Context, in *IBPartitionUpdat
 	return out, nil
 }
 
-func (c *nicoClient) DeleteIBPartition(ctx context.Context, in *IBPartitionDeletionRequest, opts ...grpc.CallOption) (*IBPartitionDeletionResult, error) {
+func (c *nICoClient) DeleteIBPartition(ctx context.Context, in *IBPartitionDeletionRequest, opts ...grpc.CallOption) (*IBPartitionDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBPartitionDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteIBPartition_FullMethodName, in, out, cOpts...)
@@ -1438,7 +1438,7 @@ func (c *nicoClient) DeleteIBPartition(ctx context.Context, in *IBPartitionDelet
 	return out, nil
 }
 
-func (c *nicoClient) IBPartitionsForTenant(ctx context.Context, in *TenantSearchQuery, opts ...grpc.CallOption) (*IBPartitionList, error) {
+func (c *nICoClient) IBPartitionsForTenant(ctx context.Context, in *TenantSearchQuery, opts ...grpc.CallOption) (*IBPartitionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBPartitionList)
 	err := c.cc.Invoke(ctx, NICo_IBPartitionsForTenant_FullMethodName, in, out, cOpts...)
@@ -1448,7 +1448,7 @@ func (c *nicoClient) IBPartitionsForTenant(ctx context.Context, in *TenantSearch
 	return out, nil
 }
 
-func (c *nicoClient) FindPowerShelves(ctx context.Context, in *PowerShelfQuery, opts ...grpc.CallOption) (*PowerShelfList, error) {
+func (c *nICoClient) FindPowerShelves(ctx context.Context, in *PowerShelfQuery, opts ...grpc.CallOption) (*PowerShelfList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerShelfList)
 	err := c.cc.Invoke(ctx, NICo_FindPowerShelves_FullMethodName, in, out, cOpts...)
@@ -1458,7 +1458,7 @@ func (c *nicoClient) FindPowerShelves(ctx context.Context, in *PowerShelfQuery, 
 	return out, nil
 }
 
-func (c *nicoClient) FindPowerShelfIds(ctx context.Context, in *PowerShelfSearchFilter, opts ...grpc.CallOption) (*PowerShelfIdList, error) {
+func (c *nICoClient) FindPowerShelfIds(ctx context.Context, in *PowerShelfSearchFilter, opts ...grpc.CallOption) (*PowerShelfIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerShelfIdList)
 	err := c.cc.Invoke(ctx, NICo_FindPowerShelfIds_FullMethodName, in, out, cOpts...)
@@ -1468,7 +1468,7 @@ func (c *nicoClient) FindPowerShelfIds(ctx context.Context, in *PowerShelfSearch
 	return out, nil
 }
 
-func (c *nicoClient) FindPowerShelvesByIds(ctx context.Context, in *PowerShelvesByIdsRequest, opts ...grpc.CallOption) (*PowerShelfList, error) {
+func (c *nICoClient) FindPowerShelvesByIds(ctx context.Context, in *PowerShelvesByIdsRequest, opts ...grpc.CallOption) (*PowerShelfList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerShelfList)
 	err := c.cc.Invoke(ctx, NICo_FindPowerShelvesByIds_FullMethodName, in, out, cOpts...)
@@ -1478,7 +1478,7 @@ func (c *nicoClient) FindPowerShelvesByIds(ctx context.Context, in *PowerShelves
 	return out, nil
 }
 
-func (c *nicoClient) DeletePowerShelf(ctx context.Context, in *PowerShelfDeletionRequest, opts ...grpc.CallOption) (*PowerShelfDeletionResult, error) {
+func (c *nICoClient) DeletePowerShelf(ctx context.Context, in *PowerShelfDeletionRequest, opts ...grpc.CallOption) (*PowerShelfDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerShelfDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeletePowerShelf_FullMethodName, in, out, cOpts...)
@@ -1488,7 +1488,7 @@ func (c *nicoClient) DeletePowerShelf(ctx context.Context, in *PowerShelfDeletio
 	return out, nil
 }
 
-func (c *nicoClient) AdminForceDeletePowerShelf(ctx context.Context, in *AdminForceDeletePowerShelfRequest, opts ...grpc.CallOption) (*AdminForceDeletePowerShelfResponse, error) {
+func (c *nICoClient) AdminForceDeletePowerShelf(ctx context.Context, in *AdminForceDeletePowerShelfRequest, opts ...grpc.CallOption) (*AdminForceDeletePowerShelfResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminForceDeletePowerShelfResponse)
 	err := c.cc.Invoke(ctx, NICo_AdminForceDeletePowerShelf_FullMethodName, in, out, cOpts...)
@@ -1498,7 +1498,7 @@ func (c *nicoClient) AdminForceDeletePowerShelf(ctx context.Context, in *AdminFo
 	return out, nil
 }
 
-func (c *nicoClient) FindSwitches(ctx context.Context, in *SwitchQuery, opts ...grpc.CallOption) (*SwitchList, error) {
+func (c *nICoClient) FindSwitches(ctx context.Context, in *SwitchQuery, opts ...grpc.CallOption) (*SwitchList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SwitchList)
 	err := c.cc.Invoke(ctx, NICo_FindSwitches_FullMethodName, in, out, cOpts...)
@@ -1508,7 +1508,7 @@ func (c *nicoClient) FindSwitches(ctx context.Context, in *SwitchQuery, opts ...
 	return out, nil
 }
 
-func (c *nicoClient) FindSwitchIds(ctx context.Context, in *SwitchSearchFilter, opts ...grpc.CallOption) (*SwitchIdList, error) {
+func (c *nICoClient) FindSwitchIds(ctx context.Context, in *SwitchSearchFilter, opts ...grpc.CallOption) (*SwitchIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SwitchIdList)
 	err := c.cc.Invoke(ctx, NICo_FindSwitchIds_FullMethodName, in, out, cOpts...)
@@ -1518,7 +1518,7 @@ func (c *nicoClient) FindSwitchIds(ctx context.Context, in *SwitchSearchFilter, 
 	return out, nil
 }
 
-func (c *nicoClient) FindSwitchesByIds(ctx context.Context, in *SwitchesByIdsRequest, opts ...grpc.CallOption) (*SwitchList, error) {
+func (c *nICoClient) FindSwitchesByIds(ctx context.Context, in *SwitchesByIdsRequest, opts ...grpc.CallOption) (*SwitchList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SwitchList)
 	err := c.cc.Invoke(ctx, NICo_FindSwitchesByIds_FullMethodName, in, out, cOpts...)
@@ -1528,7 +1528,7 @@ func (c *nicoClient) FindSwitchesByIds(ctx context.Context, in *SwitchesByIdsReq
 	return out, nil
 }
 
-func (c *nicoClient) DeleteSwitch(ctx context.Context, in *SwitchDeletionRequest, opts ...grpc.CallOption) (*SwitchDeletionResult, error) {
+func (c *nICoClient) DeleteSwitch(ctx context.Context, in *SwitchDeletionRequest, opts ...grpc.CallOption) (*SwitchDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SwitchDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteSwitch_FullMethodName, in, out, cOpts...)
@@ -1538,7 +1538,7 @@ func (c *nicoClient) DeleteSwitch(ctx context.Context, in *SwitchDeletionRequest
 	return out, nil
 }
 
-func (c *nicoClient) AdminForceDeleteSwitch(ctx context.Context, in *AdminForceDeleteSwitchRequest, opts ...grpc.CallOption) (*AdminForceDeleteSwitchResponse, error) {
+func (c *nICoClient) AdminForceDeleteSwitch(ctx context.Context, in *AdminForceDeleteSwitchRequest, opts ...grpc.CallOption) (*AdminForceDeleteSwitchResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminForceDeleteSwitchResponse)
 	err := c.cc.Invoke(ctx, NICo_AdminForceDeleteSwitch_FullMethodName, in, out, cOpts...)
@@ -1548,7 +1548,7 @@ func (c *nicoClient) AdminForceDeleteSwitch(ctx context.Context, in *AdminForceD
 	return out, nil
 }
 
-func (c *nicoClient) FindIBFabricIds(ctx context.Context, in *IBFabricSearchFilter, opts ...grpc.CallOption) (*IBFabricIdList, error) {
+func (c *nICoClient) FindIBFabricIds(ctx context.Context, in *IBFabricSearchFilter, opts ...grpc.CallOption) (*IBFabricIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IBFabricIdList)
 	err := c.cc.Invoke(ctx, NICo_FindIBFabricIds_FullMethodName, in, out, cOpts...)
@@ -1558,7 +1558,7 @@ func (c *nicoClient) FindIBFabricIds(ctx context.Context, in *IBFabricSearchFilt
 	return out, nil
 }
 
-func (c *nicoClient) AllocateInstance(ctx context.Context, in *InstanceAllocationRequest, opts ...grpc.CallOption) (*Instance, error) {
+func (c *nICoClient) AllocateInstance(ctx context.Context, in *InstanceAllocationRequest, opts ...grpc.CallOption) (*Instance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Instance)
 	err := c.cc.Invoke(ctx, NICo_AllocateInstance_FullMethodName, in, out, cOpts...)
@@ -1568,7 +1568,7 @@ func (c *nicoClient) AllocateInstance(ctx context.Context, in *InstanceAllocatio
 	return out, nil
 }
 
-func (c *nicoClient) AllocateInstances(ctx context.Context, in *BatchInstanceAllocationRequest, opts ...grpc.CallOption) (*BatchInstanceAllocationResponse, error) {
+func (c *nICoClient) AllocateInstances(ctx context.Context, in *BatchInstanceAllocationRequest, opts ...grpc.CallOption) (*BatchInstanceAllocationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchInstanceAllocationResponse)
 	err := c.cc.Invoke(ctx, NICo_AllocateInstances_FullMethodName, in, out, cOpts...)
@@ -1578,7 +1578,7 @@ func (c *nicoClient) AllocateInstances(ctx context.Context, in *BatchInstanceAll
 	return out, nil
 }
 
-func (c *nicoClient) ReleaseInstance(ctx context.Context, in *InstanceReleaseRequest, opts ...grpc.CallOption) (*InstanceReleaseResult, error) {
+func (c *nICoClient) ReleaseInstance(ctx context.Context, in *InstanceReleaseRequest, opts ...grpc.CallOption) (*InstanceReleaseResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InstanceReleaseResult)
 	err := c.cc.Invoke(ctx, NICo_ReleaseInstance_FullMethodName, in, out, cOpts...)
@@ -1588,7 +1588,7 @@ func (c *nicoClient) ReleaseInstance(ctx context.Context, in *InstanceReleaseReq
 	return out, nil
 }
 
-func (c *nicoClient) UpdateInstanceOperatingSystem(ctx context.Context, in *InstanceOperatingSystemUpdateRequest, opts ...grpc.CallOption) (*Instance, error) {
+func (c *nICoClient) UpdateInstanceOperatingSystem(ctx context.Context, in *InstanceOperatingSystemUpdateRequest, opts ...grpc.CallOption) (*Instance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Instance)
 	err := c.cc.Invoke(ctx, NICo_UpdateInstanceOperatingSystem_FullMethodName, in, out, cOpts...)
@@ -1598,7 +1598,7 @@ func (c *nicoClient) UpdateInstanceOperatingSystem(ctx context.Context, in *Inst
 	return out, nil
 }
 
-func (c *nicoClient) UpdateInstanceConfig(ctx context.Context, in *InstanceConfigUpdateRequest, opts ...grpc.CallOption) (*Instance, error) {
+func (c *nICoClient) UpdateInstanceConfig(ctx context.Context, in *InstanceConfigUpdateRequest, opts ...grpc.CallOption) (*Instance, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Instance)
 	err := c.cc.Invoke(ctx, NICo_UpdateInstanceConfig_FullMethodName, in, out, cOpts...)
@@ -1608,7 +1608,7 @@ func (c *nicoClient) UpdateInstanceConfig(ctx context.Context, in *InstanceConfi
 	return out, nil
 }
 
-func (c *nicoClient) FindInstanceIds(ctx context.Context, in *InstanceSearchFilter, opts ...grpc.CallOption) (*InstanceIdList, error) {
+func (c *nICoClient) FindInstanceIds(ctx context.Context, in *InstanceSearchFilter, opts ...grpc.CallOption) (*InstanceIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InstanceIdList)
 	err := c.cc.Invoke(ctx, NICo_FindInstanceIds_FullMethodName, in, out, cOpts...)
@@ -1618,7 +1618,7 @@ func (c *nicoClient) FindInstanceIds(ctx context.Context, in *InstanceSearchFilt
 	return out, nil
 }
 
-func (c *nicoClient) FindInstancesByIds(ctx context.Context, in *InstancesByIdsRequest, opts ...grpc.CallOption) (*InstanceList, error) {
+func (c *nICoClient) FindInstancesByIds(ctx context.Context, in *InstancesByIdsRequest, opts ...grpc.CallOption) (*InstanceList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InstanceList)
 	err := c.cc.Invoke(ctx, NICo_FindInstancesByIds_FullMethodName, in, out, cOpts...)
@@ -1628,7 +1628,7 @@ func (c *nicoClient) FindInstancesByIds(ctx context.Context, in *InstancesByIdsR
 	return out, nil
 }
 
-func (c *nicoClient) FindInstanceByMachineID(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*InstanceList, error) {
+func (c *nICoClient) FindInstanceByMachineID(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*InstanceList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InstanceList)
 	err := c.cc.Invoke(ctx, NICo_FindInstanceByMachineID_FullMethodName, in, out, cOpts...)
@@ -1638,7 +1638,7 @@ func (c *nicoClient) FindInstanceByMachineID(ctx context.Context, in *MachineId,
 	return out, nil
 }
 
-func (c *nicoClient) GetManagedHostNetworkConfig(ctx context.Context, in *ManagedHostNetworkConfigRequest, opts ...grpc.CallOption) (*ManagedHostNetworkConfigResponse, error) {
+func (c *nICoClient) GetManagedHostNetworkConfig(ctx context.Context, in *ManagedHostNetworkConfigRequest, opts ...grpc.CallOption) (*ManagedHostNetworkConfigResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ManagedHostNetworkConfigResponse)
 	err := c.cc.Invoke(ctx, NICo_GetManagedHostNetworkConfig_FullMethodName, in, out, cOpts...)
@@ -1648,7 +1648,7 @@ func (c *nicoClient) GetManagedHostNetworkConfig(ctx context.Context, in *Manage
 	return out, nil
 }
 
-func (c *nicoClient) RecordDpuNetworkStatus(ctx context.Context, in *DpuNetworkStatus, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RecordDpuNetworkStatus(ctx context.Context, in *DpuNetworkStatus, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RecordDpuNetworkStatus_FullMethodName, in, out, cOpts...)
@@ -1658,7 +1658,7 @@ func (c *nicoClient) RecordDpuNetworkStatus(ctx context.Context, in *DpuNetworkS
 	return out, nil
 }
 
-func (c *nicoClient) ListHealthReportOverrides(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*ListHealthReportOverrideResponse, error) {
+func (c *nICoClient) ListHealthReportOverrides(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*ListHealthReportOverrideResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListHealthReportOverrideResponse)
 	err := c.cc.Invoke(ctx, NICo_ListHealthReportOverrides_FullMethodName, in, out, cOpts...)
@@ -1668,7 +1668,7 @@ func (c *nicoClient) ListHealthReportOverrides(ctx context.Context, in *MachineI
 	return out, nil
 }
 
-func (c *nicoClient) InsertHealthReportOverride(ctx context.Context, in *InsertHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) InsertHealthReportOverride(ctx context.Context, in *InsertHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_InsertHealthReportOverride_FullMethodName, in, out, cOpts...)
@@ -1678,7 +1678,7 @@ func (c *nicoClient) InsertHealthReportOverride(ctx context.Context, in *InsertH
 	return out, nil
 }
 
-func (c *nicoClient) RemoveHealthReportOverride(ctx context.Context, in *RemoveHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RemoveHealthReportOverride(ctx context.Context, in *RemoveHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RemoveHealthReportOverride_FullMethodName, in, out, cOpts...)
@@ -1688,7 +1688,7 @@ func (c *nicoClient) RemoveHealthReportOverride(ctx context.Context, in *RemoveH
 	return out, nil
 }
 
-func (c *nicoClient) ListRackHealthReportOverrides(ctx context.Context, in *ListRackHealthReportOverridesRequest, opts ...grpc.CallOption) (*ListHealthReportOverrideResponse, error) {
+func (c *nICoClient) ListRackHealthReportOverrides(ctx context.Context, in *ListRackHealthReportOverridesRequest, opts ...grpc.CallOption) (*ListHealthReportOverrideResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListHealthReportOverrideResponse)
 	err := c.cc.Invoke(ctx, NICo_ListRackHealthReportOverrides_FullMethodName, in, out, cOpts...)
@@ -1698,7 +1698,7 @@ func (c *nicoClient) ListRackHealthReportOverrides(ctx context.Context, in *List
 	return out, nil
 }
 
-func (c *nicoClient) InsertRackHealthReportOverride(ctx context.Context, in *InsertRackHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) InsertRackHealthReportOverride(ctx context.Context, in *InsertRackHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_InsertRackHealthReportOverride_FullMethodName, in, out, cOpts...)
@@ -1708,7 +1708,7 @@ func (c *nicoClient) InsertRackHealthReportOverride(ctx context.Context, in *Ins
 	return out, nil
 }
 
-func (c *nicoClient) RemoveRackHealthReportOverride(ctx context.Context, in *RemoveRackHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RemoveRackHealthReportOverride(ctx context.Context, in *RemoveRackHealthReportOverrideRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RemoveRackHealthReportOverride_FullMethodName, in, out, cOpts...)
@@ -1718,7 +1718,7 @@ func (c *nicoClient) RemoveRackHealthReportOverride(ctx context.Context, in *Rem
 	return out, nil
 }
 
-func (c *nicoClient) DpuAgentUpgradeCheck(ctx context.Context, in *DpuAgentUpgradeCheckRequest, opts ...grpc.CallOption) (*DpuAgentUpgradeCheckResponse, error) {
+func (c *nICoClient) DpuAgentUpgradeCheck(ctx context.Context, in *DpuAgentUpgradeCheckRequest, opts ...grpc.CallOption) (*DpuAgentUpgradeCheckResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuAgentUpgradeCheckResponse)
 	err := c.cc.Invoke(ctx, NICo_DpuAgentUpgradeCheck_FullMethodName, in, out, cOpts...)
@@ -1728,7 +1728,7 @@ func (c *nicoClient) DpuAgentUpgradeCheck(ctx context.Context, in *DpuAgentUpgra
 	return out, nil
 }
 
-func (c *nicoClient) DpuAgentUpgradePolicyAction(ctx context.Context, in *DpuAgentUpgradePolicyRequest, opts ...grpc.CallOption) (*DpuAgentUpgradePolicyResponse, error) {
+func (c *nICoClient) DpuAgentUpgradePolicyAction(ctx context.Context, in *DpuAgentUpgradePolicyRequest, opts ...grpc.CallOption) (*DpuAgentUpgradePolicyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuAgentUpgradePolicyResponse)
 	err := c.cc.Invoke(ctx, NICo_DpuAgentUpgradePolicyAction_FullMethodName, in, out, cOpts...)
@@ -1739,7 +1739,7 @@ func (c *nicoClient) DpuAgentUpgradePolicyAction(ctx context.Context, in *DpuAge
 }
 
 // Deprecated: Do not use.
-func (c *nicoClient) LookupRecordLegacy(ctx context.Context, in *DNSMessage_DNSQuestion, opts ...grpc.CallOption) (*DNSMessage_DNSResponse, error) {
+func (c *nICoClient) LookupRecordLegacy(ctx context.Context, in *DNSMessage_DNSQuestion, opts ...grpc.CallOption) (*DNSMessage_DNSResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DNSMessage_DNSResponse)
 	err := c.cc.Invoke(ctx, NICo_LookupRecordLegacy_FullMethodName, in, out, cOpts...)
@@ -1749,7 +1749,7 @@ func (c *nicoClient) LookupRecordLegacy(ctx context.Context, in *DNSMessage_DNSQ
 	return out, nil
 }
 
-func (c *nicoClient) InvokeInstancePower(ctx context.Context, in *InstancePowerRequest, opts ...grpc.CallOption) (*InstancePowerResult, error) {
+func (c *nICoClient) InvokeInstancePower(ctx context.Context, in *InstancePowerRequest, opts ...grpc.CallOption) (*InstancePowerResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InstancePowerResult)
 	err := c.cc.Invoke(ctx, NICo_InvokeInstancePower_FullMethodName, in, out, cOpts...)
@@ -1759,7 +1759,7 @@ func (c *nicoClient) InvokeInstancePower(ctx context.Context, in *InstancePowerR
 	return out, nil
 }
 
-func (c *nicoClient) NICoAgentControl(ctx context.Context, in *NICoAgentControlRequest, opts ...grpc.CallOption) (*NICoAgentControlResponse, error) {
+func (c *nICoClient) NICoAgentControl(ctx context.Context, in *NICoAgentControlRequest, opts ...grpc.CallOption) (*NICoAgentControlResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NICoAgentControlResponse)
 	err := c.cc.Invoke(ctx, NICo_NICoAgentControl_FullMethodName, in, out, cOpts...)
@@ -1769,7 +1769,7 @@ func (c *nicoClient) NICoAgentControl(ctx context.Context, in *NICoAgentControlR
 	return out, nil
 }
 
-func (c *nicoClient) DiscoverMachine(ctx context.Context, in *MachineDiscoveryInfo, opts ...grpc.CallOption) (*MachineDiscoveryResult, error) {
+func (c *nICoClient) DiscoverMachine(ctx context.Context, in *MachineDiscoveryInfo, opts ...grpc.CallOption) (*MachineDiscoveryResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineDiscoveryResult)
 	err := c.cc.Invoke(ctx, NICo_DiscoverMachine_FullMethodName, in, out, cOpts...)
@@ -1779,7 +1779,7 @@ func (c *nicoClient) DiscoverMachine(ctx context.Context, in *MachineDiscoveryIn
 	return out, nil
 }
 
-func (c *nicoClient) RenewMachineCertificate(ctx context.Context, in *MachineCertificateRenewRequest, opts ...grpc.CallOption) (*MachineCertificateResult, error) {
+func (c *nICoClient) RenewMachineCertificate(ctx context.Context, in *MachineCertificateRenewRequest, opts ...grpc.CallOption) (*MachineCertificateResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineCertificateResult)
 	err := c.cc.Invoke(ctx, NICo_RenewMachineCertificate_FullMethodName, in, out, cOpts...)
@@ -1789,7 +1789,7 @@ func (c *nicoClient) RenewMachineCertificate(ctx context.Context, in *MachineCer
 	return out, nil
 }
 
-func (c *nicoClient) DiscoveryCompleted(ctx context.Context, in *MachineDiscoveryCompletedRequest, opts ...grpc.CallOption) (*MachineDiscoveryCompletedResponse, error) {
+func (c *nICoClient) DiscoveryCompleted(ctx context.Context, in *MachineDiscoveryCompletedRequest, opts ...grpc.CallOption) (*MachineDiscoveryCompletedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineDiscoveryCompletedResponse)
 	err := c.cc.Invoke(ctx, NICo_DiscoveryCompleted_FullMethodName, in, out, cOpts...)
@@ -1799,7 +1799,7 @@ func (c *nicoClient) DiscoveryCompleted(ctx context.Context, in *MachineDiscover
 	return out, nil
 }
 
-func (c *nicoClient) CleanupMachineCompleted(ctx context.Context, in *MachineCleanupInfo, opts ...grpc.CallOption) (*MachineCleanupResult, error) {
+func (c *nICoClient) CleanupMachineCompleted(ctx context.Context, in *MachineCleanupInfo, opts ...grpc.CallOption) (*MachineCleanupResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineCleanupResult)
 	err := c.cc.Invoke(ctx, NICo_CleanupMachineCompleted_FullMethodName, in, out, cOpts...)
@@ -1809,7 +1809,7 @@ func (c *nicoClient) CleanupMachineCompleted(ctx context.Context, in *MachineCle
 	return out, nil
 }
 
-func (c *nicoClient) ReportNICoScoutError(ctx context.Context, in *NICoScoutErrorReport, opts ...grpc.CallOption) (*NICoScoutErrorReportResult, error) {
+func (c *nICoClient) ReportNICoScoutError(ctx context.Context, in *NICoScoutErrorReport, opts ...grpc.CallOption) (*NICoScoutErrorReportResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NICoScoutErrorReportResult)
 	err := c.cc.Invoke(ctx, NICo_ReportNICoScoutError_FullMethodName, in, out, cOpts...)
@@ -1819,7 +1819,7 @@ func (c *nicoClient) ReportNICoScoutError(ctx context.Context, in *NICoScoutErro
 	return out, nil
 }
 
-func (c *nicoClient) DiscoverDhcp(ctx context.Context, in *DhcpDiscovery, opts ...grpc.CallOption) (*DhcpRecord, error) {
+func (c *nICoClient) DiscoverDhcp(ctx context.Context, in *DhcpDiscovery, opts ...grpc.CallOption) (*DhcpRecord, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DhcpRecord)
 	err := c.cc.Invoke(ctx, NICo_DiscoverDhcp_FullMethodName, in, out, cOpts...)
@@ -1829,7 +1829,7 @@ func (c *nicoClient) DiscoverDhcp(ctx context.Context, in *DhcpDiscovery, opts .
 	return out, nil
 }
 
-func (c *nicoClient) ExpireDhcpLease(ctx context.Context, in *ExpireDhcpLeaseRequest, opts ...grpc.CallOption) (*ExpireDhcpLeaseResponse, error) {
+func (c *nICoClient) ExpireDhcpLease(ctx context.Context, in *ExpireDhcpLeaseRequest, opts ...grpc.CallOption) (*ExpireDhcpLeaseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpireDhcpLeaseResponse)
 	err := c.cc.Invoke(ctx, NICo_ExpireDhcpLease_FullMethodName, in, out, cOpts...)
@@ -1839,7 +1839,7 @@ func (c *nicoClient) ExpireDhcpLease(ctx context.Context, in *ExpireDhcpLeaseReq
 	return out, nil
 }
 
-func (c *nicoClient) AssignStaticAddress(ctx context.Context, in *AssignStaticAddressRequest, opts ...grpc.CallOption) (*AssignStaticAddressResponse, error) {
+func (c *nICoClient) AssignStaticAddress(ctx context.Context, in *AssignStaticAddressRequest, opts ...grpc.CallOption) (*AssignStaticAddressResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AssignStaticAddressResponse)
 	err := c.cc.Invoke(ctx, NICo_AssignStaticAddress_FullMethodName, in, out, cOpts...)
@@ -1849,7 +1849,7 @@ func (c *nicoClient) AssignStaticAddress(ctx context.Context, in *AssignStaticAd
 	return out, nil
 }
 
-func (c *nicoClient) RemoveStaticAddress(ctx context.Context, in *RemoveStaticAddressRequest, opts ...grpc.CallOption) (*RemoveStaticAddressResponse, error) {
+func (c *nICoClient) RemoveStaticAddress(ctx context.Context, in *RemoveStaticAddressRequest, opts ...grpc.CallOption) (*RemoveStaticAddressResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveStaticAddressResponse)
 	err := c.cc.Invoke(ctx, NICo_RemoveStaticAddress_FullMethodName, in, out, cOpts...)
@@ -1859,7 +1859,7 @@ func (c *nicoClient) RemoveStaticAddress(ctx context.Context, in *RemoveStaticAd
 	return out, nil
 }
 
-func (c *nicoClient) FindInterfaceAddresses(ctx context.Context, in *FindInterfaceAddressesRequest, opts ...grpc.CallOption) (*FindInterfaceAddressesResponse, error) {
+func (c *nICoClient) FindInterfaceAddresses(ctx context.Context, in *FindInterfaceAddressesRequest, opts ...grpc.CallOption) (*FindInterfaceAddressesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindInterfaceAddressesResponse)
 	err := c.cc.Invoke(ctx, NICo_FindInterfaceAddresses_FullMethodName, in, out, cOpts...)
@@ -1869,7 +1869,7 @@ func (c *nicoClient) FindInterfaceAddresses(ctx context.Context, in *FindInterfa
 	return out, nil
 }
 
-func (c *nicoClient) FindInterfaces(ctx context.Context, in *InterfaceSearchQuery, opts ...grpc.CallOption) (*InterfaceList, error) {
+func (c *nICoClient) FindInterfaces(ctx context.Context, in *InterfaceSearchQuery, opts ...grpc.CallOption) (*InterfaceList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InterfaceList)
 	err := c.cc.Invoke(ctx, NICo_FindInterfaces_FullMethodName, in, out, cOpts...)
@@ -1879,7 +1879,7 @@ func (c *nicoClient) FindInterfaces(ctx context.Context, in *InterfaceSearchQuer
 	return out, nil
 }
 
-func (c *nicoClient) DeleteInterface(ctx context.Context, in *InterfaceDeleteQuery, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteInterface(ctx context.Context, in *InterfaceDeleteQuery, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteInterface_FullMethodName, in, out, cOpts...)
@@ -1889,7 +1889,7 @@ func (c *nicoClient) DeleteInterface(ctx context.Context, in *InterfaceDeleteQue
 	return out, nil
 }
 
-func (c *nicoClient) FindIpAddress(ctx context.Context, in *FindIpAddressRequest, opts ...grpc.CallOption) (*FindIpAddressResponse, error) {
+func (c *nICoClient) FindIpAddress(ctx context.Context, in *FindIpAddressRequest, opts ...grpc.CallOption) (*FindIpAddressResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindIpAddressResponse)
 	err := c.cc.Invoke(ctx, NICo_FindIpAddress_FullMethodName, in, out, cOpts...)
@@ -1899,7 +1899,7 @@ func (c *nicoClient) FindIpAddress(ctx context.Context, in *FindIpAddressRequest
 	return out, nil
 }
 
-func (c *nicoClient) FindMachineIds(ctx context.Context, in *MachineSearchConfig, opts ...grpc.CallOption) (*MachineIdList, error) {
+func (c *nICoClient) FindMachineIds(ctx context.Context, in *MachineSearchConfig, opts ...grpc.CallOption) (*MachineIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineIdList)
 	err := c.cc.Invoke(ctx, NICo_FindMachineIds_FullMethodName, in, out, cOpts...)
@@ -1909,7 +1909,7 @@ func (c *nicoClient) FindMachineIds(ctx context.Context, in *MachineSearchConfig
 	return out, nil
 }
 
-func (c *nicoClient) FindMachinesByIds(ctx context.Context, in *MachinesByIdsRequest, opts ...grpc.CallOption) (*MachineList, error) {
+func (c *nICoClient) FindMachinesByIds(ctx context.Context, in *MachinesByIdsRequest, opts ...grpc.CallOption) (*MachineList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineList)
 	err := c.cc.Invoke(ctx, NICo_FindMachinesByIds_FullMethodName, in, out, cOpts...)
@@ -1919,7 +1919,7 @@ func (c *nicoClient) FindMachinesByIds(ctx context.Context, in *MachinesByIdsReq
 	return out, nil
 }
 
-func (c *nicoClient) FindMachineStateHistories(ctx context.Context, in *MachineStateHistoriesRequest, opts ...grpc.CallOption) (*MachineStateHistories, error) {
+func (c *nICoClient) FindMachineStateHistories(ctx context.Context, in *MachineStateHistoriesRequest, opts ...grpc.CallOption) (*MachineStateHistories, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineStateHistories)
 	err := c.cc.Invoke(ctx, NICo_FindMachineStateHistories_FullMethodName, in, out, cOpts...)
@@ -1929,7 +1929,7 @@ func (c *nicoClient) FindMachineStateHistories(ctx context.Context, in *MachineS
 	return out, nil
 }
 
-func (c *nicoClient) FindMachineHealthHistories(ctx context.Context, in *MachineHealthHistoriesRequest, opts ...grpc.CallOption) (*HealthHistories, error) {
+func (c *nICoClient) FindMachineHealthHistories(ctx context.Context, in *MachineHealthHistoriesRequest, opts ...grpc.CallOption) (*HealthHistories, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HealthHistories)
 	err := c.cc.Invoke(ctx, NICo_FindMachineHealthHistories_FullMethodName, in, out, cOpts...)
@@ -1939,7 +1939,7 @@ func (c *nicoClient) FindMachineHealthHistories(ctx context.Context, in *Machine
 	return out, nil
 }
 
-func (c *nicoClient) FindPowerShelfStateHistories(ctx context.Context, in *PowerShelfStateHistoriesRequest, opts ...grpc.CallOption) (*PowerShelfStateHistories, error) {
+func (c *nICoClient) FindPowerShelfStateHistories(ctx context.Context, in *PowerShelfStateHistoriesRequest, opts ...grpc.CallOption) (*PowerShelfStateHistories, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerShelfStateHistories)
 	err := c.cc.Invoke(ctx, NICo_FindPowerShelfStateHistories_FullMethodName, in, out, cOpts...)
@@ -1949,7 +1949,7 @@ func (c *nicoClient) FindPowerShelfStateHistories(ctx context.Context, in *Power
 	return out, nil
 }
 
-func (c *nicoClient) FindRackStateHistories(ctx context.Context, in *RackStateHistoriesRequest, opts ...grpc.CallOption) (*RackStateHistories, error) {
+func (c *nICoClient) FindRackStateHistories(ctx context.Context, in *RackStateHistoriesRequest, opts ...grpc.CallOption) (*RackStateHistories, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackStateHistories)
 	err := c.cc.Invoke(ctx, NICo_FindRackStateHistories_FullMethodName, in, out, cOpts...)
@@ -1959,7 +1959,7 @@ func (c *nicoClient) FindRackStateHistories(ctx context.Context, in *RackStateHi
 	return out, nil
 }
 
-func (c *nicoClient) FindSwitchStateHistories(ctx context.Context, in *SwitchStateHistoriesRequest, opts ...grpc.CallOption) (*SwitchStateHistories, error) {
+func (c *nICoClient) FindSwitchStateHistories(ctx context.Context, in *SwitchStateHistoriesRequest, opts ...grpc.CallOption) (*SwitchStateHistories, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SwitchStateHistories)
 	err := c.cc.Invoke(ctx, NICo_FindSwitchStateHistories_FullMethodName, in, out, cOpts...)
@@ -1969,7 +1969,7 @@ func (c *nicoClient) FindSwitchStateHistories(ctx context.Context, in *SwitchSta
 	return out, nil
 }
 
-func (c *nicoClient) FindTenantOrganizationIds(ctx context.Context, in *TenantSearchFilter, opts ...grpc.CallOption) (*TenantOrganizationIdList, error) {
+func (c *nICoClient) FindTenantOrganizationIds(ctx context.Context, in *TenantSearchFilter, opts ...grpc.CallOption) (*TenantOrganizationIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TenantOrganizationIdList)
 	err := c.cc.Invoke(ctx, NICo_FindTenantOrganizationIds_FullMethodName, in, out, cOpts...)
@@ -1979,7 +1979,7 @@ func (c *nicoClient) FindTenantOrganizationIds(ctx context.Context, in *TenantSe
 	return out, nil
 }
 
-func (c *nicoClient) FindTenantsByOrganizationIds(ctx context.Context, in *TenantByOrganizationIdsRequest, opts ...grpc.CallOption) (*TenantList, error) {
+func (c *nICoClient) FindTenantsByOrganizationIds(ctx context.Context, in *TenantByOrganizationIdsRequest, opts ...grpc.CallOption) (*TenantList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TenantList)
 	err := c.cc.Invoke(ctx, NICo_FindTenantsByOrganizationIds_FullMethodName, in, out, cOpts...)
@@ -1989,7 +1989,7 @@ func (c *nicoClient) FindTenantsByOrganizationIds(ctx context.Context, in *Tenan
 	return out, nil
 }
 
-func (c *nicoClient) FindConnectedDevicesByDpuMachineIds(ctx context.Context, in *MachineIdList, opts ...grpc.CallOption) (*ConnectedDeviceList, error) {
+func (c *nICoClient) FindConnectedDevicesByDpuMachineIds(ctx context.Context, in *MachineIdList, opts ...grpc.CallOption) (*ConnectedDeviceList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ConnectedDeviceList)
 	err := c.cc.Invoke(ctx, NICo_FindConnectedDevicesByDpuMachineIds_FullMethodName, in, out, cOpts...)
@@ -1999,7 +1999,7 @@ func (c *nicoClient) FindConnectedDevicesByDpuMachineIds(ctx context.Context, in
 	return out, nil
 }
 
-func (c *nicoClient) FindMachineIdsByBmcIps(ctx context.Context, in *BmcIpList, opts ...grpc.CallOption) (*MachineIdBmcIpPairs, error) {
+func (c *nICoClient) FindMachineIdsByBmcIps(ctx context.Context, in *BmcIpList, opts ...grpc.CallOption) (*MachineIdBmcIpPairs, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineIdBmcIpPairs)
 	err := c.cc.Invoke(ctx, NICo_FindMachineIdsByBmcIps_FullMethodName, in, out, cOpts...)
@@ -2009,7 +2009,7 @@ func (c *nicoClient) FindMachineIdsByBmcIps(ctx context.Context, in *BmcIpList, 
 	return out, nil
 }
 
-func (c *nicoClient) FindMacAddressByBmcIp(ctx context.Context, in *BmcIp, opts ...grpc.CallOption) (*MacAddressBmcIp, error) {
+func (c *nICoClient) FindMacAddressByBmcIp(ctx context.Context, in *BmcIp, opts ...grpc.CallOption) (*MacAddressBmcIp, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MacAddressBmcIp)
 	err := c.cc.Invoke(ctx, NICo_FindMacAddressByBmcIp_FullMethodName, in, out, cOpts...)
@@ -2019,7 +2019,7 @@ func (c *nicoClient) FindMacAddressByBmcIp(ctx context.Context, in *BmcIp, opts 
 	return out, nil
 }
 
-func (c *nicoClient) IdentifyUuid(ctx context.Context, in *IdentifyUuidRequest, opts ...grpc.CallOption) (*IdentifyUuidResponse, error) {
+func (c *nICoClient) IdentifyUuid(ctx context.Context, in *IdentifyUuidRequest, opts ...grpc.CallOption) (*IdentifyUuidResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IdentifyUuidResponse)
 	err := c.cc.Invoke(ctx, NICo_IdentifyUuid_FullMethodName, in, out, cOpts...)
@@ -2029,7 +2029,7 @@ func (c *nicoClient) IdentifyUuid(ctx context.Context, in *IdentifyUuidRequest, 
 	return out, nil
 }
 
-func (c *nicoClient) IdentifyMac(ctx context.Context, in *IdentifyMacRequest, opts ...grpc.CallOption) (*IdentifyMacResponse, error) {
+func (c *nICoClient) IdentifyMac(ctx context.Context, in *IdentifyMacRequest, opts ...grpc.CallOption) (*IdentifyMacResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IdentifyMacResponse)
 	err := c.cc.Invoke(ctx, NICo_IdentifyMac_FullMethodName, in, out, cOpts...)
@@ -2039,7 +2039,7 @@ func (c *nicoClient) IdentifyMac(ctx context.Context, in *IdentifyMacRequest, op
 	return out, nil
 }
 
-func (c *nicoClient) IdentifySerial(ctx context.Context, in *IdentifySerialRequest, opts ...grpc.CallOption) (*IdentifySerialResponse, error) {
+func (c *nICoClient) IdentifySerial(ctx context.Context, in *IdentifySerialRequest, opts ...grpc.CallOption) (*IdentifySerialResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IdentifySerialResponse)
 	err := c.cc.Invoke(ctx, NICo_IdentifySerial_FullMethodName, in, out, cOpts...)
@@ -2049,7 +2049,7 @@ func (c *nicoClient) IdentifySerial(ctx context.Context, in *IdentifySerialReque
 	return out, nil
 }
 
-func (c *nicoClient) GetBMCMetaData(ctx context.Context, in *BMCMetaDataGetRequest, opts ...grpc.CallOption) (*BMCMetaDataGetResponse, error) {
+func (c *nICoClient) GetBMCMetaData(ctx context.Context, in *BMCMetaDataGetRequest, opts ...grpc.CallOption) (*BMCMetaDataGetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BMCMetaDataGetResponse)
 	err := c.cc.Invoke(ctx, NICo_GetBMCMetaData_FullMethodName, in, out, cOpts...)
@@ -2059,7 +2059,7 @@ func (c *nicoClient) GetBMCMetaData(ctx context.Context, in *BMCMetaDataGetReque
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMachineCredentials(ctx context.Context, in *MachineCredentialsUpdateRequest, opts ...grpc.CallOption) (*MachineCredentialsUpdateResponse, error) {
+func (c *nICoClient) UpdateMachineCredentials(ctx context.Context, in *MachineCredentialsUpdateRequest, opts ...grpc.CallOption) (*MachineCredentialsUpdateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineCredentialsUpdateResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateMachineCredentials_FullMethodName, in, out, cOpts...)
@@ -2069,7 +2069,7 @@ func (c *nicoClient) UpdateMachineCredentials(ctx context.Context, in *MachineCr
 	return out, nil
 }
 
-func (c *nicoClient) GetPxeInstructions(ctx context.Context, in *PxeInstructionRequest, opts ...grpc.CallOption) (*PxeInstructions, error) {
+func (c *nICoClient) GetPxeInstructions(ctx context.Context, in *PxeInstructionRequest, opts ...grpc.CallOption) (*PxeInstructions, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PxeInstructions)
 	err := c.cc.Invoke(ctx, NICo_GetPxeInstructions_FullMethodName, in, out, cOpts...)
@@ -2079,7 +2079,7 @@ func (c *nicoClient) GetPxeInstructions(ctx context.Context, in *PxeInstructionR
 	return out, nil
 }
 
-func (c *nicoClient) GetCloudInitInstructions(ctx context.Context, in *CloudInitInstructionsRequest, opts ...grpc.CallOption) (*CloudInitInstructions, error) {
+func (c *nICoClient) GetCloudInitInstructions(ctx context.Context, in *CloudInitInstructionsRequest, opts ...grpc.CallOption) (*CloudInitInstructions, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CloudInitInstructions)
 	err := c.cc.Invoke(ctx, NICo_GetCloudInitInstructions_FullMethodName, in, out, cOpts...)
@@ -2089,7 +2089,7 @@ func (c *nicoClient) GetCloudInitInstructions(ctx context.Context, in *CloudInit
 	return out, nil
 }
 
-func (c *nicoClient) Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error) {
+func (c *nICoClient) Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EchoResponse)
 	err := c.cc.Invoke(ctx, NICo_Echo_FullMethodName, in, out, cOpts...)
@@ -2099,7 +2099,7 @@ func (c *nicoClient) Echo(ctx context.Context, in *EchoRequest, opts ...grpc.Cal
 	return out, nil
 }
 
-func (c *nicoClient) CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*CreateTenantResponse, error) {
+func (c *nICoClient) CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*CreateTenantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateTenantResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateTenant_FullMethodName, in, out, cOpts...)
@@ -2109,7 +2109,7 @@ func (c *nicoClient) CreateTenant(ctx context.Context, in *CreateTenantRequest, 
 	return out, nil
 }
 
-func (c *nicoClient) FindTenant(ctx context.Context, in *FindTenantRequest, opts ...grpc.CallOption) (*FindTenantResponse, error) {
+func (c *nICoClient) FindTenant(ctx context.Context, in *FindTenantRequest, opts ...grpc.CallOption) (*FindTenantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindTenantResponse)
 	err := c.cc.Invoke(ctx, NICo_FindTenant_FullMethodName, in, out, cOpts...)
@@ -2119,7 +2119,7 @@ func (c *nicoClient) FindTenant(ctx context.Context, in *FindTenantRequest, opts
 	return out, nil
 }
 
-func (c *nicoClient) UpdateTenant(ctx context.Context, in *UpdateTenantRequest, opts ...grpc.CallOption) (*UpdateTenantResponse, error) {
+func (c *nICoClient) UpdateTenant(ctx context.Context, in *UpdateTenantRequest, opts ...grpc.CallOption) (*UpdateTenantResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateTenantResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateTenant_FullMethodName, in, out, cOpts...)
@@ -2129,7 +2129,7 @@ func (c *nicoClient) UpdateTenant(ctx context.Context, in *UpdateTenantRequest, 
 	return out, nil
 }
 
-func (c *nicoClient) CreateTenantKeyset(ctx context.Context, in *CreateTenantKeysetRequest, opts ...grpc.CallOption) (*CreateTenantKeysetResponse, error) {
+func (c *nICoClient) CreateTenantKeyset(ctx context.Context, in *CreateTenantKeysetRequest, opts ...grpc.CallOption) (*CreateTenantKeysetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateTenantKeysetResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateTenantKeyset_FullMethodName, in, out, cOpts...)
@@ -2139,7 +2139,7 @@ func (c *nicoClient) CreateTenantKeyset(ctx context.Context, in *CreateTenantKey
 	return out, nil
 }
 
-func (c *nicoClient) FindTenantKeysetIds(ctx context.Context, in *TenantKeysetSearchFilter, opts ...grpc.CallOption) (*TenantKeysetIdList, error) {
+func (c *nICoClient) FindTenantKeysetIds(ctx context.Context, in *TenantKeysetSearchFilter, opts ...grpc.CallOption) (*TenantKeysetIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TenantKeysetIdList)
 	err := c.cc.Invoke(ctx, NICo_FindTenantKeysetIds_FullMethodName, in, out, cOpts...)
@@ -2149,7 +2149,7 @@ func (c *nicoClient) FindTenantKeysetIds(ctx context.Context, in *TenantKeysetSe
 	return out, nil
 }
 
-func (c *nicoClient) FindTenantKeysetsByIds(ctx context.Context, in *TenantKeysetsByIdsRequest, opts ...grpc.CallOption) (*TenantKeySetList, error) {
+func (c *nICoClient) FindTenantKeysetsByIds(ctx context.Context, in *TenantKeysetsByIdsRequest, opts ...grpc.CallOption) (*TenantKeySetList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TenantKeySetList)
 	err := c.cc.Invoke(ctx, NICo_FindTenantKeysetsByIds_FullMethodName, in, out, cOpts...)
@@ -2159,7 +2159,7 @@ func (c *nicoClient) FindTenantKeysetsByIds(ctx context.Context, in *TenantKeyse
 	return out, nil
 }
 
-func (c *nicoClient) UpdateTenantKeyset(ctx context.Context, in *UpdateTenantKeysetRequest, opts ...grpc.CallOption) (*UpdateTenantKeysetResponse, error) {
+func (c *nICoClient) UpdateTenantKeyset(ctx context.Context, in *UpdateTenantKeysetRequest, opts ...grpc.CallOption) (*UpdateTenantKeysetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateTenantKeysetResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateTenantKeyset_FullMethodName, in, out, cOpts...)
@@ -2169,7 +2169,7 @@ func (c *nicoClient) UpdateTenantKeyset(ctx context.Context, in *UpdateTenantKey
 	return out, nil
 }
 
-func (c *nicoClient) DeleteTenantKeyset(ctx context.Context, in *DeleteTenantKeysetRequest, opts ...grpc.CallOption) (*DeleteTenantKeysetResponse, error) {
+func (c *nICoClient) DeleteTenantKeyset(ctx context.Context, in *DeleteTenantKeysetRequest, opts ...grpc.CallOption) (*DeleteTenantKeysetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteTenantKeysetResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteTenantKeyset_FullMethodName, in, out, cOpts...)
@@ -2179,7 +2179,7 @@ func (c *nicoClient) DeleteTenantKeyset(ctx context.Context, in *DeleteTenantKey
 	return out, nil
 }
 
-func (c *nicoClient) ValidateTenantPublicKey(ctx context.Context, in *ValidateTenantPublicKeyRequest, opts ...grpc.CallOption) (*ValidateTenantPublicKeyResponse, error) {
+func (c *nICoClient) ValidateTenantPublicKey(ctx context.Context, in *ValidateTenantPublicKeyRequest, opts ...grpc.CallOption) (*ValidateTenantPublicKeyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ValidateTenantPublicKeyResponse)
 	err := c.cc.Invoke(ctx, NICo_ValidateTenantPublicKey_FullMethodName, in, out, cOpts...)
@@ -2189,7 +2189,7 @@ func (c *nicoClient) ValidateTenantPublicKey(ctx context.Context, in *ValidateTe
 	return out, nil
 }
 
-func (c *nicoClient) GetBmcCredentials(ctx context.Context, in *GetBmcCredentialsRequest, opts ...grpc.CallOption) (*GetBmcCredentialsResponse, error) {
+func (c *nICoClient) GetBmcCredentials(ctx context.Context, in *GetBmcCredentialsRequest, opts ...grpc.CallOption) (*GetBmcCredentialsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetBmcCredentialsResponse)
 	err := c.cc.Invoke(ctx, NICo_GetBmcCredentials_FullMethodName, in, out, cOpts...)
@@ -2199,7 +2199,7 @@ func (c *nicoClient) GetBmcCredentials(ctx context.Context, in *GetBmcCredential
 	return out, nil
 }
 
-func (c *nicoClient) GetAllManagedHostNetworkStatus(ctx context.Context, in *ManagedHostNetworkStatusRequest, opts ...grpc.CallOption) (*ManagedHostNetworkStatusResponse, error) {
+func (c *nICoClient) GetAllManagedHostNetworkStatus(ctx context.Context, in *ManagedHostNetworkStatusRequest, opts ...grpc.CallOption) (*ManagedHostNetworkStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ManagedHostNetworkStatusResponse)
 	err := c.cc.Invoke(ctx, NICo_GetAllManagedHostNetworkStatus_FullMethodName, in, out, cOpts...)
@@ -2209,7 +2209,7 @@ func (c *nicoClient) GetAllManagedHostNetworkStatus(ctx context.Context, in *Man
 	return out, nil
 }
 
-func (c *nicoClient) GetSiteExplorationReport(ctx context.Context, in *GetSiteExplorationRequest, opts ...grpc.CallOption) (*SiteExplorationReport, error) {
+func (c *nICoClient) GetSiteExplorationReport(ctx context.Context, in *GetSiteExplorationRequest, opts ...grpc.CallOption) (*SiteExplorationReport, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SiteExplorationReport)
 	err := c.cc.Invoke(ctx, NICo_GetSiteExplorationReport_FullMethodName, in, out, cOpts...)
@@ -2219,7 +2219,7 @@ func (c *nicoClient) GetSiteExplorationReport(ctx context.Context, in *GetSiteEx
 	return out, nil
 }
 
-func (c *nicoClient) ClearSiteExplorationError(ctx context.Context, in *ClearSiteExplorationErrorRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ClearSiteExplorationError(ctx context.Context, in *ClearSiteExplorationErrorRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ClearSiteExplorationError_FullMethodName, in, out, cOpts...)
@@ -2229,7 +2229,7 @@ func (c *nicoClient) ClearSiteExplorationError(ctx context.Context, in *ClearSit
 	return out, nil
 }
 
-func (c *nicoClient) IsBmcInManagedHost(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*IsBmcInManagedHostResponse, error) {
+func (c *nICoClient) IsBmcInManagedHost(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*IsBmcInManagedHostResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IsBmcInManagedHostResponse)
 	err := c.cc.Invoke(ctx, NICo_IsBmcInManagedHost_FullMethodName, in, out, cOpts...)
@@ -2239,7 +2239,7 @@ func (c *nicoClient) IsBmcInManagedHost(ctx context.Context, in *BmcEndpointRequ
 	return out, nil
 }
 
-func (c *nicoClient) BmcCredentialStatus(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*BmcCredentialStatusResponse, error) {
+func (c *nICoClient) BmcCredentialStatus(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*BmcCredentialStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BmcCredentialStatusResponse)
 	err := c.cc.Invoke(ctx, NICo_BmcCredentialStatus_FullMethodName, in, out, cOpts...)
@@ -2249,7 +2249,7 @@ func (c *nicoClient) BmcCredentialStatus(ctx context.Context, in *BmcEndpointReq
 	return out, nil
 }
 
-func (c *nicoClient) Explore(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*EndpointExplorationReport, error) {
+func (c *nICoClient) Explore(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*EndpointExplorationReport, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EndpointExplorationReport)
 	err := c.cc.Invoke(ctx, NICo_Explore_FullMethodName, in, out, cOpts...)
@@ -2259,7 +2259,7 @@ func (c *nicoClient) Explore(ctx context.Context, in *BmcEndpointRequest, opts .
 	return out, nil
 }
 
-func (c *nicoClient) ReExploreEndpoint(ctx context.Context, in *ReExploreEndpointRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ReExploreEndpoint(ctx context.Context, in *ReExploreEndpointRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ReExploreEndpoint_FullMethodName, in, out, cOpts...)
@@ -2269,7 +2269,7 @@ func (c *nicoClient) ReExploreEndpoint(ctx context.Context, in *ReExploreEndpoin
 	return out, nil
 }
 
-func (c *nicoClient) DeleteExploredEndpoint(ctx context.Context, in *DeleteExploredEndpointRequest, opts ...grpc.CallOption) (*DeleteExploredEndpointResponse, error) {
+func (c *nICoClient) DeleteExploredEndpoint(ctx context.Context, in *DeleteExploredEndpointRequest, opts ...grpc.CallOption) (*DeleteExploredEndpointResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteExploredEndpointResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteExploredEndpoint_FullMethodName, in, out, cOpts...)
@@ -2279,7 +2279,7 @@ func (c *nicoClient) DeleteExploredEndpoint(ctx context.Context, in *DeleteExplo
 	return out, nil
 }
 
-func (c *nicoClient) PauseExploredEndpointRemediation(ctx context.Context, in *PauseExploredEndpointRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) PauseExploredEndpointRemediation(ctx context.Context, in *PauseExploredEndpointRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_PauseExploredEndpointRemediation_FullMethodName, in, out, cOpts...)
@@ -2289,7 +2289,7 @@ func (c *nicoClient) PauseExploredEndpointRemediation(ctx context.Context, in *P
 	return out, nil
 }
 
-func (c *nicoClient) FindExploredEndpointIds(ctx context.Context, in *ExploredEndpointSearchFilter, opts ...grpc.CallOption) (*ExploredEndpointIdList, error) {
+func (c *nICoClient) FindExploredEndpointIds(ctx context.Context, in *ExploredEndpointSearchFilter, opts ...grpc.CallOption) (*ExploredEndpointIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExploredEndpointIdList)
 	err := c.cc.Invoke(ctx, NICo_FindExploredEndpointIds_FullMethodName, in, out, cOpts...)
@@ -2299,7 +2299,7 @@ func (c *nicoClient) FindExploredEndpointIds(ctx context.Context, in *ExploredEn
 	return out, nil
 }
 
-func (c *nicoClient) FindExploredEndpointsByIds(ctx context.Context, in *ExploredEndpointsByIdsRequest, opts ...grpc.CallOption) (*ExploredEndpointList, error) {
+func (c *nICoClient) FindExploredEndpointsByIds(ctx context.Context, in *ExploredEndpointsByIdsRequest, opts ...grpc.CallOption) (*ExploredEndpointList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExploredEndpointList)
 	err := c.cc.Invoke(ctx, NICo_FindExploredEndpointsByIds_FullMethodName, in, out, cOpts...)
@@ -2309,7 +2309,7 @@ func (c *nicoClient) FindExploredEndpointsByIds(ctx context.Context, in *Explore
 	return out, nil
 }
 
-func (c *nicoClient) FindExploredManagedHostIds(ctx context.Context, in *ExploredManagedHostSearchFilter, opts ...grpc.CallOption) (*ExploredManagedHostIdList, error) {
+func (c *nICoClient) FindExploredManagedHostIds(ctx context.Context, in *ExploredManagedHostSearchFilter, opts ...grpc.CallOption) (*ExploredManagedHostIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExploredManagedHostIdList)
 	err := c.cc.Invoke(ctx, NICo_FindExploredManagedHostIds_FullMethodName, in, out, cOpts...)
@@ -2319,7 +2319,7 @@ func (c *nicoClient) FindExploredManagedHostIds(ctx context.Context, in *Explore
 	return out, nil
 }
 
-func (c *nicoClient) FindExploredManagedHostsByIds(ctx context.Context, in *ExploredManagedHostsByIdsRequest, opts ...grpc.CallOption) (*ExploredManagedHostList, error) {
+func (c *nICoClient) FindExploredManagedHostsByIds(ctx context.Context, in *ExploredManagedHostsByIdsRequest, opts ...grpc.CallOption) (*ExploredManagedHostList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExploredManagedHostList)
 	err := c.cc.Invoke(ctx, NICo_FindExploredManagedHostsByIds_FullMethodName, in, out, cOpts...)
@@ -2329,7 +2329,7 @@ func (c *nicoClient) FindExploredManagedHostsByIds(ctx context.Context, in *Expl
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMachineHardwareInfo(ctx context.Context, in *UpdateMachineHardwareInfoRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateMachineHardwareInfo(ctx context.Context, in *UpdateMachineHardwareInfoRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateMachineHardwareInfo_FullMethodName, in, out, cOpts...)
@@ -2339,7 +2339,7 @@ func (c *nicoClient) UpdateMachineHardwareInfo(ctx context.Context, in *UpdateMa
 	return out, nil
 }
 
-func (c *nicoClient) AdminForceDeleteMachine(ctx context.Context, in *AdminForceDeleteMachineRequest, opts ...grpc.CallOption) (*AdminForceDeleteMachineResponse, error) {
+func (c *nICoClient) AdminForceDeleteMachine(ctx context.Context, in *AdminForceDeleteMachineRequest, opts ...grpc.CallOption) (*AdminForceDeleteMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminForceDeleteMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_AdminForceDeleteMachine_FullMethodName, in, out, cOpts...)
@@ -2349,7 +2349,7 @@ func (c *nicoClient) AdminForceDeleteMachine(ctx context.Context, in *AdminForce
 	return out, nil
 }
 
-func (c *nicoClient) AdminListResourcePools(ctx context.Context, in *ListResourcePoolsRequest, opts ...grpc.CallOption) (*ResourcePools, error) {
+func (c *nICoClient) AdminListResourcePools(ctx context.Context, in *ListResourcePoolsRequest, opts ...grpc.CallOption) (*ResourcePools, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ResourcePools)
 	err := c.cc.Invoke(ctx, NICo_AdminListResourcePools_FullMethodName, in, out, cOpts...)
@@ -2359,7 +2359,7 @@ func (c *nicoClient) AdminListResourcePools(ctx context.Context, in *ListResourc
 	return out, nil
 }
 
-func (c *nicoClient) AdminGrowResourcePool(ctx context.Context, in *GrowResourcePoolRequest, opts ...grpc.CallOption) (*GrowResourcePoolResponse, error) {
+func (c *nICoClient) AdminGrowResourcePool(ctx context.Context, in *GrowResourcePoolRequest, opts ...grpc.CallOption) (*GrowResourcePoolResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GrowResourcePoolResponse)
 	err := c.cc.Invoke(ctx, NICo_AdminGrowResourcePool_FullMethodName, in, out, cOpts...)
@@ -2369,7 +2369,7 @@ func (c *nicoClient) AdminGrowResourcePool(ctx context.Context, in *GrowResource
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMachineMetadata(ctx context.Context, in *MachineMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateMachineMetadata(ctx context.Context, in *MachineMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateMachineMetadata_FullMethodName, in, out, cOpts...)
@@ -2379,7 +2379,7 @@ func (c *nicoClient) UpdateMachineMetadata(ctx context.Context, in *MachineMetad
 	return out, nil
 }
 
-func (c *nicoClient) UpdateRackMetadata(ctx context.Context, in *RackMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateRackMetadata(ctx context.Context, in *RackMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateRackMetadata_FullMethodName, in, out, cOpts...)
@@ -2389,7 +2389,7 @@ func (c *nicoClient) UpdateRackMetadata(ctx context.Context, in *RackMetadataUpd
 	return out, nil
 }
 
-func (c *nicoClient) UpdateSwitchMetadata(ctx context.Context, in *SwitchMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateSwitchMetadata(ctx context.Context, in *SwitchMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateSwitchMetadata_FullMethodName, in, out, cOpts...)
@@ -2399,7 +2399,7 @@ func (c *nicoClient) UpdateSwitchMetadata(ctx context.Context, in *SwitchMetadat
 	return out, nil
 }
 
-func (c *nicoClient) UpdatePowerShelfMetadata(ctx context.Context, in *PowerShelfMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdatePowerShelfMetadata(ctx context.Context, in *PowerShelfMetadataUpdateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdatePowerShelfMetadata_FullMethodName, in, out, cOpts...)
@@ -2409,7 +2409,7 @@ func (c *nicoClient) UpdatePowerShelfMetadata(ctx context.Context, in *PowerShel
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMachineNvLinkInfo(ctx context.Context, in *UpdateMachineNvLinkInfoRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateMachineNvLinkInfo(ctx context.Context, in *UpdateMachineNvLinkInfoRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateMachineNvLinkInfo_FullMethodName, in, out, cOpts...)
@@ -2419,7 +2419,7 @@ func (c *nicoClient) UpdateMachineNvLinkInfo(ctx context.Context, in *UpdateMach
 	return out, nil
 }
 
-func (c *nicoClient) SetMaintenance(ctx context.Context, in *MaintenanceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) SetMaintenance(ctx context.Context, in *MaintenanceRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_SetMaintenance_FullMethodName, in, out, cOpts...)
@@ -2429,7 +2429,7 @@ func (c *nicoClient) SetMaintenance(ctx context.Context, in *MaintenanceRequest,
 	return out, nil
 }
 
-func (c *nicoClient) SetDynamicConfig(ctx context.Context, in *SetDynamicConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) SetDynamicConfig(ctx context.Context, in *SetDynamicConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_SetDynamicConfig_FullMethodName, in, out, cOpts...)
@@ -2439,7 +2439,7 @@ func (c *nicoClient) SetDynamicConfig(ctx context.Context, in *SetDynamicConfigR
 	return out, nil
 }
 
-func (c *nicoClient) TriggerDpuReprovisioning(ctx context.Context, in *DpuReprovisioningRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) TriggerDpuReprovisioning(ctx context.Context, in *DpuReprovisioningRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_TriggerDpuReprovisioning_FullMethodName, in, out, cOpts...)
@@ -2449,7 +2449,7 @@ func (c *nicoClient) TriggerDpuReprovisioning(ctx context.Context, in *DpuReprov
 	return out, nil
 }
 
-func (c *nicoClient) ListDpuWaitingForReprovisioning(ctx context.Context, in *DpuReprovisioningListRequest, opts ...grpc.CallOption) (*DpuReprovisioningListResponse, error) {
+func (c *nICoClient) ListDpuWaitingForReprovisioning(ctx context.Context, in *DpuReprovisioningListRequest, opts ...grpc.CallOption) (*DpuReprovisioningListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuReprovisioningListResponse)
 	err := c.cc.Invoke(ctx, NICo_ListDpuWaitingForReprovisioning_FullMethodName, in, out, cOpts...)
@@ -2459,7 +2459,7 @@ func (c *nicoClient) ListDpuWaitingForReprovisioning(ctx context.Context, in *Dp
 	return out, nil
 }
 
-func (c *nicoClient) TriggerHostReprovisioning(ctx context.Context, in *HostReprovisioningRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) TriggerHostReprovisioning(ctx context.Context, in *HostReprovisioningRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_TriggerHostReprovisioning_FullMethodName, in, out, cOpts...)
@@ -2469,7 +2469,7 @@ func (c *nicoClient) TriggerHostReprovisioning(ctx context.Context, in *HostRepr
 	return out, nil
 }
 
-func (c *nicoClient) ListHostsWaitingForReprovisioning(ctx context.Context, in *HostReprovisioningListRequest, opts ...grpc.CallOption) (*HostReprovisioningListResponse, error) {
+func (c *nICoClient) ListHostsWaitingForReprovisioning(ctx context.Context, in *HostReprovisioningListRequest, opts ...grpc.CallOption) (*HostReprovisioningListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(HostReprovisioningListResponse)
 	err := c.cc.Invoke(ctx, NICo_ListHostsWaitingForReprovisioning_FullMethodName, in, out, cOpts...)
@@ -2479,7 +2479,7 @@ func (c *nicoClient) ListHostsWaitingForReprovisioning(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *nicoClient) MarkManualFirmwareUpgradeComplete(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) MarkManualFirmwareUpgradeComplete(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_MarkManualFirmwareUpgradeComplete_FullMethodName, in, out, cOpts...)
@@ -2489,7 +2489,7 @@ func (c *nicoClient) MarkManualFirmwareUpgradeComplete(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *nicoClient) GetDpuInfoList(ctx context.Context, in *GetDpuInfoListRequest, opts ...grpc.CallOption) (*GetDpuInfoListResponse, error) {
+func (c *nICoClient) GetDpuInfoList(ctx context.Context, in *GetDpuInfoListRequest, opts ...grpc.CallOption) (*GetDpuInfoListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetDpuInfoListResponse)
 	err := c.cc.Invoke(ctx, NICo_GetDpuInfoList_FullMethodName, in, out, cOpts...)
@@ -2499,7 +2499,7 @@ func (c *nicoClient) GetDpuInfoList(ctx context.Context, in *GetDpuInfoListReque
 	return out, nil
 }
 
-func (c *nicoClient) GetMachineBootOverride(ctx context.Context, in *MachineInterfaceId, opts ...grpc.CallOption) (*MachineBootOverride, error) {
+func (c *nICoClient) GetMachineBootOverride(ctx context.Context, in *MachineInterfaceId, opts ...grpc.CallOption) (*MachineBootOverride, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineBootOverride)
 	err := c.cc.Invoke(ctx, NICo_GetMachineBootOverride_FullMethodName, in, out, cOpts...)
@@ -2509,7 +2509,7 @@ func (c *nicoClient) GetMachineBootOverride(ctx context.Context, in *MachineInte
 	return out, nil
 }
 
-func (c *nicoClient) SetMachineBootOverride(ctx context.Context, in *MachineBootOverride, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) SetMachineBootOverride(ctx context.Context, in *MachineBootOverride, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_SetMachineBootOverride_FullMethodName, in, out, cOpts...)
@@ -2519,7 +2519,7 @@ func (c *nicoClient) SetMachineBootOverride(ctx context.Context, in *MachineBoot
 	return out, nil
 }
 
-func (c *nicoClient) ClearMachineBootOverride(ctx context.Context, in *MachineInterfaceId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ClearMachineBootOverride(ctx context.Context, in *MachineInterfaceId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ClearMachineBootOverride_FullMethodName, in, out, cOpts...)
@@ -2529,7 +2529,7 @@ func (c *nicoClient) ClearMachineBootOverride(ctx context.Context, in *MachineIn
 	return out, nil
 }
 
-func (c *nicoClient) GetNetworkTopology(ctx context.Context, in *NetworkTopologyRequest, opts ...grpc.CallOption) (*NetworkTopologyData, error) {
+func (c *nICoClient) GetNetworkTopology(ctx context.Context, in *NetworkTopologyRequest, opts ...grpc.CallOption) (*NetworkTopologyData, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkTopologyData)
 	err := c.cc.Invoke(ctx, NICo_GetNetworkTopology_FullMethodName, in, out, cOpts...)
@@ -2539,7 +2539,7 @@ func (c *nicoClient) GetNetworkTopology(ctx context.Context, in *NetworkTopology
 	return out, nil
 }
 
-func (c *nicoClient) FindNetworkDevicesByDeviceIds(ctx context.Context, in *NetworkDeviceIdList, opts ...grpc.CallOption) (*NetworkTopologyData, error) {
+func (c *nICoClient) FindNetworkDevicesByDeviceIds(ctx context.Context, in *NetworkDeviceIdList, opts ...grpc.CallOption) (*NetworkTopologyData, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NetworkTopologyData)
 	err := c.cc.Invoke(ctx, NICo_FindNetworkDevicesByDeviceIds_FullMethodName, in, out, cOpts...)
@@ -2549,7 +2549,7 @@ func (c *nicoClient) FindNetworkDevicesByDeviceIds(ctx context.Context, in *Netw
 	return out, nil
 }
 
-func (c *nicoClient) CreateCredential(ctx context.Context, in *CredentialCreationRequest, opts ...grpc.CallOption) (*CredentialCreationResult, error) {
+func (c *nICoClient) CreateCredential(ctx context.Context, in *CredentialCreationRequest, opts ...grpc.CallOption) (*CredentialCreationResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CredentialCreationResult)
 	err := c.cc.Invoke(ctx, NICo_CreateCredential_FullMethodName, in, out, cOpts...)
@@ -2559,7 +2559,7 @@ func (c *nicoClient) CreateCredential(ctx context.Context, in *CredentialCreatio
 	return out, nil
 }
 
-func (c *nicoClient) DeleteCredential(ctx context.Context, in *CredentialDeletionRequest, opts ...grpc.CallOption) (*CredentialDeletionResult, error) {
+func (c *nICoClient) DeleteCredential(ctx context.Context, in *CredentialDeletionRequest, opts ...grpc.CallOption) (*CredentialDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CredentialDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteCredential_FullMethodName, in, out, cOpts...)
@@ -2569,7 +2569,7 @@ func (c *nicoClient) DeleteCredential(ctx context.Context, in *CredentialDeletio
 	return out, nil
 }
 
-func (c *nicoClient) GetRouteServers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RouteServerEntries, error) {
+func (c *nICoClient) GetRouteServers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RouteServerEntries, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RouteServerEntries)
 	err := c.cc.Invoke(ctx, NICo_GetRouteServers_FullMethodName, in, out, cOpts...)
@@ -2579,7 +2579,7 @@ func (c *nicoClient) GetRouteServers(ctx context.Context, in *emptypb.Empty, opt
 	return out, nil
 }
 
-func (c *nicoClient) AddRouteServers(ctx context.Context, in *RouteServers, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AddRouteServers(ctx context.Context, in *RouteServers, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AddRouteServers_FullMethodName, in, out, cOpts...)
@@ -2589,7 +2589,7 @@ func (c *nicoClient) AddRouteServers(ctx context.Context, in *RouteServers, opts
 	return out, nil
 }
 
-func (c *nicoClient) RemoveRouteServers(ctx context.Context, in *RouteServers, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RemoveRouteServers(ctx context.Context, in *RouteServers, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RemoveRouteServers_FullMethodName, in, out, cOpts...)
@@ -2599,7 +2599,7 @@ func (c *nicoClient) RemoveRouteServers(ctx context.Context, in *RouteServers, o
 	return out, nil
 }
 
-func (c *nicoClient) ReplaceRouteServers(ctx context.Context, in *RouteServers, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ReplaceRouteServers(ctx context.Context, in *RouteServers, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ReplaceRouteServers_FullMethodName, in, out, cOpts...)
@@ -2609,7 +2609,7 @@ func (c *nicoClient) ReplaceRouteServers(ctx context.Context, in *RouteServers, 
 	return out, nil
 }
 
-func (c *nicoClient) UpdateAgentReportedInventory(ctx context.Context, in *DpuAgentInventoryReport, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateAgentReportedInventory(ctx context.Context, in *DpuAgentInventoryReport, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateAgentReportedInventory_FullMethodName, in, out, cOpts...)
@@ -2619,7 +2619,7 @@ func (c *nicoClient) UpdateAgentReportedInventory(ctx context.Context, in *DpuAg
 	return out, nil
 }
 
-func (c *nicoClient) UpdateInstancePhoneHomeLastContact(ctx context.Context, in *InstancePhoneHomeLastContactRequest, opts ...grpc.CallOption) (*InstancePhoneHomeLastContactResponse, error) {
+func (c *nICoClient) UpdateInstancePhoneHomeLastContact(ctx context.Context, in *InstancePhoneHomeLastContactRequest, opts ...grpc.CallOption) (*InstancePhoneHomeLastContactResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(InstancePhoneHomeLastContactResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateInstancePhoneHomeLastContact_FullMethodName, in, out, cOpts...)
@@ -2629,7 +2629,7 @@ func (c *nicoClient) UpdateInstancePhoneHomeLastContact(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *nicoClient) SetHostUefiPassword(ctx context.Context, in *SetHostUefiPasswordRequest, opts ...grpc.CallOption) (*SetHostUefiPasswordResponse, error) {
+func (c *nICoClient) SetHostUefiPassword(ctx context.Context, in *SetHostUefiPasswordRequest, opts ...grpc.CallOption) (*SetHostUefiPasswordResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetHostUefiPasswordResponse)
 	err := c.cc.Invoke(ctx, NICo_SetHostUefiPassword_FullMethodName, in, out, cOpts...)
@@ -2639,7 +2639,7 @@ func (c *nicoClient) SetHostUefiPassword(ctx context.Context, in *SetHostUefiPas
 	return out, nil
 }
 
-func (c *nicoClient) ClearHostUefiPassword(ctx context.Context, in *ClearHostUefiPasswordRequest, opts ...grpc.CallOption) (*ClearHostUefiPasswordResponse, error) {
+func (c *nICoClient) ClearHostUefiPassword(ctx context.Context, in *ClearHostUefiPasswordRequest, opts ...grpc.CallOption) (*ClearHostUefiPasswordResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClearHostUefiPasswordResponse)
 	err := c.cc.Invoke(ctx, NICo_ClearHostUefiPassword_FullMethodName, in, out, cOpts...)
@@ -2649,7 +2649,7 @@ func (c *nicoClient) ClearHostUefiPassword(ctx context.Context, in *ClearHostUef
 	return out, nil
 }
 
-func (c *nicoClient) AddExpectedMachine(ctx context.Context, in *ExpectedMachine, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AddExpectedMachine(ctx context.Context, in *ExpectedMachine, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AddExpectedMachine_FullMethodName, in, out, cOpts...)
@@ -2659,7 +2659,7 @@ func (c *nicoClient) AddExpectedMachine(ctx context.Context, in *ExpectedMachine
 	return out, nil
 }
 
-func (c *nicoClient) DeleteExpectedMachine(ctx context.Context, in *ExpectedMachineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteExpectedMachine(ctx context.Context, in *ExpectedMachineRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteExpectedMachine_FullMethodName, in, out, cOpts...)
@@ -2669,7 +2669,7 @@ func (c *nicoClient) DeleteExpectedMachine(ctx context.Context, in *ExpectedMach
 	return out, nil
 }
 
-func (c *nicoClient) UpdateExpectedMachine(ctx context.Context, in *ExpectedMachine, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateExpectedMachine(ctx context.Context, in *ExpectedMachine, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateExpectedMachine_FullMethodName, in, out, cOpts...)
@@ -2679,7 +2679,7 @@ func (c *nicoClient) UpdateExpectedMachine(ctx context.Context, in *ExpectedMach
 	return out, nil
 }
 
-func (c *nicoClient) GetExpectedMachine(ctx context.Context, in *ExpectedMachineRequest, opts ...grpc.CallOption) (*ExpectedMachine, error) {
+func (c *nICoClient) GetExpectedMachine(ctx context.Context, in *ExpectedMachineRequest, opts ...grpc.CallOption) (*ExpectedMachine, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedMachine)
 	err := c.cc.Invoke(ctx, NICo_GetExpectedMachine_FullMethodName, in, out, cOpts...)
@@ -2689,7 +2689,7 @@ func (c *nicoClient) GetExpectedMachine(ctx context.Context, in *ExpectedMachine
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedMachines(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedMachineList, error) {
+func (c *nICoClient) GetAllExpectedMachines(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedMachineList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedMachineList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedMachines_FullMethodName, in, out, cOpts...)
@@ -2699,7 +2699,7 @@ func (c *nicoClient) GetAllExpectedMachines(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
-func (c *nicoClient) CreateRackFirmware(ctx context.Context, in *RackFirmwareCreateRequest, opts ...grpc.CallOption) (*RackFirmware, error) {
+func (c *nICoClient) CreateRackFirmware(ctx context.Context, in *RackFirmwareCreateRequest, opts ...grpc.CallOption) (*RackFirmware, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackFirmware)
 	err := c.cc.Invoke(ctx, NICo_CreateRackFirmware_FullMethodName, in, out, cOpts...)
@@ -2709,7 +2709,7 @@ func (c *nicoClient) CreateRackFirmware(ctx context.Context, in *RackFirmwareCre
 	return out, nil
 }
 
-func (c *nicoClient) GetRackFirmware(ctx context.Context, in *RackFirmwareGetRequest, opts ...grpc.CallOption) (*RackFirmware, error) {
+func (c *nICoClient) GetRackFirmware(ctx context.Context, in *RackFirmwareGetRequest, opts ...grpc.CallOption) (*RackFirmware, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackFirmware)
 	err := c.cc.Invoke(ctx, NICo_GetRackFirmware_FullMethodName, in, out, cOpts...)
@@ -2719,7 +2719,7 @@ func (c *nicoClient) GetRackFirmware(ctx context.Context, in *RackFirmwareGetReq
 	return out, nil
 }
 
-func (c *nicoClient) ListRackFirmware(ctx context.Context, in *RackFirmwareListRequest, opts ...grpc.CallOption) (*RackFirmwareList, error) {
+func (c *nICoClient) ListRackFirmware(ctx context.Context, in *RackFirmwareListRequest, opts ...grpc.CallOption) (*RackFirmwareList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackFirmwareList)
 	err := c.cc.Invoke(ctx, NICo_ListRackFirmware_FullMethodName, in, out, cOpts...)
@@ -2729,7 +2729,7 @@ func (c *nicoClient) ListRackFirmware(ctx context.Context, in *RackFirmwareListR
 	return out, nil
 }
 
-func (c *nicoClient) DeleteRackFirmware(ctx context.Context, in *RackFirmwareDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteRackFirmware(ctx context.Context, in *RackFirmwareDeleteRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteRackFirmware_FullMethodName, in, out, cOpts...)
@@ -2739,7 +2739,7 @@ func (c *nicoClient) DeleteRackFirmware(ctx context.Context, in *RackFirmwareDel
 	return out, nil
 }
 
-func (c *nicoClient) ApplyRackFirmware(ctx context.Context, in *RackFirmwareApplyRequest, opts ...grpc.CallOption) (*RackFirmwareApplyResponse, error) {
+func (c *nICoClient) ApplyRackFirmware(ctx context.Context, in *RackFirmwareApplyRequest, opts ...grpc.CallOption) (*RackFirmwareApplyResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackFirmwareApplyResponse)
 	err := c.cc.Invoke(ctx, NICo_ApplyRackFirmware_FullMethodName, in, out, cOpts...)
@@ -2749,7 +2749,7 @@ func (c *nicoClient) ApplyRackFirmware(ctx context.Context, in *RackFirmwareAppl
 	return out, nil
 }
 
-func (c *nicoClient) GetRackFirmwareJobStatus(ctx context.Context, in *RackFirmwareJobStatusRequest, opts ...grpc.CallOption) (*RackFirmwareJobStatusResponse, error) {
+func (c *nICoClient) GetRackFirmwareJobStatus(ctx context.Context, in *RackFirmwareJobStatusRequest, opts ...grpc.CallOption) (*RackFirmwareJobStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackFirmwareJobStatusResponse)
 	err := c.cc.Invoke(ctx, NICo_GetRackFirmwareJobStatus_FullMethodName, in, out, cOpts...)
@@ -2759,7 +2759,7 @@ func (c *nicoClient) GetRackFirmwareJobStatus(ctx context.Context, in *RackFirmw
 	return out, nil
 }
 
-func (c *nicoClient) GetRackFirmwareHistory(ctx context.Context, in *RackFirmwareHistoryRequest, opts ...grpc.CallOption) (*RackFirmwareHistoryResponse, error) {
+func (c *nICoClient) GetRackFirmwareHistory(ctx context.Context, in *RackFirmwareHistoryRequest, opts ...grpc.CallOption) (*RackFirmwareHistoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackFirmwareHistoryResponse)
 	err := c.cc.Invoke(ctx, NICo_GetRackFirmwareHistory_FullMethodName, in, out, cOpts...)
@@ -2769,7 +2769,7 @@ func (c *nicoClient) GetRackFirmwareHistory(ctx context.Context, in *RackFirmwar
 	return out, nil
 }
 
-func (c *nicoClient) ReplaceAllExpectedMachines(ctx context.Context, in *ExpectedMachineList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ReplaceAllExpectedMachines(ctx context.Context, in *ExpectedMachineList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ReplaceAllExpectedMachines_FullMethodName, in, out, cOpts...)
@@ -2779,7 +2779,7 @@ func (c *nicoClient) ReplaceAllExpectedMachines(ctx context.Context, in *Expecte
 	return out, nil
 }
 
-func (c *nicoClient) DeleteAllExpectedMachines(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteAllExpectedMachines(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteAllExpectedMachines_FullMethodName, in, out, cOpts...)
@@ -2789,7 +2789,7 @@ func (c *nicoClient) DeleteAllExpectedMachines(ctx context.Context, in *emptypb.
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedMachinesLinked(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LinkedExpectedMachineList, error) {
+func (c *nICoClient) GetAllExpectedMachinesLinked(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LinkedExpectedMachineList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LinkedExpectedMachineList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedMachinesLinked_FullMethodName, in, out, cOpts...)
@@ -2799,7 +2799,7 @@ func (c *nicoClient) GetAllExpectedMachinesLinked(ctx context.Context, in *empty
 	return out, nil
 }
 
-func (c *nicoClient) CreateExpectedMachines(ctx context.Context, in *BatchExpectedMachineOperationRequest, opts ...grpc.CallOption) (*BatchExpectedMachineOperationResponse, error) {
+func (c *nICoClient) CreateExpectedMachines(ctx context.Context, in *BatchExpectedMachineOperationRequest, opts ...grpc.CallOption) (*BatchExpectedMachineOperationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchExpectedMachineOperationResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateExpectedMachines_FullMethodName, in, out, cOpts...)
@@ -2809,7 +2809,7 @@ func (c *nicoClient) CreateExpectedMachines(ctx context.Context, in *BatchExpect
 	return out, nil
 }
 
-func (c *nicoClient) UpdateExpectedMachines(ctx context.Context, in *BatchExpectedMachineOperationRequest, opts ...grpc.CallOption) (*BatchExpectedMachineOperationResponse, error) {
+func (c *nICoClient) UpdateExpectedMachines(ctx context.Context, in *BatchExpectedMachineOperationRequest, opts ...grpc.CallOption) (*BatchExpectedMachineOperationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BatchExpectedMachineOperationResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateExpectedMachines_FullMethodName, in, out, cOpts...)
@@ -2819,7 +2819,7 @@ func (c *nicoClient) UpdateExpectedMachines(ctx context.Context, in *BatchExpect
 	return out, nil
 }
 
-func (c *nicoClient) AddExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelf, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AddExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelf, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AddExpectedPowerShelf_FullMethodName, in, out, cOpts...)
@@ -2829,7 +2829,7 @@ func (c *nicoClient) AddExpectedPowerShelf(ctx context.Context, in *ExpectedPowe
 	return out, nil
 }
 
-func (c *nicoClient) DeleteExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelfRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelfRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteExpectedPowerShelf_FullMethodName, in, out, cOpts...)
@@ -2839,7 +2839,7 @@ func (c *nicoClient) DeleteExpectedPowerShelf(ctx context.Context, in *ExpectedP
 	return out, nil
 }
 
-func (c *nicoClient) UpdateExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelf, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelf, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateExpectedPowerShelf_FullMethodName, in, out, cOpts...)
@@ -2849,7 +2849,7 @@ func (c *nicoClient) UpdateExpectedPowerShelf(ctx context.Context, in *ExpectedP
 	return out, nil
 }
 
-func (c *nicoClient) GetExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelfRequest, opts ...grpc.CallOption) (*ExpectedPowerShelf, error) {
+func (c *nICoClient) GetExpectedPowerShelf(ctx context.Context, in *ExpectedPowerShelfRequest, opts ...grpc.CallOption) (*ExpectedPowerShelf, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedPowerShelf)
 	err := c.cc.Invoke(ctx, NICo_GetExpectedPowerShelf_FullMethodName, in, out, cOpts...)
@@ -2859,7 +2859,7 @@ func (c *nicoClient) GetExpectedPowerShelf(ctx context.Context, in *ExpectedPowe
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedPowerShelves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedPowerShelfList, error) {
+func (c *nICoClient) GetAllExpectedPowerShelves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedPowerShelfList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedPowerShelfList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedPowerShelves_FullMethodName, in, out, cOpts...)
@@ -2869,7 +2869,7 @@ func (c *nicoClient) GetAllExpectedPowerShelves(ctx context.Context, in *emptypb
 	return out, nil
 }
 
-func (c *nicoClient) ReplaceAllExpectedPowerShelves(ctx context.Context, in *ExpectedPowerShelfList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ReplaceAllExpectedPowerShelves(ctx context.Context, in *ExpectedPowerShelfList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ReplaceAllExpectedPowerShelves_FullMethodName, in, out, cOpts...)
@@ -2879,7 +2879,7 @@ func (c *nicoClient) ReplaceAllExpectedPowerShelves(ctx context.Context, in *Exp
 	return out, nil
 }
 
-func (c *nicoClient) DeleteAllExpectedPowerShelves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteAllExpectedPowerShelves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteAllExpectedPowerShelves_FullMethodName, in, out, cOpts...)
@@ -2889,7 +2889,7 @@ func (c *nicoClient) DeleteAllExpectedPowerShelves(ctx context.Context, in *empt
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedPowerShelvesLinked(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LinkedExpectedPowerShelfList, error) {
+func (c *nICoClient) GetAllExpectedPowerShelvesLinked(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LinkedExpectedPowerShelfList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LinkedExpectedPowerShelfList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedPowerShelvesLinked_FullMethodName, in, out, cOpts...)
@@ -2899,7 +2899,7 @@ func (c *nicoClient) GetAllExpectedPowerShelvesLinked(ctx context.Context, in *e
 	return out, nil
 }
 
-func (c *nicoClient) AddExpectedSwitch(ctx context.Context, in *ExpectedSwitch, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AddExpectedSwitch(ctx context.Context, in *ExpectedSwitch, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AddExpectedSwitch_FullMethodName, in, out, cOpts...)
@@ -2909,7 +2909,7 @@ func (c *nicoClient) AddExpectedSwitch(ctx context.Context, in *ExpectedSwitch, 
 	return out, nil
 }
 
-func (c *nicoClient) DeleteExpectedSwitch(ctx context.Context, in *ExpectedSwitchRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteExpectedSwitch(ctx context.Context, in *ExpectedSwitchRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteExpectedSwitch_FullMethodName, in, out, cOpts...)
@@ -2919,7 +2919,7 @@ func (c *nicoClient) DeleteExpectedSwitch(ctx context.Context, in *ExpectedSwitc
 	return out, nil
 }
 
-func (c *nicoClient) UpdateExpectedSwitch(ctx context.Context, in *ExpectedSwitch, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateExpectedSwitch(ctx context.Context, in *ExpectedSwitch, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateExpectedSwitch_FullMethodName, in, out, cOpts...)
@@ -2929,7 +2929,7 @@ func (c *nicoClient) UpdateExpectedSwitch(ctx context.Context, in *ExpectedSwitc
 	return out, nil
 }
 
-func (c *nicoClient) GetExpectedSwitch(ctx context.Context, in *ExpectedSwitchRequest, opts ...grpc.CallOption) (*ExpectedSwitch, error) {
+func (c *nICoClient) GetExpectedSwitch(ctx context.Context, in *ExpectedSwitchRequest, opts ...grpc.CallOption) (*ExpectedSwitch, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedSwitch)
 	err := c.cc.Invoke(ctx, NICo_GetExpectedSwitch_FullMethodName, in, out, cOpts...)
@@ -2939,7 +2939,7 @@ func (c *nicoClient) GetExpectedSwitch(ctx context.Context, in *ExpectedSwitchRe
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedSwitches(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedSwitchList, error) {
+func (c *nICoClient) GetAllExpectedSwitches(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedSwitchList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedSwitchList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedSwitches_FullMethodName, in, out, cOpts...)
@@ -2949,7 +2949,7 @@ func (c *nicoClient) GetAllExpectedSwitches(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
-func (c *nicoClient) ReplaceAllExpectedSwitches(ctx context.Context, in *ExpectedSwitchList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ReplaceAllExpectedSwitches(ctx context.Context, in *ExpectedSwitchList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ReplaceAllExpectedSwitches_FullMethodName, in, out, cOpts...)
@@ -2959,7 +2959,7 @@ func (c *nicoClient) ReplaceAllExpectedSwitches(ctx context.Context, in *Expecte
 	return out, nil
 }
 
-func (c *nicoClient) DeleteAllExpectedSwitches(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteAllExpectedSwitches(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteAllExpectedSwitches_FullMethodName, in, out, cOpts...)
@@ -2969,7 +2969,7 @@ func (c *nicoClient) DeleteAllExpectedSwitches(ctx context.Context, in *emptypb.
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedSwitchesLinked(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LinkedExpectedSwitchList, error) {
+func (c *nICoClient) GetAllExpectedSwitchesLinked(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*LinkedExpectedSwitchList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LinkedExpectedSwitchList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedSwitchesLinked_FullMethodName, in, out, cOpts...)
@@ -2979,7 +2979,7 @@ func (c *nicoClient) GetAllExpectedSwitchesLinked(ctx context.Context, in *empty
 	return out, nil
 }
 
-func (c *nicoClient) AddExpectedRack(ctx context.Context, in *ExpectedRack, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AddExpectedRack(ctx context.Context, in *ExpectedRack, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AddExpectedRack_FullMethodName, in, out, cOpts...)
@@ -2989,7 +2989,7 @@ func (c *nicoClient) AddExpectedRack(ctx context.Context, in *ExpectedRack, opts
 	return out, nil
 }
 
-func (c *nicoClient) DeleteExpectedRack(ctx context.Context, in *ExpectedRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteExpectedRack(ctx context.Context, in *ExpectedRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteExpectedRack_FullMethodName, in, out, cOpts...)
@@ -2999,7 +2999,7 @@ func (c *nicoClient) DeleteExpectedRack(ctx context.Context, in *ExpectedRackReq
 	return out, nil
 }
 
-func (c *nicoClient) UpdateExpectedRack(ctx context.Context, in *ExpectedRack, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateExpectedRack(ctx context.Context, in *ExpectedRack, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateExpectedRack_FullMethodName, in, out, cOpts...)
@@ -3009,7 +3009,7 @@ func (c *nicoClient) UpdateExpectedRack(ctx context.Context, in *ExpectedRack, o
 	return out, nil
 }
 
-func (c *nicoClient) GetExpectedRack(ctx context.Context, in *ExpectedRackRequest, opts ...grpc.CallOption) (*ExpectedRack, error) {
+func (c *nICoClient) GetExpectedRack(ctx context.Context, in *ExpectedRackRequest, opts ...grpc.CallOption) (*ExpectedRack, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedRack)
 	err := c.cc.Invoke(ctx, NICo_GetExpectedRack_FullMethodName, in, out, cOpts...)
@@ -3019,7 +3019,7 @@ func (c *nicoClient) GetExpectedRack(ctx context.Context, in *ExpectedRackReques
 	return out, nil
 }
 
-func (c *nicoClient) GetAllExpectedRacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedRackList, error) {
+func (c *nICoClient) GetAllExpectedRacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ExpectedRackList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExpectedRackList)
 	err := c.cc.Invoke(ctx, NICo_GetAllExpectedRacks_FullMethodName, in, out, cOpts...)
@@ -3029,7 +3029,7 @@ func (c *nicoClient) GetAllExpectedRacks(ctx context.Context, in *emptypb.Empty,
 	return out, nil
 }
 
-func (c *nicoClient) ReplaceAllExpectedRacks(ctx context.Context, in *ExpectedRackList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ReplaceAllExpectedRacks(ctx context.Context, in *ExpectedRackList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ReplaceAllExpectedRacks_FullMethodName, in, out, cOpts...)
@@ -3039,7 +3039,7 @@ func (c *nicoClient) ReplaceAllExpectedRacks(ctx context.Context, in *ExpectedRa
 	return out, nil
 }
 
-func (c *nicoClient) DeleteAllExpectedRacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteAllExpectedRacks(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteAllExpectedRacks_FullMethodName, in, out, cOpts...)
@@ -3049,7 +3049,7 @@ func (c *nicoClient) DeleteAllExpectedRacks(ctx context.Context, in *emptypb.Emp
 	return out, nil
 }
 
-func (c *nicoClient) AttestQuote(ctx context.Context, in *AttestQuoteRequest, opts ...grpc.CallOption) (*AttestQuoteResponse, error) {
+func (c *nICoClient) AttestQuote(ctx context.Context, in *AttestQuoteRequest, opts ...grpc.CallOption) (*AttestQuoteResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AttestQuoteResponse)
 	err := c.cc.Invoke(ctx, NICo_AttestQuote_FullMethodName, in, out, cOpts...)
@@ -3059,7 +3059,7 @@ func (c *nicoClient) AttestQuote(ctx context.Context, in *AttestQuoteRequest, op
 	return out, nil
 }
 
-func (c *nicoClient) CreateInstanceType(ctx context.Context, in *CreateInstanceTypeRequest, opts ...grpc.CallOption) (*CreateInstanceTypeResponse, error) {
+func (c *nICoClient) CreateInstanceType(ctx context.Context, in *CreateInstanceTypeRequest, opts ...grpc.CallOption) (*CreateInstanceTypeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateInstanceTypeResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateInstanceType_FullMethodName, in, out, cOpts...)
@@ -3069,7 +3069,7 @@ func (c *nicoClient) CreateInstanceType(ctx context.Context, in *CreateInstanceT
 	return out, nil
 }
 
-func (c *nicoClient) FindInstanceTypeIds(ctx context.Context, in *FindInstanceTypeIdsRequest, opts ...grpc.CallOption) (*FindInstanceTypeIdsResponse, error) {
+func (c *nICoClient) FindInstanceTypeIds(ctx context.Context, in *FindInstanceTypeIdsRequest, opts ...grpc.CallOption) (*FindInstanceTypeIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindInstanceTypeIdsResponse)
 	err := c.cc.Invoke(ctx, NICo_FindInstanceTypeIds_FullMethodName, in, out, cOpts...)
@@ -3079,7 +3079,7 @@ func (c *nicoClient) FindInstanceTypeIds(ctx context.Context, in *FindInstanceTy
 	return out, nil
 }
 
-func (c *nicoClient) FindInstanceTypesByIds(ctx context.Context, in *FindInstanceTypesByIdsRequest, opts ...grpc.CallOption) (*FindInstanceTypesByIdsResponse, error) {
+func (c *nICoClient) FindInstanceTypesByIds(ctx context.Context, in *FindInstanceTypesByIdsRequest, opts ...grpc.CallOption) (*FindInstanceTypesByIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindInstanceTypesByIdsResponse)
 	err := c.cc.Invoke(ctx, NICo_FindInstanceTypesByIds_FullMethodName, in, out, cOpts...)
@@ -3089,7 +3089,7 @@ func (c *nicoClient) FindInstanceTypesByIds(ctx context.Context, in *FindInstanc
 	return out, nil
 }
 
-func (c *nicoClient) UpdateInstanceType(ctx context.Context, in *UpdateInstanceTypeRequest, opts ...grpc.CallOption) (*UpdateInstanceTypeResponse, error) {
+func (c *nICoClient) UpdateInstanceType(ctx context.Context, in *UpdateInstanceTypeRequest, opts ...grpc.CallOption) (*UpdateInstanceTypeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateInstanceTypeResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateInstanceType_FullMethodName, in, out, cOpts...)
@@ -3099,7 +3099,7 @@ func (c *nicoClient) UpdateInstanceType(ctx context.Context, in *UpdateInstanceT
 	return out, nil
 }
 
-func (c *nicoClient) DeleteInstanceType(ctx context.Context, in *DeleteInstanceTypeRequest, opts ...grpc.CallOption) (*DeleteInstanceTypeResponse, error) {
+func (c *nICoClient) DeleteInstanceType(ctx context.Context, in *DeleteInstanceTypeRequest, opts ...grpc.CallOption) (*DeleteInstanceTypeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteInstanceTypeResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteInstanceType_FullMethodName, in, out, cOpts...)
@@ -3109,7 +3109,7 @@ func (c *nicoClient) DeleteInstanceType(ctx context.Context, in *DeleteInstanceT
 	return out, nil
 }
 
-func (c *nicoClient) AssociateMachinesWithInstanceType(ctx context.Context, in *AssociateMachinesWithInstanceTypeRequest, opts ...grpc.CallOption) (*AssociateMachinesWithInstanceTypeResponse, error) {
+func (c *nICoClient) AssociateMachinesWithInstanceType(ctx context.Context, in *AssociateMachinesWithInstanceTypeRequest, opts ...grpc.CallOption) (*AssociateMachinesWithInstanceTypeResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AssociateMachinesWithInstanceTypeResponse)
 	err := c.cc.Invoke(ctx, NICo_AssociateMachinesWithInstanceType_FullMethodName, in, out, cOpts...)
@@ -3119,7 +3119,7 @@ func (c *nicoClient) AssociateMachinesWithInstanceType(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *nicoClient) RemoveMachineInstanceTypeAssociation(ctx context.Context, in *RemoveMachineInstanceTypeAssociationRequest, opts ...grpc.CallOption) (*RemoveMachineInstanceTypeAssociationResponse, error) {
+func (c *nICoClient) RemoveMachineInstanceTypeAssociation(ctx context.Context, in *RemoveMachineInstanceTypeAssociationRequest, opts ...grpc.CallOption) (*RemoveMachineInstanceTypeAssociationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveMachineInstanceTypeAssociationResponse)
 	err := c.cc.Invoke(ctx, NICo_RemoveMachineInstanceTypeAssociation_FullMethodName, in, out, cOpts...)
@@ -3129,7 +3129,7 @@ func (c *nicoClient) RemoveMachineInstanceTypeAssociation(ctx context.Context, i
 	return out, nil
 }
 
-func (c *nicoClient) CreateMeasurementBundle(ctx context.Context, in *CreateMeasurementBundleRequest, opts ...grpc.CallOption) (*CreateMeasurementBundleResponse, error) {
+func (c *nICoClient) CreateMeasurementBundle(ctx context.Context, in *CreateMeasurementBundleRequest, opts ...grpc.CallOption) (*CreateMeasurementBundleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateMeasurementBundleResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateMeasurementBundle_FullMethodName, in, out, cOpts...)
@@ -3139,7 +3139,7 @@ func (c *nicoClient) CreateMeasurementBundle(ctx context.Context, in *CreateMeas
 	return out, nil
 }
 
-func (c *nicoClient) DeleteMeasurementBundle(ctx context.Context, in *DeleteMeasurementBundleRequest, opts ...grpc.CallOption) (*DeleteMeasurementBundleResponse, error) {
+func (c *nICoClient) DeleteMeasurementBundle(ctx context.Context, in *DeleteMeasurementBundleRequest, opts ...grpc.CallOption) (*DeleteMeasurementBundleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteMeasurementBundleResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteMeasurementBundle_FullMethodName, in, out, cOpts...)
@@ -3149,7 +3149,7 @@ func (c *nicoClient) DeleteMeasurementBundle(ctx context.Context, in *DeleteMeas
 	return out, nil
 }
 
-func (c *nicoClient) RenameMeasurementBundle(ctx context.Context, in *RenameMeasurementBundleRequest, opts ...grpc.CallOption) (*RenameMeasurementBundleResponse, error) {
+func (c *nICoClient) RenameMeasurementBundle(ctx context.Context, in *RenameMeasurementBundleRequest, opts ...grpc.CallOption) (*RenameMeasurementBundleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RenameMeasurementBundleResponse)
 	err := c.cc.Invoke(ctx, NICo_RenameMeasurementBundle_FullMethodName, in, out, cOpts...)
@@ -3159,7 +3159,7 @@ func (c *nicoClient) RenameMeasurementBundle(ctx context.Context, in *RenameMeas
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMeasurementBundle(ctx context.Context, in *UpdateMeasurementBundleRequest, opts ...grpc.CallOption) (*UpdateMeasurementBundleResponse, error) {
+func (c *nICoClient) UpdateMeasurementBundle(ctx context.Context, in *UpdateMeasurementBundleRequest, opts ...grpc.CallOption) (*UpdateMeasurementBundleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateMeasurementBundleResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateMeasurementBundle_FullMethodName, in, out, cOpts...)
@@ -3169,7 +3169,7 @@ func (c *nicoClient) UpdateMeasurementBundle(ctx context.Context, in *UpdateMeas
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementBundle(ctx context.Context, in *ShowMeasurementBundleRequest, opts ...grpc.CallOption) (*ShowMeasurementBundleResponse, error) {
+func (c *nICoClient) ShowMeasurementBundle(ctx context.Context, in *ShowMeasurementBundleRequest, opts ...grpc.CallOption) (*ShowMeasurementBundleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementBundleResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementBundle_FullMethodName, in, out, cOpts...)
@@ -3179,7 +3179,7 @@ func (c *nicoClient) ShowMeasurementBundle(ctx context.Context, in *ShowMeasurem
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementBundles(ctx context.Context, in *ShowMeasurementBundlesRequest, opts ...grpc.CallOption) (*ShowMeasurementBundlesResponse, error) {
+func (c *nICoClient) ShowMeasurementBundles(ctx context.Context, in *ShowMeasurementBundlesRequest, opts ...grpc.CallOption) (*ShowMeasurementBundlesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementBundlesResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementBundles_FullMethodName, in, out, cOpts...)
@@ -3189,7 +3189,7 @@ func (c *nicoClient) ShowMeasurementBundles(ctx context.Context, in *ShowMeasure
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementBundles(ctx context.Context, in *ListMeasurementBundlesRequest, opts ...grpc.CallOption) (*ListMeasurementBundlesResponse, error) {
+func (c *nICoClient) ListMeasurementBundles(ctx context.Context, in *ListMeasurementBundlesRequest, opts ...grpc.CallOption) (*ListMeasurementBundlesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementBundlesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementBundles_FullMethodName, in, out, cOpts...)
@@ -3199,7 +3199,7 @@ func (c *nicoClient) ListMeasurementBundles(ctx context.Context, in *ListMeasure
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementBundleMachines(ctx context.Context, in *ListMeasurementBundleMachinesRequest, opts ...grpc.CallOption) (*ListMeasurementBundleMachinesResponse, error) {
+func (c *nICoClient) ListMeasurementBundleMachines(ctx context.Context, in *ListMeasurementBundleMachinesRequest, opts ...grpc.CallOption) (*ListMeasurementBundleMachinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementBundleMachinesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementBundleMachines_FullMethodName, in, out, cOpts...)
@@ -3209,7 +3209,7 @@ func (c *nicoClient) ListMeasurementBundleMachines(ctx context.Context, in *List
 	return out, nil
 }
 
-func (c *nicoClient) FindClosestBundleMatch(ctx context.Context, in *FindClosestBundleMatchRequest, opts ...grpc.CallOption) (*ShowMeasurementBundleResponse, error) {
+func (c *nICoClient) FindClosestBundleMatch(ctx context.Context, in *FindClosestBundleMatchRequest, opts ...grpc.CallOption) (*ShowMeasurementBundleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementBundleResponse)
 	err := c.cc.Invoke(ctx, NICo_FindClosestBundleMatch_FullMethodName, in, out, cOpts...)
@@ -3219,7 +3219,7 @@ func (c *nicoClient) FindClosestBundleMatch(ctx context.Context, in *FindClosest
 	return out, nil
 }
 
-func (c *nicoClient) DeleteMeasurementJournal(ctx context.Context, in *DeleteMeasurementJournalRequest, opts ...grpc.CallOption) (*DeleteMeasurementJournalResponse, error) {
+func (c *nICoClient) DeleteMeasurementJournal(ctx context.Context, in *DeleteMeasurementJournalRequest, opts ...grpc.CallOption) (*DeleteMeasurementJournalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteMeasurementJournalResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteMeasurementJournal_FullMethodName, in, out, cOpts...)
@@ -3229,7 +3229,7 @@ func (c *nicoClient) DeleteMeasurementJournal(ctx context.Context, in *DeleteMea
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementJournal(ctx context.Context, in *ShowMeasurementJournalRequest, opts ...grpc.CallOption) (*ShowMeasurementJournalResponse, error) {
+func (c *nICoClient) ShowMeasurementJournal(ctx context.Context, in *ShowMeasurementJournalRequest, opts ...grpc.CallOption) (*ShowMeasurementJournalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementJournalResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementJournal_FullMethodName, in, out, cOpts...)
@@ -3239,7 +3239,7 @@ func (c *nicoClient) ShowMeasurementJournal(ctx context.Context, in *ShowMeasure
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementJournals(ctx context.Context, in *ShowMeasurementJournalsRequest, opts ...grpc.CallOption) (*ShowMeasurementJournalsResponse, error) {
+func (c *nICoClient) ShowMeasurementJournals(ctx context.Context, in *ShowMeasurementJournalsRequest, opts ...grpc.CallOption) (*ShowMeasurementJournalsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementJournalsResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementJournals_FullMethodName, in, out, cOpts...)
@@ -3249,7 +3249,7 @@ func (c *nicoClient) ShowMeasurementJournals(ctx context.Context, in *ShowMeasur
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementJournal(ctx context.Context, in *ListMeasurementJournalRequest, opts ...grpc.CallOption) (*ListMeasurementJournalResponse, error) {
+func (c *nICoClient) ListMeasurementJournal(ctx context.Context, in *ListMeasurementJournalRequest, opts ...grpc.CallOption) (*ListMeasurementJournalResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementJournalResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementJournal_FullMethodName, in, out, cOpts...)
@@ -3259,7 +3259,7 @@ func (c *nicoClient) ListMeasurementJournal(ctx context.Context, in *ListMeasure
 	return out, nil
 }
 
-func (c *nicoClient) AttestCandidateMachine(ctx context.Context, in *AttestCandidateMachineRequest, opts ...grpc.CallOption) (*AttestCandidateMachineResponse, error) {
+func (c *nICoClient) AttestCandidateMachine(ctx context.Context, in *AttestCandidateMachineRequest, opts ...grpc.CallOption) (*AttestCandidateMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AttestCandidateMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_AttestCandidateMachine_FullMethodName, in, out, cOpts...)
@@ -3269,7 +3269,7 @@ func (c *nicoClient) AttestCandidateMachine(ctx context.Context, in *AttestCandi
 	return out, nil
 }
 
-func (c *nicoClient) ShowCandidateMachine(ctx context.Context, in *ShowCandidateMachineRequest, opts ...grpc.CallOption) (*ShowCandidateMachineResponse, error) {
+func (c *nICoClient) ShowCandidateMachine(ctx context.Context, in *ShowCandidateMachineRequest, opts ...grpc.CallOption) (*ShowCandidateMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowCandidateMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowCandidateMachine_FullMethodName, in, out, cOpts...)
@@ -3279,7 +3279,7 @@ func (c *nicoClient) ShowCandidateMachine(ctx context.Context, in *ShowCandidate
 	return out, nil
 }
 
-func (c *nicoClient) ShowCandidateMachines(ctx context.Context, in *ShowCandidateMachinesRequest, opts ...grpc.CallOption) (*ShowCandidateMachinesResponse, error) {
+func (c *nICoClient) ShowCandidateMachines(ctx context.Context, in *ShowCandidateMachinesRequest, opts ...grpc.CallOption) (*ShowCandidateMachinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowCandidateMachinesResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowCandidateMachines_FullMethodName, in, out, cOpts...)
@@ -3289,7 +3289,7 @@ func (c *nicoClient) ShowCandidateMachines(ctx context.Context, in *ShowCandidat
 	return out, nil
 }
 
-func (c *nicoClient) ListCandidateMachines(ctx context.Context, in *ListCandidateMachinesRequest, opts ...grpc.CallOption) (*ListCandidateMachinesResponse, error) {
+func (c *nICoClient) ListCandidateMachines(ctx context.Context, in *ListCandidateMachinesRequest, opts ...grpc.CallOption) (*ListCandidateMachinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListCandidateMachinesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListCandidateMachines_FullMethodName, in, out, cOpts...)
@@ -3299,7 +3299,7 @@ func (c *nicoClient) ListCandidateMachines(ctx context.Context, in *ListCandidat
 	return out, nil
 }
 
-func (c *nicoClient) CreateMeasurementSystemProfile(ctx context.Context, in *CreateMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*CreateMeasurementSystemProfileResponse, error) {
+func (c *nICoClient) CreateMeasurementSystemProfile(ctx context.Context, in *CreateMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*CreateMeasurementSystemProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateMeasurementSystemProfileResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateMeasurementSystemProfile_FullMethodName, in, out, cOpts...)
@@ -3309,7 +3309,7 @@ func (c *nicoClient) CreateMeasurementSystemProfile(ctx context.Context, in *Cre
 	return out, nil
 }
 
-func (c *nicoClient) DeleteMeasurementSystemProfile(ctx context.Context, in *DeleteMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*DeleteMeasurementSystemProfileResponse, error) {
+func (c *nICoClient) DeleteMeasurementSystemProfile(ctx context.Context, in *DeleteMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*DeleteMeasurementSystemProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteMeasurementSystemProfileResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteMeasurementSystemProfile_FullMethodName, in, out, cOpts...)
@@ -3319,7 +3319,7 @@ func (c *nicoClient) DeleteMeasurementSystemProfile(ctx context.Context, in *Del
 	return out, nil
 }
 
-func (c *nicoClient) RenameMeasurementSystemProfile(ctx context.Context, in *RenameMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*RenameMeasurementSystemProfileResponse, error) {
+func (c *nICoClient) RenameMeasurementSystemProfile(ctx context.Context, in *RenameMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*RenameMeasurementSystemProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RenameMeasurementSystemProfileResponse)
 	err := c.cc.Invoke(ctx, NICo_RenameMeasurementSystemProfile_FullMethodName, in, out, cOpts...)
@@ -3329,7 +3329,7 @@ func (c *nicoClient) RenameMeasurementSystemProfile(ctx context.Context, in *Ren
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementSystemProfile(ctx context.Context, in *ShowMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*ShowMeasurementSystemProfileResponse, error) {
+func (c *nICoClient) ShowMeasurementSystemProfile(ctx context.Context, in *ShowMeasurementSystemProfileRequest, opts ...grpc.CallOption) (*ShowMeasurementSystemProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementSystemProfileResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementSystemProfile_FullMethodName, in, out, cOpts...)
@@ -3339,7 +3339,7 @@ func (c *nicoClient) ShowMeasurementSystemProfile(ctx context.Context, in *ShowM
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementSystemProfiles(ctx context.Context, in *ShowMeasurementSystemProfilesRequest, opts ...grpc.CallOption) (*ShowMeasurementSystemProfilesResponse, error) {
+func (c *nICoClient) ShowMeasurementSystemProfiles(ctx context.Context, in *ShowMeasurementSystemProfilesRequest, opts ...grpc.CallOption) (*ShowMeasurementSystemProfilesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementSystemProfilesResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementSystemProfiles_FullMethodName, in, out, cOpts...)
@@ -3349,7 +3349,7 @@ func (c *nicoClient) ShowMeasurementSystemProfiles(ctx context.Context, in *Show
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementSystemProfiles(ctx context.Context, in *ListMeasurementSystemProfilesRequest, opts ...grpc.CallOption) (*ListMeasurementSystemProfilesResponse, error) {
+func (c *nICoClient) ListMeasurementSystemProfiles(ctx context.Context, in *ListMeasurementSystemProfilesRequest, opts ...grpc.CallOption) (*ListMeasurementSystemProfilesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementSystemProfilesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementSystemProfiles_FullMethodName, in, out, cOpts...)
@@ -3359,7 +3359,7 @@ func (c *nicoClient) ListMeasurementSystemProfiles(ctx context.Context, in *List
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementSystemProfileBundles(ctx context.Context, in *ListMeasurementSystemProfileBundlesRequest, opts ...grpc.CallOption) (*ListMeasurementSystemProfileBundlesResponse, error) {
+func (c *nICoClient) ListMeasurementSystemProfileBundles(ctx context.Context, in *ListMeasurementSystemProfileBundlesRequest, opts ...grpc.CallOption) (*ListMeasurementSystemProfileBundlesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementSystemProfileBundlesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementSystemProfileBundles_FullMethodName, in, out, cOpts...)
@@ -3369,7 +3369,7 @@ func (c *nicoClient) ListMeasurementSystemProfileBundles(ctx context.Context, in
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementSystemProfileMachines(ctx context.Context, in *ListMeasurementSystemProfileMachinesRequest, opts ...grpc.CallOption) (*ListMeasurementSystemProfileMachinesResponse, error) {
+func (c *nICoClient) ListMeasurementSystemProfileMachines(ctx context.Context, in *ListMeasurementSystemProfileMachinesRequest, opts ...grpc.CallOption) (*ListMeasurementSystemProfileMachinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementSystemProfileMachinesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementSystemProfileMachines_FullMethodName, in, out, cOpts...)
@@ -3379,7 +3379,7 @@ func (c *nicoClient) ListMeasurementSystemProfileMachines(ctx context.Context, i
 	return out, nil
 }
 
-func (c *nicoClient) CreateMeasurementReport(ctx context.Context, in *CreateMeasurementReportRequest, opts ...grpc.CallOption) (*CreateMeasurementReportResponse, error) {
+func (c *nICoClient) CreateMeasurementReport(ctx context.Context, in *CreateMeasurementReportRequest, opts ...grpc.CallOption) (*CreateMeasurementReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateMeasurementReportResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateMeasurementReport_FullMethodName, in, out, cOpts...)
@@ -3389,7 +3389,7 @@ func (c *nicoClient) CreateMeasurementReport(ctx context.Context, in *CreateMeas
 	return out, nil
 }
 
-func (c *nicoClient) DeleteMeasurementReport(ctx context.Context, in *DeleteMeasurementReportRequest, opts ...grpc.CallOption) (*DeleteMeasurementReportResponse, error) {
+func (c *nICoClient) DeleteMeasurementReport(ctx context.Context, in *DeleteMeasurementReportRequest, opts ...grpc.CallOption) (*DeleteMeasurementReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteMeasurementReportResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteMeasurementReport_FullMethodName, in, out, cOpts...)
@@ -3399,7 +3399,7 @@ func (c *nicoClient) DeleteMeasurementReport(ctx context.Context, in *DeleteMeas
 	return out, nil
 }
 
-func (c *nicoClient) PromoteMeasurementReport(ctx context.Context, in *PromoteMeasurementReportRequest, opts ...grpc.CallOption) (*PromoteMeasurementReportResponse, error) {
+func (c *nICoClient) PromoteMeasurementReport(ctx context.Context, in *PromoteMeasurementReportRequest, opts ...grpc.CallOption) (*PromoteMeasurementReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PromoteMeasurementReportResponse)
 	err := c.cc.Invoke(ctx, NICo_PromoteMeasurementReport_FullMethodName, in, out, cOpts...)
@@ -3409,7 +3409,7 @@ func (c *nicoClient) PromoteMeasurementReport(ctx context.Context, in *PromoteMe
 	return out, nil
 }
 
-func (c *nicoClient) RevokeMeasurementReport(ctx context.Context, in *RevokeMeasurementReportRequest, opts ...grpc.CallOption) (*RevokeMeasurementReportResponse, error) {
+func (c *nICoClient) RevokeMeasurementReport(ctx context.Context, in *RevokeMeasurementReportRequest, opts ...grpc.CallOption) (*RevokeMeasurementReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RevokeMeasurementReportResponse)
 	err := c.cc.Invoke(ctx, NICo_RevokeMeasurementReport_FullMethodName, in, out, cOpts...)
@@ -3419,7 +3419,7 @@ func (c *nicoClient) RevokeMeasurementReport(ctx context.Context, in *RevokeMeas
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementReportForId(ctx context.Context, in *ShowMeasurementReportForIdRequest, opts ...grpc.CallOption) (*ShowMeasurementReportForIdResponse, error) {
+func (c *nICoClient) ShowMeasurementReportForId(ctx context.Context, in *ShowMeasurementReportForIdRequest, opts ...grpc.CallOption) (*ShowMeasurementReportForIdResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementReportForIdResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementReportForId_FullMethodName, in, out, cOpts...)
@@ -3429,7 +3429,7 @@ func (c *nicoClient) ShowMeasurementReportForId(ctx context.Context, in *ShowMea
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementReportsForMachine(ctx context.Context, in *ShowMeasurementReportsForMachineRequest, opts ...grpc.CallOption) (*ShowMeasurementReportsForMachineResponse, error) {
+func (c *nICoClient) ShowMeasurementReportsForMachine(ctx context.Context, in *ShowMeasurementReportsForMachineRequest, opts ...grpc.CallOption) (*ShowMeasurementReportsForMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementReportsForMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementReportsForMachine_FullMethodName, in, out, cOpts...)
@@ -3439,7 +3439,7 @@ func (c *nicoClient) ShowMeasurementReportsForMachine(ctx context.Context, in *S
 	return out, nil
 }
 
-func (c *nicoClient) ShowMeasurementReports(ctx context.Context, in *ShowMeasurementReportsRequest, opts ...grpc.CallOption) (*ShowMeasurementReportsResponse, error) {
+func (c *nICoClient) ShowMeasurementReports(ctx context.Context, in *ShowMeasurementReportsRequest, opts ...grpc.CallOption) (*ShowMeasurementReportsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ShowMeasurementReportsResponse)
 	err := c.cc.Invoke(ctx, NICo_ShowMeasurementReports_FullMethodName, in, out, cOpts...)
@@ -3449,7 +3449,7 @@ func (c *nicoClient) ShowMeasurementReports(ctx context.Context, in *ShowMeasure
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementReport(ctx context.Context, in *ListMeasurementReportRequest, opts ...grpc.CallOption) (*ListMeasurementReportResponse, error) {
+func (c *nICoClient) ListMeasurementReport(ctx context.Context, in *ListMeasurementReportRequest, opts ...grpc.CallOption) (*ListMeasurementReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementReportResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementReport_FullMethodName, in, out, cOpts...)
@@ -3459,7 +3459,7 @@ func (c *nicoClient) ListMeasurementReport(ctx context.Context, in *ListMeasurem
 	return out, nil
 }
 
-func (c *nicoClient) MatchMeasurementReport(ctx context.Context, in *MatchMeasurementReportRequest, opts ...grpc.CallOption) (*MatchMeasurementReportResponse, error) {
+func (c *nICoClient) MatchMeasurementReport(ctx context.Context, in *MatchMeasurementReportRequest, opts ...grpc.CallOption) (*MatchMeasurementReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MatchMeasurementReportResponse)
 	err := c.cc.Invoke(ctx, NICo_MatchMeasurementReport_FullMethodName, in, out, cOpts...)
@@ -3469,7 +3469,7 @@ func (c *nicoClient) MatchMeasurementReport(ctx context.Context, in *MatchMeasur
 	return out, nil
 }
 
-func (c *nicoClient) ImportSiteMeasurements(ctx context.Context, in *ImportSiteMeasurementsRequest, opts ...grpc.CallOption) (*ImportSiteMeasurementsResponse, error) {
+func (c *nICoClient) ImportSiteMeasurements(ctx context.Context, in *ImportSiteMeasurementsRequest, opts ...grpc.CallOption) (*ImportSiteMeasurementsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ImportSiteMeasurementsResponse)
 	err := c.cc.Invoke(ctx, NICo_ImportSiteMeasurements_FullMethodName, in, out, cOpts...)
@@ -3479,7 +3479,7 @@ func (c *nicoClient) ImportSiteMeasurements(ctx context.Context, in *ImportSiteM
 	return out, nil
 }
 
-func (c *nicoClient) ExportSiteMeasurements(ctx context.Context, in *ExportSiteMeasurementsRequest, opts ...grpc.CallOption) (*ExportSiteMeasurementsResponse, error) {
+func (c *nICoClient) ExportSiteMeasurements(ctx context.Context, in *ExportSiteMeasurementsRequest, opts ...grpc.CallOption) (*ExportSiteMeasurementsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ExportSiteMeasurementsResponse)
 	err := c.cc.Invoke(ctx, NICo_ExportSiteMeasurements_FullMethodName, in, out, cOpts...)
@@ -3489,7 +3489,7 @@ func (c *nicoClient) ExportSiteMeasurements(ctx context.Context, in *ExportSiteM
 	return out, nil
 }
 
-func (c *nicoClient) AddMeasurementTrustedMachine(ctx context.Context, in *AddMeasurementTrustedMachineRequest, opts ...grpc.CallOption) (*AddMeasurementTrustedMachineResponse, error) {
+func (c *nICoClient) AddMeasurementTrustedMachine(ctx context.Context, in *AddMeasurementTrustedMachineRequest, opts ...grpc.CallOption) (*AddMeasurementTrustedMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AddMeasurementTrustedMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_AddMeasurementTrustedMachine_FullMethodName, in, out, cOpts...)
@@ -3499,7 +3499,7 @@ func (c *nicoClient) AddMeasurementTrustedMachine(ctx context.Context, in *AddMe
 	return out, nil
 }
 
-func (c *nicoClient) RemoveMeasurementTrustedMachine(ctx context.Context, in *RemoveMeasurementTrustedMachineRequest, opts ...grpc.CallOption) (*RemoveMeasurementTrustedMachineResponse, error) {
+func (c *nICoClient) RemoveMeasurementTrustedMachine(ctx context.Context, in *RemoveMeasurementTrustedMachineRequest, opts ...grpc.CallOption) (*RemoveMeasurementTrustedMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveMeasurementTrustedMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_RemoveMeasurementTrustedMachine_FullMethodName, in, out, cOpts...)
@@ -3509,7 +3509,7 @@ func (c *nicoClient) RemoveMeasurementTrustedMachine(ctx context.Context, in *Re
 	return out, nil
 }
 
-func (c *nicoClient) AddMeasurementTrustedProfile(ctx context.Context, in *AddMeasurementTrustedProfileRequest, opts ...grpc.CallOption) (*AddMeasurementTrustedProfileResponse, error) {
+func (c *nICoClient) AddMeasurementTrustedProfile(ctx context.Context, in *AddMeasurementTrustedProfileRequest, opts ...grpc.CallOption) (*AddMeasurementTrustedProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AddMeasurementTrustedProfileResponse)
 	err := c.cc.Invoke(ctx, NICo_AddMeasurementTrustedProfile_FullMethodName, in, out, cOpts...)
@@ -3519,7 +3519,7 @@ func (c *nicoClient) AddMeasurementTrustedProfile(ctx context.Context, in *AddMe
 	return out, nil
 }
 
-func (c *nicoClient) RemoveMeasurementTrustedProfile(ctx context.Context, in *RemoveMeasurementTrustedProfileRequest, opts ...grpc.CallOption) (*RemoveMeasurementTrustedProfileResponse, error) {
+func (c *nICoClient) RemoveMeasurementTrustedProfile(ctx context.Context, in *RemoveMeasurementTrustedProfileRequest, opts ...grpc.CallOption) (*RemoveMeasurementTrustedProfileResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemoveMeasurementTrustedProfileResponse)
 	err := c.cc.Invoke(ctx, NICo_RemoveMeasurementTrustedProfile_FullMethodName, in, out, cOpts...)
@@ -3529,7 +3529,7 @@ func (c *nicoClient) RemoveMeasurementTrustedProfile(ctx context.Context, in *Re
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementTrustedMachines(ctx context.Context, in *ListMeasurementTrustedMachinesRequest, opts ...grpc.CallOption) (*ListMeasurementTrustedMachinesResponse, error) {
+func (c *nICoClient) ListMeasurementTrustedMachines(ctx context.Context, in *ListMeasurementTrustedMachinesRequest, opts ...grpc.CallOption) (*ListMeasurementTrustedMachinesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementTrustedMachinesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementTrustedMachines_FullMethodName, in, out, cOpts...)
@@ -3539,7 +3539,7 @@ func (c *nicoClient) ListMeasurementTrustedMachines(ctx context.Context, in *Lis
 	return out, nil
 }
 
-func (c *nicoClient) ListMeasurementTrustedProfiles(ctx context.Context, in *ListMeasurementTrustedProfilesRequest, opts ...grpc.CallOption) (*ListMeasurementTrustedProfilesResponse, error) {
+func (c *nICoClient) ListMeasurementTrustedProfiles(ctx context.Context, in *ListMeasurementTrustedProfilesRequest, opts ...grpc.CallOption) (*ListMeasurementTrustedProfilesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListMeasurementTrustedProfilesResponse)
 	err := c.cc.Invoke(ctx, NICo_ListMeasurementTrustedProfiles_FullMethodName, in, out, cOpts...)
@@ -3549,7 +3549,7 @@ func (c *nicoClient) ListMeasurementTrustedProfiles(ctx context.Context, in *Lis
 	return out, nil
 }
 
-func (c *nicoClient) ListAttestationSummary(ctx context.Context, in *ListAttestationSummaryRequest, opts ...grpc.CallOption) (*ListAttestationSummaryResponse, error) {
+func (c *nICoClient) ListAttestationSummary(ctx context.Context, in *ListAttestationSummaryRequest, opts ...grpc.CallOption) (*ListAttestationSummaryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListAttestationSummaryResponse)
 	err := c.cc.Invoke(ctx, NICo_ListAttestationSummary_FullMethodName, in, out, cOpts...)
@@ -3559,7 +3559,7 @@ func (c *nicoClient) ListAttestationSummary(ctx context.Context, in *ListAttesta
 	return out, nil
 }
 
-func (c *nicoClient) CreateNetworkSecurityGroup(ctx context.Context, in *CreateNetworkSecurityGroupRequest, opts ...grpc.CallOption) (*CreateNetworkSecurityGroupResponse, error) {
+func (c *nICoClient) CreateNetworkSecurityGroup(ctx context.Context, in *CreateNetworkSecurityGroupRequest, opts ...grpc.CallOption) (*CreateNetworkSecurityGroupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateNetworkSecurityGroupResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateNetworkSecurityGroup_FullMethodName, in, out, cOpts...)
@@ -3569,7 +3569,7 @@ func (c *nicoClient) CreateNetworkSecurityGroup(ctx context.Context, in *CreateN
 	return out, nil
 }
 
-func (c *nicoClient) FindNetworkSecurityGroupIds(ctx context.Context, in *FindNetworkSecurityGroupIdsRequest, opts ...grpc.CallOption) (*FindNetworkSecurityGroupIdsResponse, error) {
+func (c *nICoClient) FindNetworkSecurityGroupIds(ctx context.Context, in *FindNetworkSecurityGroupIdsRequest, opts ...grpc.CallOption) (*FindNetworkSecurityGroupIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindNetworkSecurityGroupIdsResponse)
 	err := c.cc.Invoke(ctx, NICo_FindNetworkSecurityGroupIds_FullMethodName, in, out, cOpts...)
@@ -3579,7 +3579,7 @@ func (c *nicoClient) FindNetworkSecurityGroupIds(ctx context.Context, in *FindNe
 	return out, nil
 }
 
-func (c *nicoClient) FindNetworkSecurityGroupsByIds(ctx context.Context, in *FindNetworkSecurityGroupsByIdsRequest, opts ...grpc.CallOption) (*FindNetworkSecurityGroupsByIdsResponse, error) {
+func (c *nICoClient) FindNetworkSecurityGroupsByIds(ctx context.Context, in *FindNetworkSecurityGroupsByIdsRequest, opts ...grpc.CallOption) (*FindNetworkSecurityGroupsByIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindNetworkSecurityGroupsByIdsResponse)
 	err := c.cc.Invoke(ctx, NICo_FindNetworkSecurityGroupsByIds_FullMethodName, in, out, cOpts...)
@@ -3589,7 +3589,7 @@ func (c *nicoClient) FindNetworkSecurityGroupsByIds(ctx context.Context, in *Fin
 	return out, nil
 }
 
-func (c *nicoClient) UpdateNetworkSecurityGroup(ctx context.Context, in *UpdateNetworkSecurityGroupRequest, opts ...grpc.CallOption) (*UpdateNetworkSecurityGroupResponse, error) {
+func (c *nICoClient) UpdateNetworkSecurityGroup(ctx context.Context, in *UpdateNetworkSecurityGroupRequest, opts ...grpc.CallOption) (*UpdateNetworkSecurityGroupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateNetworkSecurityGroupResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateNetworkSecurityGroup_FullMethodName, in, out, cOpts...)
@@ -3599,7 +3599,7 @@ func (c *nicoClient) UpdateNetworkSecurityGroup(ctx context.Context, in *UpdateN
 	return out, nil
 }
 
-func (c *nicoClient) DeleteNetworkSecurityGroup(ctx context.Context, in *DeleteNetworkSecurityGroupRequest, opts ...grpc.CallOption) (*DeleteNetworkSecurityGroupResponse, error) {
+func (c *nICoClient) DeleteNetworkSecurityGroup(ctx context.Context, in *DeleteNetworkSecurityGroupRequest, opts ...grpc.CallOption) (*DeleteNetworkSecurityGroupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteNetworkSecurityGroupResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteNetworkSecurityGroup_FullMethodName, in, out, cOpts...)
@@ -3609,7 +3609,7 @@ func (c *nicoClient) DeleteNetworkSecurityGroup(ctx context.Context, in *DeleteN
 	return out, nil
 }
 
-func (c *nicoClient) GetNetworkSecurityGroupPropagationStatus(ctx context.Context, in *GetNetworkSecurityGroupPropagationStatusRequest, opts ...grpc.CallOption) (*GetNetworkSecurityGroupPropagationStatusResponse, error) {
+func (c *nICoClient) GetNetworkSecurityGroupPropagationStatus(ctx context.Context, in *GetNetworkSecurityGroupPropagationStatusRequest, opts ...grpc.CallOption) (*GetNetworkSecurityGroupPropagationStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetNetworkSecurityGroupPropagationStatusResponse)
 	err := c.cc.Invoke(ctx, NICo_GetNetworkSecurityGroupPropagationStatus_FullMethodName, in, out, cOpts...)
@@ -3619,7 +3619,7 @@ func (c *nicoClient) GetNetworkSecurityGroupPropagationStatus(ctx context.Contex
 	return out, nil
 }
 
-func (c *nicoClient) GetNetworkSecurityGroupAttachments(ctx context.Context, in *GetNetworkSecurityGroupAttachmentsRequest, opts ...grpc.CallOption) (*GetNetworkSecurityGroupAttachmentsResponse, error) {
+func (c *nICoClient) GetNetworkSecurityGroupAttachments(ctx context.Context, in *GetNetworkSecurityGroupAttachmentsRequest, opts ...grpc.CallOption) (*GetNetworkSecurityGroupAttachmentsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetNetworkSecurityGroupAttachmentsResponse)
 	err := c.cc.Invoke(ctx, NICo_GetNetworkSecurityGroupAttachments_FullMethodName, in, out, cOpts...)
@@ -3629,7 +3629,7 @@ func (c *nicoClient) GetNetworkSecurityGroupAttachments(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *nicoClient) CreateOsImage(ctx context.Context, in *OsImageAttributes, opts ...grpc.CallOption) (*OsImage, error) {
+func (c *nICoClient) CreateOsImage(ctx context.Context, in *OsImageAttributes, opts ...grpc.CallOption) (*OsImage, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OsImage)
 	err := c.cc.Invoke(ctx, NICo_CreateOsImage_FullMethodName, in, out, cOpts...)
@@ -3639,7 +3639,7 @@ func (c *nicoClient) CreateOsImage(ctx context.Context, in *OsImageAttributes, o
 	return out, nil
 }
 
-func (c *nicoClient) DeleteOsImage(ctx context.Context, in *DeleteOsImageRequest, opts ...grpc.CallOption) (*DeleteOsImageResponse, error) {
+func (c *nICoClient) DeleteOsImage(ctx context.Context, in *DeleteOsImageRequest, opts ...grpc.CallOption) (*DeleteOsImageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteOsImageResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteOsImage_FullMethodName, in, out, cOpts...)
@@ -3649,7 +3649,7 @@ func (c *nicoClient) DeleteOsImage(ctx context.Context, in *DeleteOsImageRequest
 	return out, nil
 }
 
-func (c *nicoClient) ListOsImage(ctx context.Context, in *ListOsImageRequest, opts ...grpc.CallOption) (*ListOsImageResponse, error) {
+func (c *nICoClient) ListOsImage(ctx context.Context, in *ListOsImageRequest, opts ...grpc.CallOption) (*ListOsImageResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListOsImageResponse)
 	err := c.cc.Invoke(ctx, NICo_ListOsImage_FullMethodName, in, out, cOpts...)
@@ -3659,7 +3659,7 @@ func (c *nicoClient) ListOsImage(ctx context.Context, in *ListOsImageRequest, op
 	return out, nil
 }
 
-func (c *nicoClient) GetOsImage(ctx context.Context, in *UUID, opts ...grpc.CallOption) (*OsImage, error) {
+func (c *nICoClient) GetOsImage(ctx context.Context, in *UUID, opts ...grpc.CallOption) (*OsImage, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OsImage)
 	err := c.cc.Invoke(ctx, NICo_GetOsImage_FullMethodName, in, out, cOpts...)
@@ -3669,7 +3669,7 @@ func (c *nicoClient) GetOsImage(ctx context.Context, in *UUID, opts ...grpc.Call
 	return out, nil
 }
 
-func (c *nicoClient) UpdateOsImage(ctx context.Context, in *OsImageAttributes, opts ...grpc.CallOption) (*OsImage, error) {
+func (c *nICoClient) UpdateOsImage(ctx context.Context, in *OsImageAttributes, opts ...grpc.CallOption) (*OsImage, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OsImage)
 	err := c.cc.Invoke(ctx, NICo_UpdateOsImage_FullMethodName, in, out, cOpts...)
@@ -3679,7 +3679,7 @@ func (c *nicoClient) UpdateOsImage(ctx context.Context, in *OsImageAttributes, o
 	return out, nil
 }
 
-func (c *nicoClient) RebootCompleted(ctx context.Context, in *MachineRebootCompletedRequest, opts ...grpc.CallOption) (*MachineRebootCompletedResponse, error) {
+func (c *nICoClient) RebootCompleted(ctx context.Context, in *MachineRebootCompletedRequest, opts ...grpc.CallOption) (*MachineRebootCompletedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineRebootCompletedResponse)
 	err := c.cc.Invoke(ctx, NICo_RebootCompleted_FullMethodName, in, out, cOpts...)
@@ -3689,7 +3689,7 @@ func (c *nicoClient) RebootCompleted(ctx context.Context, in *MachineRebootCompl
 	return out, nil
 }
 
-func (c *nicoClient) PersistValidationResult(ctx context.Context, in *MachineValidationResultPostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) PersistValidationResult(ctx context.Context, in *MachineValidationResultPostRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_PersistValidationResult_FullMethodName, in, out, cOpts...)
@@ -3699,7 +3699,7 @@ func (c *nicoClient) PersistValidationResult(ctx context.Context, in *MachineVal
 	return out, nil
 }
 
-func (c *nicoClient) GetMachineValidationResults(ctx context.Context, in *MachineValidationGetRequest, opts ...grpc.CallOption) (*MachineValidationResultList, error) {
+func (c *nICoClient) GetMachineValidationResults(ctx context.Context, in *MachineValidationGetRequest, opts ...grpc.CallOption) (*MachineValidationResultList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationResultList)
 	err := c.cc.Invoke(ctx, NICo_GetMachineValidationResults_FullMethodName, in, out, cOpts...)
@@ -3709,7 +3709,7 @@ func (c *nicoClient) GetMachineValidationResults(ctx context.Context, in *Machin
 	return out, nil
 }
 
-func (c *nicoClient) MachineValidationCompleted(ctx context.Context, in *MachineValidationCompletedRequest, opts ...grpc.CallOption) (*MachineValidationCompletedResponse, error) {
+func (c *nICoClient) MachineValidationCompleted(ctx context.Context, in *MachineValidationCompletedRequest, opts ...grpc.CallOption) (*MachineValidationCompletedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationCompletedResponse)
 	err := c.cc.Invoke(ctx, NICo_MachineValidationCompleted_FullMethodName, in, out, cOpts...)
@@ -3719,7 +3719,7 @@ func (c *nicoClient) MachineValidationCompleted(ctx context.Context, in *Machine
 	return out, nil
 }
 
-func (c *nicoClient) MachineSetAutoUpdate(ctx context.Context, in *MachineSetAutoUpdateRequest, opts ...grpc.CallOption) (*MachineSetAutoUpdateResponse, error) {
+func (c *nICoClient) MachineSetAutoUpdate(ctx context.Context, in *MachineSetAutoUpdateRequest, opts ...grpc.CallOption) (*MachineSetAutoUpdateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineSetAutoUpdateResponse)
 	err := c.cc.Invoke(ctx, NICo_MachineSetAutoUpdate_FullMethodName, in, out, cOpts...)
@@ -3729,7 +3729,7 @@ func (c *nicoClient) MachineSetAutoUpdate(ctx context.Context, in *MachineSetAut
 	return out, nil
 }
 
-func (c *nicoClient) GetMachineValidationExternalConfig(ctx context.Context, in *GetMachineValidationExternalConfigRequest, opts ...grpc.CallOption) (*GetMachineValidationExternalConfigResponse, error) {
+func (c *nICoClient) GetMachineValidationExternalConfig(ctx context.Context, in *GetMachineValidationExternalConfigRequest, opts ...grpc.CallOption) (*GetMachineValidationExternalConfigResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMachineValidationExternalConfigResponse)
 	err := c.cc.Invoke(ctx, NICo_GetMachineValidationExternalConfig_FullMethodName, in, out, cOpts...)
@@ -3739,7 +3739,7 @@ func (c *nicoClient) GetMachineValidationExternalConfig(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *nicoClient) GetMachineValidationExternalConfigs(ctx context.Context, in *GetMachineValidationExternalConfigsRequest, opts ...grpc.CallOption) (*GetMachineValidationExternalConfigsResponse, error) {
+func (c *nICoClient) GetMachineValidationExternalConfigs(ctx context.Context, in *GetMachineValidationExternalConfigsRequest, opts ...grpc.CallOption) (*GetMachineValidationExternalConfigsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetMachineValidationExternalConfigsResponse)
 	err := c.cc.Invoke(ctx, NICo_GetMachineValidationExternalConfigs_FullMethodName, in, out, cOpts...)
@@ -3749,7 +3749,7 @@ func (c *nicoClient) GetMachineValidationExternalConfigs(ctx context.Context, in
 	return out, nil
 }
 
-func (c *nicoClient) AddUpdateMachineValidationExternalConfig(ctx context.Context, in *AddUpdateMachineValidationExternalConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AddUpdateMachineValidationExternalConfig(ctx context.Context, in *AddUpdateMachineValidationExternalConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AddUpdateMachineValidationExternalConfig_FullMethodName, in, out, cOpts...)
@@ -3759,7 +3759,7 @@ func (c *nicoClient) AddUpdateMachineValidationExternalConfig(ctx context.Contex
 	return out, nil
 }
 
-func (c *nicoClient) GetMachineValidationRuns(ctx context.Context, in *MachineValidationRunListGetRequest, opts ...grpc.CallOption) (*MachineValidationRunList, error) {
+func (c *nICoClient) GetMachineValidationRuns(ctx context.Context, in *MachineValidationRunListGetRequest, opts ...grpc.CallOption) (*MachineValidationRunList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationRunList)
 	err := c.cc.Invoke(ctx, NICo_GetMachineValidationRuns_FullMethodName, in, out, cOpts...)
@@ -3769,7 +3769,7 @@ func (c *nicoClient) GetMachineValidationRuns(ctx context.Context, in *MachineVa
 	return out, nil
 }
 
-func (c *nicoClient) RemoveMachineValidationExternalConfig(ctx context.Context, in *RemoveMachineValidationExternalConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RemoveMachineValidationExternalConfig(ctx context.Context, in *RemoveMachineValidationExternalConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RemoveMachineValidationExternalConfig_FullMethodName, in, out, cOpts...)
@@ -3779,7 +3779,7 @@ func (c *nicoClient) RemoveMachineValidationExternalConfig(ctx context.Context, 
 	return out, nil
 }
 
-func (c *nicoClient) GetMachineValidationTests(ctx context.Context, in *MachineValidationTestsGetRequest, opts ...grpc.CallOption) (*MachineValidationTestsGetResponse, error) {
+func (c *nICoClient) GetMachineValidationTests(ctx context.Context, in *MachineValidationTestsGetRequest, opts ...grpc.CallOption) (*MachineValidationTestsGetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationTestsGetResponse)
 	err := c.cc.Invoke(ctx, NICo_GetMachineValidationTests_FullMethodName, in, out, cOpts...)
@@ -3789,7 +3789,7 @@ func (c *nicoClient) GetMachineValidationTests(ctx context.Context, in *MachineV
 	return out, nil
 }
 
-func (c *nicoClient) AddMachineValidationTest(ctx context.Context, in *MachineValidationTestAddRequest, opts ...grpc.CallOption) (*MachineValidationTestAddUpdateResponse, error) {
+func (c *nICoClient) AddMachineValidationTest(ctx context.Context, in *MachineValidationTestAddRequest, opts ...grpc.CallOption) (*MachineValidationTestAddUpdateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationTestAddUpdateResponse)
 	err := c.cc.Invoke(ctx, NICo_AddMachineValidationTest_FullMethodName, in, out, cOpts...)
@@ -3799,7 +3799,7 @@ func (c *nicoClient) AddMachineValidationTest(ctx context.Context, in *MachineVa
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMachineValidationTest(ctx context.Context, in *MachineValidationTestUpdateRequest, opts ...grpc.CallOption) (*MachineValidationTestAddUpdateResponse, error) {
+func (c *nICoClient) UpdateMachineValidationTest(ctx context.Context, in *MachineValidationTestUpdateRequest, opts ...grpc.CallOption) (*MachineValidationTestAddUpdateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationTestAddUpdateResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateMachineValidationTest_FullMethodName, in, out, cOpts...)
@@ -3809,7 +3809,7 @@ func (c *nicoClient) UpdateMachineValidationTest(ctx context.Context, in *Machin
 	return out, nil
 }
 
-func (c *nicoClient) MachineValidationTestVerfied(ctx context.Context, in *MachineValidationTestVerfiedRequest, opts ...grpc.CallOption) (*MachineValidationTestVerfiedResponse, error) {
+func (c *nICoClient) MachineValidationTestVerfied(ctx context.Context, in *MachineValidationTestVerfiedRequest, opts ...grpc.CallOption) (*MachineValidationTestVerfiedResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationTestVerfiedResponse)
 	err := c.cc.Invoke(ctx, NICo_MachineValidationTestVerfied_FullMethodName, in, out, cOpts...)
@@ -3819,7 +3819,7 @@ func (c *nicoClient) MachineValidationTestVerfied(ctx context.Context, in *Machi
 	return out, nil
 }
 
-func (c *nicoClient) MachineValidationTestNextVersion(ctx context.Context, in *MachineValidationTestNextVersionRequest, opts ...grpc.CallOption) (*MachineValidationTestNextVersionResponse, error) {
+func (c *nICoClient) MachineValidationTestNextVersion(ctx context.Context, in *MachineValidationTestNextVersionRequest, opts ...grpc.CallOption) (*MachineValidationTestNextVersionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationTestNextVersionResponse)
 	err := c.cc.Invoke(ctx, NICo_MachineValidationTestNextVersion_FullMethodName, in, out, cOpts...)
@@ -3829,7 +3829,7 @@ func (c *nicoClient) MachineValidationTestNextVersion(ctx context.Context, in *M
 	return out, nil
 }
 
-func (c *nicoClient) MachineValidationTestEnableDisableTest(ctx context.Context, in *MachineValidationTestEnableDisableTestRequest, opts ...grpc.CallOption) (*MachineValidationTestEnableDisableTestResponse, error) {
+func (c *nICoClient) MachineValidationTestEnableDisableTest(ctx context.Context, in *MachineValidationTestEnableDisableTestRequest, opts ...grpc.CallOption) (*MachineValidationTestEnableDisableTestResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationTestEnableDisableTestResponse)
 	err := c.cc.Invoke(ctx, NICo_MachineValidationTestEnableDisableTest_FullMethodName, in, out, cOpts...)
@@ -3839,7 +3839,7 @@ func (c *nicoClient) MachineValidationTestEnableDisableTest(ctx context.Context,
 	return out, nil
 }
 
-func (c *nicoClient) UpdateMachineValidationRun(ctx context.Context, in *MachineValidationRunRequest, opts ...grpc.CallOption) (*MachineValidationRunResponse, error) {
+func (c *nICoClient) UpdateMachineValidationRun(ctx context.Context, in *MachineValidationRunRequest, opts ...grpc.CallOption) (*MachineValidationRunResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationRunResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateMachineValidationRun_FullMethodName, in, out, cOpts...)
@@ -3849,7 +3849,7 @@ func (c *nicoClient) UpdateMachineValidationRun(ctx context.Context, in *Machine
 	return out, nil
 }
 
-func (c *nicoClient) AdminBmcReset(ctx context.Context, in *AdminBmcResetRequest, opts ...grpc.CallOption) (*AdminBmcResetResponse, error) {
+func (c *nICoClient) AdminBmcReset(ctx context.Context, in *AdminBmcResetRequest, opts ...grpc.CallOption) (*AdminBmcResetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminBmcResetResponse)
 	err := c.cc.Invoke(ctx, NICo_AdminBmcReset_FullMethodName, in, out, cOpts...)
@@ -3859,7 +3859,7 @@ func (c *nicoClient) AdminBmcReset(ctx context.Context, in *AdminBmcResetRequest
 	return out, nil
 }
 
-func (c *nicoClient) AdminPowerControl(ctx context.Context, in *AdminPowerControlRequest, opts ...grpc.CallOption) (*AdminPowerControlResponse, error) {
+func (c *nICoClient) AdminPowerControl(ctx context.Context, in *AdminPowerControlRequest, opts ...grpc.CallOption) (*AdminPowerControlResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AdminPowerControlResponse)
 	err := c.cc.Invoke(ctx, NICo_AdminPowerControl_FullMethodName, in, out, cOpts...)
@@ -3869,7 +3869,7 @@ func (c *nicoClient) AdminPowerControl(ctx context.Context, in *AdminPowerContro
 	return out, nil
 }
 
-func (c *nicoClient) DisableSecureBoot(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*DisableSecureBootResponse, error) {
+func (c *nICoClient) DisableSecureBoot(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*DisableSecureBootResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DisableSecureBootResponse)
 	err := c.cc.Invoke(ctx, NICo_DisableSecureBoot_FullMethodName, in, out, cOpts...)
@@ -3879,7 +3879,7 @@ func (c *nicoClient) DisableSecureBoot(ctx context.Context, in *BmcEndpointReque
 	return out, nil
 }
 
-func (c *nicoClient) Lockdown(ctx context.Context, in *LockdownRequest, opts ...grpc.CallOption) (*LockdownResponse, error) {
+func (c *nICoClient) Lockdown(ctx context.Context, in *LockdownRequest, opts ...grpc.CallOption) (*LockdownResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LockdownResponse)
 	err := c.cc.Invoke(ctx, NICo_Lockdown_FullMethodName, in, out, cOpts...)
@@ -3889,7 +3889,7 @@ func (c *nicoClient) Lockdown(ctx context.Context, in *LockdownRequest, opts ...
 	return out, nil
 }
 
-func (c *nicoClient) LockdownStatus(ctx context.Context, in *LockdownStatusRequest, opts ...grpc.CallOption) (*LockdownStatus, error) {
+func (c *nICoClient) LockdownStatus(ctx context.Context, in *LockdownStatusRequest, opts ...grpc.CallOption) (*LockdownStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(LockdownStatus)
 	err := c.cc.Invoke(ctx, NICo_LockdownStatus_FullMethodName, in, out, cOpts...)
@@ -3899,7 +3899,7 @@ func (c *nicoClient) LockdownStatus(ctx context.Context, in *LockdownStatusReque
 	return out, nil
 }
 
-func (c *nicoClient) MachineSetup(ctx context.Context, in *MachineSetupRequest, opts ...grpc.CallOption) (*MachineSetupResponse, error) {
+func (c *nICoClient) MachineSetup(ctx context.Context, in *MachineSetupRequest, opts ...grpc.CallOption) (*MachineSetupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineSetupResponse)
 	err := c.cc.Invoke(ctx, NICo_MachineSetup_FullMethodName, in, out, cOpts...)
@@ -3909,7 +3909,7 @@ func (c *nicoClient) MachineSetup(ctx context.Context, in *MachineSetupRequest, 
 	return out, nil
 }
 
-func (c *nicoClient) SetDpuFirstBootOrder(ctx context.Context, in *SetDpuFirstBootOrderRequest, opts ...grpc.CallOption) (*SetDpuFirstBootOrderResponse, error) {
+func (c *nICoClient) SetDpuFirstBootOrder(ctx context.Context, in *SetDpuFirstBootOrderRequest, opts ...grpc.CallOption) (*SetDpuFirstBootOrderResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetDpuFirstBootOrderResponse)
 	err := c.cc.Invoke(ctx, NICo_SetDpuFirstBootOrder_FullMethodName, in, out, cOpts...)
@@ -3919,7 +3919,7 @@ func (c *nicoClient) SetDpuFirstBootOrder(ctx context.Context, in *SetDpuFirstBo
 	return out, nil
 }
 
-func (c *nicoClient) CreateBmcUser(ctx context.Context, in *CreateBmcUserRequest, opts ...grpc.CallOption) (*CreateBmcUserResponse, error) {
+func (c *nICoClient) CreateBmcUser(ctx context.Context, in *CreateBmcUserRequest, opts ...grpc.CallOption) (*CreateBmcUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateBmcUserResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateBmcUser_FullMethodName, in, out, cOpts...)
@@ -3929,7 +3929,7 @@ func (c *nicoClient) CreateBmcUser(ctx context.Context, in *CreateBmcUserRequest
 	return out, nil
 }
 
-func (c *nicoClient) DeleteBmcUser(ctx context.Context, in *DeleteBmcUserRequest, opts ...grpc.CallOption) (*DeleteBmcUserResponse, error) {
+func (c *nICoClient) DeleteBmcUser(ctx context.Context, in *DeleteBmcUserRequest, opts ...grpc.CallOption) (*DeleteBmcUserResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteBmcUserResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteBmcUser_FullMethodName, in, out, cOpts...)
@@ -3939,7 +3939,7 @@ func (c *nicoClient) DeleteBmcUser(ctx context.Context, in *DeleteBmcUserRequest
 	return out, nil
 }
 
-func (c *nicoClient) EnableInfiniteBoot(ctx context.Context, in *EnableInfiniteBootRequest, opts ...grpc.CallOption) (*EnableInfiniteBootResponse, error) {
+func (c *nICoClient) EnableInfiniteBoot(ctx context.Context, in *EnableInfiniteBootRequest, opts ...grpc.CallOption) (*EnableInfiniteBootResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(EnableInfiniteBootResponse)
 	err := c.cc.Invoke(ctx, NICo_EnableInfiniteBoot_FullMethodName, in, out, cOpts...)
@@ -3949,7 +3949,7 @@ func (c *nicoClient) EnableInfiniteBoot(ctx context.Context, in *EnableInfiniteB
 	return out, nil
 }
 
-func (c *nicoClient) IsInfiniteBootEnabled(ctx context.Context, in *IsInfiniteBootEnabledRequest, opts ...grpc.CallOption) (*IsInfiniteBootEnabledResponse, error) {
+func (c *nICoClient) IsInfiniteBootEnabled(ctx context.Context, in *IsInfiniteBootEnabledRequest, opts ...grpc.CallOption) (*IsInfiniteBootEnabledResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IsInfiniteBootEnabledResponse)
 	err := c.cc.Invoke(ctx, NICo_IsInfiniteBootEnabled_FullMethodName, in, out, cOpts...)
@@ -3959,7 +3959,7 @@ func (c *nicoClient) IsInfiniteBootEnabled(ctx context.Context, in *IsInfiniteBo
 	return out, nil
 }
 
-func (c *nicoClient) OnDemandMachineValidation(ctx context.Context, in *MachineValidationOnDemandRequest, opts ...grpc.CallOption) (*MachineValidationOnDemandResponse, error) {
+func (c *nICoClient) OnDemandMachineValidation(ctx context.Context, in *MachineValidationOnDemandRequest, opts ...grpc.CallOption) (*MachineValidationOnDemandResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineValidationOnDemandResponse)
 	err := c.cc.Invoke(ctx, NICo_OnDemandMachineValidation_FullMethodName, in, out, cOpts...)
@@ -3969,7 +3969,7 @@ func (c *nicoClient) OnDemandMachineValidation(ctx context.Context, in *MachineV
 	return out, nil
 }
 
-func (c *nicoClient) TpmAddCaCert(ctx context.Context, in *TpmCaCert, opts ...grpc.CallOption) (*TpmCaAddedCaStatus, error) {
+func (c *nICoClient) TpmAddCaCert(ctx context.Context, in *TpmCaCert, opts ...grpc.CallOption) (*TpmCaAddedCaStatus, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TpmCaAddedCaStatus)
 	err := c.cc.Invoke(ctx, NICo_TpmAddCaCert_FullMethodName, in, out, cOpts...)
@@ -3979,7 +3979,7 @@ func (c *nicoClient) TpmAddCaCert(ctx context.Context, in *TpmCaCert, opts ...gr
 	return out, nil
 }
 
-func (c *nicoClient) TpmShowCaCerts(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TpmCaCertDetailCollection, error) {
+func (c *nICoClient) TpmShowCaCerts(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TpmCaCertDetailCollection, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TpmCaCertDetailCollection)
 	err := c.cc.Invoke(ctx, NICo_TpmShowCaCerts_FullMethodName, in, out, cOpts...)
@@ -3989,7 +3989,7 @@ func (c *nicoClient) TpmShowCaCerts(ctx context.Context, in *emptypb.Empty, opts
 	return out, nil
 }
 
-func (c *nicoClient) TpmShowUnmatchedEkCerts(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TpmEkCertStatusCollection, error) {
+func (c *nICoClient) TpmShowUnmatchedEkCerts(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*TpmEkCertStatusCollection, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TpmEkCertStatusCollection)
 	err := c.cc.Invoke(ctx, NICo_TpmShowUnmatchedEkCerts_FullMethodName, in, out, cOpts...)
@@ -3999,7 +3999,7 @@ func (c *nicoClient) TpmShowUnmatchedEkCerts(ctx context.Context, in *emptypb.Em
 	return out, nil
 }
 
-func (c *nicoClient) TpmDeleteCaCert(ctx context.Context, in *TpmCaCertId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) TpmDeleteCaCert(ctx context.Context, in *TpmCaCertId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_TpmDeleteCaCert_FullMethodName, in, out, cOpts...)
@@ -4009,7 +4009,7 @@ func (c *nicoClient) TpmDeleteCaCert(ctx context.Context, in *TpmCaCertId, opts 
 	return out, nil
 }
 
-func (c *nicoClient) RedfishBrowse(ctx context.Context, in *RedfishBrowseRequest, opts ...grpc.CallOption) (*RedfishBrowseResponse, error) {
+func (c *nICoClient) RedfishBrowse(ctx context.Context, in *RedfishBrowseRequest, opts ...grpc.CallOption) (*RedfishBrowseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RedfishBrowseResponse)
 	err := c.cc.Invoke(ctx, NICo_RedfishBrowse_FullMethodName, in, out, cOpts...)
@@ -4019,7 +4019,7 @@ func (c *nicoClient) RedfishBrowse(ctx context.Context, in *RedfishBrowseRequest
 	return out, nil
 }
 
-func (c *nicoClient) RedfishListActions(ctx context.Context, in *RedfishListActionsRequest, opts ...grpc.CallOption) (*RedfishListActionsResponse, error) {
+func (c *nICoClient) RedfishListActions(ctx context.Context, in *RedfishListActionsRequest, opts ...grpc.CallOption) (*RedfishListActionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RedfishListActionsResponse)
 	err := c.cc.Invoke(ctx, NICo_RedfishListActions_FullMethodName, in, out, cOpts...)
@@ -4029,7 +4029,7 @@ func (c *nicoClient) RedfishListActions(ctx context.Context, in *RedfishListActi
 	return out, nil
 }
 
-func (c *nicoClient) RedfishCreateAction(ctx context.Context, in *RedfishCreateActionRequest, opts ...grpc.CallOption) (*RedfishCreateActionResponse, error) {
+func (c *nICoClient) RedfishCreateAction(ctx context.Context, in *RedfishCreateActionRequest, opts ...grpc.CallOption) (*RedfishCreateActionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RedfishCreateActionResponse)
 	err := c.cc.Invoke(ctx, NICo_RedfishCreateAction_FullMethodName, in, out, cOpts...)
@@ -4039,7 +4039,7 @@ func (c *nicoClient) RedfishCreateAction(ctx context.Context, in *RedfishCreateA
 	return out, nil
 }
 
-func (c *nicoClient) RedfishApproveAction(ctx context.Context, in *RedfishActionID, opts ...grpc.CallOption) (*RedfishApproveActionResponse, error) {
+func (c *nICoClient) RedfishApproveAction(ctx context.Context, in *RedfishActionID, opts ...grpc.CallOption) (*RedfishApproveActionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RedfishApproveActionResponse)
 	err := c.cc.Invoke(ctx, NICo_RedfishApproveAction_FullMethodName, in, out, cOpts...)
@@ -4049,7 +4049,7 @@ func (c *nicoClient) RedfishApproveAction(ctx context.Context, in *RedfishAction
 	return out, nil
 }
 
-func (c *nicoClient) RedfishApplyAction(ctx context.Context, in *RedfishActionID, opts ...grpc.CallOption) (*RedfishApplyActionResponse, error) {
+func (c *nICoClient) RedfishApplyAction(ctx context.Context, in *RedfishActionID, opts ...grpc.CallOption) (*RedfishApplyActionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RedfishApplyActionResponse)
 	err := c.cc.Invoke(ctx, NICo_RedfishApplyAction_FullMethodName, in, out, cOpts...)
@@ -4059,7 +4059,7 @@ func (c *nicoClient) RedfishApplyAction(ctx context.Context, in *RedfishActionID
 	return out, nil
 }
 
-func (c *nicoClient) RedfishCancelAction(ctx context.Context, in *RedfishActionID, opts ...grpc.CallOption) (*RedfishCancelActionResponse, error) {
+func (c *nICoClient) RedfishCancelAction(ctx context.Context, in *RedfishActionID, opts ...grpc.CallOption) (*RedfishCancelActionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RedfishCancelActionResponse)
 	err := c.cc.Invoke(ctx, NICo_RedfishCancelAction_FullMethodName, in, out, cOpts...)
@@ -4069,7 +4069,7 @@ func (c *nicoClient) RedfishCancelAction(ctx context.Context, in *RedfishActionI
 	return out, nil
 }
 
-func (c *nicoClient) UfmBrowse(ctx context.Context, in *UfmBrowseRequest, opts ...grpc.CallOption) (*UfmBrowseResponse, error) {
+func (c *nICoClient) UfmBrowse(ctx context.Context, in *UfmBrowseRequest, opts ...grpc.CallOption) (*UfmBrowseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UfmBrowseResponse)
 	err := c.cc.Invoke(ctx, NICo_UfmBrowse_FullMethodName, in, out, cOpts...)
@@ -4079,7 +4079,7 @@ func (c *nicoClient) UfmBrowse(ctx context.Context, in *UfmBrowseRequest, opts .
 	return out, nil
 }
 
-func (c *nicoClient) GetDesiredFirmwareVersions(ctx context.Context, in *GetDesiredFirmwareVersionsRequest, opts ...grpc.CallOption) (*GetDesiredFirmwareVersionsResponse, error) {
+func (c *nICoClient) GetDesiredFirmwareVersions(ctx context.Context, in *GetDesiredFirmwareVersionsRequest, opts ...grpc.CallOption) (*GetDesiredFirmwareVersionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetDesiredFirmwareVersionsResponse)
 	err := c.cc.Invoke(ctx, NICo_GetDesiredFirmwareVersions_FullMethodName, in, out, cOpts...)
@@ -4089,7 +4089,7 @@ func (c *nicoClient) GetDesiredFirmwareVersions(ctx context.Context, in *GetDesi
 	return out, nil
 }
 
-func (c *nicoClient) CreateSku(ctx context.Context, in *SkuList, opts ...grpc.CallOption) (*SkuIdList, error) {
+func (c *nICoClient) CreateSku(ctx context.Context, in *SkuList, opts ...grpc.CallOption) (*SkuIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SkuIdList)
 	err := c.cc.Invoke(ctx, NICo_CreateSku_FullMethodName, in, out, cOpts...)
@@ -4099,7 +4099,7 @@ func (c *nicoClient) CreateSku(ctx context.Context, in *SkuList, opts ...grpc.Ca
 	return out, nil
 }
 
-func (c *nicoClient) GenerateSkuFromMachine(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*Sku, error) {
+func (c *nICoClient) GenerateSkuFromMachine(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*Sku, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Sku)
 	err := c.cc.Invoke(ctx, NICo_GenerateSkuFromMachine_FullMethodName, in, out, cOpts...)
@@ -4109,7 +4109,7 @@ func (c *nicoClient) GenerateSkuFromMachine(ctx context.Context, in *MachineId, 
 	return out, nil
 }
 
-func (c *nicoClient) VerifySkuForMachine(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) VerifySkuForMachine(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_VerifySkuForMachine_FullMethodName, in, out, cOpts...)
@@ -4119,7 +4119,7 @@ func (c *nicoClient) VerifySkuForMachine(ctx context.Context, in *MachineId, opt
 	return out, nil
 }
 
-func (c *nicoClient) AssignSkuToMachine(ctx context.Context, in *SkuMachinePair, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AssignSkuToMachine(ctx context.Context, in *SkuMachinePair, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AssignSkuToMachine_FullMethodName, in, out, cOpts...)
@@ -4129,7 +4129,7 @@ func (c *nicoClient) AssignSkuToMachine(ctx context.Context, in *SkuMachinePair,
 	return out, nil
 }
 
-func (c *nicoClient) RemoveSkuAssociation(ctx context.Context, in *RemoveSkuRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RemoveSkuAssociation(ctx context.Context, in *RemoveSkuRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RemoveSkuAssociation_FullMethodName, in, out, cOpts...)
@@ -4139,7 +4139,7 @@ func (c *nicoClient) RemoveSkuAssociation(ctx context.Context, in *RemoveSkuRequ
 	return out, nil
 }
 
-func (c *nicoClient) DeleteSku(ctx context.Context, in *SkuIdList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteSku(ctx context.Context, in *SkuIdList, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteSku_FullMethodName, in, out, cOpts...)
@@ -4149,7 +4149,7 @@ func (c *nicoClient) DeleteSku(ctx context.Context, in *SkuIdList, opts ...grpc.
 	return out, nil
 }
 
-func (c *nicoClient) GetAllSkuIds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SkuIdList, error) {
+func (c *nICoClient) GetAllSkuIds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*SkuIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SkuIdList)
 	err := c.cc.Invoke(ctx, NICo_GetAllSkuIds_FullMethodName, in, out, cOpts...)
@@ -4159,7 +4159,7 @@ func (c *nicoClient) GetAllSkuIds(ctx context.Context, in *emptypb.Empty, opts .
 	return out, nil
 }
 
-func (c *nicoClient) FindSkusByIds(ctx context.Context, in *SkusByIdsRequest, opts ...grpc.CallOption) (*SkuList, error) {
+func (c *nICoClient) FindSkusByIds(ctx context.Context, in *SkusByIdsRequest, opts ...grpc.CallOption) (*SkuList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SkuList)
 	err := c.cc.Invoke(ctx, NICo_FindSkusByIds_FullMethodName, in, out, cOpts...)
@@ -4169,7 +4169,7 @@ func (c *nicoClient) FindSkusByIds(ctx context.Context, in *SkusByIdsRequest, op
 	return out, nil
 }
 
-func (c *nicoClient) UpdateSkuMetadata(ctx context.Context, in *SkuUpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) UpdateSkuMetadata(ctx context.Context, in *SkuUpdateMetadataRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_UpdateSkuMetadata_FullMethodName, in, out, cOpts...)
@@ -4179,7 +4179,7 @@ func (c *nicoClient) UpdateSkuMetadata(ctx context.Context, in *SkuUpdateMetadat
 	return out, nil
 }
 
-func (c *nicoClient) ReplaceSku(ctx context.Context, in *Sku, opts ...grpc.CallOption) (*Sku, error) {
+func (c *nICoClient) ReplaceSku(ctx context.Context, in *Sku, opts ...grpc.CallOption) (*Sku, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Sku)
 	err := c.cc.Invoke(ctx, NICo_ReplaceSku_FullMethodName, in, out, cOpts...)
@@ -4189,7 +4189,7 @@ func (c *nicoClient) ReplaceSku(ctx context.Context, in *Sku, opts ...grpc.CallO
 	return out, nil
 }
 
-func (c *nicoClient) GetManagedHostQuarantineState(ctx context.Context, in *GetManagedHostQuarantineStateRequest, opts ...grpc.CallOption) (*GetManagedHostQuarantineStateResponse, error) {
+func (c *nICoClient) GetManagedHostQuarantineState(ctx context.Context, in *GetManagedHostQuarantineStateRequest, opts ...grpc.CallOption) (*GetManagedHostQuarantineStateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetManagedHostQuarantineStateResponse)
 	err := c.cc.Invoke(ctx, NICo_GetManagedHostQuarantineState_FullMethodName, in, out, cOpts...)
@@ -4199,7 +4199,7 @@ func (c *nicoClient) GetManagedHostQuarantineState(ctx context.Context, in *GetM
 	return out, nil
 }
 
-func (c *nicoClient) SetManagedHostQuarantineState(ctx context.Context, in *SetManagedHostQuarantineStateRequest, opts ...grpc.CallOption) (*SetManagedHostQuarantineStateResponse, error) {
+func (c *nICoClient) SetManagedHostQuarantineState(ctx context.Context, in *SetManagedHostQuarantineStateRequest, opts ...grpc.CallOption) (*SetManagedHostQuarantineStateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetManagedHostQuarantineStateResponse)
 	err := c.cc.Invoke(ctx, NICo_SetManagedHostQuarantineState_FullMethodName, in, out, cOpts...)
@@ -4209,7 +4209,7 @@ func (c *nicoClient) SetManagedHostQuarantineState(ctx context.Context, in *SetM
 	return out, nil
 }
 
-func (c *nicoClient) ClearManagedHostQuarantineState(ctx context.Context, in *ClearManagedHostQuarantineStateRequest, opts ...grpc.CallOption) (*ClearManagedHostQuarantineStateResponse, error) {
+func (c *nICoClient) ClearManagedHostQuarantineState(ctx context.Context, in *ClearManagedHostQuarantineStateRequest, opts ...grpc.CallOption) (*ClearManagedHostQuarantineStateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ClearManagedHostQuarantineStateResponse)
 	err := c.cc.Invoke(ctx, NICo_ClearManagedHostQuarantineState_FullMethodName, in, out, cOpts...)
@@ -4219,7 +4219,7 @@ func (c *nicoClient) ClearManagedHostQuarantineState(ctx context.Context, in *Cl
 	return out, nil
 }
 
-func (c *nicoClient) ResetHostReprovisioning(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ResetHostReprovisioning(ctx context.Context, in *MachineId, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ResetHostReprovisioning_FullMethodName, in, out, cOpts...)
@@ -4229,7 +4229,7 @@ func (c *nicoClient) ResetHostReprovisioning(ctx context.Context, in *MachineId,
 	return out, nil
 }
 
-func (c *nicoClient) CopyBfbToDpuRshim(ctx context.Context, in *CopyBfbToDpuRshimRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) CopyBfbToDpuRshim(ctx context.Context, in *CopyBfbToDpuRshimRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_CopyBfbToDpuRshim_FullMethodName, in, out, cOpts...)
@@ -4239,7 +4239,7 @@ func (c *nicoClient) CopyBfbToDpuRshim(ctx context.Context, in *CopyBfbToDpuRshi
 	return out, nil
 }
 
-func (c *nicoClient) GetAllDpaInterfaceIds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DpaInterfaceIdList, error) {
+func (c *nICoClient) GetAllDpaInterfaceIds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*DpaInterfaceIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpaInterfaceIdList)
 	err := c.cc.Invoke(ctx, NICo_GetAllDpaInterfaceIds_FullMethodName, in, out, cOpts...)
@@ -4249,7 +4249,7 @@ func (c *nicoClient) GetAllDpaInterfaceIds(ctx context.Context, in *emptypb.Empt
 	return out, nil
 }
 
-func (c *nicoClient) FindDpaInterfacesByIds(ctx context.Context, in *DpaInterfacesByIdsRequest, opts ...grpc.CallOption) (*DpaInterfaceList, error) {
+func (c *nICoClient) FindDpaInterfacesByIds(ctx context.Context, in *DpaInterfacesByIdsRequest, opts ...grpc.CallOption) (*DpaInterfaceList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpaInterfaceList)
 	err := c.cc.Invoke(ctx, NICo_FindDpaInterfacesByIds_FullMethodName, in, out, cOpts...)
@@ -4259,7 +4259,7 @@ func (c *nicoClient) FindDpaInterfacesByIds(ctx context.Context, in *DpaInterfac
 	return out, nil
 }
 
-func (c *nicoClient) CreateDpaInterface(ctx context.Context, in *DpaInterfaceCreationRequest, opts ...grpc.CallOption) (*DpaInterface, error) {
+func (c *nICoClient) CreateDpaInterface(ctx context.Context, in *DpaInterfaceCreationRequest, opts ...grpc.CallOption) (*DpaInterface, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpaInterface)
 	err := c.cc.Invoke(ctx, NICo_CreateDpaInterface_FullMethodName, in, out, cOpts...)
@@ -4269,7 +4269,7 @@ func (c *nicoClient) CreateDpaInterface(ctx context.Context, in *DpaInterfaceCre
 	return out, nil
 }
 
-func (c *nicoClient) EnsureDpaInterface(ctx context.Context, in *DpaInterfaceCreationRequest, opts ...grpc.CallOption) (*DpaInterface, error) {
+func (c *nICoClient) EnsureDpaInterface(ctx context.Context, in *DpaInterfaceCreationRequest, opts ...grpc.CallOption) (*DpaInterface, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpaInterface)
 	err := c.cc.Invoke(ctx, NICo_EnsureDpaInterface_FullMethodName, in, out, cOpts...)
@@ -4279,7 +4279,7 @@ func (c *nicoClient) EnsureDpaInterface(ctx context.Context, in *DpaInterfaceCre
 	return out, nil
 }
 
-func (c *nicoClient) DeleteDpaInterface(ctx context.Context, in *DpaInterfaceDeletionRequest, opts ...grpc.CallOption) (*DpaInterfaceDeletionResult, error) {
+func (c *nICoClient) DeleteDpaInterface(ctx context.Context, in *DpaInterfaceDeletionRequest, opts ...grpc.CallOption) (*DpaInterfaceDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpaInterfaceDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteDpaInterface_FullMethodName, in, out, cOpts...)
@@ -4289,7 +4289,7 @@ func (c *nicoClient) DeleteDpaInterface(ctx context.Context, in *DpaInterfaceDel
 	return out, nil
 }
 
-func (c *nicoClient) SetDpaNetworkObservationStatus(ctx context.Context, in *DpaNetworkObservationSetRequest, opts ...grpc.CallOption) (*DpaInterface, error) {
+func (c *nICoClient) SetDpaNetworkObservationStatus(ctx context.Context, in *DpaNetworkObservationSetRequest, opts ...grpc.CallOption) (*DpaInterface, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpaInterface)
 	err := c.cc.Invoke(ctx, NICo_SetDpaNetworkObservationStatus_FullMethodName, in, out, cOpts...)
@@ -4299,7 +4299,7 @@ func (c *nicoClient) SetDpaNetworkObservationStatus(ctx context.Context, in *Dpa
 	return out, nil
 }
 
-func (c *nicoClient) GetPowerOptions(ctx context.Context, in *PowerOptionRequest, opts ...grpc.CallOption) (*PowerOptionResponse, error) {
+func (c *nICoClient) GetPowerOptions(ctx context.Context, in *PowerOptionRequest, opts ...grpc.CallOption) (*PowerOptionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerOptionResponse)
 	err := c.cc.Invoke(ctx, NICo_GetPowerOptions_FullMethodName, in, out, cOpts...)
@@ -4309,7 +4309,7 @@ func (c *nicoClient) GetPowerOptions(ctx context.Context, in *PowerOptionRequest
 	return out, nil
 }
 
-func (c *nicoClient) UpdatePowerOption(ctx context.Context, in *PowerOptionUpdateRequest, opts ...grpc.CallOption) (*PowerOptionResponse, error) {
+func (c *nICoClient) UpdatePowerOption(ctx context.Context, in *PowerOptionUpdateRequest, opts ...grpc.CallOption) (*PowerOptionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PowerOptionResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdatePowerOption_FullMethodName, in, out, cOpts...)
@@ -4319,7 +4319,7 @@ func (c *nicoClient) UpdatePowerOption(ctx context.Context, in *PowerOptionUpdat
 	return out, nil
 }
 
-func (c *nicoClient) AllowIngestionAndPowerOn(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) AllowIngestionAndPowerOn(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_AllowIngestionAndPowerOn_FullMethodName, in, out, cOpts...)
@@ -4329,7 +4329,7 @@ func (c *nicoClient) AllowIngestionAndPowerOn(ctx context.Context, in *BmcEndpoi
 	return out, nil
 }
 
-func (c *nicoClient) DetermineMachineIngestionState(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*MachineIngestionStateResponse, error) {
+func (c *nICoClient) DetermineMachineIngestionState(ctx context.Context, in *BmcEndpointRequest, opts ...grpc.CallOption) (*MachineIngestionStateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineIngestionStateResponse)
 	err := c.cc.Invoke(ctx, NICo_DetermineMachineIngestionState_FullMethodName, in, out, cOpts...)
@@ -4339,7 +4339,7 @@ func (c *nicoClient) DetermineMachineIngestionState(ctx context.Context, in *Bmc
 	return out, nil
 }
 
-func (c *nicoClient) FindRackIds(ctx context.Context, in *RackSearchFilter, opts ...grpc.CallOption) (*RackIdList, error) {
+func (c *nICoClient) FindRackIds(ctx context.Context, in *RackSearchFilter, opts ...grpc.CallOption) (*RackIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackIdList)
 	err := c.cc.Invoke(ctx, NICo_FindRackIds_FullMethodName, in, out, cOpts...)
@@ -4349,7 +4349,7 @@ func (c *nicoClient) FindRackIds(ctx context.Context, in *RackSearchFilter, opts
 	return out, nil
 }
 
-func (c *nicoClient) FindRacksByIds(ctx context.Context, in *RacksByIdsRequest, opts ...grpc.CallOption) (*RackList, error) {
+func (c *nICoClient) FindRacksByIds(ctx context.Context, in *RacksByIdsRequest, opts ...grpc.CallOption) (*RackList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RackList)
 	err := c.cc.Invoke(ctx, NICo_FindRacksByIds_FullMethodName, in, out, cOpts...)
@@ -4359,7 +4359,7 @@ func (c *nicoClient) FindRacksByIds(ctx context.Context, in *RacksByIdsRequest, 
 	return out, nil
 }
 
-func (c *nicoClient) GetRack(ctx context.Context, in *GetRackRequest, opts ...grpc.CallOption) (*GetRackResponse, error) {
+func (c *nICoClient) GetRack(ctx context.Context, in *GetRackRequest, opts ...grpc.CallOption) (*GetRackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRackResponse)
 	err := c.cc.Invoke(ctx, NICo_GetRack_FullMethodName, in, out, cOpts...)
@@ -4369,7 +4369,7 @@ func (c *nicoClient) GetRack(ctx context.Context, in *GetRackRequest, opts ...gr
 	return out, nil
 }
 
-func (c *nicoClient) DeleteRack(ctx context.Context, in *DeleteRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteRack(ctx context.Context, in *DeleteRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteRack_FullMethodName, in, out, cOpts...)
@@ -4379,7 +4379,7 @@ func (c *nicoClient) DeleteRack(ctx context.Context, in *DeleteRackRequest, opts
 	return out, nil
 }
 
-func (c *nicoClient) CreateComputeAllocation(ctx context.Context, in *CreateComputeAllocationRequest, opts ...grpc.CallOption) (*CreateComputeAllocationResponse, error) {
+func (c *nICoClient) CreateComputeAllocation(ctx context.Context, in *CreateComputeAllocationRequest, opts ...grpc.CallOption) (*CreateComputeAllocationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateComputeAllocationResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateComputeAllocation_FullMethodName, in, out, cOpts...)
@@ -4389,7 +4389,7 @@ func (c *nicoClient) CreateComputeAllocation(ctx context.Context, in *CreateComp
 	return out, nil
 }
 
-func (c *nicoClient) FindComputeAllocationIds(ctx context.Context, in *FindComputeAllocationIdsRequest, opts ...grpc.CallOption) (*FindComputeAllocationIdsResponse, error) {
+func (c *nICoClient) FindComputeAllocationIds(ctx context.Context, in *FindComputeAllocationIdsRequest, opts ...grpc.CallOption) (*FindComputeAllocationIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindComputeAllocationIdsResponse)
 	err := c.cc.Invoke(ctx, NICo_FindComputeAllocationIds_FullMethodName, in, out, cOpts...)
@@ -4399,7 +4399,7 @@ func (c *nicoClient) FindComputeAllocationIds(ctx context.Context, in *FindCompu
 	return out, nil
 }
 
-func (c *nicoClient) FindComputeAllocationsByIds(ctx context.Context, in *FindComputeAllocationsByIdsRequest, opts ...grpc.CallOption) (*FindComputeAllocationsByIdsResponse, error) {
+func (c *nICoClient) FindComputeAllocationsByIds(ctx context.Context, in *FindComputeAllocationsByIdsRequest, opts ...grpc.CallOption) (*FindComputeAllocationsByIdsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindComputeAllocationsByIdsResponse)
 	err := c.cc.Invoke(ctx, NICo_FindComputeAllocationsByIds_FullMethodName, in, out, cOpts...)
@@ -4409,7 +4409,7 @@ func (c *nicoClient) FindComputeAllocationsByIds(ctx context.Context, in *FindCo
 	return out, nil
 }
 
-func (c *nicoClient) UpdateComputeAllocation(ctx context.Context, in *UpdateComputeAllocationRequest, opts ...grpc.CallOption) (*UpdateComputeAllocationResponse, error) {
+func (c *nICoClient) UpdateComputeAllocation(ctx context.Context, in *UpdateComputeAllocationRequest, opts ...grpc.CallOption) (*UpdateComputeAllocationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateComputeAllocationResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateComputeAllocation_FullMethodName, in, out, cOpts...)
@@ -4419,7 +4419,7 @@ func (c *nicoClient) UpdateComputeAllocation(ctx context.Context, in *UpdateComp
 	return out, nil
 }
 
-func (c *nicoClient) DeleteComputeAllocation(ctx context.Context, in *DeleteComputeAllocationRequest, opts ...grpc.CallOption) (*DeleteComputeAllocationResponse, error) {
+func (c *nICoClient) DeleteComputeAllocation(ctx context.Context, in *DeleteComputeAllocationRequest, opts ...grpc.CallOption) (*DeleteComputeAllocationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteComputeAllocationResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteComputeAllocation_FullMethodName, in, out, cOpts...)
@@ -4429,7 +4429,7 @@ func (c *nicoClient) DeleteComputeAllocation(ctx context.Context, in *DeleteComp
 	return out, nil
 }
 
-func (c *nicoClient) SetFirmwareUpdateTimeWindow(ctx context.Context, in *SetFirmwareUpdateTimeWindowRequest, opts ...grpc.CallOption) (*SetFirmwareUpdateTimeWindowResponse, error) {
+func (c *nICoClient) SetFirmwareUpdateTimeWindow(ctx context.Context, in *SetFirmwareUpdateTimeWindowRequest, opts ...grpc.CallOption) (*SetFirmwareUpdateTimeWindowResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SetFirmwareUpdateTimeWindowResponse)
 	err := c.cc.Invoke(ctx, NICo_SetFirmwareUpdateTimeWindow_FullMethodName, in, out, cOpts...)
@@ -4439,7 +4439,7 @@ func (c *nicoClient) SetFirmwareUpdateTimeWindow(ctx context.Context, in *SetFir
 	return out, nil
 }
 
-func (c *nicoClient) ListHostFirmware(ctx context.Context, in *ListHostFirmwareRequest, opts ...grpc.CallOption) (*ListHostFirmwareResponse, error) {
+func (c *nICoClient) ListHostFirmware(ctx context.Context, in *ListHostFirmwareRequest, opts ...grpc.CallOption) (*ListHostFirmwareResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListHostFirmwareResponse)
 	err := c.cc.Invoke(ctx, NICo_ListHostFirmware_FullMethodName, in, out, cOpts...)
@@ -4449,7 +4449,7 @@ func (c *nicoClient) ListHostFirmware(ctx context.Context, in *ListHostFirmwareR
 	return out, nil
 }
 
-func (c *nicoClient) PublishMlxDeviceReport(ctx context.Context, in *PublishMlxDeviceReportRequest, opts ...grpc.CallOption) (*PublishMlxDeviceReportResponse, error) {
+func (c *nICoClient) PublishMlxDeviceReport(ctx context.Context, in *PublishMlxDeviceReportRequest, opts ...grpc.CallOption) (*PublishMlxDeviceReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PublishMlxDeviceReportResponse)
 	err := c.cc.Invoke(ctx, NICo_PublishMlxDeviceReport_FullMethodName, in, out, cOpts...)
@@ -4459,7 +4459,7 @@ func (c *nicoClient) PublishMlxDeviceReport(ctx context.Context, in *PublishMlxD
 	return out, nil
 }
 
-func (c *nicoClient) PublishMlxObservationReport(ctx context.Context, in *PublishMlxObservationReportRequest, opts ...grpc.CallOption) (*PublishMlxObservationReportResponse, error) {
+func (c *nICoClient) PublishMlxObservationReport(ctx context.Context, in *PublishMlxObservationReportRequest, opts ...grpc.CallOption) (*PublishMlxObservationReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PublishMlxObservationReportResponse)
 	err := c.cc.Invoke(ctx, NICo_PublishMlxObservationReport_FullMethodName, in, out, cOpts...)
@@ -4469,7 +4469,7 @@ func (c *nicoClient) PublishMlxObservationReport(ctx context.Context, in *Publis
 	return out, nil
 }
 
-func (c *nicoClient) TrimTable(ctx context.Context, in *TrimTableRequest, opts ...grpc.CallOption) (*TrimTableResponse, error) {
+func (c *nICoClient) TrimTable(ctx context.Context, in *TrimTableRequest, opts ...grpc.CallOption) (*TrimTableResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TrimTableResponse)
 	err := c.cc.Invoke(ctx, NICo_TrimTable_FullMethodName, in, out, cOpts...)
@@ -4479,7 +4479,7 @@ func (c *nicoClient) TrimTable(ctx context.Context, in *TrimTableRequest, opts .
 	return out, nil
 }
 
-func (c *nicoClient) CreateRemediation(ctx context.Context, in *CreateRemediationRequest, opts ...grpc.CallOption) (*CreateRemediationResponse, error) {
+func (c *nICoClient) CreateRemediation(ctx context.Context, in *CreateRemediationRequest, opts ...grpc.CallOption) (*CreateRemediationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateRemediationResponse)
 	err := c.cc.Invoke(ctx, NICo_CreateRemediation_FullMethodName, in, out, cOpts...)
@@ -4489,7 +4489,7 @@ func (c *nicoClient) CreateRemediation(ctx context.Context, in *CreateRemediatio
 	return out, nil
 }
 
-func (c *nicoClient) ApproveRemediation(ctx context.Context, in *ApproveRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ApproveRemediation(ctx context.Context, in *ApproveRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ApproveRemediation_FullMethodName, in, out, cOpts...)
@@ -4499,7 +4499,7 @@ func (c *nicoClient) ApproveRemediation(ctx context.Context, in *ApproveRemediat
 	return out, nil
 }
 
-func (c *nicoClient) RevokeRemediation(ctx context.Context, in *RevokeRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RevokeRemediation(ctx context.Context, in *RevokeRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RevokeRemediation_FullMethodName, in, out, cOpts...)
@@ -4509,7 +4509,7 @@ func (c *nicoClient) RevokeRemediation(ctx context.Context, in *RevokeRemediatio
 	return out, nil
 }
 
-func (c *nicoClient) EnableRemediation(ctx context.Context, in *EnableRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) EnableRemediation(ctx context.Context, in *EnableRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_EnableRemediation_FullMethodName, in, out, cOpts...)
@@ -4519,7 +4519,7 @@ func (c *nicoClient) EnableRemediation(ctx context.Context, in *EnableRemediatio
 	return out, nil
 }
 
-func (c *nicoClient) DisableRemediation(ctx context.Context, in *DisableRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DisableRemediation(ctx context.Context, in *DisableRemediationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DisableRemediation_FullMethodName, in, out, cOpts...)
@@ -4529,7 +4529,7 @@ func (c *nicoClient) DisableRemediation(ctx context.Context, in *DisableRemediat
 	return out, nil
 }
 
-func (c *nicoClient) FindRemediationIds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RemediationIdList, error) {
+func (c *nICoClient) FindRemediationIds(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*RemediationIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemediationIdList)
 	err := c.cc.Invoke(ctx, NICo_FindRemediationIds_FullMethodName, in, out, cOpts...)
@@ -4539,7 +4539,7 @@ func (c *nicoClient) FindRemediationIds(ctx context.Context, in *emptypb.Empty, 
 	return out, nil
 }
 
-func (c *nicoClient) FindRemediationsByIds(ctx context.Context, in *RemediationIdList, opts ...grpc.CallOption) (*RemediationList, error) {
+func (c *nICoClient) FindRemediationsByIds(ctx context.Context, in *RemediationIdList, opts ...grpc.CallOption) (*RemediationList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(RemediationList)
 	err := c.cc.Invoke(ctx, NICo_FindRemediationsByIds_FullMethodName, in, out, cOpts...)
@@ -4549,7 +4549,7 @@ func (c *nicoClient) FindRemediationsByIds(ctx context.Context, in *RemediationI
 	return out, nil
 }
 
-func (c *nicoClient) FindAppliedRemediationIds(ctx context.Context, in *FindAppliedRemediationIdsRequest, opts ...grpc.CallOption) (*AppliedRemediationIdList, error) {
+func (c *nICoClient) FindAppliedRemediationIds(ctx context.Context, in *FindAppliedRemediationIdsRequest, opts ...grpc.CallOption) (*AppliedRemediationIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AppliedRemediationIdList)
 	err := c.cc.Invoke(ctx, NICo_FindAppliedRemediationIds_FullMethodName, in, out, cOpts...)
@@ -4559,7 +4559,7 @@ func (c *nicoClient) FindAppliedRemediationIds(ctx context.Context, in *FindAppl
 	return out, nil
 }
 
-func (c *nicoClient) FindAppliedRemediations(ctx context.Context, in *FindAppliedRemediationsRequest, opts ...grpc.CallOption) (*AppliedRemediationList, error) {
+func (c *nICoClient) FindAppliedRemediations(ctx context.Context, in *FindAppliedRemediationsRequest, opts ...grpc.CallOption) (*AppliedRemediationList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AppliedRemediationList)
 	err := c.cc.Invoke(ctx, NICo_FindAppliedRemediations_FullMethodName, in, out, cOpts...)
@@ -4569,7 +4569,7 @@ func (c *nicoClient) FindAppliedRemediations(ctx context.Context, in *FindApplie
 	return out, nil
 }
 
-func (c *nicoClient) GetNextRemediationForMachine(ctx context.Context, in *GetNextRemediationForMachineRequest, opts ...grpc.CallOption) (*GetNextRemediationForMachineResponse, error) {
+func (c *nICoClient) GetNextRemediationForMachine(ctx context.Context, in *GetNextRemediationForMachineRequest, opts ...grpc.CallOption) (*GetNextRemediationForMachineResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetNextRemediationForMachineResponse)
 	err := c.cc.Invoke(ctx, NICo_GetNextRemediationForMachine_FullMethodName, in, out, cOpts...)
@@ -4579,7 +4579,7 @@ func (c *nicoClient) GetNextRemediationForMachine(ctx context.Context, in *GetNe
 	return out, nil
 }
 
-func (c *nicoClient) RemediationApplied(ctx context.Context, in *RemediationAppliedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) RemediationApplied(ctx context.Context, in *RemediationAppliedRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_RemediationApplied_FullMethodName, in, out, cOpts...)
@@ -4589,7 +4589,7 @@ func (c *nicoClient) RemediationApplied(ctx context.Context, in *RemediationAppl
 	return out, nil
 }
 
-func (c *nicoClient) SetPrimaryDpu(ctx context.Context, in *SetPrimaryDpuRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) SetPrimaryDpu(ctx context.Context, in *SetPrimaryDpuRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_SetPrimaryDpu_FullMethodName, in, out, cOpts...)
@@ -4599,7 +4599,7 @@ func (c *nicoClient) SetPrimaryDpu(ctx context.Context, in *SetPrimaryDpuRequest
 	return out, nil
 }
 
-func (c *nicoClient) CreateDpuExtensionService(ctx context.Context, in *CreateDpuExtensionServiceRequest, opts ...grpc.CallOption) (*DpuExtensionService, error) {
+func (c *nICoClient) CreateDpuExtensionService(ctx context.Context, in *CreateDpuExtensionServiceRequest, opts ...grpc.CallOption) (*DpuExtensionService, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuExtensionService)
 	err := c.cc.Invoke(ctx, NICo_CreateDpuExtensionService_FullMethodName, in, out, cOpts...)
@@ -4609,7 +4609,7 @@ func (c *nicoClient) CreateDpuExtensionService(ctx context.Context, in *CreateDp
 	return out, nil
 }
 
-func (c *nicoClient) UpdateDpuExtensionService(ctx context.Context, in *UpdateDpuExtensionServiceRequest, opts ...grpc.CallOption) (*DpuExtensionService, error) {
+func (c *nICoClient) UpdateDpuExtensionService(ctx context.Context, in *UpdateDpuExtensionServiceRequest, opts ...grpc.CallOption) (*DpuExtensionService, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuExtensionService)
 	err := c.cc.Invoke(ctx, NICo_UpdateDpuExtensionService_FullMethodName, in, out, cOpts...)
@@ -4619,7 +4619,7 @@ func (c *nicoClient) UpdateDpuExtensionService(ctx context.Context, in *UpdateDp
 	return out, nil
 }
 
-func (c *nicoClient) DeleteDpuExtensionService(ctx context.Context, in *DeleteDpuExtensionServiceRequest, opts ...grpc.CallOption) (*DeleteDpuExtensionServiceResponse, error) {
+func (c *nICoClient) DeleteDpuExtensionService(ctx context.Context, in *DeleteDpuExtensionServiceRequest, opts ...grpc.CallOption) (*DeleteDpuExtensionServiceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteDpuExtensionServiceResponse)
 	err := c.cc.Invoke(ctx, NICo_DeleteDpuExtensionService_FullMethodName, in, out, cOpts...)
@@ -4629,7 +4629,7 @@ func (c *nicoClient) DeleteDpuExtensionService(ctx context.Context, in *DeleteDp
 	return out, nil
 }
 
-func (c *nicoClient) FindDpuExtensionServiceIds(ctx context.Context, in *DpuExtensionServiceSearchFilter, opts ...grpc.CallOption) (*DpuExtensionServiceIdList, error) {
+func (c *nICoClient) FindDpuExtensionServiceIds(ctx context.Context, in *DpuExtensionServiceSearchFilter, opts ...grpc.CallOption) (*DpuExtensionServiceIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuExtensionServiceIdList)
 	err := c.cc.Invoke(ctx, NICo_FindDpuExtensionServiceIds_FullMethodName, in, out, cOpts...)
@@ -4639,7 +4639,7 @@ func (c *nicoClient) FindDpuExtensionServiceIds(ctx context.Context, in *DpuExte
 	return out, nil
 }
 
-func (c *nicoClient) FindDpuExtensionServicesByIds(ctx context.Context, in *DpuExtensionServicesByIdsRequest, opts ...grpc.CallOption) (*DpuExtensionServiceList, error) {
+func (c *nICoClient) FindDpuExtensionServicesByIds(ctx context.Context, in *DpuExtensionServicesByIdsRequest, opts ...grpc.CallOption) (*DpuExtensionServiceList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuExtensionServiceList)
 	err := c.cc.Invoke(ctx, NICo_FindDpuExtensionServicesByIds_FullMethodName, in, out, cOpts...)
@@ -4649,7 +4649,7 @@ func (c *nicoClient) FindDpuExtensionServicesByIds(ctx context.Context, in *DpuE
 	return out, nil
 }
 
-func (c *nicoClient) GetDpuExtensionServiceVersionsInfo(ctx context.Context, in *GetDpuExtensionServiceVersionsInfoRequest, opts ...grpc.CallOption) (*DpuExtensionServiceVersionInfoList, error) {
+func (c *nICoClient) GetDpuExtensionServiceVersionsInfo(ctx context.Context, in *GetDpuExtensionServiceVersionsInfoRequest, opts ...grpc.CallOption) (*DpuExtensionServiceVersionInfoList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DpuExtensionServiceVersionInfoList)
 	err := c.cc.Invoke(ctx, NICo_GetDpuExtensionServiceVersionsInfo_FullMethodName, in, out, cOpts...)
@@ -4659,7 +4659,7 @@ func (c *nicoClient) GetDpuExtensionServiceVersionsInfo(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *nicoClient) FindInstancesByDpuExtensionService(ctx context.Context, in *FindInstancesByDpuExtensionServiceRequest, opts ...grpc.CallOption) (*FindInstancesByDpuExtensionServiceResponse, error) {
+func (c *nICoClient) FindInstancesByDpuExtensionService(ctx context.Context, in *FindInstancesByDpuExtensionServiceRequest, opts ...grpc.CallOption) (*FindInstancesByDpuExtensionServiceResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(FindInstancesByDpuExtensionServiceResponse)
 	err := c.cc.Invoke(ctx, NICo_FindInstancesByDpuExtensionService_FullMethodName, in, out, cOpts...)
@@ -4669,7 +4669,7 @@ func (c *nicoClient) FindInstancesByDpuExtensionService(ctx context.Context, in 
 	return out, nil
 }
 
-func (c *nicoClient) TriggerMachineAttestation(ctx context.Context, in *AttestationData, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) TriggerMachineAttestation(ctx context.Context, in *AttestationData, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_TriggerMachineAttestation_FullMethodName, in, out, cOpts...)
@@ -4679,7 +4679,7 @@ func (c *nicoClient) TriggerMachineAttestation(ctx context.Context, in *Attestat
 	return out, nil
 }
 
-func (c *nicoClient) CancelMachineAttestation(ctx context.Context, in *AttestationData, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) CancelMachineAttestation(ctx context.Context, in *AttestationData, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_CancelMachineAttestation_FullMethodName, in, out, cOpts...)
@@ -4689,7 +4689,7 @@ func (c *nicoClient) CancelMachineAttestation(ctx context.Context, in *Attestati
 	return out, nil
 }
 
-func (c *nicoClient) FindMachineIdsUnderAttestation(ctx context.Context, in *AttestationIdsRequest, opts ...grpc.CallOption) (*MachineIdList, error) {
+func (c *nICoClient) FindMachineIdsUnderAttestation(ctx context.Context, in *AttestationIdsRequest, opts ...grpc.CallOption) (*MachineIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineIdList)
 	err := c.cc.Invoke(ctx, NICo_FindMachineIdsUnderAttestation_FullMethodName, in, out, cOpts...)
@@ -4699,7 +4699,7 @@ func (c *nicoClient) FindMachineIdsUnderAttestation(ctx context.Context, in *Att
 	return out, nil
 }
 
-func (c *nicoClient) FindMachinesUnderAttestation(ctx context.Context, in *AttestationMachineList, opts ...grpc.CallOption) (*AttestationResponse, error) {
+func (c *nICoClient) FindMachinesUnderAttestation(ctx context.Context, in *AttestationMachineList, opts ...grpc.CallOption) (*AttestationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AttestationResponse)
 	err := c.cc.Invoke(ctx, NICo_FindMachinesUnderAttestation_FullMethodName, in, out, cOpts...)
@@ -4709,7 +4709,7 @@ func (c *nicoClient) FindMachinesUnderAttestation(ctx context.Context, in *Attes
 	return out, nil
 }
 
-func (c *nicoClient) SignMachineIdentity(ctx context.Context, in *MachineIdentityRequest, opts ...grpc.CallOption) (*MachineIdentityResponse, error) {
+func (c *nICoClient) SignMachineIdentity(ctx context.Context, in *MachineIdentityRequest, opts ...grpc.CallOption) (*MachineIdentityResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachineIdentityResponse)
 	err := c.cc.Invoke(ctx, NICo_SignMachineIdentity_FullMethodName, in, out, cOpts...)
@@ -4719,7 +4719,7 @@ func (c *nicoClient) SignMachineIdentity(ctx context.Context, in *MachineIdentit
 	return out, nil
 }
 
-func (c *nicoClient) GetIdentityConfiguration(ctx context.Context, in *GetIdentityConfigRequest, opts ...grpc.CallOption) (*IdentityConfigResponse, error) {
+func (c *nICoClient) GetIdentityConfiguration(ctx context.Context, in *GetIdentityConfigRequest, opts ...grpc.CallOption) (*IdentityConfigResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IdentityConfigResponse)
 	err := c.cc.Invoke(ctx, NICo_GetIdentityConfiguration_FullMethodName, in, out, cOpts...)
@@ -4729,7 +4729,7 @@ func (c *nicoClient) GetIdentityConfiguration(ctx context.Context, in *GetIdenti
 	return out, nil
 }
 
-func (c *nicoClient) SetIdentityConfiguration(ctx context.Context, in *IdentityConfigRequest, opts ...grpc.CallOption) (*IdentityConfigResponse, error) {
+func (c *nICoClient) SetIdentityConfiguration(ctx context.Context, in *IdentityConfigRequest, opts ...grpc.CallOption) (*IdentityConfigResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IdentityConfigResponse)
 	err := c.cc.Invoke(ctx, NICo_SetIdentityConfiguration_FullMethodName, in, out, cOpts...)
@@ -4739,7 +4739,7 @@ func (c *nicoClient) SetIdentityConfiguration(ctx context.Context, in *IdentityC
 	return out, nil
 }
 
-func (c *nicoClient) DeleteIdentityConfiguration(ctx context.Context, in *GetIdentityConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteIdentityConfiguration(ctx context.Context, in *GetIdentityConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteIdentityConfiguration_FullMethodName, in, out, cOpts...)
@@ -4749,7 +4749,7 @@ func (c *nicoClient) DeleteIdentityConfiguration(ctx context.Context, in *GetIde
 	return out, nil
 }
 
-func (c *nicoClient) GetTokenDelegation(ctx context.Context, in *GetTokenDelegationRequest, opts ...grpc.CallOption) (*TokenDelegationResponse, error) {
+func (c *nICoClient) GetTokenDelegation(ctx context.Context, in *GetTokenDelegationRequest, opts ...grpc.CallOption) (*TokenDelegationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TokenDelegationResponse)
 	err := c.cc.Invoke(ctx, NICo_GetTokenDelegation_FullMethodName, in, out, cOpts...)
@@ -4759,7 +4759,7 @@ func (c *nicoClient) GetTokenDelegation(ctx context.Context, in *GetTokenDelegat
 	return out, nil
 }
 
-func (c *nicoClient) SetTokenDelegation(ctx context.Context, in *TokenDelegationRequest, opts ...grpc.CallOption) (*TokenDelegationResponse, error) {
+func (c *nICoClient) SetTokenDelegation(ctx context.Context, in *TokenDelegationRequest, opts ...grpc.CallOption) (*TokenDelegationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TokenDelegationResponse)
 	err := c.cc.Invoke(ctx, NICo_SetTokenDelegation_FullMethodName, in, out, cOpts...)
@@ -4769,7 +4769,7 @@ func (c *nicoClient) SetTokenDelegation(ctx context.Context, in *TokenDelegation
 	return out, nil
 }
 
-func (c *nicoClient) DeleteTokenDelegation(ctx context.Context, in *GetTokenDelegationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) DeleteTokenDelegation(ctx context.Context, in *GetTokenDelegationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_DeleteTokenDelegation_FullMethodName, in, out, cOpts...)
@@ -4779,7 +4779,7 @@ func (c *nicoClient) DeleteTokenDelegation(ctx context.Context, in *GetTokenDele
 	return out, nil
 }
 
-func (c *nicoClient) GetJWKS(ctx context.Context, in *JwksRequest, opts ...grpc.CallOption) (*Jwks, error) {
+func (c *nICoClient) GetJWKS(ctx context.Context, in *JwksRequest, opts ...grpc.CallOption) (*Jwks, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Jwks)
 	err := c.cc.Invoke(ctx, NICo_GetJWKS_FullMethodName, in, out, cOpts...)
@@ -4789,7 +4789,7 @@ func (c *nicoClient) GetJWKS(ctx context.Context, in *JwksRequest, opts ...grpc.
 	return out, nil
 }
 
-func (c *nicoClient) GetOpenIDConfiguration(ctx context.Context, in *OpenIdConfigRequest, opts ...grpc.CallOption) (*OpenIdConfiguration, error) {
+func (c *nICoClient) GetOpenIDConfiguration(ctx context.Context, in *OpenIdConfigRequest, opts ...grpc.CallOption) (*OpenIdConfiguration, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OpenIdConfiguration)
 	err := c.cc.Invoke(ctx, NICo_GetOpenIDConfiguration_FullMethodName, in, out, cOpts...)
@@ -4799,7 +4799,7 @@ func (c *nicoClient) GetOpenIDConfiguration(ctx context.Context, in *OpenIdConfi
 	return out, nil
 }
 
-func (c *nicoClient) ScoutStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ScoutStreamApiBoundMessage, ScoutStreamScoutBoundMessage], error) {
+func (c *nICoClient) ScoutStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[ScoutStreamApiBoundMessage, ScoutStreamScoutBoundMessage], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &NICo_ServiceDesc.Streams[0], NICo_ScoutStream_FullMethodName, cOpts...)
 	if err != nil {
@@ -4812,7 +4812,7 @@ func (c *nicoClient) ScoutStream(ctx context.Context, opts ...grpc.CallOption) (
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type NICo_ScoutStreamClient = grpc.BidiStreamingClient[ScoutStreamApiBoundMessage, ScoutStreamScoutBoundMessage]
 
-func (c *nicoClient) ScoutStreamShowConnections(ctx context.Context, in *ScoutStreamShowConnectionsRequest, opts ...grpc.CallOption) (*ScoutStreamShowConnectionsResponse, error) {
+func (c *nICoClient) ScoutStreamShowConnections(ctx context.Context, in *ScoutStreamShowConnectionsRequest, opts ...grpc.CallOption) (*ScoutStreamShowConnectionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ScoutStreamShowConnectionsResponse)
 	err := c.cc.Invoke(ctx, NICo_ScoutStreamShowConnections_FullMethodName, in, out, cOpts...)
@@ -4822,7 +4822,7 @@ func (c *nicoClient) ScoutStreamShowConnections(ctx context.Context, in *ScoutSt
 	return out, nil
 }
 
-func (c *nicoClient) ScoutStreamDisconnect(ctx context.Context, in *ScoutStreamDisconnectRequest, opts ...grpc.CallOption) (*ScoutStreamDisconnectResponse, error) {
+func (c *nICoClient) ScoutStreamDisconnect(ctx context.Context, in *ScoutStreamDisconnectRequest, opts ...grpc.CallOption) (*ScoutStreamDisconnectResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ScoutStreamDisconnectResponse)
 	err := c.cc.Invoke(ctx, NICo_ScoutStreamDisconnect_FullMethodName, in, out, cOpts...)
@@ -4832,7 +4832,7 @@ func (c *nicoClient) ScoutStreamDisconnect(ctx context.Context, in *ScoutStreamD
 	return out, nil
 }
 
-func (c *nicoClient) ScoutStreamPing(ctx context.Context, in *ScoutStreamAdminPingRequest, opts ...grpc.CallOption) (*ScoutStreamAdminPingResponse, error) {
+func (c *nICoClient) ScoutStreamPing(ctx context.Context, in *ScoutStreamAdminPingRequest, opts ...grpc.CallOption) (*ScoutStreamAdminPingResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ScoutStreamAdminPingResponse)
 	err := c.cc.Invoke(ctx, NICo_ScoutStreamPing_FullMethodName, in, out, cOpts...)
@@ -4842,7 +4842,7 @@ func (c *nicoClient) ScoutStreamPing(ctx context.Context, in *ScoutStreamAdminPi
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminProfileSync(ctx context.Context, in *MlxAdminProfileSyncRequest, opts ...grpc.CallOption) (*MlxAdminProfileSyncResponse, error) {
+func (c *nICoClient) MlxAdminProfileSync(ctx context.Context, in *MlxAdminProfileSyncRequest, opts ...grpc.CallOption) (*MlxAdminProfileSyncResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminProfileSyncResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminProfileSync_FullMethodName, in, out, cOpts...)
@@ -4852,7 +4852,7 @@ func (c *nicoClient) MlxAdminProfileSync(ctx context.Context, in *MlxAdminProfil
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminProfileShow(ctx context.Context, in *MlxAdminProfileShowRequest, opts ...grpc.CallOption) (*MlxAdminProfileShowResponse, error) {
+func (c *nICoClient) MlxAdminProfileShow(ctx context.Context, in *MlxAdminProfileShowRequest, opts ...grpc.CallOption) (*MlxAdminProfileShowResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminProfileShowResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminProfileShow_FullMethodName, in, out, cOpts...)
@@ -4862,7 +4862,7 @@ func (c *nicoClient) MlxAdminProfileShow(ctx context.Context, in *MlxAdminProfil
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminProfileCompare(ctx context.Context, in *MlxAdminProfileCompareRequest, opts ...grpc.CallOption) (*MlxAdminProfileCompareResponse, error) {
+func (c *nICoClient) MlxAdminProfileCompare(ctx context.Context, in *MlxAdminProfileCompareRequest, opts ...grpc.CallOption) (*MlxAdminProfileCompareResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminProfileCompareResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminProfileCompare_FullMethodName, in, out, cOpts...)
@@ -4872,7 +4872,7 @@ func (c *nicoClient) MlxAdminProfileCompare(ctx context.Context, in *MlxAdminPro
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminProfileList(ctx context.Context, in *MlxAdminProfileListRequest, opts ...grpc.CallOption) (*MlxAdminProfileListResponse, error) {
+func (c *nICoClient) MlxAdminProfileList(ctx context.Context, in *MlxAdminProfileListRequest, opts ...grpc.CallOption) (*MlxAdminProfileListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminProfileListResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminProfileList_FullMethodName, in, out, cOpts...)
@@ -4882,7 +4882,7 @@ func (c *nicoClient) MlxAdminProfileList(ctx context.Context, in *MlxAdminProfil
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminLockdownLock(ctx context.Context, in *MlxAdminLockdownLockRequest, opts ...grpc.CallOption) (*MlxAdminLockdownLockResponse, error) {
+func (c *nICoClient) MlxAdminLockdownLock(ctx context.Context, in *MlxAdminLockdownLockRequest, opts ...grpc.CallOption) (*MlxAdminLockdownLockResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminLockdownLockResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminLockdownLock_FullMethodName, in, out, cOpts...)
@@ -4892,7 +4892,7 @@ func (c *nicoClient) MlxAdminLockdownLock(ctx context.Context, in *MlxAdminLockd
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminLockdownUnlock(ctx context.Context, in *MlxAdminLockdownUnlockRequest, opts ...grpc.CallOption) (*MlxAdminLockdownUnlockResponse, error) {
+func (c *nICoClient) MlxAdminLockdownUnlock(ctx context.Context, in *MlxAdminLockdownUnlockRequest, opts ...grpc.CallOption) (*MlxAdminLockdownUnlockResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminLockdownUnlockResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminLockdownUnlock_FullMethodName, in, out, cOpts...)
@@ -4902,7 +4902,7 @@ func (c *nicoClient) MlxAdminLockdownUnlock(ctx context.Context, in *MlxAdminLoc
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminLockdownStatus(ctx context.Context, in *MlxAdminLockdownStatusRequest, opts ...grpc.CallOption) (*MlxAdminLockdownStatusResponse, error) {
+func (c *nICoClient) MlxAdminLockdownStatus(ctx context.Context, in *MlxAdminLockdownStatusRequest, opts ...grpc.CallOption) (*MlxAdminLockdownStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminLockdownStatusResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminLockdownStatus_FullMethodName, in, out, cOpts...)
@@ -4912,7 +4912,7 @@ func (c *nicoClient) MlxAdminLockdownStatus(ctx context.Context, in *MlxAdminLoc
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminShowDevice(ctx context.Context, in *MlxAdminDeviceInfoRequest, opts ...grpc.CallOption) (*MlxAdminDeviceInfoResponse, error) {
+func (c *nICoClient) MlxAdminShowDevice(ctx context.Context, in *MlxAdminDeviceInfoRequest, opts ...grpc.CallOption) (*MlxAdminDeviceInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminDeviceInfoResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminShowDevice_FullMethodName, in, out, cOpts...)
@@ -4922,7 +4922,7 @@ func (c *nicoClient) MlxAdminShowDevice(ctx context.Context, in *MlxAdminDeviceI
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminShowMachine(ctx context.Context, in *MlxAdminDeviceReportRequest, opts ...grpc.CallOption) (*MlxAdminDeviceReportResponse, error) {
+func (c *nICoClient) MlxAdminShowMachine(ctx context.Context, in *MlxAdminDeviceReportRequest, opts ...grpc.CallOption) (*MlxAdminDeviceReportResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminDeviceReportResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminShowMachine_FullMethodName, in, out, cOpts...)
@@ -4932,7 +4932,7 @@ func (c *nicoClient) MlxAdminShowMachine(ctx context.Context, in *MlxAdminDevice
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminRegistryList(ctx context.Context, in *MlxAdminRegistryListRequest, opts ...grpc.CallOption) (*MlxAdminRegistryListResponse, error) {
+func (c *nICoClient) MlxAdminRegistryList(ctx context.Context, in *MlxAdminRegistryListRequest, opts ...grpc.CallOption) (*MlxAdminRegistryListResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminRegistryListResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminRegistryList_FullMethodName, in, out, cOpts...)
@@ -4942,7 +4942,7 @@ func (c *nicoClient) MlxAdminRegistryList(ctx context.Context, in *MlxAdminRegis
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminRegistryShow(ctx context.Context, in *MlxAdminRegistryShowRequest, opts ...grpc.CallOption) (*MlxAdminRegistryShowResponse, error) {
+func (c *nICoClient) MlxAdminRegistryShow(ctx context.Context, in *MlxAdminRegistryShowRequest, opts ...grpc.CallOption) (*MlxAdminRegistryShowResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminRegistryShowResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminRegistryShow_FullMethodName, in, out, cOpts...)
@@ -4952,7 +4952,7 @@ func (c *nicoClient) MlxAdminRegistryShow(ctx context.Context, in *MlxAdminRegis
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminConfigQuery(ctx context.Context, in *MlxAdminConfigQueryRequest, opts ...grpc.CallOption) (*MlxAdminConfigQueryResponse, error) {
+func (c *nICoClient) MlxAdminConfigQuery(ctx context.Context, in *MlxAdminConfigQueryRequest, opts ...grpc.CallOption) (*MlxAdminConfigQueryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminConfigQueryResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminConfigQuery_FullMethodName, in, out, cOpts...)
@@ -4962,7 +4962,7 @@ func (c *nicoClient) MlxAdminConfigQuery(ctx context.Context, in *MlxAdminConfig
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminConfigSet(ctx context.Context, in *MlxAdminConfigSetRequest, opts ...grpc.CallOption) (*MlxAdminConfigSetResponse, error) {
+func (c *nICoClient) MlxAdminConfigSet(ctx context.Context, in *MlxAdminConfigSetRequest, opts ...grpc.CallOption) (*MlxAdminConfigSetResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminConfigSetResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminConfigSet_FullMethodName, in, out, cOpts...)
@@ -4972,7 +4972,7 @@ func (c *nicoClient) MlxAdminConfigSet(ctx context.Context, in *MlxAdminConfigSe
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminConfigSync(ctx context.Context, in *MlxAdminConfigSyncRequest, opts ...grpc.CallOption) (*MlxAdminConfigSyncResponse, error) {
+func (c *nICoClient) MlxAdminConfigSync(ctx context.Context, in *MlxAdminConfigSyncRequest, opts ...grpc.CallOption) (*MlxAdminConfigSyncResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminConfigSyncResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminConfigSync_FullMethodName, in, out, cOpts...)
@@ -4982,7 +4982,7 @@ func (c *nicoClient) MlxAdminConfigSync(ctx context.Context, in *MlxAdminConfigS
 	return out, nil
 }
 
-func (c *nicoClient) MlxAdminConfigCompare(ctx context.Context, in *MlxAdminConfigCompareRequest, opts ...grpc.CallOption) (*MlxAdminConfigCompareResponse, error) {
+func (c *nICoClient) MlxAdminConfigCompare(ctx context.Context, in *MlxAdminConfigCompareRequest, opts ...grpc.CallOption) (*MlxAdminConfigCompareResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MlxAdminConfigCompareResponse)
 	err := c.cc.Invoke(ctx, NICo_MlxAdminConfigCompare_FullMethodName, in, out, cOpts...)
@@ -4992,7 +4992,7 @@ func (c *nicoClient) MlxAdminConfigCompare(ctx context.Context, in *MlxAdminConf
 	return out, nil
 }
 
-func (c *nicoClient) FindNVLinkPartitionIds(ctx context.Context, in *NVLinkPartitionSearchFilter, opts ...grpc.CallOption) (*NVLinkPartitionIdList, error) {
+func (c *nICoClient) FindNVLinkPartitionIds(ctx context.Context, in *NVLinkPartitionSearchFilter, opts ...grpc.CallOption) (*NVLinkPartitionIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkPartitionIdList)
 	err := c.cc.Invoke(ctx, NICo_FindNVLinkPartitionIds_FullMethodName, in, out, cOpts...)
@@ -5002,7 +5002,7 @@ func (c *nicoClient) FindNVLinkPartitionIds(ctx context.Context, in *NVLinkParti
 	return out, nil
 }
 
-func (c *nicoClient) FindNVLinkPartitionsByIds(ctx context.Context, in *NVLinkPartitionsByIdsRequest, opts ...grpc.CallOption) (*NVLinkPartitionList, error) {
+func (c *nICoClient) FindNVLinkPartitionsByIds(ctx context.Context, in *NVLinkPartitionsByIdsRequest, opts ...grpc.CallOption) (*NVLinkPartitionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkPartitionList)
 	err := c.cc.Invoke(ctx, NICo_FindNVLinkPartitionsByIds_FullMethodName, in, out, cOpts...)
@@ -5012,7 +5012,7 @@ func (c *nicoClient) FindNVLinkPartitionsByIds(ctx context.Context, in *NVLinkPa
 	return out, nil
 }
 
-func (c *nicoClient) NVLinkPartitionsForTenant(ctx context.Context, in *TenantSearchQuery, opts ...grpc.CallOption) (*NVLinkPartitionList, error) {
+func (c *nICoClient) NVLinkPartitionsForTenant(ctx context.Context, in *TenantSearchQuery, opts ...grpc.CallOption) (*NVLinkPartitionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkPartitionList)
 	err := c.cc.Invoke(ctx, NICo_NVLinkPartitionsForTenant_FullMethodName, in, out, cOpts...)
@@ -5022,7 +5022,7 @@ func (c *nicoClient) NVLinkPartitionsForTenant(ctx context.Context, in *TenantSe
 	return out, nil
 }
 
-func (c *nicoClient) FindNVLinkLogicalPartitionIds(ctx context.Context, in *NVLinkLogicalPartitionSearchFilter, opts ...grpc.CallOption) (*NVLinkLogicalPartitionIdList, error) {
+func (c *nICoClient) FindNVLinkLogicalPartitionIds(ctx context.Context, in *NVLinkLogicalPartitionSearchFilter, opts ...grpc.CallOption) (*NVLinkLogicalPartitionIdList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkLogicalPartitionIdList)
 	err := c.cc.Invoke(ctx, NICo_FindNVLinkLogicalPartitionIds_FullMethodName, in, out, cOpts...)
@@ -5032,7 +5032,7 @@ func (c *nicoClient) FindNVLinkLogicalPartitionIds(ctx context.Context, in *NVLi
 	return out, nil
 }
 
-func (c *nicoClient) FindNVLinkLogicalPartitionsByIds(ctx context.Context, in *NVLinkLogicalPartitionsByIdsRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartitionList, error) {
+func (c *nICoClient) FindNVLinkLogicalPartitionsByIds(ctx context.Context, in *NVLinkLogicalPartitionsByIdsRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartitionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkLogicalPartitionList)
 	err := c.cc.Invoke(ctx, NICo_FindNVLinkLogicalPartitionsByIds_FullMethodName, in, out, cOpts...)
@@ -5042,7 +5042,7 @@ func (c *nicoClient) FindNVLinkLogicalPartitionsByIds(ctx context.Context, in *N
 	return out, nil
 }
 
-func (c *nicoClient) CreateNVLinkLogicalPartition(ctx context.Context, in *NVLinkLogicalPartitionCreationRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartition, error) {
+func (c *nICoClient) CreateNVLinkLogicalPartition(ctx context.Context, in *NVLinkLogicalPartitionCreationRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartition, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkLogicalPartition)
 	err := c.cc.Invoke(ctx, NICo_CreateNVLinkLogicalPartition_FullMethodName, in, out, cOpts...)
@@ -5052,7 +5052,7 @@ func (c *nicoClient) CreateNVLinkLogicalPartition(ctx context.Context, in *NVLin
 	return out, nil
 }
 
-func (c *nicoClient) UpdateNVLinkLogicalPartition(ctx context.Context, in *NVLinkLogicalPartitionUpdateRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartitionUpdateResult, error) {
+func (c *nICoClient) UpdateNVLinkLogicalPartition(ctx context.Context, in *NVLinkLogicalPartitionUpdateRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartitionUpdateResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkLogicalPartitionUpdateResult)
 	err := c.cc.Invoke(ctx, NICo_UpdateNVLinkLogicalPartition_FullMethodName, in, out, cOpts...)
@@ -5062,7 +5062,7 @@ func (c *nicoClient) UpdateNVLinkLogicalPartition(ctx context.Context, in *NVLin
 	return out, nil
 }
 
-func (c *nicoClient) DeleteNVLinkLogicalPartition(ctx context.Context, in *NVLinkLogicalPartitionDeletionRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartitionDeletionResult, error) {
+func (c *nICoClient) DeleteNVLinkLogicalPartition(ctx context.Context, in *NVLinkLogicalPartitionDeletionRequest, opts ...grpc.CallOption) (*NVLinkLogicalPartitionDeletionResult, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkLogicalPartitionDeletionResult)
 	err := c.cc.Invoke(ctx, NICo_DeleteNVLinkLogicalPartition_FullMethodName, in, out, cOpts...)
@@ -5072,7 +5072,7 @@ func (c *nicoClient) DeleteNVLinkLogicalPartition(ctx context.Context, in *NVLin
 	return out, nil
 }
 
-func (c *nicoClient) NVLinkLogicalPartitionsForTenant(ctx context.Context, in *TenantSearchQuery, opts ...grpc.CallOption) (*NVLinkLogicalPartitionList, error) {
+func (c *nICoClient) NVLinkLogicalPartitionsForTenant(ctx context.Context, in *TenantSearchQuery, opts ...grpc.CallOption) (*NVLinkLogicalPartitionList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NVLinkLogicalPartitionList)
 	err := c.cc.Invoke(ctx, NICo_NVLinkLogicalPartitionsForTenant_FullMethodName, in, out, cOpts...)
@@ -5082,7 +5082,7 @@ func (c *nicoClient) NVLinkLogicalPartitionsForTenant(ctx context.Context, in *T
 	return out, nil
 }
 
-func (c *nicoClient) GetMachinePositionInfo(ctx context.Context, in *MachinePositionQuery, opts ...grpc.CallOption) (*MachinePositionInfoList, error) {
+func (c *nICoClient) GetMachinePositionInfo(ctx context.Context, in *MachinePositionQuery, opts ...grpc.CallOption) (*MachinePositionInfoList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MachinePositionInfoList)
 	err := c.cc.Invoke(ctx, NICo_GetMachinePositionInfo_FullMethodName, in, out, cOpts...)
@@ -5092,7 +5092,7 @@ func (c *nicoClient) GetMachinePositionInfo(ctx context.Context, in *MachinePosi
 	return out, nil
 }
 
-func (c *nicoClient) NmxmBrowse(ctx context.Context, in *NmxmBrowseRequest, opts ...grpc.CallOption) (*NmxmBrowseResponse, error) {
+func (c *nICoClient) NmxmBrowse(ctx context.Context, in *NmxmBrowseRequest, opts ...grpc.CallOption) (*NmxmBrowseResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(NmxmBrowseResponse)
 	err := c.cc.Invoke(ctx, NICo_NmxmBrowse_FullMethodName, in, out, cOpts...)
@@ -5102,7 +5102,7 @@ func (c *nicoClient) NmxmBrowse(ctx context.Context, in *NmxmBrowseRequest, opts
 	return out, nil
 }
 
-func (c *nicoClient) ModifyDPFState(ctx context.Context, in *ModifyDPFStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *nICoClient) ModifyDPFState(ctx context.Context, in *ModifyDPFStateRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, NICo_ModifyDPFState_FullMethodName, in, out, cOpts...)
@@ -5112,7 +5112,7 @@ func (c *nicoClient) ModifyDPFState(ctx context.Context, in *ModifyDPFStateReque
 	return out, nil
 }
 
-func (c *nicoClient) GetDPFState(ctx context.Context, in *GetDPFStateRequest, opts ...grpc.CallOption) (*DPFStateResponse, error) {
+func (c *nICoClient) GetDPFState(ctx context.Context, in *GetDPFStateRequest, opts ...grpc.CallOption) (*DPFStateResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DPFStateResponse)
 	err := c.cc.Invoke(ctx, NICo_GetDPFState_FullMethodName, in, out, cOpts...)
@@ -5122,7 +5122,7 @@ func (c *nicoClient) GetDPFState(ctx context.Context, in *GetDPFStateRequest, op
 	return out, nil
 }
 
-func (c *nicoClient) ComponentPowerControl(ctx context.Context, in *ComponentPowerControlRequest, opts ...grpc.CallOption) (*ComponentPowerControlResponse, error) {
+func (c *nICoClient) ComponentPowerControl(ctx context.Context, in *ComponentPowerControlRequest, opts ...grpc.CallOption) (*ComponentPowerControlResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ComponentPowerControlResponse)
 	err := c.cc.Invoke(ctx, NICo_ComponentPowerControl_FullMethodName, in, out, cOpts...)
@@ -5132,7 +5132,7 @@ func (c *nicoClient) ComponentPowerControl(ctx context.Context, in *ComponentPow
 	return out, nil
 }
 
-func (c *nicoClient) GetComponentInventory(ctx context.Context, in *GetComponentInventoryRequest, opts ...grpc.CallOption) (*GetComponentInventoryResponse, error) {
+func (c *nICoClient) GetComponentInventory(ctx context.Context, in *GetComponentInventoryRequest, opts ...grpc.CallOption) (*GetComponentInventoryResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetComponentInventoryResponse)
 	err := c.cc.Invoke(ctx, NICo_GetComponentInventory_FullMethodName, in, out, cOpts...)
@@ -5142,7 +5142,7 @@ func (c *nicoClient) GetComponentInventory(ctx context.Context, in *GetComponent
 	return out, nil
 }
 
-func (c *nicoClient) UpdateComponentFirmware(ctx context.Context, in *UpdateComponentFirmwareRequest, opts ...grpc.CallOption) (*UpdateComponentFirmwareResponse, error) {
+func (c *nICoClient) UpdateComponentFirmware(ctx context.Context, in *UpdateComponentFirmwareRequest, opts ...grpc.CallOption) (*UpdateComponentFirmwareResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(UpdateComponentFirmwareResponse)
 	err := c.cc.Invoke(ctx, NICo_UpdateComponentFirmware_FullMethodName, in, out, cOpts...)
@@ -5152,7 +5152,7 @@ func (c *nicoClient) UpdateComponentFirmware(ctx context.Context, in *UpdateComp
 	return out, nil
 }
 
-func (c *nicoClient) GetComponentFirmwareStatus(ctx context.Context, in *GetComponentFirmwareStatusRequest, opts ...grpc.CallOption) (*GetComponentFirmwareStatusResponse, error) {
+func (c *nICoClient) GetComponentFirmwareStatus(ctx context.Context, in *GetComponentFirmwareStatusRequest, opts ...grpc.CallOption) (*GetComponentFirmwareStatusResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetComponentFirmwareStatusResponse)
 	err := c.cc.Invoke(ctx, NICo_GetComponentFirmwareStatus_FullMethodName, in, out, cOpts...)
@@ -5162,7 +5162,7 @@ func (c *nicoClient) GetComponentFirmwareStatus(ctx context.Context, in *GetComp
 	return out, nil
 }
 
-func (c *nicoClient) ListComponentFirmwareVersions(ctx context.Context, in *ListComponentFirmwareVersionsRequest, opts ...grpc.CallOption) (*ListComponentFirmwareVersionsResponse, error) {
+func (c *nICoClient) ListComponentFirmwareVersions(ctx context.Context, in *ListComponentFirmwareVersionsRequest, opts ...grpc.CallOption) (*ListComponentFirmwareVersionsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListComponentFirmwareVersionsResponse)
 	err := c.cc.Invoke(ctx, NICo_ListComponentFirmwareVersions_FullMethodName, in, out, cOpts...)
@@ -5264,7 +5264,7 @@ type NICoServer interface {
 	FindInstanceIds(context.Context, *InstanceSearchFilter) (*InstanceIdList, error)
 	FindInstancesByIds(context.Context, *InstancesByIdsRequest) (*InstanceList, error)
 	FindInstanceByMachineID(context.Context, *MachineId) (*InstanceList, error)
-	// nico-dpu-agent -> nico-api
+	// nico-dpu-agent -> nico-core-api
 	GetManagedHostNetworkConfig(context.Context, *ManagedHostNetworkConfigRequest) (*ManagedHostNetworkConfigResponse, error)
 	RecordDpuNetworkStatus(context.Context, *DpuNetworkStatus) (*emptypb.Empty, error)
 	// Lists all overrides that have been placed on a Machine health status
@@ -5753,7 +5753,7 @@ type NICoServer interface {
 	GetJWKS(context.Context, *JwksRequest) (*Jwks, error)
 	GetOpenIDConfiguration(context.Context, *OpenIdConfigRequest) (*OpenIdConfiguration, error)
 	// ScoutStream establishes a bidirectional streaming connection between
-	// scout agents and nico-api. The initial use-case for this is for
+	// scout agents and nico-core-api. The initial use-case for this is for
 	// Mellanox device management using nico-admin-cli, but there's an
 	// opportunity to pull the NICoAgentControl flow into here as well.
 	ScoutStream(grpc.BidiStreamingServer[ScoutStreamApiBoundMessage, ScoutStreamScoutBoundMessage]) error
@@ -5773,12 +5773,12 @@ type NICoServer interface {
 	// MlxAdminProfileSync is used to sync an MlxConfigProfile to a given device.
 	MlxAdminProfileSync(context.Context, *MlxAdminProfileSyncRequest) (*MlxAdminProfileSyncResponse, error)
 	// MlxAdminProfileShow shows the configuration of a specific MlxConfigProfile
-	// loaded into nico-api.
+	// loaded into nico-core-api.
 	MlxAdminProfileShow(context.Context, *MlxAdminProfileShowRequest) (*MlxAdminProfileShowResponse, error)
 	// MlxAdminProfileCompare compares the running config of a device to
 	// the values of a given MlxConfigProfile.
 	MlxAdminProfileCompare(context.Context, *MlxAdminProfileCompareRequest) (*MlxAdminProfileCompareResponse, error)
-	// MlxAdminProfileList lists all configured MlxConfigProfiles in nico-api.
+	// MlxAdminProfileList lists all configured MlxConfigProfiles in nico-core-api.
 	MlxAdminProfileList(context.Context, *MlxAdminProfileListRequest) (*MlxAdminProfileListResponse, error)
 	// Mellanox administrative endpoints for lockdown management, which are called by
 	// the CLI (nico-admin-cli) and potentially the UI. These endpoints ultimately
