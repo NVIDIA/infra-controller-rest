@@ -85,6 +85,27 @@ type PowerOnGateController interface {
 	PausePowerOnGate(ctx context.Context, target common.Target) error
 }
 
+// InstanceVerifier is an optional interface for component managers that can
+// check whether a target component still has allocated workload (e.g. a
+// running instance on a compute node). Used as a precondition check before
+// destructive operations like bring-down.
+type InstanceVerifier interface {
+	// VerifyNoInstance returns an error if any target component still has
+	// an allocated instance. The error message identifies which components.
+	VerifyNoInstance(ctx context.Context, target common.Target) error
+}
+
+// MaintenanceController is an optional interface for component managers that
+// can place a component under a long-lived maintenance marker. Distinct from
+// the transient health-report override used internally by power operations.
+type MaintenanceController interface {
+	// EnterMaintenance marks each target component as under maintenance.
+	// The marker is long-lived (not removed by this call) and is the
+	// caller's responsibility to clear once maintenance is over.
+	// Implementations should be idempotent.
+	EnterMaintenance(ctx context.Context, target common.Target) error
+}
+
 // ManagerFactory is a function that creates a ComponentManager instance.
 // It receives a ProviderRegistry from which it can retrieve the providers it needs.
 type ManagerFactory func(providers *ProviderRegistry) (ComponentManager, error)

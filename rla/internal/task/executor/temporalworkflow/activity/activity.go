@@ -43,6 +43,8 @@ const (
 	NameGetBringUpStatus          = "GetBringUpStatus"
 	NameVerifyFirmwareConsistency = "VerifyFirmwareConsistency"
 	NamePausePowerOnGate          = "PausePowerOnGate"
+	NameVerifyNoInstance          = "VerifyNoInstance"
+	NameEnterMaintenance          = "EnterMaintenance"
 )
 
 // InjectExpectation is a Temporal activity that registers expected component
@@ -232,6 +234,48 @@ func (a *Activities) PausePowerOnGate(
 	}
 
 	return gate.PausePowerOnGate(ctx, target)
+}
+
+// VerifyNoInstance returns an error if any target component still has an
+// allocated instance. Only supported by component managers that implement
+// InstanceVerifier.
+func (a *Activities) VerifyNoInstance(
+	ctx context.Context,
+	target common.Target,
+) error {
+	cm, err := a.validAndGetComponentManager(target)
+	if err != nil {
+		return err
+	}
+
+	verifier, ok := cm.(componentmanager.InstanceVerifier)
+	if !ok {
+		return fmt.Errorf("component manager for %s does not support VerifyNoInstance",
+			target.Type)
+	}
+
+	return verifier.VerifyNoInstance(ctx, target)
+}
+
+// EnterMaintenance places each target component under a long-lived
+// maintenance marker. Only supported by component managers that implement
+// MaintenanceController.
+func (a *Activities) EnterMaintenance(
+	ctx context.Context,
+	target common.Target,
+) error {
+	cm, err := a.validAndGetComponentManager(target)
+	if err != nil {
+		return err
+	}
+
+	mc, ok := cm.(componentmanager.MaintenanceController)
+	if !ok {
+		return fmt.Errorf("component manager for %s does not support EnterMaintenance",
+			target.Type)
+	}
+
+	return mc.EnterMaintenance(ctx, target)
 }
 
 // validAndGetComponentManager validates the target and returns the component

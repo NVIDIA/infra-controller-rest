@@ -49,6 +49,17 @@ const (
 
 	// Bring-down specific actions
 	//
+	// VerifyNoInstance fails the stage if any target machine still has an
+	// allocated instance on top of it. Acts as a precondition check for
+	// destructive operations.
+	ActionVerifyNoInstance = "VerifyNoInstance"
+
+	// EnterMaintenance places each target machine under maintenance via a
+	// long-lived health-report override (source = "rla-bring-down"). The
+	// override is intentionally NOT removed on bring-down completion;
+	// bring-up (or a follow-up cleanup) is responsible for clearing it.
+	ActionEnterMaintenance = "EnterMaintenance"
+
 	// PausePowerOnGate moves the per-machine desired power state to
 	// PowerManagerDisabled, taking the machine out of Carbide's power-manager
 	// control so that subsequent reconcile passes will not bring it back up.

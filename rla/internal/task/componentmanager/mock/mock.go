@@ -194,6 +194,33 @@ func (m *Manager) PausePowerOnGate(
 	return nil
 }
 
+// VerifyNoInstance simulates the precondition check; the mock always reports
+// no instances so bring-down can proceed in tests.
+func (m *Manager) VerifyNoInstance(
+	ctx context.Context,
+	target common.Target,
+) error {
+	log.Debug().
+		Str("component_type", m.componentType.String()).
+		Str("target", target.String()).
+		Msg("Mock: VerifyNoInstance")
+	time.Sleep(m.delay)
+	return nil
+}
+
+// EnterMaintenance simulates placing target components under maintenance.
+func (m *Manager) EnterMaintenance(
+	ctx context.Context,
+	target common.Target,
+) error {
+	log.Debug().
+		Str("component_type", m.componentType.String()).
+		Str("target", target.String()).
+		Msg("Mock: EnterMaintenance")
+	time.Sleep(m.delay)
+	return nil
+}
+
 // GetBringUpStatus simulates getting bring-up status.
 func (m *Manager) GetBringUpStatus(
 	ctx context.Context,

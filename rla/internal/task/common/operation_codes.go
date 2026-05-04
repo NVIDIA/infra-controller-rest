@@ -36,7 +36,7 @@ const (
 	OpCodeFirmwareControlRollback  = "rollback"
 )
 
-// Bring-up operation codes
+// Lifecycle operation codes (TaskTypeBringUp)
 const (
 	OpCodeBringUp   = "bring_up"
 	OpCodeIngest    = "ingest"

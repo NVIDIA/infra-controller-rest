@@ -37,6 +37,7 @@ func TestTaskType_IsValid(t *testing.T) {
 		TaskTypePowerControl,
 		TaskTypeFirmwareControl,
 		TaskTypeBringUp,
+		TaskTypeBringDown,
 	}
 	for _, tt := range valid {
 		assert.True(t, tt.IsValid(), "%q should be valid", tt)
@@ -61,6 +62,7 @@ func TestTaskTypeFromString(t *testing.T) {
 		{"power_control", TaskTypePowerControl},
 		{"firmware_control", TaskTypeFirmwareControl},
 		{"bring_up", TaskTypeBringUp},
+		{"bring_down", TaskTypeBringDown},
 		{"unknown", TaskTypeUnknown},
 		{"", TaskTypeUnknown},
 		{"garbage", TaskTypeUnknown},

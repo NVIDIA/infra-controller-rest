@@ -765,7 +765,7 @@ func (rs *RLAServerImpl) BringDownRack(
 		return nil, errors.New("target_spec is required")
 	}
 
-	info := &operations.BringUpTaskInfo{
+	info := &operations.BringDownTaskInfo{
 		RuleID: protobuf.UUIDStringFrom(req.GetRuleId()),
 	}
 
@@ -776,9 +776,6 @@ func (rs *RLAServerImpl) BringDownRack(
 		return nil, err
 	}
 
-	// Override the operation code so the rule resolver picks the
-	// bring-down rule instead of the default bring-up rule.
-	opReq.Operation.Code = taskcommon.OpCodeBringDown
 	opReq.RuleID = protobuf.OptionalUUIDFrom(req.GetRuleId())
 
 	taskIDs, err := rs.taskManager.SubmitTask(ctx, opReq)

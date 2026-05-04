@@ -4744,10 +4744,6 @@ func (x *BringUpRackRequest) GetRuleId() *UUID {
 	return nil
 }
 
-// BringDownRackRequest is the symmetric counterpart to BringUpRackRequest.
-// It powers off compute, pauses the per-machine power-on gate so the power
-// manager will not automatically bring it back up, then powers off the
-// remaining components (NVLSwitch and PowerShelf).
 type BringDownRackRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TargetSpec    *OperationTargetSpec   `protobuf:"bytes,1,opt,name=target_spec,json=targetSpec,proto3" json:"target_spec,omitempty"` // Target racks for bring-down

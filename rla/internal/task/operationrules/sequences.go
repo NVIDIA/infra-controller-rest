@@ -43,10 +43,14 @@ const (
 	SequenceRollback  = common.OpCodeFirmwareControlRollback
 )
 
-// Bring-up sequence names - use shared operation codes
+// Bring-up sequence names (TaskTypeBringUp) - use shared operation codes
 const (
-	SequenceBringUp   = common.OpCodeBringUp
-	SequenceIngest    = common.OpCodeIngest
+	SequenceBringUp = common.OpCodeBringUp
+	SequenceIngest  = common.OpCodeIngest
+)
+
+// Bring-down sequence names (TaskTypeBringDown) - use shared operation codes
+const (
 	SequenceBringDown = common.OpCodeBringDown
 )
 
@@ -83,6 +87,8 @@ var ValidOperations = map[common.TaskType][]string{
 	common.TaskTypeBringUp: {
 		SequenceBringUp,
 		SequenceIngest,
+	},
+	common.TaskTypeBringDown: {
 		SequenceBringDown,
 	},
 }

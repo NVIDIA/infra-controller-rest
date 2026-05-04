@@ -33,6 +33,7 @@ const (
 	TaskTypePowerControl      TaskType = "power_control"
 	TaskTypeFirmwareControl   TaskType = "firmware_control"
 	TaskTypeBringUp           TaskType = "bring_up"
+	TaskTypeBringDown         TaskType = "bring_down"
 )
 
 func TaskTypeFromString(s string) TaskType {
@@ -45,6 +46,8 @@ func TaskTypeFromString(s string) TaskType {
 		return TaskTypeFirmwareControl
 	case TaskTypeBringUp.String():
 		return TaskTypeBringUp
+	case TaskTypeBringDown.String():
+		return TaskTypeBringDown
 	default:
 		return TaskTypeUnknown
 	}

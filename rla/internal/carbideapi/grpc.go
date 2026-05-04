@@ -497,6 +497,21 @@ func (c *grpcClient) RemoveHealthReportOverride(ctx context.Context, machineID s
 	return nil
 }
 
+func (c *grpcClient) MachineHasInstance(ctx context.Context, machineID string) (bool, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
+	defer cancel()
+
+	resp, err := c.gclient.FindInstanceByMachineID(
+		ctx, &pb.MachineId{Id: machineID},
+	)
+	if err != nil {
+		return false, fmt.Errorf(
+			"failed to find instance by machine id %s: %w", machineID, err,
+		)
+	}
+	return len(resp.GetInstances()) > 0, nil
+}
+
 func (c *grpcClient) ComponentPowerControl(ctx context.Context, req *pb.ComponentPowerControlRequest) (*pb.ComponentPowerControlResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
 	defer cancel()
@@ -631,5 +646,9 @@ func (c *grpcClient) AddExpectedSwitchInfo(info ExpectedSwitchInfo) {
 }
 
 func (c *grpcClient) SetLeakingMachineIds(ids []string) {
+	panic("Not a unit test")
+}
+
+func (c *grpcClient) SetMachineHasInstance(machineID string, has bool) {
 	panic("Not a unit test")
 }

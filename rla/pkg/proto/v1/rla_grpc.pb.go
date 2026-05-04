@@ -710,7 +710,7 @@ func (c *rLAClient) ListRackRuleAssociations(ctx context.Context, in *ListRackRu
 }
 
 // RLAServer is the server API for RLA service.
-// All implementations should embed UnimplementedRLAServer
+// All implementations must embed UnimplementedRLAServer
 // for forward compatibility.
 type RLAServer interface {
 	// Version
@@ -776,9 +776,10 @@ type RLAServer interface {
 	DisassociateRuleFromRack(context.Context, *DisassociateRuleFromRackRequest) (*emptypb.Empty, error)
 	GetRackRuleAssociation(context.Context, *GetRackRuleAssociationRequest) (*GetRackRuleAssociationResponse, error)
 	ListRackRuleAssociations(context.Context, *ListRackRuleAssociationsRequest) (*ListRackRuleAssociationsResponse, error)
+	mustEmbedUnimplementedRLAServer()
 }
 
-// UnimplementedRLAServer should be embedded to have
+// UnimplementedRLAServer must be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
@@ -947,7 +948,8 @@ func (UnimplementedRLAServer) GetRackRuleAssociation(context.Context, *GetRackRu
 func (UnimplementedRLAServer) ListRackRuleAssociations(context.Context, *ListRackRuleAssociationsRequest) (*ListRackRuleAssociationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListRackRuleAssociations not implemented")
 }
-func (UnimplementedRLAServer) testEmbeddedByValue() {}
+func (UnimplementedRLAServer) mustEmbedUnimplementedRLAServer() {}
+func (UnimplementedRLAServer) testEmbeddedByValue()             {}
 
 // UnsafeRLAServer may be embedded to opt out of forward compatibility for this service.
 // Use of this interface is not recommended, as added methods to RLAServer will

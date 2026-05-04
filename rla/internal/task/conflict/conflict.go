@@ -159,6 +159,17 @@ var builtinRule = &Rule{ //nolint
 				OperationType: "*",
 			},
 		},
+		// BringDown is comprehensive (powers off the whole rack and
+		// pauses the per-machine power-on gate) and likewise blocks all
+		// other operations on the rack.
+		{
+			A: OperationSpec{
+				OperationType: string(taskcommon.TaskTypeBringDown),
+			},
+			B: OperationSpec{
+				OperationType: "*",
+			},
+		},
 	},
 }
 

@@ -41,6 +41,9 @@ var (
 		taskcommon.TaskTypeBringUp: {
 			Timeout: 120 * time.Minute,
 		},
+		taskcommon.TaskTypeBringDown: {
+			Timeout: 60 * time.Minute,
+		},
 	}
 )
 

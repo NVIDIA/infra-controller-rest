@@ -44,6 +44,8 @@ func TestActivities_All_ContainsAllActivities(t *testing.T) {
 		NameGetBringUpStatus,
 		NameVerifyFirmwareConsistency,
 		NamePausePowerOnGate,
+		NameVerifyNoInstance,
+		NameEnterMaintenance,
 	}
 	require.Len(t, all, len(expectedNames), "unexpected number of activities")
 

@@ -92,11 +92,18 @@ func TestIsValidOperation(t *testing.T) {
 			operation: SequenceIngest,
 			want:      true,
 		},
+		// Valid bring-down task type operations
 		{
 			name:      "valid bring_down",
-			opType:    common.TaskTypeBringUp,
+			opType:    common.TaskTypeBringDown,
 			operation: SequenceBringDown,
 			want:      true,
+		},
+		{
+			name:      "bring_down rejected under bring_up task type",
+			opType:    common.TaskTypeBringUp,
+			operation: SequenceBringDown,
+			want:      false,
 		},
 		// Valid firmware control operations
 		{

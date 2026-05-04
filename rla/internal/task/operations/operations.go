@@ -209,6 +209,49 @@ func (t *BringUpTaskInfo) CodeString() string {
 	return taskcommon.OpCodeBringUp
 }
 
+// BringDownTaskInfo is the task payload for the bring-down workflow. It is
+// kept distinct from BringUpTaskInfo because bring-down is its own TaskType
+// and is expected to grow divergent semantics over time (e.g. instance
+// removal, data cleanup) that do not belong on the bring-up payload.
+type BringDownTaskInfo struct {
+	RuleID string `json:"rule_id,omitempty"`
+}
+
+func (t *BringDownTaskInfo) Validate() error {
+	return nil
+}
+
+func (t *BringDownTaskInfo) Marshal() (json.RawMessage, error) {
+	raw, err := json.Marshal(t)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"failed to marshal bring-down task info: %w", err,
+		)
+	}
+	return raw, nil
+}
+
+func (t *BringDownTaskInfo) Unmarshal(data json.RawMessage) error {
+	if err := json.Unmarshal(data, t); err != nil {
+		return fmt.Errorf(
+			"failed to unmarshal bring-down task info: %w", err,
+		)
+	}
+	return nil
+}
+
+func (t *BringDownTaskInfo) Type() taskcommon.TaskType {
+	return taskcommon.TaskTypeBringDown
+}
+
+func (t *BringDownTaskInfo) Description() string {
+	return "rack bring-down"
+}
+
+func (t *BringDownTaskInfo) CodeString() string {
+	return taskcommon.OpCodeBringDown
+}
+
 type FirmwareControlTaskInfo struct {
 	Operation     FirmwareOperation `json:"operation"`
 	TargetVersion string            `json:"target_version,omitempty"`

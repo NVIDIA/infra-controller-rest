@@ -53,7 +53,7 @@ func init() {
 		ruleKey(common.TaskTypeFirmwareControl, SequenceRollback):   firmwareUpgradeRule, // Same rule
 		ruleKey(common.TaskTypeBringUp, SequenceBringUp):            bringUpRule,
 		ruleKey(common.TaskTypeBringUp, SequenceIngest):             ingestRule,
-		ruleKey(common.TaskTypeBringUp, SequenceBringDown):          bringDownRule,
+		ruleKey(common.TaskTypeBringDown, SequenceBringDown):        bringDownRule,
 	}
 }
 
@@ -1272,33 +1272,64 @@ func buildForceRestartRule() *OperationRule {
 
 // buildBringDownRule creates the hardcoded default rule for rack bring-down.
 //
-// Stage 1: Compute    — graceful power off, verify off
-// Stage 2: Compute    — pause power-on gate (PowerManagerDisabled) so a stale
+// Stages:
 //
-//	reconcile pass cannot bring the machine back up
-//
-// Stage 3: NVLSwitch  — graceful power off, verify off
-// Stage 4: PowerShelf — graceful power off, verify off
+//  1. Compute    — verify no allocated instance (fail fast)
+//  2. Compute    — enter maintenance (long-lived health-report override)
+//  3. Compute    — graceful power off, verify off
+//  4. Compute    — pause power-on gate (PowerManagerDisabled) so a stale
+//     reconcile pass cannot bring the machine back up
+//  5. NVLSwitch  — graceful power off, verify off
+//  6. PowerShelf — graceful power off, verify off
 //
 // The component order mirrors `power_off` (Compute → NVLSwitch → PowerShelf)
-// but is distinct from it: bring-down explicitly disables the power-on gate
-// after the compute is down, marking intent that the machine should stay
-// down. A plain `power_off` only sets desired state to Off and leaves the
-// machine under power-manager supervision, which means an automatic recovery
-// loop could re-power it.
+// but is distinct from it. Two pre-stages run before any power op so we
+// never power off a machine that still serves workload, and so the machine
+// is locked out of the allocator before its state changes. Stage 4
+// explicitly disables the power-on gate after compute is down, marking
+// intent that the machine should stay down — a plain `power_off` only sets
+// desired state to Off and leaves the machine under power-manager
+// supervision, which means an automatic recovery loop could re-power it.
 func buildBringDownRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Bring-Down",
-		Description:   "Full bring-down: power off compute, pause gate, power off switch and power shelf",
-		OperationType: common.TaskTypeBringUp,
+		Description:   "Full bring-down: verify clean, enter maintenance, power off compute, pause gate, power off switch and power shelf",
+		OperationType: common.TaskTypeBringDown,
 		OperationCode: SequenceBringDown,
 		RuleDefinition: RuleDefinition{
 			Version: CurrentRuleDefinitionVersion,
 			Steps: []SequenceStep{
-				// === Stage 1: Compute — power off, verify ===
+				// === Stage 1: Compute — verify no allocated instance ===
 				{
 					ComponentType: devicetypes.ComponentTypeCompute,
 					Stage:         1,
+					MaxParallel:   0,
+					Timeout:       5 * time.Minute,
+					// No retry: a "machine still has an instance" result
+					// is not transient; retrying just delays the failure.
+					MainOperation: ActionConfig{
+						Name: ActionVerifyNoInstance,
+					},
+				},
+				// === Stage 2: Compute — enter maintenance ===
+				{
+					ComponentType: devicetypes.ComponentTypeCompute,
+					Stage:         2,
+					MaxParallel:   0,
+					Timeout:       5 * time.Minute,
+					RetryPolicy: &RetryPolicy{
+						MaxAttempts:        3,
+						InitialInterval:    5 * time.Second,
+						BackoffCoefficient: 2.0,
+					},
+					MainOperation: ActionConfig{
+						Name: ActionEnterMaintenance,
+					},
+				},
+				// === Stage 3: Compute — power off, verify ===
+				{
+					ComponentType: devicetypes.ComponentTypeCompute,
+					Stage:         3,
 					MaxParallel:   0,
 					Timeout:       20 * time.Minute,
 					RetryPolicy: &RetryPolicy{
@@ -1323,10 +1354,10 @@ func buildBringDownRule() *OperationRule {
 						},
 					},
 				},
-				// === Stage 2: Compute — pause power-on gate ===
+				// === Stage 4: Compute — pause power-on gate ===
 				{
 					ComponentType: devicetypes.ComponentTypeCompute,
-					Stage:         2,
+					Stage:         4,
 					MaxParallel:   0,
 					Timeout:       5 * time.Minute,
 					RetryPolicy: &RetryPolicy{
@@ -1338,10 +1369,10 @@ func buildBringDownRule() *OperationRule {
 						Name: ActionPausePowerOnGate,
 					},
 				},
-				// === Stage 3: NVLSwitch — power off, verify ===
+				// === Stage 5: NVLSwitch — power off, verify ===
 				{
 					ComponentType: devicetypes.ComponentTypeNVLSwitch,
-					Stage:         3,
+					Stage:         5,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
 					RetryPolicy: &RetryPolicy{
@@ -1366,10 +1397,10 @@ func buildBringDownRule() *OperationRule {
 						},
 					},
 				},
-				// === Stage 4: PowerShelf — power off, verify ===
+				// === Stage 6: PowerShelf — power off, verify ===
 				{
 					ComponentType: devicetypes.ComponentTypePowerShelf,
-					Stage:         4,
+					Stage:         6,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
 					RetryPolicy: &RetryPolicy{

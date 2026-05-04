@@ -58,6 +58,8 @@ var actionExecutorRegistry = map[string]actionExecutor{
 	operationrules.ActionInjectExpectation:         executeInjectExpectationAction,
 	operationrules.ActionVerifyFirmwareConsistency: executeVerifyFirmwareConsistencyAction,
 	operationrules.ActionPausePowerOnGate:          executePausePowerOnGateAction,
+	operationrules.ActionVerifyNoInstance:          executeVerifyNoInstanceAction,
+	operationrules.ActionEnterMaintenance:          executeEnterMaintenanceAction,
 }
 
 // executeActionList executes a list of actions sequentially
@@ -415,6 +417,22 @@ func executeBringUpControlAction(actx actionExecutionContext) error {
 func executePausePowerOnGateAction(actx actionExecutionContext) error {
 	return workflow.ExecuteActivity(
 		actx.workflowContext, activity.NamePausePowerOnGate, actx.target,
+	).Get(actx.workflowContext, nil)
+}
+
+// executeVerifyNoInstanceAction fails the action if any target component
+// still has an allocated instance — used as a precondition for bring-down.
+func executeVerifyNoInstanceAction(actx actionExecutionContext) error {
+	return workflow.ExecuteActivity(
+		actx.workflowContext, activity.NameVerifyNoInstance, actx.target,
+	).Get(actx.workflowContext, nil)
+}
+
+// executeEnterMaintenanceAction places target components under a long-lived
+// maintenance marker so they cannot be allocated until the marker is cleared.
+func executeEnterMaintenanceAction(actx actionExecutionContext) error {
+	return workflow.ExecuteActivity(
+		actx.workflowContext, activity.NameEnterMaintenance, actx.target,
 	).Get(actx.workflowContext, nil)
 }
 

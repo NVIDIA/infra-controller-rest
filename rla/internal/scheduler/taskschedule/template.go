@@ -139,6 +139,9 @@ func SummaryFromTemplate(templateJSON json.RawMessage) (opType, description stri
 		}
 		return "BRING_UP", "Bring Up", nil
 
+	case taskcommon.TaskTypeBringDown:
+		return "BRING_DOWN", "Bring Down", nil
+
 	case taskcommon.TaskTypeFirmwareControl:
 		var info struct {
 			TargetVersion string `json:"target_version"`

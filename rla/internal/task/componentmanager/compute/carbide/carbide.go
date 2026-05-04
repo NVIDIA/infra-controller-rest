@@ -44,6 +44,12 @@ const (
 	// healthOverrideSource is the source tag written into health-report
 	// overrides so they can be matched on removal.
 	healthOverrideSource = "rla-power-control"
+
+	// bringDownOverrideSource is the source tag for the long-lived
+	// maintenance override placed by EnterMaintenance during bring-down.
+	// Distinct from healthOverrideSource so that the transient
+	// power-control override cleanup does not remove it.
+	bringDownOverrideSource = "rla-bring-down"
 )
 
 // Manager manages compute node components via the Carbide API.
@@ -697,6 +703,75 @@ func (m *Manager) GetFirmwareStatus(ctx context.Context, target common.Target) (
 	}
 
 	return result, nil
+}
+
+// VerifyNoInstance returns an error if any target machine still has an
+// allocated instance on top of it. Used as a precondition for bring-down so
+// that we never power off a machine that is still serving workload.
+//
+// On the first machine that reports an instance the call short-circuits with
+// an error naming that machine — there is no value in continuing to query
+// when we already know the operation cannot proceed.
+func (m *Manager) VerifyNoInstance(
+	ctx context.Context,
+	target common.Target,
+) error {
+	if m.carbideClient == nil {
+		return fmt.Errorf("carbide client is not configured")
+	}
+	if err := target.Validate(); err != nil {
+		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	for _, componentID := range target.ComponentIDs {
+		hasInstance, err := m.carbideClient.MachineHasInstance(ctx, componentID)
+		if err != nil {
+			return fmt.Errorf(
+				"failed to query instances for %s: %w", componentID, err,
+			)
+		}
+		if hasInstance {
+			return fmt.Errorf(
+				"machine %s still has an allocated instance; refuse to proceed",
+				componentID,
+			)
+		}
+	}
+	return nil
+}
+
+// EnterMaintenance places each target machine under maintenance by inserting
+// a long-lived health-report override with the bring-down source tag. The
+// override is intentionally not removed here — bring-up (or a dedicated
+// cleanup operation) is responsible for clearing it.
+//
+// Idempotent: re-inserting under the same source replaces the existing entry
+// (Carbide's InsertHealthReportOverride is OverrideMode_Replace).
+func (m *Manager) EnterMaintenance(
+	ctx context.Context,
+	target common.Target,
+) error {
+	if m.carbideClient == nil {
+		return fmt.Errorf("carbide client is not configured")
+	}
+	if err := target.Validate(); err != nil {
+		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	for _, componentID := range target.ComponentIDs {
+		if err := m.carbideClient.InsertHealthReportOverride(
+			ctx, componentID, bringDownOverrideSource,
+		); err != nil {
+			return fmt.Errorf(
+				"failed to enter maintenance for %s: %w", componentID, err,
+			)
+		}
+		log.Info().
+			Str("component_id", componentID).
+			Str("source", bringDownOverrideSource).
+			Msg("EnterMaintenance succeeded")
+	}
+	return nil
 }
 
 // PausePowerOnGate moves the per-machine desired power state to

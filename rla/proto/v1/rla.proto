@@ -607,10 +607,6 @@ message BringUpRackRequest {
     optional UUID rule_id = 3;            // optional: override rule resolution with a specific rule
 }
 
-// BringDownRackRequest is the symmetric counterpart to BringUpRackRequest.
-// It powers off compute, pauses the per-machine power-on gate so the power
-// manager will not automatically bring it back up, then powers off the
-// remaining components (NVLSwitch and PowerShelf).
 message BringDownRackRequest {
     OperationTargetSpec target_spec = 1;  // Target racks for bring-down
     string description = 2;               // optional task description

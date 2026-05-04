@@ -118,6 +118,12 @@ type Client interface {
 	// SetMachineAutoUpdate enables or disables firmware auto-update for a machine.
 	SetMachineAutoUpdate(ctx context.Context, machineID string, enable bool) error
 
+	// MachineHasInstance reports whether the given machine currently has any
+	// allocated instance(s) on top of it. Returns true if at least one
+	// instance is associated with the machine. Used as a precondition check
+	// before destructive operations like bring-down.
+	MachineHasInstance(ctx context.Context, machineID string) (bool, error)
+
 	// The following are only valid in the mock environment and should only be called by unit tests
 	AddMachine(MachineDetail)
 	AddPowerState(machineID string, state PowerState)
@@ -126,4 +132,5 @@ type Client interface {
 	AddMachineInterface(iface MachineInterface)
 	AddExpectedSwitchInfo(info ExpectedSwitchInfo)
 	SetLeakingMachineIds(ids []string)
+	SetMachineHasInstance(machineID string, has bool)
 }

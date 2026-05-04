@@ -34,6 +34,7 @@ type mockClient struct {
 	firmwareUpdateTimeWindowErr error // If set, SetFirmwareUpdateTimeWindow will return this error
 	adminPowerControlErr        error // If set, AdminPowerControl will return this error
 	desiredFirmwareVersions     []*pb.DesiredFirmwareVersionEntry
+	machineInstances            map[string]bool // machineID -> has instance
 }
 
 // NewMockClient returns a "GRPC" client that returns mock values so it can be used in unit tests.
@@ -43,6 +44,7 @@ func NewMockClient() Client {
 		powerStates:       map[string]PowerState{},
 		machineInterfaces: map[string]MachineInterface{},
 		expectedSwitches:  map[string]ExpectedSwitchInfo{},
+		machineInstances:  map[string]bool{},
 	}
 }
 
@@ -64,6 +66,10 @@ func (c *mockClient) GetLeakingMachineIds(ctx context.Context) ([]string, error)
 
 func (c *mockClient) SetLeakingMachineIds(ids []string) {
 	c.leakingMachineIds = ids
+}
+
+func (c *mockClient) SetMachineHasInstance(machineID string, has bool) {
+	c.machineInstances[machineID] = has
 }
 
 func (c *mockClient) GetPowerStates(ctx context.Context, machineIds []string) (ret []MachinePowerState, err error) {
@@ -173,6 +179,10 @@ func (c *mockClient) InsertHealthReportOverride(ctx context.Context, machineID s
 
 func (c *mockClient) RemoveHealthReportOverride(ctx context.Context, machineID string, source string) error {
 	return nil
+}
+
+func (c *mockClient) MachineHasInstance(ctx context.Context, machineID string) (bool, error) {
+	return c.machineInstances[machineID], nil
 }
 
 func (c *mockClient) ComponentPowerControl(ctx context.Context, req *pb.ComponentPowerControlRequest) (*pb.ComponentPowerControlResponse, error) {

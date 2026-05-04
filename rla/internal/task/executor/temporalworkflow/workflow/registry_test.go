@@ -239,6 +239,40 @@ func TestWorkflowDescriptor_Unmarshal_BringUp(t *testing.T) {
 	})
 }
 
+// --- BringDown ---
+
+func TestWorkflowDescriptor_Registered_BringDown(t *testing.T) {
+	desc := mustGetDescriptor(t, taskcommon.TaskTypeBringDown)
+	assert.Equal(t, "BringDown", desc.WorkflowName)
+	assert.NotNil(t, desc.WorkflowFunc)
+	assert.Greater(t, desc.Timeout, time.Duration(0), "expected non-zero timeout")
+}
+
+func TestWorkflowDescriptor_Unmarshal_BringDown(t *testing.T) {
+	desc := mustGetDescriptor(t, taskcommon.TaskTypeBringDown)
+
+	t.Run("valid empty payload", func(t *testing.T) {
+		result, err := desc.Unmarshal(json.RawMessage(`{}`))
+		require.NoError(t, err)
+		_, ok := result.(*operations.BringDownTaskInfo)
+		assert.True(t, ok, "expected *BringDownTaskInfo, got %T", result)
+	})
+
+	t.Run("valid with rule_id", func(t *testing.T) {
+		raw, _ := json.Marshal(map[string]any{"rule_id": "test-rule"})
+		result, err := desc.Unmarshal(raw)
+		require.NoError(t, err)
+		info, ok := result.(*operations.BringDownTaskInfo)
+		require.True(t, ok, "expected *BringDownTaskInfo, got %T", result)
+		assert.Equal(t, "test-rule", info.RuleID)
+	})
+
+	t.Run("invalid JSON", func(t *testing.T) {
+		_, err := desc.Unmarshal(json.RawMessage(`{not valid json`))
+		assert.Error(t, err)
+	})
+}
+
 // --- InjectExpectation ---
 
 func TestWorkflowDescriptor_Registered_InjectExpectation(t *testing.T) {
