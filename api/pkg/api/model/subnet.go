@@ -25,7 +25,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
-	ipam "github.com/NVIDIA/infra-controller-rest/ipam"
+	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 const (
@@ -166,7 +166,7 @@ type APISubnet struct {
 }
 
 // NewAPISubnet accepts a DB layer objects and returns an API layer object
-func NewAPISubnet(dbs *cdbm.Subnet, dbsds []cdbm.StatusDetail, dbpu *ipam.Usage) *APISubnet {
+func NewAPISubnet(dbs *cdbm.Subnet, dbsds []cdbm.StatusDetail, dbpu *cipam.Usage) *APISubnet {
 	apiSubnet := APISubnet{
 		ID:           dbs.ID.String(),
 		Name:         dbs.Name,

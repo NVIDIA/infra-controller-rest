@@ -1318,8 +1318,9 @@ func TestSubnetHandler_Get(t *testing.T) {
 
 				assert.Equal(t, cdbm.IPBlockRoutingTypeDatacenterOnly, *rsp.RoutingType)
 
-				expanded := tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil || tc.expectUsageStatsNonNil
-				if expanded {
+				hasRelations := tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil
+				hasUsageStats := tc.expectUsageStatsNonNil
+				if hasRelations || hasUsageStats {
 					if tc.expectedVpcName != nil {
 						assert.Equal(t, *tc.expectedVpcName, rsp.Vpc.Name)
 					}
@@ -1329,7 +1330,7 @@ func TestSubnetHandler_Get(t *testing.T) {
 					if tc.expectedIPv6Name != nil {
 						assert.Equal(t, *tc.expectedIPv6Name, rsp.IPv6Block.Name)
 					}
-					if tc.expectUsageStatsNonNil {
+					if hasUsageStats {
 						require.NotNil(t, rsp.IPv4Block)
 					}
 				} else {

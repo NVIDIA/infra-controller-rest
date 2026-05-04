@@ -24,8 +24,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
-	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -505,18 +503,9 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	includeUsageStats := false
-	qius := c.QueryParam("includeUsageStats")
-	if qius != "" {
-		includeUsageStats, err = strconv.ParseBool(qius)
-		if err != nil {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
-		}
-	}
-
-	queryIncludeRelations := slices.Clone(qIncludeRelations)
-	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPv4BlockRelationName) {
-		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPv4BlockRelationName)
+	includeUsageStats, queryIncludeRelations, err := common.ParseIncludeUsageStats(c, qIncludeRelations, cdbm.IPv4BlockRelationName)
+	if err != nil {
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
 	}
 
 	// Get site ID from query param
@@ -724,18 +713,9 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	includeUsageStats := false
-	qius := c.QueryParam("includeUsageStats")
-	if qius != "" {
-		includeUsageStats, err = strconv.ParseBool(qius)
-		if err != nil {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
-		}
-	}
-
-	queryIncludeRelations := slices.Clone(qIncludeRelations)
-	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPv4BlockRelationName) {
-		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPv4BlockRelationName)
+	includeUsageStats, queryIncludeRelations, err := common.ParseIncludeUsageStats(c, qIncludeRelations, cdbm.IPv4BlockRelationName)
+	if err != nil {
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
 	}
 
 	// Get subnet ID from URL param

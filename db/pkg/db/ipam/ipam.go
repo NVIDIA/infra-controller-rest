@@ -82,11 +82,11 @@ func GetCidrForIPBlock(ctx context.Context, prefix string, blockSize int) string
 }
 
 func getVpcPrefixCidr(ctx context.Context, vpcPrefix *cdbm.VpcPrefix) string {
-	if vpcPrefix != nil && strings.Contains(vpcPrefix.Prefix, "/") {
-		return vpcPrefix.Prefix
-	}
 	if vpcPrefix == nil {
 		return ""
+	}
+	if strings.Contains(vpcPrefix.Prefix, "/") {
+		return vpcPrefix.Prefix
 	}
 	return GetCidrForIPBlock(ctx, vpcPrefix.Prefix, vpcPrefix.PrefixLength)
 }
