@@ -6488,7 +6488,7 @@ const file_rla_proto_rawDesc = "" +
 	"\x15AssociateRuleWithRack\x12 .v1.AssociateRuleWithRackRequest\x1a\x16.google.protobuf.Empty\x12W\n" +
 	"\x18DisassociateRuleFromRack\x12#.v1.DisassociateRuleFromRackRequest\x1a\x16.google.protobuf.Empty\x12_\n" +
 	"\x16GetRackRuleAssociation\x12!.v1.GetRackRuleAssociationRequest\x1a\".v1.GetRackRuleAssociationResponse\x12e\n" +
-	"\x18ListRackRuleAssociations\x12#.v1.ListRackRuleAssociationsRequest\x1a$.v1.ListRackRuleAssociationsResponseBAZ?github.com/NVIDIA/infra-controller-rest/workflow-schema/rlab\x06proto3"
+	"\x18ListRackRuleAssociations\x12#.v1.ListRackRuleAssociationsRequest\x1a$.v1.ListRackRuleAssociationsResponseB=Z;github.com/NVIDIA/infra-controller-rest/workflow-schema/rlab\x06proto3"
 
 var (
 	file_rla_proto_rawDescOnce sync.Once
