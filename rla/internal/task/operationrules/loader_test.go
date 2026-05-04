@@ -222,19 +222,9 @@ rules:
         timeout: 10m
         main_operation:
           name: FirmwareControl
-  - name: "Rollback"
-    operation_type: firmware_control
-    operation: rollback
-    steps:
-      - component_type: compute
-        stage: 1
-        max_parallel: 1
-        timeout: 10m
-        main_operation:
-          name: FirmwareControl
 `,
 			wantRules: map[common.TaskType][]string{
-				common.TaskTypeFirmwareControl: {"upgrade", "downgrade", "rollback"},
+				common.TaskTypeFirmwareControl: {"upgrade", "downgrade"},
 			},
 		},
 		{

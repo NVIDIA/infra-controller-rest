@@ -6340,7 +6340,7 @@ type TaskSchedule struct {
 	// operation_type identifies the kind of operation this schedule runs.
 	// Values: "POWER_ON", "POWER_OFF", "POWER_RESET", "BRING_UP", "INGEST",
 	//
-	//	"UPGRADE_FIRMWARE", "DOWNGRADE_FIRMWARE", "ROLLBACK_FIRMWARE".
+	//	"UPGRADE_FIRMWARE", "DOWNGRADE_FIRMWARE".
 	OperationType string `protobuf:"bytes,10,opt,name=operation_type,json=operationType,proto3" json:"operation_type,omitempty"`
 	// description is a human-readable summary of the operation and its key parameters,
 	// e.g. "Power Reset (forced)" or "Upgrade Firmware to v2.3.1".

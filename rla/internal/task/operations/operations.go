@@ -78,6 +78,12 @@ func New(typ taskcommon.TaskType, info json.RawMessage) (Operation, error) {
 			return nil, fmt.Errorf("failed to unmarshal bring-up task info: %w", err) //nolint
 		}
 		return &taskInfo, nil
+	case taskcommon.TaskTypeBringDown:
+		var taskInfo BringDownTaskInfo
+		if err := json.Unmarshal(info, &taskInfo); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal bring-down task info: %w", err) //nolint
+		}
+		return &taskInfo, nil
 	default:
 		return nil, fmt.Errorf("unsupported task type: %s", typ)
 	}

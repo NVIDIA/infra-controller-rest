@@ -50,7 +50,6 @@ func init() {
 		ruleKey(common.TaskTypePowerControl, SequenceForceRestart):  forceRestartRule,
 		ruleKey(common.TaskTypeFirmwareControl, SequenceUpgrade):    firmwareUpgradeRule,
 		ruleKey(common.TaskTypeFirmwareControl, SequenceDowngrade):  firmwareUpgradeRule, // Same rule
-		ruleKey(common.TaskTypeFirmwareControl, SequenceRollback):   firmwareUpgradeRule, // Same rule
 		ruleKey(common.TaskTypeBringUp, SequenceBringUp):            bringUpRule,
 		ruleKey(common.TaskTypeBringUp, SequenceIngest):             ingestRule,
 		ruleKey(common.TaskTypeBringDown, SequenceBringDown):        bringDownRule,

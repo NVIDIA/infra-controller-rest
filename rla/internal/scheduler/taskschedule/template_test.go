@@ -267,11 +267,6 @@ func TestSummaryFromTemplate(t *testing.T) {
 			wantOpType: "DOWNGRADE_FIRMWARE",
 			wantDesc:   "Downgrade Firmware to v1.9.0",
 		},
-		"rollback_firmware": {
-			input:      mustMarshalTemplate(taskcommon.TaskTypeFirmwareControl, taskcommon.OpCodeFirmwareControlRollback, firmwareInfo("")),
-			wantOpType: "ROLLBACK_FIRMWARE",
-			wantDesc:   "Rollback Firmware",
-		},
 		"unknown_firmware_control_code": {
 			input:      mustMarshalTemplate(taskcommon.TaskTypeFirmwareControl, "flash", firmwareInfo("")),
 			wantOpType: "FIRMWARE_CONTROL",

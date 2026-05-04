@@ -197,8 +197,6 @@ func firmwareOperationToSequenceName(op operations.FirmwareOperation) string {
 		return SequenceUpgrade
 	case operations.FirmwareOperationDowngrade:
 		return SequenceDowngrade
-	case operations.FirmwareOperationRollback:
-		return SequenceRollback
 	default:
 		return SequenceUpgrade // Default fallback
 	}

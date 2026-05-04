@@ -106,11 +106,12 @@ const (
 type FirmwareOperation int
 
 const (
-	FirmwareOperationUnknown FirmwareOperation = iota
-	FirmwareOperationUpgrade
-	FirmwareOperationDowngrade
-	FirmwareOperationRollback
-	FirmwareOperationVersion
+	FirmwareOperationUnknown   FirmwareOperation = 0
+	FirmwareOperationUpgrade   FirmwareOperation = 1
+	FirmwareOperationDowngrade FirmwareOperation = 2
+	// 3 was previously FirmwareOperationRollback; kept reserved so persisted
+	// values for FirmwareOperationVersion remain stable.
+	FirmwareOperationVersion FirmwareOperation = 4
 )
 
 func (o FirmwareOperation) String() string {
@@ -119,8 +120,6 @@ func (o FirmwareOperation) String() string {
 		return "FirmwareUpgrade"
 	case FirmwareOperationDowngrade:
 		return "FirmwareDowngrade"
-	case FirmwareOperationRollback:
-		return "FirmwareRollback"
 	case FirmwareOperationVersion:
 		return "FirmwareVersion"
 	}
@@ -132,7 +131,6 @@ func (o FirmwareOperation) String() string {
 var firmwareOperationCodes = map[FirmwareOperation]string{
 	FirmwareOperationUpgrade:   taskcommon.OpCodeFirmwareControlUpgrade,
 	FirmwareOperationDowngrade: taskcommon.OpCodeFirmwareControlDowngrade,
-	FirmwareOperationRollback:  taskcommon.OpCodeFirmwareControlRollback,
 }
 
 // MachineBringUpState represents the bring-up state of a

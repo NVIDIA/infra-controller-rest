@@ -40,7 +40,6 @@ const (
 const (
 	SequenceUpgrade   = common.OpCodeFirmwareControlUpgrade
 	SequenceDowngrade = common.OpCodeFirmwareControlDowngrade
-	SequenceRollback  = common.OpCodeFirmwareControlRollback
 )
 
 // Bring-up sequence names (TaskTypeBringUp) - use shared operation codes
@@ -82,7 +81,6 @@ var ValidOperations = map[common.TaskType][]string{
 	common.TaskTypeFirmwareControl: {
 		SequenceUpgrade,
 		SequenceDowngrade,
-		SequenceRollback,
 	},
 	common.TaskTypeBringUp: {
 		SequenceBringUp,

@@ -118,12 +118,6 @@ func TestIsValidOperation(t *testing.T) {
 			operation: SequenceDowngrade,
 			want:      true,
 		},
-		{
-			name:      "valid rollback",
-			opType:    common.TaskTypeFirmwareControl,
-			operation: SequenceRollback,
-			want:      true,
-		},
 		// Invalid operations
 		{
 			name:      "invalid operation for power control",
@@ -191,7 +185,7 @@ func TestSequenceConstantsMatchSharedCodes(t *testing.T) {
 		{"ColdReset", SequenceColdReset, common.OpCodePowerControlColdReset},
 		{"Upgrade", SequenceUpgrade, common.OpCodeFirmwareControlUpgrade},
 		{"Downgrade", SequenceDowngrade, common.OpCodeFirmwareControlDowngrade},
-		{"Rollback", SequenceRollback, common.OpCodeFirmwareControlRollback},
+		{"BringDown", SequenceBringDown, common.OpCodeBringDown},
 	}
 
 	for _, tt := range tests {

@@ -33,7 +33,6 @@ const (
 const (
 	OpCodeFirmwareControlUpgrade   = "upgrade"
 	OpCodeFirmwareControlDowngrade = "downgrade"
-	OpCodeFirmwareControlRollback  = "rollback"
 )
 
 // Lifecycle operation codes (TaskTypeBringUp)

@@ -162,8 +162,6 @@ func SummaryFromTemplate(templateJSON json.RawMessage) (opType, description stri
 				return "DOWNGRADE_FIRMWARE", "Downgrade Firmware to " + info.TargetVersion, nil
 			}
 			return "DOWNGRADE_FIRMWARE", "Downgrade Firmware", nil
-		case taskcommon.OpCodeFirmwareControlRollback:
-			return "ROLLBACK_FIRMWARE", "Rollback Firmware", nil
 		default: // unrecognized
 			return "FIRMWARE_CONTROL", tmpl.Code, nil
 		}

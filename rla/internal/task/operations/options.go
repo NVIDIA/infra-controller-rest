@@ -42,7 +42,7 @@ var (
 			Timeout: 120 * time.Minute,
 		},
 		taskcommon.TaskTypeBringDown: {
-			Timeout: 60 * time.Minute,
+			Timeout: 120 * time.Minute,
 		},
 	}
 )

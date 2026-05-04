@@ -96,7 +96,6 @@ func TestFirmwareOperationCodeString(t *testing.T) {
 	}{
 		{"Upgrade", FirmwareOperationUpgrade, taskcommon.OpCodeFirmwareControlUpgrade},
 		{"Downgrade", FirmwareOperationDowngrade, taskcommon.OpCodeFirmwareControlDowngrade},
-		{"Rollback", FirmwareOperationRollback, taskcommon.OpCodeFirmwareControlRollback},
 	}
 
 	for _, tt := range tests {
