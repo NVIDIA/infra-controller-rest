@@ -909,6 +909,8 @@ func TestGetIpamUsageForVpcPrefix(t *testing.T) {
 	u2, err := GetIpamUsageForVpcPrefix(ctx, ipamDB, vpBareNetwork, parent)
 	assert.Nil(t, err)
 	assert.Equal(t, u1.AcquiredIPs, u2.AcquiredIPs)
+	assert.Equal(t, u1.AcquiredPrefixes, u2.AcquiredPrefixes)
+	assert.Equal(t, u1.AvailableSmallestPrefixes, u2.AvailableSmallestPrefixes)
 
 	fullGrantParent := &cdbm.IPBlock{
 		ID:                       uuid.New(),
@@ -1003,6 +1005,8 @@ func TestGetIpamUsageForSubnet(t *testing.T) {
 	u2, err := GetIpamUsageForSubnet(ctx, ipamDB, subBare, parent)
 	assert.Nil(t, err)
 	assert.Equal(t, u1.AcquiredIPs, u2.AcquiredIPs)
+	assert.Equal(t, u1.AcquiredPrefixes, u2.AcquiredPrefixes)
+	assert.Equal(t, u1.AvailableSmallestPrefixes, u2.AvailableSmallestPrefixes)
 
 	fullGrantParent := &cdbm.IPBlock{
 		ID:                       uuid.New(),

@@ -100,7 +100,7 @@ func cidrPrefixesEqual(a, b string) bool {
 	if err != nil {
 		return false
 	}
-	return pa == pb
+	return pa.Masked() == pb.Masked()
 }
 
 // CreateIpamEntryForIPBlock will create an ipam entry in the ipam DB for the IPBlock
