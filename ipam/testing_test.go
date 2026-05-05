@@ -227,7 +227,7 @@ func startEtcd() (container testcontainers.Container, s *etcd, err error) {
 		var err error
 		req := testcontainers.ContainerRequest{
 			Image:        "quay.io/coreos/etcd:" + etcdVersion,
-			ExposedPorts: []string{"2379:2379", "2380:2380"},
+			ExposedPorts: []string{"2379/tcp", "2380/tcp"},
 			WaitingFor: wait.ForAll(
 				wait.ForListeningPort("2379/tcp").WithStartupTimeout(120*time.Second),
 				wait.ForListeningPort("2380/tcp").WithStartupTimeout(120*time.Second),
