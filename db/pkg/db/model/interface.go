@@ -185,6 +185,8 @@ type InterfaceDAO interface {
 	Clear(ctx context.Context, tx *db.Tx, input InterfaceClearInput) (*Interface, error)
 	//
 	Delete(ctx context.Context, tx *db.Tx, id uuid.UUID) error
+	//
+	DeleteAllByInstanceIDs(ctx context.Context, tx *db.Tx, instanceIDs []uuid.UUID) error
 }
 
 // InterfaceSQLDAO is an implementation of the InterfaceDAO interface
@@ -494,6 +496,30 @@ func (ifcd InterfaceSQLDAO) Delete(ctx context.Context, tx *db.Tx, id uuid.UUID)
 	}
 
 	return nil
+}
+
+// DeleteAllByInstanceIDs soft-deletes every Interface whose instance id is in
+// the provided list.
+// error is returned only if there is a db error
+func (ifcd InterfaceSQLDAO) DeleteAllByInstanceIDs(ctx context.Context, tx *db.Tx, instanceIDs []uuid.UUID) error {
+	ctx, interfaceDAOSpan := ifcd.tracerSpan.CreateChildInCurrentContext(ctx, "InterfaceDAO.DeleteAllByInstanceIDs")
+	if interfaceDAOSpan != nil {
+		defer interfaceDAOSpan.End()
+
+		ifcd.tracerSpan.SetAttribute(interfaceDAOSpan, "instance_id_count", len(instanceIDs))
+	}
+
+	if len(instanceIDs) == 0 { // no-op
+		return nil
+	}
+
+	_, err := db.GetIDB(tx, ifcd.dbSession).
+		NewDelete().
+		Model((*Interface)(nil)).
+		Where("ifc.instance_id IN (?)", bun.In(instanceIDs)).
+		Exec(ctx)
+
+	return err
 }
 
 // CreateMultiple creates multiple Interfaces from the given parameters

@@ -73,6 +73,12 @@ func TestSetupSchema(t *testing.T, dbSession *cdb.Session) {
 	// create VPC table
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Vpc)(nil))
 	assert.Nil(t, err)
+	// create VpcPeering table (depends on VPC and Site)
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.VpcPeering)(nil))
+	assert.Nil(t, err)
+	// create Fabric table (depends on Site and InfrastructureProvider)
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Fabric)(nil))
+	assert.Nil(t, err)
 	// create Domain table
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Domain)(nil))
 	assert.Nil(t, err)
@@ -111,6 +117,12 @@ func TestSetupSchema(t *testing.T, dbSession *cdb.Session) {
 	assert.Nil(t, err)
 	// create ExpectedMachine table
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.ExpectedMachine)(nil))
+	assert.Nil(t, err)
+	// create ExpectedSwitch table
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.ExpectedSwitch)(nil))
+	assert.Nil(t, err)
+	// create ExpectedPowerShelf table
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.ExpectedPowerShelf)(nil))
 	assert.Nil(t, err)
 	// create Instance table
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Instance)(nil))
@@ -738,6 +750,114 @@ func TestBuildBuildIPBlock(t *testing.T, dbSession *cdb.Session, name string, si
 	)
 	assert.Nil(t, err)
 	return ipb
+}
+
+// TestBuildVpcPeering inserts a VpcPeering row. The schema enforces FK
+// constraints on (vpc1_id, vpc2_id, site_id, infrastructure_provider_id,
+// tenant_id), so callers must pass IDs of rows that already exist.
+func TestBuildVpcPeering(t *testing.T, dbSession *cdb.Session, vpc1ID, vpc2ID, siteID uuid.UUID, ipID uuid.UUID, tenantID uuid.UUID, createdBy uuid.UUID) *cdbm.VpcPeering {
+	vp := &cdbm.VpcPeering{
+		ID:                       uuid.New(),
+		Vpc1ID:                   vpc1ID,
+		Vpc2ID:                   vpc2ID,
+		SiteID:                   siteID,
+		InfrastructureProviderID: &ipID,
+		TenantID:                 &tenantID,
+		Status:                   cdbm.VpcPeeringStatusPending,
+		CreatedBy:                createdBy,
+	}
+	_, err := dbSession.DB.NewInsert().Model(vp).Exec(context.Background())
+	assert.Nil(t, err)
+	return vp
+}
+
+// TestBuildFabric inserts a Fabric row for the given site.
+func TestBuildFabric(t *testing.T, dbSession *cdb.Session, id string, site *cdbm.Site, ipID uuid.UUID, status string) *cdbm.Fabric {
+	fb := &cdbm.Fabric{
+		ID:                       id,
+		Org:                      site.Org,
+		SiteID:                   site.ID,
+		InfrastructureProviderID: ipID,
+		Status:                   status,
+	}
+	_, err := dbSession.DB.NewInsert().Model(fb).Exec(context.Background())
+	assert.Nil(t, err)
+	return fb
+}
+
+// TestBuildNetworkSecurityGroup inserts a minimal NetworkSecurityGroup row for
+// a given site/tenant. Rules are intentionally left empty since callers care
+// about the cleanup behaviour, not the rule contents.
+func TestBuildNetworkSecurityGroup(t *testing.T, dbSession *cdb.Session, name string, site *cdbm.Site, tenant *cdbm.Tenant, status string, user *cdbm.User) *cdbm.NetworkSecurityGroup {
+	nsg := &cdbm.NetworkSecurityGroup{
+		ID:        uuid.NewString(),
+		Name:      name,
+		SiteID:    site.ID,
+		TenantOrg: tenant.Org,
+		TenantID:  tenant.ID,
+		Status:    status,
+		CreatedBy: user.ID,
+		UpdatedBy: user.ID,
+	}
+	_, err := dbSession.DB.NewInsert().Model(nsg).Exec(context.Background())
+	assert.Nil(t, err)
+	return nsg
+}
+
+// TestBuildExpectedMachine inserts a minimal ExpectedMachine row for the given
+// site. The table has no soft-delete column, so cleanup is a hard delete.
+func TestBuildExpectedMachine(t *testing.T, dbSession *cdb.Session, site *cdbm.Site, bmcMacAddress, chassisSerialNumber string, user *cdbm.User) *cdbm.ExpectedMachine {
+	em := &cdbm.ExpectedMachine{
+		ID:                  uuid.New(),
+		SiteID:              site.ID,
+		BmcMacAddress:       bmcMacAddress,
+		ChassisSerialNumber: chassisSerialNumber,
+		CreatedBy:           user.ID,
+	}
+	_, err := dbSession.DB.NewInsert().Model(em).Exec(context.Background())
+	assert.Nil(t, err)
+	return em
+}
+
+// TestBuildExpectedSwitch inserts a minimal ExpectedSwitch row for the given
+// site. The table has no soft-delete column, so cleanup is a hard delete.
+func TestBuildExpectedSwitch(t *testing.T, dbSession *cdb.Session, site *cdbm.Site, bmcMacAddress, switchSerialNumber string, user *cdbm.User) *cdbm.ExpectedSwitch {
+	es := &cdbm.ExpectedSwitch{
+		ID:                 uuid.New(),
+		SiteID:             site.ID,
+		BmcMacAddress:      bmcMacAddress,
+		SwitchSerialNumber: switchSerialNumber,
+		CreatedBy:          user.ID,
+	}
+	_, err := dbSession.DB.NewInsert().Model(es).Exec(context.Background())
+	assert.Nil(t, err)
+	return es
+}
+
+// TestBuildExpectedPowerShelf inserts a minimal ExpectedPowerShelf row for the
+// given site. The table has no soft-delete column, so cleanup is a hard delete.
+func TestBuildExpectedPowerShelf(t *testing.T, dbSession *cdb.Session, site *cdbm.Site, bmcMacAddress, shelfSerialNumber string, user *cdbm.User) *cdbm.ExpectedPowerShelf {
+	eps := &cdbm.ExpectedPowerShelf{
+		ID:                uuid.New(),
+		SiteID:            site.ID,
+		BmcMacAddress:     bmcMacAddress,
+		ShelfSerialNumber: shelfSerialNumber,
+		CreatedBy:         user.ID,
+	}
+	_, err := dbSession.DB.NewInsert().Model(eps).Exec(context.Background())
+	assert.Nil(t, err)
+	return eps
+}
+
+// TestBuildSku inserts a minimal SKU row for the given site.
+func TestBuildSku(t *testing.T, dbSession *cdb.Session, skuID string, site *cdbm.Site) *cdbm.SKU {
+	sk := &cdbm.SKU{
+		ID:     skuID,
+		SiteID: site.ID,
+	}
+	_, err := dbSession.DB.NewInsert().Model(sk).Exec(context.Background())
+	assert.Nil(t, err)
+	return sk
 }
 
 func TestBuildVPCPrefix(t *testing.T, dbSession *cdb.Session, name string, st *cdbm.Site, tenant *cdbm.Tenant, vpcID uuid.UUID, ipv4BlockID *uuid.UUID, prefix *string, prefixLength *int, status string, user *cdbm.User) *cdbm.VpcPrefix {

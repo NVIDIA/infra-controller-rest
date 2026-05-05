@@ -991,3 +991,279 @@ func TestManageSite_DeleteOrphanedSiteTemporalNamespaces_Activity(t *testing.T) 
 
 	gmockctrl1.Finish()
 }
+
+// TestManageSite_DeleteSiteComponentsFromDB_NewResources covers the additional
+// site-scoped resources that DeleteSiteComponentsFromDB now cleans up
+// (interfaces, vpc prefixes, vpc peerings, fabrics, NVLink logical partitions,
+// SSH key group site/instance associations, network security groups, DPU
+// extension service deployments, tenant sites, SKUs, allocations, allocation
+// constraints, and the expected_machine / expected_switch / expected_power_shelf
+// records).
+//
+// The test builds the same set of records under two sites, runs the cleanup
+// against site 1, and then asserts that:
+//   - every site-1 record is gone (soft-deleted, or hard-deleted for SKU and
+//     the expected_* tables which have no soft_delete column), and
+//   - every site-2 record is still present and active.
+//
+// SSHKeyAssociation is intentionally not asserted on here: the workflow's
+// current call to skaDAO.GetAll filters by sshKeyGroupIDs using the siteID,
+// which is effectively a no-op (no group has a site UUID). It is built so the
+// scenario is realistic but is not part of the cleanup contract being tested.
+func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
+	ctx := context.Background()
+
+	dbSession := testSiteInitDB(t)
+	defer dbSession.Close()
+
+	util.TestSetupSchema(t, dbSession)
+
+	ipOrg := "test-provider-org-1"
+	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
+	ip := util.TestBuildInfrastructureProvider(t, dbSession, "testIP", ipOrg, ipu)
+
+	tnOrg := "test-tenant-org-1"
+	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg}, tnRoles)
+	tncfg := cdbm.TenantConfig{EnableSSHAccess: true}
+	tenant := util.TestBuildTenant(t, dbSession, "test-tenant", tnOrg, &tncfg, tnu)
+
+	iDAO := cdbm.NewInstanceDAO(dbSession)
+	operatingSystem := util.TestBuildOperatingSystem(t, dbSession, "test-os")
+
+	// siteResources captures the IDs we expect to verify after the cleanup
+	// runs. Pointer types are used where the underlying ID type isn't
+	// uuid.UUID (Fabric, NSG, SKU all use string IDs).
+	type siteResources struct {
+		site               *cdbm.Site
+		instance           *cdbm.Instance
+		vpc                *cdbm.Vpc
+		ipBlock            *cdbm.IPBlock
+		vpcPrefixID        uuid.UUID
+		vpcPeeringID       uuid.UUID
+		fabricID           string
+		nvllpID            uuid.UUID
+		nsgID              string
+		skuID              string
+		dpuDeploymentID    uuid.UUID
+		tenantSiteID       uuid.UUID
+		allocationID       uuid.UUID
+		allocConstraintID  uuid.UUID
+		interfaceIDs       []uuid.UUID
+		ibInterfaceIDs     []uuid.UUID
+		nvlinkInterfaceIDs []uuid.UUID
+		sshKeyGroupSiteID  uuid.UUID
+		sshKeyGroupInstID  uuid.UUID
+		sshKeyAssocID      uuid.UUID
+		expectedMachineID  uuid.UUID
+		expectedSwitchID   uuid.UUID
+		expectedShelfID    uuid.UUID
+	}
+
+	buildSiteResources := func(tag string) *siteResources {
+		site := util.TestBuildSite(t, dbSession, ip, "test-site-"+tag, cdbm.SiteStatusPending, nil, ipu)
+
+		// Core dependencies for an instance. A second VPC is needed so the
+		// VpcPeering row can satisfy its (vpc1_id, vpc2_id) foreign keys.
+		vpc := util.TestBuildVpc(t, dbSession, ip, site, tenant, "vpc-"+tag)
+		vpc2 := util.TestBuildVpc(t, dbSession, ip, site, tenant, "vpc2-"+tag)
+		machine := util.TestBuildMachine(t, dbSession, ip.ID, site.ID, cdb.GetStrPtr("x86"), cdb.GetBoolPtr(true), cdbm.MachineStatusReady)
+		instanceType := util.TestBuildInstanceType(t, dbSession, ip, site, "it-"+tag)
+
+		instance, err := iDAO.Create(
+			ctx, nil,
+			cdbm.InstanceCreateInput{
+				Name:                     "ins-" + tag,
+				TenantID:                 tenant.ID,
+				InfrastructureProviderID: ip.ID,
+				SiteID:                   site.ID,
+				InstanceTypeID:           &instanceType.ID,
+				VpcID:                    vpc.ID,
+				MachineID:                &machine.ID,
+				Hostname:                 cdb.GetStrPtr(tag + ".test.com"),
+				OperatingSystemID:        cdb.GetUUIDPtr(operatingSystem.ID),
+				IpxeScript:               cdb.GetStrPtr("ipxe"),
+				UserData:                 cdb.GetStrPtr("userdata"),
+				Labels:                   map[string]string{},
+				Status:                   cdbm.InstanceStatusPending,
+				CreatedBy:                tnu.ID,
+			},
+		)
+		require.NoError(t, err)
+
+		// Allocation + constraint
+		allocation := util.TestBuildAllocation(t, dbSession, ip, tenant, site, "alloc-"+tag)
+		allocConstraint := util.TestBuildAllocationContraints(t, dbSession, allocation, cdbm.AllocationResourceTypeInstanceType, instanceType.ID, cdbm.AllocationConstraintTypeReserved, 1, ipu)
+
+		// VPC Prefix needs an IPBlock.
+		ipBlock := util.TestBuildBuildIPBlock(t, dbSession, "ipblock-"+tag, site, ip, &tenant.ID, cdbm.IPBlockRoutingTypeDatacenterOnly, "10.0.0.0/16", 16, cdbm.IPBlockProtocolVersionV4, true, cdbm.IPBlockStatusReady, ipu)
+		vpcPrefix := util.TestBuildVPCPrefix(t, dbSession, "vpfx-"+tag, site, tenant, vpc.ID, &ipBlock.ID, cdb.GetStrPtr("10.1.0.0/24"), cdb.GetIntPtr(24), "Pending", ipu)
+
+		// VpcPeering uses two distinct vpc1/vpc2 IDs and the schema enforces
+		// real FKs on both, so we use the two VPCs created above.
+		vpcPeering := util.TestBuildVpcPeering(t, dbSession, vpc.ID, vpc2.ID, site.ID, ip.ID, tenant.ID, ipu.ID)
+
+		// Fabric IDs are strings; tag them so the two sites do not collide.
+		fabric := util.TestBuildFabric(t, dbSession, "fabric-"+tag, site, ip.ID, cdbm.FabricStatusReady)
+
+		// NVLink logical partition + an NVLink interface attached to it.
+		nvllp := util.TestBuildNVLinkLogicalPartition(t, dbSession, "nvllp-"+tag, nil, site, tenant, cdbm.NVLinkLogicalPartitionStatusReady, false)
+		nvli := util.TestBuildNVLinkInterface(t, dbSession, instance.ID, site.ID, nvllp.ID, cdb.GetStrPtr("Nvidia GB200"), 0, cdb.GetStrPtr("guid-"+tag), nil, cdbm.NVLinkInterfaceStatusReady)
+
+		// InfiniBand partition + an InfiniBand interface attached to it.
+		ibp := util.TestBuildInfiniBandPartition(t, dbSession, "ibp-"+tag, site, tenant, nil, cdbm.InfiniBandPartitionStatusReady, false)
+		ibi := util.TestBuildInfiniBandInterface(t, dbSession, instance.ID, site.ID, ibp.ID, "mlx5_0", 0, true, nil, cdbm.InfiniBandInterfaceStatusReady, false)
+
+		// Two ethernet interfaces on the instance.
+		iface1 := util.TestBuildInterface(t, dbSession, &instance.ID, nil, nil, true, cdb.GetStrPtr("eth0"), cdb.GetIntPtr(0), nil, &ipu.ID, cdbm.InterfaceStatusReady)
+		iface2 := util.TestBuildInterface(t, dbSession, &instance.ID, nil, nil, false, cdb.GetStrPtr("eth1"), cdb.GetIntPtr(1), nil, &ipu.ID, cdbm.InterfaceStatusPending)
+
+		// Network Security Group
+		nsg := util.TestBuildNetworkSecurityGroup(t, dbSession, "nsg-"+tag, site, tenant, cdbm.NetworkSecurityGroupStatusReady, ipu)
+
+		// DPU extension service + deployment
+		des := util.TestBuildDpuExtensionService(t, dbSession, "des-"+tag, site, tenant, "test-type", cdb.GetStrPtr("v1"), nil, []string{"v1"}, cdbm.DpuExtensionServiceStatusReady, ipu)
+		desd := util.TestBuildDpuExtensionServiceDeployment(t, dbSession, des.ID, site.ID, tenant.ID, instance.ID, "v1", cdbm.DpuExtensionServiceStatusReady, ipu)
+
+		// Tenant <-> Site association
+		tsa := util.TestBuildTenantSiteAssociation(t, dbSession, tenant.Org, tenant.ID, site.ID, ipu.ID)
+
+		// SKU (hard delete)
+		sku := util.TestBuildSku(t, dbSession, "sku-"+tag, site)
+
+		// SSH key group + site/instance associations + key + key association.
+		// The site/instance associations are scoped by SiteID; the key
+		// association is intentionally unscoped (see test docstring).
+		skg := util.TestBuildSSHKeyGroup(t, dbSession, "skg-"+tag, tenant.Org, nil, tenant.ID, cdb.GetStrPtr("v1"), cdbm.SSHKeyGroupStatusSynced, ipu.ID)
+		skgsa := util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg.ID, site.ID, cdb.GetStrPtr("v1"), cdbm.SSHKeyGroupSiteAssociationStatusSynced, ipu.ID)
+		skgia := util.TestBuildSSHKeyGroupInstanceAssociation(t, dbSession, skg.ID, site.ID, instance.ID, ipu.ID)
+		sshKey := util.TestBuildSSHKey(t, dbSession, "key-"+tag, tenant, "ssh-rsa AAAA...", ipu)
+		ska := util.TestBuildSSHKeyAssociation(t, dbSession, skg.ID, sshKey.ID, ipu.ID)
+
+		// Expected records (hard-deleted by the workflow). MAC addresses are
+		// scoped per-tag so the optional (bmc_mac_address, site_id) unique
+		// constraint, if present, will not be tripped across sites.
+		em := util.TestBuildExpectedMachine(t, dbSession, site, "00:11:22:33:44:0"+tag, "chassis-"+tag, ipu)
+		es := util.TestBuildExpectedSwitch(t, dbSession, site, "00:11:22:33:55:0"+tag, "switch-"+tag, ipu)
+		eps := util.TestBuildExpectedPowerShelf(t, dbSession, site, "00:11:22:33:66:0"+tag, "shelf-"+tag, ipu)
+
+		return &siteResources{
+			site:               site,
+			instance:           instance,
+			vpc:                vpc,
+			ipBlock:            ipBlock,
+			vpcPrefixID:        vpcPrefix.ID,
+			vpcPeeringID:       vpcPeering.ID,
+			fabricID:           fabric.ID,
+			nvllpID:            nvllp.ID,
+			nsgID:              nsg.ID,
+			skuID:              sku.ID,
+			dpuDeploymentID:    desd.ID,
+			tenantSiteID:       tsa.ID,
+			allocationID:       allocation.ID,
+			allocConstraintID:  allocConstraint.ID,
+			interfaceIDs:       []uuid.UUID{iface1.ID, iface2.ID},
+			ibInterfaceIDs:     []uuid.UUID{ibi.ID},
+			nvlinkInterfaceIDs: []uuid.UUID{nvli.ID},
+			sshKeyGroupSiteID:  skgsa.ID,
+			sshKeyGroupInstID:  skgia.ID,
+			sshKeyAssocID:      ska.ID,
+			expectedMachineID:  em.ID,
+			expectedSwitchID:   es.ID,
+			expectedShelfID:    eps.ID,
+		}
+	}
+
+	site1Resources := buildSiteResources("a")
+	site2Resources := buildSiteResources("b")
+
+	tSiteClientPool := testTemporalSiteClientPool(t)
+	assert.NotNil(t, tSiteClientPool)
+
+	mv := ManageSite{
+		dbSession:      dbSession,
+		siteClientPool: tSiteClientPool,
+	}
+
+	err := mv.DeleteSiteComponentsFromDB(ctx, site1Resources.site.ID, ip.ID, false)
+	require.NoError(t, err)
+
+	// assertGone checks that a soft-deletable row identified by `id` is no
+	// longer visible to a default (non-WhereAllWithDeleted) select. Caller
+	// passes a fresh empty model pointer so we can vary the type.
+	assertGone := func(label string, model interface{}, idColumn string, id interface{}) {
+		t.Helper()
+		err := dbSession.DB.NewSelect().Model(model).Where(idColumn+" = ?", id).Scan(ctx)
+		assert.Equal(t, sql.ErrNoRows, err, "%s with id %v should be soft-deleted/hard-deleted", label, id)
+	}
+
+	// assertPresent checks that a row is still visible to a default select
+	// (i.e. not soft-deleted).
+	assertPresent := func(label string, model interface{}, idColumn string, id interface{}) {
+		t.Helper()
+		err := dbSession.DB.NewSelect().Model(model).Where(idColumn+" = ?", id).Scan(ctx)
+		assert.NoError(t, err, "%s with id %v should still be present", label, id)
+	}
+
+	// --- Site 1: every site-scoped resource we built should be gone. ---
+
+	// Ethernet interfaces (DeleteAllByInstanceIDs)
+	for _, id := range site1Resources.interfaceIDs {
+		assertGone("interface", &cdbm.Interface{}, "ifc.id", id)
+	}
+	// InfiniBand interfaces (DeleteAllBySiteID)
+	for _, id := range site1Resources.ibInterfaceIDs {
+		assertGone("infiniband_interface", &cdbm.InfiniBandInterface{}, "ibi.id", id)
+	}
+	// NVLink interfaces (DeleteAllBySiteID)
+	for _, id := range site1Resources.nvlinkInterfaceIDs {
+		assertGone("nvlink_interface", &cdbm.NVLinkInterface{}, "nvli.id", id)
+	}
+	assertGone("vpc_prefix", &cdbm.VpcPrefix{}, "vp.id", site1Resources.vpcPrefixID)
+	assertGone("vpc_peering", &cdbm.VpcPeering{}, "vp.id", site1Resources.vpcPeeringID)
+	assertGone("fabric", &cdbm.Fabric{}, "fb.id", site1Resources.fabricID)
+	assertGone("nvlink_logical_partition", &cdbm.NVLinkLogicalPartition{}, "nvllp.id", site1Resources.nvllpID)
+	assertGone("ssh_key_group_site_association", &cdbm.SSHKeyGroupSiteAssociation{}, "skgsa.id", site1Resources.sshKeyGroupSiteID)
+	assertGone("ssh_key_group_instance_association", &cdbm.SSHKeyGroupInstanceAssociation{}, "skgia.id", site1Resources.sshKeyGroupInstID)
+	assertGone("network_security_group", &cdbm.NetworkSecurityGroup{}, "nsg.id", site1Resources.nsgID)
+	assertGone("dpu_extension_service_deployment", &cdbm.DpuExtensionServiceDeployment{}, "desd.id", site1Resources.dpuDeploymentID)
+	assertGone("tenant_site", &cdbm.TenantSite{}, "ts.id", site1Resources.tenantSiteID)
+	assertGone("sku", &cdbm.SKU{}, "sk.id", site1Resources.skuID)
+	assertGone("allocation", &cdbm.Allocation{}, "a.id", site1Resources.allocationID)
+	assertGone("allocation_constraint", &cdbm.AllocationConstraint{}, "ac.id", site1Resources.allocConstraintID)
+	assertGone("expected_machine", &cdbm.ExpectedMachine{}, "em.id", site1Resources.expectedMachineID)
+	assertGone("expected_switch", &cdbm.ExpectedSwitch{}, "es.id", site1Resources.expectedSwitchID)
+	assertGone("expected_power_shelf", &cdbm.ExpectedPowerShelf{}, "eps.id", site1Resources.expectedShelfID)
+
+	// --- Site 2: nothing should have been touched. ---
+
+	for _, id := range site2Resources.interfaceIDs {
+		assertPresent("interface", &cdbm.Interface{}, "ifc.id", id)
+	}
+	for _, id := range site2Resources.ibInterfaceIDs {
+		assertPresent("infiniband_interface", &cdbm.InfiniBandInterface{}, "ibi.id", id)
+	}
+	for _, id := range site2Resources.nvlinkInterfaceIDs {
+		assertPresent("nvlink_interface", &cdbm.NVLinkInterface{}, "nvli.id", id)
+	}
+	assertPresent("vpc_prefix", &cdbm.VpcPrefix{}, "vp.id", site2Resources.vpcPrefixID)
+	assertPresent("vpc_peering", &cdbm.VpcPeering{}, "vp.id", site2Resources.vpcPeeringID)
+	assertPresent("fabric", &cdbm.Fabric{}, "fb.id", site2Resources.fabricID)
+	assertPresent("nvlink_logical_partition", &cdbm.NVLinkLogicalPartition{}, "nvllp.id", site2Resources.nvllpID)
+	assertPresent("ssh_key_group_site_association", &cdbm.SSHKeyGroupSiteAssociation{}, "skgsa.id", site2Resources.sshKeyGroupSiteID)
+	assertPresent("ssh_key_group_instance_association", &cdbm.SSHKeyGroupInstanceAssociation{}, "skgia.id", site2Resources.sshKeyGroupInstID)
+	assertPresent("network_security_group", &cdbm.NetworkSecurityGroup{}, "nsg.id", site2Resources.nsgID)
+	assertPresent("dpu_extension_service_deployment", &cdbm.DpuExtensionServiceDeployment{}, "desd.id", site2Resources.dpuDeploymentID)
+	assertPresent("tenant_site", &cdbm.TenantSite{}, "ts.id", site2Resources.tenantSiteID)
+	assertPresent("sku", &cdbm.SKU{}, "sk.id", site2Resources.skuID)
+	assertPresent("allocation", &cdbm.Allocation{}, "a.id", site2Resources.allocationID)
+	assertPresent("allocation_constraint", &cdbm.AllocationConstraint{}, "ac.id", site2Resources.allocConstraintID)
+	assertPresent("expected_machine", &cdbm.ExpectedMachine{}, "em.id", site2Resources.expectedMachineID)
+	assertPresent("expected_switch", &cdbm.ExpectedSwitch{}, "es.id", site2Resources.expectedSwitchID)
+	assertPresent("expected_power_shelf", &cdbm.ExpectedPowerShelf{}, "eps.id", site2Resources.expectedShelfID)
+
+	// SSHKeyAssociation for site 1 should still be present since the
+	// workflow's call effectively no-ops against site IDs (see test docstring).
+	assertPresent("ssh_key_association (intentionally not cleaned)", &cdbm.SSHKeyAssociation{}, "ska.id", site1Resources.sshKeyAssocID)
+}
