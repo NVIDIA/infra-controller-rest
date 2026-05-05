@@ -66,7 +66,7 @@ type InstanceUpdateRequest struct {
 	Interfaces []InterfaceCreateRequest `json:"interfaces,omitempty"`
 	// Update InfiniBand Interfaces of the Instance
 	InfinibandInterfaces []InfiniBandInterfaceCreateRequest `json:"infinibandInterfaces,omitempty"`
-	// Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item binds one GPU index (`deviceInstance`) to one NVLink Logical Partition; items may reference different partitions. Entries present in the request are updated or left intact when they already match; entries omitted from the request are marked for deletion.
+	// Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references a GPU index (`deviceInstance`) and an NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions. Partial updates are not allowed, specified interfaces will delete or replace existing Interfaces. Updating is not allowed if Instance's VPC has `nvLinkLogicalPartitionId` attribute set.
 	NvLinkInterfaces []NVLinkInterfaceCreateOrUpdateRequest `json:"nvLinkInterfaces,omitempty"`
 	// Updated set of DPU Extension Services to deploy to the DPUs of this Instance
 	DpuExtensionServiceDeployments []DpuExtensionServiceDeploymentRequest `json:"dpuExtensionServiceDeployments,omitempty"`

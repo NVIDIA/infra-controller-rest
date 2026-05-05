@@ -16131,7 +16131,7 @@ components:
             $ref: '#/components/schemas/InfiniBandInterfaceCreateRequest'
         nvLinkInterfaces:
           type: array
-          description: Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item binds one GPU index (`deviceInstance`) to one NVLink Logical Partition; items may reference different partitions. Entries present in the request are updated or left intact when they already match; entries omitted from the request are marked for deletion.
+          description: Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references a GPU index (`deviceInstance`) and an NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions. Partial updates are not allowed, specified interfaces will delete or replace existing Interfaces. Updating is not allowed if Instance's VPC has `nvLinkLogicalPartitionId` attribute set.
           items:
             $ref: '#/components/schemas/NVLinkInterfaceCreateOrUpdateRequest'
         dpuExtensionServiceDeployments:
