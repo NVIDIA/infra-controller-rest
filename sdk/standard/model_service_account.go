@@ -39,9 +39,9 @@ type ServiceAccount struct {
 	// Indicates whether Service Account is enabled
 	Enabled *bool `json:"enabled,omitempty"`
 	// ID of the Infrastructure Provider associated with Service Account
-	InfrastructureProviderId *string `json:"infrastructureProviderId,omitempty"`
+	InfrastructureProviderId NullableString `json:"infrastructureProviderId,omitempty"`
 	// ID of the Tenant associated with Service Account
-	TenantId *string `json:"tenantId,omitempty"`
+	TenantId NullableString `json:"tenantId,omitempty"`
 }
 
 // NewServiceAccount instantiates a new ServiceAccount object
@@ -93,68 +93,90 @@ func (o *ServiceAccount) SetEnabled(v bool) {
 	o.Enabled = &v
 }
 
-// GetInfrastructureProviderId returns the InfrastructureProviderId field value if set, zero value otherwise.
+// GetInfrastructureProviderId returns the InfrastructureProviderId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ServiceAccount) GetInfrastructureProviderId() string {
-	if o == nil || IsNil(o.InfrastructureProviderId) {
+	if o == nil || IsNil(o.InfrastructureProviderId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.InfrastructureProviderId
+	return *o.InfrastructureProviderId.Get()
 }
 
 // GetInfrastructureProviderIdOk returns a tuple with the InfrastructureProviderId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ServiceAccount) GetInfrastructureProviderIdOk() (*string, bool) {
-	if o == nil || IsNil(o.InfrastructureProviderId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.InfrastructureProviderId, true
+	return o.InfrastructureProviderId.Get(), o.InfrastructureProviderId.IsSet()
 }
 
 // HasInfrastructureProviderId returns a boolean if a field has been set.
 func (o *ServiceAccount) HasInfrastructureProviderId() bool {
-	if o != nil && !IsNil(o.InfrastructureProviderId) {
+	if o != nil && o.InfrastructureProviderId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetInfrastructureProviderId gets a reference to the given string and assigns it to the InfrastructureProviderId field.
+// SetInfrastructureProviderId gets a reference to the given NullableString and assigns it to the InfrastructureProviderId field.
 func (o *ServiceAccount) SetInfrastructureProviderId(v string) {
-	o.InfrastructureProviderId = &v
+	o.InfrastructureProviderId.Set(&v)
 }
 
-// GetTenantId returns the TenantId field value if set, zero value otherwise.
+// SetInfrastructureProviderIdNil sets the value for InfrastructureProviderId to be an explicit nil
+func (o *ServiceAccount) SetInfrastructureProviderIdNil() {
+	o.InfrastructureProviderId.Set(nil)
+}
+
+// UnsetInfrastructureProviderId ensures that no value is present for InfrastructureProviderId, not even an explicit nil
+func (o *ServiceAccount) UnsetInfrastructureProviderId() {
+	o.InfrastructureProviderId.Unset()
+}
+
+// GetTenantId returns the TenantId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *ServiceAccount) GetTenantId() string {
-	if o == nil || IsNil(o.TenantId) {
+	if o == nil || IsNil(o.TenantId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.TenantId
+	return *o.TenantId.Get()
 }
 
 // GetTenantIdOk returns a tuple with the TenantId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *ServiceAccount) GetTenantIdOk() (*string, bool) {
-	if o == nil || IsNil(o.TenantId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.TenantId, true
+	return o.TenantId.Get(), o.TenantId.IsSet()
 }
 
 // HasTenantId returns a boolean if a field has been set.
 func (o *ServiceAccount) HasTenantId() bool {
-	if o != nil && !IsNil(o.TenantId) {
+	if o != nil && o.TenantId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetTenantId gets a reference to the given string and assigns it to the TenantId field.
+// SetTenantId gets a reference to the given NullableString and assigns it to the TenantId field.
 func (o *ServiceAccount) SetTenantId(v string) {
-	o.TenantId = &v
+	o.TenantId.Set(&v)
+}
+
+// SetTenantIdNil sets the value for TenantId to be an explicit nil
+func (o *ServiceAccount) SetTenantIdNil() {
+	o.TenantId.Set(nil)
+}
+
+// UnsetTenantId ensures that no value is present for TenantId, not even an explicit nil
+func (o *ServiceAccount) UnsetTenantId() {
+	o.TenantId.Unset()
 }
 
 func (o ServiceAccount) MarshalJSON() ([]byte, error) {
@@ -170,11 +192,11 @@ func (o ServiceAccount) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Enabled) {
 		toSerialize["enabled"] = o.Enabled
 	}
-	if !IsNil(o.InfrastructureProviderId) {
-		toSerialize["infrastructureProviderId"] = o.InfrastructureProviderId
+	if o.InfrastructureProviderId.IsSet() {
+		toSerialize["infrastructureProviderId"] = o.InfrastructureProviderId.Get()
 	}
-	if !IsNil(o.TenantId) {
-		toSerialize["tenantId"] = o.TenantId
+	if o.TenantId.IsSet() {
+		toSerialize["tenantId"] = o.TenantId.Get()
 	}
 	return toSerialize, nil
 }

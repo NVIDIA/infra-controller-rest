@@ -39,7 +39,7 @@ var _ MappedNullable = &Subnet{}
 type Subnet struct {
 	Id                         *string        `json:"id,omitempty"`
 	Name                       *string        `json:"name,omitempty"`
-	Description                *string        `json:"description,omitempty"`
+	Description                NullableString `json:"description,omitempty"`
 	SiteId                     *string        `json:"siteId,omitempty"`
 	VpcId                      *string        `json:"vpcId,omitempty"`
 	TenantId                   *string        `json:"tenantId,omitempty"`
@@ -55,7 +55,7 @@ type Subnet struct {
 	Mtu *int32 `json:"mtu,omitempty"`
 	// Max value depends on prefix length of parent IP Block
 	PrefixLength  *int32         `json:"prefixLength,omitempty"`
-	RoutingType   *string        `json:"routingType,omitempty"`
+	RoutingType   NullableString `json:"routingType,omitempty"`
 	Status        *SubnetStatus  `json:"status,omitempty"`
 	StatusHistory []StatusDetail `json:"statusHistory,omitempty"`
 	Created       *time.Time     `json:"created,omitempty"`
@@ -144,36 +144,47 @@ func (o *Subnet) SetName(v string) {
 	o.Name = &v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Subnet) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || IsNil(o.Description.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.Description.Get()
 }
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Subnet) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Description, true
+	return o.Description.Get(), o.Description.IsSet()
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *Subnet) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && o.Description.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription gets a reference to the given NullableString and assigns it to the Description field.
 func (o *Subnet) SetDescription(v string) {
-	o.Description = &v
+	o.Description.Set(&v)
+}
+
+// SetDescriptionNil sets the value for Description to be an explicit nil
+func (o *Subnet) SetDescriptionNil() {
+	o.Description.Set(nil)
+}
+
+// UnsetDescription ensures that no value is present for Description, not even an explicit nil
+func (o *Subnet) UnsetDescription() {
+	o.Description.Unset()
 }
 
 // GetSiteId returns the SiteId field value if set, zero value otherwise.
@@ -637,36 +648,47 @@ func (o *Subnet) SetPrefixLength(v int32) {
 	o.PrefixLength = &v
 }
 
-// GetRoutingType returns the RoutingType field value if set, zero value otherwise.
+// GetRoutingType returns the RoutingType field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Subnet) GetRoutingType() string {
-	if o == nil || IsNil(o.RoutingType) {
+	if o == nil || IsNil(o.RoutingType.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.RoutingType
+	return *o.RoutingType.Get()
 }
 
 // GetRoutingTypeOk returns a tuple with the RoutingType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Subnet) GetRoutingTypeOk() (*string, bool) {
-	if o == nil || IsNil(o.RoutingType) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RoutingType, true
+	return o.RoutingType.Get(), o.RoutingType.IsSet()
 }
 
 // HasRoutingType returns a boolean if a field has been set.
 func (o *Subnet) HasRoutingType() bool {
-	if o != nil && !IsNil(o.RoutingType) {
+	if o != nil && o.RoutingType.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetRoutingType gets a reference to the given string and assigns it to the RoutingType field.
+// SetRoutingType gets a reference to the given NullableString and assigns it to the RoutingType field.
 func (o *Subnet) SetRoutingType(v string) {
-	o.RoutingType = &v
+	o.RoutingType.Set(&v)
+}
+
+// SetRoutingTypeNil sets the value for RoutingType to be an explicit nil
+func (o *Subnet) SetRoutingTypeNil() {
+	o.RoutingType.Set(nil)
+}
+
+// UnsetRoutingType ensures that no value is present for RoutingType, not even an explicit nil
+func (o *Subnet) UnsetRoutingType() {
+	o.RoutingType.Unset()
 }
 
 // GetStatus returns the Status field value if set, zero value otherwise.
@@ -845,8 +867,8 @@ func (o Subnet) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if o.Description.IsSet() {
+		toSerialize["description"] = o.Description.Get()
 	}
 	if !IsNil(o.SiteId) {
 		toSerialize["siteId"] = o.SiteId
@@ -884,8 +906,8 @@ func (o Subnet) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.PrefixLength) {
 		toSerialize["prefixLength"] = o.PrefixLength
 	}
-	if !IsNil(o.RoutingType) {
-		toSerialize["routingType"] = o.RoutingType
+	if o.RoutingType.IsSet() {
+		toSerialize["routingType"] = o.RoutingType.Get()
 	}
 	if !IsNil(o.Status) {
 		toSerialize["status"] = o.Status

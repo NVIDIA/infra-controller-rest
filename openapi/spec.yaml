@@ -11856,7 +11856,9 @@ components:
         org:
           type: string
         orgDisplayName:
-          type: string
+          type:
+            - string
+            - 'null'
         created:
           type: string
           format: date-time
@@ -11994,7 +11996,9 @@ components:
           type: string
           description: Name/external ID of Tenant's organization
         orgDisplayName:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Display name of Tenant's organization
         created:
           type: string
@@ -12319,7 +12323,9 @@ components:
           maxLength: 256
           description: Name of the Site
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description for the Site
         org:
           type: string
@@ -12327,21 +12333,31 @@ components:
           type: string
           format: uuid
         siteControllerVersion:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Site Controller software
         siteAgentVersion:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Site Agent software
         registrationToken:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Token that can be used to register a Site. Value only exposed to Provider
         registrationTokenExpiration:
-          type: string
+          type:
+            - string
+            - 'null'
           format: date-time
-          description: Date/time when registration token  expires. Value only exposed to Provider
+          description: Date/time when registration token expires. Value only exposed to Provider
           readOnly: true
         serialConsoleHostname:
-          type: string
+          type:
+            - string
+            - 'null'
           format: hostname
         isSerialConsoleEnabled:
           type: boolean
@@ -12545,10 +12561,14 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Description for the Site
         serialConsoleHostname:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Hostname to reach Serial Console for the Site
           format: hostname
         location:
@@ -12574,16 +12594,22 @@ components:
             email: johndoe@nvidia.com
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update name of the Site. Can only be updated by Provider
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update description for the Site. Can only be updated by Provider
         renewRegistrationToken:
           type: boolean
           description: Set to true to issue a new registration token. Can only be updated by Provider
         serialConsoleHostname:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Hostname to reach Serial Console for the Site. Can only be updated by Provider
           format: hostname
         isSerialConsoleEnabled:
@@ -12675,7 +12701,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Detailed description of the Allocation
         infrastructureProviderId:
           type: string
@@ -12741,7 +12769,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Detailed description for the Allocation
         tenantId:
           type: string
@@ -12768,12 +12798,16 @@ components:
           description: Echo Studios resource allocation in SJC4
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update name of the Allocation
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update description of the Allocation
     AllocationConstraint:
       title: AllocationConstraint
@@ -12958,7 +12992,9 @@ components:
           maxLength: 256
           description: Name of the VPC
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 'Description of the VPC, can be empty'
         org:
           type: string
@@ -12980,7 +13016,9 @@ components:
           format: uuid
           description: 'Legacy attribute, contains the same value as ID'
         networkVirtualizationType:
-          type: string
+          type:
+            - string
+            - 'null'
           enum:
             - ETHERNET_VIRTUALIZER
             - FNN
@@ -13094,7 +13132,9 @@ components:
           maxLength: 256
           description: Name of the VPC
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description for the VPC
         siteId:
           type: string
@@ -13148,12 +13188,16 @@ components:
           description: Virtual network for machines executing Spark jobs v1
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
           description: Updated name of the VPC
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Updated description of the VPC
         networkSecurityGroupId:
           type:
@@ -13428,7 +13472,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -13483,7 +13529,9 @@ components:
           example: 24
           description: Max value depends on prefix length of parent IP Block
         routingType:
-          type: string
+          type:
+            - string
+            - 'null'
           enum:
             - Public
             - DatacenterOnly
@@ -13532,15 +13580,21 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         vpcId:
           type: string
           format: uuid
         ipv4BlockId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         ipv6BlockId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         prefixLength:
           type: integer
@@ -13561,7 +13615,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
       required:
         - name
     InfiniBandPartition:
@@ -13599,7 +13655,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -13706,7 +13764,9 @@ components:
           maxLength: 256
           description: Name of the Partition to create
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the Partition
         siteId:
           type: string
@@ -13731,7 +13791,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         labels:
           $ref: '#/components/schemas/Labels'
           description: String key value pairs describing Partition labels. Up to 10 key value pairs can be specified
@@ -13767,7 +13829,9 @@ components:
           maxLength: 256
           description: Name of the NVLink Logical Partition
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the NVLink Logical Partition
         siteId:
           type: string
@@ -13822,7 +13886,9 @@ components:
           maxLength: 256
           description: Name of the NVLink Logical Partition to create
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the NVLink Logical Partition
         siteId:
           type: string
@@ -13840,12 +13906,16 @@ components:
       description: Request data to update an NVLink Logical Partition
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
           description: Updated name for the NVLink Logical Partition
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Updated description for the NVLink Logical Partition
     OperatingSystem:
       title: OperatingSystem
@@ -14009,7 +14079,9 @@ components:
           maxLength: 256
           description: Name of the Operating System
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the Operating System
         infrastructureProviderId:
           type:
@@ -14024,7 +14096,9 @@ components:
           format: uuid
           description: Specified if a Tenant owns the Operating System
         type:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Type of the Operating System
           enum:
             - iPXE
@@ -14155,7 +14229,9 @@ components:
         status:
           $ref: '#/components/schemas/SshKeyGroupStatus'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Key Group on Site
           example: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
         created:
@@ -14214,7 +14290,9 @@ components:
           maxLength: 256
           description: Name of the Operating System
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the Operating System
         infrastructureProviderId:
           type:
@@ -14452,9 +14530,13 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         controllerMachineType:
-          type: string
+          type:
+            - string
+            - 'null'
         infrastructureProviderId:
           type: string
           format: uuid
@@ -14586,14 +14668,18 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
         labels:
           $ref: '#/components/schemas/Labels'
         controllerMachineType:
-          type: string
+          type:
+            - string
+            - 'null'
         machineCapabilities:
           type: array
           items:
@@ -14609,11 +14695,15 @@ components:
       description: Request data to update an Instance Type
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         labels:
           $ref: '#/components/schemas/Labels'
         machineCapabilities:
@@ -14909,7 +14999,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Description for the Instance
         tenantId:
           type: string
@@ -14924,7 +15016,9 @@ components:
           format: uuid
           description: ID of the Site where the Instance is located
         instanceTypeId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         vpcId:
           type: string
@@ -14940,7 +15034,9 @@ components:
             - string
             - 'null'
         operatingSystemId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         networkSecurityGroupId:
           type:
@@ -15191,11 +15287,15 @@ components:
           format: uuid
           description: ID of the Tenant creating the Instance
         instanceTypeId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the Instance Type to use for Instance
         machineId:
-          type: string
+          type:
+            - string
+            - 'null'
           description: ID of of specific Machine to use for Instance. Requires Targeted Instance Creation capability enabled for Tenant
         vpcId:
           type: string
@@ -15617,7 +15717,9 @@ components:
             - Other
           description: Category of the issue
         summary:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Short summary describing the issue
         details:
           type:
@@ -15924,14 +16026,18 @@ components:
           format: uuid
           description: ID of the NVLink Logical Partition associated with this interface
         nvLinkDomainId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the NVLink Domain associated with this Interface
         deviceInstance:
           type: integer
           description: 'Index of the device, used to identify the GPU associated with this Interface'
         gpuGuid:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Unique ID of the GPU
         status:
           $ref: '#/components/schemas/NVLinkInterfaceStatus'
@@ -16462,7 +16568,9 @@ components:
         filter:
           $ref: '#/components/schemas/RackFilter'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Target firmware version.
     BringUpRackRequest:
       title: BringUpRackRequest
@@ -16573,7 +16681,9 @@ components:
         filter:
           $ref: '#/components/schemas/TrayFilter'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Target firmware version.
     UpdatePowerStateRequest:
       title: UpdatePowerStateRequest
@@ -16635,7 +16745,9 @@ components:
           format: uuid
           description: ID of the Site
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Target firmware version.
       examples:
         - siteId: 550e8400-e29b-41d4-a716-446655440000
@@ -16780,7 +16892,9 @@ components:
           type: string
           description: 'ID of the Machine at Site, now same as the primary ID'
         controllerMachineType:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Denotes architecture (x86 vs ARM) of the Machine
         hwSkuDeviceType:
           type:
@@ -16788,13 +16902,19 @@ components:
             - 'null'
           description: 'SKU derived device type of the machine, e.g. cpu, gpu, cache, storage, etc.'
         vendor:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Name of the vendor of the Machine
         productName:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Product name of the Machine
         serialNumber:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 'Serial number of the Machine, only visible to Provider'
         machineCapabilities:
           type: array
@@ -16966,10 +17086,14 @@ components:
         machineId:
           type: string
         controllerInterfaceId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         controllerSegmentId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         attachedDpuMachineID:
           type:
@@ -16981,12 +17105,16 @@ components:
             - 'null'
           format: uuid
         hostname:
-          type: string
+          type:
+            - string
+            - 'null'
           format: hostname
         isPrimary:
           type: boolean
         macAddress:
-          type: string
+          type:
+            - string
+            - 'null'
         ipAddresses:
           type: array
           description: Array of IP addresses
@@ -17071,14 +17199,22 @@ components:
           firmwareRevision: '6.00'
       properties:
         ip:
-          type: string
+          type:
+            - string
+            - 'null'
           format: ipv4
         mac:
-          type: string
+          type:
+            - string
+            - 'null'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
         firmwareRevision:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineDMIData:
       title: MachineDMIData
       type: object
@@ -17093,19 +17229,33 @@ components:
           chassisSerial: J1050ACR
       properties:
         boardName:
-          type: string
+          type:
+            - string
+            - 'null'
         boardSerial:
-          type: string
+          type:
+            - string
+            - 'null'
         boardVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         biosDate:
-          type: string
+          type:
+            - string
+            - 'null'
         biosVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         productSerial:
-          type: string
+          type:
+            - string
+            - 'null'
         chassisSerial:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineGPUInfo:
       title: MachineGPUInfo
       type: object
@@ -17121,21 +17271,37 @@ components:
           pciBusId: '00000000:17:00.0'
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
         serial:
-          type: string
+          type:
+            - string
+            - 'null'
         driverVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         vbiosVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         inforomVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         totalMemory:
-          type: string
+          type:
+            - string
+            - 'null'
         frequency:
-          type: string
+          type:
+            - string
+            - 'null'
         pciBusId:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineHealth:
       title: MachineHealth
       type: object
@@ -17266,19 +17432,31 @@ components:
           slot: '0000:04:00.0'
       properties:
         macAddress:
-          type: string
+          type:
+            - string
+            - 'null'
         vendor:
-          type: string
+          type:
+            - string
+            - 'null'
         device:
-          type: string
+          type:
+            - string
+            - 'null'
         path:
-          type: string
+          type:
+            - string
+            - 'null'
         numaNode:
           type: integer
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         slot:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineInfiniBandInterface:
       title: MachineInfiniBandInterface
       description: Describes information about an Infiniband Interface of a Machine
@@ -17293,19 +17471,31 @@ components:
           slot: '0000:ca:00.0'
       properties:
         guid:
-          type: string
+          type:
+            - string
+            - 'null'
         vendor:
-          type: string
+          type:
+            - string
+            - 'null'
         device:
-          type: string
+          type:
+            - string
+            - 'null'
         path:
-          type: string
+          type:
+            - string
+            - 'null'
         numaNode:
           type: integer
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         slot:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineInstanceType:
       title: MachineInstanceType
       type: object
@@ -18667,7 +18857,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -18816,7 +19008,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -18852,11 +19046,15 @@ components:
           description: This is the primary IP overlay for SJC4. All IPs are publicly routable
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
     NetworkSecurityGroup:
       type: object
       examples:
@@ -18894,7 +19092,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -18956,7 +19156,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -19113,7 +19315,9 @@ components:
         status:
           type: string
         message:
-          type: string
+          type:
+            - string
+            - 'null'
         created:
           type: string
           format: date-time
@@ -19194,7 +19398,9 @@ components:
           format: uuid
           description: ID of the Tenane the SSH Key Group belongs to
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the SSH Key Group
           example: fbc692b61ffef6fbfc38a3833f6b7e7ae508da75
         sshKeys:
@@ -19262,7 +19468,9 @@ components:
         status:
           $ref: '#/components/schemas/SshKeyGroupSiteAssociationStatus'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Key Group on Site
           example: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
         created:
@@ -19298,7 +19506,9 @@ components:
         name:
           type: string
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteIds:
           type: array
           items:
@@ -19422,7 +19632,9 @@ components:
         - name: sre-ssh-reno-integration
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
     DpuExtensionService:
       title: DpuExtensionService
       type: object
@@ -19665,13 +19877,19 @@ components:
                   path: /var/log/busybox.log
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Name for the DPU Extension Service. Must be unique for a given Tenant
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description for the DPU Extension Service
         data:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Deployment spec for the DPU Extension Service
         credentials:
           $ref: '#/components/schemas/DpuExtensionServiceCredentials'
@@ -19849,12 +20067,18 @@ components:
           format: uuid
           readOnly: true
         email:
-          type: string
+          type:
+            - string
+            - 'null'
           format: email
         firstName:
-          type: string
+          type:
+            - string
+            - 'null'
         lastName:
-          type: string
+          type:
+            - string
+            - 'null'
         created:
           type: string
           format: date-time
@@ -20030,11 +20254,15 @@ components:
           type: boolean
           description: Indicates whether Service Account is enabled
         infrastructureProviderId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the Infrastructure Provider associated with Service Account
         tenantId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the Tenant associated with Service Account
       examples:

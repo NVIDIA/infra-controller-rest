@@ -71,7 +71,7 @@ func operatingSystemFromStandard(api standard.OperatingSystem) OperatingSystem {
 	if api.Name != nil {
 		os.Name = *api.Name
 	}
-	os.Description = api.Description
+	os.Description = api.Description.Get()
 	if api.IpxeScript.IsSet() {
 		os.IpxeScript = api.IpxeScript.Get()
 	}
@@ -96,7 +96,7 @@ func (osm OperatingSystemManager) Create(ctx context.Context, request OperatingS
 	ctx = context.WithValue(ctx, standard.ContextAccessToken, osm.client.Config.Token)
 
 	apiReq := standard.OperatingSystemCreateRequest{Name: request.Name}
-	apiReq.Description = request.Description
+	apiReq.Description.Set(request.Description)
 	if osm.client.apiMetadata.TenantID != "" {
 		apiReq.TenantId.Set(&osm.client.apiMetadata.TenantID)
 	}

@@ -37,11 +37,11 @@ var _ MappedNullable = &InfrastructureProvider{}
 
 // InfrastructureProvider Infrastructure providers own and manage datacenters
 type InfrastructureProvider struct {
-	Id             *string    `json:"id,omitempty"`
-	Org            *string    `json:"org,omitempty"`
-	OrgDisplayName *string    `json:"orgDisplayName,omitempty"`
-	Created        *time.Time `json:"created,omitempty"`
-	Updated        *time.Time `json:"updated,omitempty"`
+	Id             *string        `json:"id,omitempty"`
+	Org            *string        `json:"org,omitempty"`
+	OrgDisplayName NullableString `json:"orgDisplayName,omitempty"`
+	Created        *time.Time     `json:"created,omitempty"`
+	Updated        *time.Time     `json:"updated,omitempty"`
 }
 
 // NewInfrastructureProvider instantiates a new InfrastructureProvider object
@@ -125,36 +125,47 @@ func (o *InfrastructureProvider) SetOrg(v string) {
 	o.Org = &v
 }
 
-// GetOrgDisplayName returns the OrgDisplayName field value if set, zero value otherwise.
+// GetOrgDisplayName returns the OrgDisplayName field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *InfrastructureProvider) GetOrgDisplayName() string {
-	if o == nil || IsNil(o.OrgDisplayName) {
+	if o == nil || IsNil(o.OrgDisplayName.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.OrgDisplayName
+	return *o.OrgDisplayName.Get()
 }
 
 // GetOrgDisplayNameOk returns a tuple with the OrgDisplayName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *InfrastructureProvider) GetOrgDisplayNameOk() (*string, bool) {
-	if o == nil || IsNil(o.OrgDisplayName) {
+	if o == nil {
 		return nil, false
 	}
-	return o.OrgDisplayName, true
+	return o.OrgDisplayName.Get(), o.OrgDisplayName.IsSet()
 }
 
 // HasOrgDisplayName returns a boolean if a field has been set.
 func (o *InfrastructureProvider) HasOrgDisplayName() bool {
-	if o != nil && !IsNil(o.OrgDisplayName) {
+	if o != nil && o.OrgDisplayName.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetOrgDisplayName gets a reference to the given string and assigns it to the OrgDisplayName field.
+// SetOrgDisplayName gets a reference to the given NullableString and assigns it to the OrgDisplayName field.
 func (o *InfrastructureProvider) SetOrgDisplayName(v string) {
-	o.OrgDisplayName = &v
+	o.OrgDisplayName.Set(&v)
+}
+
+// SetOrgDisplayNameNil sets the value for OrgDisplayName to be an explicit nil
+func (o *InfrastructureProvider) SetOrgDisplayNameNil() {
+	o.OrgDisplayName.Set(nil)
+}
+
+// UnsetOrgDisplayName ensures that no value is present for OrgDisplayName, not even an explicit nil
+func (o *InfrastructureProvider) UnsetOrgDisplayName() {
+	o.OrgDisplayName.Unset()
 }
 
 // GetCreated returns the Created field value if set, zero value otherwise.
@@ -237,8 +248,8 @@ func (o InfrastructureProvider) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Org) {
 		toSerialize["org"] = o.Org
 	}
-	if !IsNil(o.OrgDisplayName) {
-		toSerialize["orgDisplayName"] = o.OrgDisplayName
+	if o.OrgDisplayName.IsSet() {
+		toSerialize["orgDisplayName"] = o.OrgDisplayName.Get()
 	}
 	if !IsNil(o.Created) {
 		toSerialize["created"] = o.Created

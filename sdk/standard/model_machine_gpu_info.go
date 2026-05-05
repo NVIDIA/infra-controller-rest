@@ -36,14 +36,14 @@ var _ MappedNullable = &MachineGPUInfo{}
 
 // MachineGPUInfo Describes information about GPU of a Machine
 type MachineGPUInfo struct {
-	Name           *string `json:"name,omitempty"`
-	Serial         *string `json:"serial,omitempty"`
-	DriverVersion  *string `json:"driverVersion,omitempty"`
-	VbiosVersion   *string `json:"vbiosVersion,omitempty"`
-	InforomVersion *string `json:"inforomVersion,omitempty"`
-	TotalMemory    *string `json:"totalMemory,omitempty"`
-	Frequency      *string `json:"frequency,omitempty"`
-	PciBusId       *string `json:"pciBusId,omitempty"`
+	Name           NullableString `json:"name,omitempty"`
+	Serial         NullableString `json:"serial,omitempty"`
+	DriverVersion  NullableString `json:"driverVersion,omitempty"`
+	VbiosVersion   NullableString `json:"vbiosVersion,omitempty"`
+	InforomVersion NullableString `json:"inforomVersion,omitempty"`
+	TotalMemory    NullableString `json:"totalMemory,omitempty"`
+	Frequency      NullableString `json:"frequency,omitempty"`
+	PciBusId       NullableString `json:"pciBusId,omitempty"`
 }
 
 // NewMachineGPUInfo instantiates a new MachineGPUInfo object
@@ -63,260 +63,348 @@ func NewMachineGPUInfoWithDefaults() *MachineGPUInfo {
 	return &this
 }
 
-// GetName returns the Name field value if set, zero value otherwise.
+// GetName returns the Name field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetName() string {
-	if o == nil || IsNil(o.Name) {
+	if o == nil || IsNil(o.Name.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Name
+	return *o.Name.Get()
 }
 
 // GetNameOk returns a tuple with the Name field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetNameOk() (*string, bool) {
-	if o == nil || IsNil(o.Name) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Name, true
+	return o.Name.Get(), o.Name.IsSet()
 }
 
 // HasName returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasName() bool {
-	if o != nil && !IsNil(o.Name) {
+	if o != nil && o.Name.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetName gets a reference to the given string and assigns it to the Name field.
+// SetName gets a reference to the given NullableString and assigns it to the Name field.
 func (o *MachineGPUInfo) SetName(v string) {
-	o.Name = &v
+	o.Name.Set(&v)
 }
 
-// GetSerial returns the Serial field value if set, zero value otherwise.
+// SetNameNil sets the value for Name to be an explicit nil
+func (o *MachineGPUInfo) SetNameNil() {
+	o.Name.Set(nil)
+}
+
+// UnsetName ensures that no value is present for Name, not even an explicit nil
+func (o *MachineGPUInfo) UnsetName() {
+	o.Name.Unset()
+}
+
+// GetSerial returns the Serial field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetSerial() string {
-	if o == nil || IsNil(o.Serial) {
+	if o == nil || IsNil(o.Serial.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Serial
+	return *o.Serial.Get()
 }
 
 // GetSerialOk returns a tuple with the Serial field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetSerialOk() (*string, bool) {
-	if o == nil || IsNil(o.Serial) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Serial, true
+	return o.Serial.Get(), o.Serial.IsSet()
 }
 
 // HasSerial returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasSerial() bool {
-	if o != nil && !IsNil(o.Serial) {
+	if o != nil && o.Serial.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSerial gets a reference to the given string and assigns it to the Serial field.
+// SetSerial gets a reference to the given NullableString and assigns it to the Serial field.
 func (o *MachineGPUInfo) SetSerial(v string) {
-	o.Serial = &v
+	o.Serial.Set(&v)
 }
 
-// GetDriverVersion returns the DriverVersion field value if set, zero value otherwise.
+// SetSerialNil sets the value for Serial to be an explicit nil
+func (o *MachineGPUInfo) SetSerialNil() {
+	o.Serial.Set(nil)
+}
+
+// UnsetSerial ensures that no value is present for Serial, not even an explicit nil
+func (o *MachineGPUInfo) UnsetSerial() {
+	o.Serial.Unset()
+}
+
+// GetDriverVersion returns the DriverVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetDriverVersion() string {
-	if o == nil || IsNil(o.DriverVersion) {
+	if o == nil || IsNil(o.DriverVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.DriverVersion
+	return *o.DriverVersion.Get()
 }
 
 // GetDriverVersionOk returns a tuple with the DriverVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetDriverVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.DriverVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.DriverVersion, true
+	return o.DriverVersion.Get(), o.DriverVersion.IsSet()
 }
 
 // HasDriverVersion returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasDriverVersion() bool {
-	if o != nil && !IsNil(o.DriverVersion) {
+	if o != nil && o.DriverVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDriverVersion gets a reference to the given string and assigns it to the DriverVersion field.
+// SetDriverVersion gets a reference to the given NullableString and assigns it to the DriverVersion field.
 func (o *MachineGPUInfo) SetDriverVersion(v string) {
-	o.DriverVersion = &v
+	o.DriverVersion.Set(&v)
 }
 
-// GetVbiosVersion returns the VbiosVersion field value if set, zero value otherwise.
+// SetDriverVersionNil sets the value for DriverVersion to be an explicit nil
+func (o *MachineGPUInfo) SetDriverVersionNil() {
+	o.DriverVersion.Set(nil)
+}
+
+// UnsetDriverVersion ensures that no value is present for DriverVersion, not even an explicit nil
+func (o *MachineGPUInfo) UnsetDriverVersion() {
+	o.DriverVersion.Unset()
+}
+
+// GetVbiosVersion returns the VbiosVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetVbiosVersion() string {
-	if o == nil || IsNil(o.VbiosVersion) {
+	if o == nil || IsNil(o.VbiosVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.VbiosVersion
+	return *o.VbiosVersion.Get()
 }
 
 // GetVbiosVersionOk returns a tuple with the VbiosVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetVbiosVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.VbiosVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.VbiosVersion, true
+	return o.VbiosVersion.Get(), o.VbiosVersion.IsSet()
 }
 
 // HasVbiosVersion returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasVbiosVersion() bool {
-	if o != nil && !IsNil(o.VbiosVersion) {
+	if o != nil && o.VbiosVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVbiosVersion gets a reference to the given string and assigns it to the VbiosVersion field.
+// SetVbiosVersion gets a reference to the given NullableString and assigns it to the VbiosVersion field.
 func (o *MachineGPUInfo) SetVbiosVersion(v string) {
-	o.VbiosVersion = &v
+	o.VbiosVersion.Set(&v)
 }
 
-// GetInforomVersion returns the InforomVersion field value if set, zero value otherwise.
+// SetVbiosVersionNil sets the value for VbiosVersion to be an explicit nil
+func (o *MachineGPUInfo) SetVbiosVersionNil() {
+	o.VbiosVersion.Set(nil)
+}
+
+// UnsetVbiosVersion ensures that no value is present for VbiosVersion, not even an explicit nil
+func (o *MachineGPUInfo) UnsetVbiosVersion() {
+	o.VbiosVersion.Unset()
+}
+
+// GetInforomVersion returns the InforomVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetInforomVersion() string {
-	if o == nil || IsNil(o.InforomVersion) {
+	if o == nil || IsNil(o.InforomVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.InforomVersion
+	return *o.InforomVersion.Get()
 }
 
 // GetInforomVersionOk returns a tuple with the InforomVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetInforomVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.InforomVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.InforomVersion, true
+	return o.InforomVersion.Get(), o.InforomVersion.IsSet()
 }
 
 // HasInforomVersion returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasInforomVersion() bool {
-	if o != nil && !IsNil(o.InforomVersion) {
+	if o != nil && o.InforomVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetInforomVersion gets a reference to the given string and assigns it to the InforomVersion field.
+// SetInforomVersion gets a reference to the given NullableString and assigns it to the InforomVersion field.
 func (o *MachineGPUInfo) SetInforomVersion(v string) {
-	o.InforomVersion = &v
+	o.InforomVersion.Set(&v)
 }
 
-// GetTotalMemory returns the TotalMemory field value if set, zero value otherwise.
+// SetInforomVersionNil sets the value for InforomVersion to be an explicit nil
+func (o *MachineGPUInfo) SetInforomVersionNil() {
+	o.InforomVersion.Set(nil)
+}
+
+// UnsetInforomVersion ensures that no value is present for InforomVersion, not even an explicit nil
+func (o *MachineGPUInfo) UnsetInforomVersion() {
+	o.InforomVersion.Unset()
+}
+
+// GetTotalMemory returns the TotalMemory field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetTotalMemory() string {
-	if o == nil || IsNil(o.TotalMemory) {
+	if o == nil || IsNil(o.TotalMemory.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.TotalMemory
+	return *o.TotalMemory.Get()
 }
 
 // GetTotalMemoryOk returns a tuple with the TotalMemory field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetTotalMemoryOk() (*string, bool) {
-	if o == nil || IsNil(o.TotalMemory) {
+	if o == nil {
 		return nil, false
 	}
-	return o.TotalMemory, true
+	return o.TotalMemory.Get(), o.TotalMemory.IsSet()
 }
 
 // HasTotalMemory returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasTotalMemory() bool {
-	if o != nil && !IsNil(o.TotalMemory) {
+	if o != nil && o.TotalMemory.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetTotalMemory gets a reference to the given string and assigns it to the TotalMemory field.
+// SetTotalMemory gets a reference to the given NullableString and assigns it to the TotalMemory field.
 func (o *MachineGPUInfo) SetTotalMemory(v string) {
-	o.TotalMemory = &v
+	o.TotalMemory.Set(&v)
 }
 
-// GetFrequency returns the Frequency field value if set, zero value otherwise.
+// SetTotalMemoryNil sets the value for TotalMemory to be an explicit nil
+func (o *MachineGPUInfo) SetTotalMemoryNil() {
+	o.TotalMemory.Set(nil)
+}
+
+// UnsetTotalMemory ensures that no value is present for TotalMemory, not even an explicit nil
+func (o *MachineGPUInfo) UnsetTotalMemory() {
+	o.TotalMemory.Unset()
+}
+
+// GetFrequency returns the Frequency field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetFrequency() string {
-	if o == nil || IsNil(o.Frequency) {
+	if o == nil || IsNil(o.Frequency.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Frequency
+	return *o.Frequency.Get()
 }
 
 // GetFrequencyOk returns a tuple with the Frequency field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetFrequencyOk() (*string, bool) {
-	if o == nil || IsNil(o.Frequency) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Frequency, true
+	return o.Frequency.Get(), o.Frequency.IsSet()
 }
 
 // HasFrequency returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasFrequency() bool {
-	if o != nil && !IsNil(o.Frequency) {
+	if o != nil && o.Frequency.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetFrequency gets a reference to the given string and assigns it to the Frequency field.
+// SetFrequency gets a reference to the given NullableString and assigns it to the Frequency field.
 func (o *MachineGPUInfo) SetFrequency(v string) {
-	o.Frequency = &v
+	o.Frequency.Set(&v)
 }
 
-// GetPciBusId returns the PciBusId field value if set, zero value otherwise.
+// SetFrequencyNil sets the value for Frequency to be an explicit nil
+func (o *MachineGPUInfo) SetFrequencyNil() {
+	o.Frequency.Set(nil)
+}
+
+// UnsetFrequency ensures that no value is present for Frequency, not even an explicit nil
+func (o *MachineGPUInfo) UnsetFrequency() {
+	o.Frequency.Unset()
+}
+
+// GetPciBusId returns the PciBusId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineGPUInfo) GetPciBusId() string {
-	if o == nil || IsNil(o.PciBusId) {
+	if o == nil || IsNil(o.PciBusId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.PciBusId
+	return *o.PciBusId.Get()
 }
 
 // GetPciBusIdOk returns a tuple with the PciBusId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineGPUInfo) GetPciBusIdOk() (*string, bool) {
-	if o == nil || IsNil(o.PciBusId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.PciBusId, true
+	return o.PciBusId.Get(), o.PciBusId.IsSet()
 }
 
 // HasPciBusId returns a boolean if a field has been set.
 func (o *MachineGPUInfo) HasPciBusId() bool {
-	if o != nil && !IsNil(o.PciBusId) {
+	if o != nil && o.PciBusId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetPciBusId gets a reference to the given string and assigns it to the PciBusId field.
+// SetPciBusId gets a reference to the given NullableString and assigns it to the PciBusId field.
 func (o *MachineGPUInfo) SetPciBusId(v string) {
-	o.PciBusId = &v
+	o.PciBusId.Set(&v)
+}
+
+// SetPciBusIdNil sets the value for PciBusId to be an explicit nil
+func (o *MachineGPUInfo) SetPciBusIdNil() {
+	o.PciBusId.Set(nil)
+}
+
+// UnsetPciBusId ensures that no value is present for PciBusId, not even an explicit nil
+func (o *MachineGPUInfo) UnsetPciBusId() {
+	o.PciBusId.Unset()
 }
 
 func (o MachineGPUInfo) MarshalJSON() ([]byte, error) {
@@ -329,29 +417,29 @@ func (o MachineGPUInfo) MarshalJSON() ([]byte, error) {
 
 func (o MachineGPUInfo) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Name) {
-		toSerialize["name"] = o.Name
+	if o.Name.IsSet() {
+		toSerialize["name"] = o.Name.Get()
 	}
-	if !IsNil(o.Serial) {
-		toSerialize["serial"] = o.Serial
+	if o.Serial.IsSet() {
+		toSerialize["serial"] = o.Serial.Get()
 	}
-	if !IsNil(o.DriverVersion) {
-		toSerialize["driverVersion"] = o.DriverVersion
+	if o.DriverVersion.IsSet() {
+		toSerialize["driverVersion"] = o.DriverVersion.Get()
 	}
-	if !IsNil(o.VbiosVersion) {
-		toSerialize["vbiosVersion"] = o.VbiosVersion
+	if o.VbiosVersion.IsSet() {
+		toSerialize["vbiosVersion"] = o.VbiosVersion.Get()
 	}
-	if !IsNil(o.InforomVersion) {
-		toSerialize["inforomVersion"] = o.InforomVersion
+	if o.InforomVersion.IsSet() {
+		toSerialize["inforomVersion"] = o.InforomVersion.Get()
 	}
-	if !IsNil(o.TotalMemory) {
-		toSerialize["totalMemory"] = o.TotalMemory
+	if o.TotalMemory.IsSet() {
+		toSerialize["totalMemory"] = o.TotalMemory.Get()
 	}
-	if !IsNil(o.Frequency) {
-		toSerialize["frequency"] = o.Frequency
+	if o.Frequency.IsSet() {
+		toSerialize["frequency"] = o.Frequency.Get()
 	}
-	if !IsNil(o.PciBusId) {
-		toSerialize["pciBusId"] = o.PciBusId
+	if o.PciBusId.IsSet() {
+		toSerialize["pciBusId"] = o.PciBusId.Get()
 	}
 	return toSerialize, nil
 }

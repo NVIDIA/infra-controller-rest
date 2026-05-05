@@ -42,13 +42,13 @@ type OperatingSystem struct {
 	// Name of the Operating System
 	Name *string `json:"name,omitempty"`
 	// Optional description of the Operating System
-	Description *string `json:"description,omitempty"`
+	Description NullableString `json:"description,omitempty"`
 	// Specified if a Provider owns the Operating System
 	InfrastructureProviderId NullableString `json:"infrastructureProviderId,omitempty"`
 	// Specified if a Tenant owns the Operating System
 	TenantId NullableString `json:"tenantId,omitempty"`
 	// Type of the Operating System
-	Type *string `json:"type,omitempty"`
+	Type NullableString `json:"type,omitempty"`
 	// Original URL from where the Operating System image can be retrieved
 	ImageUrl NullableString `json:"imageUrl,omitempty"`
 	// SHA hash of the image file, only present for image based OS
@@ -170,36 +170,47 @@ func (o *OperatingSystem) SetName(v string) {
 	o.Name = &v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *OperatingSystem) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || IsNil(o.Description.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.Description.Get()
 }
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *OperatingSystem) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Description, true
+	return o.Description.Get(), o.Description.IsSet()
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *OperatingSystem) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && o.Description.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription gets a reference to the given NullableString and assigns it to the Description field.
 func (o *OperatingSystem) SetDescription(v string) {
-	o.Description = &v
+	o.Description.Set(&v)
+}
+
+// SetDescriptionNil sets the value for Description to be an explicit nil
+func (o *OperatingSystem) SetDescriptionNil() {
+	o.Description.Set(nil)
+}
+
+// UnsetDescription ensures that no value is present for Description, not even an explicit nil
+func (o *OperatingSystem) UnsetDescription() {
+	o.Description.Unset()
 }
 
 // GetInfrastructureProviderId returns the InfrastructureProviderId field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -288,36 +299,47 @@ func (o *OperatingSystem) UnsetTenantId() {
 	o.TenantId.Unset()
 }
 
-// GetType returns the Type field value if set, zero value otherwise.
+// GetType returns the Type field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *OperatingSystem) GetType() string {
-	if o == nil || IsNil(o.Type) {
+	if o == nil || IsNil(o.Type.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Type
+	return *o.Type.Get()
 }
 
 // GetTypeOk returns a tuple with the Type field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *OperatingSystem) GetTypeOk() (*string, bool) {
-	if o == nil || IsNil(o.Type) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Type, true
+	return o.Type.Get(), o.Type.IsSet()
 }
 
 // HasType returns a boolean if a field has been set.
 func (o *OperatingSystem) HasType() bool {
-	if o != nil && !IsNil(o.Type) {
+	if o != nil && o.Type.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetType gets a reference to the given string and assigns it to the Type field.
+// SetType gets a reference to the given NullableString and assigns it to the Type field.
 func (o *OperatingSystem) SetType(v string) {
-	o.Type = &v
+	o.Type.Set(&v)
+}
+
+// SetTypeNil sets the value for Type to be an explicit nil
+func (o *OperatingSystem) SetTypeNil() {
+	o.Type.Set(nil)
+}
+
+// UnsetType ensures that no value is present for Type, not even an explicit nil
+func (o *OperatingSystem) UnsetType() {
+	o.Type.Unset()
 }
 
 // GetImageUrl returns the ImageUrl field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -1054,8 +1076,8 @@ func (o OperatingSystem) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if o.Description.IsSet() {
+		toSerialize["description"] = o.Description.Get()
 	}
 	if o.InfrastructureProviderId.IsSet() {
 		toSerialize["infrastructureProviderId"] = o.InfrastructureProviderId.Get()
@@ -1063,8 +1085,8 @@ func (o OperatingSystem) ToMap() (map[string]interface{}, error) {
 	if o.TenantId.IsSet() {
 		toSerialize["tenantId"] = o.TenantId.Get()
 	}
-	if !IsNil(o.Type) {
-		toSerialize["type"] = o.Type
+	if o.Type.IsSet() {
+		toSerialize["type"] = o.Type.Get()
 	}
 	if o.ImageUrl.IsSet() {
 		toSerialize["imageUrl"] = o.ImageUrl.Get()

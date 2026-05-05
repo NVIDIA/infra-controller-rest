@@ -42,19 +42,19 @@ type Instance struct {
 	// Name for the Instance
 	Name *string `json:"name,omitempty"`
 	// Description for the Instance
-	Description *string `json:"description,omitempty"`
+	Description NullableString `json:"description,omitempty"`
 	// ID of the Tenant the Instance belongs to
 	TenantId *string `json:"tenantId,omitempty"`
 	// ID of the Infrastructure Provider that owns the Site where the Instance is located
 	InfrastructureProviderId *string `json:"infrastructureProviderId,omitempty"`
 	// ID of the Site where the Instance is located
-	SiteId         *string `json:"siteId,omitempty"`
-	InstanceTypeId *string `json:"instanceTypeId,omitempty"`
-	VpcId          *string `json:"vpcId,omitempty"`
+	SiteId         *string        `json:"siteId,omitempty"`
+	InstanceTypeId NullableString `json:"instanceTypeId,omitempty"`
+	VpcId          *string        `json:"vpcId,omitempty"`
 	// IDs of VPCs attached to the Instance through non-primary interfaces
 	SecondaryVpcIds        []string       `json:"secondaryVpcIds,omitempty"`
 	MachineId              NullableString `json:"machineId,omitempty"`
-	OperatingSystemId      *string        `json:"operatingSystemId,omitempty"`
+	OperatingSystemId      NullableString `json:"operatingSystemId,omitempty"`
 	NetworkSecurityGroupId NullableString `json:"networkSecurityGroupId,omitempty"`
 	// Propagation details for the attached Network Security Group
 	NetworkSecurityGroupPropagationDetails *NetworkSecurityGroupPropagationDetails `json:"networkSecurityGroupPropagationDetails,omitempty"`
@@ -171,36 +171,47 @@ func (o *Instance) SetName(v string) {
 	o.Name = &v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Instance) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || IsNil(o.Description.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.Description.Get()
 }
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Instance) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Description, true
+	return o.Description.Get(), o.Description.IsSet()
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *Instance) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && o.Description.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription gets a reference to the given NullableString and assigns it to the Description field.
 func (o *Instance) SetDescription(v string) {
-	o.Description = &v
+	o.Description.Set(&v)
+}
+
+// SetDescriptionNil sets the value for Description to be an explicit nil
+func (o *Instance) SetDescriptionNil() {
+	o.Description.Set(nil)
+}
+
+// UnsetDescription ensures that no value is present for Description, not even an explicit nil
+func (o *Instance) UnsetDescription() {
+	o.Description.Unset()
 }
 
 // GetTenantId returns the TenantId field value if set, zero value otherwise.
@@ -299,36 +310,47 @@ func (o *Instance) SetSiteId(v string) {
 	o.SiteId = &v
 }
 
-// GetInstanceTypeId returns the InstanceTypeId field value if set, zero value otherwise.
+// GetInstanceTypeId returns the InstanceTypeId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Instance) GetInstanceTypeId() string {
-	if o == nil || IsNil(o.InstanceTypeId) {
+	if o == nil || IsNil(o.InstanceTypeId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.InstanceTypeId
+	return *o.InstanceTypeId.Get()
 }
 
 // GetInstanceTypeIdOk returns a tuple with the InstanceTypeId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Instance) GetInstanceTypeIdOk() (*string, bool) {
-	if o == nil || IsNil(o.InstanceTypeId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.InstanceTypeId, true
+	return o.InstanceTypeId.Get(), o.InstanceTypeId.IsSet()
 }
 
 // HasInstanceTypeId returns a boolean if a field has been set.
 func (o *Instance) HasInstanceTypeId() bool {
-	if o != nil && !IsNil(o.InstanceTypeId) {
+	if o != nil && o.InstanceTypeId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetInstanceTypeId gets a reference to the given string and assigns it to the InstanceTypeId field.
+// SetInstanceTypeId gets a reference to the given NullableString and assigns it to the InstanceTypeId field.
 func (o *Instance) SetInstanceTypeId(v string) {
-	o.InstanceTypeId = &v
+	o.InstanceTypeId.Set(&v)
+}
+
+// SetInstanceTypeIdNil sets the value for InstanceTypeId to be an explicit nil
+func (o *Instance) SetInstanceTypeIdNil() {
+	o.InstanceTypeId.Set(nil)
+}
+
+// UnsetInstanceTypeId ensures that no value is present for InstanceTypeId, not even an explicit nil
+func (o *Instance) UnsetInstanceTypeId() {
+	o.InstanceTypeId.Unset()
 }
 
 // GetVpcId returns the VpcId field value if set, zero value otherwise.
@@ -438,36 +460,47 @@ func (o *Instance) UnsetMachineId() {
 	o.MachineId.Unset()
 }
 
-// GetOperatingSystemId returns the OperatingSystemId field value if set, zero value otherwise.
+// GetOperatingSystemId returns the OperatingSystemId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Instance) GetOperatingSystemId() string {
-	if o == nil || IsNil(o.OperatingSystemId) {
+	if o == nil || IsNil(o.OperatingSystemId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.OperatingSystemId
+	return *o.OperatingSystemId.Get()
 }
 
 // GetOperatingSystemIdOk returns a tuple with the OperatingSystemId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Instance) GetOperatingSystemIdOk() (*string, bool) {
-	if o == nil || IsNil(o.OperatingSystemId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.OperatingSystemId, true
+	return o.OperatingSystemId.Get(), o.OperatingSystemId.IsSet()
 }
 
 // HasOperatingSystemId returns a boolean if a field has been set.
 func (o *Instance) HasOperatingSystemId() bool {
-	if o != nil && !IsNil(o.OperatingSystemId) {
+	if o != nil && o.OperatingSystemId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetOperatingSystemId gets a reference to the given string and assigns it to the OperatingSystemId field.
+// SetOperatingSystemId gets a reference to the given NullableString and assigns it to the OperatingSystemId field.
 func (o *Instance) SetOperatingSystemId(v string) {
-	o.OperatingSystemId = &v
+	o.OperatingSystemId.Set(&v)
+}
+
+// SetOperatingSystemIdNil sets the value for OperatingSystemId to be an explicit nil
+func (o *Instance) SetOperatingSystemIdNil() {
+	o.OperatingSystemId.Set(nil)
+}
+
+// UnsetOperatingSystemId ensures that no value is present for OperatingSystemId, not even an explicit nil
+func (o *Instance) UnsetOperatingSystemId() {
+	o.OperatingSystemId.Unset()
 }
 
 // GetNetworkSecurityGroupId returns the NetworkSecurityGroupId field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -1288,8 +1321,8 @@ func (o Instance) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if o.Description.IsSet() {
+		toSerialize["description"] = o.Description.Get()
 	}
 	if !IsNil(o.TenantId) {
 		toSerialize["tenantId"] = o.TenantId
@@ -1300,8 +1333,8 @@ func (o Instance) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.SiteId) {
 		toSerialize["siteId"] = o.SiteId
 	}
-	if !IsNil(o.InstanceTypeId) {
-		toSerialize["instanceTypeId"] = o.InstanceTypeId
+	if o.InstanceTypeId.IsSet() {
+		toSerialize["instanceTypeId"] = o.InstanceTypeId.Get()
 	}
 	if !IsNil(o.VpcId) {
 		toSerialize["vpcId"] = o.VpcId
@@ -1312,8 +1345,8 @@ func (o Instance) ToMap() (map[string]interface{}, error) {
 	if o.MachineId.IsSet() {
 		toSerialize["machineId"] = o.MachineId.Get()
 	}
-	if !IsNil(o.OperatingSystemId) {
-		toSerialize["operatingSystemId"] = o.OperatingSystemId
+	if o.OperatingSystemId.IsSet() {
+		toSerialize["operatingSystemId"] = o.OperatingSystemId.Get()
 	}
 	if o.NetworkSecurityGroupId.IsSet() {
 		toSerialize["networkSecurityGroupId"] = o.NetworkSecurityGroupId.Get()

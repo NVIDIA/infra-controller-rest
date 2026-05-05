@@ -52,15 +52,15 @@ type Machine struct {
 	// ID of the Machine at Site, now same as the primary ID
 	ControllerMachineId *string `json:"controllerMachineId,omitempty"`
 	// Denotes architecture (x86 vs ARM) of the Machine
-	ControllerMachineType *string `json:"controllerMachineType,omitempty"`
+	ControllerMachineType NullableString `json:"controllerMachineType,omitempty"`
 	// SKU derived device type of the machine, e.g. cpu, gpu, cache, storage, etc.
 	HwSkuDeviceType NullableString `json:"hwSkuDeviceType,omitempty"`
 	// Name of the vendor of the Machine
-	Vendor *string `json:"vendor,omitempty"`
+	Vendor NullableString `json:"vendor,omitempty"`
 	// Product name of the Machine
-	ProductName *string `json:"productName,omitempty"`
+	ProductName NullableString `json:"productName,omitempty"`
 	// Serial number of the Machine, only visible to Provider
-	SerialNumber        *string             `json:"serialNumber,omitempty"`
+	SerialNumber        NullableString      `json:"serialNumber,omitempty"`
 	MachineCapabilities []MachineCapability `json:"machineCapabilities,omitempty"`
 	MachineInterfaces   []MachineInterface  `json:"machineInterfaces,omitempty"`
 	// If the Machine is in maintenance mode, this message will typically describe the reason and how long it is expected to be in maintenance
@@ -351,36 +351,47 @@ func (o *Machine) SetControllerMachineId(v string) {
 	o.ControllerMachineId = &v
 }
 
-// GetControllerMachineType returns the ControllerMachineType field value if set, zero value otherwise.
+// GetControllerMachineType returns the ControllerMachineType field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Machine) GetControllerMachineType() string {
-	if o == nil || IsNil(o.ControllerMachineType) {
+	if o == nil || IsNil(o.ControllerMachineType.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.ControllerMachineType
+	return *o.ControllerMachineType.Get()
 }
 
 // GetControllerMachineTypeOk returns a tuple with the ControllerMachineType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Machine) GetControllerMachineTypeOk() (*string, bool) {
-	if o == nil || IsNil(o.ControllerMachineType) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ControllerMachineType, true
+	return o.ControllerMachineType.Get(), o.ControllerMachineType.IsSet()
 }
 
 // HasControllerMachineType returns a boolean if a field has been set.
 func (o *Machine) HasControllerMachineType() bool {
-	if o != nil && !IsNil(o.ControllerMachineType) {
+	if o != nil && o.ControllerMachineType.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetControllerMachineType gets a reference to the given string and assigns it to the ControllerMachineType field.
+// SetControllerMachineType gets a reference to the given NullableString and assigns it to the ControllerMachineType field.
 func (o *Machine) SetControllerMachineType(v string) {
-	o.ControllerMachineType = &v
+	o.ControllerMachineType.Set(&v)
+}
+
+// SetControllerMachineTypeNil sets the value for ControllerMachineType to be an explicit nil
+func (o *Machine) SetControllerMachineTypeNil() {
+	o.ControllerMachineType.Set(nil)
+}
+
+// UnsetControllerMachineType ensures that no value is present for ControllerMachineType, not even an explicit nil
+func (o *Machine) UnsetControllerMachineType() {
+	o.ControllerMachineType.Unset()
 }
 
 // GetHwSkuDeviceType returns the HwSkuDeviceType field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -426,100 +437,133 @@ func (o *Machine) UnsetHwSkuDeviceType() {
 	o.HwSkuDeviceType.Unset()
 }
 
-// GetVendor returns the Vendor field value if set, zero value otherwise.
+// GetVendor returns the Vendor field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Machine) GetVendor() string {
-	if o == nil || IsNil(o.Vendor) {
+	if o == nil || IsNil(o.Vendor.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Vendor
+	return *o.Vendor.Get()
 }
 
 // GetVendorOk returns a tuple with the Vendor field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Machine) GetVendorOk() (*string, bool) {
-	if o == nil || IsNil(o.Vendor) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Vendor, true
+	return o.Vendor.Get(), o.Vendor.IsSet()
 }
 
 // HasVendor returns a boolean if a field has been set.
 func (o *Machine) HasVendor() bool {
-	if o != nil && !IsNil(o.Vendor) {
+	if o != nil && o.Vendor.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVendor gets a reference to the given string and assigns it to the Vendor field.
+// SetVendor gets a reference to the given NullableString and assigns it to the Vendor field.
 func (o *Machine) SetVendor(v string) {
-	o.Vendor = &v
+	o.Vendor.Set(&v)
 }
 
-// GetProductName returns the ProductName field value if set, zero value otherwise.
+// SetVendorNil sets the value for Vendor to be an explicit nil
+func (o *Machine) SetVendorNil() {
+	o.Vendor.Set(nil)
+}
+
+// UnsetVendor ensures that no value is present for Vendor, not even an explicit nil
+func (o *Machine) UnsetVendor() {
+	o.Vendor.Unset()
+}
+
+// GetProductName returns the ProductName field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Machine) GetProductName() string {
-	if o == nil || IsNil(o.ProductName) {
+	if o == nil || IsNil(o.ProductName.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.ProductName
+	return *o.ProductName.Get()
 }
 
 // GetProductNameOk returns a tuple with the ProductName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Machine) GetProductNameOk() (*string, bool) {
-	if o == nil || IsNil(o.ProductName) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ProductName, true
+	return o.ProductName.Get(), o.ProductName.IsSet()
 }
 
 // HasProductName returns a boolean if a field has been set.
 func (o *Machine) HasProductName() bool {
-	if o != nil && !IsNil(o.ProductName) {
+	if o != nil && o.ProductName.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetProductName gets a reference to the given string and assigns it to the ProductName field.
+// SetProductName gets a reference to the given NullableString and assigns it to the ProductName field.
 func (o *Machine) SetProductName(v string) {
-	o.ProductName = &v
+	o.ProductName.Set(&v)
 }
 
-// GetSerialNumber returns the SerialNumber field value if set, zero value otherwise.
+// SetProductNameNil sets the value for ProductName to be an explicit nil
+func (o *Machine) SetProductNameNil() {
+	o.ProductName.Set(nil)
+}
+
+// UnsetProductName ensures that no value is present for ProductName, not even an explicit nil
+func (o *Machine) UnsetProductName() {
+	o.ProductName.Unset()
+}
+
+// GetSerialNumber returns the SerialNumber field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Machine) GetSerialNumber() string {
-	if o == nil || IsNil(o.SerialNumber) {
+	if o == nil || IsNil(o.SerialNumber.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.SerialNumber
+	return *o.SerialNumber.Get()
 }
 
 // GetSerialNumberOk returns a tuple with the SerialNumber field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Machine) GetSerialNumberOk() (*string, bool) {
-	if o == nil || IsNil(o.SerialNumber) {
+	if o == nil {
 		return nil, false
 	}
-	return o.SerialNumber, true
+	return o.SerialNumber.Get(), o.SerialNumber.IsSet()
 }
 
 // HasSerialNumber returns a boolean if a field has been set.
 func (o *Machine) HasSerialNumber() bool {
-	if o != nil && !IsNil(o.SerialNumber) {
+	if o != nil && o.SerialNumber.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSerialNumber gets a reference to the given string and assigns it to the SerialNumber field.
+// SetSerialNumber gets a reference to the given NullableString and assigns it to the SerialNumber field.
 func (o *Machine) SetSerialNumber(v string) {
-	o.SerialNumber = &v
+	o.SerialNumber.Set(&v)
+}
+
+// SetSerialNumberNil sets the value for SerialNumber to be an explicit nil
+func (o *Machine) SetSerialNumberNil() {
+	o.SerialNumber.Set(nil)
+}
+
+// UnsetSerialNumber ensures that no value is present for SerialNumber, not even an explicit nil
+func (o *Machine) UnsetSerialNumber() {
+	o.SerialNumber.Unset()
 }
 
 // GetMachineCapabilities returns the MachineCapabilities field value if set, zero value otherwise.
@@ -916,20 +960,20 @@ func (o Machine) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.ControllerMachineId) {
 		toSerialize["controllerMachineId"] = o.ControllerMachineId
 	}
-	if !IsNil(o.ControllerMachineType) {
-		toSerialize["controllerMachineType"] = o.ControllerMachineType
+	if o.ControllerMachineType.IsSet() {
+		toSerialize["controllerMachineType"] = o.ControllerMachineType.Get()
 	}
 	if o.HwSkuDeviceType.IsSet() {
 		toSerialize["hwSkuDeviceType"] = o.HwSkuDeviceType.Get()
 	}
-	if !IsNil(o.Vendor) {
-		toSerialize["vendor"] = o.Vendor
+	if o.Vendor.IsSet() {
+		toSerialize["vendor"] = o.Vendor.Get()
 	}
-	if !IsNil(o.ProductName) {
-		toSerialize["productName"] = o.ProductName
+	if o.ProductName.IsSet() {
+		toSerialize["productName"] = o.ProductName.Get()
 	}
-	if !IsNil(o.SerialNumber) {
-		toSerialize["serialNumber"] = o.SerialNumber
+	if o.SerialNumber.IsSet() {
+		toSerialize["serialNumber"] = o.SerialNumber.Get()
 	}
 	if !IsNil(o.MachineCapabilities) {
 		toSerialize["machineCapabilities"] = o.MachineCapabilities

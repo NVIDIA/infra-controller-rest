@@ -39,7 +39,7 @@ type MachineHealthIssue struct {
 	// Category of the issue
 	Category *string `json:"category,omitempty"`
 	// Short summary describing the issue
-	Summary *string `json:"summary,omitempty"`
+	Summary NullableString `json:"summary,omitempty"`
 	// Details about the issue helpful for diagnosis
 	Details NullableString `json:"details,omitempty"`
 }
@@ -93,36 +93,47 @@ func (o *MachineHealthIssue) SetCategory(v string) {
 	o.Category = &v
 }
 
-// GetSummary returns the Summary field value if set, zero value otherwise.
+// GetSummary returns the Summary field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineHealthIssue) GetSummary() string {
-	if o == nil || IsNil(o.Summary) {
+	if o == nil || IsNil(o.Summary.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Summary
+	return *o.Summary.Get()
 }
 
 // GetSummaryOk returns a tuple with the Summary field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineHealthIssue) GetSummaryOk() (*string, bool) {
-	if o == nil || IsNil(o.Summary) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Summary, true
+	return o.Summary.Get(), o.Summary.IsSet()
 }
 
 // HasSummary returns a boolean if a field has been set.
 func (o *MachineHealthIssue) HasSummary() bool {
-	if o != nil && !IsNil(o.Summary) {
+	if o != nil && o.Summary.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSummary gets a reference to the given string and assigns it to the Summary field.
+// SetSummary gets a reference to the given NullableString and assigns it to the Summary field.
 func (o *MachineHealthIssue) SetSummary(v string) {
-	o.Summary = &v
+	o.Summary.Set(&v)
+}
+
+// SetSummaryNil sets the value for Summary to be an explicit nil
+func (o *MachineHealthIssue) SetSummaryNil() {
+	o.Summary.Set(nil)
+}
+
+// UnsetSummary ensures that no value is present for Summary, not even an explicit nil
+func (o *MachineHealthIssue) UnsetSummary() {
+	o.Summary.Unset()
 }
 
 // GetDetails returns the Details field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -181,8 +192,8 @@ func (o MachineHealthIssue) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Category) {
 		toSerialize["category"] = o.Category
 	}
-	if !IsNil(o.Summary) {
-		toSerialize["summary"] = o.Summary
+	if o.Summary.IsSet() {
+		toSerialize["summary"] = o.Summary.Get()
 	}
 	if o.Details.IsSet() {
 		toSerialize["details"] = o.Details.Get()

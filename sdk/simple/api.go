@@ -182,8 +182,8 @@ func (am *ApiMetadata) SetDefaultVPC(ctx context.Context, apiClient *standard.AP
 			if vpc.Name != nil {
 				am.VpcName = *vpc.Name
 			}
-			if vpc.NetworkVirtualizationType != nil {
-				am.VpcNetworkVirtualizationType = *vpc.NetworkVirtualizationType
+			if vpc.NetworkVirtualizationType.IsSet() {
+				am.VpcNetworkVirtualizationType = *vpc.NetworkVirtualizationType.Get()
 			}
 			logger.Info().Msgf("Default VPC %s (%s) with NetworkVirtualizationType '%s' has been set for Instance creation.", am.VpcName, am.VpcID, am.VpcNetworkVirtualizationType)
 			break
@@ -208,8 +208,8 @@ func (am *ApiMetadata) SetDefaultVPC(ctx context.Context, apiClient *standard.AP
 			if vpcs[0].Name != nil {
 				am.VpcName = *vpcs[0].Name
 			}
-			if vpcs[0].NetworkVirtualizationType != nil {
-				am.VpcNetworkVirtualizationType = *vpcs[0].NetworkVirtualizationType
+			if vpcs[0].NetworkVirtualizationType.IsSet() {
+				am.VpcNetworkVirtualizationType = *vpcs[0].NetworkVirtualizationType.Get()
 			}
 			if len(vpcs) > 1 {
 				logger.Warn().Msgf("Multiple VPCs configured for Site: %s. Will default to VPC: %s (%s) with NetworkVirtualizationType '%s' for Instance creation.", am.SiteName, am.VpcName, am.VpcID, am.VpcNetworkVirtualizationType)

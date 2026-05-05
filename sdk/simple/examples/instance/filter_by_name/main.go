@@ -121,8 +121,8 @@ func main() {
 		machineID := instance.GetMachineId()
 		fmt.Printf("  - Name: %s, ID: %s, Status: %s, MachineID: %s\n",
 			name, instance.GetId(), status, machineID)
-		if instance.Description != nil {
-			fmt.Printf("    Description: %s\n", *instance.Description)
+		if instance.Description.IsSet() {
+			fmt.Printf("    Description: %s\n", *instance.Description.Get())
 		}
 		if instance.Labels != nil {
 			fmt.Printf("    Labels: %v\n", instance.Labels)
