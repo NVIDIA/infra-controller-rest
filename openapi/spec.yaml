@@ -1326,7 +1326,8 @@ paths:
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        Tenant management of Allocation is not supported in MVP.
+        To successfully create a compute Allocation, there must be enough unallocated Machines associated with the Instance Type to satisfy the constraint value.
+        For network Allocation, the source Site level IP Block must have an available prefix of the size of constraint value.
       requestBody:
         content:
           application/json:
@@ -5605,6 +5606,8 @@ paths:
         Associate a Machine to an Instance Type
 
         Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        The Machine's capabilities must be a superset of the Instance Type's required capabilities for the association to succeed.
       requestBody:
         content:
           application/json:
@@ -5614,9 +5617,9 @@ paths:
               example-1:
                 value:
                   machineIds:
-                    - 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                    - 59c8d465-69f1-447f-80f8-1bc85627a03b
-                    - 0a44ffc3-39ba-46c6-b483-be00a1e2cc27
+                    - fm100ht4v4mce2qstjnl8970nnj3ie6ecek4mtjn27pea4kre5gsa49jg0g
+                    - fm100htrh18t1lrjg2pqagkh3sfigr9m65dejvkq168ako07sc0uibpp5q0
+                    - fm100ht68sf2m52idrpslcjkpdj5r3tb3j5o0bkfubhoglbq47u18nknfog
   '/v2/org/{org}/nico/instance/type/{instanceTypeId}/machine/{machineAssociationId}':
     parameters:
       - schema:
@@ -12862,17 +12865,18 @@ components:
         resourceTypeId:
           type: string
           format: uuid
-          description: ID of the Resource Type that the Allocation Constraint applies to. For InstanceType, this is the ID of the Instance Type. For IPBlock, this is the ID of the IP Block.
+          description: 'ID of the Resource Type that acts as the source of the Allocation. For resource type: `InstanceType`, this is the ID of the Instance Type whose associated Machines are allocated to the Tenant. For resource type `IPBlock`, this is the ID of the Site level IP Block from where a prefix is allocated to the Tenant.'
         constraintType:
           type: string
-          description: Type of the Allocation Constraint. Please note that OnDemand and Preemptible are not supported by current implementation.
+          description: 'Type of the Allocation Constraint. `Reserved` is the only constraint type supported by current implementation.'
           enum:
             - Reserved
             - OnDemand
             - Preemptible
         constraintValue:
           type: integer
-          description: Value of the Allocation Constraint. For InstanceType, this value represents number of Machines allocated for Tenant. For IPBlock, this value represents the prefix Length of the IP Block.
+          description: |-
+            Value of the Allocation Constraint. For resource type: `InstanceType`, this value represents number of Machines associated with the Instance Type that is allocated to the Tenant. For resource type `IPBlock`, this value represents the prefix length of the IP Block allocated to the Tenant.
         derivedResourceId:
           type:
             - string
@@ -17537,20 +17541,21 @@ components:
     MachineInstanceTypeCreateRequest:
       title: MachineInstanceTypeCreateRequest
       type: object
-      description: Associates one or more Machines with an Instance Type
+      description: |-
+        Associates one or more Machines with an Instance Type.
+
+        The Machine's capabilities must be a superset of the Instance Type's required capabilities for the association to succeed.
       examples:
         - machineIds:
-            - 497f6eca-6276-4993-bfeb-53cbbbba6f08
-            - 59c8d465-69f1-447f-80f8-1bc85627a03b
-            - 0a44ffc3-39ba-46c6-b483-be00a1e2cc27
+            - fm100ht4v4mce2qstjnl8970nnj3ie6ecek4mtjn27pea4kre5gsa49jg0g
+            - fm100htrh18t1lrjg2pqagkh3sfigr9m65dejvkq168ako07sc0uibpp5q0
+            - fm100ht68sf2m52idrpslcjkpdj5r3tb3j5o0bkfubhoglbq47u18nknfog
       properties:
         machineIds:
           type: array
-          format: uuid
           minItems: 1
           items:
             type: string
-            format: uuid
       required:
         - machineIds
     ExpectedMachine:
