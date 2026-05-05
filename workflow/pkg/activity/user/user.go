@@ -27,8 +27,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
