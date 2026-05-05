@@ -28,6 +28,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
@@ -3943,6 +3944,31 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	instnvlifc4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusReady)
 	assert.NotNil(t, instnvlifc4)
 
+	// Instances with four Pending NVLink interfaces — isolate stale vs fresh `updated` timestamp behavior across subtests.
+	inst13PendingStale := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-pending-stale", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, inst13PendingStale)
+
+	inst13psNvl1 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingStale.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13psNvl1)
+	inst13psNvl2 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingStale.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 1, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13psNvl2)
+	inst13psNvl3 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingStale.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 2, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13psNvl3)
+	inst13psNvl4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingStale.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13psNvl4)
+
+	inst13PendingFresh := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-pending-fresh", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, inst13PendingFresh)
+
+	inst13pfNvl1 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingFresh.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13pfNvl1)
+	inst13pfNvl2 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingFresh.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 1, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13pfNvl2)
+	inst13pfNvl3 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingFresh.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 2, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13pfNvl3)
+	inst13pfNvl4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingFresh.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusPending)
+	assert.NotNil(t, inst13pfNvl4)
+
 	mc6 := testInstanceBuildMachine(t, dbSession, ip.ID, st2.ID, cdb.GetBoolPtr(false), nil)
 	assert.NotNil(t, mc6)
 
@@ -4140,6 +4166,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 		expectedPropagationStatus             *string
 		// When true, only assert len(siteReq.Config.Nvlink.GpuConfigs) matches the request (e.g. NVLink no-op where workflow uses DB order).
 		nvLinkGpuConfigsVerifyCountOnly bool
+		// Optional hook after building the echo context and before Handle (e.g. adjust DB timestamps for time-sensitive branches).
+		beforeHandle func(t *testing.T)
 	}
 
 	tests := []struct {
@@ -5690,6 +5718,77 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
+			name: "test Instance update API endpoint success when NVLink interfaces unchanged — pending rows older than grace window count toward multiset no-op",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 3},
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 2},
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
+					},
+				},
+				reqInstance:                     inst13PendingStale.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				nvLinkGpuConfigsVerifyCountOnly: true,
+				beforeHandle: func(t *testing.T) {
+					stale := time.Now().UTC().Add(-2 * time.Minute)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE instance_id = ?",
+						stale,
+						inst13PendingStale.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update API endpoint success when NVLink pending rows are recent — excluded from unchanged match, interfaces replaced",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 3},
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 2},
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
+					},
+				},
+				reqInstance:              inst13PendingFresh.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(4),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
+					*inst13pfNvl1,
+					*inst13pfNvl2,
+					*inst13pfNvl3,
+					*inst13pfNvl4,
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
 			name: "test Instance update API endpoint success with NVLink interface subset replacing full set",
 			fields: fields{
 				dbSession: dbSession,
@@ -5841,6 +5940,10 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 
 			ctx = context.WithValue(ctx, otelecho.TracerKey, tracer)
 			ec.SetRequest(ec.Request().WithContext(ctx))
+
+			if tt.args.beforeHandle != nil {
+				tt.args.beforeHandle(t)
+			}
 
 			if err := uih.Handle(ec); (err != nil) != tt.wantErr {
 				t.Errorf("UpdateInstanceHandler.Handle() error = %v, wantErr %v", err, tt.wantErr)

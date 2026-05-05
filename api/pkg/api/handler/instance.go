@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"time"
 
 	goset "github.com/deckarep/golang-set/v2"
 	"github.com/labstack/echo/v4"
@@ -3126,7 +3127,13 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				case cdbm.NVLinkInterfaceStatusReady:
 					existingReadyNvlIfcsCount++
 				case cdbm.NVLinkInterfaceStatusPending:
-					existingPendingNvlIfcsCount++
+					// Only count pending interfaces whose updated timestamp is older than the grace window;
+					// recently-updated pending rows are excluded so in-flight updates are not treated as a no-op match.
+					lastUpdatedAt := existingNvlIfcs[i].Updated
+					if lastUpdatedAt.Before(time.Now().Add(-90 * time.Second)) {
+						// 90 seconds is the grace period for pending interfaces to be considered unchanged
+						existingPendingNvlIfcsCount++
+					}
 				case cdbm.NVLinkInterfaceStatusDeleting:
 					existingDeletingNvlIfcsCount++
 				default:

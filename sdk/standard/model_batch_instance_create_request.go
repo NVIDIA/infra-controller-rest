@@ -72,7 +72,7 @@ type BatchInstanceCreateRequest struct {
 	// DPU Extension Services to deploy to all instances in the batch
 	DpuExtensionServiceDeployments []DpuExtensionServiceDeploymentRequest `json:"dpuExtensionServiceDeployments,omitempty"`
 	// NVLink interface configuration shared across all instances. A subset of GPUs may be specified. Each item references one GPU index (`deviceInstance`) and one NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions.
-	NvLinkInterfaces []NVLinkInterfaceCreateRequest `json:"nvLinkInterfaces,omitempty"`
+	NvLinkInterfaces []NVLinkInterfaceCreateOrUpdateRequest `json:"nvLinkInterfaces,omitempty"`
 	// SSH Key Group IDs that will provide Serial over LAN access to all instances
 	SshKeyGroupIds []string `json:"sshKeyGroupIds,omitempty"`
 	// When true (default), all instances must be allocated on machines within the same NVLink domain. When false, instances can be spread across different NVLink domains.
@@ -660,9 +660,9 @@ func (o *BatchInstanceCreateRequest) SetDpuExtensionServiceDeployments(v []DpuEx
 }
 
 // GetNvLinkInterfaces returns the NvLinkInterfaces field value if set, zero value otherwise.
-func (o *BatchInstanceCreateRequest) GetNvLinkInterfaces() []NVLinkInterfaceCreateRequest {
+func (o *BatchInstanceCreateRequest) GetNvLinkInterfaces() []NVLinkInterfaceCreateOrUpdateRequest {
 	if o == nil || IsNil(o.NvLinkInterfaces) {
-		var ret []NVLinkInterfaceCreateRequest
+		var ret []NVLinkInterfaceCreateOrUpdateRequest
 		return ret
 	}
 	return o.NvLinkInterfaces
@@ -670,7 +670,7 @@ func (o *BatchInstanceCreateRequest) GetNvLinkInterfaces() []NVLinkInterfaceCrea
 
 // GetNvLinkInterfacesOk returns a tuple with the NvLinkInterfaces field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *BatchInstanceCreateRequest) GetNvLinkInterfacesOk() ([]NVLinkInterfaceCreateRequest, bool) {
+func (o *BatchInstanceCreateRequest) GetNvLinkInterfacesOk() ([]NVLinkInterfaceCreateOrUpdateRequest, bool) {
 	if o == nil || IsNil(o.NvLinkInterfaces) {
 		return nil, false
 	}
@@ -686,8 +686,8 @@ func (o *BatchInstanceCreateRequest) HasNvLinkInterfaces() bool {
 	return false
 }
 
-// SetNvLinkInterfaces gets a reference to the given []NVLinkInterfaceCreateRequest and assigns it to the NvLinkInterfaces field.
-func (o *BatchInstanceCreateRequest) SetNvLinkInterfaces(v []NVLinkInterfaceCreateRequest) {
+// SetNvLinkInterfaces gets a reference to the given []NVLinkInterfaceCreateOrUpdateRequest and assigns it to the NvLinkInterfaces field.
+func (o *BatchInstanceCreateRequest) SetNvLinkInterfaces(v []NVLinkInterfaceCreateOrUpdateRequest) {
 	o.NvLinkInterfaces = v
 }
 
