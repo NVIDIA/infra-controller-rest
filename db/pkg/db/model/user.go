@@ -26,7 +26,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/pkg/errors"
 
