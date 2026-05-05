@@ -2717,7 +2717,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	var dbskgs []cdbm.SSHKeyGroup
 	var ssds []cdbm.StatusDetail
 	reqCtx := ctx
-
+	nvLinkInterfacesUnchanged := false
 	err = cdb.WithTx(ctx, uih.dbSession, func(tx *cdb.Tx) error {
 		// Prepare DAOs
 		sdDAO := cdbm.NewStatusDetailDAO(uih.dbSession)
@@ -3023,71 +3023,81 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Infiniband Interface for Instance, DB error", nil)
 				}
 			}
-		}
-	}
-
-	// Create new NVLink Interface records in the DB if specified in request
-	var newNvlIfcs []cdbm.NVLinkInterface
-	nvlIfcDAO := cdbm.NewNVLinkInterfaceDAO(uih.dbSession)
-
-	// OrderAscending is our best-effort to make sure we send Carbide the interfaces in the order it originally received them. so the config doesn't get rejected
-	existingNvlIfcs, _, err := nvlIfcDAO.GetAll(ctx, tx, cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}}, cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.NVLinkInterfaceOrderByCreated, Order: cdbp.OrderAscending}}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve NVLink Interfaces details for Instance")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve NVLink interfaces for Instance, DB error", nil)
-	}
-
-	nvLinkInterfacesUnchanged := false
-	if apiRequest.NVLinkInterfaces != nil {
-		// Count the number of NVLink interfaces by NVLink Logical Partition ID and Device Instance
-		existingNvlIfcMap := make(map[string]int)
-		existingReadyNvlIfcsCount := 0
-		existingPendingNvlIfcsCount := 0
-		existingDeletingNvlIfcsCount := 0
-		for i := range existingNvlIfcs {
-			key := fmt.Sprintf("%s:%d", existingNvlIfcs[i].NVLinkLogicalPartitionID.String(), existingNvlIfcs[i].DeviceInstance)
-			existingNvlIfcMap[key]++
-			switch existingNvlIfcs[i].Status {
-			case cdbm.NVLinkInterfaceStatusReady:
-				existingReadyNvlIfcsCount++
-			case cdbm.NVLinkInterfaceStatusPending:
-				existingPendingNvlIfcsCount++
-			case cdbm.NVLinkInterfaceStatusDeleting:
-				existingDeletingNvlIfcsCount++
-			default:
-				// Provisioning, Error, or other statuses are not counted in these buckets.
-			}
+		} else {
+			newIbIfcs = existingIbIfcs
 		}
 
-		// If the number of pending/ready/deleting NVLink interfaces is unchanged, do nothing
-		// because existing NVLink interfaces includes pending/ready/deleting NVLink interfaces on the same logical partition and device instance
-		// hence we need to verify if incoming request contains the same number of pending/ready/deleting NVLink interfaces
-		if len(apiRequest.NVLinkInterfaces) == existingPendingNvlIfcsCount {
-			nvLinkInterfacesUnchanged = true
-		} else if len(apiRequest.NVLinkInterfaces) == existingReadyNvlIfcsCount {
-			nvLinkInterfacesUnchanged = true
-		} else if len(apiRequest.NVLinkInterfaces) == existingDeletingNvlIfcsCount {
-			nvLinkInterfacesUnchanged = true
+		// Fetch existing DPU Extension Service Deployments for the Instance
+		desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(uih.dbSession)
+		existingDesds, _, derr := desdDAO.GetAll(ctx, tx, cdbm.DpuExtensionServiceDeploymentFilterInput{
+			InstanceIDs: []uuid.UUID{instance.ID},
+		}, cdbp.PageInput{
+			OrderBy: &cdbp.OrderBy{Field: cdbm.DpuExtensionServiceDeploymentOrderByDefault, Order: cdbp.OrderAscending},
+			Limit:   cdb.GetIntPtr(cdbp.TotalLimit),
+		}, []string{cdbm.DpuExtensionServiceRelationName})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve DpuExtensionServiceDeployment details for Instance")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve existing DPU Extension Service Deployments for Instance, DB error", nil)
 		}
 
-		nvllpIDs := goset.NewSet[uuid.UUID]()
-		for _, apiNvlIfc := range apiRequest.NVLinkInterfaces {
-			// NVLink Logical Partition
-			nvllPartitionID, err := uuid.Parse(apiNvlIfc.NVLinkLogicalPartitionID)
-			if err != nil {
-				logger.Warn().Err(err).Msg("error parsing NVLink Logical Partition id in instance NVLink Interface request")
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("NVLink Logical Partition ID: %v specified in request data is not valid", apiNvlIfc.NVLinkLogicalPartitionID), nil)
-			}
-			nvllpIDs.Add(nvllPartitionID)
+		// Check if any DPU Extension Service Deployments are being requested to be created or removed
+		existingDesdMap := map[string]*cdbm.DpuExtensionServiceDeployment{}
+		for _, desd := range existingDesds {
+			existingDesdMap[fmt.Sprintf("%s:%s", desd.DpuExtensionServiceID.String(), desd.Version)] = &desd
+		}
 
-			// If the number of active NVLink interfaces is unchanged, consume matching keys (multiset match).
-			if nvLinkInterfacesUnchanged {
-				key := fmt.Sprintf("%s:%d", nvllPartitionID.String(), apiNvlIfc.DeviceInstance)
-				count := existingNvlIfcMap[key]
-				if count == 0 {
-					nvLinkInterfacesUnchanged = false
+		updatedDesdMap := map[string]*cdbm.DpuExtensionServiceDeployment{}
+
+		// If DPU extension services were omitted from the request, preserve existing
+		// services in the config we send to Site Controller.
+		if apiRequest.DpuExtensionServiceDeployments == nil {
+			updateDesds = append(updateDesds, existingDesds...)
+		} else {
+			for _, adesdr := range apiRequest.DpuExtensionServiceDeployments {
+				desdID, err := uuid.Parse(adesdr.DpuExtensionServiceID)
+				if err != nil {
+					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Invalid DPU Extension Service ID: %s specified in request", adesdr.DpuExtensionServiceID), nil)
+				}
+
+				desvID := fmt.Sprintf("%s:%s", desdID.String(), adesdr.Version)
+
+				existingDesd, exists := existingDesdMap[desvID]
+				if exists {
+					updateDesds = append(updateDesds, *existingDesd)
+					updatedDesdMap[desvID] = existingDesd
 				} else {
-					existingNvlIfcMap[key] = count - 1
+					newDesd, serr := desdDAO.Create(ctx, tx, cdbm.DpuExtensionServiceDeploymentCreateInput{
+						SiteID:                site.ID,
+						TenantID:              tenant.ID,
+						InstanceID:            instance.ID,
+						DpuExtensionServiceID: desdID,
+						Version:               adesdr.Version,
+						Status:                cdbm.DpuExtensionServiceDeploymentStatusPending,
+						CreatedBy:             dbUser.ID,
+					})
+					if serr != nil {
+						logger.Error().Err(serr).Msg("error creating Instance DpuExtensionServiceDeployment record in DB")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create DPU Extension Service Deployment for Instance, DB error", nil)
+					}
+					des, _ := desIDMap[desdID]
+					newDesd.DpuExtensionService = des
+					updateDesds = append(updateDesds, *newDesd)
+					updatedDesdMap[desvID] = newDesd
+				}
+			}
+
+			for _, existingDesd := range existingDesds {
+				desvID := fmt.Sprintf("%s:%s", existingDesd.DpuExtensionServiceID.String(), existingDesd.Version)
+				_, exists := updatedDesdMap[desvID]
+				if !exists && existingDesd.Status != cdbm.DpuExtensionServiceDeploymentStatusTerminating {
+					// The deployment is not present in request sent by user, update status to Terminating if not already in that state
+					_, derr = desdDAO.Update(ctx, tx, cdbm.DpuExtensionServiceDeploymentUpdateInput{
+						DpuExtensionServiceDeploymentID: existingDesd.ID,
+						Status:                          cdb.GetStrPtr(cdbm.DpuExtensionServiceDeploymentStatusTerminating)})
+					if derr != nil {
+						logger.Error().Err(derr).Msg("failed to update DpuExtensionServiceDeployment record in DB")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update DPU Extension Service Deployment for Instance, DB error", nil)
+					}
 				}
 			}
 		}
@@ -3103,6 +3113,37 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		if apiRequest.NVLinkInterfaces != nil {
+			// Count the number of NVLink interfaces by NVLink Logical Partition ID and Device Instance
+			existingNvlIfcMap := make(map[string]int)
+			existingReadyNvlIfcsCount := 0
+			existingPendingNvlIfcsCount := 0
+			existingDeletingNvlIfcsCount := 0
+
+			for i := range existingNvlIfcs {
+				key := fmt.Sprintf("%s:%d", existingNvlIfcs[i].NVLinkLogicalPartitionID.String(), existingNvlIfcs[i].DeviceInstance)
+				existingNvlIfcMap[key]++
+				switch existingNvlIfcs[i].Status {
+				case cdbm.NVLinkInterfaceStatusReady:
+					existingReadyNvlIfcsCount++
+				case cdbm.NVLinkInterfaceStatusPending:
+					existingPendingNvlIfcsCount++
+				case cdbm.NVLinkInterfaceStatusDeleting:
+					existingDeletingNvlIfcsCount++
+				default:
+					// Provisioning, Error, or other statuses are not counted in these buckets.
+				}
+			}
+			// If the number of pending/ready/deeleting NVLink interfaces is unchanged, do nothing
+			// because existing NVLink interfaces includes pending/ready/deleting NVLink interfaces on the same logical partition and device instance
+			// hence we need to verify if incoming request contains the same number of pending/ready/deleting NVLink interfaces
+			if len(apiRequest.NVLinkInterfaces) == existingPendingNvlIfcsCount {
+				nvLinkInterfacesUnchanged = true
+			} else if len(apiRequest.NVLinkInterfaces) == existingReadyNvlIfcsCount {
+				nvLinkInterfacesUnchanged = true
+			} else if len(apiRequest.NVLinkInterfaces) == existingDeletingNvlIfcsCount {
+				nvLinkInterfacesUnchanged = true
+			}
+
 			nvllpIDs := goset.NewSet[uuid.UUID]()
 			for _, apiNvlIfc := range apiRequest.NVLinkInterfaces {
 				// NVLink Logical Partition
@@ -3112,60 +3153,71 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("NVLink Logical Partition ID: %v specified in request data is not valid", apiNvlIfc.NVLinkLogicalPartitionID), nil)
 				}
 				nvllpIDs.Add(nvllPartitionID)
-			}
 
-			nvllpIDMap := make(map[string]*cdbm.NVLinkLogicalPartition)
-
-			if nvllpIDs.Cardinality() > 0 {
-				nvllps, _, err := nvllpDAO.GetAll(ctx, nil, cdbm.NVLinkLogicalPartitionFilterInput{NVLinkLogicalPartitionIDs: nvllpIDs.ToSlice()}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
-				if err != nil {
-					logger.Error().Err(err).Msg("error retrieving NVLink Logical Partitions from DB by IDs")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve NVLink Logical Partitions specified in request data, DB error", nil)
-				}
-				for i := range nvllps {
-					nvllpIDMap[nvllps[i].ID.String()] = &nvllps[i]
-				}
-			}
-
-			for _, apiNvlIfc := range apiRequest.NVLinkInterfaces {
-				nvllPartition, ok := nvllpIDMap[apiNvlIfc.NVLinkLogicalPartitionID]
-				if !ok {
-					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Could not find NVLink Logical Partition with ID: %v specified in request data", apiNvlIfc.NVLinkLogicalPartitionID), nil)
-				}
-
-				newNvlIfc, err := nvlIfcDAO.Create(ctx, tx, cdbm.NVLinkInterfaceCreateInput{
-					InstanceID:               instanceID,
-					SiteID:                   site.ID,
-					NVLinkLogicalPartitionID: nvllPartition.ID,
-					DeviceInstance:           apiNvlIfc.DeviceInstance,
-					Status:                   cdbm.NVLinkInterfaceStatusPending,
-					CreatedBy:                dbUser.ID,
-				})
-
-				if err != nil {
-					logger.Error().Err(err).Msg("failed to create NVLink Interface record in DB")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create NVLink Interface for Instance, DB error", nil)
-				}
-				newNvlIfcs = append(newNvlIfcs, *newNvlIfc)
-			}
-
-			// Update status of existing NVLink interfaces to Deleting
-			if len(existingNvlIfcs) > 0 {
-				nvlIfcUpdateInputs := make([]cdbm.NVLinkInterfaceUpdateInput, len(existingNvlIfcs))
-				for i := range existingNvlIfcs {
-					existingNvlIfcs[i].Status = cdbm.NVLinkInterfaceStatusDeleting
-					nvlIfcUpdateInputs[i] = cdbm.NVLinkInterfaceUpdateInput{
-						NVLinkInterfaceID: existingNvlIfcs[i].ID,
-						Status:            cdb.GetStrPtr(cdbm.NVLinkInterfaceStatusDeleting),
+				// If the number of active NVLink interfaces is unchanged, consume matching keys (multiset match).
+				if nvLinkInterfacesUnchanged {
+					key := fmt.Sprintf("%s:%d", nvllPartitionID.String(), apiNvlIfc.DeviceInstance)
+					count := existingNvlIfcMap[key]
+					if count == 0 {
+						nvLinkInterfacesUnchanged = false
+					} else {
+						existingNvlIfcMap[key] = count - 1
 					}
 				}
-				_, err := nvlIfcDAO.UpdateMultiple(ctx, tx, nvlIfcUpdateInputs)
-				if err != nil {
-					logger.Error().Err(err).Msg("failed to update NVLink Interface records in DB")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update NVLink Interfaces for Instance, DB error", nil)
-				}
 			}
 
+			if !nvLinkInterfacesUnchanged {
+				nvllpIDMap := make(map[string]*cdbm.NVLinkLogicalPartition)
+				if nvllpIDs.Cardinality() > 0 {
+					nvllps, _, err := nvllpDAO.GetAll(ctx, nil, cdbm.NVLinkLogicalPartitionFilterInput{NVLinkLogicalPartitionIDs: nvllpIDs.ToSlice()}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+					if err != nil {
+						logger.Error().Err(err).Msg("error retrieving NVLink Logical Partitions from DB by IDs")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve NVLink Logical Partitions specified in request data, DB error", nil)
+					}
+					for i := range nvllps {
+						nvllpIDMap[nvllps[i].ID.String()] = &nvllps[i]
+					}
+				}
+				for _, apiNvlIfc := range apiRequest.NVLinkInterfaces {
+					nvllPartition, ok := nvllpIDMap[apiNvlIfc.NVLinkLogicalPartitionID]
+					if !ok {
+						return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Could not find NVLink Logical Partition with ID: %v specified in request data", apiNvlIfc.NVLinkLogicalPartitionID), nil)
+					}
+
+					newNvlIfc, err := nvlIfcDAO.Create(ctx, tx, cdbm.NVLinkInterfaceCreateInput{
+						InstanceID:               instanceID,
+						SiteID:                   site.ID,
+						NVLinkLogicalPartitionID: nvllPartition.ID,
+						DeviceInstance:           apiNvlIfc.DeviceInstance,
+						Status:                   cdbm.NVLinkInterfaceStatusPending,
+						CreatedBy:                dbUser.ID,
+					})
+
+					if err != nil {
+						logger.Error().Err(err).Msg("failed to create NVLink Interface record in DB")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create NVLink Interface for Instance, DB error", nil)
+					}
+					newNvlIfcs = append(newNvlIfcs, *newNvlIfc)
+				}
+				// Update status of existing NVLink interfaces to Deleting
+				if len(existingNvlIfcs) > 0 {
+					nvlIfcUpdateInputs := make([]cdbm.NVLinkInterfaceUpdateInput, len(existingNvlIfcs))
+					for i := range existingNvlIfcs {
+						existingNvlIfcs[i].Status = cdbm.NVLinkInterfaceStatusDeleting
+						nvlIfcUpdateInputs[i] = cdbm.NVLinkInterfaceUpdateInput{
+							NVLinkInterfaceID: existingNvlIfcs[i].ID,
+							Status:            cdb.GetStrPtr(cdbm.NVLinkInterfaceStatusDeleting),
+						}
+					}
+					_, err := nvlIfcDAO.UpdateMultiple(ctx, tx, nvlIfcUpdateInputs)
+					if err != nil {
+						logger.Error().Err(err).Msg("failed to update NVLink Interface records in DB")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update NVLink Interfaces for Instance, DB error", nil)
+					}
+				}
+			} else {
+				newNvlIfcs = existingNvlIfcs
+			}
 		} else {
 			newNvlIfcs = existingNvlIfcs
 		}
