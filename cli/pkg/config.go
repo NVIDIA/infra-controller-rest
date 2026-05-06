@@ -38,9 +38,10 @@ type ConfigAPI struct {
 }
 
 type ConfigAuth struct {
-	Token  string        `yaml:"token,omitempty"`
-	OIDC   *ConfigOIDC   `yaml:"oidc,omitempty"`
-	APIKey *ConfigAPIKey `yaml:"api_key,omitempty"`
+	Token        string        `yaml:"token,omitempty"`
+	TokenCommand string        `yaml:"token_command,omitempty"`
+	OIDC         *ConfigOIDC   `yaml:"oidc,omitempty"`
+	APIKey       *ConfigAPIKey `yaml:"api_key,omitempty"`
 }
 
 type ConfigOIDC struct {
@@ -176,6 +177,11 @@ func HasAPIKeyConfig(cfg *ConfigFile) bool {
 		cfg.Auth.APIKey.Key != ""
 }
 
+// HasTokenCommandConfig returns true when an auth token command is configured.
+func HasTokenCommandConfig(cfg *ConfigFile) bool {
+	return cfg.Auth.TokenCommand != ""
+}
+
 const SampleConfig = `# NICo CLI configuration
 #
 # API connection:
@@ -184,9 +190,10 @@ const SampleConfig = `# NICo CLI configuration
 #   api.name -- API path segment (default: nico)
 #
 # Authentication options (choose one):
-#   auth.token      -- direct bearer token (no login required)
-#   auth.oidc       -- OIDC password/client-credentials flow
-#   auth.api_key    -- NGC API key exchange
+#   auth.token         -- direct bearer token (no login required)
+#   auth.token_command -- shell command/script that prints a bearer token
+#   auth.oidc          -- OIDC password/client-credentials flow
+#   auth.api_key       -- NGC API key exchange
 #
 api:
   base: http://localhost:8388
@@ -197,7 +204,10 @@ auth:
   # Option 1: Direct bearer token
   # token: eyJhbGciOi...
 
-  # Option 2: OIDC provider (e.g. Keycloak)
+  # Option 2: Auth script/token command
+  # token_command: /path/to/get-nico-token.sh
+
+  # Option 3: OIDC provider (e.g. Keycloak)
   oidc:
     token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
     client_id: nico-api
@@ -205,8 +215,9 @@ auth:
     username: admin@example.com
     password: adminpassword
 
-  # Option 3: NGC API key
+  # Option 4: NGC API key
   # api_key:
-  #   authn_url: https://your-authn-server/token
   #   key: nvapi-xxxx
+  #   # authn_url is only required for legacy NGC keys (without nvapi- prefix)
+  #   # authn_url: https://your-authn-server/token
 `

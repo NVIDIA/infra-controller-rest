@@ -34,13 +34,34 @@ import (
 )
 
 type Client struct {
-	BaseURL    string
-	Org        string
-	Token      string
-	APIName    string
-	HTTPClient *http.Client
-	Debug      bool
-	Log        *logrus.Entry
+	BaseURL         string
+	Org             string
+	Token           string
+	APIName         string
+	HTTPClient      *http.Client
+	Debug           bool
+	Log             *logrus.Entry
+	TokenRefresh    func() (string, error)
+	AuthRetryMax    int
+	AuthRetryNotify func(AuthRetryEvent)
+}
+
+type AuthRetryAction string
+
+const (
+	AuthRetryActionLogin AuthRetryAction = "login"
+	AuthRetryActionRetry AuthRetryAction = "retry"
+	AuthRetryActionSkip  AuthRetryAction = "skip"
+	defaultAuthRetryMax                  = 3
+)
+
+type AuthRetryEvent struct {
+	Action      AuthRetryAction
+	Attempt     int
+	MaxAttempts int
+	StatusCode  int
+	Status      string
+	Method      string
 }
 
 type APIError struct {
@@ -92,6 +113,75 @@ func (c *Client) rewriteAPIName(path string) string {
 
 // Do executes an HTTP request against the API.
 func (c *Client) Do(method, pathTemplate string, pathParams, queryParams map[string]string, body []byte) ([]byte, http.Header, error) {
+	respBody, respHeader, err := c.do(method, pathTemplate, pathParams, queryParams, body)
+	if isUnauthorizedError(err) && c.TokenRefresh != nil && !canReplayAfterAuthRefresh(method) {
+		apiErr := err.(*APIError)
+		c.notifyAuthRetry(AuthRetryEvent{
+			Action:      AuthRetryActionSkip,
+			Attempt:     0,
+			MaxAttempts: c.authRetryMax(),
+			StatusCode:  apiErr.StatusCode,
+			Status:      apiErr.Status,
+			Method:      method,
+		})
+		return respBody, respHeader, err
+	}
+
+	maxAttempts := c.authRetryMax()
+	for attempt := 1; attempt <= maxAttempts && isUnauthorizedError(err) && c.TokenRefresh != nil; attempt++ {
+		apiErr := err.(*APIError)
+		c.notifyAuthRetry(AuthRetryEvent{
+			Action:      AuthRetryActionLogin,
+			Attempt:     attempt,
+			MaxAttempts: maxAttempts,
+			StatusCode:  apiErr.StatusCode,
+			Status:      apiErr.Status,
+			Method:      method,
+		})
+		token, refreshErr := c.TokenRefresh()
+		if refreshErr != nil {
+			return nil, nil, fmt.Errorf("refreshing auth token after unauthorized response: %w", refreshErr)
+		}
+		if token == "" {
+			return nil, nil, fmt.Errorf("refreshing auth token after unauthorized response: no token returned")
+		}
+		c.Token = token
+		c.notifyAuthRetry(AuthRetryEvent{
+			Action:      AuthRetryActionRetry,
+			Attempt:     attempt,
+			MaxAttempts: maxAttempts,
+			StatusCode:  apiErr.StatusCode,
+			Status:      apiErr.Status,
+			Method:      method,
+		})
+		respBody, respHeader, err = c.do(method, pathTemplate, pathParams, queryParams, body)
+	}
+	return respBody, respHeader, err
+}
+
+func (c *Client) authRetryMax() int {
+	if c.AuthRetryMax > 0 {
+		return c.AuthRetryMax
+	}
+	return defaultAuthRetryMax
+}
+
+func (c *Client) notifyAuthRetry(event AuthRetryEvent) {
+	if c.AuthRetryNotify != nil {
+		c.AuthRetryNotify(event)
+	}
+}
+
+func canReplayAfterAuthRefresh(method string) bool {
+	switch strings.ToUpper(method) {
+	case http.MethodGet, http.MethodHead, http.MethodOptions:
+		return true
+	default:
+		return false
+	}
+}
+
+func (c *Client) do(method, pathTemplate string, pathParams, queryParams map[string]string, body []byte) ([]byte, http.Header, error) {
 	path := pathTemplate
 	path = strings.ReplaceAll(path, "{org}", url.PathEscape(c.Org))
 	for k, v := range pathParams {
@@ -172,6 +262,14 @@ func (c *Client) Do(method, pathTemplate string, pathParams, queryParams map[str
 	}
 
 	return respBody, resp.Header, nil
+}
+
+func isUnauthorizedError(err error) bool {
+	apiErr, ok := err.(*APIError)
+	if !ok {
+		return false
+	}
+	return apiErr.StatusCode == http.StatusUnauthorized
 }
 
 // ResolveToken returns the token or executes the token command.

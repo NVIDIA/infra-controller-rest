@@ -21,6 +21,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetAuthToken_Priority(t *testing.T) {
@@ -84,6 +86,12 @@ func TestGetAuthToken_Priority(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHasTokenCommandConfig(t *testing.T) {
+	cfg := ConfigFile{Auth: ConfigAuth{TokenCommand: "printf token"}}
+	require.True(t, HasTokenCommandConfig(&cfg))
+	require.False(t, HasTokenCommandConfig(&ConfigFile{}))
 }
 
 func TestHasOIDCConfig(t *testing.T) {

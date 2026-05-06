@@ -18,6 +18,8 @@
 package cli
 
 import (
+	"flag"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -71,6 +73,35 @@ func TestToKebab(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClientFromContextExplicitTokenCommandOverridesCachedConfigToken(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	cfg := &ConfigFile{
+		API: ConfigAPI{
+			Base: "http://localhost:8388",
+			Org:  "test-org",
+		},
+		Auth: ConfigAuth{
+			Token: "cached-token",
+		},
+	}
+	require.NoError(t, SaveConfigToPath(cfg, configPath))
+	SetConfigPath(configPath)
+	defer SetConfigPath("")
+
+	flags := flag.NewFlagSet("test", flag.ContinueOnError)
+	flags.String("token", "", "")
+	flags.String("token-command", "", "")
+	flags.String("base-url", "", "")
+	flags.String("org", "", "")
+	flags.Bool("debug", false, "")
+	require.NoError(t, flags.Set("token-command", "printf explicit-token"))
+
+	ctx := cli.NewContext(cli.NewApp(), flags, nil)
+	client, err := clientFromContext(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "explicit-token", client.Token)
 }
 
 func TestOperationAction(t *testing.T) {

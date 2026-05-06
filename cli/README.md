@@ -85,7 +85,10 @@ auth:
   # Option 1: Direct bearer token
   # token: eyJhbGciOi...
 
-  # Option 2: OIDC provider (e.g. Keycloak)
+  # Option 2: Auth script/token command
+  # token_command: /path/to/get-nico-token.sh
+
+  # Option 3: OIDC provider (e.g. Keycloak)
   oidc:
     token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
     client_id: nico-api
@@ -93,10 +96,11 @@ auth:
     username: admin@example.com
     password: adminpassword
 
-  # Option 3: NGC API key
+  # Option 4: NGC API key
   # api_key:
-  #   authn_url: https://your-authn-server/token
   #   key: nvapi-xxxx
+  #   # authn_url is only required for legacy NGC keys (without nvapi- prefix)
+  #   # authn_url: https://your-authn-server/token
 ```
 
 ### Global flags
@@ -109,7 +113,7 @@ These flags apply to every command and override the corresponding config values.
 | `--base-url` | `NICO_BASE_URL` | API base URL |
 | `--org` | `NICO_ORG` | Organization name |
 | `--token` | `NICO_TOKEN` | Bearer token (skips login) |
-| `--token-command` | | Shell command that prints a bearer token on stdout |
+| `--token-command`, `--auth-script` | `NICO_TOKEN_COMMAND`, `NICO_AUTH_SCRIPT` | Shell command/script that prints a bearer token on stdout |
 | `--token-url` | `NICO_TOKEN_URL` | OIDC token endpoint URL for login and refresh |
 | `--keycloak-url` | `NICO_KEYCLOAK_URL` | Keycloak base URL (constructs `--token-url` if not set) |
 | `--keycloak-realm` | `NICO_KEYCLOAK_REALM` | Keycloak realm (default: `nico-dev`) |
@@ -144,11 +148,14 @@ nicocli --token-url https://auth.example.com/token login --client-secret "$NICO_
 # NGC API key (with explicit authn endpoint)
 nicocli login --api-key nvapi-xxxx --authn-url https://your-authn-server/token
 
+# Auth script/token command
+nicocli --auth-script /path/to/get-nico-token.sh login
+
 # Keycloak shorthand
 nicocli --keycloak-url http://localhost:8080 login --username admin@example.com
 ```
 
-Tokens are saved to `~/.nico/config.yaml` with auto-refresh for OIDC.
+Tokens are saved to the active config file (`~/.nico/config.yaml` by default, or the path selected with `--config` / the TUI config selector). OIDC is refreshed when possible; TUI mode reruns the configured auth method after `401 Unauthorized` API responses and retries safe read requests up to three times, logging each auth refresh/retry attempt.
 
 `login` accepts these flags in addition to the OIDC/OAuth global flags above:
 

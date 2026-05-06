@@ -700,19 +700,30 @@ func coerceValue(v string, schemaType SchemaType) (interface{}, error) {
 func clientFromContext(c *cli.Context) (*Client, error) {
 	cfg, _ := LoadConfig()
 
+	tokenCommand := c.String("token-command")
+	tokenCommandFromConfig := false
+	if tokenCommand == "" && HasTokenCommandConfig(cfg) {
+		tokenCommand = cfg.Auth.TokenCommand
+		tokenCommandFromConfig = true
+	}
+
 	token := c.String("token")
 	if token == "" {
-		token = GetAuthToken(cfg)
-		if token == "" {
-			var refreshErr error
-			token, refreshErr = AutoRefreshToken(cfg)
-			if refreshErr != nil {
-				fmt.Fprintf(os.Stderr, "Warning: auto-refresh token failed: %v\n", refreshErr)
+		if tokenCommand != "" && !tokenCommandFromConfig {
+			token = ""
+		} else {
+			token = GetAuthToken(cfg)
+			if token == "" {
+				var refreshErr error
+				token, refreshErr = AutoRefreshToken(cfg)
+				if refreshErr != nil {
+					fmt.Fprintf(os.Stderr, "Warning: auto-refresh token failed: %v\n", refreshErr)
+				}
 			}
 		}
 	}
 
-	resolved, err := ResolveToken(token, c.String("token-command"))
+	resolved, err := ResolveToken(token, tokenCommand)
 	if err != nil {
 		return nil, err
 	}
@@ -748,6 +759,15 @@ func clientFromContext(c *cli.Context) (*Client, error) {
 
 	client := NewClient(baseURL, org, resolved, log, debug)
 	client.APIName = apiName
+	if tokenCommand != "" {
+		configPath := ConfigPath()
+		client.TokenRefresh = func() (string, error) {
+			if tokenCommandFromConfig {
+				return LoginWithTokenCommand(cfg, configPath, tokenCommand)
+			}
+			return ExecuteTokenCommand(tokenCommand)
+		}
+	}
 	return client, nil
 }
 

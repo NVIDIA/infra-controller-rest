@@ -132,9 +132,18 @@ func RunTUI(explicitConfig string) error {
 		apiName = "nico"
 	}
 
-	token, _ := cli.AutoRefreshToken(cfg)
+	token, refreshErr := cli.AutoRefreshTokenToPath(cfg, configPath)
+	if refreshErr != nil {
+		return fmt.Errorf("refreshing auth token: %w", refreshErr)
+	}
 	if token == "" {
 		token = cli.GetAuthToken(cfg)
+	}
+	if token == "" && (cli.HasTokenCommandConfig(cfg) || cli.HasOIDCConfig(cfg) || cli.HasAPIKeyConfig(cfg)) {
+		token, err = cli.LoginFromConfig(cfg, configPath)
+		if err != nil {
+			return fmt.Errorf("logging in from config: %w", err)
+		}
 	}
 
 	client := cli.NewClient(baseURL, org, token, nil, false)
@@ -143,9 +152,30 @@ func RunTUI(explicitConfig string) error {
 	session := NewSession(client, org, configPath)
 	session.Token = token
 
-	if cli.HasOIDCConfig(cfg) || cli.HasAPIKeyConfig(cfg) {
-		session.LoginFn = func() (string, error) {
-			return loginFromConfig(cfg, configPath)
+	if cli.HasTokenCommandConfig(cfg) || cli.HasOIDCConfig(cfg) || cli.HasAPIKeyConfig(cfg) {
+		loginFn := func() (string, error) {
+			return cli.LoginFromConfig(cfg, configPath)
+		}
+		session.LoginFn = loginFn
+		client.TokenRefresh = func() (string, error) {
+			token, err := loginFn()
+			if err == nil && token != "" {
+				session.RefreshClient(token)
+			}
+			return token, err
+		}
+		client.AuthRetryNotify = func(event cli.AuthRetryEvent) {
+			switch event.Action {
+			case cli.AuthRetryActionLogin:
+				fmt.Fprintf(os.Stderr, "%s API returned %d; running configured login (%d/%d).\n",
+					Yellow("Auth:"), event.StatusCode, event.Attempt, event.MaxAttempts)
+			case cli.AuthRetryActionRetry:
+				fmt.Fprintf(os.Stderr, "%s Retrying API request with refreshed token (%d/%d).\n",
+					Yellow("Auth:"), event.Attempt, event.MaxAttempts)
+			case cli.AuthRetryActionSkip:
+				fmt.Fprintf(os.Stderr, "%s API returned %d for %s; automatic retry skipped for non-idempotent request. Run %s and retry the command.\n",
+					Yellow("Auth:"), event.StatusCode, event.Method, Bold("login"))
+			}
 		}
 	}
 
@@ -155,22 +185,4 @@ func RunTUI(explicitConfig string) error {
 	}
 
 	return RunREPL(session)
-}
-
-// loginFromConfig performs a fresh login using the config's auth method.
-func loginFromConfig(cfg *cli.ConfigFile, configPath string) (string, error) {
-	if cli.HasOIDCConfig(cfg) {
-		newToken, err := cli.AutoRefreshToken(cfg)
-		if err != nil || newToken == "" {
-			return "", fmt.Errorf("OIDC token refresh failed: %w", err)
-		}
-		if saveErr := cli.SaveConfigToPath(cfg, configPath); saveErr != nil {
-			fmt.Fprintf(os.Stderr, "Warning: could not save refreshed token: %v\n", saveErr)
-		}
-		return newToken, nil
-	}
-	if cli.HasAPIKeyConfig(cfg) {
-		return cli.ExchangeAPIKey(cfg, configPath)
-	}
-	return "", fmt.Errorf("no auth method configured")
 }

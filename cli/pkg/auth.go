@@ -72,20 +72,102 @@ func LoginCommand() *cli.Command {
 		Action: func(c *cli.Context) error {
 			cfg, _ := LoadConfig()
 
+			tokenCommand := c.String("token-command")
+			if tokenCommand != "" {
+				if _, err := LoginWithTokenCommand(cfg, ConfigPath(), tokenCommand); err != nil {
+					return err
+				}
+				fmt.Fprintf(os.Stderr, "Login successful (auth script). Token saved to %s\n", ConfigPath())
+				return nil
+			}
+
+			explicitAPIKey := hasExplicitAPIKeyLoginFlags(c)
 			apiKey := c.String("api-key")
-			if apiKey == "" && HasAPIKeyConfig(cfg) {
+			if apiKey == "" && explicitAPIKey && cfg.Auth.APIKey != nil {
 				apiKey = cfg.Auth.APIKey.Key
 			}
-			if apiKey != "" {
+			if explicitAPIKey {
+				if apiKey == "" {
+					return fmt.Errorf("api-key must be provided when using API key auth")
+				}
 				authnURL := c.String("authn-url")
 				if authnURL == "" && cfg.Auth.APIKey != nil && cfg.Auth.APIKey.AuthnURL != "" {
 					authnURL = cfg.Auth.APIKey.AuthnURL
 				}
+				if authnURL == "" && !isNGCBearerAPIKey(apiKey) {
+					return fmt.Errorf("authn-url must be provided when using --api-key (legacy NGC keys); not required for nvapi- prefixed keys")
+				}
 				return loginWithAPIKey(cfg, authnURL, apiKey)
+			}
+
+			if hasExplicitOIDCLoginFlags(c) {
+				return loginWithOIDCCmd(c, cfg)
+			}
+
+			if HasTokenCommandConfig(cfg) {
+				if _, err := LoginWithTokenCommand(cfg, ConfigPath(), cfg.Auth.TokenCommand); err != nil {
+					return err
+				}
+				fmt.Fprintf(os.Stderr, "Login successful (auth script). Token saved to %s\n", ConfigPath())
+				return nil
+			}
+			if HasOIDCConfig(cfg) {
+				_, err := LoginWithOIDCConfig(cfg, ConfigPath())
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(os.Stderr, "Login successful. Token saved to %s\n", ConfigPath())
+				return nil
+			}
+			if cfg.Auth.APIKey != nil && cfg.Auth.APIKey.Key != "" {
+				if cfg.Auth.APIKey.AuthnURL == "" && !isNGCBearerAPIKey(cfg.Auth.APIKey.Key) {
+					return fmt.Errorf("auth.api_key.authn_url is required in config (legacy NGC keys); not required for nvapi- prefixed keys")
+				}
+				return loginWithAPIKey(cfg, cfg.Auth.APIKey.AuthnURL, cfg.Auth.APIKey.Key)
 			}
 			return loginWithOIDCCmd(c, cfg)
 		},
 	}
+}
+
+// isNGCBearerAPIKey reports whether an NGC API key is a Personal or Service key
+// that already serves as a bearer token. These keys are prefixed with "nvapi-"
+// and do not need to be exchanged via the authn URL. Legacy NGC API keys
+// (without the prefix) must still be exchanged for a bearer token.
+func isNGCBearerAPIKey(apiKey string) bool {
+	return strings.HasPrefix(apiKey, "nvapi-")
+}
+
+func hasExplicitOIDCLoginFlags(c *cli.Context) bool {
+	for _, name := range []string{"token-url", "keycloak-url", "keycloak-realm", "client-id", "client-secret", "username", "password"} {
+		if cliFlagExplicitlySet(c, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func hasExplicitAPIKeyLoginFlags(c *cli.Context) bool {
+	return cliFlagExplicitlySet(c, "api-key") || cliFlagExplicitlySet(c, "authn-url")
+}
+
+func cliFlagExplicitlySet(c *cli.Context, name string) bool {
+	for _, flagName := range c.FlagNames() {
+		if flagName == name {
+			return commandLineContainsFlag(name)
+		}
+	}
+	return false
+}
+
+func commandLineContainsFlag(name string) bool {
+	longFlag := "--" + name
+	for _, arg := range os.Args[1:] {
+		if arg == longFlag || strings.HasPrefix(arg, longFlag+"=") {
+			return true
+		}
+	}
+	return false
 }
 
 // InitCommand returns the 'init' CLI command that generates a sample config.
@@ -110,11 +192,96 @@ func InitCommand() *cli.Command {
 	}
 }
 
+// LoginFromConfig performs a login using the configured auth method and returns
+// the current bearer token.
+func LoginFromConfig(cfg *ConfigFile, configPath string) (string, error) {
+	if HasTokenCommandConfig(cfg) {
+		return LoginWithTokenCommand(cfg, configPath, cfg.Auth.TokenCommand)
+	}
+	if HasOIDCConfig(cfg) {
+		return LoginWithOIDCConfig(cfg, configPath)
+	}
+	if HasAPIKeyConfig(cfg) {
+		return ExchangeAPIKey(cfg, configPath)
+	}
+	return "", fmt.Errorf("no auth method configured")
+}
+
+// LoginWithTokenCommand runs a shell command that prints a bearer token,
+// stores it in config, and returns it.
+func LoginWithTokenCommand(cfg *ConfigFile, configPath, tokenCommand string) (string, error) {
+	token, err := ExecuteTokenCommand(tokenCommand)
+	if err != nil {
+		return "", err
+	}
+	cfg.Auth.TokenCommand = tokenCommand
+	cfg.Auth.Token = token
+	if err := SaveConfigToPath(cfg, configPath); err != nil {
+		return "", fmt.Errorf("saving config: %w", err)
+	}
+	return token, nil
+}
+
+// ExecuteTokenCommand runs a shell command that prints a bearer token.
+func ExecuteTokenCommand(tokenCommand string) (string, error) {
+	token, err := ResolveToken("", tokenCommand)
+	if err != nil {
+		return "", err
+	}
+	if token == "" {
+		return "", fmt.Errorf("auth script did not return a token")
+	}
+	return token, nil
+}
+
+// LoginWithOIDCConfig performs a non-interactive OIDC login from config.
+func LoginWithOIDCConfig(cfg *ConfigFile, configPath string) (string, error) {
+	if !HasOIDCConfig(cfg) {
+		return "", fmt.Errorf("no OIDC auth configured")
+	}
+	oidc := cfg.Auth.OIDC
+
+	var tokenResp *TokenResponse
+	var err error
+	if oidc.RefreshToken != "" {
+		tokenResp, err = refreshTokenGrant(oidc.TokenURL, oidc.ClientID, oidc.ClientSecret, oidc.RefreshToken)
+	}
+	if tokenResp == nil && oidc.Username == "" && oidc.ClientSecret != "" {
+		tokenResp, err = clientCredentialsGrant(oidc.TokenURL, oidc.ClientID, oidc.ClientSecret)
+	}
+	if tokenResp == nil && oidc.Username != "" && oidc.Password != "" {
+		tokenResp, err = passwordGrant(oidc.TokenURL, oidc.ClientID, oidc.ClientSecret, oidc.Username, oidc.Password)
+	}
+	if tokenResp == nil {
+		if err != nil {
+			return "", fmt.Errorf("OIDC login failed: %w", err)
+		}
+		return "", fmt.Errorf("OIDC login requires auth.oidc.refresh_token, client credentials, or username/password in config")
+	}
+
+	if err := saveOIDCToken(oidc, tokenResp); err != nil {
+		return "", err
+	}
+	if err := SaveConfigToPath(cfg, configPath); err != nil {
+		return "", fmt.Errorf("saving config: %w", err)
+	}
+	return tokenResp.AccessToken, nil
+}
+
 // ExchangeAPIKey exchanges an NGC API key for a bearer token, updates the config,
-// and saves it. Returns the new token.
+// and saves it. Returns the new token. NGC Personal/Service API keys (those
+// prefixed with "nvapi-") are bearer tokens themselves and are returned as-is
+// without contacting the authn endpoint.
 func ExchangeAPIKey(cfg *ConfigFile, configPath string) (string, error) {
 	if cfg.Auth.APIKey == nil || cfg.Auth.APIKey.Key == "" {
 		return "", fmt.Errorf("no NGC API key configured")
+	}
+	if isNGCBearerAPIKey(cfg.Auth.APIKey.Key) {
+		cfg.Auth.APIKey.Token = cfg.Auth.APIKey.Key
+		if saveErr := SaveConfigToPath(cfg, configPath); saveErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not save token: %v\n", saveErr)
+		}
+		return cfg.Auth.APIKey.Key, nil
 	}
 	authnURL := cfg.Auth.APIKey.AuthnURL
 	if authnURL == "" {
@@ -154,6 +321,18 @@ func ExchangeAPIKey(cfg *ConfigFile, configPath string) (string, error) {
 }
 
 func loginWithAPIKey(cfg *ConfigFile, authnURL, apiKey string) error {
+	if isNGCBearerAPIKey(apiKey) {
+		if cfg.Auth.APIKey == nil {
+			cfg.Auth.APIKey = &ConfigAPIKey{}
+		}
+		cfg.Auth.APIKey.Key = apiKey
+		cfg.Auth.APIKey.Token = apiKey
+		if err := SaveConfig(cfg); err != nil {
+			return fmt.Errorf("saving config: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "Login successful (NGC API key). Token saved to %s\n", ConfigPath())
+		return nil
+	}
 	req, err := http.NewRequest("GET", authnURL, nil)
 	if err != nil {
 		return fmt.Errorf("building request: %w", err)
@@ -269,9 +448,9 @@ func loginWithOIDCCmd(c *cli.Context, cfg *ConfigFile) error {
 	if cfg.Auth.OIDC == nil {
 		cfg.Auth.OIDC = &ConfigOIDC{}
 	}
-	cfg.Auth.OIDC.Token = tokenResp.AccessToken
-	cfg.Auth.OIDC.RefreshToken = tokenResp.RefreshToken
-	cfg.Auth.OIDC.ExpiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second).Format(time.RFC3339)
+	if err := saveOIDCToken(cfg.Auth.OIDC, tokenResp); err != nil {
+		return err
+	}
 	cfg.Auth.OIDC.TokenURL = tokenURL
 	cfg.Auth.OIDC.ClientID = clientID
 	cfg.Auth.OIDC.ClientSecret = clientSecret
@@ -350,6 +529,12 @@ func postToken(tokenURL string, data url.Values) (*TokenResponse, error) {
 
 // AutoRefreshToken attempts to refresh the OIDC token if it is near expiry.
 func AutoRefreshToken(cfg *ConfigFile) (string, error) {
+	return AutoRefreshTokenToPath(cfg, ConfigPath())
+}
+
+// AutoRefreshTokenToPath attempts to refresh the OIDC token if it is near expiry
+// and saves refreshed tokens to configPath.
+func AutoRefreshTokenToPath(cfg *ConfigFile, configPath string) (string, error) {
 	if cfg.Auth.OIDC == nil {
 		return GetAuthToken(cfg), nil
 	}
@@ -380,12 +565,26 @@ func AutoRefreshToken(cfg *ConfigFile) (string, error) {
 		return oidc.Token, nil
 	}
 
-	oidc.Token = tokenResp.AccessToken
-	oidc.RefreshToken = tokenResp.RefreshToken
-	oidc.ExpiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second).Format(time.RFC3339)
-	if err := SaveConfig(cfg); err != nil {
+	if err := saveOIDCToken(oidc, tokenResp); err != nil {
+		return oidc.Token, err
+	}
+	if err := SaveConfigToPath(cfg, configPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning: token refreshed but could not save config: %v\n", err)
 	}
 
 	return oidc.Token, nil
+}
+
+func saveOIDCToken(oidc *ConfigOIDC, tokenResp *TokenResponse) error {
+	if tokenResp.AccessToken == "" {
+		return fmt.Errorf("OIDC token response did not contain an access token")
+	}
+	oidc.Token = tokenResp.AccessToken
+	if tokenResp.RefreshToken != "" {
+		oidc.RefreshToken = tokenResp.RefreshToken
+	}
+	if tokenResp.ExpiresIn > 0 {
+		oidc.ExpiresAt = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second).Format(time.RFC3339)
+	}
+	return nil
 }

@@ -76,8 +76,10 @@ func NewApp(specData []byte) (*cli.App, error) {
 				EnvVars: []string{"NICO_TOKEN"},
 			},
 			&cli.StringFlag{
-				Name:  "token-command",
-				Usage: "Shell command that prints a bearer token",
+				Name:    "token-command",
+				Aliases: []string{"auth-script"},
+				Usage:   "Shell command/script that prints a bearer token",
+				EnvVars: []string{"NICO_TOKEN_COMMAND", "NICO_AUTH_SCRIPT"},
 			},
 			&cli.BoolFlag{
 				Name:  "debug",
