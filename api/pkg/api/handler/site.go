@@ -458,6 +458,9 @@ func (ush UpdateSiteHandler) Handle(c echo.Context) error {
 
 	// Check if Site capabilities can be modified
 	if apiRequest.Capabilities != nil {
+		if es.Config == nil {
+			es.Config = &cdbm.SiteConfig{}
+		}
 		if apiRequest.Capabilities.NativeNetworking != nil && *apiRequest.Capabilities.NativeNetworking != es.Config.NativeNetworking && !*apiRequest.Capabilities.NativeNetworking {
 			// Native Networking is being disabled
 			// Check if there are VPCs that have virtualization type set to FNN
