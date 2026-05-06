@@ -994,7 +994,7 @@ func TestManageSite_DeleteOrphanedSiteTemporalNamespaces_Activity(t *testing.T) 
 
 // TestManageSite_DeleteSiteComponentsFromDB_NewResources covers the additional
 // site-scoped resources that DeleteSiteComponentsFromDB now cleans up
-// (interfaces, vpc prefixes, vpc peerings, fabrics, NVLink logical partitions,
+// (interfaces, vpc prefixes, vpc peerings, NVLink logical partitions,
 // SSH key group site/instance associations, network security groups, DPU
 // extension service deployments, tenant sites, SKUs, allocations, allocation
 // constraints, and the expected_machine / expected_switch / expected_power_shelf
@@ -1034,7 +1034,7 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 
 	// siteResources captures the IDs we expect to verify after the cleanup
 	// runs. Pointer types are used where the underlying ID type isn't
-	// uuid.UUID (Fabric, NSG, SKU all use string IDs).
+	// uuid.UUID (NSG, SKU all use string IDs).
 	type siteResources struct {
 		site               *cdbm.Site
 		instance           *cdbm.Instance
@@ -1042,7 +1042,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		ipBlock            *cdbm.IPBlock
 		vpcPrefixID        uuid.UUID
 		vpcPeeringID       uuid.UUID
-		fabricID           string
 		nvllpID            uuid.UUID
 		nsgID              string
 		skuID              string
@@ -1104,9 +1103,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		// real FKs on both, so we use the two VPCs created above.
 		vpcPeering := util.TestBuildVpcPeering(t, dbSession, vpc.ID, vpc2.ID, site.ID, ip.ID, tenant.ID, ipu.ID)
 
-		// Fabric IDs are strings; tag them so the two sites do not collide.
-		fabric := util.TestBuildFabric(t, dbSession, "fabric-"+tag, site, ip.ID, cdbm.FabricStatusReady)
-
 		// NVLink logical partition + an NVLink interface attached to it.
 		nvllp := util.TestBuildNVLinkLogicalPartition(t, dbSession, "nvllp-"+tag, nil, site, tenant, cdbm.NVLinkLogicalPartitionStatusReady, false)
 		nvli := util.TestBuildNVLinkInterface(t, dbSession, instance.ID, site.ID, nvllp.ID, cdb.GetStrPtr("Nvidia GB200"), 0, cdb.GetStrPtr("guid-"+tag), nil, cdbm.NVLinkInterfaceStatusReady)
@@ -1155,7 +1151,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 			ipBlock:            ipBlock,
 			vpcPrefixID:        vpcPrefix.ID,
 			vpcPeeringID:       vpcPeering.ID,
-			fabricID:           fabric.ID,
 			nvllpID:            nvllp.ID,
 			nsgID:              nsg.ID,
 			skuID:              sku.ID,
@@ -1222,7 +1217,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 	}
 	assertGone("vpc_prefix", &cdbm.VpcPrefix{}, "vp.id", site1Resources.vpcPrefixID)
 	assertGone("vpc_peering", &cdbm.VpcPeering{}, "vp.id", site1Resources.vpcPeeringID)
-	assertGone("fabric", &cdbm.Fabric{}, "fb.id", site1Resources.fabricID)
 	assertGone("nvlink_logical_partition", &cdbm.NVLinkLogicalPartition{}, "nvllp.id", site1Resources.nvllpID)
 	assertGone("ssh_key_group_site_association", &cdbm.SSHKeyGroupSiteAssociation{}, "skgsa.id", site1Resources.sshKeyGroupSiteID)
 	assertGone("ssh_key_group_instance_association", &cdbm.SSHKeyGroupInstanceAssociation{}, "skgia.id", site1Resources.sshKeyGroupInstID)
@@ -1249,7 +1243,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 	}
 	assertPresent("vpc_prefix", &cdbm.VpcPrefix{}, "vp.id", site2Resources.vpcPrefixID)
 	assertPresent("vpc_peering", &cdbm.VpcPeering{}, "vp.id", site2Resources.vpcPeeringID)
-	assertPresent("fabric", &cdbm.Fabric{}, "fb.id", site2Resources.fabricID)
 	assertPresent("nvlink_logical_partition", &cdbm.NVLinkLogicalPartition{}, "nvllp.id", site2Resources.nvllpID)
 	assertPresent("ssh_key_group_site_association", &cdbm.SSHKeyGroupSiteAssociation{}, "skgsa.id", site2Resources.sshKeyGroupSiteID)
 	assertPresent("ssh_key_group_instance_association", &cdbm.SSHKeyGroupInstanceAssociation{}, "skgia.id", site2Resources.sshKeyGroupInstID)

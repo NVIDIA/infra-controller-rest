@@ -59,7 +59,6 @@ func init() {
 		}{
 			{"vpc_prefix", "vp"},
 			{"vpc_peering", "vp"},
-			{"fabric", "fb"},
 			{"nvlink_logical_partition", "nvllp"},
 			{"ssh_key_group_site_association", "skgsa"},
 			{"ssh_key_group_instance_association", "skgia"},
@@ -113,7 +112,7 @@ func init() {
 			handlePanic(terr, "failed to commit transaction")
 		}
 
-		fmt.Print(" [up migration] Soft-deleted orphan site-scoped rows across interface, vpc_prefix, vpc_peering, fabric, nvlink_logical_partition, ssh_key_group_site_association, ssh_key_group_instance_association, network_security_group, dpu_extension_service_deployment, tenant_site, allocation, and allocation_constraint; hard-deleted orphan rows from sku, expected_machine, expected_switch, and expected_power_shelf. ")
+		fmt.Print(" [up migration] Soft-deleted orphan site-scoped rows across interface, vpc_prefix, vpc_peering, nvlink_logical_partition, ssh_key_group_site_association, ssh_key_group_instance_association, network_security_group, dpu_extension_service_deployment, tenant_site, allocation, and allocation_constraint; hard-deleted orphan rows from sku, expected_machine, expected_switch, and expected_power_shelf. ")
 		return nil
 	}, func(_ context.Context, _ *bun.DB) error {
 		fmt.Print(" [down migration] No-op (data cleanup cannot be reversed). ")

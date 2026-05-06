@@ -62,7 +62,7 @@ type ManageSite struct {
 
 // DeleteSiteComponentsFromDB is a Temporal activity that initiates delete for instance type, machine,
 // machine interface, machine capability, operating system, instance, subnet, vpc, vpc peering, vpc prefix,
-// infiniband partition, fabric, nvlink logical partition, dpu extension service deployment,
+// infiniband partition, nvlink logical partition, dpu extension service deployment,
 // interface, nvlink interface, infiniband interface, ssh key group, tenant site, sku, allocation, and allocation constraint
 func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uuid.UUID, infrastructureProviderID uuid.UUID, purgeMachines bool) error {
 	logger := log.With().Str("Activity", "DeleteSiteComponentsFromDB").Str("Site ID", siteID.String()).
@@ -87,7 +87,6 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 	subnetDAO := cdbm.NewSubnetDAO(mst.dbSession)
 	vpfxDAO := cdbm.NewVpcPrefixDAO(mst.dbSession)
 	ibpDAO := cdbm.NewInfiniBandPartitionDAO(mst.dbSession)
-	fbDAO := cdbm.NewFabricDAO(mst.dbSession)
 	nvllpDAO := cdbm.NewNVLinkLogicalPartitionDAO(mst.dbSession)
 	mitDAO := cdbm.NewMachineInstanceTypeDAO(mst.dbSession)
 	mDAO := cdbm.NewMachineDAO(mst.dbSession)
@@ -351,21 +350,6 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		serr := ibpDAO.Delete(ctx, nil, ibp.ID)
 		if serr != nil && serr != cdb.ErrDoesNotExist {
 			logger.Error().Err(serr).Str("IB Partition ID", ibp.ID.String()).Msg("error deleting IB Partition record in DB")
-			return serr
-		}
-	}
-
-	// Delete Fabrics
-	fabrics, _, err := fbDAO.GetAll(ctx, nil, nil, &siteID, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Fabrics from DB by Site ID")
-		return err
-	}
-
-	for _, fabric := range fabrics {
-		serr := fbDAO.DeleteByID(ctx, nil, fabric.ID, siteID)
-		if serr != nil && serr != cdb.ErrDoesNotExist {
-			logger.Error().Err(serr).Str("Fabric ID", fabric.ID).Msg("error deleting Fabric record in DB")
 			return serr
 		}
 	}
