@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
@@ -34,9 +35,12 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 
+	cip "github.com/NVIDIA/infra-controller-rest/ipam"
+
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	modelutil "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
@@ -364,7 +368,7 @@ func NewGetAllVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client,
 // @Param vpcId query string true "ID of Vpc"
 // @Param query query string false "Query input for full text search"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'IPBlock'"
-// @Param includeUsageStats query boolean false "VPC prefix IPAM usage stats (same shape as IP Block usage)"
+// @Param includeUsageStats query boolean false "IPv4 usage (interface/instance-derived; same shape as IP Block usage)"
 // @Param pageNumber query integer false "Page number of results returned"
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
@@ -427,9 +431,18 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	includeUsageStats, queryIncludeRelations, err := common.ParseIncludeUsageStats(c, qIncludeRelations, cdbm.IPBlockRelationName)
-	if err != nil {
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPBlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPBlockRelationName)
 	}
 
 	// Get site ID from query param
@@ -502,16 +515,15 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 
 	puVpMap := map[uuid.UUID]*cip.Usage{}
 	if includeUsageStats {
-		ipamStorage := ipam.NewIpamStorage(gash.dbSession.DB, nil)
 		for i := range vpcPrefixes {
 			vp := &vpcPrefixes[i]
 			if vp.IPBlock == nil {
 				logger.Error().Str("vpcPrefixId", vp.ID.String()).Msg("VPC prefix missing IP Block relation for usage stats")
 				continue
 			}
-			prefixUsage, serr := ipam.GetIpamUsageForVpcPrefix(ctx, ipamStorage, vp, vp.IPBlock)
+			prefixUsage, serr := modelutil.GetInterfaceBasedUsageForVpcPrefix(ctx, gash.dbSession.DB, vp)
 			if serr != nil {
-				logger.Error().Err(serr).Msg("error retrieving ipam usage stats for VPC prefix")
+				logger.Error().Err(serr).Msg("error retrieving usage stats for VPC prefix")
 				continue
 			}
 			puVpMap[vp.ID] = prefixUsage
@@ -592,7 +604,7 @@ func NewGetVpcPrefixHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of VPC prefix"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
-// @Param includeUsageStats query boolean false "VPC prefix IPAM usage stats (same shape as IP Block usage)"
+// @Param includeUsageStats query boolean false "IPv4 usage (interface/instance-derived; same shape as IP Block usage)"
 // @Success 200 {object} model.APIVpcPrefix
 // @Router /v2/org/{org}/nico/vpcprefix/{id} [get]
 func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
@@ -630,9 +642,18 @@ func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	includeUsageStats, queryIncludeRelations, err := common.ParseIncludeUsageStats(c, qIncludeRelations, cdbm.IPBlockRelationName)
-	if err != nil {
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPBlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPBlockRelationName)
 	}
 
 	// Get VPC prefix ID from URL param
@@ -685,10 +706,9 @@ func (gsh GetVpcPrefixHandler) Handle(c echo.Context) error {
 			logger.Error().Str("vpcPrefixId", vpcPrefix.ID.String()).Msg("VPC prefix missing IP Block relation for usage stats")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for VPC prefix", nil)
 		}
-		ipamStorage := ipam.NewIpamStorage(gsh.dbSession.DB, nil)
-		puVPC, err = ipam.GetIpamUsageForVpcPrefix(ctx, ipamStorage, vpcPrefix, vpcPrefix.IPBlock)
+		puVPC, err = modelutil.GetInterfaceBasedUsageForVpcPrefix(ctx, gsh.dbSession.DB, vpcPrefix)
 		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving ipam usage stats details for VPC prefix")
+			logger.Error().Err(err).Msg("error retrieving usage stats for VPC prefix")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for VPC prefix", nil)
 		}
 	}

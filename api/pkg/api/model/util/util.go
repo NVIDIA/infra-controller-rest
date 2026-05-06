@@ -18,9 +18,17 @@
 package util
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"net/netip"
+	"strings"
 
+	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
+	"github.com/google/uuid"
+	"github.com/uptrace/bun"
+
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"gopkg.in/yaml.v3"
 )
@@ -173,4 +181,140 @@ func ProtobufLabelsFromAPILabels(labels map[string]string) []*cwssaws.Label {
 		})
 	}
 	return protoLabels
+}
+
+// ipv4UsableHostAddressesForPrefixBits returns assignable IPv4 host count for a prefix length (/32 and /31 special-cased).
+func ipv4UsableHostAddressesForPrefixBits(prefixBits int) uint64 {
+	if prefixBits < 0 || prefixBits > 32 {
+		return 0
+	}
+	hostBits := 32 - prefixBits
+	switch {
+	case hostBits == 0:
+		return 1
+	case prefixBits == 31:
+		return 2
+	default:
+		total := uint64(1) << uint(hostBits)
+		if total >= 2 {
+			return total - 2
+		}
+		return total
+	}
+}
+
+// IPv4UsableHostAddrsFromCidr returns usable IPv4 host addresses for the given CIDR for interface/instance usage stats.
+func IPv4UsableHostAddrsFromCidr(cidr string) (uint64, error) {
+	p, err := netip.ParsePrefix(cidr)
+	if err != nil {
+		return 0, err
+	}
+	if !p.Addr().Is4() {
+		return 0, fmt.Errorf("usage stats support IPv4 only, got %s", cidr)
+	}
+	return ipv4UsableHostAddressesForPrefixBits(int(p.Bits())), nil
+}
+
+func vpcPrefixIPv4Cidr(vp *cdbm.VpcPrefix) string {
+	if vp == nil {
+		return ""
+	}
+	if strings.Contains(vp.Prefix, "/") {
+		return vp.Prefix
+	}
+	return fmt.Sprintf("%s/%d", vp.Prefix, vp.PrefixLength)
+}
+
+func subnetIPv4Cidr(sn *cdbm.Subnet) (string, error) {
+	if sn == nil {
+		return "", fmt.Errorf("subnet is nil")
+	}
+	if sn.IPv4Prefix == nil || *sn.IPv4Prefix == "" {
+		return "", fmt.Errorf("subnet has no IPv4 prefix")
+	}
+	p := *sn.IPv4Prefix
+	if strings.Contains(p, "/") {
+		return p, nil
+	}
+	return fmt.Sprintf("%s/%d", p, sn.PrefixLength), nil
+}
+
+func countInterfacesAndDistinctInstances(ctx context.Context, db bun.IDB, subnetID *uuid.UUID, vpcPrefixID *uuid.UUID) (ifaceCount, instCount uint64, err error) {
+	var row struct {
+		Iface int64 `bun:"iface_count"`
+		Inst  int64 `bun:"inst_count"`
+	}
+	switch {
+	case subnetID != nil:
+		err = db.NewRaw(
+			`SELECT count(*) AS iface_count, count(distinct instance_id) AS inst_count FROM "interface" AS ifc WHERE ifc.subnet_id = ? AND ifc.deleted IS NULL`,
+			*subnetID,
+		).Scan(ctx, &row)
+	case vpcPrefixID != nil:
+		err = db.NewRaw(
+			`SELECT count(*) AS iface_count, count(distinct instance_id) AS inst_count FROM "interface" AS ifc WHERE ifc.vpc_prefix_id = ? AND ifc.deleted IS NULL`,
+			*vpcPrefixID,
+		).Scan(ctx, &row)
+	default:
+		return 0, 0, fmt.Errorf("usage stats: need subnet or vpc prefix id")
+	}
+	if err != nil {
+		return 0, 0, err
+	}
+	return uint64(row.Iface), uint64(row.Inst), nil
+}
+
+func ipamUsageFromInterfaceTelemetry(usableHosts, ifaceCount, instCount uint64) *cipam.Usage {
+	var available uint64
+	if usableHosts > ifaceCount {
+		available = usableHosts - ifaceCount
+	}
+	return &cipam.Usage{
+		AvailableIPs:              available,
+		AcquiredIPs:               ifaceCount,
+		AvailableSmallestPrefixes: 0,
+		AvailablePrefixes:         nil,
+		AcquiredPrefixes:          instCount,
+	}
+}
+
+// GetInterfaceBasedUsageForVpcPrefix returns ipam.Usage-shaped stats from VPC prefix IPv4 size and
+// interface/instance rows for this vpc_prefix_id (Core allocates instance IPs; not the IPAM subtree).
+func GetInterfaceBasedUsageForVpcPrefix(ctx context.Context, db bun.IDB, vp *cdbm.VpcPrefix) (*cipam.Usage, error) {
+	if vp == nil {
+		return nil, fmt.Errorf("vpc prefix is nil")
+	}
+	cidr := vpcPrefixIPv4Cidr(vp)
+	if cidr == "" {
+		return nil, fmt.Errorf("vpc prefix has no IPv4 CIDR")
+	}
+	usable, err := IPv4UsableHostAddrsFromCidr(cidr)
+	if err != nil {
+		return nil, err
+	}
+	ifaceCount, instCount, err := countInterfacesAndDistinctInstances(ctx, db, nil, &vp.ID)
+	if err != nil {
+		return nil, err
+	}
+	return ipamUsageFromInterfaceTelemetry(usable, ifaceCount, instCount), nil
+}
+
+// GetInterfaceBasedUsageForSubnet returns ipam.Usage-shaped stats from subnet IPv4 CIDR and interface/instance rows for subnet_id.
+func GetInterfaceBasedUsageForSubnet(ctx context.Context, db bun.IDB, sn *cdbm.Subnet) (*cipam.Usage, error) {
+	if sn == nil {
+		return nil, fmt.Errorf("subnet is nil")
+	}
+	cidr, err := subnetIPv4Cidr(sn)
+	if err != nil {
+		return nil, err
+	}
+	usable, err := IPv4UsableHostAddrsFromCidr(cidr)
+	if err != nil {
+		return nil, err
+	}
+	ifaceCount, instCount, err := countInterfacesAndDistinctInstances(ctx, db, &sn.ID, nil)
+	if err != nil {
+		return nil, err
+	}
+	return ipamUsageFromInterfaceTelemetry(usable, ifaceCount, instCount), nil
 }

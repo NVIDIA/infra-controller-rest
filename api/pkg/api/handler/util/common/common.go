@@ -28,7 +28,6 @@ import (
 	"net/url"
 	"reflect"
 	"slices"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -621,23 +620,6 @@ func HandleTxError(c echo.Context, logger zerolog.Logger, err error, fallback st
 	}
 	logger.Error().Err(err).Msg(fallback)
 	return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fallback, nil)
-}
-
-// ParseIncludeUsageStats reads includeUsageStats from the request; when true, clones relations and appends relationForStats
-// if absent (Subnet: IPv4Block; VPC prefix: IPBlock).
-func ParseIncludeUsageStats(c echo.Context, relations []string, relationForStats string) (includeUsageStats bool, augmented []string, err error) {
-	includeUsageStats = false
-	if qius := c.QueryParam("includeUsageStats"); qius != "" {
-		includeUsageStats, err = strconv.ParseBool(qius)
-		if err != nil {
-			return false, nil, err
-		}
-	}
-	augmented = slices.Clone(relations)
-	if includeUsageStats && relationForStats != "" && !slices.Contains(augmented, relationForStats) {
-		augmented = append(augmented, relationForStats)
-	}
-	return includeUsageStats, augmented, nil
 }
 
 // GetAndValidateQueryRelations is a utility function to get and validate the query parameters for include relations get/getall request

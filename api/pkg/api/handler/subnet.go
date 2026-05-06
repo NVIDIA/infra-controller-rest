@@ -25,10 +25,11 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strconv"
 
 	"github.com/labstack/echo/v4"
 
-	cip "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
+	cip "github.com/NVIDIA/infra-controller-rest/ipam"
 
 	"go.opentelemetry.io/otel/attribute"
 	temporalClient "go.temporal.io/sdk/client"
@@ -40,6 +41,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	modelutil "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
@@ -439,7 +441,7 @@ func NewGetAllSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param status query string false "Filter by status" e.g. 'Pending', 'Error'"
 // @Param query query string false "Query input for full text search"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
-// @Param includeUsageStats query boolean false "Subnet IPv4 IPAM usage stats (same shape as IP Block usage)"
+// @Param includeUsageStats query boolean false "Subnet IPv4 usage (interface/instance-derived; same shape as IP Block usage)"
 // @Param pageNumber query integer false "Page number of results returned"
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
@@ -504,9 +506,17 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	includeUsageStats, queryIncludeRelations, err := common.ParseIncludeUsageStats(c, qIncludeRelations, cdbm.IPv4BlockRelationName)
-	if err != nil {
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPv4BlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPv4BlockRelationName)
 	}
 
 	// Get site ID from query param
@@ -586,16 +596,15 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 
 	puSubnetMap := map[uuid.UUID]*cip.Usage{}
 	if includeUsageStats {
-		ipamStorage := ipam.NewIpamStorage(gash.dbSession.DB, nil)
 		for i := range subnets {
 			sn := &subnets[i]
 			if sn.IPv4Block == nil {
 				logger.Error().Str("subnetId", sn.ID.String()).Msg("Subnet missing IPv4 Block relation for usage stats")
 				continue
 			}
-			prefixUsage, serr := ipam.GetIpamUsageForSubnet(ctx, ipamStorage, sn, sn.IPv4Block)
+			prefixUsage, serr := modelutil.GetInterfaceBasedUsageForSubnet(ctx, gash.dbSession.DB, sn)
 			if serr != nil {
-				logger.Error().Err(serr).Str("subnetId", sn.ID.String()).Msg("error retrieving ipam usage stats for Subnet")
+				logger.Error().Err(serr).Str("subnetId", sn.ID.String()).Msg("error retrieving usage stats for Subnet")
 				continue
 			}
 			puSubnetMap[sn.ID] = prefixUsage
@@ -676,7 +685,7 @@ func NewGetSubnetHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Subnet"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'Vpc', 'Tenant', 'IPv4Block', 'IPv6Block'"
-// @Param includeUsageStats query boolean false "Subnet IPv4 IPAM usage stats (same shape as IP Block usage)"
+// @Param includeUsageStats query boolean false "Subnet IPv4 usage (interface/instance-derived; same shape as IP Block usage)"
 // @Success 200 {object} model.APISubnet
 // @Router /v2/org/{org}/nico/subnet/{id} [get]
 func (gsh GetSubnetHandler) Handle(c echo.Context) error {
@@ -714,9 +723,18 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	includeUsageStats, queryIncludeRelations, err := common.ParseIncludeUsageStats(c, qIncludeRelations, cdbm.IPv4BlockRelationName)
-	if err != nil {
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+	includeUsageStats := false
+	qius := c.QueryParam("includeUsageStats")
+	if qius != "" {
+		includeUsageStats, err = strconv.ParseBool(qius)
+		if err != nil {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `includeUsageStats` query param", nil)
+		}
+	}
+
+	queryIncludeRelations := slices.Clone(qIncludeRelations)
+	if includeUsageStats && !slices.Contains(queryIncludeRelations, cdbm.IPv4BlockRelationName) {
+		queryIncludeRelations = append(queryIncludeRelations, cdbm.IPv4BlockRelationName)
 	}
 
 	// Get subnet ID from URL param
@@ -769,10 +787,9 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 			logger.Error().Str("subnetId", subnet.ID.String()).Msg("Subnet missing IPv4 Block relation for usage stats")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for Subnet", nil)
 		}
-		ipamStorage := ipam.NewIpamStorage(gsh.dbSession.DB, nil)
-		puSubnet, err = ipam.GetIpamUsageForSubnet(ctx, ipamStorage, subnet, subnet.IPv4Block)
+		puSubnet, err = modelutil.GetInterfaceBasedUsageForSubnet(ctx, gsh.dbSession.DB, subnet)
 		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving ipam usage stats details for Subnet")
+			logger.Error().Err(err).Msg("error retrieving usage stats for Subnet")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for Subnet", nil)
 		}
 	}

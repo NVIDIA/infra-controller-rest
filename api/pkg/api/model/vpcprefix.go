@@ -135,7 +135,7 @@ type APIVpcPrefix struct {
 	Status string `json:"status"`
 	// StatusHistory is the history of statuses for the VpcPrefix
 	StatusHistory []APIStatusDetail `json:"statusHistory"`
-	// UsageStats reports IP usage within this VPC Prefix (from IPAM) when requested via includeUsageStats
+	// UsageStats reports IPv4 usage (derived from interface count, distinct instance count, and CIDR size) when requested via includeUsageStats
 	UsageStats *APIIPBlockUsageStats `json:"usageStats,omitempty"`
 	// CreatedAt indicates the ISO datetime string for when the entity was created
 	Created time.Time `json:"created"`
