@@ -513,13 +513,23 @@ func (ifcd InterfaceSQLDAO) DeleteAllByInstanceIDs(ctx context.Context, tx *db.T
 		return nil
 	}
 
-	_, err := db.GetIDB(tx, ifcd.dbSession).
-		NewDelete().
-		Model((*Interface)(nil)).
-		Where("ifc.instance_id IN (?)", bun.In(instanceIDs)).
-		Exec(ctx)
+	for start := 0; start < len(instanceIDs); start += db.MaxBatchItems {
+		end := start + db.MaxBatchItems
+		if end > len(instanceIDs) {
+			end = len(instanceIDs)
+		}
 
-	return err
+		_, err := db.GetIDB(tx, ifcd.dbSession).
+			NewDelete().
+			Model((*Interface)(nil)).
+			Where("ifc.instance_id IN (?)", bun.In(instanceIDs[start:end])).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // CreateMultiple creates multiple Interfaces from the given parameters

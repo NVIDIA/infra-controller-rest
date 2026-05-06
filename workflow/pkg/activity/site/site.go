@@ -480,17 +480,19 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 	}
 
 	// Delete Allocation Constraints
-	accs, _, err := acDAO.GetAll(ctx, nil, allocationIDs, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Allocation Constraints from DB by Site ID")
-		return err
-	}
+	if len(allocationIDs) > 0 {
+		accs, _, err := acDAO.GetAll(ctx, nil, allocationIDs, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Allocation Constraints from DB by Site ID")
+			return err
+		}
 
-	for _, acc := range accs {
-		serr := acDAO.DeleteByID(ctx, nil, acc.ID)
-		if serr != nil && serr != cdb.ErrDoesNotExist {
-			logger.Error().Err(serr).Str("Allocation Constraint ID", acc.ID.String()).Msg("error deleting Allocation Constraint record in DB")
-			return serr
+		for _, acc := range accs {
+			serr := acDAO.DeleteByID(ctx, nil, acc.ID)
+			if serr != nil && serr != cdb.ErrDoesNotExist {
+				logger.Error().Err(serr).Str("Allocation Constraint ID", acc.ID.String()).Msg("error deleting Allocation Constraint record in DB")
+				return serr
+			}
 		}
 	}
 
