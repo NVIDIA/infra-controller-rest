@@ -161,6 +161,15 @@ func testSiteSetupSchema(t *testing.T, dbSession *cdb.Session) {
 	// create Status Details table
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.StatusDetail)(nil))
 	assert.Nil(t, err)
+	// create NVLinkLogicalPartition table
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.NVLinkLogicalPartition)(nil))
+	assert.Nil(t, err)
+	// create NetworkSecurityGroup table
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.NetworkSecurityGroup)(nil))
+	assert.Nil(t, err)
+	// create VPC table
+	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Vpc)(nil))
+	assert.Nil(t, err)
 }
 
 func testSiteBuildInfrastructureProvider(t *testing.T, dbSession *cdb.Session, name string, org string, user *cdbm.User) *cdbm.InfrastructureProvider {
@@ -544,31 +553,35 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 	ipOrg := "test-provider-org"
 	ipRoles := []string{authz.ProviderAdminRole}
 
-	ipu := testSiteBuildUser(t, dbSession, "test123", ipOrg, ipRoles)
-	ip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", ipOrg, ipu)
+	ipu := testSiteBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
+	ip := testSiteBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
 	tnRoles := []string{authz.TenantAdminRole}
 
-	tnu := testSiteBuildUser(t, dbSession, "test456", tnOrg, tnRoles)
-	tn := testSiteBuildTenant(t, dbSession, "Test Tenant 1", tnOrg, tnu)
+	tnu := testSiteBuildUser(t, dbSession, uuid.NewString(), tnOrg, tnRoles)
+	tn := testSiteBuildTenant(t, dbSession, "test-tenant-1", tnOrg, tnu)
 
 	mOrg := "test-mixed-org"
 	mixedRole := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
-	mu := testSiteBuildUser(t, dbSession, "test789", mOrg, mixedRole)
-	mip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Mixed Provider", mOrg, mu)
-	mtn := testSiteBuildTenant(t, dbSession, "Test Mixed Tenant", mOrg, mu)
-	mst := testSiteBuildSite(t, dbSession, mip, "Test Mixed Site", cdbm.SiteStatusRegistered, mu, nil, nil, nil)
-	testSiteBuildAllocation(t, dbSession, mst, mtn, "Test Allocation Mixed", mu)
+	mu := testSiteBuildUser(t, dbSession, uuid.NewString(), mOrg, mixedRole)
+	mip := testSiteBuildInfrastructureProvider(t, dbSession, "test-mixed-provider", mOrg, mu)
+	mtn := testSiteBuildTenant(t, dbSession, "test-mixed-tenant", mOrg, mu)
+	mst := testSiteBuildSite(t, dbSession, mip, "test-mixed-site", cdbm.SiteStatusRegistered, mu, nil, nil, nil)
+	testSiteBuildAllocation(t, dbSession, mst, mtn, "test-allocation-mixed", mu)
 	common.TestBuildTenantSite(t, dbSession, mtn, mst, mu)
 
-	st := testSiteBuildSite(t, dbSession, ip, "Test Site", cdbm.SiteStatusRegistered, ipu, nil, nil, nil)
-	st2 := testSiteBuildSite(t, dbSession, ip, "Test Site 2", cdbm.SiteStatusError, ipu, nil, nil, nil)
-	st3 := testSiteBuildSite(t, dbSession, ip, "Test Site 3", cdbm.SiteStatusRegistered, ipu, nil, nil, nil)
-	st4 := testSiteBuildSite(t, dbSession, ip, "Test Site 4", cdbm.SiteStatusRegistered, ipu, nil, nil, nil)
-	st5 := testSiteBuildSite(t, dbSession, ip, "Test Site 5", cdbm.SiteStatusRegistered, ipu, nil, nil, &cdbm.SiteConfig{NativeNetworking: true, NetworkSecurityGroup: true})
+	st := testSiteBuildSite(t, dbSession, ip, "test-site", cdbm.SiteStatusRegistered, ipu, nil, nil, nil)
+	st2 := testSiteBuildSite(t, dbSession, ip, "test-site-2", cdbm.SiteStatusError, ipu, nil, nil, nil)
+	st3 := testSiteBuildSite(t, dbSession, ip, "test-site-3", cdbm.SiteStatusRegistered, ipu, nil, nil, nil)
+	st4 := testSiteBuildSite(t, dbSession, ip, "test-site-4", cdbm.SiteStatusRegistered, ipu, nil, nil, nil)
+	st5 := testSiteBuildSite(t, dbSession, ip, "test-site-5", cdbm.SiteStatusRegistered, ipu, nil, nil, &cdbm.SiteConfig{NativeNetworking: true, NetworkSecurityGroup: true})
+	st6 := testSiteBuildSite(t, dbSession, ip, "test-site-6", cdbm.SiteStatusRegistered, ipu, nil, nil, &cdbm.SiteConfig{NativeNetworking: true, NetworkSecurityGroup: true})
 
-	testSiteBuildAllocation(t, dbSession, st, tn, "Test Allocation", ipu)
+	common.TestBuildTenantSite(t, dbSession, tn, st6, tnu)
+	common.TestBuildVPC(t, dbSession, "test-vpc", ip, tn, st6, nil, cdb.GetStrPtr(cdbm.VpcFNN), nil, cdbm.VpcStatusReady, tnu)
+
+	testSiteBuildAllocation(t, dbSession, st, tn, "test-allocation", ipu)
 	common.TestBuildTenantSite(t, dbSession, tn, st, ipu)
 
 	cfg := common.GetTestConfig()
@@ -644,6 +657,25 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 			csmEnabled:         true,
 			wantErr:            false,
 			verifyChildSpanner: true,
+		},
+		{
+			name: "test Site update API endpoint failure when disabling Native Networking while Site has one or more VPCs with virtualization type set to FNN",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        &tmocks.Client{},
+				cfg:       cfg,
+			},
+			args: args{
+				site: st6,
+				org:  ipOrg,
+				user: ipu,
+				reqData: &model.APISiteUpdateRequest{
+					Capabilities: &model.APISiteCapabilitiesUpdateRequest{NativeNetworking: cdb.GetBoolPtr(false)},
+				},
+			},
+			csmEnabled:         true,
+			wantErr:            true,
+			verifyChildSpanner: false,
 		},
 		{
 			name: "test registration token renewal success for Site in Error state",
@@ -771,7 +803,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 				org:  ipOrg,
 				user: ipu,
 				reqData: &model.APISiteUpdateRequest{
-					Name: cdb.GetStrPtr("Test Site 2"),
+					Name: cdb.GetStrPtr("test-site-2"),
 				},
 			},
 			csmEnabled: true,
@@ -789,7 +821,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 				org:  ipOrg,
 				user: ipu,
 				reqData: &model.APISiteUpdateRequest{
-					Name: cdb.GetStrPtr("Test Site"),
+					Name: cdb.GetStrPtr("test-site"),
 				},
 			},
 			csmEnabled: false,
@@ -807,7 +839,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 				org:  ipOrg,
 				user: ipu,
 				reqData: &model.APISiteUpdateRequest{
-					Name: cdb.GetStrPtr("Test Site X"),
+					Name: cdb.GetStrPtr("test-site-x"),
 				},
 			},
 			csmEnabled: false,
@@ -825,7 +857,7 @@ func TestUpdateSiteHandler_Handle(t *testing.T) {
 				org:  ipOrg,
 				user: ipu,
 				reqData: &model.APISiteUpdateRequest{
-					Name:                   cdb.GetStrPtr("Test Site 4"),
+					Name:                   cdb.GetStrPtr("test-site-4"),
 					Description:            cdb.GetStrPtr("Test Site Description Updated"),
 					SerialConsoleHostname:  cdb.GetStrPtr("nico.acme.com"),
 					RenewRegistrationToken: cdb.GetBoolPtr(true),
