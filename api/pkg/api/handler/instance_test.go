@@ -3944,6 +3944,29 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	instnvlifc4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusReady)
 	assert.NotNil(t, instnvlifc4)
 
+	// Dedicated instances for four-NVLink → two-NVLink subset updates (avoid mutating inst13 used by later tests).
+	instSubsetFourToTwoA := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-four-to-two-a", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instSubsetFourToTwoA)
+	instSubsetANvl1 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoA.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetANvl1)
+	instSubsetANvl2 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoA.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 1, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetANvl2)
+	instSubsetANvl3 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoA.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 2, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetANvl3)
+	instSubsetANvl4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoA.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetANvl4)
+
+	instSubsetFourToTwoB := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-four-to-two-b", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instSubsetFourToTwoB)
+	instSubsetBNvl1 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoB.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetBNvl1)
+	instSubsetBNvl2 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoB.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 1, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetBNvl2)
+	instSubsetBNvl3 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoB.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 2, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetBNvl3)
+	instSubsetBNvl4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instSubsetFourToTwoB.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusReady)
+	assert.NotNil(t, instSubsetBNvl4)
+
 	// Instances with four Pending NVLink interfaces — isolate stale vs fresh `updated` timestamp behavior across subtests.
 	inst13PendingStale := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-pending-stale", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
 	assert.NotNil(t, inst13PendingStale)
@@ -5789,7 +5812,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
-			name: "test Instance update API endpoint success with NVLink interface subset replacing full set",
+			name: "test Instance update API endpoint success when Instance has four NVLink interfaces and update requests two (nvllp1 devices 0 and 1)",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -5810,10 +5833,55 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						},
 					},
 				},
-				reqInstance: inst13.ID.String(),
-				reqOrg:      tnOrg1,
-				reqUser:     tnu1,
-				respCode:    http.StatusOK,
+				reqInstance:              instSubsetFourToTwoA.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(2),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
+					*instSubsetANvl1,
+					*instSubsetANvl2,
+					*instSubsetANvl3,
+					*instSubsetANvl4,
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update API endpoint success when Instance has four NVLink interfaces and update requests two (nvllp2 devices 2 and 3)",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{
+							NVLinkLogicalPartitionID: nvllp2.ID.String(),
+							DeviceInstance:           2,
+						},
+						{
+							NVLinkLogicalPartitionID: nvllp2.ID.String(),
+							DeviceInstance:           3,
+						},
+					},
+				},
+				reqInstance:              instSubsetFourToTwoB.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(2),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
+					*instSubsetBNvl1,
+					*instSubsetBNvl2,
+					*instSubsetBNvl3,
+					*instSubsetBNvl4,
+				},
 			},
 			wantErr:                     false,
 			verifySiteControllerRequest: true,
