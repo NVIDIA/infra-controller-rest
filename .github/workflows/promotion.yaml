@@ -40,8 +40,6 @@ on:
         required: true
       NVCR_PROD_TOKEN:
         required: true
-      GITTAG_PAT_TOKEN:
-        required: true
 
 jobs:
   # ============================================================================
