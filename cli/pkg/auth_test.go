@@ -329,6 +329,77 @@ func TestLoginCommandConfiguredAPIKeyRequiresAuthnURL(t *testing.T) {
 	require.Contains(t, err.Error(), "auth.api_key.authn_url")
 }
 
+func TestLoginCommandExplicitNvapiKeySkipsAuthnURL(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	SetConfigPath(configPath)
+	defer SetConfigPath("")
+
+	flags := flag.NewFlagSet("login", flag.ContinueOnError)
+	for _, name := range []string{"api-key", "authn-url", "token-url", "keycloak-url", "keycloak-realm", "client-id", "client-secret", "username", "password", "token-command"} {
+		flags.String(name, "", "")
+	}
+	require.NoError(t, flags.Set("api-key", "nvapi-explicit-key"))
+	withArgs(t, "nicocli", "login", "--api-key", "nvapi-explicit-key")
+
+	ctx := cli.NewContext(cli.NewApp(), flags, nil)
+	require.NoError(t, LoginCommand().Action(ctx))
+
+	loaded, err := LoadConfigFromPath(configPath)
+	require.NoError(t, err)
+	require.Equal(t, "nvapi-explicit-key", loaded.Auth.APIKey.Token)
+	require.Equal(t, "nvapi-explicit-key", loaded.Auth.APIKey.Key)
+}
+
+func TestLoginCommandConfiguredNvapiKeySkipsAuthnURL(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	cfg := &ConfigFile{
+		Auth: ConfigAuth{
+			APIKey: &ConfigAPIKey{Key: "nvapi-configured-key"},
+		},
+	}
+	require.NoError(t, SaveConfigToPath(cfg, configPath))
+	SetConfigPath(configPath)
+	defer SetConfigPath("")
+
+	flags := flag.NewFlagSet("login", flag.ContinueOnError)
+	for _, name := range []string{"api-key", "authn-url", "token-url", "keycloak-url", "keycloak-realm", "client-id", "client-secret", "username", "password", "token-command"} {
+		flags.String(name, "", "")
+	}
+
+	ctx := cli.NewContext(cli.NewApp(), flags, nil)
+	require.NoError(t, LoginCommand().Action(ctx))
+
+	loaded, err := LoadConfigFromPath(configPath)
+	require.NoError(t, err)
+	require.Equal(t, "nvapi-configured-key", loaded.Auth.APIKey.Token)
+}
+
+func TestExchangeAPIKeyNvapiReturnsKeyDirectly(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	cfg := &ConfigFile{
+		Auth: ConfigAuth{
+			APIKey: &ConfigAPIKey{Key: "nvapi-bearer-key"},
+		},
+	}
+
+	token, err := ExchangeAPIKey(cfg, configPath)
+	require.NoError(t, err)
+	require.Equal(t, "nvapi-bearer-key", token)
+	require.Equal(t, "nvapi-bearer-key", cfg.Auth.APIKey.Token)
+
+	loaded, err := LoadConfigFromPath(configPath)
+	require.NoError(t, err)
+	require.Equal(t, "nvapi-bearer-key", loaded.Auth.APIKey.Token)
+}
+
+func TestIsNGCBearerAPIKey(t *testing.T) {
+	require.True(t, isNGCBearerAPIKey("nvapi-abc"))
+	require.True(t, isNGCBearerAPIKey("nvapi-"))
+	require.False(t, isNGCBearerAPIKey("legacy-key"))
+	require.False(t, isNGCBearerAPIKey(""))
+	require.False(t, isNGCBearerAPIKey("NVAPI-uppercase"))
+}
+
 func withArgs(t *testing.T, args ...string) {
 	t.Helper()
 	oldArgs := os.Args

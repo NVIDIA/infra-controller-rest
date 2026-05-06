@@ -94,8 +94,8 @@ func LoginCommand() *cli.Command {
 				if authnURL == "" && cfg.Auth.APIKey != nil && cfg.Auth.APIKey.AuthnURL != "" {
 					authnURL = cfg.Auth.APIKey.AuthnURL
 				}
-				if authnURL == "" {
-					return fmt.Errorf("authn-url must be provided when using --api-key")
+				if authnURL == "" && !isNGCBearerAPIKey(apiKey) {
+					return fmt.Errorf("authn-url must be provided when using --api-key (legacy NGC keys); not required for nvapi- prefixed keys")
 				}
 				return loginWithAPIKey(cfg, authnURL, apiKey)
 			}
@@ -120,14 +120,22 @@ func LoginCommand() *cli.Command {
 				return nil
 			}
 			if cfg.Auth.APIKey != nil && cfg.Auth.APIKey.Key != "" {
-				if cfg.Auth.APIKey.AuthnURL == "" {
-					return fmt.Errorf("auth.api_key.authn_url is required in config")
+				if cfg.Auth.APIKey.AuthnURL == "" && !isNGCBearerAPIKey(cfg.Auth.APIKey.Key) {
+					return fmt.Errorf("auth.api_key.authn_url is required in config (legacy NGC keys); not required for nvapi- prefixed keys")
 				}
 				return loginWithAPIKey(cfg, cfg.Auth.APIKey.AuthnURL, cfg.Auth.APIKey.Key)
 			}
 			return loginWithOIDCCmd(c, cfg)
 		},
 	}
+}
+
+// isNGCBearerAPIKey reports whether an NGC API key is a Personal or Service key
+// that already serves as a bearer token. These keys are prefixed with "nvapi-"
+// and do not need to be exchanged via the authn URL. Legacy NGC API keys
+// (without the prefix) must still be exchanged for a bearer token.
+func isNGCBearerAPIKey(apiKey string) bool {
+	return strings.HasPrefix(apiKey, "nvapi-")
 }
 
 func hasExplicitOIDCLoginFlags(c *cli.Context) bool {
@@ -261,10 +269,19 @@ func LoginWithOIDCConfig(cfg *ConfigFile, configPath string) (string, error) {
 }
 
 // ExchangeAPIKey exchanges an NGC API key for a bearer token, updates the config,
-// and saves it. Returns the new token.
+// and saves it. Returns the new token. NGC Personal/Service API keys (those
+// prefixed with "nvapi-") are bearer tokens themselves and are returned as-is
+// without contacting the authn endpoint.
 func ExchangeAPIKey(cfg *ConfigFile, configPath string) (string, error) {
 	if cfg.Auth.APIKey == nil || cfg.Auth.APIKey.Key == "" {
 		return "", fmt.Errorf("no NGC API key configured")
+	}
+	if isNGCBearerAPIKey(cfg.Auth.APIKey.Key) {
+		cfg.Auth.APIKey.Token = cfg.Auth.APIKey.Key
+		if saveErr := SaveConfigToPath(cfg, configPath); saveErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not save token: %v\n", saveErr)
+		}
+		return cfg.Auth.APIKey.Key, nil
 	}
 	authnURL := cfg.Auth.APIKey.AuthnURL
 	if authnURL == "" {
@@ -304,6 +321,18 @@ func ExchangeAPIKey(cfg *ConfigFile, configPath string) (string, error) {
 }
 
 func loginWithAPIKey(cfg *ConfigFile, authnURL, apiKey string) error {
+	if isNGCBearerAPIKey(apiKey) {
+		if cfg.Auth.APIKey == nil {
+			cfg.Auth.APIKey = &ConfigAPIKey{}
+		}
+		cfg.Auth.APIKey.Key = apiKey
+		cfg.Auth.APIKey.Token = apiKey
+		if err := SaveConfig(cfg); err != nil {
+			return fmt.Errorf("saving config: %w", err)
+		}
+		fmt.Fprintf(os.Stderr, "Login successful (NGC API key). Token saved to %s\n", ConfigPath())
+		return nil
+	}
 	req, err := http.NewRequest("GET", authnURL, nil)
 	if err != nil {
 		return fmt.Errorf("building request: %w", err)

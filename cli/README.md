@@ -84,7 +84,7 @@ auth:
   # token: eyJhbGciOi...
 
   # Option 2: Auth script/token command
-  # token_command: /path/to/get-carbide-token.sh
+  # token_command: /path/to/get-nico-token.sh
 
   # Option 3: OIDC provider (e.g. Keycloak)
   oidc:
@@ -94,8 +94,9 @@ auth:
 
   # Option 4: NGC API key
   # api_key:
-  #   authn_url: https://authn.nvidia.com/token
   #   key: nvapi-xxxx
+  #   # authn_url is only required for legacy NGC keys (without nvapi- prefix)
+  #   # authn_url: https://authn.nvidia.com/token
 ```
 
 Flags and environment variables override config values:
