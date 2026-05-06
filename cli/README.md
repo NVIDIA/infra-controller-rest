@@ -73,7 +73,7 @@ nicocli site list               # list all sites
 
 Config file: `~/.nico/config.yaml`
 
-`nicocli init` writes a sample matching the layout below. The OIDC `username`/`password` fields are written as plain values so a fresh local dev install is one edit away from working; remove them and rely on `nicocli login` (or `--api-key`) for any environment that does not allow plaintext passwords on disk.
+`nicocli init` writes a sample matching the layout below.
 
 ```yaml
 api:
@@ -93,8 +93,8 @@ auth:
     token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
     client_id: nico-api
     client_secret: nico-local-secret
-    username: admin@example.com
-    password: adminpassword
+    # Run `nicocli login` to authenticate; it will prompt for username/password
+    # and persist the resulting bearer token (and refresh token) here.
 
   # Option 4: NGC API key
   # api_key:
@@ -102,6 +102,8 @@ auth:
   #   # authn_url is only required for legacy NGC keys (without nvapi- prefix)
   #   # authn_url: https://your-authn-server/token
 ```
+
+`nicocli login` writes bearer/refresh tokens back to this file, so restrict it (`chmod 600 ~/.nico/config*.yaml`) and do not commit it.
 
 ### Global flags
 
