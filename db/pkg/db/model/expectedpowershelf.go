@@ -23,13 +23,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
 
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
 )
 
 const (
@@ -53,7 +54,7 @@ var (
 	}
 )
 
-// ExpectedPowerShelf is a record for each power shelf expected to be processed by Forge
+// ExpectedPowerShelf is a record for each power shelf expected to be processed by NICo
 type ExpectedPowerShelf struct {
 	bun.BaseModel `bun:"table:expected_power_shelf,alias:eps"`
 
@@ -62,7 +63,7 @@ type ExpectedPowerShelf struct {
 	Site              *Site             `bun:"rel:belongs-to,join:site_id=id"`
 	BmcMacAddress     string            `bun:"bmc_mac_address,notnull"`
 	ShelfSerialNumber string            `bun:"shelf_serial_number,notnull"`
-	IpAddress         *string           `bun:"ip_address"`
+	BmcIpAddress      *string           `bun:"bmc_ip_address"`
 	RackID            *string           `bun:"rack_id"`
 	Name              *string           `bun:"name"`
 	Manufacturer      *string           `bun:"manufacturer"`
@@ -78,13 +79,86 @@ type ExpectedPowerShelf struct {
 	CreatedBy         uuid.UUID         `bun:"type:uuid,notnull"`
 }
 
+// ExpectedPowerShelfCredentials carries the BMC credentials for one
+// ExpectedPowerShelf. They live in their own type because they aren't
+// stored in the DB record and have to be threaded through to ToProto
+// separately.
+type ExpectedPowerShelfCredentials struct {
+	Username *string
+	Password *string
+}
+
+// ToProto builds the workflow proto for this ExpectedPowerShelf. BMC
+// credentials are passed in because they aren't persisted on the record;
+// labels are read from eps.Labels.
+func (eps *ExpectedPowerShelf) ToProto(creds ExpectedPowerShelfCredentials) *cwssaws.ExpectedPowerShelf {
+	proto := &cwssaws.ExpectedPowerShelf{
+		ExpectedPowerShelfId: &cwssaws.UUID{Value: eps.ID.String()},
+		BmcMacAddress:        eps.BmcMacAddress,
+		ShelfSerialNumber:    eps.ShelfSerialNumber,
+	}
+
+	if eps.BmcIpAddress != nil {
+		proto.BmcIpAddress = *eps.BmcIpAddress
+	}
+	if eps.RackID != nil {
+		proto.RackId = &cwssaws.RackId{Id: *eps.RackID}
+	}
+	if eps.Name != nil {
+		proto.Name = eps.Name
+	}
+	if eps.Manufacturer != nil {
+		proto.Manufacturer = eps.Manufacturer
+	}
+	if eps.Model != nil {
+		proto.Model = eps.Model
+	}
+	if eps.Description != nil {
+		proto.Description = eps.Description
+	}
+	if eps.FirmwareVersion != nil {
+		proto.FirmwareVersion = eps.FirmwareVersion
+	}
+	if eps.SlotID != nil {
+		proto.SlotId = eps.SlotID
+	}
+	if eps.TrayIdx != nil {
+		proto.TrayIdx = eps.TrayIdx
+	}
+	if eps.HostID != nil {
+		proto.HostId = eps.HostID
+	}
+
+	if creds.Username != nil {
+		proto.BmcUsername = *creds.Username
+	}
+	if creds.Password != nil {
+		proto.BmcPassword = *creds.Password
+	}
+
+	if eps.Labels != nil {
+		protoLabels := make([]*cwssaws.Label, 0, len(eps.Labels))
+		for k, v := range eps.Labels {
+			protoLabels = append(protoLabels, &cwssaws.Label{
+				Key:   k,
+				Value: &v,
+			})
+		}
+		proto.Metadata = &cwssaws.Metadata{
+			Labels: protoLabels,
+		}
+	}
+
+	return proto
+}
+
 // ExpectedPowerShelfCreateInput input parameters for Create method
 type ExpectedPowerShelfCreateInput struct {
 	ExpectedPowerShelfID uuid.UUID
 	SiteID               uuid.UUID
 	BmcMacAddress        string
 	ShelfSerialNumber    string
-	IpAddress            *string
+	BmcIpAddress         *string
 	RackID               *string
 	Name                 *string
 	Manufacturer         *string
@@ -103,7 +177,7 @@ type ExpectedPowerShelfUpdateInput struct {
 	ExpectedPowerShelfID uuid.UUID
 	BmcMacAddress        *string
 	ShelfSerialNumber    *string
-	IpAddress            *string
+	BmcIpAddress         *string
 	RackID               *string
 	Name                 *string
 	Manufacturer         *string
@@ -119,7 +193,7 @@ type ExpectedPowerShelfUpdateInput struct {
 // ExpectedPowerShelfClearInput input parameters for Clear method
 type ExpectedPowerShelfClearInput struct {
 	ExpectedPowerShelfID uuid.UUID
-	IpAddress            bool
+	BmcIpAddress         bool
 	RackID               bool
 	Name                 bool
 	Manufacturer         bool
@@ -204,7 +278,7 @@ func (epsd ExpectedPowerShelfSQLDAO) Create(ctx context.Context, tx *db.Tx, inpu
 		SiteID:            input.SiteID,
 		BmcMacAddress:     input.BmcMacAddress,
 		ShelfSerialNumber: input.ShelfSerialNumber,
-		IpAddress:         input.IpAddress,
+		BmcIpAddress:      input.BmcIpAddress,
 		RackID:            input.RackID,
 		Name:              input.Name,
 		Manufacturer:      input.Manufacturer,
@@ -306,10 +380,10 @@ func (epsd ExpectedPowerShelfSQLDAO) setQueryWithFilter(filter ExpectedPowerShel
 	if ok {
 		query = query.WhereGroup(" AND ", func(q *bun.SelectQuery) *bun.SelectQuery {
 			return q.
-				Where("to_tsvector('english', (coalesce(eps.bmc_mac_address, ' ') || ' ' || coalesce(eps.shelf_serial_number, ' ') || ' ' || coalesce(eps.ip_address, ' ') || ' ' || coalesce(eps.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
+				Where("to_tsvector('english', (coalesce(eps.bmc_mac_address, ' ') || ' ' || coalesce(eps.shelf_serial_number, ' ') || ' ' || coalesce(eps.bmc_ip_address, ' ') || ' ' || coalesce(eps.labels::text, ' '))) @@ to_tsquery('english', ?)", *searchTokens).
 				WhereOr("eps.bmc_mac_address ILIKE ?", "%"+searchQuery+"%").
 				WhereOr("eps.shelf_serial_number ILIKE ?", "%"+searchQuery+"%").
-				WhereOr("eps.ip_address ILIKE ?", "%"+searchQuery+"%").
+				WhereOr("eps.bmc_ip_address ILIKE ?", "%"+searchQuery+"%").
 				WhereOr("eps.labels::text ILIKE ?", "%"+searchQuery+"%").
 				WhereOr("eps.id::text ILIKE ?", "%"+searchQuery+"%").
 				WhereOr("eps.site_id::text ILIKE ?", "%"+searchQuery+"%")
@@ -397,9 +471,9 @@ func (epsd ExpectedPowerShelfSQLDAO) Update(ctx context.Context, tx *db.Tx, inpu
 		eps.ShelfSerialNumber = *input.ShelfSerialNumber
 		columnsSet["shelf_serial_number"] = true
 	}
-	if input.IpAddress != nil {
-		eps.IpAddress = input.IpAddress
-		columnsSet["ip_address"] = true
+	if input.BmcIpAddress != nil {
+		eps.BmcIpAddress = input.BmcIpAddress
+		columnsSet["bmc_ip_address"] = true
 	}
 	if input.RackID != nil {
 		eps.RackID = input.RackID
@@ -487,9 +561,9 @@ func (epsd ExpectedPowerShelfSQLDAO) Clear(ctx context.Context, tx *db.Tx, input
 	}
 
 	updatedFields := []string{}
-	if input.IpAddress {
-		eps.IpAddress = nil
-		updatedFields = append(updatedFields, "ip_address")
+	if input.BmcIpAddress {
+		eps.BmcIpAddress = nil
+		updatedFields = append(updatedFields, "bmc_ip_address")
 	}
 	if input.RackID {
 		eps.RackID = nil

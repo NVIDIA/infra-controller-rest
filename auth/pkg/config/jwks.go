@@ -24,8 +24,8 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/core"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/core"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/golang-jwt/jwt/v5"
@@ -95,7 +95,7 @@ type ClaimMapping struct {
 	// Roles: static role list. Used when RolesAttribute is empty and IsServiceAccount is false.
 	Roles []string `mapstructure:"roles"`
 
-	// IsServiceAccount: if true, assigns admin roles (FORGE_PROVIDER_ADMIN, FORGE_TENANT_ADMIN). Ignores RolesAttribute/Roles.
+	// IsServiceAccount: if true, assigns admin roles (PROVIDER_ADMIN, TENANT_ADMIN). Ignores RolesAttribute/Roles.
 	IsServiceAccount bool `mapstructure:"isServiceAccount"`
 }
 
@@ -173,7 +173,7 @@ type JwksConfig struct {
 	ServiceAccount bool
 
 	// ReservedOrgNames prevents dynamic org mappings from claiming statically-configured org names.
-	// Populated by carbide-rest-api during initialization.
+	// Populated by nico-rest-api during initialization.
 	ReservedOrgNames map[string]bool
 
 	subjectPrefix string // SHA256(issuer)[0:10] - namespaces subject claims

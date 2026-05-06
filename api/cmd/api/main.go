@@ -25,15 +25,15 @@ import (
 
 	tClient "go.temporal.io/sdk/client"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	capis "github.com/NVIDIA/ncx-infra-controller-rest/api/internal/server"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	capis "github.com/NVIDIA/infra-controller-rest/api/internal/server"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 
 	// Imports for API doc generation
-	_ "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	_ "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
 )
 
 const (
@@ -43,13 +43,10 @@ const (
 	ZerologLevelFieldName = "type"
 )
 
-// @title NVIDIA Forge Cloud API
+// @title NVIDIA NICo REST API
 // @version 1.0
-// @description Forge Cloud API allows you to manage datacenter resources from Cloud
+// @description NICo REST API allows you to manage datacenter resources from Cloud
 // @termsOfService https://ngc.nvidia.com/legal/terms
-
-// @contact.name NVIDIA Forge Cloud
-// @contact.email forge@nvidia.com
 
 // @license.name Proprietary
 
@@ -108,7 +105,7 @@ func main() {
 	mconfig := cfg.GetMetricsConfig()
 	if mconfig.Enabled {
 		// Initialize Prometheus Echo instance
-		ep := capis.InitMetricsServer(e)
+		ep := capis.InitMetricsServer(e, cfg)
 
 		// Start Prometheus server
 		log.Info().Msg("starting Metrics server")

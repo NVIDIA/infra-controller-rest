@@ -29,9 +29,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	dbmodel "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	dbmodel "github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
 )
 
 // ListOptions filters results from List.

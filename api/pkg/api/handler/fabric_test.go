@@ -26,10 +26,10 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -37,10 +37,11 @@ import (
 	"github.com/uptrace/bun/extra/bundebug"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 	tmocks "go.temporal.io/sdk/mocks"
 )
 
@@ -169,15 +170,15 @@ func TestFabricHandler_Get(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 	ipuv := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipvRoles)
 
 	tnOrg1 := "test-tn-org-1"
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles1)
 
@@ -388,15 +389,15 @@ func TestFabricHandler_GetAll(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipvRoles := []string{"FORGE_PROVIDER_VIEWER"}
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipvRoles := []string{authz.ProviderViewerRole}
 
 	ipu := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 	ipuv := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipvRoles)
 
 	tnOrg1 := "test-tn-org-1"
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, ipOrg1}, tnRoles1)
 
@@ -615,7 +616,7 @@ func TestFabricHandler_GetAll(t *testing.T) {
 				q.Set("orderBy", *tc.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/site/%s/fabric?%s", tc.reqOrgName, tc.querySiteID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/site/%s/fabric?%s", tc.reqOrgName, tc.querySiteID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

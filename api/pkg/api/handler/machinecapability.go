@@ -26,15 +26,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // GetAllMachineCapabilityHandler is an API Handler to return various Machine Capabilities
@@ -61,7 +61,7 @@ func NewGetAllMachineCapabilityHandler(dbSession *cdb.Session) GetAllMachineCapa
 // @Param org path string true "Name of NGC organization"
 // @Param site_id query string true "Filter by site ID"
 // @Success 200 {object} model.APIUser
-// @Router /v2/org/{org}/carbide/machine-capability [get]
+// @Router /v2/org/{org}/nico/machine-capability [get]
 func (gamch GetAllMachineCapabilityHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineCapability", "GetAll", c, gamch.tracerSpan)
 	if handlerSpan != nil {

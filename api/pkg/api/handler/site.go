@@ -39,19 +39,19 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	csm "github.com/NVIDIA/ncx-infra-controller-rest/site-manager/pkg/sitemgr"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	csm "github.com/NVIDIA/infra-controller-rest/site-manager/pkg/sitemgr"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	siteWorkflow "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/workflow/site"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	siteWorkflow "github.com/NVIDIA/infra-controller-rest/workflow/pkg/workflow/site"
 )
 
 const (
@@ -94,7 +94,7 @@ func NewCreateSiteHandler(dbSession *cdb.Session, tc tClient.Client, tnc tClient
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APISiteCreateRequest true "Site create request"
 // @Success 201 {object} model.APISite
-// @Router /v2/org/{org}/carbide/site [post]
+// @Router /v2/org/{org}/nico/site [post]
 func (csh CreateSiteHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Site", "Create", c, csh.tracerSpan)
 	if handlerSpan != nil {
@@ -322,7 +322,7 @@ func NewUpdateSiteHandler(dbSession *cdb.Session, tc tClient.Client, cfg *config
 // @Param id path string true "ID of Site"
 // @Param message body model.APISiteUpdateRequest true "Site update request"
 // @Success 200 {object} model.APISite
-// @Router /v2/org/{org}/carbide/site/{id} [patch]
+// @Router /v2/org/{org}/nico/site/{id} [patch]
 func (ush UpdateSiteHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Site", "Update", c, ush.tracerSpan)
 	if handlerSpan != nil {
@@ -567,7 +567,7 @@ func NewGetSiteHandler(dbSession *cdb.Session, tc tClient.Client, cfg *config.Co
 // @Param id path string true "ID of Site"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider'"
 // @Success 200 {object} model.APISite
-// @Router /v2/org/{org}/carbide/site/{id} [get]
+// @Router /v2/org/{org}/nico/site/{id} [get]
 func (gsh GetSiteHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Site", "Get", c, gsh.tracerSpan)
 	if handlerSpan != nil {
@@ -708,7 +708,7 @@ func NewGetAllSiteHandler(dbSession *cdb.Session, tc tClient.Client, cfg *config
 // @Param status query string false "Query input for status"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider'"
 // @Success 200 {array} []model.APISite
-// @Router /v2/org/{org}/carbide/site [get]
+// @Router /v2/org/{org}/nico/site [get]
 func (gash GetAllSiteHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Site", "GetAll", c, gash.tracerSpan)
 	if handlerSpan != nil {
@@ -994,7 +994,7 @@ func NewDeleteSiteHandler(dbSession *cdb.Session, tc tClient.Client, cfg *config
 // @Param id path string true "ID of Site"
 // @Param purgeMachines query boolean false "Permanently remove all Machines associated with this Site"
 // @Success 204
-// @Router /v2/org/{org}/carbide/site/{id} [delete]
+// @Router /v2/org/{org}/nico/site/{id} [delete]
 func (dsh DeleteSiteHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Site", "Delete", c, dsh.tracerSpan)
 	if handlerSpan != nil {
@@ -1166,7 +1166,7 @@ func NewGetSiteStatusDetailsHandler(dbSession *cdb.Session) GetSiteStatusDetails
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Site"
 // @Success 200 {object} []model.APIStatusDetail
-// @Router /v2/org/{org}/carbide/Site/{id}/status-history [get]
+// @Router /v2/org/{org}/nico/Site/{id}/status-history [get]
 func (gssdh GetSiteStatusDetailsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Site", "Get", c, gssdh.tracerSpan)
 	if handlerSpan != nil {

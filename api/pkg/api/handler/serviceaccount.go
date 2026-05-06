@@ -20,13 +20,13 @@ package handler
 import (
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -56,7 +56,7 @@ func NewGetCurrentServiceAccountHandler(dbSession *cdb.Session, cfg *config.Conf
 // @Security ApiKeyAuth
 // @Param org path string true "Name of organization"
 // @Success 200 {object} model.APIServiceAccount
-// @Router /v2/org/{org}/carbide/service-account/current [get]
+// @Router /v2/org/{org}/nico/service-account/current [get]
 func (gcsah GetCurrentServiceAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ServiceAccount", "GetCurrent", c, gcsah.tracerSpan)
 	if handlerSpan != nil {

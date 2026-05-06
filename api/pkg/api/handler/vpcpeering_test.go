@@ -27,14 +27,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	sutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	sutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -83,13 +84,13 @@ func TestCreateVpcPeeringHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 	ipOrg2 := "test-provider-tenant-org"
-	ipOrgRoles2 := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	ipOrgRoles2 := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -419,15 +420,15 @@ func TestGetAllVpcPeeringHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	ipOrg2 := "test-provider-org-2"
-	ipOrgRoles2 := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	ipOrgRoles2 := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	// Provider users
 	// ip is a provider admin, ip2 is a provider tenant admin
@@ -681,15 +682,15 @@ func TestGetVpcPeeringHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	ipOrg2 := "test-provider-org-2"
-	ipOrgRoles2 := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	ipOrgRoles2 := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	// Provider users
 	// ip is a provider admin, ip2 is a provider tenant admin
@@ -904,14 +905,14 @@ func TestDeleteVpcPeeringHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org-1"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 	ipOrg2 := "test-provider-org-2"
-	ipOrgRoles2 := []string{"FORGE_PROVIDER_ADMIN", "FORGE_TENANT_ADMIN"}
+	ipOrgRoles2 := []string{authz.ProviderAdminRole, authz.TenantAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
-	tnOrgRolesForbidden := []string{"FORGE_TENANT_USER"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
+	tnOrgRolesForbidden := []string{"NICO_TENANT_USER"}
 
 	ipu := common.TestBuildUser(t, dbSession, uuid.New().String(), ipOrg, ipOrgRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)

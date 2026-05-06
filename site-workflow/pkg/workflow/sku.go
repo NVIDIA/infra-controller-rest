@@ -20,7 +20,7 @@ package workflow
 import (
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"

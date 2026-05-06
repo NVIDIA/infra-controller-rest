@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -31,25 +32,25 @@ import (
 	temporalClient "go.temporal.io/sdk/client"
 	tp "go.temporal.io/sdk/temporal"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 
-	wfutil "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	wfutil "github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -84,7 +85,7 @@ func NewCreateNVLinkLogicalPartitionHandler(dbSession *cdb.Session, tc temporalC
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APINVLinkLogicalPartitionCreateRequest true "NVLinkLogicalPartition creation request"
 // @Success 201 {object} model.APINVLinkLogicalPartition
-// @Router /v2/org/{org}/carbide/nvlink-logical-partition [post]
+// @Router /v2/org/{org}/nico/nvlink-logical-partition [post]
 func (cibph CreateNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkLogicalPartition", "Create", c, cibph.tracerSpan)
 	if handlerSpan != nil {
@@ -400,7 +401,7 @@ func NewGetAllNVLinkLogicalPartitionHandler(dbSession *cdb.Session, tc temporalC
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APINVLinkLogicalPartition
-// @Router /v2/org/{org}/carbide/nvlink-logical-partition [get]
+// @Router /v2/org/{org}/nico/nvlink-logical-partition [get]
 func (gaibph GetAllNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkLogicalPartition", "GetAll", c, gaibph.tracerSpan)
 	if handlerSpan != nil {
@@ -700,7 +701,7 @@ func NewGetNVLinkLogicalPartitionHandler(dbSession *cdb.Session, tc temporalClie
 // @Param includeInterfaces query boolean false "Include NVLinkInterfaces in response"
 // @Param includeStats query boolean false "Include NVLinkLogicalPartitionStats in response"
 // @Success 200 {object} model.APINVLinkLogicalPartition
-// @Router /v2/org/{org}/carbide/nvlink-logical-partition/{id} [get]
+// @Router /v2/org/{org}/nico/nvlink-logical-partition/{id} [get]
 func (gibph GetNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkLogicalPartition", "Get", c, gibph.tracerSpan)
 	if handlerSpan != nil {
@@ -893,7 +894,7 @@ func NewUpdateNVLinkLogicalPartitionHandler(dbSession *cdb.Session, tc temporalC
 // @Param id path string true "ID of NVLinkLogicalPartition"
 // @Param message body model.APINVLinkLogicalPartitionUpdateRequest true "NVLinkLogicalPartition update request"
 // @Success 200 {object} model.APINVLinkLogicalPartition
-// @Router /v2/org/{org}/carbide/nvlink-logical-partition/{id} [patch]
+// @Router /v2/org/{org}/nico/nvlink-logical-partition/{id} [patch]
 func (uibph UpdateNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkLogicalPartition", "Update", c, uibph.tracerSpan)
 	if handlerSpan != nil {
@@ -1062,7 +1063,7 @@ func (uibph UpdateNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 		},
 	}
 
-	// Site Controller (Forge) requires metadata.name on every update. When the client
+	// Site Controller (NICo) requires metadata.name on every update. When the client
 	// sends only description, apiRequest.Name is nil but we must still send the
 	// current partition name from the DB.
 	updateRequest.Config.Metadata.Name = unvllp.Name
@@ -1168,7 +1169,7 @@ func NewDeleteNVLinkLogicalPartitionHandler(dbSession *cdb.Session, tc temporalC
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of NVLinkLogicalPartition"
 // @Success 202
-// @Router /v2/org/{org}/carbide/nvlink-logical-partition/{id} [delete]
+// @Router /v2/org/{org}/nico/nvlink-logical-partition/{id} [delete]
 func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkLogicalPartition", "Delete", c, dibph.tracerSpan)
 	if handlerSpan != nil {
@@ -1328,10 +1329,10 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 	err = we.Get(ctx, nil)
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-			logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 			// Reset error to nil
 			err = nil
 		}

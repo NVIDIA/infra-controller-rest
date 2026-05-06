@@ -18,8 +18,8 @@
 package dpuextensionservice
 
 import (
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterSubscriber registers DPU Extension Service CRUD workflows and activities with Temporal
@@ -45,7 +45,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("DpuExtensionService: Successfully registered GetDpuExtensionServiceVersionsInfo workflow")
 
 	// Register activities
-	dpuExtServiceManager := swa.NewManageDpuExtensionService(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	dpuExtServiceManager := swa.NewManageDpuExtensionService(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateDpuExtensionServiceOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(dpuExtServiceManager.CreateDpuExtensionServiceOnSite)

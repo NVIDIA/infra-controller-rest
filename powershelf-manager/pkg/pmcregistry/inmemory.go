@@ -19,7 +19,7 @@ package pmcregistry
 import (
 	"context"
 	"fmt"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/pmc"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/pmc"
 	"net"
 	"sync"
 

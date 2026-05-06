@@ -27,7 +27,7 @@ import (
 	"os"
 	"path/filepath"
 
-	pkgcerts "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/certs"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
 
 // Default certificate directory and file names for the Kubernetes SPIFFE

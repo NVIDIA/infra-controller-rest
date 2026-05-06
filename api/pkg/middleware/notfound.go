@@ -21,8 +21,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	ccu "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	ccu "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	"github.com/labstack/echo/v4"
 )
 

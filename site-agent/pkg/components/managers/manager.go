@@ -20,41 +20,41 @@ package managers
 import (
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/machinevalidation"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/machinevalidation"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/metadata"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/metadata"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/bootstrap"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/carbide"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/instance"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/instancetype"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/machine"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/managerapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/networksecuritygroup"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/nvlinklogicalpartition"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/operatingsystem"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/rla"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/sku"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/sshkeygroup"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/subnet"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/tenant"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/vpc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/vpcpeering"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/vpcprefix"
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/managers/workflow"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/bootstrap"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instance"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instancetype"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/machine"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/networksecuritygroup"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nico"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nvlinklogicalpartition"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/operatingsystem"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/rla"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sku"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sshkeygroup"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/subnet"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/tenant"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpc"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpcpeering"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpcprefix"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/workflow"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
 
-	computils "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/utils"
+	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
 )
 
 // NewAPIHandlers - handle new api
@@ -68,7 +68,7 @@ func NewAPIHandlers() {
 		Subnet:                 &subnet.API{},
 		Instance:               &instance.API{},
 		Machine:                &machine.API{},
-		Carbide:                &carbide.API{},
+		NICo:                   &nico.API{},
 		Bootstrap:              &bootstrap.BoostrapAPI{},
 		SSHKeyGroup:            &sshkeygroup.API{},
 		InfiniBandPartition:    &infinibandpartition.API{},
@@ -111,7 +111,7 @@ func (Managers *Manager) NewInstance() {
 	Managers.VpcPrefix()
 	Managers.Subnet()
 	Managers.Instance()
-	Managers.Carbide()
+	Managers.NICo()
 	Managers.Machine()
 	Managers.Bootstrap()
 	Managers.SSHKeyGroup()
@@ -156,7 +156,7 @@ func (Managers *Manager) Init() {
 	ManagerAccess.Data.EB.HealthStatus.Store(uint64(computils.CompUnhealthy))
 
 	Managers.Orchestrator().Init()
-	Managers.Carbide().Init()
+	Managers.NICo().Init()
 	Managers.Bootstrap().Init()
 	Managers.VPC().Init()
 	Managers.VpcPrefix().Init()
@@ -184,7 +184,7 @@ func (Managers *Manager) Start() {
 	go StartMetricServer()
 	StartHTTPServer()
 	ManagerAccess.Data.EB.Log.Info().Msg("Managers: Starting all the managers")
-	Managers.Carbide().Start()
+	Managers.NICo().Start()
 	Managers.Bootstrap().Start()
 	Managers.Orchestrator().Start()
 	Managers.RLA().Start()

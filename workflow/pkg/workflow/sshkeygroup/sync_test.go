@@ -30,7 +30,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	sshKeyGroupActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/sshkeygroup"
+	sshKeyGroupActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/sshkeygroup"
 )
 
 type SyncSSHKeyGroupTestSuite struct {

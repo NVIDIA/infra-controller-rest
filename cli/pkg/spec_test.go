@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package carbidecli
+package cli
 
 import (
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/openapi"
+	"github.com/NVIDIA/infra-controller-rest/openapi"
 )
 
 func TestParseSpec_EmbeddedSpec(t *testing.T) {

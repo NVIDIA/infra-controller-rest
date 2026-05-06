@@ -18,10 +18,10 @@
 package model
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/metadata"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/metadata"
 )
 
-// APIMetadata is a data structure to capture Forge API system information
+// APIMetadata is a data structure to capture NICo API system information
 type APIMetadata struct {
 	// Version contains the API version
 	Version string `json:"version"`

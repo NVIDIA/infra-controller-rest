@@ -23,7 +23,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/client"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
 )
 
 var (
@@ -33,8 +33,8 @@ var (
 		Long: `Inject expected component configurations to their respective component manager services.
 
 Components are routed to the appropriate service based on type:
-  - Compute    → Carbide AddExpectedMachine API
-  - NVLSwitch  → Carbide AddExpectedSwitch API
+  - Compute    → NICo AddExpectedMachine API
+  - NVLSwitch  → NICo AddExpectedSwitch API
   - PowerShelf → PSM RegisterPowershelves API
 
 Specify racks by ID or name:

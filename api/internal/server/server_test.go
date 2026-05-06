@@ -26,16 +26,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	_ "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	cconfig "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/config"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	_ "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	cconfig "github.com/NVIDIA/infra-controller-rest/common/pkg/config"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	echo "github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	temporalClient "go.temporal.io/sdk/client"
@@ -126,7 +126,8 @@ func Test_InitTemporalClients(t *testing.T) {
 
 func Test_InitMetricsServer(t *testing.T) {
 	type args struct {
-		e *echo.Echo
+		e   *echo.Echo
+		cfg *config.Config
 	}
 	tests := []struct {
 		name string
@@ -135,13 +136,14 @@ func Test_InitMetricsServer(t *testing.T) {
 		{
 			name: "test initMetricsServer success",
 			args: args{
-				e: echo.New(),
+				e:   echo.New(),
+				cfg: common.GetTestConfig(),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			InitMetricsServer(tt.args.e)
+			InitMetricsServer(tt.args.e, tt.args.cfg)
 		})
 	}
 }

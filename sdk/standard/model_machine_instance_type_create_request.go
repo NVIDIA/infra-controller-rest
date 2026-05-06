@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -36,7 +36,7 @@ import (
 // checks if the MachineInstanceTypeCreateRequest type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &MachineInstanceTypeCreateRequest{}
 
-// MachineInstanceTypeCreateRequest Associates one or more Machines with an Instance Type
+// MachineInstanceTypeCreateRequest Associates one or more Machines with an Instance Type.  The Machine's capabilities must be a superset of the Instance Type's required capabilities for the association to succeed.
 type MachineInstanceTypeCreateRequest struct {
 	MachineIds []string `json:"machineIds"`
 }

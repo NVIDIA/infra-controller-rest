@@ -23,7 +23,7 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
 )
 
 type RackOpReport struct {

@@ -25,9 +25,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	taskstore "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/store"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	taskstore "github.com/NVIDIA/infra-controller-rest/rla/internal/task/store"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 const (

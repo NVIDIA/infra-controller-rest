@@ -18,7 +18,7 @@
 package operations
 
 import (
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
 )
 
 type PowerOperation int

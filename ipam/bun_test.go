@@ -14,8 +14,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -42,7 +42,7 @@ func getTestDBParams() TestDBConfig {
 	tdbcfg := TestDBConfig{
 		Host:     "localhost",
 		Port:     "30432",
-		Name:     "forgetest",
+		Name:     "nicotest",
 		User:     "postgres",
 		Password: "postgres",
 	}
@@ -63,7 +63,7 @@ func newBunPostgres(host, port, user, password, dbname string) (*bun.DB, error) 
 	if err != nil {
 		return nil, err
 	}
-	config.PreferSimpleProtocol = true
+	config.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
 
 	sqldb := stdlib.OpenDB(*config)
 	db := bun.NewDB(sqldb, pgdialect.New())

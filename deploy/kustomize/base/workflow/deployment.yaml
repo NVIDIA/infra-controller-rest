@@ -17,14 +17,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carbide-rest-cloud-worker
+  name: nico-rest-cloud-worker
   labels:
-    app: carbide-rest-workflow
+    app: nico-rest-workflow
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carbide-rest-workflow
+      app: nico-rest-workflow
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -33,13 +33,13 @@ spec:
   template:
     metadata:
       labels:
-        app: carbide-rest-workflow
+        app: nico-rest-workflow
     spec:
       imagePullSecrets:
         - name: image-pull-secret
       containers:
         - name: cloud-worker
-          image: carbide-rest-workflow
+          image: nico-rest-workflow
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9360
@@ -90,7 +90,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: carbide-rest-workflow-config
+            name: nico-rest-workflow-config
         - name: temporal-encryption-key
           secret:
             secretName: temporal-encryption-key
@@ -105,14 +105,14 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carbide-rest-site-worker
+  name: nico-rest-site-worker
   labels:
-    app: carbide-rest-workflow
+    app: nico-rest-workflow
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carbide-rest-workflow
+      app: nico-rest-workflow
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -121,13 +121,13 @@ spec:
   template:
     metadata:
       labels:
-        app: carbide-rest-workflow
+        app: nico-rest-workflow
     spec:
       imagePullSecrets:
         - name: image-pull-secret
       containers:
         - name: site-worker
-          image: carbide-rest-workflow
+          image: nico-rest-workflow
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9360
@@ -178,7 +178,7 @@ spec:
       volumes:
         - name: config
           configMap:
-            name: carbide-rest-workflow-config
+            name: nico-rest-workflow-config
         - name: temporal-encryption-key
           secret:
             secretName: temporal-encryption-key

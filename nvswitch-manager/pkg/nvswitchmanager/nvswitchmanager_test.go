@@ -21,12 +21,12 @@ import (
 	"context"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/credentials"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/nvswitchregistry"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/credentials"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/nvswitchregistry"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -143,10 +143,12 @@ func TestNVSwitchManager_Get(t *testing.T) {
 			tray := newTestTray(t)
 
 			if tc.setupBMCCred {
-				require.NoError(t, nm.CredentialManager.PutBMC(ctx, tray.BMC.MAC, credential.New("admin", "pass")))
+				c := credential.New("admin", "pass")
+				require.NoError(t, nm.CredentialManager.PutBMC(ctx, tray.BMC.MAC, &c))
 			}
 			if tc.setupNVOSCred {
-				require.NoError(t, nm.CredentialManager.PutNVOS(ctx, tray.BMC.MAC, credential.New("nvos_admin", "nvos_pass")))
+				c := credential.New("nvos_admin", "nvos_pass")
+				require.NoError(t, nm.CredentialManager.PutNVOS(ctx, tray.BMC.MAC, &c))
 			}
 
 			_, _, err := nm.Registry.Register(ctx, tray)

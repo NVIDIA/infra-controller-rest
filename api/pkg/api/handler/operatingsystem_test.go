@@ -28,17 +28,18 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	cdmu "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/ipam"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	cdmu "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/ipam"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -61,14 +62,14 @@ func TestOperatingSystemHandler_Create(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	testMachineBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	ip := testMachineBuildInfrastructureProvider(t, dbSession, ipOrg1, "infra-provider-1")
 	assert.NotNil(t, ip)
@@ -401,7 +402,7 @@ func TestOperatingSystemHandler_GetAll(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ip := testMachineBuildInfrastructureProvider(t, dbSession, ipOrg1, "infra-provider-1")
 	assert.NotNil(t, ip)
@@ -415,7 +416,7 @@ func TestOperatingSystemHandler_GetAll(t *testing.T) {
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
 	tnOrg4 := "test-tn-org-4"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1, tnOrg2, tnOrg3, tnOrg4}, tnRoles)
 
@@ -787,7 +788,7 @@ func TestOperatingSystemHandler_GetAll(t *testing.T) {
 				q.Set("orderBy", *tc.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/operating-system?%s", tc.reqOrgName, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/operating-system?%s", tc.reqOrgName, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 
@@ -875,7 +876,7 @@ func TestOperatingSystemHandler_GetByID(t *testing.T) {
 
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	orgRoles := []string{"FORGE_TENANT_ADMIN"}
+	orgRoles := []string{authz.TenantAdminRole}
 
 	user := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3, tnOrg1, tnOrg2}, orgRoles)
 
@@ -1153,7 +1154,7 @@ func TestOperatingSystemHandler_Update(t *testing.T) {
 	ipOrg3 := "test-ip-org-3"
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
-	orgRoles := []string{"FORGE_TENANT_ADMIN"}
+	orgRoles := []string{authz.TenantAdminRole}
 	user := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3, tnOrg1, tnOrg2}, orgRoles)
 
 	ip := testMachineBuildInfrastructureProvider(t, dbSession, ipOrg1, "infra-provider-1")
@@ -1894,7 +1895,7 @@ func TestOperatingSystemHandler_Delete(t *testing.T) {
 	ipOrg1 := "test-ip-org-1"
 	ipOrg2 := "test-ip-org-2"
 	ipOrg3 := "test-ip-org-3"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg1, ipOrg2, ipOrg3}, ipRoles)
 
@@ -1902,7 +1903,7 @@ func TestOperatingSystemHandler_Delete(t *testing.T) {
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
 	tnOrg4 := "test-tn-org-4"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := testMachineBuildUser(t, dbSession, uuid.New().String(), []string{tnOrg1, tnOrg2, tnOrg3, tnOrg4}, tnRoles)
 
@@ -2111,23 +2112,23 @@ func TestOperatingSystemHandler_Delete(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[site.ID.String()] = tscWithCarbideNotFound
-	scpWithCarbideNotFound.IDClientMap[site2.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[site.ID.String()] = tscWithNICoNotFound
+	scpWithNICoNotFound.IDClientMap[site2.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteOsImage", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteOsImage", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	tests := []struct {
 		name               string
@@ -2217,15 +2218,15 @@ func TestOperatingSystemHandler_Delete(t *testing.T) {
 			tClient:            tscWithTimeout,
 		},
 		{
-			name:               "carbide not-found success",
+			name:               "nico not-found success",
 			reqOrgName:         tnOrg1,
 			user:               tnu,
 			osID:               os5.ID.String(),
 			expectedErr:        false,
 			expectedStatus:     http.StatusAccepted,
 			verifyChildSpanner: true,
-			clientPool:         scpWithCarbideNotFound,
-			tClient:            tscWithCarbideNotFound,
+			clientPool:         scpWithNICoNotFound,
+			tClient:            tscWithNICoNotFound,
 		},
 	}
 	for _, tc := range tests {

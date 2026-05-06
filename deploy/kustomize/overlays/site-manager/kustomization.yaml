@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Overlay for site-manager only: carbide-rest-site-manager.
+# Overlay for site-manager only: nico-rest-site-manager.
 # Deploys only this component; cert-manager, namespace, image-pull-secret, etc. are assumed to exist.
 # Apply with: kubectl kustomize --load-restrictor LoadRestrictionsNone . | kubectl apply -f -
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -22,24 +22,24 @@ kind: Kustomization
 generatorOptions:
   disableNameSuffixHash: true
 
-namespace: carbide-rest
+namespace: nico-rest
 
 resources:
   - ../../base/site-manager
 
 images:
-  - name: carbide-rest-site-manager
-    newName: localhost:5000/carbide-rest-site-manager
+  - name: nico-rest-site-manager
+    newName: localhost:5000/nico-rest-site-manager
     newTag: latest
 
 patches:
   - target:
       kind: Deployment
-      name: carbide-rest-site-manager
+      name: nico-rest-site-manager
     patch: |-
       - op: replace
         path: /spec/template/spec/imagePullSecrets
         value: []
 
 commonLabels:
-  app.kubernetes.io/part-of: carbide-rest
+  app.kubernetes.io/part-of: nico-rest

@@ -28,14 +28,14 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // ManageSubnet is an activity wrapper for Subnet management tasks that allows injecting DB access
 type ManageSubnet struct {
-	CarbideAtomicClient *cClient.CarbideAtomicClient
+	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 }
 
 // Function to Create Subnets with the Site Controller
@@ -74,12 +74,13 @@ func (mm *ManageSubnet) CreateSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.CreateNetworkSegment(ctx, request)
+	_, err = rpcClient.CreateNetworkSegment(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Subnet using Site Controller API")
 		return swe.WrapErr(err)
@@ -113,12 +114,13 @@ func (mm *ManageSubnet) DeleteSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Site Controller gRPC endpoint
-	forgeClient, err := mm.CarbideAtomicClient.GetForgeClient()
-	if err != nil {
-		return err
+	nicoClient := mm.NICoCoreAtomicClient.GetClient()
+	if nicoClient == nil {
+		return cClient.ErrClientNotConnected
 	}
+	rpcClient := nicoClient.NICo()
 
-	_, err = forgeClient.DeleteNetworkSegment(ctx, request)
+	_, err = rpcClient.DeleteNetworkSegment(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete Subnet using Site Controller API")
 		return swe.WrapErr(err)
@@ -130,9 +132,9 @@ func (mm *ManageSubnet) DeleteSubnetOnSite(ctx context.Context, request *cwssaws
 }
 
 // NewManageSubnet returns a new ManageSubnet client
-func NewManageSubnet(carbideClient *cClient.CarbideAtomicClient) ManageSubnet {
+func NewManageSubnet(nicoClient *cClient.NICoCoreAtomicClient) ManageSubnet {
 	return ManageSubnet{
-		CarbideAtomicClient: carbideClient,
+		NICoCoreAtomicClient: nicoClient,
 	}
 }
 
@@ -162,20 +164,16 @@ func NewManageSubnetInventory(config ManageInventoryConfig) ManageSubnetInventor
 	}
 }
 
-func subnetFindIDs(ctx context.Context, carbideClient *cClient.CarbideClient) ([]*cwssaws.NetworkSegmentId, error) {
-	forgeClient := carbideClient.Carbide()
-
-	idList, err := forgeClient.FindNetworkSegmentIds(ctx, &cwssaws.NetworkSegmentSearchFilter{})
+func subnetFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.NetworkSegmentId, error) {
+	idList, err := nicoClient.NICo().FindNetworkSegmentIds(ctx, &cwssaws.NetworkSegmentSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
 	return idList.GetNetworkSegmentsIds(), nil
 }
 
-func subnetFindByIDs(ctx context.Context, carbideClient *cClient.CarbideClient, ids []*cwssaws.NetworkSegmentId) ([]*cwssaws.NetworkSegment, error) {
-	forgeClient := carbideClient.Carbide()
-
-	list, err := forgeClient.FindNetworkSegmentsByIds(ctx, &cwssaws.NetworkSegmentsByIdsRequest{
+func subnetFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.NetworkSegmentId) ([]*cwssaws.NetworkSegment, error) {
+	list, err := nicoClient.NICo().FindNetworkSegmentsByIds(ctx, &cwssaws.NetworkSegmentsByIdsRequest{
 		NetworkSegmentsIds: ids,
 	})
 	if err != nil {

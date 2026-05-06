@@ -30,12 +30,13 @@ import (
 
 	"github.com/uptrace/bun/extra/bundebug"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/roles"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/workflow/internal/config"
 )
 
 // TestInitDB init DB
@@ -853,7 +854,7 @@ func TestAssertMetricExistsTimes(t *testing.T, reg *prometheus.Registry, metricN
 // This is a common utility for all inventory metrics testing
 func TestSetupSite(t *testing.T, dbSession *cdb.Session) *cdbm.Site {
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{roles.ProviderAdminRole}
 
 	ipu := TestBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg}, ipRoles)
 	ip := TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)

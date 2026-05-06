@@ -21,8 +21,8 @@ import (
 	"context"
 	"testing"
 
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,13 +30,13 @@ import (
 )
 
 func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -52,7 +52,7 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test create VpcPeering success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -67,7 +67,7 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test create VpcPeering fail on missing VpcId",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -81,7 +81,7 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test create VpcPeering fail on missing PeerVpcId",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -95,7 +95,7 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test create VpcPeering fail on missing VPC peering ID",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -109,7 +109,7 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test create VpcPeering fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -121,7 +121,7 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageVpcPeering(tt.fields.CarbideAtomicClient)
+			mm := NewManageVpcPeering(tt.fields.NICoCoreAtomicClient)
 			err := mm.CreateVpcPeeringOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -133,13 +133,13 @@ func TestManageVpcPeering_CreateVpcPeeringOnSite(t *testing.T) {
 }
 
 func TestManageVpcPeering_DeleteVpcPeeringOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -155,7 +155,7 @@ func TestManageVpcPeering_DeleteVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test delete VpcPeering success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -168,7 +168,7 @@ func TestManageVpcPeering_DeleteVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test delete VpcPeering fail on missing ID",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -181,7 +181,7 @@ func TestManageVpcPeering_DeleteVpcPeeringOnSite(t *testing.T) {
 		{
 			name: "test delete VpcPeering fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -193,7 +193,7 @@ func TestManageVpcPeering_DeleteVpcPeeringOnSite(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageVpcPeering(tt.fields.CarbideAtomicClient)
+			mm := NewManageVpcPeering(tt.fields.NICoCoreAtomicClient)
 			err := mm.DeleteVpcPeeringOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -205,10 +205,10 @@ func TestManageVpcPeering_DeleteVpcPeeringOnSite(t *testing.T) {
 }
 
 func TestManageVpcPeeringInventory_DiscoverVpcPeeringInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -216,7 +216,7 @@ func TestManageVpcPeeringInventory_DiscoverVpcPeeringInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -234,7 +234,7 @@ func TestManageVpcPeeringInventory_DiscoverVpcPeeringInventory(t *testing.T) {
 			name: "test collecting and publishing VpcPeering success, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -247,7 +247,7 @@ func TestManageVpcPeeringInventory_DiscoverVpcPeeringInventory(t *testing.T) {
 			name: "test collecting and publishing VpcPeering success, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -273,7 +273,7 @@ func TestManageVpcPeeringInventory_DiscoverVpcPeeringInventory(t *testing.T) {
 
 			manageVpcPeering := NewManageVpcPeeringInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

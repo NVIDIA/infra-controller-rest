@@ -20,7 +20,7 @@ package model
 import (
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/metadata"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/metadata"
 	"github.com/stretchr/testify/assert"
 )
 

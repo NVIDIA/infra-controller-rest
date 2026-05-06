@@ -24,11 +24,11 @@ import (
 	"net/netip"
 	"strings"
 
-	cipam "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
+	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
 	"github.com/uptrace/bun"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 )
 
 var (

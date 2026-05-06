@@ -31,12 +31,12 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
-	cipam "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
+	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 var (
@@ -603,7 +603,7 @@ func TestCommonTraceProviderSetup(t *testing.T, ctx context.Context) (trace.Trac
 func TestBuildAuditEntry(t *testing.T, dbSession *cdb.Session, orgName string, userID *uuid.UUID, statusCode int) *cdbm.AuditEntry {
 	aeDAO := cdbm.NewAuditEntryDAO(dbSession)
 	aeo, err := aeDAO.Create(context.Background(), nil, cdbm.AuditEntryCreateInput{
-		Endpoint: fmt.Sprintf("/v2/org/%s/carbide/ep", orgName),
+		Endpoint: fmt.Sprintf("/v2/org/%s/nico/ep", orgName),
 		QueryParams: url.Values{
 			"test": []string{"1234"},
 		},

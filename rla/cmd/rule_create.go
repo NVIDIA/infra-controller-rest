@@ -25,10 +25,10 @@ import (
 
 	"github.com/spf13/cobra"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/client"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/types"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
 )
 
 var ruleCreateCmd = &cobra.Command{

@@ -20,9 +20,9 @@ package model
 import (
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 )
@@ -163,7 +163,7 @@ func NewAPISiteMachineStats() *APISiteMachineStats {
 
 // APISite is a data structure to capture information about site at the API layer
 type APISite struct {
-	// ID is the unique UUID v4 identifier of the site in Forge Cloud
+	// ID is the unique UUID v4 identifier of the site in NICo Cloud
 	ID string `json:"id"`
 	// Name is the name of the site
 	Name string `json:"name"`

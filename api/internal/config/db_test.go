@@ -21,7 +21,7 @@ import (
 	"reflect"
 	"testing"
 
-	cconfig "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/config"
+	cconfig "github.com/NVIDIA/infra-controller-rest/common/pkg/config"
 )
 
 func TestNewDBConfig(t *testing.T) {
@@ -36,8 +36,8 @@ func TestNewDBConfig(t *testing.T) {
 	dbcfg := cconfig.DBConfig{
 		Host:     "localhost",
 		Port:     5432,
-		Name:     "forge",
-		User:     "forge",
+		Name:     "nico",
+		User:     "nico",
 		Password: "test123",
 	}
 

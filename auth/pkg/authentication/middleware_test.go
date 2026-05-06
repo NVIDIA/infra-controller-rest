@@ -28,14 +28,14 @@ import (
 	"testing"
 	"time"
 
-	config2 "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/core/claim"
-	"github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/processors"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/config"
+	config2 "github.com/NVIDIA/infra-controller-rest/auth/pkg/config"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/core/claim"
+	"github.com/NVIDIA/infra-controller-rest/auth/pkg/processors"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/config"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -74,7 +74,7 @@ var (
 const (
 	ssaIssuer      = "https://ytynxseffxl4u4jswpl8k6wfcbjzudh1k9dmmlfnquw.stg.ssa.nvidia.com"
 	kasIssuer      = "stg.auth.ngc.nvidia.com"
-	keycloakIssuer = "http://localhost:8082/realms/forge"
+	keycloakIssuer = "http://localhost:8082/realms/nico"
 )
 
 func TestAuthProcessor(t *testing.T) {
@@ -243,7 +243,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			"test-org": cdbm.Org{
 				Name:        "test-org",
 				DisplayName: "Test Org",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+				Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -275,7 +275,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			"test-org": cdbm.Org{
 				Name:        "test-org",
 				DisplayName: "Test Org",
-				Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+				Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 				Teams:       []cdbm.Team{},
 			},
 		},
@@ -307,7 +307,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 				headers: map[string]string{
 					ngcUserNameHeader:       base64.StdEncoding.EncodeToString([]byte("Jane Smith")),
 					ngcUserEmailHeader:      base64.StdEncoding.EncodeToString([]byte("jane@test.com")),
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Org")),
 				},
 				existingUser: *noDataUser,
@@ -322,7 +322,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Org",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -335,7 +335,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 				headers: map[string]string{
 					ngcUserNameHeader:       base64.StdEncoding.EncodeToString([]byte("John Robert Smith")),
 					ngcUserEmailHeader:      base64.StdEncoding.EncodeToString([]byte("jrsmith@test.com")),
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Organization")),
 				},
 				existingUser: *dataUser1,
@@ -349,7 +349,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Organization",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -362,7 +362,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 				headers: map[string]string{
 					ngcUserNameHeader:       base64.StdEncoding.EncodeToString([]byte("John Doe")),
 					ngcUserEmailHeader:      base64.StdEncoding.EncodeToString([]byte("jdoe@test.com")),
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("SRE Org")),
 				},
 				existingUser: *dataUser2,
@@ -381,7 +381,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"sre-org": cdbm.Org{
 						Name:        "sre-org",
 						DisplayName: "SRE Org",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -392,7 +392,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			name: "test user data update, no name or email headers",
 			args: args{
 				headers: map[string]string{
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Organization")),
 				},
 				existingUser: *dataUser3,
@@ -404,7 +404,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 					"test-org": cdbm.Org{
 						Name:        "test-org",
 						DisplayName: "Test Organization",
-						Roles:       []string{"FORGE_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
+						Roles:       []string{"NICO_PROVIDER_ADMIN", "REGISTRY_READ", "USER_ADMIN"},
 						Teams:       []cdbm.Team{},
 					},
 				},
@@ -416,7 +416,7 @@ func Test_getUpdatedUserFromHeaders(t *testing.T) {
 			args: args{
 				headers: map[string]string{
 					ngcUserNameHeader:       "invalid-base64-encoded-name",
-					ngcRolesHeader:          "forge_provider_admin,registry-read,user-admin",
+					ngcRolesHeader:          "nico_provider_admin,registry-read,user-admin",
 					ngcOrgDisplayNameHeader: base64.StdEncoding.EncodeToString([]byte("Test Organization")),
 				},
 				existingUser: *dataUser3,

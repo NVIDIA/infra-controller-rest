@@ -26,9 +26,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -52,7 +52,7 @@ func createAuditUser(dbSession *db.Session) (uuid.UUID, error) {
 		DisplayName: "Test Org",
 		OrgType:     "test-org-type",
 		Roles: []string{
-			"FORGE_SERVICE_PROVIDER_ADMIN",
+			"NICO_SERVICE_PROVIDER_ADMIN",
 		},
 		Teams: []Team{
 			{
@@ -60,7 +60,7 @@ func createAuditUser(dbSession *db.Session) (uuid.UUID, error) {
 				Name:     "test-team",
 				TeamType: "test-team-type",
 				Roles: []string{
-					"FORGE_SERVICE_PROVIDER_USER",
+					"NICO_SERVICE_PROVIDER_USER",
 				},
 			},
 		},
@@ -107,7 +107,7 @@ func makeAuditEntryCreateInput(orgName string, userID uuid.UUID, statusCode int)
 		return AuditEntryCreateInput{}, err
 	}
 	return AuditEntryCreateInput{
-		Endpoint: fmt.Sprintf("/v2/org/%s/carbide/site", orgName),
+		Endpoint: fmt.Sprintf("/v2/org/%s/nico/site", orgName),
 		QueryParams: url.Values{
 			"test": []string{"1234"},
 		},

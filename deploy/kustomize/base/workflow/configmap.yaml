@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-workflow configuration
+# nico-rest-workflow configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: carbide-rest-workflow-config
+  name: nico-rest-workflow-config
   labels:
-    app: carbide-rest-workflow
+    app: nico-rest-workflow
 data:
   config.yaml: |
     env:
@@ -31,9 +31,9 @@ data:
     db:
       host: postgres.postgres
       port: 5432
-      name: forge
-      user: forge
-      password: forge
+      name: nico
+      user: nico
+      password: nico
 
     temporal:
       host: temporal-frontend.temporal
@@ -63,4 +63,4 @@ data:
 
     tracing:
       enabled: false
-      serviceName: carbide-rest-workflow
+      serviceName: nico-rest-workflow

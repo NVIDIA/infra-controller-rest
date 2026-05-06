@@ -21,8 +21,8 @@ import (
 	"context"
 	"testing"
 
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,15 +30,15 @@ import (
 )
 
 func TestManageInstance_CreateTenantOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	orgID := "m4jjok8wsg"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -53,7 +53,7 @@ func TestManageInstance_CreateTenantOnSite(t *testing.T) {
 		{
 			name: "test create Tenant success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -66,7 +66,7 @@ func TestManageInstance_CreateTenantOnSite(t *testing.T) {
 		{
 			name: "test create Tenant fails on missing org ID",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -77,7 +77,7 @@ func TestManageInstance_CreateTenantOnSite(t *testing.T) {
 		{
 			name: "test create Tenant fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -88,7 +88,7 @@ func TestManageInstance_CreateTenantOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageTenant(tt.fields.CarbideAtomicClient)
+			mt := NewManageTenant(tt.fields.NICoCoreAtomicClient)
 			err := mt.CreateTenantOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -100,15 +100,15 @@ func TestManageInstance_CreateTenantOnSite(t *testing.T) {
 }
 
 func TestManageTenant_UpdateTenantOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	orgID := "m4jjok8wsg"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -123,7 +123,7 @@ func TestManageTenant_UpdateTenantOnSite(t *testing.T) {
 		{
 			name: "test update Tenant success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -136,7 +136,7 @@ func TestManageTenant_UpdateTenantOnSite(t *testing.T) {
 		{
 			name: "test create Tenant fails on missing org ID",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -147,7 +147,7 @@ func TestManageTenant_UpdateTenantOnSite(t *testing.T) {
 		{
 			name: "test create Tenant fails on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -158,7 +158,7 @@ func TestManageTenant_UpdateTenantOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mt := NewManageTenant(tt.fields.CarbideAtomicClient)
+			mt := NewManageTenant(tt.fields.NICoCoreAtomicClient)
 			err := mt.UpdateTenantOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -170,10 +170,10 @@ func TestManageTenant_UpdateTenantOnSite(t *testing.T) {
 }
 
 func TestManageTenantInventory_DiscoverTenantInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -181,7 +181,7 @@ func TestManageTenantInventory_DiscoverTenantInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -199,7 +199,7 @@ func TestManageTenantInventory_DiscoverTenantInventory(t *testing.T) {
 			name: "test collecting and publishing Tenant inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -212,7 +212,7 @@ func TestManageTenantInventory_DiscoverTenantInventory(t *testing.T) {
 			name: "test collecting and publishing Tenant inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -232,7 +232,7 @@ func TestManageTenantInventory_DiscoverTenantInventory(t *testing.T) {
 
 			manageTenantInventory := NewManageTenantInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,

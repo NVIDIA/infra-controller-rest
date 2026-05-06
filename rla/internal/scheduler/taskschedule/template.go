@@ -21,8 +21,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
 )
 
 // TaskTemplate is the JSON-serialized operation stored in task_schedule.operation_template.

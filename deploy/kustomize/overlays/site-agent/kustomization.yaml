@@ -18,20 +18,20 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: carbide-rest
+namespace: nico-rest
 
 resources:
   - ../../base/site-agent
 
 images:
-  - name: carbide-rest-site-agent
-    newName: localhost:5000/carbide-rest-site-agent
+  - name: nico-rest-site-agent
+    newName: localhost:5000/nico-rest-site-agent
     newTag: latest
 
 patches:
   - target:
       kind: StatefulSet
-      name: carbide-rest-site-agent
+      name: nico-rest-site-agent
     patch: |-
       - op: replace
         path: /spec/template/spec/imagePullSecrets

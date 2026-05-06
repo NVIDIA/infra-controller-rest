@@ -22,10 +22,10 @@ import (
 
 	"github.com/google/uuid"
 
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 // mockStore is a minimal in-memory implementation of taskstore.Store used in

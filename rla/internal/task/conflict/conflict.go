@@ -32,11 +32,11 @@ package conflict
 import (
 	"context"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	taskstore "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/store"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	taskstore "github.com/NVIDIA/infra-controller-rest/rla/internal/task/store"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 	"github.com/google/uuid"
 )
 

@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Keycloak realm configuration for carbide-dev
+# Keycloak realm configuration for nico-dev
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -21,11 +21,11 @@ metadata:
   labels:
     app: keycloak
 data:
-  carbide-dev-realm.json: |
+  nico-dev-realm.json: |
     {
-      "realm": "carbide-dev",
+      "realm": "nico-dev",
       "enabled": true,
-      "displayName": "Carbide Development",
+      "displayName": "NICo Development",
       "sslRequired": "none",
       "registrationAllowed": false,
       "loginWithEmailAllowed": true,
@@ -36,15 +36,15 @@ data:
       "roles": {
         "realm": [
           {
-            "name": "test-org:FORGE_PROVIDER_ADMIN",
+            "name": "test-org:PROVIDER_ADMIN",
             "description": "Provider Admin role for test-org"
           },
           {
-            "name": "test-org:FORGE_TENANT_ADMIN",
+            "name": "test-org:TENANT_ADMIN",
             "description": "Tenant Admin role for test-org"
           },
           {
-            "name": "test-org:FORGE_PROVIDER_VIEWER",
+            "name": "test-org:PROVIDER_VIEWER",
             "description": "Provider Viewer role for test-org"
           },
           {
@@ -57,21 +57,21 @@ data:
           }
         ],
         "client": {
-          "carbide-api": [
+          "nico-api": [
             {
               "name": "api-access",
-              "description": "Access to Carbide API"
+              "description": "Access to NICo API"
             }
           ]
         }
       },
       "clients": [
         {
-          "clientId": "carbide-api",
-          "name": "Carbide API",
+          "clientId": "nico-api",
+          "name": "NICo API",
           "enabled": true,
           "clientAuthenticatorType": "client-secret",
-          "secret": "carbide-local-secret",
+          "secret": "nico-local-secret",
           "redirectUris": [
             "http://localhost:8388/*",
             "http://localhost:3000/*"
@@ -108,7 +108,7 @@ data:
               "protocolMapper": "oidc-audience-mapper",
               "consentRequired": false,
               "config": {
-                "included.client.audience": "carbide-api",
+                "included.client.audience": "nico-api",
                 "id.token.claim": "true",
                 "access.token.claim": "true"
               }
@@ -147,10 +147,10 @@ data:
           ],
           "realmRoles": [
             "user",
-            "test-org:FORGE_TENANT_ADMIN"
+            "test-org:TENANT_ADMIN"
           ],
           "clientRoles": {
-            "carbide-api": [
+            "nico-api": [
               "api-access"
             ]
           },
@@ -175,11 +175,11 @@ data:
           "realmRoles": [
             "admin",
             "user",
-            "test-org:FORGE_PROVIDER_ADMIN",
-            "test-org:FORGE_TENANT_ADMIN"
+            "test-org:PROVIDER_ADMIN",
+            "test-org:TENANT_ADMIN"
           ],
           "clientRoles": {
-            "carbide-api": [
+            "nico-api": [
               "api-access"
             ]
           },
@@ -203,10 +203,10 @@ data:
           ],
           "realmRoles": [
             "user",
-            "test-org:FORGE_PROVIDER_ADMIN"
+            "test-org:PROVIDER_ADMIN"
           ],
           "clientRoles": {
-            "carbide-api": [
+            "nico-api": [
               "api-access"
             ]
           },

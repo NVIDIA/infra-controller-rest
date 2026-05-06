@@ -31,7 +31,7 @@ import (
 	"strings"
 	"sync"
 
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/rs/zerolog/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -47,17 +47,17 @@ import (
 
 	tclient "go.temporal.io/sdk/client"
 
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 
 	temporalEnums "go.temporal.io/api/enums/v1"
 
-	cam "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	cam "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 )
 
 const (
@@ -197,7 +197,7 @@ func GetTenantFromTenantIDOrOrg(ctx context.Context, tx *cdb.Tx, dbSession *cdb.
 // GenerateAccountNumber will generate a unique account number
 // this will be deprecated - for now, use a uuid
 func GenerateAccountNumber() string {
-	return fmt.Sprintf("forge-%s", strings.ReplaceAll(uuid.New().String(), "-", ""))
+	return fmt.Sprintf("nico-%s", strings.ReplaceAll(uuid.New().String(), "-", ""))
 }
 
 // GetSiteFromIDString gets the site DB model from the id string
@@ -604,6 +604,30 @@ func RollbackTx(ctx context.Context, tx *cdb.Tx, committed *bool) {
 	if committed != nil && !*committed {
 		tx.Rollback()
 	}
+}
+
+// HandleTxError translates an error returned by cdb.WithTx / cdb.WithTxResult
+// into an Echo API response. The lookups happen in this order:
+//  1. If the error wraps a *cutil.APIError (the closure chose its own
+//     Code/Message/Data), those are preserved.
+//  2. If the error is cdb.ErrTransactionInitiation or cdb.ErrTransactionCommit,
+//     a 500 is returned with a message that names the transaction phase.
+//  3. Otherwise the caller-supplied fallback message is used with a 500.
+func HandleTxError(c echo.Context, logger zerolog.Logger, err error, fallback string) error {
+	var apiErr *cutil.APIError
+	if errors.As(err, &apiErr) {
+		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
+	}
+	if errors.Is(err, cdb.ErrTransactionInitiation) {
+		logger.Error().Err(err).Msg("DB transaction initiation failed")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to complete request, DB transaction initiation error", nil)
+	}
+	if errors.Is(err, cdb.ErrTransactionCommit) {
+		logger.Error().Err(err).Msg("DB transaction commit failed")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to complete request, DB transaction commit error", nil)
+	}
+	logger.Error().Err(err).Msg(fallback)
+	return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fallback, nil)
 }
 
 // GetAndValidateQueryRelations is a utility function to get and validate the query parameters for include relations get/getall request
@@ -1143,19 +1167,19 @@ func UnwrapWorkflowError(err error) (code int, unwrappedError error) {
 	switch tpError.Type() {
 	case swe.ErrTypeInvalidRequest:
 		code = http.StatusBadRequest
-	case swe.ErrTypeCarbideObjectNotFound:
+	case swe.ErrTypeNICoObjectNotFound, swe.ErrTypeCarbideObjectNotFound:
 		code = http.StatusNotFound
-	case swe.ErrTypeCarbideUnimplemented:
+	case swe.ErrTypeNICoUnimplemented, swe.ErrTypeCarbideUnimplemented:
 		code = http.StatusNotImplemented
-	case swe.ErrTypeCarbideDenied:
+	case swe.ErrTypeNICoDenied, swe.ErrTypeCarbideDenied:
 		code = http.StatusForbidden
-	case swe.ErrTypeCarbideUnavailable:
+	case swe.ErrTypeNICoUnavailable, swe.ErrTypeCarbideUnavailable:
 		code = http.StatusServiceUnavailable
-	case swe.ErrTypeCarbideAlreadyExists:
+	case swe.ErrTypeNICoAlreadyExists, swe.ErrTypeCarbideAlreadyExists:
 		code = http.StatusConflict
-	case swe.ErrTypeCarbideFailedPrecondition:
+	case swe.ErrTypeNICoFailedPrecondition, swe.ErrTypeCarbideFailedPrecondition:
 		code = http.StatusPreconditionFailed
-	case swe.ErrTypeCarbideInvalidArgument:
+	case swe.ErrTypeNICoInvalidArgument, swe.ErrTypeCarbideInvalidArgument:
 		code = http.StatusBadRequest
 	}
 

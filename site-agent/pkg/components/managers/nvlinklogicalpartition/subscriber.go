@@ -18,8 +18,8 @@
 package nvlinklogicalpartition
 
 import (
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterSubscriber registers NVLinkLogicalPartition CRUD workflows and activities with Temporal
@@ -41,7 +41,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("NVLinkLogicalPartition: Successfully registered DeleteNVLinkLogicalPartition workflow")
 
 	// Register activities
-	nvLinkLogicalPartitionManager := swa.NewManageNVLinkLogicalPartition(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	nvLinkLogicalPartitionManager := swa.NewManageNVLinkLogicalPartition(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateNVLinkLogicalPartitionOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(nvLinkLogicalPartitionManager.CreateNVLinkLogicalPartitionOnSite)

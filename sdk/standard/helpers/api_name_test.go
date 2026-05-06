@@ -26,22 +26,22 @@ import (
 
 func TestRewriteAPINamePath(t *testing.T) {
 	t.Run("default api name leaves path unchanged", func(t *testing.T) {
-		path := "/v2/org/test-org/carbide/metadata"
+		path := "/v2/org/test-org/nico/metadata"
 		assert.Equal(t, path, RewriteAPINamePath(path, ""))
-		assert.Equal(t, path, RewriteAPINamePath(path, "carbide"))
+		assert.Equal(t, path, RewriteAPINamePath(path, "nico"))
 	})
 
 	t.Run("custom api name rewrites org scoped paths", func(t *testing.T) {
 		assert.Equal(
 			t,
-			"/v2/org/test-org/forge/metadata",
-			RewriteAPINamePath("/v2/org/test-org/carbide/metadata", "forge"),
+			"/v2/org/test-org/nico/metadata",
+			RewriteAPINamePath("/v2/org/test-org/nico/metadata", "nico"),
 		)
 	})
 
 	t.Run("non matching paths are left unchanged", func(t *testing.T) {
 		path := "/healthz"
-		assert.Equal(t, path, RewriteAPINamePath(path, "forge"))
+		assert.Equal(t, path, RewriteAPINamePath(path, "nico"))
 	})
 }
 
@@ -55,15 +55,15 @@ func TestNormalizeAPIName(t *testing.T) {
 	})
 
 	t.Run("embedded slash returns default", func(t *testing.T) {
-		assert.Equal(t, DefaultAPIName, NormalizeAPIName("forge/internal"))
+		assert.Equal(t, DefaultAPIName, NormalizeAPIName("nico/internal"))
 	})
 
 	t.Run("surrounding slashes are trimmed", func(t *testing.T) {
-		assert.Equal(t, "forge", NormalizeAPIName("/forge/"))
+		assert.Equal(t, "nico", NormalizeAPIName("/nico/"))
 	})
 
 	t.Run("valid name is returned as-is", func(t *testing.T) {
-		assert.Equal(t, "forge", NormalizeAPIName("forge"))
+		assert.Equal(t, "nico", NormalizeAPIName("nico"))
 	})
 }
 
@@ -79,10 +79,10 @@ func TestCurrentAPINameRewriteTransport(t *testing.T) {
 	})
 
 	t.Run("client with rewrite transport returns it", func(t *testing.T) {
-		transport := NewAPINameRewriteTransport("forge", nil)
+		transport := NewAPINameRewriteTransport("nico", nil)
 		client := &http.Client{Transport: transport}
 		rewriter, ok := CurrentAPINameRewriteTransport(client)
 		assert.True(t, ok)
-		assert.Equal(t, "forge", rewriter.APIName())
+		assert.Equal(t, "nico", rewriter.APIName())
 	})
 }

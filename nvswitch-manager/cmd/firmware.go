@@ -24,7 +24,7 @@ import (
 	"strings"
 	"text/tabwriter"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/firmwaremanager/packages"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/firmwaremanager/packages"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

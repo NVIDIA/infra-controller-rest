@@ -36,21 +36,20 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/ipam"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/ipam"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -85,7 +84,7 @@ func NewCreateAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIAllocationCreateRequest true "Allocation creation request"
 // @Success 201 {object} model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation [post]
+// @Router /v2/org/{org}/nico/allocation [post]
 func (cah CreateAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Create", c, cah.tracerSpan)
 	if handlerSpan != nil {
@@ -440,17 +439,7 @@ func (cah CreateAllocationHandler) Handle(c echo.Context) error {
 		}
 
 		// Trigger apporpriate workflow on Site
-		// Unlikely case, but ensure that Tenant has an org display name populated
-		orgDisplayName := tenant.Org
-		if tenant.OrgDisplayName != nil {
-			orgDisplayName = *tenant.OrgDisplayName
-		}
-		createTenantRequest := &cwssaws.CreateTenantRequest{
-			OrganizationId: tenant.Org,
-			Metadata: &cwssaws.Metadata{
-				Name: orgDisplayName,
-			},
-		}
+		createTenantRequest := tenant.ToCreateRequestProto()
 
 		we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateTenant", createTenantRequest)
 		if err != nil {
@@ -518,7 +507,7 @@ func NewGetAllAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation [get]
+// @Router /v2/org/{org}/nico/allocation [get]
 func (gaah GetAllAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "GetAll", c, gaah.tracerSpan)
 	if handlerSpan != nil {
@@ -839,7 +828,7 @@ func NewGetAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param tenantId query string false "Deprecated: ID of Tenant"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant', 'Site'"
 // @Success 200 {object} model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation/{id} [get]
+// @Router /v2/org/{org}/nico/allocation/{id} [get]
 func (gah GetAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Get", c, gah.tracerSpan)
 	if handlerSpan != nil {
@@ -949,7 +938,7 @@ func NewUpdateAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param id path string true "ID of Allocation"
 // @Param message body model.APIAllocationUpdateRequest true "Allocation update request"
 // @Success 200 {object} model.APIAllocation
-// @Router /v2/org/{org}/carbide/allocation/{id} [patch]
+// @Router /v2/org/{org}/nico/allocation/{id} [patch]
 func (uah UpdateAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Update", c, uah.tracerSpan)
 	if handlerSpan != nil {
@@ -1153,7 +1142,7 @@ func NewDeleteAllocationHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Allocation"
 // @Success 202
-// @Router /v2/org/{org}/carbide/allocation/{id} [delete]
+// @Router /v2/org/{org}/nico/allocation/{id} [delete]
 func (dah DeleteAllocationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Allocation", "Delete", c, dah.tracerSpan)
 	if handlerSpan != nil {

@@ -49,13 +49,13 @@ import (
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
 
-	dbmodel "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	taskmanager "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/manager"
-	taskstore "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/store"
-	identifier "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	dbmodel "github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	taskmanager "github.com/NVIDIA/infra-controller-rest/rla/internal/task/manager"
+	taskstore "github.com/NVIDIA/infra-controller-rest/rla/internal/task/store"
+	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 const (

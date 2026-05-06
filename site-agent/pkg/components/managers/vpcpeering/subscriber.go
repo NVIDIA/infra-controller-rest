@@ -18,8 +18,8 @@
 package vpcpeering
 
 import (
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterSubscriber registers VPC Peering CRUD workflows and activities with Temporal
@@ -36,7 +36,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("VpcPeering: Successfully registered DeleteVpcPeering workflow")
 
 	// Register activities
-	vpcPeeringManager := swa.NewManageVpcPeering(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	vpcPeeringManager := swa.NewManageVpcPeering(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateVpcPeeringOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcPeeringManager.CreateVpcPeeringOnSite)

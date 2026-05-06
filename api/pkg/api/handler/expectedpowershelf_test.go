@@ -25,13 +25,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -155,13 +156,13 @@ func TestCreateExpectedPowerShelfHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
 	}
 
-	validIpAddress := "192.168.1.100"
+	validBmcIpAddress := "192.168.1.100"
 
 	tests := []struct {
 		name           string
@@ -177,7 +178,7 @@ func TestCreateExpectedPowerShelfHandler_Handle(t *testing.T) {
 				DefaultBmcUsername: cdb.GetStrPtr("admin"),
 				DefaultBmcPassword: cdb.GetStrPtr("password"),
 				ShelfSerialNumber:  "SHELF123",
-				IpAddress:          &validIpAddress,
+				BmcIpAddress:       &validBmcIpAddress,
 				Labels:             map[string]string{"env": "test"},
 			},
 			setupContext: func(c echo.Context) {
@@ -274,7 +275,7 @@ func TestCreateExpectedPowerShelfHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest(http.MethodPost, "/v2/org/test-org/carbide/expected-power-shelf", bytes.NewReader(reqBody))
+			req := httptest.NewRequest(http.MethodPost, "/v2/org/test-org/nico/expected-power-shelf", bytes.NewReader(reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req = req.WithContext(context.Background())
 
@@ -362,7 +363,7 @@ func TestGetAllExpectedPowerShelfHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_VIEWER"},
+					Roles:       []string{authz.ProviderViewerRole},
 				},
 			},
 		}
@@ -449,7 +450,7 @@ func TestGetAllExpectedPowerShelfHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-power-shelf"
+			url := "/v2/org/" + org + "/nico/expected-power-shelf"
 			params := []string{}
 			if tt.siteId != "" {
 				params = append(params, "siteId="+tt.siteId)
@@ -549,7 +550,7 @@ func TestGetExpectedPowerShelfHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -607,7 +608,7 @@ func TestGetExpectedPowerShelfHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-power-shelf/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-power-shelf/" + tt.id
 			req := httptest.NewRequest(http.MethodGet, url, nil)
 			req = req.WithContext(context.Background())
 
@@ -709,7 +710,7 @@ func TestUpdateExpectedPowerShelfHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -771,7 +772,7 @@ func TestUpdateExpectedPowerShelfHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(tt.requestBody)
-			url := "/v2/org/" + org + "/carbide/expected-power-shelf/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-power-shelf/" + tt.id
 			req := httptest.NewRequest(http.MethodPatch, url, bytes.NewReader(reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req = req.WithContext(context.Background())
@@ -864,7 +865,7 @@ func TestDeleteExpectedPowerShelfHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -902,7 +903,7 @@ func TestDeleteExpectedPowerShelfHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-power-shelf/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-power-shelf/" + tt.id
 			req := httptest.NewRequest(http.MethodDelete, url, nil)
 			req = req.WithContext(context.Background())
 

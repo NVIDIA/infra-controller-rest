@@ -20,7 +20,7 @@ package model
 import (
 	"fmt"
 
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 )
 
 // ========== Firmware Update Request ==========

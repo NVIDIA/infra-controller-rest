@@ -22,7 +22,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
 )
 
 // componentCmd is the parent command for component operation subcommands.

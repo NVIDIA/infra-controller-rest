@@ -23,10 +23,10 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/vendor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvos"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/objects/nvswitch"
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"

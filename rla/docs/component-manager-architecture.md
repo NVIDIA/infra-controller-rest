@@ -19,7 +19,7 @@ The Component Manager system uses two main patterns:
 ┌─────────────────────────────────────────────────────────────────────┐
 │                      ProviderRegistry                               │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
-│  │   carbide   │  │     psm     │  │   (new...)  │                 │
+│  │   nico   │  │     psm     │  │   (new...)  │                 │
 │  │  Provider   │  │  Provider   │  │  Provider   │                 │
 │  └─────────────┘  └─────────────┘  └─────────────┘                 │
 └─────────────────────────────────────────────────────────────────────┘
@@ -29,11 +29,11 @@ The Component Manager system uses two main patterns:
 │                    ComponentManager Registry                        │
 │  ┌─────────────────────────────────────────────────────────────┐   │
 │  │ ComponentType: Compute                                       │   │
-│  │   ├── "carbide" → Factory → Manager (uses carbide.Provider)  │   │
+│  │   ├── "nico" → Factory → Manager (uses nico.Provider)  │   │
 │  │   └── "mock"    → Factory → Manager (no provider needed)     │   │
 │  ├─────────────────────────────────────────────────────────────┤   │
 │  │ ComponentType: NVLSwitch                                     │   │
-│  │   ├── "carbide" → Factory → Manager                          │   │
+│  │   ├── "nico" → Factory → Manager                          │   │
 │  │   └── "mock"    → Factory → Manager                          │   │
 │  ├─────────────────────────────────────────────────────────────┤   │
 │  │ ComponentType: PowerShelf                                    │   │
@@ -61,9 +61,9 @@ Providers wrap API clients and are registered in the `ProviderRegistry`. Compone
 Manages provider instances. Component manager factories use `GetTyped[T]()` to retrieve type-safe providers:
 
 ```go
-provider, err := componentmanager.GetTyped[*carbide.Provider](
+provider, err := componentmanager.GetTyped[*nico.Provider](
     providerRegistry,
-    carbide.ProviderName,
+    nico.ProviderName,
 )
 ```
 
@@ -107,16 +107,16 @@ internal/task/componentmanager/
 ├── mock/
 │   └── mock.go              # Generic mock implementation
 ├── providers/
-│   ├── carbide/
-│   │   └── provider.go      # Carbide API provider
+│   ├── nico/
+│   │   └── provider.go      # NICo API provider
 │   └── psm/
 │       └── provider.go      # PSM API provider
 ├── compute/
-│   └── carbide/
-│       └── carbide.go       # Carbide-based compute manager
+│   └── nico/
+│       └── nico.go       # NICo-based compute manager
 ├── nvlswitch/
-│   └── carbide/
-│       └── carbide.go       # Carbide-based NVL switch manager
+│   └── nico/
+│       └── nico.go       # NICo-based NVL switch manager
 └── powershelf/
     └── psm/
         └── psm.go           # PSM-based power shelf manager
@@ -138,7 +138,7 @@ package myapi
 import (
     "time"
     "github.com/rs/zerolog/log"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/myapi"  // Your API client
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/myapi"  // Your API client
 )
 
 const (
@@ -189,17 +189,17 @@ Update `internal/task/componentmanager/config.go`:
 ```go
 import (
     // ... existing imports
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
 )
 
 type ProviderConfig struct {
-    Carbide *carbide.Config
+    NICo *nico.Config
     PSM     *psm.Config
     MyAPI   *myapi.Config  // Add new provider config
 }
 
 type rawProviderConfig struct {
-    Carbide *rawCarbideConfig `yaml:"carbide"`
+    NICo *rawNICoConfig `yaml:"nico"`
     PSM     *rawPSMConfig     `yaml:"psm"`
     MyAPI   *rawMyAPIConfig   `yaml:"myapi"`  // Add raw config
 }
@@ -217,7 +217,7 @@ Update `cmd/serve.go` in `initProviderRegistry()`:
 
 ```go
 import (
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
 )
 
 func initProviderRegistry(config componentmanager.Config) (...) {
@@ -252,11 +252,11 @@ import (
     "context"
     "fmt"
 
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-    myapiprovider "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operations"
-    "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+    myapiprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
+    "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 const ImplementationName = "myimpl"
@@ -315,14 +315,14 @@ Update `cmd/serve.go` in `initComponentManagerRegistry()`:
 
 ```go
 import (
-    myimpl "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/compute/myimpl"
+    myimpl "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/myimpl"
 )
 
 func initComponentManagerRegistry(...) (*componentmanager.Registry, error) {
     registry := componentmanager.NewRegistry()
 
     // Register all available component manager factories
-    computecarbide.Register(registry)
+    computenico.Register(registry)
     myimpl.Register(registry)  // Add new implementation
     // ... other registrations ...
     mock.RegisterAll(registry)
@@ -338,13 +338,13 @@ Now you can use the new implementation in YAML config:
 ```yaml
 component_managers:
   compute: myimpl
-  nvlswitch: carbide
+  nvlswitch: nico
   powershelf: psm
 
 providers:
   myapi:
     timeout: "30s"
-  carbide:
+  nico:
     timeout: "1m"
   psm:
     timeout: "30s"

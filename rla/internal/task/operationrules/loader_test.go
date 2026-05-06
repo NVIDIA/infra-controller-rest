@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
 )
 
 func TestYAMLRuleLoader_InvalidOperations(t *testing.T) {

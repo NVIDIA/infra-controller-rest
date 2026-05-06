@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard"
 )
 
 // ExpectedMachine represents a simplified Expected Machine

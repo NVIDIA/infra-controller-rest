@@ -28,19 +28,19 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/ipam"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/ipam"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	cwm "github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/metrics"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
+	cwm "github.com/NVIDIA/infra-controller-rest/workflow/internal/metrics"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
 
-	cwsv1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwsv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cwutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 const (
@@ -181,7 +181,7 @@ func (ms ManageSubnet) UpdateSubnetsInDB(ctx context.Context, siteID uuid.UUID, 
 		}
 
 		// Update Subnet in DB
-		status, statusMessage := getForgeSubnetStatus(controllerSegment.State)
+		status, statusMessage := getNICoSubnetStatus(controllerSegment.State)
 
 		// If Subnet is already in Deleting state then no need to update status
 		if subnet.Status == cdbm.SubnetStatusDeleting {
@@ -380,8 +380,8 @@ func (ms ManageSubnet) deleteSubnetFromDB(ctx context.Context, tx *cdb.Tx, subne
 	return nil
 }
 
-// Utility function to get Forge Subent status from Controller Segment state
-func getForgeSubnetStatus(controllerNetworkSegmentTenantState cwsv1.TenantState) (string, string) {
+// Utility function to get NICo Subent status from Controller Segment state
+func getNICoSubnetStatus(controllerNetworkSegmentTenantState cwsv1.TenantState) (string, string) {
 	switch controllerNetworkSegmentTenantState {
 	case cwsv1.TenantState_PROVISIONING:
 		return cdbm.SubnetStatusProvisioning, "Subnet is being provisioned on Site"

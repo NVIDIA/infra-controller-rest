@@ -16,7 +16,7 @@
 
 set -e
 
-NAMESPACE="${NAMESPACE:-carbide-rest}"
+NAMESPACE="${NAMESPACE:-nico-rest}"
 API_URL="${API_URL:-http://localhost:8388}"
 KEYCLOAK_URL="${KEYCLOAK_URL:-http://localhost:8082}"
 ORG="${ORG:-test-org}"
@@ -52,9 +52,9 @@ prompt = no
 C = US
 ST = CA
 L = Local
-O = Carbide Dev
+O = NICo Dev
 OU = Dev
-CN = carbide-local-ca
+CN = nico-local-ca
 
 [v3_ca]
 basicConstraints = critical,CA:TRUE
@@ -70,7 +70,7 @@ EOFCNF
         -config "$CA_DIR/ca.cnf" \
         -extensions v3_ca
 
-    # Create CA secret in carbide-rest namespace for credsmgr
+    # Create CA secret in nico-rest namespace for credsmgr
     kubectl create secret tls ca-signing-secret \
         --cert="$CA_DIR/ca.crt" \
         --key="$CA_DIR/ca.key" \
@@ -93,7 +93,7 @@ create_service_certs() {
     # Note: core-grpc-client-site-agent-certs and site-manager-tls are now managed by
     # cert-manager.io Certificate resources (see deploy/kustomize/base/site-agent/certificate.yaml
     # and deploy/kustomize/base/site-manager/certificate.yaml). They will be issued
-    # automatically once the carbide-rest-ca-issuer ClusterIssuer is applied.
+    # automatically once the nico-rest-ca-issuer ClusterIssuer is applied.
 
     CA_CERT=$(kubectl get secret ca-signing-secret -n "$NAMESPACE" -o jsonpath='{.data.tls\.crt}' | base64 -d 2>/dev/null || echo "")
 
@@ -105,7 +105,7 @@ create_service_certs() {
     kubectl create secret generic site-registration \
         --from-literal=site-uuid="00000000-0000-4000-8000-000000000001" \
         --from-literal=otp="local-dev-otp-token" \
-        --from-literal=creds-url="http://carbide-rest-site-manager:8100/v1/site/credentials" \
+        --from-literal=creds-url="http://nico-rest-site-manager:8100/v1/site/credentials" \
         --from-literal=cacert="$CA_CERT" \
         -n "$NAMESPACE" \
         --dry-run=client -o yaml | kubectl apply -f -
@@ -128,7 +128,7 @@ setup_pki() {
 wait_for_services() {
     echo "Waiting for Keycloak..."
     for i in {1..240}; do
-        if curl -sf "$KEYCLOAK_URL/realms/carbide-dev" > /dev/null 2>&1; then
+        if curl -sf "$KEYCLOAK_URL/realms/nico-dev" > /dev/null 2>&1; then
             break
         fi
         if [ $i -eq 240 ]; then
@@ -143,25 +143,25 @@ wait_for_services() {
     # when it started it would have failed to fetch the JWKS, and therefore it will automatically
     # disable Keycloak support.
     echo "Waiting for API ..."
-    kubectl -n $NAMESPACE rollout restart deployment carbide-rest-api
-    if ! kubectl -n $NAMESPACE rollout status deployment carbide-rest-api --timeout=240s; then
+    kubectl -n $NAMESPACE rollout restart deployment nico-rest-api
+    if ! kubectl -n $NAMESPACE rollout status deployment nico-rest-api --timeout=240s; then
         echo "ERROR: Failed to restart API"
         exit 1
     fi
 
     echo "Waiting for site-manager..."
-    if ! kubectl -n $NAMESPACE wait --for=condition=ready pod -l app=carbide-rest-site-manager --timeout=360s; then
+    if ! kubectl -n $NAMESPACE wait --for=condition=ready pod -l app=nico-rest-site-manager --timeout=360s; then
         echo "ERROR: Site-manager not ready"
-        kubectl -n $NAMESPACE get pods -l app=carbide-rest-site-manager
+        kubectl -n $NAMESPACE get pods -l app=nico-rest-site-manager
         exit 1
     fi
 }
 
 get_token() {
-    TOKEN=$(curl -sf -X POST "$KEYCLOAK_URL/realms/carbide-dev/protocol/openid-connect/token" \
+    TOKEN=$(curl -sf -X POST "$KEYCLOAK_URL/realms/nico-dev/protocol/openid-connect/token" \
         -H "Content-Type: application/x-www-form-urlencoded" \
-        -d "client_id=carbide-api" \
-        -d "client_secret=carbide-local-secret" \
+        -d "client_id=nico-api" \
+        -d "client_secret=nico-local-secret" \
         -d "grant_type=password" \
         -d "username=admin@example.com" \
         -d "password=adminpassword" | jq -r .access_token)
@@ -176,22 +176,22 @@ get_token() {
 create_site() {
     local token=$1
 
-    curl -sf "$API_URL/v2/org/$ORG/carbide/tenant/current" \
+    curl -sf "$API_URL/v2/org/$ORG/nico/tenant/current" \
         -H "Authorization: Bearer $token" > /dev/null 2>&1 || true
 
-    PROVIDER_RESP=$(curl -sf "$API_URL/v2/org/$ORG/carbide/infrastructure-provider/current" \
+    PROVIDER_RESP=$(curl -sf "$API_URL/v2/org/$ORG/nico/infrastructure-provider/current" \
         -H "Authorization: Bearer $token" 2>/dev/null || echo "{}")
 
     PROVIDER_ID=$(echo "$PROVIDER_RESP" | jq -r '.id // empty')
     if [ -z "$PROVIDER_ID" ]; then
-        PROVIDER_RESP=$(curl -sf -X POST "$API_URL/v2/org/$ORG/carbide/infrastructure-provider" \
+        PROVIDER_RESP=$(curl -sf -X POST "$API_URL/v2/org/$ORG/nico/infrastructure-provider" \
             -H "Authorization: Bearer $token" \
             -H "Content-Type: application/json" \
             -d '{"name": "Local Dev Provider", "description": "Local development infrastructure provider"}')
         PROVIDER_ID=$(echo "$PROVIDER_RESP" | jq -r '.id')
     fi
 
-    EXISTING_RESP=$(curl -sf "$API_URL/v2/org/$ORG/carbide/site?infrastructureProviderId=$PROVIDER_ID" \
+    EXISTING_RESP=$(curl -sf "$API_URL/v2/org/$ORG/nico/site?infrastructureProviderId=$PROVIDER_ID" \
         -H "Authorization: Bearer $token" 2>/dev/null || echo "[]")
     EXISTING_SITE=$(echo "$EXISTING_RESP" | jq -r '.[] | select(.name == "local-dev-site") | .id' 2>/dev/null || echo "")
 
@@ -202,7 +202,7 @@ create_site() {
     fi
 
     for attempt in 1 2 3; do
-        FULL=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/v2/org/$ORG/carbide/site?infrastructureProviderId=$PROVIDER_ID" \
+        FULL=$(curl -s -w "\n%{http_code}" -X POST "$API_URL/v2/org/$ORG/nico/site?infrastructureProviderId=$PROVIDER_ID" \
             -H "Authorization: Bearer $token" \
             -H "Content-Type: application/json" \
             -d '{
@@ -243,7 +243,7 @@ configure_site_agent() {
         --tls-ca-path /var/secrets/temporal/certs/server-interservice/ca.crt \
         --tls-server-name interservice.server.temporal.local || true
 
-    kubectl -n $NAMESPACE get configmap carbide-rest-site-agent-config -o yaml | \
+    kubectl -n $NAMESPACE get configmap nico-rest-site-agent-config -o yaml | \
         sed "s/CLUSTER_ID: .*/CLUSTER_ID: \"$site_id\"/" | \
         sed "s/TEMPORAL_SUBSCRIBE_NAMESPACE: .*/TEMPORAL_SUBSCRIBE_NAMESPACE: \"$site_id\"/" | \
         sed "s/TEMPORAL_SUBSCRIBE_QUEUE: .*/TEMPORAL_SUBSCRIBE_QUEUE: \"site\"/" | \
@@ -257,11 +257,11 @@ configure_site_agent() {
     kubectl -n $NAMESPACE create secret generic site-registration \
         --from-literal=site-uuid="$site_id" \
         --from-literal=otp="$reg_token" \
-        --from-literal=creds-url="https://carbide-rest-site-manager:8100/v1/sitecreds" \
+        --from-literal=creds-url="https://nico-rest-site-manager:8100/v1/sitecreds" \
         --from-literal=cacert="$sm_cacert"
 
-    kubectl -n $NAMESPACE rollout restart sts/carbide-rest-site-agent
-    kubectl -n $NAMESPACE rollout status sts/carbide-rest-site-agent --timeout=240s
+    kubectl -n $NAMESPACE rollout restart sts/nico-rest-site-agent
+    kubectl -n $NAMESPACE rollout status sts/nico-rest-site-agent --timeout=240s
 }
 
 setup_site_agent() {
@@ -278,8 +278,8 @@ setup_site_agent() {
     SITE_ID=$(create_site "$TOKEN")
     echo "Site ID: $SITE_ID"
 
-    SITE_REG_TOKEN=$(curl -sf "$API_URL/v2/org/$ORG/carbide/site/$SITE_ID?infrastructureProviderId=$(
-        curl -sf "$API_URL/v2/org/$ORG/carbide/infrastructure-provider/current" \
+    SITE_REG_TOKEN=$(curl -sf "$API_URL/v2/org/$ORG/nico/site/$SITE_ID?infrastructureProviderId=$(
+        curl -sf "$API_URL/v2/org/$ORG/nico/infrastructure-provider/current" \
             -H "Authorization: Bearer $TOKEN" | jq -r '.id'
     )" -H "Authorization: Bearer $TOKEN" | jq -r '.registrationToken // empty' 2>/dev/null)
     if [ -z "$SITE_REG_TOKEN" ] || [ "$SITE_REG_TOKEN" = "null" ]; then
@@ -291,7 +291,7 @@ setup_site_agent() {
     echo "Configuring site-agent..."
     configure_site_agent "$SITE_ID"
 
-    kubectl -n $NAMESPACE get pods -l app=carbide-rest-site-agent
+    kubectl -n $NAMESPACE get pods -l app=nico-rest-site-agent
     echo "Site-agent setup complete."
 }
 
@@ -310,14 +310,14 @@ verify() {
     fi
 
     echo -n "Keycloak realm... "
-    if curl -sf "$KEYCLOAK_URL/realms/carbide-dev" 2>/dev/null | jq -e '.realm == "carbide-dev"' > /dev/null 2>&1; then
+    if curl -sf "$KEYCLOAK_URL/realms/nico-dev" 2>/dev/null | jq -e '.realm == "nico-dev"' > /dev/null 2>&1; then
         echo "[OK]"
     else
         echo "[FAIL]"
     fi
 
     echo -n "Cert manager... "
-    if kubectl -n "$NAMESPACE" get deployment carbide-rest-cert-manager -o jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q "[1-9]"; then
+    if kubectl -n "$NAMESPACE" get deployment nico-rest-cert-manager -o jsonpath='{.status.readyReplicas}' 2>/dev/null | grep -q "[1-9]"; then
         echo "[OK]"
     else
         echo "[WARN]"

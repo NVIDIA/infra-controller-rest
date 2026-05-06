@@ -19,7 +19,7 @@ package user
 
 import (
 	"context"
-	cloudutils "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cloudutils "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	"testing"
 
 	"github.com/google/uuid"
@@ -29,7 +29,7 @@ import (
 	tmocks "go.temporal.io/sdk/mocks"
 	"go.temporal.io/sdk/testsuite"
 
-	userActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/user"
+	userActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/user"
 )
 
 type UnitTestSuite struct {

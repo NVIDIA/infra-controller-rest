@@ -25,9 +25,9 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	ipam "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	ipam "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 const (
@@ -288,17 +288,17 @@ func NewAPIIPBlockSummary(dbipb *cdbm.IPBlock) *APIIPBlockSummary {
 
 // APIIPBlockStats is a data structure to capture information about IPBlock stats at the API layer
 type APIIPBlockStats struct {
-	// Total is the total number of the IPBlock object in Forge Cloud
+	// Total is the total number of the IPBlock object in NICo Cloud
 	Total int `json:"total"`
-	// Pending is the total number of pending IPBlock object in Forge Cloud
+	// Pending is the total number of pending IPBlock object in NICo Cloud
 	Pending int `json:"pending"`
-	// Provisioning is the total number of provisioning IPBlock object in Forge Cloud
+	// Provisioning is the total number of provisioning IPBlock object in NICo Cloud
 	Provisioning int `json:"provisioning"`
-	// Ready is the total number of ready IPBlock object in Forge Cloud
+	// Ready is the total number of ready IPBlock object in NICo Cloud
 	Ready int `json:"ready"`
-	// Deleting is the total number of deleting IPBlock object in Forge Cloud
+	// Deleting is the total number of deleting IPBlock object in NICo Cloud
 	Deleting int `json:"deleting"`
-	// Error is the total number of error IPBlock object in Forge Cloud
+	// Error is the total number of error IPBlock object in NICo Cloud
 	Error int `json:"error"`
 }
 

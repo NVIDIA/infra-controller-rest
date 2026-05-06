@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Kustomize base configuration for Carbide REST services
+# Kustomize base configuration for NICo REST services
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 

@@ -74,6 +74,77 @@ func RollbackTx(ctx context.Context, tx *Tx, committed *bool) {
 	}
 }
 
+// WithTx runs fn inside a database transaction. If fn returns nil, the
+// transaction is committed; if fn returns an error, the transaction is rolled
+// back. Callers don't have to manage Begin/Commit/Rollback or a "did we
+// commit?" flag manually.
+//
+// Use this in preference to BeginTx + manual RollbackTx + tx.Commit() at call
+// sites. See WithTxOpts for non-default tx options.
+func WithTx(ctx context.Context, dbSession *Session, fn func(tx *Tx) error) error {
+	return WithTxOpts(ctx, dbSession, &sql.TxOptions{}, fn)
+}
+
+// WithTxOpts is the variant of WithTx that lets callers pass non-default
+// sql.TxOptions (e.g., a specific isolation level).
+func WithTxOpts(ctx context.Context, dbSession *Session, opts *sql.TxOptions, fn func(tx *Tx) error) error {
+	tx, err := BeginTx(ctx, dbSession, opts)
+	if err != nil {
+		return fmt.Errorf("%w: %w", ErrTransactionInitiation, err)
+	}
+	// If fn panics, ensure the tx is rolled back so we don't leak an open
+	// transaction (and any locks it holds) until the connection drops.
+	// The original panic is re-raised after rollback.
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("%w: %w", ErrTransactionCommit, err)
+	}
+	return nil
+}
+
+// WithTxResult is the value-returning variant of WithTx. The closure can
+// return a result of any type; it's only returned to the caller if the
+// transaction committed successfully.
+func WithTxResult[T any](ctx context.Context, dbSession *Session, fn func(tx *Tx) (T, error)) (T, error) {
+	return WithTxResultOpts(ctx, dbSession, &sql.TxOptions{}, fn)
+}
+
+// WithTxResultOpts is the value-returning variant of WithTxOpts.
+func WithTxResultOpts[T any](ctx context.Context, dbSession *Session, opts *sql.TxOptions, fn func(tx *Tx) (T, error)) (T, error) {
+	var zero T
+	tx, err := BeginTx(ctx, dbSession, opts)
+	if err != nil {
+		return zero, fmt.Errorf("begin tx: %w", err)
+	}
+	// If fn panics, ensure the tx is rolled back so we don't leak an open
+	// transaction (and any locks it holds) until the connection drops.
+	// The original panic is re-raised after rollback.
+	defer func() {
+		if p := recover(); p != nil {
+			_ = tx.Rollback()
+			panic(p)
+		}
+	}()
+	result, err := fn(tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return zero, err
+	}
+	if err := tx.Commit(); err != nil {
+		return zero, fmt.Errorf("commit tx: %w", err)
+	}
+	return result, nil
+}
+
 // Commit wraps bun's Commit
 func (tx *Tx) Commit() error {
 	return tx.tx.Commit()

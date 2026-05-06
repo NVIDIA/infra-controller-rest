@@ -25,9 +25,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	otrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
 	"github.com/google/uuid"
 )
 
@@ -79,6 +79,7 @@ func TestExpectedSwitchSQLDAO_Create(t *testing.T) {
 					SiteID:             site.ID,
 					BmcMacAddress:      "00:1B:44:11:3A:B7",
 					SwitchSerialNumber: "SWITCH123",
+					BmcIpAddress:       db.GetStrPtr("192.168.1.10"),
 					Labels: map[string]string{
 						"environment": "test",
 						"location":    "datacenter1",
@@ -143,6 +144,7 @@ func TestExpectedSwitchSQLDAO_Create(t *testing.T) {
 					assert.NotNil(t, es)
 					assert.Equal(t, input.BmcMacAddress, es.BmcMacAddress)
 					assert.Equal(t, input.SwitchSerialNumber, es.SwitchSerialNumber)
+					assert.Equal(t, input.BmcIpAddress, es.BmcIpAddress)
 					assert.Equal(t, input.Labels, es.Labels)
 				}
 

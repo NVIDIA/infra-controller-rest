@@ -95,7 +95,7 @@ func RunREPL(s *Session) error {
 		"scope", "scope site", "scope vpc", "scope label", "scope label clear", "scope clear",
 		"exit", "quit")
 
-	fmt.Printf("\n%s\n", Bold("Carbide Interactive Mode"))
+	fmt.Printf("\n%s\n", Bold("NICo Interactive Mode"))
 	fmt.Printf("Org: %s\n", Cyan(s.Org))
 	if s.ConfigPath != "" {
 		fmt.Printf("Config: %s\n", Dim(s.ConfigPath))

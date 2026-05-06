@@ -23,8 +23,8 @@ import (
 	"fmt"
 	"net/http"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/labstack/echo/v4"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -32,13 +32,13 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	common "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	common "github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -71,7 +71,7 @@ func NewCreateTenantAccountHandler(dbSession *cdb.Session, tc temporalClient.Cli
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APITenantAccountCreateRequest true "TenantAccount creation request"
 // @Success 201 {object} model.APITenantAccount
-// @Router /v2/org/{org}/carbide/tenant/account [post]
+// @Router /v2/org/{org}/nico/tenant/account [post]
 func (ctah CreateTenantAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantAccount", "Create", c, ctah.tracerSpan)
 	if handlerSpan != nil {
@@ -273,7 +273,7 @@ func NewGetAllTenantAccountHandler(dbSession *cdb.Session, tc temporalClient.Cli
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APITenantAccount
-// @Router /v2/org/{org}/carbide/tenant/account [get]
+// @Router /v2/org/{org}/nico/tenant/account [get]
 func (gatah GetAllTenantAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantAccount", "GetAll", c, gatah.tracerSpan)
 	if handlerSpan != nil {
@@ -549,7 +549,7 @@ func NewGetTenantAccountHandler(dbSession *cdb.Session, tc temporalClient.Client
 // @Param tenantId query string true "ID of Tenant"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider', 'Tenant'"
 // @Success 200 {object} model.APITenantAccount
-// @Router /v2/org/{org}/carbide/tenant/account/{id} [get]
+// @Router /v2/org/{org}/nico/tenant/account/{id} [get]
 func (gtah GetTenantAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantAccount", "Get", c, gtah.tracerSpan)
 	if handlerSpan != nil {
@@ -749,7 +749,7 @@ func NewUpdateTenantAccountHandler(dbSession *cdb.Session, tc temporalClient.Cli
 // @Param id path string true "ID of Tenant Account"
 // @Param message body model.APITenantAccountUpdateRequest true "TenantAccount update request"
 // @Success 200 {object} model.APITenantAccount
-// @Router /v2/org/{org}/carbide/tenant/account/{id} [patch]
+// @Router /v2/org/{org}/nico/tenant/account/{id} [patch]
 func (utah UpdateTenantAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantAccount", "Update", c, utah.tracerSpan)
 	if handlerSpan != nil {
@@ -915,7 +915,7 @@ func NewDeleteTenantAccountHandler(dbSession *cdb.Session, tc temporalClient.Cli
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Tenant Account"
 // @Success 202
-// @Router /v2/org/{org}/carbide/tenant/account/{id} [delete]
+// @Router /v2/org/{org}/nico/tenant/account/{id} [delete]
 func (dtah DeleteTenantAccountHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantAccount", "Delete", c, dtah.tracerSpan)
 	if handlerSpan != nil {

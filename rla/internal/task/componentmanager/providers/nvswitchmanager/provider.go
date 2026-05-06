@@ -23,8 +23,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v3"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 )
 
 const (

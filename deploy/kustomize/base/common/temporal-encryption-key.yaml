@@ -18,7 +18,7 @@ kind: Secret
 metadata:
   name: temporal-encryption-key
   labels:
-    app.kubernetes.io/part-of: carbide-rest
+    app.kubernetes.io/part-of: nico-rest
 type: Opaque
 # Replace with real key before applying outside local dev.
 # The local overlay patches this placeholder with the dev default.

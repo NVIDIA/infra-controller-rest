@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"slices"
 	"strconv"
 	"time"
 
@@ -40,24 +41,24 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 )
 
 const MachineMissingDelayThreshold = 24 * time.Hour
@@ -239,7 +240,7 @@ func NewGetAllMachineHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIMachine
-// @Router /v2/org/{org}/carbide/machine [get]
+// @Router /v2/org/{org}/nico/machine [get]
 func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "GetAll", c, gamh.tracerSpan)
 	if handlerSpan != nil {
@@ -592,7 +593,7 @@ func NewGetMachineHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg 
 // @Param id path string true "ID of Machine"
 // @Param includeMetadata query boolean false "Include metadata info in response"
 // @Success 200 {object} model.APIMachine
-// @Router /v2/org/{org}/carbide/machine/{id} [get]
+// @Router /v2/org/{org}/nico/machine/{id} [get]
 func (gmh GetMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "Get", c, gmh.tracerSpan)
 	if handlerSpan != nil {
@@ -749,7 +750,7 @@ func NewUpdateMachineHandler(dbSession *cdb.Session, tc temporalClient.Client, s
 // @Param id path string true "ID of Machine"
 // @Param message body model.APIMachineUpdateRequest true "Machine update request"
 // @Success 200 {object} model.APIMachine
-// @Router /v2/org/{org}/carbide/machine/{id} [patch]
+// @Router /v2/org/{org}/nico/machine/{id} [patch]
 func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "Update", c, umh.tracerSpan)
 	if handlerSpan != nil {
@@ -1065,12 +1066,12 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			err = we.Get(ctx, nil)
 
 			if err != nil {
-				// If this was a 404 back from Carbide, the machine was not found, and we can
+				// If this was a 404 back from NICo, the machine was not found, and we can
 				// treat the object as already having been deleted and allow things to proceed.
 				var applicationErr *tp.ApplicationError
 				if errors.As(err, &applicationErr) {
-					if applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-						logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+					if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+						logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 						// Reset error to nil
 						err = nil
 					}
@@ -1433,7 +1434,7 @@ func NewGetMachineStatusDetailsHandler(dbSession *cdb.Session) GetMachineStatusD
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Machine"
 // @Success 200 {object} []model.APIStatusDetail
-// @Router /v2/org/{org}/carbide/machine/{id}/status-history [get]
+// @Router /v2/org/{org}/nico/machine/{id}/status-history [get]
 func (gmsdh GetMachineStatusDetailsHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "Get", c, gmsdh.tracerSpan)
 	if handlerSpan != nil {
@@ -1562,7 +1563,7 @@ func NewDeleteMachineHandler(dbSession *cdb.Session, tc temporalClient.Client, c
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Machine"
 // @Success 202 {object}
-// @Router /v2/org/{org}/carbide/machine/{id} [delete]
+// @Router /v2/org/{org}/nico/machine/{id} [delete]
 func (umh DeleteMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Machine", "Delete", c, umh.tracerSpan)
 	if handlerSpan != nil {

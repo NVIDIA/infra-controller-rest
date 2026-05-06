@@ -25,13 +25,13 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
 )
 
 // CreateNetworkSecurityGroup is a workflow to create new NetworkSecurityGroups using the CreateNetworkSecurityGroupOnSite activity
-// to speak to carbide directly.
+// to speak to nico directly.
 func CreateNetworkSecurityGroup(ctx workflow.Context, request *cwssaws.CreateNetworkSecurityGroupRequest) error {
 	logger := log.With().Str("Workflow", "NetworkSecurityGroup").Str("Action", "Create").Str("NetworkSecurityGroup ID", request.GetId()).Logger()
 

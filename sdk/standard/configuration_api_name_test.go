@@ -36,15 +36,15 @@ func TestSetAPINameRewritesGeneratedRequests(t *testing.T) {
 		{URL: "https://example.com", Description: "test"},
 	}
 	cfg.HTTPClient = &http.Client{Transport: transport}
-	cfg.SetAPIName("forge")
+	cfg.SetAPIName("nico")
 
 	client := NewAPIClient(cfg)
 	_, _, err := client.MetadataAPI.GetMetadata(context.Background(), "test-org").Execute()
 	require.NoError(t, err)
 
 	require.NotNil(t, transport.req)
-	assert.Equal(t, "/v2/org/test-org/forge/metadata", transport.req.URL.Path)
-	assert.Equal(t, "forge", cfg.GetAPIName())
+	assert.Equal(t, "/v2/org/test-org/nico/metadata", transport.req.URL.Path)
+	assert.Equal(t, "nico", cfg.GetAPIName())
 }
 
 type captureTransport struct {

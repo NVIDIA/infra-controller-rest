@@ -29,6 +29,7 @@ RESOURCE_NAME="$3"
 SOURCE_TAG="$4"
 SEMANTIC_VERSION="$5"
 
+# TODO: rename to "nico" once the NGC team is created under the org
 DEST_TEAM="carbide"
 
 mkdir -p ~/.ngc
@@ -73,7 +74,7 @@ ngc registry resource download-version "${SOURCE_ORG}/${SOURCE_TEAM}/${RESOURCE_
 
 FILE_PATH=$(find download_temp -type f | head -n 1)
 if [ -f "$FILE_PATH" ]; then
-    echo "Uploading to carbide/$RESOURCE_NAME:$SEMANTIC_VERSION..."
+    echo "Uploading to nico/$RESOURCE_NAME:$SEMANTIC_VERSION..."
     export NGC_CLI_API_KEY=${DEST_TOKEN} NGC_CLI_ORG=$SOURCE_ORG NGC_CLI_TEAM=$DEST_TEAM
     push_ngc_resouce "$SOURCE_ORG" "$DEST_TEAM" "$RESOURCE_NAME" "$SEMANTIC_VERSION" "$FILE_PATH"
 else

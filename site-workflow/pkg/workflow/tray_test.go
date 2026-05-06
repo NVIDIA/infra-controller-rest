@@ -28,8 +28,8 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/testsuite"
 
-	tActivity "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	tActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 )
 
 // ~~~~~ GetTray Workflow Tests ~~~~~ //

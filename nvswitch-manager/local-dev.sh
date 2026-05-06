@@ -32,7 +32,7 @@
 #   │                                                             │
 #   │  RLA (:50051) ──> NSM (:50052) ──SOCKS──> Switches         │
 #   │   │                                          │              │
-#   │   └──TLS──> Carbide via :50053               │              │
+#   │   └──TLS──> NICo via :50053               │              │
 #   │              │                               │              │
 #   │  [postgres] [temporal] [vault]    [SSH :1080] │              │
 #   └──────────────────────────────────┼───────────┼──────────────┘
@@ -40,7 +40,7 @@
 #                          SSH Tunnel  │           │
 #                                      ▼           ▼
 #                              ytl01-admin01 ──> YTL Network
-#                               ├── Carbide (7.243.80.81:1079)
+#                               ├── NICo (7.243.80.81:1079)
 #                               └── NV-Switch Trays (BMCs)
 
 set -e
@@ -124,7 +124,7 @@ run_migrations() {
 start_tunnel() {
     log_info "Starting SSH tunnel to ytl01-admin01..."
     log_info "  SOCKS proxy on localhost:1080  (NSM -> NV-Switch trays)"
-    log_info "  Port forward localhost:50053   (RLA -> Carbide at 7.243.80.81:1079)"
+    log_info "  Port forward localhost:50053   (RLA -> NICo at 7.243.80.81:1079)"
     log_info "Press Ctrl+C to stop the tunnel."
     echo ""
     ssh -D 1080 -L 50053:7.243.80.81:1079 -N ytl01-admin01

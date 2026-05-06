@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-site-agent configuration (environment variables)
+# nico-rest-site-agent configuration (environment variables)
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: carbide-rest-site-agent-config
+  name: nico-rest-site-agent-config
   labels:
-    app: carbide-rest-site-agent
+    app: nico-rest-site-agent
 data:
   # Port configuration
   ESA_PORT: "8080"
@@ -28,9 +28,9 @@ data:
   DEV_MODE: "true"
   ENABLE_DEBUG: "true"
   ENABLE_TLS: "true"
-  # Carbide Core configuration
-  CARBIDE_ADDRESS: "carbide-rest-mock-core:11079"
-  CARBIDE_SEC_OPT: "0"
+  # NICo Core configuration
+  NICO_ADDRESS: "nico-rest-mock-core:11079"
+  NICO_SEC_OPT: "0"
   # Placeholder UUID - updated by setup-local.sh site_agent with real site ID from API
   CLUSTER_ID: "00000000-0000-4000-8000-000000000001"
   TEMPORAL_HOST: "temporal-frontend.temporal"

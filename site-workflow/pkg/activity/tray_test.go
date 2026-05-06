@@ -22,8 +22,8 @@ import (
 	"errors"
 	"testing"
 
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -79,7 +79,7 @@ func TestManageTray_GetTray(t *testing.T) {
 						SerialNumber: "TSN001",
 					},
 					FirmwareVersion: "2.0.0",
-					ComponentId:     "carbide-machine-123",
+					ComponentId:     "nico-machine-123",
 					Position: &rlav1.RackPosition{
 						SlotId:  1,
 						TrayIdx: 0,

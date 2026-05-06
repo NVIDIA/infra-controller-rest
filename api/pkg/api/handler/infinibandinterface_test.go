@@ -26,14 +26,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	sutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	sutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -68,13 +69,13 @@ func TestGetAllInfiniBandInterface_Handle(t *testing.T) {
 	testInstanceSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
-	tnOrgRoles1 := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles1 := []string{authz.TenantAdminRole}
 
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles2 := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles2 := []string{authz.TenantAdminRole}
 
 	ipu := testInstanceBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testInstanceSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -513,7 +514,7 @@ func TestGetAllInfiniBandInterface_Handle(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/infiniband-interface", tt.args.reqOrg))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/infiniband-interface", tt.args.reqOrg))
 			ec.SetParamNames("orgName")
 			ec.SetParamValues(tt.args.reqOrg)
 			ec.Set("user", tt.args.reqUser)
@@ -683,13 +684,13 @@ func TestGetAllInstanceInfiniBandInterfaceHandler_Handle(t *testing.T) {
 	testInstanceSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
-	tnOrgRoles1 := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles1 := []string{authz.TenantAdminRole}
 
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles2 := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles2 := []string{authz.TenantAdminRole}
 
 	ipu := testInstanceBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testInstanceSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1048,7 +1049,7 @@ func TestGetAllInstanceInfiniBandInterfaceHandler_Handle(t *testing.T) {
 			req.URL.RawQuery = q.Encode()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/instance/%v/infinibandinterface", tt.args.reqOrg, tt.args.reqInstanceID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/instance/%v/infinibandinterface", tt.args.reqOrg, tt.args.reqInstanceID))
 			ec.SetParamNames("orgName", "instanceId")
 			if tt.args.reqInstanceID != "" {
 				ec.SetParamValues(tt.args.reqOrg, tt.args.reqInstanceID)

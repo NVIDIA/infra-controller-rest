@@ -18,9 +18,9 @@
 package model
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"net/url"
@@ -44,7 +44,7 @@ func TestNewAPIAuditEntry(t *testing.T) {
 
 	dbAuditEntry := cdbm.AuditEntry{
 		ID:       uuid.New(),
-		Endpoint: "/v2/org/aoij2l0al10s/carbide/site",
+		Endpoint: "/v2/org/aoij2l0al10s/nico/site",
 		QueryParams: url.Values{
 			"test": []string{"1234"},
 		},

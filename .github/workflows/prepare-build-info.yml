@@ -141,7 +141,7 @@ jobs:
           echo "push_requested=$PUSH_REQUESTED" >> $GITHUB_OUTPUT
 
           # Helm chart version: read from Chart.yaml (umbrella chart as source of truth)
-          HELM_VERSION=$(grep '^version:' helm/charts/carbide-rest/Chart.yaml | awk '{print $2}')
+          HELM_VERSION=$(grep '^version:' helm/charts/nico-rest/Chart.yaml | awk '{print $2}')
           echo "helm_version=$HELM_VERSION" >> $GITHUB_OUTPUT
 
           # Print for logs

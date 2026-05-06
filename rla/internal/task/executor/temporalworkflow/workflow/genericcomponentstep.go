@@ -23,9 +23,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // nameGenericComponentStepWorkflow is the registered Temporal name for

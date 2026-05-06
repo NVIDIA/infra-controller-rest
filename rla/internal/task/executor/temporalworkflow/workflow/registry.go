@@ -23,8 +23,8 @@ import (
 	"sync"
 	"time"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operations"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
 )
 
 // WorkflowDescriptor describes a Temporal workflow.

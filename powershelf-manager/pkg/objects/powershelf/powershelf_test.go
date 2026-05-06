@@ -19,10 +19,10 @@ package powershelf
 import (
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/vendor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/pmc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/powersupply"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/pmc"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/powersupply"
 
 	rfcommon "github.com/stmcginnis/gofish/common"
 	gofish "github.com/stmcginnis/gofish/redfish"

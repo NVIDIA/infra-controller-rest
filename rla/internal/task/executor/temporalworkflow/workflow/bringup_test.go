@@ -30,12 +30,12 @@ import (
 	"go.temporal.io/sdk/testsuite"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 
-	activitypkg "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/activity"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operations"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	activitypkg "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/activity"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 func mockUpdateTaskStatusForBringUp(ctx context.Context, arg *task.TaskStatusUpdate) error {

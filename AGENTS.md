@@ -5,10 +5,10 @@ This file provides guidance for AI coding agents working in the
 
 ## Project Overview
 
-**NVIDIA Infra Controller REST** is a collection of Go microservices that comprise
-the management backend for NVIDIA Infra Controller, exposed as a REST API. It
+**NVIDIA Infrastructure Controller REST** is a collection of Go microservices that comprise
+the management backend for NVIDIA Infrastructure Controller (NICo), exposed as a REST API. It
 provides multi-tenant, API-driven bare-metal lifecycle management, working in
-concert with [NVIDIA Infra Controller Core](https://github.com/NVIDIA/infra-controller-core)
+concert with [NVIDIA Infrastructure Controller Core](https://github.com/NVIDIA/infra-controller-core)
 for on-site hardware operations.
 
 > **Status:** Experimental/Preview. APIs, configurations, and features may
@@ -23,7 +23,7 @@ for on-site hardware operations.
 - IP address management (IPAM)
 - Authentication and authorization (Keycloak, JWT, service accounts)
 - Native PKI certificate management
-- CLI client (`carbidecli`) with interactive TUI
+- CLI client (`nicocli`) with interactive TUI
 
 ## Repository Structure
 
@@ -32,7 +32,7 @@ infra-controller-rest/
 ├── api/                  # Main REST API server (Echo-based)
 ├── auth/                 # Authentication (Keycloak, JWT, service accounts)
 ├── cert-manager/         # Native PKI certificate management (credsmgr)
-├── cli/                  # CLI client (carbidecli) with TUI
+├── cli/                  # CLI client (nicocli) with TUI
 ├── common/               # Shared utilities and configuration
 ├── db/                   # Database layer (Bun ORM, pgx, migrations)
 ├── deploy/               # Kubernetes deployment (Kind, Kustomize, Helm)
@@ -57,7 +57,7 @@ infra-controller-rest/
 
 ## Technology Stack
 
-- **Language:** Go (version specified in `go.mod`; module `github.com/NVIDIA/ncx-infra-controller-rest`)
+- **Language:** Go (version specified in `go.mod`; module `github.com/NVIDIA/infra-controller-rest`)
 - **HTTP framework:** Echo v4 (with middleware for CORS, auth, rate limiting, audit)
 - **Database:** PostgreSQL via pgx v5 (connection pool) and Bun ORM (queries, migrations)
 - **Workflow engine:** Temporal (cloud and site workflows/activities)
@@ -77,7 +77,7 @@ infra-controller-rest/
 make build
 
 # Build and install CLI to $GOPATH/bin
-make carbide-cli
+make nico-cli
 
 # Build Docker images (production)
 make docker-build
@@ -146,8 +146,8 @@ make publish-openapi
 ### Protobuf Code Generation
 
 ```bash
-make carbide-proto          # fetch proto files from carbide-core
-make carbide-protogen       # generate Go code from protos
+make nico-proto          # fetch proto files from nico-core
+make nico-protogen       # generate Go code from protos
 make rla-proto              # fetch RLA proto files
 make rla-protogen           # generate Go code from RLA protos
 ```

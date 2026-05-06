@@ -29,22 +29,22 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 
-	cwsv1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/config"
-	cwm "github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/metrics"
+	cwsv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/workflow/internal/config"
+	cwm "github.com/NVIDIA/infra-controller-rest/workflow/internal/metrics"
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cwutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // ManageInstance is an activity wrapper for managing Instance lifecycle that allows
@@ -168,7 +168,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 		logger.Debug().Str("Controller Instance ID", controllerInstance.Id.Value).Msgf("cached propagation status for Instance %+v", sitePropagationStatus)
 
 		// NOTE: This will be used later to determine if we should delete
-		//       an instance from forge-cloud.  If the instance is marked as Terminating
+		//       an instance from nico-cloud.  If the instance is marked as Terminating
 		//       in cloud-db an it isn't found in this map, it will be deleted.
 		//       We should _always_ track this, even if the inventory might be stale.
 		reportedInstanceIDMap[instance.ID] = true
@@ -281,7 +281,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 		var updatedInstanceStatus *string
 
 		if controllerInstance.Status != nil && controllerInstance.Status.Tenant != nil {
-			status, statusMessage := getForgeInstanceStatus(controllerInstance.Status.Tenant.State)
+			status, statusMessage := getNICoInstanceStatus(controllerInstance.Status.Tenant.State)
 			var powerStatus *string
 
 			// Get the status from the controller instance
@@ -1123,8 +1123,8 @@ func (mi ManageInstance) updateInstanceStatusInDB(ctx context.Context, tx *cdb.T
 	return nil
 }
 
-// Utility function to get Forge Instance status from Controller Instance state
-func getForgeInstanceStatus(controllerInstanceTenantState cwsv1.TenantState) (string, string) {
+// Utility function to get NICo Instance status from Controller Instance state
+func getNICoInstanceStatus(controllerInstanceTenantState cwsv1.TenantState) (string, string) {
 	switch controllerInstanceTenantState {
 	case cwsv1.TenantState_PROVISIONING:
 		return cdbm.InstanceStatusProvisioning, "Instance is being provisioned on Site"
@@ -1172,7 +1172,7 @@ func (mi ManageInstance) UpdateInstanceMetadata(ctx context.Context, siteID uuid
 		description = *instance.Description
 	}
 
-	// Prepare the labels for the metadata of the carbide call.
+	// Prepare the labels for the metadata of the nico call.
 	labels := []*cwsv1.Label{}
 	for k, v := range instance.Labels {
 		labels = append(labels, &cwsv1.Label{

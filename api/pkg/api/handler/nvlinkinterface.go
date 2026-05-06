@@ -31,16 +31,16 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	common "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	common "github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // ~~~~~ GetAll Instance NVLinkInterface Handler ~~~~~ //
@@ -78,7 +78,7 @@ func NewGetAllInstanceNVLinkInterfaceHandler(dbSession *cdb.Session, tc temporal
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APIInterface
-// @Router /v2/org/{org}/carbide/instance/{instance_id}/interface [get]
+// @Router /v2/org/{org}/nico/instance/{instance_id}/interface [get]
 func (ganvliih GetAllInstanceNVLinkInterfaceHandler) Handle(c echo.Context) error {
 	instanceID := c.Param("instanceId")
 	queryOverride := &common.QueryOverride{
@@ -135,7 +135,7 @@ func NewGetAllNVLinkInterfaceHandler(dbSession *cdb.Session, tc temporalClient.C
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} model.APINVLinkInterface
-// @Router /v2/org/{org}/carbide/nvlink-interface [get]
+// @Router /v2/org/{org}/nico/nvlink-interface [get]
 func (gaish GetAllNVLinkInterfaceHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("NVLinkInterface", "GetAll", c, gaish.tracerSpan)
 	if handlerSpan != nil {

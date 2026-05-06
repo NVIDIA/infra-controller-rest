@@ -24,7 +24,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
 )
 
 // Scheduler manages a set of scheduled jobs. Register jobs with Schedule,

@@ -23,9 +23,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/conflict"
-	taskstore "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/store"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/conflict"
+	taskstore "github.com/NVIDIA/infra-controller-rest/rla/internal/task/store"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 // notifyingTaskStore wraps a taskstore.Store and fires Promoter notifications

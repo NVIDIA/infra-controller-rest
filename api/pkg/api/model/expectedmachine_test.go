@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -221,6 +221,62 @@ func TestAPIExpectedMachineCreateRequest_Validate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedMachineCreateRequest{
+				BmcMacAddress:       "00:11:22:33:44:55",
+				DefaultBmcUsername:  &validUsername,
+				DefaultBmcPassword:  &validPassword,
+				ChassisSerialNumber: validChassisSerial,
+				BmcIpAddress:        nil,
+			},
+			expectErr: false,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
@@ -381,7 +437,7 @@ func TestAPIExpectedMachineUpdateRequest_Validate(t *testing.T) {
 					"zone":        "us-west-2",
 					"team":        "platform",
 					"cost-center": "12345",
-					"app":         "carbide-rest-api",
+					"app":         "nico-rest-api",
 				},
 			},
 			expectErr: false,
@@ -508,6 +564,47 @@ func TestAPIExpectedMachineUpdateRequest_Validate(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		// BmcIpAddress validation tests
+		{
+			desc: "valid IPv4 BmcIpAddress",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("192.168.1.10"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "valid IPv6 BmcIpAddress",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("2001:db8::1"),
+			},
+			expectErr: false,
+		},
+		{
+			desc: "invalid BmcIpAddress",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        cdb.GetStrPtr("not-an-ip"),
+			},
+			expectErr: true,
+		},
+		{
+			desc: "empty BmcIpAddress (pointer set, value empty)",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        &emptyString,
+			},
+			expectErr: true,
+		},
+		{
+			desc: "nil BmcIpAddress (default)",
+			obj: APIExpectedMachineUpdateRequest{
+				ChassisSerialNumber: &validChassisSerial,
+				BmcIpAddress:        nil,
+			},
+			expectErr: false,
+		},
 	}
 
 	for _, tc := range tests {
@@ -543,7 +640,7 @@ func TestNewAPIExpectedMachineEdgeCases(t *testing.T) {
 			BmcMacAddress:       "00:11:22:33:44:55",
 			ChassisSerialNumber: "CHASSIS-123",
 			Labels: map[string]string{
-				"app.kubernetes.io/name":    "carbide-rest-api",
+				"app.kubernetes.io/name":    "nico-rest-api",
 				"app.kubernetes.io/version": "v1.2.3",
 				"special-chars":             "value!@#$%^&*()",
 			},
@@ -554,7 +651,7 @@ func TestNewAPIExpectedMachineEdgeCases(t *testing.T) {
 		got := NewAPIExpectedMachine(dbEM)
 		assert.NotNil(t, got)
 		assert.Equal(t, dbEM.Labels, got.Labels)
-		assert.Equal(t, "carbide-rest-api", got.Labels["app.kubernetes.io/name"])
+		assert.Equal(t, "nico-rest-api", got.Labels["app.kubernetes.io/name"])
 	})
 
 	t.Run("with very long serial numbers", func(t *testing.T) {

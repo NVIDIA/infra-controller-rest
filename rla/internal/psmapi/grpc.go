@@ -26,8 +26,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/certs"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi/gen"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/certs"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi/gen"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

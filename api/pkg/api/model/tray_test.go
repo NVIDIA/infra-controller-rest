@@ -20,8 +20,8 @@ package model
 import (
 	"testing"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -85,7 +85,7 @@ func TestNewAPITray(t *testing.T) {
 					Description:  &description,
 				},
 				FirmwareVersion: "2.1.0",
-				ComponentId:     "carbide-machine-456",
+				ComponentId:     "nico-machine-456",
 				Position: &rlav1.RackPosition{
 					SlotId:  1,
 					TrayIdx: 0,
@@ -102,7 +102,7 @@ func TestNewAPITray(t *testing.T) {
 			},
 			want: &APITray{
 				ID:              "tray-id-123",
-				ComponentID:     "carbide-machine-456",
+				ComponentID:     "nico-machine-456",
 				Type:            "Compute",
 				Name:            "compute-tray-1",
 				Manufacturer:    "NVIDIA",

@@ -36,15 +36,15 @@ Reusable workflow that generates version information and build metadata.
 Reusable workflow that builds and pushes all Docker images.
 
 **Images Built:**
-1. `carbide-rest-api`
-2. `carbide-rest-db`
-3. `carbide-rest-site-manager`
-4. `carbide-rest-workflow`
-5. `carbide-rest-site-agent`
-6. `carbide-rest-cert-manager`
-7. `carbide-rla`
-8. `carbide-psm`
-9. `carbide-nsm`
+1. `nico-rest-api`
+2. `nico-rest-db`
+3. `nico-rest-site-manager`
+4. `nico-rest-workflow`
+5. `nico-rest-site-agent`
+6. `nico-rest-cert-manager`
+7. `nico-rla`
+8. `nico-psm`
+9. `nico-nsm`
 
 **Note:** This workflow uses production-optimized multi-stage Dockerfiles located in `docker/production/`.
 ## Required Secrets
@@ -85,7 +85,7 @@ Edit `.github/workflows/prepare-build-info.yml` and update the `target_registry`
 
 ```yaml
 # Line ~57
-target_registry="nvcr.io/dsx/your-team/carbide"
+target_registry="nvcr.io/dsx/your-team/nico"
 ```
 
 Replace `your-team` with appropriate NGC team name. Available options are:
@@ -129,7 +129,7 @@ This allows you to:
 
 Pushes to `main` branch will receive the following tags:
 
-1. **VERSION + Git Short SHA**: `<image>:1.0.0=<short-sha>` (e.g., `carbide-rest-api:1.0.0-abc1234`)
+1. **VERSION + Git Short SHA**: `<image>:1.0.0=<short-sha>` (e.g., `nico-rest-api:1.0.0-abc1234`)
    - Primary tag for reproducibility and traceability
    - Unique for each commit in `main` branch
 
@@ -138,12 +138,12 @@ Pushes to `main` branch will receive the following tags:
 
 Version git tags will receive the following docker tag:
 
-1. **Version Tag**: `<image>:<tag>` (e.g., `carbide-rest-api:v1.2.3`)
+1. **Version Tag**: `<image>:<tag>` (e.g., `nico-rest-api:v1.2.3`)
    - Based on tags pushed with v* format
 
 Commits to branches containing `push-container` will receive Git short SHA tag:
 
-1. **Branch Name + Git Short SHA Tag**: `<image>:fix-api-<short-sha>` (e.g., `carbide-rest-api:fix-api-ghi678`)
+1. **Branch Name + Git Short SHA Tag**: `<image>:fix-api-<short-sha>` (e.g., `nico-rest-api:fix-api-ghi678`)
    - Allows developers to push their in-progress work to dev environments
 
 ## Usage Examples
@@ -178,13 +178,13 @@ docker login nvcr.io
 # Password: <your-ngc-api-key>
 
 # Pull by SHA (recommended for production)
-docker pull nvcr.io/dsx/your-team/carbide/carbide-rest-api:1.2.3-abc1234
+docker pull nvcr.io/dsx/your-team/nico-rest-api:1.2.3-abc1234
 
 # Pull by version
-docker pull nvcr.io/dsx/your-team/carbide/carbide-rest-api:v1.2.3
+docker pull nvcr.io/dsx/your-team/nico-rest-api:v1.2.3
 
 # Pull latest
-docker pull nvcr.io/dsx/your-team/carbide/carbide-rest-api:latest
+docker pull nvcr.io/dsx/your-team/nico-rest-api:latest
 ```
 
 ## Build Cache
@@ -237,9 +237,9 @@ To build only specific images based on file changes, you can add path filters:
   with:
     filters: |
       api:
-        - 'docker/production/Dockerfile.carbide-rest-api'
+        - 'docker/production/Dockerfile.nico-rest-api'
       db:
-        - 'docker/production/Dockerfile.carbide-rest-db'
+        - 'docker/production/Dockerfile.nico-rest-db'
 
 - name: Build API
   if: steps.filter.outputs.api == 'true'

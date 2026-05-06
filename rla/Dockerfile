@@ -16,7 +16,7 @@
 #
 
 
-# This is the old Dockerfile that can be used for quick local builds.  See ../docker/production/Dockerfile.carbide-rla for the real one.
+# This is the old Dockerfile that can be used for quick local builds.  See ../docker/production/Dockerfile.nico-rla for the real one.
 
 FROM alpine
 

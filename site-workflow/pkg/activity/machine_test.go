@@ -30,20 +30,20 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"google.golang.org/grpc"
 
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/util"
 )
 
 func TestManageMachine_SetMachineMaintenanceOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		carbideAtomicClient *cClient.CarbideAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -58,7 +58,7 @@ func TestManageMachine_SetMachineMaintenanceOnSite(t *testing.T) {
 		{
 			name: "test enabling Machine maintenance mode success",
 			fields: fields{
-				carbideAtomicClient: carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -73,7 +73,7 @@ func TestManageMachine_SetMachineMaintenanceOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageMachine(tt.fields.carbideAtomicClient)
+			mm := NewManageMachine(tt.fields.nicoCoreAtomicClient)
 			err := mm.SetMachineMaintenanceOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -85,13 +85,13 @@ func TestManageMachine_SetMachineMaintenanceOnSite(t *testing.T) {
 }
 
 func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		carbideAtomicClient *cClient.CarbideAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -107,7 +107,7 @@ func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
 		{
 			name: "test updating Machine metadata success",
 			fields: fields{
-				carbideAtomicClient: carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -128,7 +128,7 @@ func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageMachine(tt.fields.carbideAtomicClient)
+			mm := NewManageMachine(tt.fields.nicoCoreAtomicClient)
 			err := mm.UpdateMachineMetadataOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -336,10 +336,10 @@ func Test_getPagedMachineIDs(t *testing.T) {
 }
 
 func TestManageMachineInventory_CollectAndPublishMachineInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -347,7 +347,7 @@ func TestManageMachineInventory_CollectAndPublishMachineInventory(t *testing.T) 
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -364,7 +364,7 @@ func TestManageMachineInventory_CollectAndPublishMachineInventory(t *testing.T) 
 			name: "test collecting and publishing machine inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -377,7 +377,7 @@ func TestManageMachineInventory_CollectAndPublishMachineInventory(t *testing.T) 
 			name: "test collecting and publishing machine inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -397,7 +397,7 @@ func TestManageMachineInventory_CollectAndPublishMachineInventory(t *testing.T) 
 
 			mmi := &ManageMachineInventory{
 				siteID:                tt.fields.siteID,
-				carbideAtomicClient:   tt.fields.carbideAtomicClient,
+				nicoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				temporalPublishClient: tc,
 				temporalPublishQueue:  tt.fields.temporalPublishQueue,
 				sitePageSize:          tt.fields.sitePageSize,
@@ -442,8 +442,8 @@ func TestManageMachineInventory_CollectAndPublishMachineInventory(t *testing.T) 
 
 func TestManageMachine_GetDpuMachinesByIDs(t *testing.T) {
 	// Custom mock implementation that returns DPU machines
-	type mockDpuForgeClient struct {
-		cClient.MockForgeClient
+	type mockDpuNICoClient struct {
+		cClient.MockNICoClient
 	}
 
 	mockFindMachinesByIds := func(ctx context.Context, in *cwssaws.MachinesByIdsRequest, opts ...grpc.CallOption) (*cwssaws.MachineList, error) {
@@ -529,14 +529,14 @@ func TestManageMachine_GetDpuMachinesByIDs(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock carbide atomic client with our custom forge implementation
-			baseAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-			baseClient := cClient.NewMockCarbideClient()
+			// Create mock nico atomic client with our custom nico implementation
+			baseAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+			baseClient := cClient.NewMockNICoClient()
 			baseAtomicClient.SwapClient(baseClient)
 
 			mm := &testManageMachineWithMock{
 				ManageMachine: ManageMachine{
-					carbideAtomicClient: baseAtomicClient,
+					nicoCoreAtomicClient: baseAtomicClient,
 				},
 				mockFindMachines: mockFindMachinesByIds,
 				mockGetNetwork:   mockGetNetworkConfig,

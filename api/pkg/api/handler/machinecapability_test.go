@@ -26,11 +26,12 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -45,13 +46,13 @@ func TestGetAllMachineCapabilityHandler_Handle(t *testing.T) {
 	common.TestSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipRoles := []string{authz.ProviderAdminRole}
 
 	ipu := common.TestBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipRoles)
 	ip := common.TestBuildInfrastructureProvider(t, dbSession, "Test Infrastructure Provider", ipOrg, ipu)
 
 	tnOrg := "test-tenant-org"
-	tnRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnRoles := []string{authz.TenantAdminRole}
 
 	tnu := common.TestBuildUser(t, dbSession, "test-starfleet-id-2", tnOrg, tnRoles)
 	common.TestBuildTenant(t, dbSession, "Test Tenant", tnOrg, tnu)
@@ -283,7 +284,7 @@ func TestGetAllMachineCapabilityHandler_Handle(t *testing.T) {
 				q.Set("orderBy", *tt.args.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/machine-capability?%s", tt.org, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/machine-capability?%s", tt.org, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

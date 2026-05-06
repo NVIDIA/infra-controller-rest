@@ -21,8 +21,8 @@ import (
 	"context"
 	"time"
 
-	cclient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cclient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -53,9 +53,9 @@ func NewManageSkuInventory(config ManageInventoryConfig) ManageSkuInventory {
 	}
 }
 
-func skuFindIDs(ctx context.Context, carbideClient *cclient.CarbideClient) ([]string, error) {
-	forgeClient := carbideClient.Carbide()
-	result, err := forgeClient.GetAllSkuIds(ctx, nil)
+func skuFindIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient) ([]string, error) {
+	rpcClient := nicoClient.NICo()
+	result, err := rpcClient.GetAllSkuIds(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,9 @@ func skuFindIDs(ctx context.Context, carbideClient *cclient.CarbideClient) ([]st
 	return ids, nil
 }
 
-func skuFindByIDs(ctx context.Context, carbideClient *cclient.CarbideClient, ids []string) ([]*cwssaws.Sku, error) {
-	forgeClient := carbideClient.Carbide()
-	result, err := forgeClient.FindSkusByIds(ctx, &cwssaws.SkusByIdsRequest{
+func skuFindByIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient, ids []string) ([]*cwssaws.Sku, error) {
+	rpcClient := nicoClient.NICo()
+	result, err := rpcClient.FindSkusByIds(ctx, &cwssaws.SkusByIdsRequest{
 		Ids: ids,
 	})
 	if err != nil {

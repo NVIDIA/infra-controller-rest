@@ -25,10 +25,10 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // Task defines the details of a task. It includes:

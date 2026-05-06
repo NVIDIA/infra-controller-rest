@@ -20,7 +20,7 @@ package util
 import (
 	"context"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
 	"github.com/rs/zerolog"
 	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"

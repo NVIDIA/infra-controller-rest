@@ -30,17 +30,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/credential"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	dbtestutil "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/testutil"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/common/vendor"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/credentials"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/db/migrations"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/pmc"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/powershelf"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/pmcmanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/pmcregistry"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	dbtestutil "github.com/NVIDIA/infra-controller-rest/db/pkg/db/testutil"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/common/vendor"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/credentials"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/db/migrations"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/pmc"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/powershelf"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/pmcmanager"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/pmcregistry"
 )
 
 func newCred(u, p string) *credential.Credential {

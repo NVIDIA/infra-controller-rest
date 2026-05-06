@@ -23,7 +23,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/powershelf-manager/pkg/objects/powershelf"
+	"github.com/NVIDIA/infra-controller-rest/powershelf-manager/pkg/objects/powershelf"
 )
 
 var _ FirmwareUpdateStore = (*InMemoryStore)(nil)

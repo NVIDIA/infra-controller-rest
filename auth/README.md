@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Issuer Configuration Guide
 
-Configure external identity providers (IdPs) for JWT authentication in `carbide-rest-api`.
+Configure external identity providers (IdPs) for JWT authentication in `nico-rest-api`.
 
 ## Configuration Structure
 
@@ -16,19 +16,19 @@ issuers:
     jwks: "https://auth.example.com/.well-known/jwks.json"  # JWKS URL (required)
     jwksTimeout: "5s"                           # Fetch timeout (default: 5s)
     audiences: ["my-api"]                       # Token must have ≥1 (optional)
-    scopes: ["openid", "carbide"]               # Token must have ALL (optional)
+    scopes: ["openid", "nico"]               # Token must have ALL (optional)
     claimMappings:                              # Required - see types below
       - orgName: "my-orgA"
         orgDisplayName: "My Organization A"
-        roles: ["FORGE_PROVIDER_ADMIN"]
+        roles: ["PROVIDER_ADMIN"]
       - orgName: "my-orgB"
         orgDisplayName: "My Organization B"
-        roles: ["FORGE_TENANT_ADMIN"]
+        roles: ["TENANT_ADMIN"]
 ```
 
 ### Key Concepts
 
-- **Only two roles allowed:** `FORGE_TENANT_ADMIN`, `FORGE_PROVIDER_ADMIN`
+- **Only two roles allowed:** `TENANT_ADMIN`, `PROVIDER_ADMIN`
 - **Audiences:** token needs at least one match → 401 on failure
 - **Scopes:** token needs all configured → 403 on failure (checks `scope`, `scopes`, `scp` claims)
 
@@ -54,7 +54,7 @@ issuers:
 claimMappings:
   - orgName: "acme-corp"
     orgDisplayName: "ACME Corp"
-    roles: ["FORGE_TENANT_ADMIN"]
+    roles: ["TENANT_ADMIN"]
 ```
 
 ### Type B: Static Org + Dynamic Roles
@@ -101,11 +101,11 @@ issuers:
   - name: corporate-sso
     issuer: "https://login.corp.com"
     jwks: "https://login.corp.com/.well-known/jwks.json"
-    audiences: ["carbide-api"]
+    audiences: ["nico-api"]
     claimMappings:
       - orgName: "corporate"
         orgDisplayName: "Corporate"
-        roles: ["FORGE_TENANT_ADMIN"]
+        roles: ["TENANT_ADMIN"]
 ```
 
 ### Multi-Tenant IdP (Type D)
@@ -116,11 +116,11 @@ issuers:
     issuer: "https://auth.saas.com"
     jwks: "https://auth.saas.com/.well-known/jwks.json"
     audiences: ["api"]
-    scopes: ["carbide"]
+    scopes: ["nico"]
     claimMappings:
       - orgAttribute: "tenant_id"
         orgDisplayAttribute: "tenant_name"
-        rolesAttribute: "carbide_roles"
+        rolesAttribute: "nico_roles"
 ```
 
 ### Multiple Orgs per Issuer
@@ -129,7 +129,7 @@ issuers:
 claimMappings:
   - orgName: "shared"
     orgDisplayName: "Shared Resources"
-    roles: ["FORGE_TENANT_ADMIN"]
+    roles: ["TENANT_ADMIN"]
   - orgName: "main"
     orgDisplayName: "Main Org"
     rolesAttribute: "main_roles"
@@ -169,12 +169,12 @@ claimMappings:
 
 ## Keycloak Integration
 
-To use Keycloak as an identity provider, update the Carbide REST API ConfigMap.
+To use Keycloak as an identity provider, update the NICo REST API ConfigMap.
 
 ### Prerequisites
 
 - **Fully Qualified Domain Name (FQDN)** for your Keycloak instance
-  - Example: `https://auth.forge.acme.com`
+  - Example: `https://auth.nico.acme.com`
   - This URL must be accessible by both the API server and end users
 
 ### Ingress Security Requirements
@@ -195,9 +195,9 @@ Once Keycloak configuration is finalized, the ingress controller for the Keycloa
 |---------------|-------------|---------|
 | `keycloak.enabled` | Enable Keycloak integration | `true` |
 | `keycloak.baseURL` | Internal Keycloak URL (cluster-internal) | `http://keycloak.keycloak.svc.cluster.local:8082` |
-| `keycloak.externalBaseURL` | External Keycloak URL (must match token issuer) | `https://auth.forge.acme.com` |
-| `keycloak.realm` | Keycloak realm name | `carbide` |
-| `keycloak.clientID` | OAuth client ID | `carbide-cloud` |
+| `keycloak.externalBaseURL` | External Keycloak URL (must match token issuer) | `https://auth.nico.acme.com` |
+| `keycloak.realm` | Keycloak realm name | `nico` |
+| `keycloak.clientID` | OAuth client ID | `nico-cloud` |
 | `keycloak.clientSecretPath` | Path to mounted client secret | `/var/secrets/keycloak/client-secret` |
 | `keycloak.serviceAccount` | Enable service account features | `true` |
 
@@ -205,17 +205,17 @@ Once Keycloak configuration is finalized, the ingress controller for the Keycloa
 
 ```bash
 kubectl create secret generic keycloak-client-secret \
-  --namespace carbide-rest \
+  --namespace nico-rest \
   --from-literal=client-secret="${OAUTH_CLIENT_SECRET}" \
   --dry-run=client -o yaml | kubectl apply -f -
 ```
 
-### Step 2: Update Carbide REST API ConfigMap
+### Step 2: Update NICo REST API ConfigMap
 
-Edit the `carbide-rest-api-config` ConfigMap in `carbide-rest` namespace:
+Edit the `nico-rest-api-config` ConfigMap in `nico-rest` namespace:
 
 ```bash
-kubectl edit configmap carbide-rest-api-config -n carbide-rest
+kubectl edit configmap nico-rest-api-config -n nico-rest
 ```
 
 If you applied the [kustomize manifests](https://github.com/NVIDIA/infra-controller-rest/blob/main/deploy/kustomize/base/api/configmap.yaml), there should already be a section for Keycloak auth.
@@ -227,9 +227,9 @@ Edit the Keycloak configuration (or add if not present) section to match the fol
 keycloak:
   enabled: true
   baseURL: http://keycloak.keycloak.svc.cluster.local:8082
-  externalBaseURL: https://auth.forge.acme.com
-  realm: carbide
-  clientID: carbide-cloud
+  externalBaseURL: https://auth.nico.acme.com
+  realm: nico
+  clientID: nico-cloud
   clientSecretPath: /var/secrets/keycloak/client-secret
   serviceAccount: true
 ```
@@ -243,7 +243,7 @@ keycloak:
 
 ### Step 3: Mount the Client Secret Volume
 
-Ensure the Carbide REST API Deployment mounts the Keycloak client secret.
+Ensure the NICo REST API Deployment mounts the Keycloak client secret.
 
 If you applied the [kustomize manifests](https://github.com/NVIDIA/infra-controller-rest/blob/main/deploy/kustomize/base/api/deployment.yaml) without any changes, this step should not be needed. Verify and edit as needed.
 
@@ -266,14 +266,14 @@ spec:
 ### Step 4: Apply Configuration and Restart
 
 ```bash
-# Restart the Carbide REST API deployment to pick up changes
-kubectl rollout restart deployment/carbide-rest-api -n carbide-rest
+# Restart the NICo REST API deployment to pick up changes
+kubectl rollout restart deployment/nico-rest-api -n nico-rest
 
 # Verify the pods are running
-kubectl get pods -n carbide-rest -l app.kubernetes.io/name=carbide-rest-api
+kubectl get pods -n nico-rest -l app.kubernetes.io/name=nico-rest-api
 
 # Check logs for Keycloak configuration
-kubectl logs -n carbide-rest -l app.kubernetes.io/name=carbide-rest-api --tail=50 | grep -i keycloak
+kubectl logs -n nico-rest -l app.kubernetes.io/name=nico-rest-api --tail=50 | grep -i keycloak
 ```
 
 Expected log messages:

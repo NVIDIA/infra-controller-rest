@@ -24,14 +24,14 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	goset "github.com/deckarep/golang-set/v2"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -60,7 +60,7 @@ func NewGetAllAuditEntryHandler(dbSession *cdb.Session) GetAllAuditEntryHandler 
 // @Produce json
 // @Security ApiKeyAuth
 // @Success 200 {array} []model.APIAuditEntry
-// @Router /v2/org/{org}/carbide/audit [get]
+// @Router /v2/org/{org}/nico/audit [get]
 func (gaaeh GetAllAuditEntryHandler) Handle(c echo.Context) error {
 	orgName, dbUser, ctx, logger, handlerSpan := common.SetupHandler("AuditEntry", "GetAll", c, gaaeh.tracerSpan)
 	if handlerSpan != nil {
@@ -196,7 +196,7 @@ func NewGetAuditEntryHandler(dbSession *cdb.Session) GetAuditEntryHandler {
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIAuditEntry
-// @Router /v2/org/{org}/carbide/audit/{id} [get]
+// @Router /v2/org/{org}/nico/audit/{id} [get]
 func (gaeh GetAuditEntryHandler) Handle(c echo.Context) error {
 	orgName, dbUser, ctx, logger, handlerSpan := common.SetupHandler("AuditEntry", "Get", c, gaeh.tracerSpan)
 	if handlerSpan != nil {

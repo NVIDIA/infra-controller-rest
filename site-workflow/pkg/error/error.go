@@ -25,7 +25,18 @@ import (
 
 var (
 	// ErrTypeInvalidRequest is returned when the request is invalid
-	ErrTypeInvalidRequest            = "InvalidRequest"
+	ErrTypeInvalidRequest         = "InvalidRequest"
+	ErrTypeNICoObjectNotFound     = "NICoObjectNotFound"
+	ErrTypeNICoUnimplemented      = "NICoUnimplemented"
+	ErrTypeNICoUnavailable        = "NICoUnavailable"
+	ErrTypeNICoDenied             = "NICoDenied"
+	ErrTypeNICoAlreadyExists      = "NICoAlreadyExists"
+	ErrTypeNICoFailedPrecondition = "NICoFailedPrecondition"
+	ErrTypeNICoInvalidArgument    = "NICoInvalidArgument"
+
+	// Legacy Carbide error type names. Retained so a newer REST can still
+	// recognise errors emitted by an older site-workflow version that has
+	// not yet been upgraded. Remove once the rollout window has closed.
 	ErrTypeCarbideObjectNotFound     = "CarbideObjectNotFound"
 	ErrTypeCarbideUnimplemented      = "CarbideUnimplemented"
 	ErrTypeCarbideUnavailable        = "CarbideUnavailable"
@@ -34,6 +45,37 @@ var (
 	ErrTypeCarbideFailedPrecondition = "CarbideFailedPrecondition"
 	ErrTypeCarbideInvalidArgument    = "CarbideInvalidArgument"
 )
+
+// ObjectNotFoundErrTypes returns the error types treated as "object not found"
+// from a Site Agent gRPC call. Both NICo and legacy Carbide names are listed
+// so that REST can recognise errors from older site-workflow deployments.
+// Remove the Carbide entry once the rollout window has closed.
+func ObjectNotFoundErrTypes() []string {
+	return []string{ErrTypeNICoObjectNotFound, ErrTypeCarbideObjectNotFound}
+}
+
+// UnimplementedOrDeniedErrTypes returns the error types treated as
+// "unimplemented or restricted" from a Site Agent gRPC call. Both NICo and
+// legacy Carbide names are listed so that REST can recognise errors from
+// older site-workflow deployments. Remove the Carbide entries once the
+// rollout window has closed.
+func UnimplementedOrDeniedErrTypes() []string {
+	return []string{
+		ErrTypeNICoUnimplemented,
+		ErrTypeNICoDenied,
+		ErrTypeCarbideUnimplemented,
+		ErrTypeCarbideDenied,
+	}
+}
+
+// FailedPreconditionErrTypes returns the error types treated as
+// "failed precondition" from a Site Agent gRPC call. Both NICo and legacy
+// Carbide names are listed so that REST can recognise errors from older
+// site-workflow deployments. Remove the Carbide entry once the rollout
+// window has closed.
+func FailedPreconditionErrTypes() []string {
+	return []string{ErrTypeNICoFailedPrecondition, ErrTypeCarbideFailedPrecondition}
+}
 
 // WrapError accepts an error and checks if it
 // can be converted to a gRPC status.
@@ -48,20 +90,20 @@ func WrapErr(err error) error {
 	if hasGrpcStatus {
 		switch status.Code() {
 		case codes.NotFound:
-			// If this is a 404 back from Carbide, we'll bubble that back up as a custom temporal error.
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideObjectNotFound, err)
+			// If this is a 404 back from NICo, we'll bubble that back up as a custom temporal error.
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoObjectNotFound, err)
 		case codes.Unimplemented:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideUnimplemented, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoUnimplemented, err)
 		case codes.Unavailable:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideUnavailable, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoUnavailable, err)
 		case codes.PermissionDenied:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideDenied, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoDenied, err)
 		case codes.AlreadyExists:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideAlreadyExists, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoAlreadyExists, err)
 		case codes.FailedPrecondition:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideFailedPrecondition, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoFailedPrecondition, err)
 		case codes.InvalidArgument:
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeCarbideInvalidArgument, err)
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeNICoInvalidArgument, err)
 		}
 	}
 	return err

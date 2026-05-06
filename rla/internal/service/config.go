@@ -23,14 +23,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/endpoint"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/certs"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/clients/temporal"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/componentmanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/executor"
-	pkgcerts "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/certs"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/endpoint"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/certs"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/clients/temporal"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
 
 const (

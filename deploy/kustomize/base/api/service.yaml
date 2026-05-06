@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-api Service
+# nico-rest-api Service
 apiVersion: v1
 kind: Service
 metadata:
-  name: carbide-rest-api
+  name: nico-rest-api
   labels:
-    app: carbide-rest-api
+    app: nico-rest-api
 spec:
   type: ClusterIP
   ports:
@@ -30,15 +30,15 @@ spec:
       targetPort: 9360
       name: metrics
   selector:
-    app: carbide-rest-api
+    app: nico-rest-api
 ---
 # NodePort service for API access from host
 apiVersion: v1
 kind: Service
 metadata:
-  name: carbide-rest-api-nodeport
+  name: nico-rest-api-nodeport
   labels:
-    app: carbide-rest-api
+    app: nico-rest-api
 spec:
   type: NodePort
   ports:
@@ -47,5 +47,5 @@ spec:
       nodePort: 30388
       name: http
   selector:
-    app: carbide-rest-api
+    app: nico-rest-api
 

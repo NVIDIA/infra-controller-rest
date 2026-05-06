@@ -21,8 +21,8 @@ import (
 	"context"
 	"testing"
 
-	cClient "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/grpc/client"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,10 +31,10 @@ import (
 )
 
 func TestManageVPCInventory_DiscoverVPCInventory(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -42,7 +42,7 @@ func TestManageVPCInventory_DiscoverVPCInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		carbideAtomicClient  *cClient.CarbideAtomicClient
+		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -59,7 +59,7 @@ func TestManageVPCInventory_DiscoverVPCInventory(t *testing.T) {
 			name: "test collecting and publishing vpc inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -72,7 +72,7 @@ func TestManageVPCInventory_DiscoverVPCInventory(t *testing.T) {
 			name: "test collecting and publishing vpc inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				carbideAtomicClient:  carbideAtomicClient,
+				nicoCoreAtomicClient: nicoCoreAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -92,7 +92,7 @@ func TestManageVPCInventory_DiscoverVPCInventory(t *testing.T) {
 
 			manageInstance := NewManageVPCInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				CarbideAtomicClient:   tt.fields.carbideAtomicClient,
+				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,
@@ -136,16 +136,16 @@ func TestManageVPCInventory_DiscoverVPCInventory(t *testing.T) {
 }
 
 func TestManageVpc_CreateVpcOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	name := "best_vpc_ever"
 	org := "best_org_ever"
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -161,7 +161,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 		{
 			name: "test create vpc success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -177,7 +177,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 		{
 			name: "test create vpc fail on missing name",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -192,7 +192,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 		{
 			name: "test create vpc fail on missing org",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -207,7 +207,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 		{
 			name: "test create vpc fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -222,7 +222,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 		{
 			name: "test create vpc fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -233,7 +233,7 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageVPC(tt.fields.CarbideAtomicClient)
+			mm := NewManageVPC(tt.fields.NICoCoreAtomicClient)
 			vpc, err := mm.CreateVpcOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -250,10 +250,10 @@ func TestManageVpc_CreateVpcOnSite(t *testing.T) {
 }
 
 func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	metedata := &cwssaws.Metadata{
 		Name: "test-name",
@@ -266,7 +266,7 @@ func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
 	}
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -281,7 +281,7 @@ func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
 		{
 			name: "test update vpc success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -295,7 +295,7 @@ func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
 		{
 			name: "test update vpc fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -308,7 +308,7 @@ func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
 		{
 			name: "test update vpc fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -319,7 +319,7 @@ func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageVPC(tt.fields.CarbideAtomicClient)
+			mm := NewManageVPC(tt.fields.NICoCoreAtomicClient)
 			err := mm.UpdateVpcOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -331,13 +331,13 @@ func TestManageInstance_UpdateVpcOnSiteOnSite(t *testing.T) {
 }
 
 func TestManageInstance_DeleteVpcOnSiteOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -352,7 +352,7 @@ func TestManageInstance_DeleteVpcOnSiteOnSite(t *testing.T) {
 		{
 			name: "test delete vpc success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -365,7 +365,7 @@ func TestManageInstance_DeleteVpcOnSiteOnSite(t *testing.T) {
 		{
 			name: "test delete vpc fail on blank id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -378,7 +378,7 @@ func TestManageInstance_DeleteVpcOnSiteOnSite(t *testing.T) {
 		{
 			name: "test delete vpc fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -389,7 +389,7 @@ func TestManageInstance_DeleteVpcOnSiteOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageVPC(tt.fields.CarbideAtomicClient)
+			mm := NewManageVPC(tt.fields.NICoCoreAtomicClient)
 			err := mm.DeleteVpcOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)
@@ -401,13 +401,13 @@ func TestManageInstance_DeleteVpcOnSiteOnSite(t *testing.T) {
 }
 
 func TestManageInstance_UpdateVpcVirtualizationOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
+	mockNICo := cClient.NewMockNICoClient()
 
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
 
 	type fields struct {
-		CarbideAtomicClient *cClient.CarbideAtomicClient
+		NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
 	}
 	type args struct {
 		ctx     context.Context
@@ -422,7 +422,7 @@ func TestManageInstance_UpdateVpcVirtualizationOnSite(t *testing.T) {
 		{
 			name: "test update vpc virtualization success",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -436,7 +436,7 @@ func TestManageInstance_UpdateVpcVirtualizationOnSite(t *testing.T) {
 		{
 			name: "test update vpc virtualization fail on missing id",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx: context.Background(),
@@ -449,7 +449,7 @@ func TestManageInstance_UpdateVpcVirtualizationOnSite(t *testing.T) {
 		{
 			name: "test update vpc virtualization fail on missing request",
 			fields: fields{
-				CarbideAtomicClient: carbideAtomicClient,
+				NICoCoreAtomicClient: nicoCoreAtomicClient,
 			},
 			args: args{
 				ctx:     context.Background(),
@@ -460,7 +460,7 @@ func TestManageInstance_UpdateVpcVirtualizationOnSite(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mm := NewManageVPC(tt.fields.CarbideAtomicClient)
+			mm := NewManageVPC(tt.fields.NICoCoreAtomicClient)
 			err := mm.UpdateVpcVirtualizationOnSite(tt.args.ctx, tt.args.request)
 			if tt.wantErr {
 				assert.Error(t, err)

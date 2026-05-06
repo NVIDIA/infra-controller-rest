@@ -34,13 +34,13 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/converter/protobuf"
-	dbmodel "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskschedule "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/taskschedule"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/proto/v1"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/converter/protobuf"
+	dbmodel "github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskschedule "github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/taskschedule"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/pkg/proto/v1"
 )
 
 // CreateTaskSchedule creates a new task schedule.

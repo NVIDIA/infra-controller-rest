@@ -25,9 +25,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	otrace "go.opentelemetry.io/otel/trace"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	stracer "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/tracer"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun/extra/bundebug"
 )

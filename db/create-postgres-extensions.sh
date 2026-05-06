@@ -37,11 +37,11 @@ if [[ -n "$KUBECTL_CONTEXT" ]]; then
   KUBECTL+=(--context "$KUBECTL_CONTEXT")
 fi
 
-# DB_NAME: from env if provided, otherwise from cloud-db-config, fallback to "forge"
+# DB_NAME: from env if provided, otherwise from cloud-db-config, fallback to "nico"
 if [[ -z "${DB_NAME:-}" ]]; then
   DB_NAME="$("${KUBECTL[@]}" -n cloud-db get configmap cloud-db-config \
     -o jsonpath='{.data.dbName}' 2>/dev/null || true)"
-  DB_NAME="${DB_NAME:-forge}"
+  DB_NAME="${DB_NAME:-nico}"
 fi
 
 banner "📦 Using database name: ${DB_NAME}"
@@ -50,12 +50,12 @@ banner "📦 Using database name: ${DB_NAME}"
 # Wait for Postgres StatefulSet to be Ready
 # ------------------------------------------------------------------------------
 
-banner "⏳  Waiting for StatefulSet postgres/forge-pg-cluster replicas to be Ready…"
+banner "⏳  Waiting for StatefulSet postgres/nico-pg-cluster replicas to be Ready…"
 
 for i in {1..120}; do
-  READY="$("${KUBECTL[@]}" -n postgres get sts forge-pg-cluster \
+  READY="$("${KUBECTL[@]}" -n postgres get sts nico-pg-cluster \
     -o jsonpath='{.status.readyReplicas}' 2>/dev/null || true)"
-  TOTAL="$("${KUBECTL[@]}" -n postgres get sts forge-pg-cluster \
+  TOTAL="$("${KUBECTL[@]}" -n postgres get sts nico-pg-cluster \
     -o jsonpath='{.status.replicas}' 2>/dev/null || true)"
 
   if [[ -n "$TOTAL" && "$READY" == "$TOTAL" && "$TOTAL" -gt 0 ]]; then

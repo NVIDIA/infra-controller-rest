@@ -28,18 +28,18 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	cwm "github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/metrics"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	cwm "github.com/NVIDIA/infra-controller-rest/workflow/internal/metrics"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cwutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // ManageVpc is an activity wrapper for managing VPC lifecycle that allows
@@ -399,7 +399,7 @@ func (mv ManageVpc) UpdateVpcMetadata(ctx context.Context, siteID uuid.UUID, tc 
 		description = *vpc.Description
 	}
 
-	// Prepare the labels for the metadata of the carbide call.
+	// Prepare the labels for the metadata of the nico call.
 	labels := []*cwssaws.Label{}
 	for k, v := range vpc.Labels {
 		labels = append(labels, &cwssaws.Label{

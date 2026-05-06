@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-api configuration
+# nico-rest-api configuration
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: carbide-rest-api-config
+  name: nico-rest-api-config
   labels:
-    app: carbide-rest-api
+    app: nico-rest-api
 data:
   config.yaml: |
     env:
@@ -27,7 +27,7 @@ data:
       disconnected: true
 
     api:
-      name: carbide
+      name: nico
       route:
         version: v2
 
@@ -39,9 +39,9 @@ data:
     db:
       host: postgres.postgres
       port: 5432
-      name: forge
-      user: forge
-      password: forge
+      name: nico
+      user: nico
+      password: nico
 
     temporal:
       host: temporal-frontend.temporal
@@ -59,7 +59,7 @@ data:
 
     siteManager:
       enabled: true
-      svcEndpoint: "https://carbide-rest-site-manager:8100/v1/site"
+      svcEndpoint: "https://nico-rest-site-manager:8100/v1/site"
 
     metrics:
       enabled: true
@@ -67,14 +67,14 @@ data:
 
     tracing:
       enabled: false
-      serviceName: carbide-rest-api
+      serviceName: nico-rest-api
 
     keycloak:
       enabled: true
       baseURL: http://keycloak:8082
       externalBaseURL: http://localhost:8082
-      realm: carbide-dev
-      clientID: carbide-api
+      realm: nico-dev
+      clientID: nico-api
       clientSecretPath: /var/secrets/keycloak/client-secret
       serviceAccount: true
 

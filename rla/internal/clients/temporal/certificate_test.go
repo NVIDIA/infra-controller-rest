@@ -30,7 +30,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/endpoint"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/endpoint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

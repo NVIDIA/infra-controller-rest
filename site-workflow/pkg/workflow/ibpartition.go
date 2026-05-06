@@ -20,8 +20,8 @@ package workflow
 import (
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/rs/zerolog/log"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
@@ -65,7 +65,7 @@ func DiscoverInfiniBandPartitionInventory(ctx workflow.Context) error {
 
 // CreateInfiniBandPartitionV2 is a workflow to create new InfiniBand Partitions using the CreateInfiniBandPartitionOnSite activity
 // V1 (CreateInfiniBandPartition) is found in cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func CreateInfiniBandPartitionV2(ctx workflow.Context, request *cwssaws.IBPartitionCreationRequest) error {
 	logger := log.With().Str("Workflow", "InfiniBandPartition").Str("Action", "Create").Str("IB Partition ID", request.GetId().GetValue()).Str("Name", request.GetConfig().GetName()).Logger()
 
@@ -134,7 +134,7 @@ func UpdateInfiniBandPartition(ctx workflow.Context, request *cwssaws.IBPartitio
 
 // DeleteInfiniBandPartitionV2 is a workflow to Delete InfiniBand Partitions using the DeleteInfiniBandPartitionOnSite activity
 // V1 (DeleteInfiniBandPartition) is found in cloud-workflow and uses a different activity that does not speak
-// to carbide directly.
+// to nico directly.
 func DeleteInfiniBandPartitionV2(ctx workflow.Context, request *cwssaws.IBPartitionDeletionRequest) error {
 	logger := log.With().Str("Workflow", "InfiniBandPartition").Str("Action", "Delete").Str("IB Partition ID", request.GetId().GetValue()).Logger()
 

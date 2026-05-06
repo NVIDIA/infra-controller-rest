@@ -30,12 +30,12 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/internal/certs"
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/internal/proto/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/db/migrations"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/db/postgres"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/firmwaremanager"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/nvswitchmanager"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/internal/certs"
+	pb "github.com/NVIDIA/infra-controller-rest/nvswitch-manager/internal/proto/v1"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/db/migrations"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/db/postgres"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/firmwaremanager"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/nvswitchmanager"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -56,20 +56,20 @@ type Service struct {
 func New(ctx context.Context, c Config) (*Service, error) {
 	// Connect to database first if configured (needed for persistent registry)
 	var db *bun.DB
-	if c.DBConf.Host != "" {
+	if c.DataStoreType == nvswitchmanager.DatastoreTypePersistent {
+		if c.DBConf.Host == "" {
+			return nil, fmt.Errorf("DB host is required for persistent mode")
+		}
 		pg, err := postgres.New(ctx, c.DBConf)
 		if err != nil {
-			if c.DataStoreType == nvswitchmanager.DatastoreTypePersistent {
-				return nil, fmt.Errorf("database connection required for persistent mode: %w", err)
-			}
-			log.Warnf("Failed to connect to database: %v (firmware manager will be disabled)", err)
-		} else {
-			if err := migrations.Migrate(ctx, pg); err != nil {
-				return nil, fmt.Errorf("failed to run database migrations: %w", err)
-			}
-			db = pg.DB()
-			log.Info("Connected to database")
+			return nil, fmt.Errorf("database connection required for persistent mode: %w", err)
 		}
+
+		if err := migrations.Migrate(ctx, pg); err != nil {
+			return nil, fmt.Errorf("failed to run database migrations: %w", err)
+		}
+		db = pg.DB()
+		log.Info("Connected to database")
 	}
 
 	nsmConfig, err := c.ToNsmConf()

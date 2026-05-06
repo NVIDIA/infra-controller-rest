@@ -30,7 +30,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
 )
 
 func TestMain(m *testing.M) {

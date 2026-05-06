@@ -18,8 +18,8 @@
 package instancetype
 
 import (
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterSubscriber registers InstanceType CRUD workflows and activities with Temporal
@@ -49,7 +49,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered RemoveMachineInstanceTypeAssociation workflow")
 
 	// Register activities
-	instanceTypeManager := swa.NewManageInstanceType(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	instanceTypeManager := swa.NewManageInstanceType(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateInstanceTypeOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.CreateInstanceTypeOnSite)

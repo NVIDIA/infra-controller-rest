@@ -24,9 +24,9 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // CreateTenant is a workflow to create a Tenant using CreateTenantOnSite activity

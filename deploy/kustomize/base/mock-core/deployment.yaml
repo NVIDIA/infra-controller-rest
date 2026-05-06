@@ -13,28 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# carbide-rest-mock-core (mock carbide gRPC server) Deployment
+# nico-rest-mock-core (mock nico gRPC server) Deployment
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: carbide-rest-mock-core
+  name: nico-rest-mock-core
   labels:
-    app: carbide-rest-mock-core
+    app: nico-rest-mock-core
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: carbide-rest-mock-core
+      app: nico-rest-mock-core
   template:
     metadata:
       labels:
-        app: carbide-rest-mock-core
+        app: nico-rest-mock-core
     spec:
       imagePullSecrets:
         - name: image-pull-secret
       containers:
         - name: mock-core
-          image: carbide-rest-mock-core
+          image: nico-rest-mock-core
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11079

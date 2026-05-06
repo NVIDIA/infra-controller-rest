@@ -23,7 +23,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 func TestRegistryGetManager(t *testing.T) {

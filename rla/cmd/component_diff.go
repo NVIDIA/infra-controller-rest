@@ -27,8 +27,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/client"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
 )
 
 var (
@@ -37,7 +37,7 @@ var (
 		Short: "Compare expected (local DB) vs actual (source system) components",
 		Long: `Compare expected components from local database against actual components from source systems.
 
-Each component type queries its own source system (e.g., Carbide for Compute, PSM for PowerShelf).
+Each component type queries its own source system (e.g., NICo for Compute, PSM for PowerShelf).
 Currently only supports Compute component type.
 
 Specify exactly ONE of the following options:

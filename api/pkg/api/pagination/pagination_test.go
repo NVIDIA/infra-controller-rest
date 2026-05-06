@@ -20,8 +20,8 @@ package pagination
 import (
 	"testing"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	"github.com/stretchr/testify/assert"
 )
 

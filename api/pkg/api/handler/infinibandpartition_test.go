@@ -28,16 +28,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -109,8 +110,8 @@ func TestInfiniBandPartitionHandler_Create(t *testing.T) {
 	tnOrg1 := "test-tn-org-1"
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles1)
 	tnu2 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg2}, tnRoles2)
@@ -474,8 +475,8 @@ func TestInfiniBandPartitionHandler_GetAll(t *testing.T) {
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
 	tnOrg4 := "test-tn-org-4"
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles1)
 	tnu2 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg2}, tnRoles2)
@@ -772,7 +773,7 @@ func TestInfiniBandPartitionHandler_GetAll(t *testing.T) {
 				q.Set("orderBy", *tc.orderBy)
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/infiniband-partition?%s", tc.reqOrgName, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/infiniband-partition?%s", tc.reqOrgName, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 
@@ -853,8 +854,8 @@ func TestInfiniBandPartitionHandler_GetByID(t *testing.T) {
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
 	tnOrg4 := "test-tn-org-4"
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles1)
 	tnu2 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg2}, tnRoles2)
@@ -1081,8 +1082,8 @@ func TestInfiniBandPartitionHandle_Update(t *testing.T) {
 	tnOrg4 := "test-tn-org-4"
 	tnOrg5 := "test-tn-org-5"
 
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles1)
 	tnu2 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg2}, tnRoles2)
@@ -1371,8 +1372,8 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 	tnOrg2 := "test-tn-org-2"
 	tnOrg3 := "test-tn-org-3"
 	tnOrg4 := "test-tn-org-4"
-	tnRoles1 := []string{"FORGE_TENANT_ADMIN"}
-	tnRoles2 := []string{"FORGE_TENANT_NONADMIN"}
+	tnRoles1 := []string{authz.TenantAdminRole}
+	tnRoles2 := []string{"NICO_TENANT_NONADMIN"}
 
 	tnu1 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg1}, tnRoles1)
 	tnu2 := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg2}, tnRoles2)
@@ -1437,22 +1438,22 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[site2.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[site2.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteInfiniBandPartitionV2", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteInfiniBandPartitionV2", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Prepare client pool for sync calls
 	// to site(s).
@@ -1585,11 +1586,11 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name: "test InfiniBand Partition delete API endpoint carbide not-found, still success",
+			name: "test InfiniBand Partition delete API endpoint nico not-found, still success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideNotFound,
-				scp:       scpWithCarbideNotFound,
+				tc:        tscWithNICoNotFound,
+				scp:       scpWithNICoNotFound,
 				cfg:       cfg,
 			},
 			reqOrgName:         tnOrg3,

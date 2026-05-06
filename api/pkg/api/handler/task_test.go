@@ -26,12 +26,13 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -64,8 +65,8 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
 	assert.Nil(t, err)
 
-	providerUser := testRackBuildUser(t, dbSession, "provider-user-task-get", org, []string{"FORGE_PROVIDER_ADMIN"})
-	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-task-get", org, []string{"FORGE_TENANT_ADMIN"})
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-task-get", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-task-get", org, []string{authz.TenantAdminRole})
 
 	handler := NewGetTaskHandler(dbSession, nil, scp, cfg)
 
@@ -174,7 +175,7 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 			for k, v := range tt.queryParams {
 				q.Set(k, v)
 			}
-			path := fmt.Sprintf("/v2/org/%s/carbide/rack/task/%s?%s", tt.reqOrg, tt.taskUUID, q.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/task/%s?%s", tt.reqOrg, tt.taskUUID, q.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)

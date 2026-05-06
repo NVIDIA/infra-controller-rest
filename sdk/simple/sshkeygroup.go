@@ -28,7 +28,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard"
 )
 
 // GetSSHKeyFingerprint generates the fingerprint for a given SSH public key

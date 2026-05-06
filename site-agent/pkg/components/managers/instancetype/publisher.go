@@ -20,8 +20,8 @@ package instancetype
 import (
 	"github.com/google/uuid"
 
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterPublisher registers InstanceType inventory workflow and activity with Temporal
@@ -35,7 +35,7 @@ func (api *API) RegisterPublisher() error {
 	// Register DiscoverInstanceTypeInventory activity
 	inventoryManager := swa.NewManageInstanceTypeInventory(swa.ManageInventoryConfig{
 		SiteID:                uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		CarbideAtomicClient:   ManagerAccess.Data.EB.Managers.Carbide.Client,
+		NICoCoreAtomicClient:  ManagerAccess.Data.EB.Managers.NICo.Client,
 		TemporalPublishClient: ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		TemporalPublishQueue:  ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
 		SitePageSize:          InventoryCarbidePageSize,

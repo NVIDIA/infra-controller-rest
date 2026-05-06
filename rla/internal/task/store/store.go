@@ -24,10 +24,10 @@ import (
 
 	"github.com/google/uuid"
 
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
 )
 
 // Store defines the interface for task and operation rule data persistence.

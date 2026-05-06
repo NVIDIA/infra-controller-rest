@@ -28,13 +28,13 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 )
 
 // ~~~~~ GetAll Handler ~~~~~ //
@@ -70,7 +70,7 @@ func NewGetAllFabricHandler(dbSession *cdb.Session, tc temporalClient.Client, cf
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIFabric
-// @Router /v2/org/{org}/carbide/site/{siteId}/fabric [get]
+// @Router /v2/org/{org}/nico/site/{siteId}/fabric [get]
 func (gafh GetAllFabricHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Fabric", "GetAll", c, gafh.tracerSpan)
 	if handlerSpan != nil {
@@ -232,7 +232,7 @@ func NewGetFabricHandler(dbSession *cdb.Session, tc temporalClient.Client, cfg *
 // @Param siteId query string true "ID of Site"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site'"
 // @Success 200 {object} model.APIFabric
-// @Router /v2/org/{org}/carbide/site/{siteId}/fabric/{id} [get]
+// @Router /v2/org/{org}/nico/site/{siteId}/fabric/{id} [get]
 func (gfh GetFabricHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Fabric", "Get", c, gfh.tracerSpan)
 	if handlerSpan != nil {

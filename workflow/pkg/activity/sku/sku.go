@@ -22,14 +22,14 @@ import (
 	"errors"
 	"reflect"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // ManageSku is an activity wrapper for managing SKU inventory that allows injecting DB access
@@ -146,7 +146,7 @@ func (ms ManageSku) UpdateSkusInDB(ctx context.Context, siteID uuid.UUID, skuInv
 		// Update existing SKU data in DB
 		if !reflect.DeepEqual(cur.Components.SkuComponents, reportedSku.Components) || cur.DeviceType != reportedSku.DeviceType ||
 			!reflect.DeepEqual(cur.AssociatedMachineIds, reportedAssociatedMachineIDs) {
-			// nil AssociatedMachineIds in carbide can mean we need to clear out existing AssociatedMachineIds in DB
+			// nil AssociatedMachineIds in nico can mean we need to clear out existing AssociatedMachineIds in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
 			if cur.AssociatedMachineIds != nil && reportedAssociatedMachineIDs == nil {
@@ -165,9 +165,9 @@ func (ms ManageSku) UpdateSkusInDB(ctx context.Context, siteID uuid.UUID, skuInv
 		}
 	}
 
-	// Delete any SKU present in DB not present in Carbide.
+	// Delete any SKU present in DB not present in NICo.
 	// We only act if this is the last page (or paging disabled) and outside race window.
-	// The source of truth for Carbide is reportedIDs.
+	// The source of truth for NICo is reportedIDs.
 	if skuInventory.InventoryPage == nil || skuInventory.InventoryPage.TotalPages == 0 || (skuInventory.InventoryPage.CurrentPage == skuInventory.InventoryPage.TotalPages) {
 		for _, sk := range existingSkus {
 			if _, keep := reportedIDs[sk.ID]; keep {

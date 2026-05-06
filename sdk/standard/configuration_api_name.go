@@ -20,7 +20,7 @@ package standard
 import (
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard/helpers"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard/helpers"
 )
 
 // NewConfigurationWithAPIName returns a generated configuration with an
@@ -50,7 +50,7 @@ func (c *Configuration) SetAPIName(apiName string) {
 	c.HTTPClient = &clientCopy
 }
 
-// GetAPIName returns the configured API path segment. When unset, carbide is
+// GetAPIName returns the configured API path segment. When unset, nico is
 // used to match the OpenAPI-generated paths.
 func (c *Configuration) GetAPIName() string {
 	if rewriter, ok := helpers.CurrentAPINameRewriteTransport(c.HTTPClient); ok {

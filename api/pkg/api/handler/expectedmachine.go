@@ -30,17 +30,17 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -122,7 +122,7 @@ func NewCreateExpectedMachineHandler(dbSession *cdb.Session, scp *sc.ClientPool,
 // @Param org path string true "Name of NGC organization"
 // @Param message body model.APIExpectedMachineCreateRequest true "ExpectedMachine creation request"
 // @Success 201 {object} model.APIExpectedMachine
-// @Router /v2/org/{org}/carbide/expected-machine [post]
+// @Router /v2/org/{org}/nico/expected-machine [post]
 func (cemh CreateExpectedMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "Create", c, cemh.tracerSpan)
 	if handlerSpan != nil {
@@ -196,8 +196,8 @@ func (cemh CreateExpectedMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Site is not in Registered state, cannot perform operation", nil)
 	}
 
-	// Check for duplicate MAC address
-	// Notes: We do not allow multiple Expected Machines with the same MAC address, but it's not a DB unique constraint so we check here
+	// Check for duplicate MAC address. The DB enforces UNIQUE (bmc_mac_address, site_id),
+	// but we pre-check here so we can return the conflicting record's ID in the response.
 	emDAO := cdbm.NewExpectedMachineDAO(cemh.dbSession)
 	ems, count, err := emDAO.GetAll(ctx, nil, cdbm.ExpectedMachineFilterInput{
 		BmcMacAddresses: []string{apiRequest.BmcMacAddress},
@@ -219,83 +219,65 @@ func (cemh CreateExpectedMachineHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// Start a db transaction
-	tx, err := cdb.BeginTx(ctx, cemh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Expected Machine due to DB transaction error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	expectedMachine, err := cdb.WithTxResult(ctx, cemh.dbSession, func(tx *cdb.Tx) (*cdbm.ExpectedMachine, error) {
+		// Note: DefaultBmcUsername and BmcPassword are not stored in DB, only passed to workflow
+		em, err := emDAO.Create(
+			ctx,
+			tx,
+			cdbm.ExpectedMachineCreateInput{
+				ExpectedMachineID:        uuid.New(),
+				SiteID:                   site.ID,
+				BmcMacAddress:            apiRequest.BmcMacAddress,
+				BmcIpAddress:             apiRequest.BmcIpAddress,
+				ChassisSerialNumber:      apiRequest.ChassisSerialNumber,
+				SkuID:                    apiRequest.SkuID,
+				FallbackDpuSerialNumbers: apiRequest.FallbackDPUSerialNumbers,
+				RackID:                   apiRequest.RackID,
+				Name:                     apiRequest.Name,
+				Manufacturer:             apiRequest.Manufacturer,
+				Model:                    apiRequest.Model,
+				Description:              apiRequest.Description,
+				FirmwareVersion:          apiRequest.FirmwareVersion,
+				SlotID:                   apiRequest.SlotID,
+				TrayIdx:                  apiRequest.TrayIdx,
+				HostID:                   apiRequest.HostID,
+				Labels:                   apiRequest.Labels,
+				CreatedBy:                dbUser.ID,
+			},
+		)
+		if err != nil {
+			logger.Error().Err(err).Msg("error creating ExpectedMachine record in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Expected Machine due to DB error", nil)
+		}
 
-	// Create the ExpectedMachine in DB
-	// Note: DefaultBmcUsername and BmcPassword are not stored in DB, only passed to workflow
-	expectedMachine, err := emDAO.Create(
-		ctx,
-		tx,
-		cdbm.ExpectedMachineCreateInput{
-			ExpectedMachineID:        uuid.New(),
-			SiteID:                   site.ID,
-			BmcMacAddress:            apiRequest.BmcMacAddress,
-			ChassisSerialNumber:      apiRequest.ChassisSerialNumber,
-			SkuID:                    apiRequest.SkuID,
-			FallbackDpuSerialNumbers: apiRequest.FallbackDPUSerialNumbers,
-			RackID:                   apiRequest.RackID,
-			Name:                     apiRequest.Name,
-			Manufacturer:             apiRequest.Manufacturer,
-			Model:                    apiRequest.Model,
-			Description:              apiRequest.Description,
-			FirmwareVersion:          apiRequest.FirmwareVersion,
-			SlotID:                   apiRequest.SlotID,
-			TrayIdx:                  apiRequest.TrayIdx,
-			HostID:                   apiRequest.HostID,
-			Labels:                   apiRequest.Labels,
-			CreatedBy:                dbUser.ID,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating ExpectedMachine record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Expected Machine due to DB error", nil)
-	}
+		createExpectedMachineRequest := em.ToProto(cdbm.ExpectedMachineCredentials{
+			Username: apiRequest.DefaultBmcUsername,
+			Password: apiRequest.DefaultBmcPassword,
+		})
 
-	createExpectedMachineRequest := expectedMachine.ToProto(cdbm.ExpectedMachineCredentials{
-		Username: apiRequest.DefaultBmcUsername,
-		Password: apiRequest.DefaultBmcPassword,
+		logger.Info().Msg("triggering Expected Machine create workflow on Site")
+
+		workflowOptions := tclient.StartWorkflowOptions{
+			ID:                       "expected-machine-create-" + em.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		stc, err := cemh.scp.GetClientByID(site.ID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		if apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "CreateExpectedMachine", workflowOptions, createExpectedMachineRequest); apiErr != nil {
+			return nil, apiErr
+		}
+		return em, nil
 	})
-
-	logger.Info().Msg("triggering Expected Machine create workflow on Site")
-
-	// Create workflow options
-	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "expected-machine-create-" + expectedMachine.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	// Get the temporal client for the site we are working with
-	stc, err := cemh.scp.GetClientByID(site.ID)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create Expected Machine due to DB transaction error")
 	}
 
-	// Run workflow
-	apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "CreateExpectedMachine", workflowOptions, createExpectedMachineRequest)
-	if apiErr != nil {
-		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing ExpectedMachine transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Expected Machine due to DB transaction error", nil)
-	}
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
-
-	// Create response
 	apiExpectedMachine := model.NewAPIExpectedMachine(expectedMachine)
 
 	logger.Info().Msg("finishing API handler")
@@ -334,7 +316,7 @@ func NewGetAllExpectedMachineHandler(dbSession *cdb.Session, cfg *config.Config)
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIExpectedMachine
-// @Router /v2/org/{org}/carbide/expected-machine [get]
+// @Router /v2/org/{org}/nico/expected-machine [get]
 func (gaemh GetAllExpectedMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "GetAll", c, gaemh.tracerSpan)
 	if handlerSpan != nil {
@@ -491,7 +473,7 @@ func NewGetExpectedMachineHandler(dbSession *cdb.Session, cfg *config.Config) Ge
 // @Param id path string true "ID of Expected Machine"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'Site', 'SKU'"
 // @Success 200 {object} model.APIExpectedMachine
-// @Router /v2/org/{org}/carbide/expected-machine/{id} [get]
+// @Router /v2/org/{org}/nico/expected-machine/{id} [get]
 func (gemh GetExpectedMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "Get", c, gemh.tracerSpan)
 	if handlerSpan != nil {
@@ -598,7 +580,7 @@ func NewUpdateExpectedMachineHandler(dbSession *cdb.Session, scp *sc.ClientPool,
 // @Param id path string true "ID of Expected Machine"
 // @Param message body model.APIExpectedMachineUpdateRequest true "ExpectedMachine update request"
 // @Success 200 {object} model.APIExpectedMachine
-// @Router /v2/org/{org}/carbide/expected-machine/{id} [patch]
+// @Router /v2/org/{org}/nico/expected-machine/{id} [patch]
 func (uemh UpdateExpectedMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "Update", c, uemh.tracerSpan)
 	if handlerSpan != nil {
@@ -692,82 +674,63 @@ func (uemh UpdateExpectedMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Current org is not associated with the Site of the Expected Machine", nil)
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, uemh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Expected Machine due to DB transaction error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	updatedExpectedMachine, err := cdb.WithTxResult(ctx, uemh.dbSession, func(tx *cdb.Tx) (*cdbm.ExpectedMachine, error) {
+		// Note: DefaultBmcUsername and BmcPassword are not stored in DB, only passed to workflow
+		em, err := emDAO.Update(
+			ctx,
+			tx,
+			cdbm.ExpectedMachineUpdateInput{
+				ExpectedMachineID:        expectedMachine.ID,
+				BmcMacAddress:            apiRequest.BmcMacAddress,
+				BmcIpAddress:             apiRequest.BmcIpAddress,
+				ChassisSerialNumber:      apiRequest.ChassisSerialNumber,
+				SkuID:                    apiRequest.SkuID,
+				FallbackDpuSerialNumbers: apiRequest.FallbackDPUSerialNumbers,
+				RackID:                   apiRequest.RackID,
+				Name:                     apiRequest.Name,
+				Manufacturer:             apiRequest.Manufacturer,
+				Model:                    apiRequest.Model,
+				Description:              apiRequest.Description,
+				FirmwareVersion:          apiRequest.FirmwareVersion,
+				SlotID:                   apiRequest.SlotID,
+				TrayIdx:                  apiRequest.TrayIdx,
+				HostID:                   apiRequest.HostID,
+				Labels:                   apiRequest.Labels,
+			},
+		)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to update ExpectedMachine record in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Expected Machine due to DB error", nil)
+		}
 
-	// Update ExpectedMachine in DB
-	// Note: DefaultBmcUsername and BmcPassword are not stored in DB, only passed to workflow
+		updateExpectedMachineRequest := em.ToProto(cdbm.ExpectedMachineCredentials{
+			Username: apiRequest.DefaultBmcUsername,
+			Password: apiRequest.DefaultBmcPassword,
+		})
 
-	updatedExpectedMachine, err := emDAO.Update(
-		ctx,
-		tx,
-		cdbm.ExpectedMachineUpdateInput{
-			ExpectedMachineID:        expectedMachine.ID,
-			BmcMacAddress:            apiRequest.BmcMacAddress,
-			ChassisSerialNumber:      apiRequest.ChassisSerialNumber,
-			SkuID:                    apiRequest.SkuID,
-			FallbackDpuSerialNumbers: apiRequest.FallbackDPUSerialNumbers,
-			RackID:                   apiRequest.RackID,
-			Name:                     apiRequest.Name,
-			Manufacturer:             apiRequest.Manufacturer,
-			Model:                    apiRequest.Model,
-			Description:              apiRequest.Description,
-			FirmwareVersion:          apiRequest.FirmwareVersion,
-			SlotID:                   apiRequest.SlotID,
-			TrayIdx:                  apiRequest.TrayIdx,
-			HostID:                   apiRequest.HostID,
-			Labels:                   apiRequest.Labels,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to update ExpectedMachine record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Expected Machine due to DB error", nil)
-	}
+		logger.Info().Msg("triggering ExpectedMachine update workflow")
 
-	updateExpectedMachineRequest := updatedExpectedMachine.ToProto(cdbm.ExpectedMachineCredentials{
-		Username: apiRequest.DefaultBmcUsername,
-		Password: apiRequest.DefaultBmcPassword,
+		workflowOptions := tclient.StartWorkflowOptions{
+			ID:                       "expected-machine-update-" + expectedMachine.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		stc, err := uemh.scp.GetClientByID(site.ID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		if apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "UpdateExpectedMachine", workflowOptions, updateExpectedMachineRequest); apiErr != nil {
+			return nil, apiErr
+		}
+		return em, nil
 	})
-
-	logger.Info().Msg("triggering ExpectedMachine update workflow")
-
-	// Create workflow options
-	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "expected-machine-update-" + expectedMachine.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	// Get the Temporal client for the site we are working with
-	stc, err := uemh.scp.GetClientByID(site.ID)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update Expected Machine due to DB transaction error")
 	}
 
-	// Run workflow
-	apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "UpdateExpectedMachine", workflowOptions, updateExpectedMachineRequest)
-	if apiErr != nil {
-		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing ExpectedMachine update transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update ExpectedMachine", nil)
-	}
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
-
-	// Create response
 	apiExpectedMachine := model.NewAPIExpectedMachine(updatedExpectedMachine)
 
 	logger.Info().Msg("finishing API handler")
@@ -805,7 +768,7 @@ func NewDeleteExpectedMachineHandler(dbSession *cdb.Session, scp *sc.ClientPool,
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of Expected Machine"
 // @Success 204
-// @Router /v2/org/{org}/carbide/expected-machine/{id} [delete]
+// @Router /v2/org/{org}/nico/expected-machine/{id} [delete]
 func (demh DeleteExpectedMachineHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "Delete", c, demh.tracerSpan)
 	if handlerSpan != nil {
@@ -860,58 +823,38 @@ func (demh DeleteExpectedMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Current org is not associated with the Site of the Expected Machine", nil)
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, demh.dbSession, &sql.TxOptions{})
+	err = cdb.WithTx(ctx, demh.dbSession, func(tx *cdb.Tx) error {
+		if err := emDAO.Delete(ctx, tx, expectedMachine.ID); err != nil {
+			logger.Error().Err(err).Msg("unable to delete ExpectedMachine record from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Expected Machine due to DB error", nil)
+		}
+
+		deleteExpectedMachineRequest := &cwssaws.ExpectedMachineRequest{
+			Id: &cwssaws.UUID{Value: expectedMachine.ID.String()},
+		}
+
+		logger.Info().Msg("triggering ExpectedMachine delete workflow")
+
+		workflowOptions := tclient.StartWorkflowOptions{
+			ID:                       "expected-machine-delete-" + expectedMachine.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		stc, err := demh.scp.GetClientByID(site.ID)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		if apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "DeleteExpectedMachine", workflowOptions, deleteExpectedMachineRequest); apiErr != nil {
+			return apiErr
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Expected Machine due to DB error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete Expected Machine due to DB transaction error")
 	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Delete ExpectedMachine from DB
-	err = emDAO.Delete(ctx, tx, expectedMachine.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to delete ExpectedMachine record from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Expected Machine due to DB error", nil)
-	}
-
-	// Build the delete request for workflow
-	deleteExpectedMachineRequest := &cwssaws.ExpectedMachineRequest{
-		Id: &cwssaws.UUID{Value: expectedMachine.ID.String()},
-	}
-
-	logger.Info().Msg("triggering ExpectedMachine delete workflow")
-
-	// Create workflow options
-	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "expected-machine-delete-" + expectedMachine.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	// Get the temporal client for the site we are working with
-	stc, err := demh.scp.GetClientByID(site.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	// Run workflow
-	apiErr := common.ExecuteSyncWorkflow(ctx, logger, stc, "DeleteExpectedMachine", workflowOptions, deleteExpectedMachineRequest)
-	if apiErr != nil {
-		return cutil.NewAPIErrorResponse(c, apiErr.Code, apiErr.Message, apiErr.Data)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing ExpectedMachine delete transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Expected Machine due to DB transaction error", nil)
-	}
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	logger.Info().Msg("finishing API handler")
 
@@ -948,7 +891,7 @@ func NewCreateExpectedMachinesHandler(dbSession *cdb.Session, scp *sc.ClientPool
 // @Param org path string true "Name of NGC organization"
 // @Param message body []model.APIExpectedMachineCreateRequest true "ExpectedMachine batch creation request"
 // @Success 201 {object} model.APIExpectedMachineBatchResponse
-// @Router /v2/org/{org}/carbide/expected-machine/batch [post]
+// @Router /v2/org/{org}/nico/expected-machine/batch [post]
 func (cemh CreateExpectedMachinesHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "CreateMultiple", c, cemh.tracerSpan)
 	if handlerSpan != nil {
@@ -1158,6 +1101,7 @@ func (cemh CreateExpectedMachinesHandler) Handle(c echo.Context) error {
 			ExpectedMachineID:        id,
 			SiteID:                   site.ID,
 			BmcMacAddress:            machineReq.BmcMacAddress,
+			BmcIpAddress:             machineReq.BmcIpAddress,
 			ChassisSerialNumber:      machineReq.ChassisSerialNumber,
 			SkuID:                    machineReq.SkuID,
 			FallbackDpuSerialNumbers: machineReq.FallbackDPUSerialNumbers,
@@ -1290,7 +1234,7 @@ func NewUpdateExpectedMachinesHandler(dbSession *cdb.Session, scp *sc.ClientPool
 // @Param org path string true "Name of NGC organization"
 // @Param message body []model.APIExpectedMachineUpdateRequest true "ExpectedMachine UpdateExpectedMachines request"
 // @Success 200 {object} model.APIExpectedMachineBatchResponse
-// @Router /v2/org/{org}/carbide/expected-machine/batch [patch]
+// @Router /v2/org/{org}/nico/expected-machine/batch [patch]
 func (uemh UpdateExpectedMachinesHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("ExpectedMachine", "UpdateMultiple", c, uemh.tracerSpan)
 	if handlerSpan != nil {
@@ -1598,6 +1542,7 @@ func (uemh UpdateExpectedMachinesHandler) Handle(c echo.Context) error {
 		updateInputs = append(updateInputs, cdbm.ExpectedMachineUpdateInput{
 			ExpectedMachineID:        emID,
 			BmcMacAddress:            machineReq.BmcMacAddress,
+			BmcIpAddress:             machineReq.BmcIpAddress,
 			ChassisSerialNumber:      machineReq.ChassisSerialNumber,
 			SkuID:                    machineReq.SkuID,
 			FallbackDpuSerialNumbers: machineReq.FallbackDPUSerialNumbers,

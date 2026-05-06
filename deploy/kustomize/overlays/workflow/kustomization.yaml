@@ -22,31 +22,31 @@ kind: Kustomization
 generatorOptions:
   disableNameSuffixHash: true
 
-namespace: carbide-rest
+namespace: nico-rest
 
 resources:
   - ../../base/workflow
 
 images:
-  - name: carbide-rest-workflow
-    newName: localhost:5000/carbide-rest-workflow
+  - name: nico-rest-workflow
+    newName: localhost:5000/nico-rest-workflow
     newTag: latest
 
 patches:
   - target:
       kind: Deployment
-      name: carbide-rest-cloud-worker
+      name: nico-rest-cloud-worker
     patch: |-
       - op: replace
         path: /spec/template/spec/imagePullSecrets
         value: []
   - target:
       kind: Deployment
-      name: carbide-rest-site-worker
+      name: nico-rest-site-worker
     patch: |-
       - op: replace
         path: /spec/template/spec/imagePullSecrets
         value: []
 
 commonLabels:
-  app.kubernetes.io/part-of: carbide-rest
+  app.kubernetes.io/part-of: nico-rest

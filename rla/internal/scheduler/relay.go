@@ -23,7 +23,7 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/scheduler/types"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
 )
 
 // relay bridges the Trigger channel to the Worker channel for a single entry.

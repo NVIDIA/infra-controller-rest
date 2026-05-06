@@ -18,8 +18,8 @@
 package subnet
 
 import (
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterSubscriber registers Subnet CRUD workflows and activities with Temporal
@@ -38,7 +38,7 @@ func (api *API) RegisterSubscriber() error {
 
 	// Register activities
 
-	subnetManager := swa.NewManageSubnet(ManagerAccess.Data.EB.Managers.Carbide.Client)
+	subnetManager := swa.NewManageSubnet(ManagerAccess.Data.EB.Managers.NICo.Client)
 
 	// Register CreateSubnetOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(subnetManager.CreateSubnetOnSite)

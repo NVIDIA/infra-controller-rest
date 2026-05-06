@@ -27,7 +27,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/client"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
 )
 
 var (
@@ -39,7 +39,7 @@ var (
 Specify exactly ONE of the following options:
   --rack-ids      : Comma-separated list of rack UUIDs
   --rack-names    : Comma-separated list of rack names
-  --component-ids : Comma-separated list of component IDs (e.g. machine_id from Carbide)
+  --component-ids : Comma-separated list of component IDs (e.g. machine_id from NICo)
 
 Component types (required for rack-ids/rack-names):
   --type compute     : Compute nodes

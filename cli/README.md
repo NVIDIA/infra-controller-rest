@@ -3,45 +3,45 @@ SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All 
 SPDX-License-Identifier: Apache-2.0
 -->
 
-# Carbide CLI
+# NICo CLI
 
-Command-line client for the NVIDIA Infra Controller REST API. Commands are dynamically generated from the embedded OpenAPI spec at startup, so every API endpoint is available with zero manual command code.
+Command-line client for the NVIDIA Infrastructure Controller (NICo) REST API. Commands are dynamically generated from the embedded OpenAPI spec at startup, so every API endpoint is available with zero manual command code.
 
 ## Prerequisites
 
 - Go 1.25.4 or later
-- Access to a running NVIDIA Infra Controller REST API instance (local via `make kind-reset` or remote)
+- Access to a running NVIDIA Infrastructure Controller (NICo) REST API instance (local via `make kind-reset` or remote)
 
 ## Installation
 
 ### From the repo (recommended)
 
 ```bash
-make carbide-cli
+make nico-cli
 ```
 
-This builds and installs `carbidecli` to `$(go env GOPATH)/bin/carbidecli`. Override the destination with:
+This builds and installs `nicocli` to `$(go env GOPATH)/bin/nicocli`. Override the destination with:
 
 ```bash
-make carbide-cli INSTALL_DIR=/usr/local/bin
+make nico-cli INSTALL_DIR=/usr/local/bin
 ```
 
 ### With go install
 
 ```bash
-go install ./cli/cmd/carbidecli
+go install ./cli/cmd/cli
 ```
 
 ### Manual go build
 
 ```bash
-go build -o /usr/local/bin/carbidecli ./cli/cmd/carbidecli
+go build -o /usr/local/bin/nicocli ./cli/cmd/cli
 ```
 
 ### Verify
 
 ```bash
-carbidecli --version
+nicocli --version
 ```
 
 ## Quick Start
@@ -49,35 +49,35 @@ carbidecli --version
 Generate a default config and add configs for each environment you work with:
 
 ```bash
-carbidecli init                    # writes ~/.carbide/config.yaml
-cp ~/.carbide/config.yaml ~/.carbide/config.staging.yaml
-cp ~/.carbide/config.yaml ~/.carbide/config.prod.yaml
+nicocli init                    # writes ~/.nico/config.yaml
+cp ~/.nico/config.yaml ~/.nico/config.staging.yaml
+cp ~/.nico/config.yaml ~/.nico/config.prod.yaml
 ```
 
 Edit each file with the appropriate server URL, org, and auth settings for that environment (see Configuration below), then launch interactive mode:
 
 ```bash
-carbidecli tui
+nicocli tui
 ```
 
-The TUI will list your configs, let you pick an environment, authenticate, and start running commands. This is the recommended way to use `carbidecli` since it handles environment selection, login, and token refresh automatically.
+The TUI will list your configs, let you pick an environment, authenticate, and start running commands. This is the recommended way to use `nicocli` since it handles environment selection, login, and token refresh automatically.
 
 For direct one-off commands without the TUI:
 
 ```bash
-carbidecli login                   # exchange credentials for a token
-carbidecli site list               # list all sites
+nicocli login                   # exchange credentials for a token
+nicocli site list               # list all sites
 ```
 
 ## Configuration
 
-Config file: `~/.carbide/config.yaml`
+Config file: `~/.nico/config.yaml`
 
 ```yaml
 api:
   base: http://localhost:8388
   org: test-org
-  name: carbide                # API path segment (default)
+  name: nico                # API path segment (default)
 
 auth:
   # Option 1: Direct bearer token
@@ -88,9 +88,9 @@ auth:
 
   # Option 3: OIDC provider (e.g. Keycloak)
   oidc:
-    token_url: http://localhost:8080/realms/carbide-dev/protocol/openid-connect/token
-    client_id: carbide-api
-    client_secret: carbide-local-secret
+    token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
+    client_id: nico-api
+    client_secret: nico-local-secret
 
   # Option 4: NGC API key
   # api_key:
@@ -102,56 +102,56 @@ Flags and environment variables override config values:
 
 | Flag | Env Var | Description |
 |------|---------|-------------|
-| `--base-url` | `CARBIDE_BASE_URL` | API base URL |
-| `--org` | `CARBIDE_ORG` | Organization name |
-| `--token` | `CARBIDE_TOKEN` | Bearer token |
-| `--token-command`, `--auth-script` | `CARBIDE_TOKEN_COMMAND`, `CARBIDE_AUTH_SCRIPT` | Shell command/script that prints a bearer token |
-| `--token-url` | `CARBIDE_TOKEN_URL` | OIDC token endpoint URL |
-| `--keycloak-url` | `CARBIDE_KEYCLOAK_URL` | Keycloak base URL (constructs token-url) |
-| `--keycloak-realm` | `CARBIDE_KEYCLOAK_REALM` | Keycloak realm (default: `carbide-dev`) |
-| `--client-id` | `CARBIDE_CLIENT_ID` | OAuth client ID |
+| `--base-url` | `NICO_BASE_URL` | API base URL |
+| `--org` | `NICO_ORG` | Organization name |
+| `--token` | `NICO_TOKEN` | Bearer token |
+| `--token-command`, `--auth-script` | `NICO_TOKEN_COMMAND`, `NICO_AUTH_SCRIPT` | Shell command/script that prints a bearer token |
+| `--token-url` | `NICO_TOKEN_URL` | OIDC token endpoint URL |
+| `--keycloak-url` | `NICO_KEYCLOAK_URL` | Keycloak base URL (constructs token-url) |
+| `--keycloak-realm` | `NICO_KEYCLOAK_REALM` | Keycloak realm (default: `nico-dev`) |
+| `--client-id` | `NICO_CLIENT_ID` | OAuth client ID |
 | `--output`, `-o` | | Output format: `json` (default), `yaml`, `table` |
 
 ## Authentication
 
 ```bash
 # OIDC (credentials from config, prompts for password if not stored)
-carbidecli login
+nicocli login
 
 # OIDC with explicit flags
-carbidecli --token-url https://auth.example.com/token login --username admin@example.com
+nicocli --token-url https://auth.example.com/token login --username admin@example.com
 
 # NGC API key
-carbidecli login --api-key nvapi-xxxx
+nicocli login --api-key nvapi-xxxx
 
 # Auth script/token command
-carbidecli --auth-script /path/to/get-carbide-token.sh login
+nicocli --auth-script /path/to/get-nico-token.sh login
 
 # Keycloak shorthand
-carbidecli --keycloak-url http://localhost:8080 login --username admin@example.com
+nicocli --keycloak-url http://localhost:8080 login --username admin@example.com
 ```
 
-Tokens are saved to the active config file (`~/.carbide/config.yaml` by default, or the path selected with `--config` / the TUI config selector). OIDC is refreshed when possible; TUI mode reruns the configured auth method after `401 Unauthorized` API responses and retries safe read requests up to three times, logging each auth refresh/retry attempt.
+Tokens are saved to the active config file (`~/.nico/config.yaml` by default, or the path selected with `--config` / the TUI config selector). OIDC is refreshed when possible; TUI mode reruns the configured auth method after `401 Unauthorized` API responses and retries safe read requests up to three times, logging each auth refresh/retry attempt.
 
 ## Usage
 
 ```bash
-carbidecli site list
-carbidecli site get <siteId>
-carbidecli site create --name "SJC4"
-carbidecli site create --data-file site.json
-cat site.json | carbidecli site create --data-file -
-carbidecli site delete <siteId>
-carbidecli instance list --status provisioned --page-size 20
-carbidecli instance list --all                # fetch all pages
-carbidecli allocation constraint create <allocationId> --constraint-type SITE
-carbidecli site list --output table
-carbidecli --debug site list
+nicocli site list
+nicocli site get <siteId>
+nicocli site create --name "SJC4"
+nicocli site create --data-file site.json
+cat site.json | nicocli site create --data-file -
+nicocli site delete <siteId>
+nicocli instance list --status provisioned --page-size 20
+nicocli instance list --all                # fetch all pages
+nicocli allocation constraint create <allocationId> --constraint-type SITE
+nicocli site list --output table
+nicocli --debug site list
 ```
 
 ## Command Structure
 
-Commands follow `carbidecli <resource> [sub-resource] <action> [args] [flags]`.
+Commands follow `cli <resource> [sub-resource] <action> [args] [flags]`.
 
 | Spec Pattern | CLI Action |
 |---|---|
@@ -167,40 +167,40 @@ Commands follow `carbidecli <resource> [sub-resource] <action> [args] [flags]`.
 Nested API paths appear as sub-resource groups:
 
 ```
-carbidecli allocation list
-carbidecli allocation constraint list
-carbidecli allocation constraint create <allocationId>
+nicocli allocation list
+nicocli allocation constraint list
+nicocli allocation constraint create <allocationId>
 ```
 
 ## Shell Completion
 
 ```bash
 # Bash
-eval "$(carbidecli completion bash)"
+eval "$(nicocli completion bash)"
 
 # Zsh
-eval "$(carbidecli completion zsh)"
+eval "$(nicocli completion zsh)"
 
 # Fish
-carbidecli completion fish > ~/.config/fish/completions/carbidecli.fish
+nicocli completion fish > ~/.config/fish/completions/nicocli.fish
 ```
 
 ## Multi-Environment Configs
 
-Each environment (local dev, staging, prod) gets its own config file in `~/.carbide/`:
+Each environment (local dev, staging, prod) gets its own config file in `~/.nico/`:
 
 ```
-~/.carbide/config.yaml           # default (local dev)
-~/.carbide/config.staging.yaml   # staging
-~/.carbide/config.prod.yaml      # production
+~/.nico/config.yaml           # default (local dev)
+~/.nico/config.staging.yaml   # staging
+~/.nico/config.prod.yaml      # production
 ```
 
-The TUI automatically discovers all `config*.yaml` files in `~/.carbide/` and presents them as a selection list at startup. This is the easiest way to switch between environments without remembering URLs or re-authenticating.
+The TUI automatically discovers all `config*.yaml` files in `~/.nico/` and presents them as a selection list at startup. This is the easiest way to switch between environments without remembering URLs or re-authenticating.
 
 For direct commands, select an environment with `--config`:
 
 ```bash
-carbidecli --config ~/.carbide/config.staging.yaml site list
+nicocli --config ~/.nico/config.staging.yaml site list
 ```
 
 ## Interactive TUI Mode
@@ -208,24 +208,24 @@ carbidecli --config ~/.carbide/config.staging.yaml site list
 The TUI is the recommended way to interact with the API. It handles config selection, authentication, and token refresh in one session:
 
 ```bash
-carbidecli tui
+nicocli tui
 ```
 
 You can also launch it with the `i` alias:
 
 ```bash
-carbidecli i
+nicocli i
 ```
 
 To skip the config selector and connect to a specific environment directly:
 
 ```bash
-carbidecli --config ~/.carbide/config.prod.yaml tui
+nicocli --config ~/.nico/config.prod.yaml tui
 ```
 
 ## Troubleshooting
 
-If `carbidecli` is not found after install, make sure `$(go env GOPATH)/bin` is in your PATH:
+If `nicocli` is not found after install, make sure `$(go env GOPATH)/bin` is in your PATH:
 
 ```bash
 export PATH="$(go env GOPATH)/bin:$PATH"
@@ -234,5 +234,5 @@ export PATH="$(go env GOPATH)/bin:$PATH"
 Use `--debug` on any command to see the full HTTP request and response for diagnosing issues:
 
 ```bash
-carbidecli --debug site list
+nicocli --debug site list
 ```

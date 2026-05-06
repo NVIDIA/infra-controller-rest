@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -57,7 +57,7 @@ var (
 	queryDescape    = strings.NewReplacer("%5B", "[", "%5D", "]")
 )
 
-// APIClient manages communication with the NCX Infra Controller REST API API v1.4.0
+// APIClient manages communication with the NVIDIA Infra Controller REST API API v1.4.0
 // In most cases there should be only one, shared, APIClient.
 type APIClient struct {
 	cfg    *Configuration

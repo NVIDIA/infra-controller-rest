@@ -22,8 +22,8 @@ import (
 
 	"github.com/google/uuid"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/proto/v1"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/types"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/pkg/proto/v1"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
 )
 
 // Proto to types conversions

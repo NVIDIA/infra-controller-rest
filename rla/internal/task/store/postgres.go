@@ -26,14 +26,14 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/converter/dao"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/errors"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/converter/dao"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/errors"
 )
 
 // txKeyType is an unexported type for the transaction context key.

@@ -26,9 +26,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 func TestPromoterConfig_ApplyDefaults(t *testing.T) {

@@ -23,8 +23,8 @@ import (
 	"github.com/sirupsen/logrus"
 	cli "github.com/urfave/cli/v2"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/cert-manager/pkg/core"
-	"github.com/NVIDIA/ncx-infra-controller-rest/cert-manager/pkg/pki"
+	"github.com/NVIDIA/infra-controller-rest/cert-manager/pkg/core"
+	"github.com/NVIDIA/infra-controller-rest/cert-manager/pkg/pki"
 )
 
 const (
@@ -34,8 +34,8 @@ const (
 // NewCommand creates a new cli command
 func NewCommand() *cli.Command {
 	return &cli.Command{
-		Name:  "Forge Credentials Service",
-		Usage: "Forge Credentials Service",
+		Name:  "NICo Credentials Service",
+		Usage: "NICo Credentials Service",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:  "debug",
@@ -70,7 +70,7 @@ func NewCommand() *cli.Command {
 			},
 			&cli.StringFlag{
 				Name:    "ca-common-name",
-				Value:   "Carbide Local CA",
+				Value:   "NICo Local CA",
 				EnvVars: []string{"CA_COMMON_NAME"},
 				Usage:   "Common name for the CA certificate",
 			},

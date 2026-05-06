@@ -22,7 +22,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard"
 )
 
 const (
@@ -185,13 +185,13 @@ func (dm DpuExtensionServiceManager) Update(ctx context.Context, id string, requ
 
 	apiReq := standard.DpuExtensionServiceUpdateRequest{}
 	if request.Name != nil {
-		apiReq.Name = request.Name
+		apiReq.Name.Set(request.Name)
 	}
 	if request.Description != nil {
-		apiReq.Description = request.Description
+		apiReq.Description.Set(request.Description)
 	}
 	if request.Data != nil {
-		apiReq.Data = request.Data
+		apiReq.Data.Set(request.Data)
 	}
 	apiDes, resp, err := dm.client.apiClient.DPUExtensionServiceAPI.UpdateDpuExtensionService(ctx, dm.client.apiMetadata.Organization, id).
 		DpuExtensionServiceUpdateRequest(apiReq).Execute()

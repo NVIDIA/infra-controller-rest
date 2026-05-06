@@ -29,20 +29,20 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/otelecho"
-	sutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/otelecho"
+	sutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -54,6 +54,7 @@ import (
 	tmocks "go.temporal.io/sdk/mocks"
 	tp "go.temporal.io/sdk/temporal"
 
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -311,10 +312,10 @@ func TestCreateVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1126,10 +1127,10 @@ func TestUpdateVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1501,7 +1502,7 @@ func TestUpdateVPCHandler_Handle(t *testing.T) {
 				reqVPC:      vpc3,
 				reqUser:     tnu,
 				respCode:    http.StatusInternalServerError,
-				respMessage: "Failed to update VPC, timeout occurred executing workflow on Site: Test timeout",
+				respMessage: "Failed to perform VPC Update - timeout occurred executing workflow on Site",
 			},
 			wantErr:            false,
 			verifyChildSpanner: true,
@@ -1593,7 +1594,7 @@ func TestUpdateVPCHandler_Handle(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPCID)
 			ec.Set("user", tt.args.reqUser)
@@ -1688,10 +1689,10 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 	testInstanceSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -1699,14 +1700,15 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 	tnu := testVPCBuildUser(t, dbSession, "test-starfleet-id-2", tnOrg, tnOrgRoles)
 	tn := testVPCBuildTenant(t, dbSession, "test-tenant", tnOrg, tnu)
 
-	st := testVPCBuildSite(t, dbSession, ip, "test-site-1", false, true, cdbm.SiteStatusRegistered, ipu)
+	// Native networking must be enabled on Site for FNN virtualization updates once VPC loads Site relation.
+	st := testVPCBuildSite(t, dbSession, ip, "test-site-1", true, true, cdbm.SiteStatusRegistered, ipu)
 	assert.NotNil(t, st)
 
 	ts1 := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st.ID, tnu.ID)
 	assert.NotNil(t, ts1)
 
 	// Site with no allocations
-	st2 := testVPCBuildSite(t, dbSession, ip, "test-site-2", false, false, cdbm.SiteStatusRegistered, ipu)
+	st2 := testVPCBuildSite(t, dbSession, ip, "test-site-2", true, false, cdbm.SiteStatusRegistered, ipu)
 	assert.NotNil(t, st2)
 
 	ts2 := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, st2.ID, tnu.ID)
@@ -1745,6 +1747,25 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 	allocationConstraint := testInstanceSiteBuildAllocationContraints(t, dbSession, al, cdbm.AllocationResourceTypeInstanceType, instanceType.ID, cdbm.AllocationConstraintTypeReserved, 1, tnu)
 	assert.NotNil(t, allocationConstraint)
 	assert.NotNil(t, testInstanceBuildInstance(t, dbSession, "test-instance", tn.ID, ip.ID, st.ID, &instanceType.ID, vpcWithInstance.ID, nil, nil, nil, cdbm.InstanceStatusReady))
+
+	// Site not Registered — native networking enabled so failure is due to status, not FNN config
+	stPending := testVPCBuildSite(t, dbSession, ip, "test-site-pending-reg", true, true, cdbm.SiteStatusPending, ipu)
+	assert.NotNil(t, stPending)
+	tsPending := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, stPending.ID, tnu.ID)
+	assert.NotNil(t, tsPending)
+	_ = testVPCSiteBuildAllocation(t, dbSession, stPending, tn, "test-allocation-pending-site", ipu)
+	vpcPendingSite := testVPCBuildVPC(t, dbSession, "test-vpc-pending-site", ip, tn, stPending, cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), nil, map[string]string{"zone": "west-pending"}, cdbm.VpcStatusReady, tnu)
+	assert.NotNil(t, vpcPendingSite)
+
+	// Registered site without native networking (FNN not enabled at site) — eligible otherwise (no subnets / instances)
+	stNoNativeNet := testVPCBuildSite(t, dbSession, ip, "test-site-no-native-net", false, true, cdbm.SiteStatusRegistered, ipu)
+	assert.NotNil(t, stNoNativeNet)
+	tsNoNative := testBuildTenantSiteAssociation(t, dbSession, tnOrg, tn.ID, stNoNativeNet.ID, tnu.ID)
+	assert.NotNil(t, tsNoNative)
+	alNoNative := testVPCSiteBuildAllocation(t, dbSession, stNoNativeNet, tn, "test-allocation-no-native", ipu)
+	assert.NotNil(t, alNoNative)
+	vpcNoNativeNet := testVPCBuildVPC(t, dbSession, "test-vpc-no-native-net", ip, tn, stNoNativeNet, cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), nil, map[string]string{"zone": "west-nonative"}, cdbm.VpcStatusReady, tnu)
+	assert.NotNil(t, vpcNoNativeNet)
 
 	e := echo.New()
 	cfg := common.GetTestConfig()
@@ -1937,6 +1958,48 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 			wantErr:            false,
 			verifyChildSpanner: true,
 		},
+		{
+			name: "test VPC virtualization update API endpoint fail when Site is not Registered",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIVpcVirtualizationUpdateRequest{
+					NetworkVirtualizationType: "FNN",
+				},
+				reqOrg:      tnOrg,
+				reqVPCID:    vpcPendingSite.ID.String(),
+				reqVPC:      vpcPendingSite,
+				reqUser:     tnu,
+				respCode:    http.StatusBadRequest,
+				respMessage: "Site that VPC belongs to must be in Registered state in order to update virtualization type",
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
+		{
+			name: "test VPC virtualization update API endpoint fail when Site does not have native networking enabled for FNN",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIVpcVirtualizationUpdateRequest{
+					NetworkVirtualizationType: "FNN",
+				},
+				reqOrg:      tnOrg,
+				reqVPCID:    vpcNoNativeNet.ID.String(),
+				reqVPC:      vpcNoNativeNet,
+				reqUser:     tnu,
+				respCode:    http.StatusBadRequest,
+				respMessage: "Site that VPC belongs to does not have native networking enabled, unable to update virtualization type to FNN",
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1955,7 +2018,7 @@ func TestUpdateVirtualizationVPCHandler_Handle(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPCID)
 			ec.Set("user", tt.args.reqUser)
@@ -2018,11 +2081,11 @@ func TestGetVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -2232,7 +2295,7 @@ func TestGetVPCHandler_Handle(t *testing.T) {
 
 			ec := e.NewContext(req, rec)
 
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPCID))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPCID)
 			ec.Set("user", tt.args.reqUser)
@@ -2303,10 +2366,10 @@ func TestGetAllVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg := "test-tenant-org"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 	tn2Org := "test-tenant-org-2"
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
@@ -2928,7 +2991,7 @@ func TestGetAllVPCHandler_Handle(t *testing.T) {
 				cfg:       tt.fields.cfg,
 			}
 
-			path := fmt.Sprintf("/v2/org/%s/carbide/vpc?%s", tt.args.org, tt.args.query.Encode())
+			path := fmt.Sprintf("/v2/org/%s/nico/vpc?%s", tt.args.org, tt.args.query.Encode())
 
 			req := httptest.NewRequest(http.MethodGet, path, nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
@@ -3022,11 +3085,11 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 	testVPCSetupSchema(t, dbSession)
 
 	ipOrg := "test-provider-org"
-	ipOrgRoles := []string{"FORGE_PROVIDER_ADMIN"}
+	ipOrgRoles := []string{authz.ProviderAdminRole}
 
 	tnOrg1 := "test-tenant-org-1"
 	tnOrg2 := "test-tenant-org-2"
-	tnOrgRoles := []string{"FORGE_TENANT_ADMIN"}
+	tnOrgRoles := []string{authz.TenantAdminRole}
 
 	ipu := testVPCBuildUser(t, dbSession, "test-starfleet-id-1", ipOrg, ipOrgRoles)
 	ip := testVPCSiteBuildInfrastructureProvider(t, dbSession, "test-infrastructure-provider", ipOrg, ipu)
@@ -3111,22 +3174,22 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 	tscWithTimeout.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	//
-	// Carbide not-found mocking
+	// NICo not-found mocking
 	//
-	scpWithCarbideNotFound := sc.NewClientPool(tcfg)
-	tscWithCarbideNotFound := &tmocks.Client{}
+	scpWithNICoNotFound := sc.NewClientPool(tcfg)
+	tscWithNICoNotFound := &tmocks.Client{}
 
-	scpWithCarbideNotFound.IDClientMap[st.ID.String()] = tscWithCarbideNotFound
+	scpWithNICoNotFound.IDClientMap[st.ID.String()] = tscWithNICoNotFound
 
-	wrunWithCarbideNotFound := &tmocks.WorkflowRun{}
-	wrunWithCarbideNotFound.On("GetID").Return("workflow-WithCarbideNotFound")
+	wrunWithNICoNotFound := &tmocks.WorkflowRun{}
+	wrunWithNICoNotFound.On("GetID").Return("workflow-WithNICoNotFound")
 
-	wrunWithCarbideNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("Carbide went bananas", swe.ErrTypeCarbideObjectNotFound, errors.New("Carbide went bananas")))
+	wrunWithNICoNotFound.Mock.On("Get", mock.Anything, mock.Anything).Return(tp.NewNonRetryableApplicationError("NICo went bananas", swe.ErrTypeNICoObjectNotFound, errors.New("NICo went bananas")))
 
-	tscWithCarbideNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		"DeleteVPCV2", mock.Anything).Return(wrunWithCarbideNotFound, nil)
+	tscWithNICoNotFound.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
+		"DeleteVPCV2", mock.Anything).Return(wrunWithNICoNotFound, nil)
 
-	tscWithCarbideNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	tscWithNICoNotFound.Mock.On("TerminateWorkflow", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// Prepare client pool for sync calls
 	// to site(s).
@@ -3177,11 +3240,11 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name: "test VPC delete API endpoint carbide not-found, still success",
+			name: "test VPC delete API endpoint nico not-found, still success",
 			fields: fields{
 				dbSession: dbSession,
-				tc:        tscWithCarbideNotFound,
-				scp:       scpWithCarbideNotFound,
+				tc:        tscWithNICoNotFound,
+				scp:       scpWithNICoNotFound,
 				cfg:       cfg,
 			},
 			args: args{
@@ -3337,7 +3400,7 @@ func TestDeleteVPCHandler_Handle(t *testing.T) {
 			rec := httptest.NewRecorder()
 
 			ec := e.NewContext(req, rec)
-			ec.SetPath(fmt.Sprintf("/v2/org/%v/carbide/vpc/%v", tt.args.reqOrg, tt.args.reqVPC))
+			ec.SetPath(fmt.Sprintf("/v2/org/%v/nico/vpc/%v", tt.args.reqOrg, tt.args.reqVPC))
 			ec.SetParamNames("orgName", "id")
 			ec.SetParamValues(tt.args.reqOrg, tt.args.reqVPC)
 			ec.Set("user", tt.args.reqUser)

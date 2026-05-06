@@ -23,12 +23,12 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // GetUserHandler is an API Handler to return information about the current user
@@ -54,7 +54,7 @@ func NewGetUserHandler(dbSession *cdb.Session) GetUserHandler {
 // @Security ApiKeyAuth
 // @Param org path string true "Name of NGC organization"
 // @Success 200 {object} model.APIUser
-// @Router /v2/org/{org}/carbide/user/current [get]
+// @Router /v2/org/{org}/nico/user/current [get]
 func (guh GetUserHandler) Handle(c echo.Context) error {
 	org, dbUser, _, logger, handlerSpan := common.SetupHandler("User", "Get", c, guh.tracerSpan)
 	if handlerSpan != nil {

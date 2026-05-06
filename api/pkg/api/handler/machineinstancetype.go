@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	"go.opentelemetry.io/otel/attribute"
 	temporalClient "go.temporal.io/sdk/client"
@@ -33,20 +34,20 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	swe "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/error"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -82,7 +83,7 @@ func NewCreateMachineInstanceTypeHandler(dbSession *cdb.Session, tc temporalClie
 // @Param instance_type_id query string true "ID of Instance Type"
 // @Param message body model.APIMachineInstanceTypeCreateRequest true "Instance Type create request"
 // @Success 201 {object} model.APIMachineInstanceType
-// @Router /v2/org/{org}/carbide/instance/type/{instance_type_id}/machine [post]
+// @Router /v2/org/{org}/nico/instance/type/{instance_type_id}/machine [post]
 func (cmith CreateMachineInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineInstanceType", "Create", c, cmith.tracerSpan)
 	if handlerSpan != nil {
@@ -256,7 +257,7 @@ func (cmith CreateMachineInstanceTypeHandler) Handle(c echo.Context) error {
 		amits = append(amits, *amit)
 	}
 
-	// Send the machine association update to Carbide
+	// Send the machine association update to NICo
 
 	// Get the temporal client for the site we are working with.
 	// SiteID was checked early on in this handler.
@@ -357,7 +358,7 @@ func NewGetAllMachineInstanceTypeHandler(dbSession *cdb.Session, tc temporalClie
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APIMachineInstanceType
-// @Router /v2/org/{org}/carbide/instance/type/{instance_type_id}/machine [get]
+// @Router /v2/org/{org}/nico/instance/type/{instance_type_id}/machine [get]
 func (gamith GetAllMachineInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineInstanceType", "GetAll", c, gamith.tracerSpan)
 	if handlerSpan != nil {
@@ -507,7 +508,7 @@ func NewDeleteMachineInstanceTypeHandler(dbSession *cdb.Session, tc temporalClie
 // @Param instance_type_id path string true "ID of Instance Type"
 // @Param id path string true "Machine ID or deprecated ID of Machine/Instance Type association"
 // @Success 204
-// @Router /v2/org/{org}/carbide/instance/type/{instance_type_id}/machine/{id} [delete]
+// @Router /v2/org/{org}/nico/instance/type/{instance_type_id}/machine/{id} [delete]
 func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("MachineInstanceType", "Delete", c, dmith.tracerSpan)
 	if handlerSpan != nil {
@@ -678,7 +679,7 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Machine/Instance Type association", nil)
 	}
 
-	// Send the machine association update to Carbide
+	// Send the machine association update to NICo
 
 	// Get the temporal client for the site we are working with.
 	// SiteID was checked early on in this handler.
@@ -688,7 +689,7 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Now that machine data is "versioned" in Carbide, a future update will likely
+	// Now that machine data is "versioned" in NICo, a future update will likely
 	// allow us to send in IfVersion here to protect against concurrent updates.
 	associateMachinesRequest := &cwssaws.RemoveMachineInstanceTypeAssociationRequest{
 		MachineId: mit.MachineID,
@@ -721,11 +722,11 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 
 	// Handle skippable errors
 	if err != nil {
-		// If this was a 404 back from Carbide, we can treat the object as already having been deleted and allow things to proceed.
+		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
 		var applicationErr *tp.ApplicationError
 		if errors.As(err, &applicationErr) {
-			if applicationErr.Type() == swe.ErrTypeCarbideObjectNotFound {
-				logger.Warn().Msg(swe.ErrTypeCarbideObjectNotFound + " received from Site")
+			if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
 				// Reset error to nil
 				err = nil
 			}

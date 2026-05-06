@@ -22,7 +22,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
 )
 
 // MetadataHandler is an API handler to return system information about the API
@@ -40,7 +40,7 @@ func NewMetadataHandler() MetadataHandler {
 // @Accept */*
 // @Produce json
 // @Success 200 {object} model.APIMetadata
-// @Router /v2/org/{org}/carbide/metadata [get]
+// @Router /v2/org/{org}/nico/metadata [get]
 func (mdh MetadataHandler) Handle(c echo.Context) error {
 	amd := model.NewAPIMetadata()
 	return c.JSON(http.StatusOK, amd)

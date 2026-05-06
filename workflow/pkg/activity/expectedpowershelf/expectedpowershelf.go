@@ -22,17 +22,17 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // ManageExpectedPowerShelf is an activity wrapper for managing ExpectedPowerShelf lifecycle that allows
@@ -64,11 +64,11 @@ func getLabelsMapFromProto(eps *cwssaws.ExpectedPowerShelf) map[string]string {
 
 // UpdateExpectedPowerShelvesInDB is a Temporal activity that takes a collection of ExpectedPowerShelf data pushed by Site Agent and updates the DB
 // Expected Power Shelf records have two unique values (MAC and UUID). We ignore the MAC value and only rely on the UUID for uniqueness.
-// Carbide is the source of truth: out of the race-condition window we make the DB match Carbide exactly.
+// NICo is the source of truth: out of the race-condition window we make the DB match NICo exactly.
 // The reconciliation logic is as follows:
-// - UUID existing in Carbide but not in DB: create record in DB
-// - UUID existing in both Carbide and DB with differences: update record in DB
-// - UUID existing in DB but not in Carbide: delete record in DB
+// - UUID existing in NICo but not in DB: create record in DB
+// - UUID existing in both NICo and DB with differences: update record in DB
+// - UUID existing in DB but not in NICo: delete record in DB
 func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.Context, siteID uuid.UUID, expectedPowerShelfInventory *cwssaws.ExpectedPowerShelfInventory) error {
 	logger := log.With().Str("Activity", "UpdateExpectedPowerShelvesInDB").Str("Site ID", siteID.String()).Logger()
 
@@ -153,10 +153,10 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 		reportedIDs[epsID] = true
 		reportedLabels := getLabelsMapFromProto(reps)
 
-		// Convert proto IpAddress (string) to *string for DB
-		var ipAddress *string
+		// Convert proto BmcIpAddress (string) to *string for DB
+		var bmcIpAddress *string
 		if reps.BmcIpAddress != "" {
-			ipAddress = &reps.BmcIpAddress
+			bmcIpAddress = &reps.BmcIpAddress
 		}
 
 		// Create a new Expected Power Shelf if it doesn't already exist in DB
@@ -167,9 +167,9 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 				SiteID:               siteID,
 				BmcMacAddress:        reps.BmcMacAddress,
 				ShelfSerialNumber:    reps.ShelfSerialNumber,
-				IpAddress:            ipAddress,
+				BmcIpAddress:         bmcIpAddress,
 				Labels:               reportedLabels,
-				CreatedBy:            siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+				CreatedBy:            siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
 				logger.Error().Err(cerr).Str("ID", epsID.String()).Msg("failed to create ExpectedPowerShelf in DB")
@@ -180,9 +180,9 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 		// update if any field differs
 		if cur.BmcMacAddress != reps.BmcMacAddress ||
 			cur.ShelfSerialNumber != reps.ShelfSerialNumber ||
-			!util.PtrsEqual(cur.IpAddress, ipAddress) ||
+			!util.PtrsEqual(cur.BmcIpAddress, bmcIpAddress) ||
 			!reflect.DeepEqual(cur.Labels, reportedLabels) {
-			// nil labels in carbide can mean we need to clear out existing labels in DB
+			// nil labels in nico can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
 			if cur.Labels != nil && reportedLabels == nil {
@@ -192,7 +192,7 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 				ExpectedPowerShelfID: cur.ID,
 				BmcMacAddress:        &reps.BmcMacAddress,
 				ShelfSerialNumber:    &reps.ShelfSerialNumber,
-				IpAddress:            ipAddress,
+				BmcIpAddress:         bmcIpAddress,
 				Labels:               reportedLabels,
 			})
 			if uerr != nil {
@@ -201,9 +201,9 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 		}
 	}
 
-	// Delete any Expected Power Shelf present in DB not present in Carbide.
+	// Delete any Expected Power Shelf present in DB not present in NICo.
 	// We only act if this is the last page (or paging disabled) and outside race window.
-	// The source of truth for Carbide is reportedIDs.
+	// The source of truth for NICo is reportedIDs.
 	if expectedPowerShelfInventory.InventoryPage == nil || expectedPowerShelfInventory.InventoryPage.TotalPages == 0 || (expectedPowerShelfInventory.InventoryPage.CurrentPage == expectedPowerShelfInventory.InventoryPage.TotalPages) {
 		for _, eps := range existingExpectedPowerShelves {
 			if _, keep := reportedIDs[eps.ID]; keep {

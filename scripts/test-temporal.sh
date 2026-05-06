@@ -17,7 +17,7 @@
 set -e
 
 NAMESPACE="${NAMESPACE:-temporal}"
-CARBIDE_REST_NAMESPACE="${CARBIDE_REST_NAMESPACE:-carbide-rest}"
+NICO_REST_NAMESPACE="${NICO_REST_NAMESPACE:-nico-rest}"
 TIMEOUT="${TIMEOUT:-600}"
 
 usage() {
@@ -94,7 +94,7 @@ test_mtls() {
     run_test "server-site-certs exists" \
         "kubectl -n $NAMESPACE get secret server-site-certs"
     run_test "temporal-client-cloud-certs exists" \
-        "kubectl -n $CARBIDE_REST_NAMESPACE get secret temporal-client-cloud-certs"
+        "kubectl -n $NICO_REST_NAMESPACE get secret temporal-client-cloud-certs"
     echo ""
 
     echo "Step 3: Checking cert-manager Certificate status..."
@@ -105,7 +105,7 @@ test_mtls() {
     run_test "server-site-cert Ready" \
         "kubectl -n $NAMESPACE get certificate server-site-cert -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' | grep -q True"
     run_test "temporal-client-cert Ready" \
-        "kubectl -n $CARBIDE_REST_NAMESPACE get certificate temporal-client-cert -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' | grep -q True"
+        "kubectl -n $NICO_REST_NAMESPACE get certificate temporal-client-cert -o jsonpath='{.status.conditions[?(@.type==\"Ready\")].status}' | grep -q True"
     echo ""
 
     echo "Step 4: Checking services..."
@@ -138,7 +138,7 @@ test_rotation() {
     INTERSERVICE_SERIAL_BEFORE=$(get_cert_serial "server-interservice-certs")
     CLOUD_SERIAL_BEFORE=$(get_cert_serial "server-cloud-certs")
     SITE_SERIAL_BEFORE=$(get_cert_serial "server-site-certs")
-    CLIENT_SERIAL_BEFORE=$(get_cert_serial "temporal-client-cloud-certs" "$CARBIDE_REST_NAMESPACE")
+    CLIENT_SERIAL_BEFORE=$(get_cert_serial "temporal-client-cloud-certs" "$NICO_REST_NAMESPACE")
 
     echo "  server-interservice-certs: $INTERSERVICE_SERIAL_BEFORE"
     echo "  server-cloud-certs:        $CLOUD_SERIAL_BEFORE"
@@ -159,21 +159,21 @@ test_rotation() {
     kubectl -n "$NAMESPACE" delete secret server-interservice-certs --ignore-not-found
     kubectl -n "$NAMESPACE" delete secret server-cloud-certs --ignore-not-found
     kubectl -n "$NAMESPACE" delete secret server-site-certs --ignore-not-found
-    kubectl -n "$CARBIDE_REST_NAMESPACE" delete secret temporal-client-cloud-certs --ignore-not-found
+    kubectl -n "$NICO_REST_NAMESPACE" delete secret temporal-client-cloud-certs --ignore-not-found
     echo ""
 
     echo "Step 4: Waiting for cert-manager to reissue certificates..."
     kubectl -n "$NAMESPACE" wait --for=condition=Ready certificate/server-interservice-cert --timeout="${TIMEOUT}s"
     kubectl -n "$NAMESPACE" wait --for=condition=Ready certificate/server-cloud-cert --timeout="${TIMEOUT}s"
     kubectl -n "$NAMESPACE" wait --for=condition=Ready certificate/server-site-cert --timeout="${TIMEOUT}s"
-    kubectl -n "$CARBIDE_REST_NAMESPACE" wait --for=condition=Ready certificate/temporal-client-cloud-cert --timeout="${TIMEOUT}s"
+    kubectl -n "$NICO_REST_NAMESPACE" wait --for=condition=Ready certificate/temporal-client-cloud-cert --timeout="${TIMEOUT}s"
     echo ""
 
     echo "Step 5: Verifying new certificate serial numbers..."
     INTERSERVICE_SERIAL_AFTER=$(get_cert_serial "server-interservice-certs")
     CLOUD_SERIAL_AFTER=$(get_cert_serial "server-cloud-certs")
     SITE_SERIAL_AFTER=$(get_cert_serial "server-site-certs")
-    CLIENT_SERIAL_AFTER=$(get_cert_serial "temporal-client-cloud-certs" "$CARBIDE_REST_NAMESPACE")
+    CLIENT_SERIAL_AFTER=$(get_cert_serial "temporal-client-cloud-certs" "$NICO_REST_NAMESPACE")
 
     ROTATION_SUCCESS=true
     [ "$INTERSERVICE_SERIAL_BEFORE" != "$INTERSERVICE_SERIAL_AFTER" ] || ROTATION_SUCCESS=false

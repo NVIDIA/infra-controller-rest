@@ -5,9 +5,9 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Executing Setup Script
 
-The setup script creates forge database and role.
+The setup script creates nico database and role.
 
-**Note**: Please update the password for `forge` DB/role in the script before executing.
+**Note**: Please update the password for `nico` DB/role in the script before executing.
 
 It also needs to install default extensions for all databases. Hence the script must be run as postgres user and connect to template1 DB:
 

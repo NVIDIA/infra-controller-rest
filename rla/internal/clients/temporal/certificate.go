@@ -21,7 +21,7 @@ import (
 	"crypto/tls"
 	"path/filepath"
 
-	pkgcerts "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/certs"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
 
 const (

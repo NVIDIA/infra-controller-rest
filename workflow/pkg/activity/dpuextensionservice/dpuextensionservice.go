@@ -29,14 +29,14 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"google.golang.org/protobuf/proto"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/util"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/util"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 const (

@@ -24,8 +24,8 @@ import (
 
 	"github.com/uptrace/bun"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cipam "github.com/NVIDIA/ncx-infra-controller-rest/ipam"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 func init() {

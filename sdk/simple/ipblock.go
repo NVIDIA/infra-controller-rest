@@ -23,7 +23,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/sdk/standard"
+	"github.com/NVIDIA/infra-controller-rest/sdk/standard"
 )
 
 // IpBlock represents a simplified IP block
@@ -52,7 +52,7 @@ func NewIpBlockManager(client *Client) IpBlockManager {
 func ipBlockFromStandard(api standard.IpBlock) IpBlock {
 	ib := IpBlock{
 		Name:            api.Name,
-		Description:     api.Description,
+		Description:     api.Description.Get(),
 		SiteID:          api.SiteId,
 		ProtocolVersion: api.ProtocolVersion,
 	}

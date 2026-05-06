@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	cwm "github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/metrics"
+	cwm "github.com/NVIDIA/infra-controller-rest/workflow/internal/metrics"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -29,9 +29,9 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	instanceTypeActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/instancetype"
+	instanceTypeActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/instancetype"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // UpdateInstanceTypeInventory is a workflow called by Site Agent to update InstanceType inventory for a Site

@@ -26,16 +26,16 @@ import (
 
 	"go.temporal.io/sdk/client"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
-	"github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/queue"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
+	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cwutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // ManageTenant is an activity wrapper for managing Tenant lifecycle that allows
@@ -191,12 +191,7 @@ func (mt ManageTenant) CreateOrUpdateTenantOnSite(ctx context.Context, siteID uu
 		}
 
 		// Trigger apporpriate workflow on Site
-		createTenantRequest := &cwssaws.CreateTenantRequest{
-			OrganizationId: tenant.Org,
-			Metadata: &cwssaws.Metadata{
-				Name: *tenant.OrgDisplayName,
-			},
-		}
+		createTenantRequest := tenant.ToCreateRequestProto()
 
 		we, err := tc.ExecuteWorkflow(ctx, workflowOptions, "CreateTenant", createTenantRequest)
 		if err != nil {
@@ -211,12 +206,7 @@ func (mt ManageTenant) CreateOrUpdateTenantOnSite(ctx context.Context, siteID uu
 		}
 
 		// Trigger apporpriate workflow on Site
-		updateTenantRequest := &cwssaws.UpdateTenantRequest{
-			OrganizationId: tenant.Org,
-			Metadata: &cwssaws.Metadata{
-				Name: *tenant.OrgDisplayName,
-			},
-		}
+		updateTenantRequest := tenant.ToUpdateRequestProto()
 
 		we, err := tc.ExecuteWorkflow(ctx, workflowOptions, "UpdateTenant", updateTenantRequest)
 		if err != nil {

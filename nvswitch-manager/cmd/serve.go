@@ -30,11 +30,11 @@ import (
 
 	"github.com/spf13/cobra"
 
-	svc "github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/internal/service"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/common/credential"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/credentials"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/nvswitch-manager/pkg/nvswitchmanager"
+	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
+	svc "github.com/NVIDIA/infra-controller-rest/nvswitch-manager/internal/service"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/credentials"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/nvswitch-manager/pkg/nvswitchmanager"
 )
 
 // getEnvOrDefault returns the value of an environment variable or a default value.
@@ -153,7 +153,7 @@ func doServe() {
 				Host:              dbHostName,
 				Port:              dbPort,
 				DBName:            dbName,
-				Credential:        *credential.New(dbUser, dbPassword),
+				Credential:        credential.New(dbUser, dbPassword),
 				CACertificatePath: dbCertPath,
 			},
 			FirmwareConf: svc.FirmwareConfig{

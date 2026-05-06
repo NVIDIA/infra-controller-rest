@@ -25,16 +25,16 @@ log:
     dsn: ""
 
 api:
-  name: carbide
+  name: nico
   route:
     version: v2
 
 db:
   host: localhost
   port: 30432
-  name: forge
-  user: forge
-  password: forge
+  name: nico
+  user: nico
+  password: nico
 
 temporal:
   host: localhost
@@ -57,7 +57,7 @@ issuers:
 
 siteManager:
   enabled: false
-  svcEndpoint: "https://sitemgr.carbide-rest-site-manager:8100/v1/site"
+  svcEndpoint: "https://sitemgr.nico-rest-site-manager:8100/v1/site"
 
 metrics:
   enabled: true
@@ -71,8 +71,8 @@ keycloak:
   enabled: false
   baseURL: http://keycloak.keycloak.svc.cluster.local:8082
   externalBaseURL: https://keycloak.test.com
-  realm: forge
-  clientID: forge-cloud
+  realm: nico
+  clientID: nico-cloud
   clientSecretPath: /var/secrets/keycloak/client-secret
   serviceAccount: true
 

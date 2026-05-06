@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
 )
 
 // Power control sequence names - use shared operation codes

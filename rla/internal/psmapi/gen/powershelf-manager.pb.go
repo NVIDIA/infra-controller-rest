@@ -2241,8 +2241,8 @@ const file_powershelf_manager_proto_rawDesc = "" +
 	"\x15ListAvailableFirmware\x12\x15.v1.PowershelfRequest\x1a!.v1.ListAvailableFirmwareResponse\x129\n" +
 	"\tSetDryRun\x12\x14.v1.SetDryRunRequest\x1a\x16.google.protobuf.Empty\x12;\n" +
 	"\bPowerOff\x12\x15.v1.PowershelfRequest\x1a\x18.v1.PowerControlResponse\x12:\n" +
-	"\aPowerOn\x12\x15.v1.PowershelfRequest\x1a\x18.v1.PowerControlResponseB\x8d\x01\n" +
-	"\x06com.v1B\x16PowershelfManagerProtoP\x01ZCgithub.com/NVIDIA/ncx-infra-controller-rest/rla/internal/psmapi/gen\xa2\x02\x03VXX\xaa\x02\x02V1\xca\x02\x02V1\xe2\x02\x0eV1\\GPBMetadata\xea\x02\x02V1b\x06proto3"
+	"\aPowerOn\x12\x15.v1.PowershelfRequest\x1a\x18.v1.PowerControlResponseB\x89\x01\n" +
+	"\x06com.v1B\x16PowershelfManagerProtoP\x01Z?github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi/gen\xa2\x02\x03VXX\xaa\x02\x02V1\xca\x02\x02V1\xe2\x02\x0eV1\\GPBMetadata\xea\x02\x02V1b\x06proto3"
 
 var (
 	file_powershelf_manager_proto_rawDescOnce sync.Once

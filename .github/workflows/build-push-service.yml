@@ -24,7 +24,7 @@ on:
         default: 'ubuntu-latest'
         type: string
       service_name:
-        description: 'Service name (e.g., carbide-rest-api)'
+        description: 'Service name (e.g., nico-rest-api)'
         required: true
         type: string
       binary_name:
@@ -71,6 +71,7 @@ on:
       ngc_path:
         description: 'NGC path for resource uploads'
         required: false
+        # TODO: change to '0837451325059433/nico-dev' once the NGC nico team is created under the org
         default: '0837451325059433/carbide-dev'
         type: string
     secrets:

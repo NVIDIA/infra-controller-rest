@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	cwm "github.com/NVIDIA/ncx-infra-controller-rest/workflow/internal/metrics"
+	cwm "github.com/NVIDIA/infra-controller-rest/workflow/internal/metrics"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -29,8 +29,8 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
-	nvlinklogicalpartitionActivity "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/activity/nvlinklogicalpartition"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	nvlinklogicalpartitionActivity "github.com/NVIDIA/infra-controller-rest/workflow/pkg/activity/nvlinklogicalpartition"
 )
 
 // UpdateNVLinkLogicalPartitionInventory is a workflow called by Site Agent to update InfiniBandPartition inventory for a Site

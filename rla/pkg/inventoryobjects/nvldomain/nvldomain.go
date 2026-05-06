@@ -20,7 +20,7 @@ package nvldomain
 import (
 	"errors"
 
-	identifier "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/Identifier"
+	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
 	"github.com/google/uuid"
 )
 

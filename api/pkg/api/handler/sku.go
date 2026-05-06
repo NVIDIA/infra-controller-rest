@@ -23,15 +23,15 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/pagination"
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"go.opentelemetry.io/otel/attribute"
@@ -71,7 +71,7 @@ func NewGetAllSkuHandler(dbSession *cdb.Session, tc tclient.Client, cfg *config.
 // @Param pageSize query integer false "Number of results per page"
 // @Param orderBy query string false "Order by field"
 // @Success 200 {object} []model.APISku
-// @Router /v2/org/{org}/carbide/sku [get]
+// @Router /v2/org/{org}/nico/sku [get]
 func (gash GetAllSkuHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("GetAll", "SKU", c, gash.tracerSpan)
 	if handlerSpan != nil {
@@ -229,7 +229,7 @@ func NewGetSkuHandler(dbSession *cdb.Session, tc tclient.Client, cfg *config.Con
 // @Param org path string true "Name of NGC organization"
 // @Param id path string true "ID of SKU"
 // @Success 200 {object} model.APISku
-// @Router /v2/org/{org}/carbide/sku/{id} [get]
+// @Router /v2/org/{org}/nico/sku/{id} [get]
 func (gsh GetSkuHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("Get", "SKU", c, gsh.tracerSpan)
 	if handlerSpan != nil {

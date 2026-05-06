@@ -17,9 +17,9 @@
 -- Example: PGPASSWORD=postgres psql -U postgres -p 30432 -d template1 < scripts/setup.sql
 -- Create extension for pg_trgm
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
--- Create Forge DB and user
-CREATE DATABASE forge WITH ENCODING 'UTF8';
+-- Create Nico DB and user
+CREATE DATABASE nico WITH ENCODING 'UTF8';
 -- Password should be changed before use in environments deployed in Cloud
-CREATE USER forge WITH PASSWORD 'forge';
--- Grant all privileges on Forge DB to Forge user
-GRANT ALL PRIVILEGES ON DATABASE forge TO forge;
+CREATE USER nico WITH PASSWORD 'nico';
+-- Grant all privileges on Nico DB to Nico user
+GRANT ALL PRIVILEGES ON DATABASE nico TO nico;

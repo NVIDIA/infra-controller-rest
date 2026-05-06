@@ -24,11 +24,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -166,7 +167,7 @@ func TestGetAllSkuHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_VIEWER"},
+					Roles:       []string{authz.ProviderViewerRole},
 				},
 			},
 		}
@@ -182,7 +183,7 @@ func TestGetAllSkuHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.TenantAdminRole},
 				},
 			},
 		}
@@ -363,7 +364,7 @@ func TestGetAllSkuHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/sku"
+			url := "/v2/org/" + org + "/nico/sku"
 			if tt.siteId != "" {
 				url += "?siteId=" + tt.siteId
 			}
@@ -449,7 +450,7 @@ func TestGetSkuHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_VIEWER"},
+					Roles:       []string{authz.ProviderViewerRole},
 				},
 			},
 		}
@@ -465,7 +466,7 @@ func TestGetSkuHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_TENANT_ADMIN"},
+					Roles:       []string{authz.TenantAdminRole},
 				},
 			},
 		}
@@ -637,7 +638,7 @@ func TestGetSkuHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/sku/" + tt.id
+			url := "/v2/org/" + org + "/nico/sku/" + tt.id
 			req := httptest.NewRequest(http.MethodGet, url, nil)
 			req = req.WithContext(context.Background())
 

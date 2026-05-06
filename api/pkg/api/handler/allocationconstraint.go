@@ -30,16 +30,16 @@ import (
 
 	"github.com/labstack/echo/v4"
 
-	cutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/ipam"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	"github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/ipam"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	auth "github.com/NVIDIA/ncx-infra-controller-rest/auth/pkg/authorization"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 )
 
 // ~~~~~ Update Handler ~~~~~ //
@@ -74,7 +74,7 @@ func NewUpdateAllocationConstraintHandler(dbSession *cdb.Session, tc temporalCli
 // @Param id path string true "ID of Allocation Constraint"
 // @Param message body model.APIAllocationConstraintUpdateRequest true "Allocation Constraint update request"
 // @Success 200 {object} model.APIAllocationConstraint
-// @Router /v2/org/{org}/carbide/allocation/{allocation_id}/constraint/{id} [patch]
+// @Router /v2/org/{org}/nico/allocation/{allocation_id}/constraint/{id} [patch]
 func (uach UpdateAllocationConstraintHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("AllocationConstraint", "Update", c, uach.tracerSpan)
 	if handlerSpan != nil {

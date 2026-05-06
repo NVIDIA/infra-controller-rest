@@ -25,14 +25,14 @@ data:
     -- Enable pg_trgm extension (required for text search)
     CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
-    -- Create forge database and user (used by API, Workflow)
-    CREATE DATABASE forge WITH ENCODING 'UTF8';
-    CREATE USER forge WITH PASSWORD 'forge';
-    GRANT ALL PRIVILEGES ON DATABASE forge TO forge;
+    -- Create nico database and user (used by API, Workflow)
+    CREATE DATABASE nico WITH ENCODING 'UTF8';
+    CREATE USER nico WITH PASSWORD 'nico';
+    GRANT ALL PRIVILEGES ON DATABASE nico TO nico;
 
-    -- Connect to forge database to set up permissions
-    \c forge
-    GRANT ALL ON SCHEMA public TO forge;
+    -- Connect to nico database to set up permissions
+    \c nico
+    GRANT ALL ON SCHEMA public TO nico;
     CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
     -- Create keycloak database

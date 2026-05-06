@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/nsmapi/gen"
+	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi/gen"
 )
 
 // PowerAction enumerates the power actions supported by NV-Switch Manager.
@@ -305,7 +305,7 @@ func nvSwitchTrayFromPb(tray *pb.NVSwitchTray) NVSwitchTray {
 }
 
 // RegisterNVSwitchRequest contains the information needed to register an NV-Switch.
-// Credentials are omitted; Carbide writes them to Vault and NSM looks them up
+// Credentials are omitted; NICo writes them to Vault and NSM looks them up
 // by MAC address at the time of use.
 type RegisterNVSwitchRequest struct {
 	BMCMACAddress  string

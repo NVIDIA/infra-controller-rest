@@ -25,15 +25,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbp "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/paginator"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/workflow/pkg/client/site"
+	sc "github.com/NVIDIA/infra-controller-rest/workflow/pkg/client/site"
 
-	cwssaws "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
-	cwutil "github.com/NVIDIA/ncx-infra-controller-rest/common/pkg/util"
+	cwutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 )
 
 // ManageNetworkSecurityGroup is an activity wrapper for managing NetworkSecurityGroup lifecycle that allows
@@ -154,7 +154,7 @@ func (mv ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupsInDB(ctx context
 				SiteID:                 siteID,
 				Status:                 cdbm.NetworkSecurityGroupStatusReady,
 				Version:                &controllerNetworkSecurityGroup.Version,
-				CreatedByID:            siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+				CreatedByID:            siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 
 			if err != nil {
@@ -186,7 +186,7 @@ func (mv ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupsInDB(ctx context
 					Rules:                  rules,
 					Status:                 cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusReady),
 					Version:                &controllerNetworkSecurityGroup.Version,
-					UpdatedByID:            siteID, /* This would normally be a user ID, but that isn't something Carbide provides */
+					UpdatedByID:            siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 				})
 
 				if err != nil {

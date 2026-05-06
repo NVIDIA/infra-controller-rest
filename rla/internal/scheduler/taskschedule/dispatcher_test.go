@@ -29,15 +29,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	dbmodel "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/model"
-	dbquery "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/db/query"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/operation"
-	taskcommon "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/operationrules"
-	taskstore "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/store"
-	taskdef "github.com/NVIDIA/ncx-infra-controller-rest/rla/internal/task/task"
-	identifier "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	dbmodel "github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
+	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
+	taskstore "github.com/NVIDIA/infra-controller-rest/rla/internal/task/store"
+	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
+	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 // ─── mock implementations ─────────────────────────────────────────────────────

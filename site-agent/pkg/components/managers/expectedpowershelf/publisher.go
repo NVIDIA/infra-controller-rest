@@ -20,8 +20,8 @@ package expectedpowershelf
 import (
 	"github.com/google/uuid"
 
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterPublisher registers ExpectedPowerShelf inventory workflow and activity with Temporal
@@ -35,7 +35,7 @@ func (api *API) RegisterPublisher() error {
 	// Register DiscoverExpectedPowerShelfInventory activity
 	inventoryManager := swa.NewManageExpectedPowerShelfInventory(
 		uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		ManagerAccess.Data.EB.Managers.Carbide.Client,
+		ManagerAccess.Data.EB.Managers.NICo.Client,
 		ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
 		InventoryCarbidePageSize,

@@ -18,8 +18,8 @@
 package model
 
 import (
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"net/url"
 	"time"
 )

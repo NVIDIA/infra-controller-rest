@@ -25,13 +25,14 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/internal/config"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/handler/util/common"
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model"
-	sc "github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/client/site"
-	cdb "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
-	cdbu "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/util"
+	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
+	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
+	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -155,7 +156,7 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -177,6 +178,7 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 				SwitchSerialNumber: "SWITCH123",
 				NvOsUsername:       cdb.GetStrPtr("nvos-admin"),
 				NvOsPassword:       cdb.GetStrPtr("nvos-password"),
+				BmcIpAddress:       cdb.GetStrPtr("192.168.1.10"),
 				Labels:             map[string]string{"env": "test"},
 			},
 			setupContext: func(c echo.Context) {
@@ -273,7 +275,7 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(tt.requestBody)
-			req := httptest.NewRequest(http.MethodPost, "/v2/org/test-org/carbide/expected-switch", bytes.NewReader(reqBody))
+			req := httptest.NewRequest(http.MethodPost, "/v2/org/test-org/nico/expected-switch", bytes.NewReader(reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req = req.WithContext(context.Background())
 
@@ -290,12 +292,19 @@ func TestCreateExpectedSwitchHandler_Handle(t *testing.T) {
 				t.Errorf("Response: %v", rec.Body.String())
 			}
 
-			if tt.expectedStatus == http.StatusCreated && tt.requestBody.Labels != nil {
+			if tt.expectedStatus == http.StatusCreated {
 				var response model.APIExpectedSwitch
 				err := json.Unmarshal(rec.Body.Bytes(), &response)
 				assert.Nil(t, err)
-				assert.NotNil(t, response.Labels, "Labels should not be nil in response")
-				assert.Equal(t, tt.requestBody.Labels, response.Labels, "Labels in response should match request")
+				if tt.requestBody.Labels != nil {
+					assert.NotNil(t, response.Labels, "Labels should not be nil in response")
+					assert.Equal(t, tt.requestBody.Labels, response.Labels, "Labels in response should match request")
+				}
+				if tt.requestBody.BmcIpAddress != nil {
+					if assert.NotNil(t, response.BmcIpAddress, "BmcIpAddress should not be nil in response") {
+						assert.Equal(t, *tt.requestBody.BmcIpAddress, *response.BmcIpAddress, "BmcIpAddress in response should match request")
+					}
+				}
 			}
 		})
 	}
@@ -361,7 +370,7 @@ func TestGetAllExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_VIEWER"},
+					Roles:       []string{authz.ProviderViewerRole},
 				},
 			},
 		}
@@ -448,7 +457,7 @@ func TestGetAllExpectedSwitchHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-switch"
+			url := "/v2/org/" + org + "/nico/expected-switch"
 			params := []string{}
 			if tt.siteId != "" {
 				params = append(params, "siteId="+tt.siteId)
@@ -548,7 +557,7 @@ func TestGetExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -606,7 +615,7 @@ func TestGetExpectedSwitchHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-switch/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-switch/" + tt.id
 			req := httptest.NewRequest(http.MethodGet, url, nil)
 			req = req.WithContext(context.Background())
 
@@ -708,7 +717,7 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -727,6 +736,19 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 			requestBody: model.APIExpectedSwitchUpdateRequest{
 				SwitchSerialNumber: cdb.GetStrPtr("UPDATED-SWITCH-123"),
 				Labels:             map[string]string{"env": "updated"},
+			},
+			setupContext: func(c echo.Context) {
+				c.Set("user", createMockUser(org))
+				c.SetParamNames("orgName", "id")
+				c.SetParamValues(org, testES.ID.String())
+			},
+			expectedStatus: http.StatusOK,
+		},
+		{
+			name: "successful update with BmcIpAddress",
+			id:   testES.ID.String(),
+			requestBody: model.APIExpectedSwitchUpdateRequest{
+				BmcIpAddress: cdb.GetStrPtr("192.168.1.42"),
 			},
 			setupContext: func(c echo.Context) {
 				c.Set("user", createMockUser(org))
@@ -770,7 +792,7 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			reqBody, _ := json.Marshal(tt.requestBody)
-			url := "/v2/org/" + org + "/carbide/expected-switch/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-switch/" + tt.id
 			req := httptest.NewRequest(http.MethodPatch, url, bytes.NewReader(reqBody))
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			req = req.WithContext(context.Background())
@@ -786,6 +808,16 @@ func TestUpdateExpectedSwitchHandler_Handle(t *testing.T) {
 			assert.Equal(t, tt.expectedStatus, rec.Code)
 			if tt.expectedStatus != rec.Code {
 				t.Errorf("Response: %v", rec.Body.String())
+			}
+
+			// Verify BmcIpAddress round-trips through the update response when set
+			if tt.expectedStatus == http.StatusOK && tt.requestBody.BmcIpAddress != nil {
+				var response model.APIExpectedSwitch
+				err := json.Unmarshal(rec.Body.Bytes(), &response)
+				assert.Nil(t, err)
+				if assert.NotNil(t, response.BmcIpAddress, "BmcIpAddress should not be nil in response") {
+					assert.Equal(t, *tt.requestBody.BmcIpAddress, *response.BmcIpAddress, "BmcIpAddress in response should match request")
+				}
 			}
 		})
 	}
@@ -863,7 +895,7 @@ func TestDeleteExpectedSwitchHandler_Handle(t *testing.T) {
 					Name:        org,
 					DisplayName: org,
 					OrgType:     "ENTERPRISE",
-					Roles:       []string{"FORGE_PROVIDER_ADMIN"},
+					Roles:       []string{authz.ProviderAdminRole},
 				},
 			},
 		}
@@ -901,7 +933,7 @@ func TestDeleteExpectedSwitchHandler_Handle(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			url := "/v2/org/" + org + "/carbide/expected-switch/" + tt.id
+			url := "/v2/org/" + org + "/nico/expected-switch/" + tt.id
 			req := httptest.NewRequest(http.MethodDelete, url, nil)
 			req = req.WithContext(context.Background())
 

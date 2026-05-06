@@ -26,7 +26,7 @@ jobs:
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v2.1.1 # Use a pre-existing action
         env:
-          MESSAGE: ":github: *carbide-rest* - ${{ github.event.pull_request.title }}\nOpened by: *${{ github.event.pull_request.user.login }}*\nURL: ${{ github.event.pull_request.html_url }}"
+          MESSAGE: ":github: *nico-rest* - ${{ github.event.pull_request.title }}\nOpened by: *${{ github.event.pull_request.user.login }}*\nURL: ${{ github.event.pull_request.html_url }}"
         with:
           webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
           webhook-type: incoming-webhook

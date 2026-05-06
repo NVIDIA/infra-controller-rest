@@ -20,7 +20,7 @@ package model
 import (
 	"testing"
 
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -95,7 +95,7 @@ func TestNewAPIRack(t *testing.T) {
 						Position: &rlav1.RackPosition{
 							SlotId: 1,
 						},
-						ComponentId: "carbide-machine-123",
+						ComponentId: "nico-machine-123",
 					},
 					{
 						Type: rlav1.ComponentType_COMPONENT_TYPE_TORSWITCH,
@@ -116,7 +116,7 @@ func TestNewAPIRack(t *testing.T) {
 				Components: []*APIRackComponent{
 					{
 						ID:              "comp-1",
-						ComponentID:     "carbide-machine-123",
+						ComponentID:     "nico-machine-123",
 						Type:            "Compute",
 						Name:            "compute-node-1",
 						SerialNumber:    "CSN001",

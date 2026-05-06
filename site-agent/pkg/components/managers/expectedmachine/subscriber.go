@@ -18,8 +18,8 @@
 package expectedmachine
 
 import (
-	swa "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/activity"
-	sww "github.com/NVIDIA/ncx-infra-controller-rest/site-workflow/pkg/workflow"
+	swa "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
+	sww "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/workflow"
 )
 
 // RegisterSubscriber registers ExpectedMachine CRUD workflows and activities with Temporal
@@ -49,7 +49,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered UpdateExpectedMachines workflow")
 
 	// Register activities
-	expectedMachineManager := swa.NewManageExpectedMachine(ManagerAccess.Data.EB.Managers.Carbide.Client, ManagerAccess.Data.EB.Managers.RLA.Client)
+	expectedMachineManager := swa.NewManageExpectedMachine(ManagerAccess.Data.EB.Managers.NICo.Client, ManagerAccess.Data.EB.Managers.RLA.Client)
 
 	// Register CreateExpectedMachineOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachineOnSite)

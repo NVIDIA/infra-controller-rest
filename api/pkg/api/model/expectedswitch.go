@@ -26,8 +26,8 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/api/pkg/api/model/util"
-	cdbm "github.com/NVIDIA/ncx-infra-controller-rest/db/pkg/db/model"
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
+	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 )
 
 // APIExpectedSwitchCreateRequest is the data structure to capture request to create a new ExpectedSwitch
@@ -48,6 +48,8 @@ type APIExpectedSwitchCreateRequest struct {
 	NvOsPassword *string `json:"nvOsPassword"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
+	// BmcIpAddress is the optional BMC IP address of the expected switch
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// Name is the optional name of the expected switch
 	Name *string `json:"name"`
 	// Manufacturer is the optional manufacturer of the expected switch
@@ -87,6 +89,10 @@ func (escr *APIExpectedSwitchCreateRequest) Validate() error {
 			validation.Length(1, 32).Error("Switch serial number must be 32 characters or less")),
 		validation.Field(&escr.RackID,
 			validation.NilOrNotEmpty.Error("RackID cannot be empty")),
+		validation.Field(&escr.BmcIpAddress,
+			validation.NilOrNotEmpty.Error("BmcIpAddress cannot be empty"),
+			validation.When(escr.BmcIpAddress != nil && *escr.BmcIpAddress != "",
+				validationis.IP.Error("BmcIpAddress must be a valid IPv4 or IPv6 address"))),
 		validation.Field(&escr.Name,
 			validation.NilOrNotEmpty.Error("Name cannot be empty")),
 		validation.Field(&escr.Manufacturer,
@@ -128,6 +134,8 @@ type APIExpectedSwitchUpdateRequest struct {
 	NvOsPassword *string `json:"nvOsPassword"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
+	// BmcIpAddress is the optional BMC IP address of the expected switch
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// Name is the optional name of the expected switch
 	Name *string `json:"name"`
 	// Manufacturer is the optional manufacturer of the expected switch
@@ -181,6 +189,10 @@ func (esur *APIExpectedSwitchUpdateRequest) Validate() error {
 			validation.Length(1, 32).Error("Switch Serial Number must be 1-32 characters")),
 		validation.Field(&esur.RackID,
 			validation.NilOrNotEmpty.Error("RackID cannot be empty")),
+		validation.Field(&esur.BmcIpAddress,
+			validation.NilOrNotEmpty.Error("BmcIpAddress cannot be empty"),
+			validation.When(esur.BmcIpAddress != nil && *esur.BmcIpAddress != "",
+				validationis.IP.Error("BmcIpAddress must be a valid IPv4 or IPv6 address"))),
 		validation.Field(&esur.Name,
 			validation.NilOrNotEmpty.Error("Name cannot be empty")),
 		validation.Field(&esur.Manufacturer,
@@ -218,6 +230,8 @@ type APIExpectedSwitch struct {
 	SwitchSerialNumber string `json:"switchSerialNumber"`
 	// RackID is the optional rack identifier
 	RackID *string `json:"rackId"`
+	// BmcIpAddress is the optional BMC IP address of the expected switch
+	BmcIpAddress *string `json:"bmcIpAddress"`
 	// Name is the optional name of the expected switch
 	Name *string `json:"name"`
 	// Manufacturer is the optional manufacturer of the expected switch
@@ -250,6 +264,7 @@ func NewAPIExpectedSwitch(dbModel *cdbm.ExpectedSwitch) *APIExpectedSwitch {
 		SiteID:             dbModel.SiteID,
 		SwitchSerialNumber: dbModel.SwitchSerialNumber,
 		RackID:             dbModel.RackID,
+		BmcIpAddress:       dbModel.BmcIpAddress,
 		Name:               dbModel.Name,
 		Manufacturer:       dbModel.Manufacturer,
 		Model:              dbModel.Model,

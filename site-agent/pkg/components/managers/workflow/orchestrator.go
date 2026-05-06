@@ -37,7 +37,7 @@ import (
 	"go.temporal.io/sdk/interceptor"
 	"go.temporal.io/sdk/worker"
 
-	computils "github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/components/utils"
+	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
 )
 
 // Orchestrator - Workflow Orchestrator
@@ -228,7 +228,7 @@ func workflowOrchestrator() error {
 	}
 
 	// Register all manager flows here
-	ManagerAccess.API.Carbide.RegisterGRPC()
+	ManagerAccess.API.NICo.RegisterGRPC()
 
 	// TODO: all RegisterSubscriber calls return an error and we ignore them. Should we?
 	ManagerAccess.API.VPC.RegisterSubscriber()

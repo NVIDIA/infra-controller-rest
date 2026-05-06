@@ -53,6 +53,13 @@ type APIError struct {
 	Data    error  `json:"data"`
 }
 
+// Error implements the error interface so *APIError can flow through error
+// channels (e.g., closures returned by WithTx). Use NewAPIErrorResponse to
+// turn one into an Echo response at the API boundary.
+func (a *APIError) Error() string {
+	return a.Message
+}
+
 // NewAPIError returns an API error given appropriate params
 func NewAPIError(code int, message string, data error) *APIError {
 	return &APIError{

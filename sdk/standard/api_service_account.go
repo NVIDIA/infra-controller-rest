@@ -16,9 +16,9 @@
  */
 
 /*
-NCX Infra Controller REST API
+NVIDIA Infra Controller REST API
 
-NCX Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NCX Infra Controller datacenters, also referred to as Sites.
+NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
 
 API version: 1.4.0
 */
@@ -84,7 +84,7 @@ func (a *ServiceAccountAPIService) GetCurrentServiceAccountExecute(r ApiGetCurre
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/carbide/service-account/current"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/service-account/current"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 
 	localVarHeaderParams := make(map[string]string)
@@ -131,7 +131,7 @@ func (a *ServiceAccountAPIService) GetCurrentServiceAccountExecute(r ApiGetCurre
 			error: localVarHTTPResponse.Status,
 		}
 		if localVarHTTPResponse.StatusCode == 403 {
-			var v CarbideAPIError
+			var v NICoAPIError
 			err = a.client.decode(&v, localVarBody, localVarHTTPResponse.Header.Get("Content-Type"))
 			if err != nil {
 				newErr.error = err.Error()

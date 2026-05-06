@@ -14,7 +14,7 @@ import (
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/NVIDIA/ncx-infra-controller-rest/ipam/api/v1"
+	v1 "github.com/NVIDIA/infra-controller-rest/ipam/api/v1"
 	http "net/http"
 	strings "strings"
 )

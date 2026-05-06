@@ -26,10 +26,10 @@ import (
 
 	"golang.org/x/term"
 
-	carbidecli "github.com/NVIDIA/ncx-infra-controller-rest/cli/pkg"
+	cli "github.com/NVIDIA/infra-controller-rest/cli/pkg"
 )
 
-// ChooseConfigFile scans ~/.carbide for config*.yaml files and shows an interactive
+// ChooseConfigFile scans ~/.nico for config*.yaml files and shows an interactive
 // selector if multiple configs exist. Returns the chosen path, or empty string
 // if only one config exists (use default) or no terminal is available.
 func ChooseConfigFile(explicitPath string) (string, error) {
@@ -45,7 +45,7 @@ func ChooseConfigFile(explicitPath string) (string, error) {
 		return "", nil
 	}
 
-	configDir := filepath.Join(home, ".carbide")
+	configDir := filepath.Join(home, ".nico")
 	entries, err := os.ReadDir(configDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -102,7 +102,7 @@ func ChooseConfigFile(explicitPath string) (string, error) {
 	return selected.ID, nil
 }
 
-// RunTUI is the entry point for carbidecli tui. It handles config selection,
+// RunTUI is the entry point for cli tui. It handles config selection,
 // authentication, and starts the REPL.
 func RunTUI(explicitConfig string) error {
 	configPath, err := ChooseConfigFile(explicitConfig)
@@ -110,12 +110,12 @@ func RunTUI(explicitConfig string) error {
 		return fmt.Errorf("choosing config: %w", err)
 	}
 
-	var cfg *carbidecli.ConfigFile
+	var cfg *cli.ConfigFile
 	if configPath != "" {
-		cfg, err = carbidecli.LoadConfigFromPath(configPath)
+		cfg, err = cli.LoadConfigFromPath(configPath)
 	} else {
-		cfg, err = carbidecli.LoadConfig()
-		configPath = carbidecli.ConfigPath()
+		cfg, err = cli.LoadConfig()
+		configPath = cli.ConfigPath()
 	}
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
@@ -129,32 +129,32 @@ func RunTUI(explicitConfig string) error {
 	baseURL := cfg.API.Base
 	apiName := cfg.API.Name
 	if apiName == "" {
-		apiName = "carbide"
+		apiName = "nico"
 	}
 
-	token, refreshErr := carbidecli.AutoRefreshTokenToPath(cfg, configPath)
+	token, refreshErr := cli.AutoRefreshTokenToPath(cfg, configPath)
 	if refreshErr != nil {
 		return fmt.Errorf("refreshing auth token: %w", refreshErr)
 	}
 	if token == "" {
-		token = carbidecli.GetAuthToken(cfg)
+		token = cli.GetAuthToken(cfg)
 	}
-	if token == "" && (carbidecli.HasTokenCommandConfig(cfg) || carbidecli.HasOIDCConfig(cfg) || carbidecli.HasAPIKeyConfig(cfg)) {
-		token, err = carbidecli.LoginFromConfig(cfg, configPath)
+	if token == "" && (cli.HasTokenCommandConfig(cfg) || cli.HasOIDCConfig(cfg) || cli.HasAPIKeyConfig(cfg)) {
+		token, err = cli.LoginFromConfig(cfg, configPath)
 		if err != nil {
 			return fmt.Errorf("logging in from config: %w", err)
 		}
 	}
 
-	client := carbidecli.NewClient(baseURL, org, token, nil, false)
+	client := cli.NewClient(baseURL, org, token, nil, false)
 	client.APIName = apiName
 
 	session := NewSession(client, org, configPath)
 	session.Token = token
 
-	if carbidecli.HasTokenCommandConfig(cfg) || carbidecli.HasOIDCConfig(cfg) || carbidecli.HasAPIKeyConfig(cfg) {
+	if cli.HasTokenCommandConfig(cfg) || cli.HasOIDCConfig(cfg) || cli.HasAPIKeyConfig(cfg) {
 		loginFn := func() (string, error) {
-			return carbidecli.LoginFromConfig(cfg, configPath)
+			return cli.LoginFromConfig(cfg, configPath)
 		}
 		session.LoginFn = loginFn
 		client.TokenRefresh = func() (string, error) {
@@ -164,15 +164,15 @@ func RunTUI(explicitConfig string) error {
 			}
 			return token, err
 		}
-		client.AuthRetryNotify = func(event carbidecli.AuthRetryEvent) {
+		client.AuthRetryNotify = func(event cli.AuthRetryEvent) {
 			switch event.Action {
-			case carbidecli.AuthRetryActionLogin:
+			case cli.AuthRetryActionLogin:
 				fmt.Fprintf(os.Stderr, "%s API returned %d; running configured login (%d/%d).\n",
 					Yellow("Auth:"), event.StatusCode, event.Attempt, event.MaxAttempts)
-			case carbidecli.AuthRetryActionRetry:
+			case cli.AuthRetryActionRetry:
 				fmt.Fprintf(os.Stderr, "%s Retrying API request with refreshed token (%d/%d).\n",
 					Yellow("Auth:"), event.Attempt, event.MaxAttempts)
-			case carbidecli.AuthRetryActionSkip:
+			case cli.AuthRetryActionSkip:
 				fmt.Fprintf(os.Stderr, "%s API returned %d for %s; automatic retry skipped for non-idempotent request. Run %s and retry the command.\n",
 					Yellow("Auth:"), event.StatusCode, event.Method, Bold("login"))
 			}

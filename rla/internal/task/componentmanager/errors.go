@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
 var (

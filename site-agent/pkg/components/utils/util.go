@@ -30,7 +30,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/NVIDIA/ncx-infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
 
 	"github.com/rs/zerolog/log"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -83,8 +83,8 @@ func (e CompStatus) String() string {
 const (
 	// DBResDataKey - DB Resource Data key name
 	DBResDataKey = "value"
-	// CarbideApiPageSize page sizing to use with paginated carbide APIs
-	CarbideApiPageSize = 100
+	// NICoApiPageSize page sizing to use with paginated nico APIs
+	NICoApiPageSize = 100
 )
 
 // GetFunctionName - Get Function Name
@@ -157,7 +157,7 @@ func GetSAStatus(path string) {
 }
 
 func UpdateState(Elektra *elektratypes.Elektra) {
-	if (CompStatus(Elektra.Managers.Carbide.State.HealthStatus.Load()) == CompHealthy) &&
+	if (CompStatus(Elektra.Managers.NICo.State.HealthStatus.Load()) == CompHealthy) &&
 		(CompStatus(Elektra.Managers.Workflow.State.HealthStatus.Load()) == CompHealthy) {
 		Elektra.HealthStatus.Store(uint64(CompHealthy))
 	} else {

@@ -21,7 +21,7 @@ import (
 	"errors"
 	"fmt"
 
-	pkgcerts "github.com/NVIDIA/ncx-infra-controller-rest/rla/pkg/certs"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
 
 // Config represents the configuration needed to create a new RLA service

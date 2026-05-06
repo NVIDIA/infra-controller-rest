@@ -22,7 +22,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	rlav1 "github.com/NVIDIA/ncx-infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
 )
 
 const (
