@@ -23,6 +23,14 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
+// binaryName is the public name of the CLI binary as users see it on PATH and
+// in --help output. It is centralized here so renames stay consistent across
+// the cli.App.Name, generated UsageText, and error messages that reference
+// the binary by name. Shell-completion script templates intentionally do not
+// use this constant; they embed the name in identifiers like
+// `_nicocli_complete` that would not benefit from string interpolation.
+const binaryName = "nicocli"
+
 // NewApp builds a cli.App from the embedded OpenAPI spec data.
 func NewApp(specData []byte) (*cli.App, error) {
 	spec, err := ParseSpec(specData)
@@ -41,7 +49,7 @@ func NewApp(specData []byte) (*cli.App, error) {
 	commands = append(commands, completionCommand())
 
 	app := &cli.App{
-		Name:                 "nicocli",
+		Name:                 binaryName,
 		Usage:                spec.Info.Title,
 		Version:              spec.Info.Version,
 		EnableBashCompletion: true,

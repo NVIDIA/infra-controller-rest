@@ -364,7 +364,7 @@ func buildActionCommand(spec *Spec, ro resolvedOp, subResource string) *cli.Comm
 		return flags[i].Names()[0] < flags[j].Names()[0]
 	})
 
-	usageText := "nicocli " + tagToCommand(ro.tag)
+	usageText := binaryName + " " + tagToCommand(ro.tag)
 	if subResource != "" {
 		usageText += " " + subResource
 	}
@@ -718,7 +718,7 @@ func clientFromContext(c *cli.Context) (*Client, error) {
 	}
 
 	if resolved == "" {
-		return nil, fmt.Errorf("no token available; run 'nicocli login' or set --token / NICO_TOKEN")
+		return nil, fmt.Errorf("no token available; run '%s login' or set --token / NICO_TOKEN", binaryName)
 	}
 
 	// Explicit flag > config > flag default (spec server URL).
