@@ -42,24 +42,6 @@ type ManageExpectedRack struct {
 	siteClientPool *sc.ClientPool
 }
 
-func getLabelsMapFromProto(er *cwssaws.ExpectedRack) map[string]string {
-	if er.Metadata == nil || er.Metadata.Labels == nil {
-		return nil
-	}
-	result := map[string]string{}
-	for _, label := range er.Metadata.Labels {
-		if label == nil || label.Key == "" {
-			continue
-		}
-		value := ""
-		if label.Value != nil {
-			value = *label.Value
-		}
-		result[label.Key] = value
-	}
-	return result
-}
-
 // Activity functions
 
 // UpdateExpectedRacksInDB is a Temporal activity that takes a collection of ExpectedRack data pushed by Site Agent and updates the DB
@@ -144,13 +126,8 @@ func (mer ManageExpectedRack) UpdateExpectedRacksInDB(ctx context.Context, siteI
 		rackID := rer.RackId.Id
 		reportedRackIDs[rackID] = true
 
-		reportedName := ""
-		reportedDescription := ""
-		if rer.Metadata != nil {
-			reportedName = rer.Metadata.Name
-			reportedDescription = rer.Metadata.Description
-		}
-		reportedLabels := getLabelsMapFromProto(rer)
+		reported := &cdbm.ExpectedRack{}
+		reported.FromProto(rer)
 
 		// Create a new Expected Rack if it doesn't already exist in DB
 		cur, found := existingByRackID[rackID]
@@ -158,11 +135,11 @@ func (mer ManageExpectedRack) UpdateExpectedRacksInDB(ctx context.Context, siteI
 			_, cerr := erDAO.Create(ctx, nil, cdbm.ExpectedRackCreateInput{
 				ExpectedRackID: uuid.New(),
 				SiteID:         siteID,
-				RackID:         rackID,
-				RackProfileID:  rer.RackType,
-				Name:           reportedName,
-				Description:    reportedDescription,
-				Labels:         reportedLabels,
+				RackID:         reported.RackID,
+				RackProfileID:  reported.RackProfileID,
+				Name:           reported.Name,
+				Description:    reported.Description,
+				Labels:         reported.Labels,
 				CreatedBy:      siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
@@ -172,22 +149,22 @@ func (mer ManageExpectedRack) UpdateExpectedRacksInDB(ctx context.Context, siteI
 		}
 
 		// update if any field differs
-		if cur.RackProfileID != rer.RackType ||
-			cur.Name != reportedName ||
-			cur.Description != reportedDescription ||
-			!reflect.DeepEqual(cur.Labels, reportedLabels) {
+		if cur.RackProfileID != reported.RackProfileID ||
+			cur.Name != reported.Name ||
+			cur.Description != reported.Description ||
+			!reflect.DeepEqual(cur.Labels, reported.Labels) {
 			// nil labels in nico can mean we need to clear out existing labels in DB.
 			// A nil value will not trigger an update in the DAO layer, so use an empty map.
-			if cur.Labels != nil && reportedLabels == nil {
-				reportedLabels = map[string]string{}
+			labels := reported.Labels
+			if cur.Labels != nil && labels == nil {
+				labels = map[string]string{}
 			}
-			rackType := rer.RackType
 			_, uerr := erDAO.Update(ctx, nil, cdbm.ExpectedRackUpdateInput{
 				ExpectedRackID: cur.ID,
-				RackProfileID:  &rackType,
-				Name:           &reportedName,
-				Description:    &reportedDescription,
-				Labels:         reportedLabels,
+				RackProfileID:  &reported.RackProfileID,
+				Name:           &reported.Name,
+				Description:    &reported.Description,
+				Labels:         labels,
 			})
 			if uerr != nil {
 				logger.Error().Err(uerr).Str("ExpectedRackID", cur.ID.String()).Str("RackID", rackID).Msg("failed to update ExpectedRack in DB")

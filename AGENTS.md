@@ -179,6 +179,37 @@ make kind-down              # tear down cluster
 - OpenAPI schema in `openapi/spec.yaml` must be updated whenever API
   endpoints are added or modified.
 
+### Proto conversion methods
+
+DB and API model types that round-trip with a workflow-schema (`cwssaws`)
+or RLA (`rlav1`) protobuf type carry conversion as receiver methods, not
+free functions. The naming and shape are uniform so call sites are
+predictable:
+
+1. **One model type ↔ one proto type:** `func (m *T) ToProto(...) *protoT`
+   and `func (m *T) FromProto(p *protoT, ...)`. `FromProto` mutates the
+   receiver, treats a `nil` proto as a no-op, and returns no error —
+   callers pre-validate anything risky like UUID strings, and the method
+   leaves the receiver field unchanged on parse failure.
+2. **Side inputs that are not on the model** (BMC credentials, a linked
+   machine ID resolved by the caller, a fallback timestamp) are passed as
+   additional arguments — preferably grouped into a `XCredentials` struct
+   declared next to the model, with a comment explaining why the field
+   isn't persisted.
+3. **One model type → multiple proto request types:** when the same
+   record produces, for example, both a Create and an Update request, use
+   `ToCreateRequestProto()` / `ToUpdateRequestProto()` (see `Tenant`).
+4. **Sub-messages of a proto request:** when a request DTO produces a
+   reusable piece of a proto request that is shared across multiple
+   request types (e.g. `OperationTargetSpec`, `[]*Filter`), name the
+   method after the sub-message it returns: `ToTargetSpec()`,
+   `ToFilters()` (see `RackFilter`, `APIRackGetAllRequest`).
+5. **Constructor wrappers for `FromProto`:** API model types that are
+   constructed from a proto in handlers commonly expose a
+   `func NewAPIX(p *protoX) *APIX` wrapper that returns `nil` for a `nil`
+   proto and otherwise builds the value and calls `FromProto`. See
+   `NewAPITray`, `NewAPIRack`.
+
 ## Git Workflow
 
 When writing git commit messages, follow the conventions below:
