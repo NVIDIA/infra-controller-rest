@@ -73,11 +73,13 @@ nicocli site list               # list all sites
 
 Config file: `~/.nico/config.yaml`
 
+`nicocli init` writes a sample matching the layout below. The OIDC `username`/`password` fields are written as plain values so a fresh local dev install is one edit away from working; remove them and rely on `nicocli login` (or `--api-key`) for any environment that does not allow plaintext passwords on disk.
+
 ```yaml
 api:
   base: http://localhost:8388
   org: test-org
-  name: nico                # API path segment (default)
+  name: nico
 
 auth:
   # Option 1: Direct bearer token
@@ -88,25 +90,44 @@ auth:
     token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
     client_id: nico-api
     client_secret: nico-local-secret
+    username: admin@example.com
+    password: adminpassword
 
   # Option 3: NGC API key
   # api_key:
-  #   authn_url: https://authn.nvidia.com/token
+  #   authn_url: https://your-authn-server/token
   #   key: nvapi-xxxx
 ```
 
-Flags and environment variables override config values:
+### Global flags
+
+These flags apply to every command and override the corresponding config values. Where an env var is listed, exporting it has the same effect as passing the flag.
 
 | Flag | Env Var | Description |
 |------|---------|-------------|
+| `--config` | `NICO_CONFIG` | Path to the config file (defaults to `~/.nico/config.yaml`) |
 | `--base-url` | `NICO_BASE_URL` | API base URL |
 | `--org` | `NICO_ORG` | Organization name |
-| `--token` | `NICO_TOKEN` | Bearer token |
-| `--token-url` | `NICO_TOKEN_URL` | OIDC token endpoint URL |
-| `--keycloak-url` | `NICO_KEYCLOAK_URL` | Keycloak base URL (constructs token-url) |
+| `--token` | `NICO_TOKEN` | Bearer token (skips login) |
+| `--token-command` | | Shell command that prints a bearer token on stdout |
+| `--token-url` | `NICO_TOKEN_URL` | OIDC token endpoint URL for login and refresh |
+| `--keycloak-url` | `NICO_KEYCLOAK_URL` | Keycloak base URL (constructs `--token-url` if not set) |
 | `--keycloak-realm` | `NICO_KEYCLOAK_REALM` | Keycloak realm (default: `nico-dev`) |
-| `--client-id` | `NICO_CLIENT_ID` | OAuth client ID |
-| `--output`, `-o` | | Output format: `json` (default), `yaml`, `table` |
+| `--client-id` | `NICO_CLIENT_ID` | OAuth client ID (default: `nico-api`) |
+| `--debug` | | Log the full HTTP request and response for the call |
+
+### Per-command flags
+
+Output formatting and pagination flags live on individual commands, not on the root, so they go after the resource and action -- `nicocli site list --output table`, not `nicocli --output table site list`. The common ones:
+
+| Flag | Where | Description |
+|------|-------|-------------|
+| `--output` | every command | Output format: `json` (default), `yaml`, `table` |
+| `--all` | list commands | Fetch every page instead of just the first |
+| `--data` | create/update commands | Request body as inline JSON |
+| `--data-file` | create/update commands | Path to a JSON file (use `-` for stdin) |
+
+Run `nicocli <command> --help` for the full per-command flag list, including spec-derived query parameters and body fields.
 
 ## Authentication
 
@@ -117,14 +138,27 @@ nicocli login
 # OIDC with explicit flags
 nicocli --token-url https://auth.example.com/token login --username admin@example.com
 
-# NGC API key
-nicocli login --api-key nvapi-xxxx
+# OIDC client-credentials grant (no username -- use --client-secret)
+nicocli --token-url https://auth.example.com/token login --client-secret "$NICO_CLIENT_SECRET"
+
+# NGC API key (with explicit authn endpoint)
+nicocli login --api-key nvapi-xxxx --authn-url https://your-authn-server/token
 
 # Keycloak shorthand
 nicocli --keycloak-url http://localhost:8080 login --username admin@example.com
 ```
 
 Tokens are saved to `~/.nico/config.yaml` with auto-refresh for OIDC.
+
+`login` accepts these flags in addition to the OIDC/OAuth global flags above:
+
+| Flag | Env Var | Description |
+|------|---------|-------------|
+| `--username` | | Username for OIDC password grant |
+| `--password` | | Password for OIDC password grant (prompted if not provided) |
+| `--client-secret` | `NICO_CLIENT_SECRET` | Client secret for confidential OIDC clients (also enables the client-credentials grant when no username is set) |
+| `--api-key` | `NICO_API_KEY` | NGC API key to exchange for a bearer token |
+| `--authn-url` | `NICO_AUTHN_URL` | NGC authentication URL for the API-key exchange |
 
 ## Usage
 
@@ -144,7 +178,7 @@ nicocli --debug site list
 
 ## Command Structure
 
-Commands follow `cli <resource> [sub-resource] <action> [args] [flags]`.
+Commands follow `nicocli <resource> [sub-resource] <action> [args] [flags]`.
 
 | Spec Pattern | CLI Action |
 |---|---|
