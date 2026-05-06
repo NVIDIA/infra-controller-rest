@@ -54,6 +54,10 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 )
 
+const (
+	NVLinkInterfaceStatusSyncGraceWindow = 3 * 60 * time.Second
+)
+
 // ~~~~~ Create Handler ~~~~~ //
 
 // CreateInstanceHandler is the API Handler for creating new Instance
@@ -2718,7 +2722,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	var dbskgs []cdbm.SSHKeyGroup
 	var ssds []cdbm.StatusDetail
 	reqCtx := ctx
-	nvLinkInterfacesUnchanged := false
+	reIssueNVLinkInterfaces := false
 	err = cdb.WithTx(ctx, uih.dbSession, func(tx *cdb.Tx) error {
 		// Prepare DAOs
 		sdDAO := cdbm.NewStatusDetailDAO(uih.dbSession)
@@ -3115,43 +3119,21 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 
 		if apiRequest.NVLinkInterfaces != nil {
 			// Count the number of NVLink interfaces by NVLink Logical Partition ID and Device Instance
-			existingNvlIfcMap := make(map[string]int)
+			existingNvlIfcMap := make(map[string][]cdbm.NVLinkInterface)
+
+			// There can be multiple NVLink interfaces for the same NVLink Logical Partition ID and Device Instance
+			// Ensure that existingNvlIfcs is sorted by created timestamp in ascending order
+			for i := range existingNvlIfcs {
+				key := fmt.Sprintf("%s:%d", existingNvlIfcs[i].NVLinkLogicalPartitionID.String(), existingNvlIfcs[i].DeviceInstance)
+				existingNvlIfcMap[key] = append(existingNvlIfcMap[key], existingNvlIfcs[i])
+			}
+
+			nvllpIDs := goset.NewSet[uuid.UUID]()
+
 			existingReadyNvlIfcsCount := 0
 			existingPendingNvlIfcsCount := 0
 			existingDeletingNvlIfcsCount := 0
 
-			for i := range existingNvlIfcs {
-				key := fmt.Sprintf("%s:%d", existingNvlIfcs[i].NVLinkLogicalPartitionID.String(), existingNvlIfcs[i].DeviceInstance)
-				existingNvlIfcMap[key]++
-				switch existingNvlIfcs[i].Status {
-				case cdbm.NVLinkInterfaceStatusReady:
-					existingReadyNvlIfcsCount++
-				case cdbm.NVLinkInterfaceStatusPending:
-					// Only count pending interfaces whose updated timestamp is older than the grace window;
-					// recently-updated pending rows are excluded so in-flight updates are not treated as a no-op match.
-					lastUpdatedAt := existingNvlIfcs[i].Updated
-					if lastUpdatedAt.Before(time.Now().Add(-90 * time.Second)) {
-						// 90 seconds is the grace period for pending interfaces to be considered unchanged
-						existingPendingNvlIfcsCount++
-					}
-				case cdbm.NVLinkInterfaceStatusDeleting:
-					existingDeletingNvlIfcsCount++
-				default:
-					// Provisioning, Error, or other statuses are not counted in these buckets.
-				}
-			}
-			// If the number of pending/ready/deeleting NVLink interfaces is unchanged, do nothing
-			// because existing NVLink interfaces includes pending/ready/deleting NVLink interfaces on the same logical partition and device instance
-			// hence we need to verify if incoming request contains the same number of pending/ready/deleting NVLink interfaces
-			if len(apiRequest.NVLinkInterfaces) == existingReadyNvlIfcsCount {
-				nvLinkInterfacesUnchanged = true
-			} else if len(apiRequest.NVLinkInterfaces) == existingPendingNvlIfcsCount {
-				nvLinkInterfacesUnchanged = true
-			} else if len(apiRequest.NVLinkInterfaces) == existingDeletingNvlIfcsCount {
-				nvLinkInterfacesUnchanged = true
-			}
-
-			nvllpIDs := goset.NewSet[uuid.UUID]()
 			for _, apiNvlIfc := range apiRequest.NVLinkInterfaces {
 				// NVLink Logical Partition
 				nvllPartitionID, err := uuid.Parse(apiNvlIfc.NVLinkLogicalPartitionID)
@@ -3162,18 +3144,38 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				nvllpIDs.Add(nvllPartitionID)
 
 				// If the number of active NVLink interfaces is unchanged, consume matching keys (multiset match).
-				if nvLinkInterfacesUnchanged {
-					key := fmt.Sprintf("%s:%d", nvllPartitionID.String(), apiNvlIfc.DeviceInstance)
-					count := existingNvlIfcMap[key]
-					if count == 0 {
-						nvLinkInterfacesUnchanged = false
+				key := fmt.Sprintf("%s:%d", nvllPartitionID.String(), apiNvlIfc.DeviceInstance)
+				existingNvlIfcsForKey := existingNvlIfcMap[key]
+
+				// Check the status of the most recent NVLink interface for this key
+				if len(existingNvlIfcsForKey) > 0 {
+					mostRecentNvlIfc := existingNvlIfcsForKey[len(existingNvlIfcsForKey)-1]
+					if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusReady {
+						// This interface is already ready, we don't need to re-issue the NVLink interface
+						existingReadyNvlIfcsCount++
 					} else {
-						existingNvlIfcMap[key] = count - 1
+						if mostRecentNvlIfc.Updated.Before(time.Now().Add(-NVLinkInterfaceStatusSyncGraceWindow)) {
+							if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusPending {
+								existingPendingNvlIfcsCount++
+							} else if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusDeleting {
+								existingDeletingNvlIfcsCount++
+							}
+						} else {
+							reIssueNVLinkInterfaces = true
+						}
 					}
+					// There are no other possible statuses for an NVLink interface, so we can break out of the loop
+				} else {
+					// No existing NVLink interface found for this NVLink Logical Partition ID and Device Instance
+					reIssueNVLinkInterfaces = true
 				}
 			}
 
-			if !nvLinkInterfacesUnchanged {
+			if !reIssueNVLinkInterfaces && (existingReadyNvlIfcsCount != len(apiRequest.NVLinkInterfaces) || (existingPendingNvlIfcsCount != len(apiRequest.NVLinkInterfaces)) || (existingDeletingNvlIfcsCount != 0)) {
+				reIssueNVLinkInterfaces = true
+			}
+
+			if reIssueNVLinkInterfaces {
 				nvllpIDMap := make(map[string]*cdbm.NVLinkLogicalPartition)
 				if nvllpIDs.Cardinality() > 0 {
 					nvllps, _, err := nvllpDAO.GetAll(ctx, nil, cdbm.NVLinkLogicalPartitionFilterInput{NVLinkLogicalPartitionIDs: nvllpIDs.ToSlice()}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
@@ -3461,7 +3463,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	}
 
 	// If existing NVLink Interfaces were updated, add them to the response
-	if len(existingNvlIfcs) > 0 && !nvLinkInterfacesUnchanged {
+	if len(existingNvlIfcs) > 0 && !reIssueNVLinkInterfaces {
 		// Add the existing NVLink Interfaces to the response
 		newNvlIfcs = append(newNvlIfcs, existingNvlIfcs...)
 	}
