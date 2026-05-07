@@ -75,6 +75,8 @@ type APIClient struct {
 
 	ExpectedPowerShelfAPI *ExpectedPowerShelfAPIService
 
+	ExpectedRackAPI *ExpectedRackAPIService
+
 	ExpectedSwitchAPI *ExpectedSwitchAPIService
 
 	IPBlockAPI *IPBlockAPIService
@@ -147,6 +149,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.DPUExtensionServiceAPI = (*DPUExtensionServiceAPIService)(&c.common)
 	c.ExpectedMachineAPI = (*ExpectedMachineAPIService)(&c.common)
 	c.ExpectedPowerShelfAPI = (*ExpectedPowerShelfAPIService)(&c.common)
+	c.ExpectedRackAPI = (*ExpectedRackAPIService)(&c.common)
 	c.ExpectedSwitchAPI = (*ExpectedSwitchAPIService)(&c.common)
 	c.IPBlockAPI = (*IPBlockAPIService)(&c.common)
 	c.InfiniBandPartitionAPI = (*InfiniBandPartitionAPIService)(&c.common)

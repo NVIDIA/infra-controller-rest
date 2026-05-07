@@ -18,7 +18,6 @@
 package handler
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -194,68 +193,58 @@ func (cipbh CreateIPBlockHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// start a database transaction
-	tx, err := cdb.BeginTx(ctx, cipbh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating ipblock", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	var ipb *cdbm.IPBlock
+	var ssd *cdbm.StatusDetail
+	err = cdb.WithTx(ctx, cipbh.dbSession, func(tx *cdb.Tx) error {
+		ipamStorage := ipam.NewIpamStorage(cipbh.dbSession.DB, tx.GetBunTx())
+		// Create the prefix in IPAM
+		prefix, derr := ipam.CreateIpamEntryForIPBlock(ctx, ipamStorage, apiRequest.Prefix, apiRequest.PrefixLength, apiRequest.RoutingType, ip.ID.String(), site.ID.String())
+		if derr != nil {
+			logger.Warn().Err(derr).Msg("error creating ipam prefix")
+			return cutil.NewAPIError(http.StatusConflict, fmt.Sprintf("Could not create IPAM entry for IPBlock. Details: %s", derr.Error()), nil)
+		}
+		logger.Info().Str("namespace", prefix.Namespace).Str("prefix", prefix.String()).Msg("created prefix in ipam")
 
-	ipamStorage := ipam.NewIpamStorage(cipbh.dbSession.DB, tx.GetBunTx())
-	// Create the prefix in IPAM
-	prefix, err := ipam.CreateIpamEntryForIPBlock(ctx, ipamStorage, apiRequest.Prefix, apiRequest.PrefixLength, apiRequest.RoutingType, ip.ID.String(), site.ID.String())
-	if err != nil {
-		logger.Warn().Err(err).Msg("error creating ipam prefix")
-		return cutil.NewAPIErrorResponse(c, http.StatusConflict, fmt.Sprintf("Could not create IPAM entry for IPBlock. Details: %s", err.Error()), nil)
-	}
-	logger.Info().Str("namespace", prefix.Namespace).Str("prefix", prefix.String()).Msg("created prefix in ipam")
+		// Create the db record for IPBlock
+		ipb, derr = ipbDAO.Create(
+			ctx,
+			tx,
+			cdbm.IPBlockCreateInput{
+				Name:                     apiRequest.Name,
+				Description:              apiRequest.Description,
+				SiteID:                   site.ID,
+				InfrastructureProviderID: ip.ID,
+				RoutingType:              apiRequest.RoutingType,
+				Prefix:                   apiRequest.Prefix,
+				PrefixLength:             apiRequest.PrefixLength,
+				ProtocolVersion:          apiRequest.ProtocolVersion,
+				Status:                   cdbm.IPBlockStatusReady,
+				CreatedBy:                &dbUser.ID,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating IPBlock in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create ip block", nil)
+		}
 
-	// Create the db record for IPBlock
-	ipb, err := ipbDAO.Create(
-		ctx,
-		tx,
-		cdbm.IPBlockCreateInput{
-			Name:                     apiRequest.Name,
-			Description:              apiRequest.Description,
-			SiteID:                   site.ID,
-			InfrastructureProviderID: ip.ID,
-			RoutingType:              apiRequest.RoutingType,
-			Prefix:                   apiRequest.Prefix,
-			PrefixLength:             apiRequest.PrefixLength,
-			ProtocolVersion:          apiRequest.ProtocolVersion,
-			Status:                   cdbm.IPBlockStatusReady,
-			CreatedBy:                &dbUser.ID,
-		},
-	)
+		// Create a status detail record for the IPBlock
+		sdDAO := cdbm.NewStatusDetailDAO(cipbh.dbSession)
+		var serr error
+		ssd, serr = sdDAO.CreateFromParams(ctx, tx, ipb.ID.String(), *cdb.GetStrPtr(cdbm.IPBlockStatusReady),
+			cdb.GetStrPtr("IP Block is ready for use"))
+		if serr != nil {
+			logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for IPBlock", nil)
+		}
+		if ssd == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for IPBlock", nil)
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error creating IPBlock in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create ip block", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create IPBlock due to DB transaction error")
 	}
-
-	// Create a status detail record for the IPBlock
-	sdDAO := cdbm.NewStatusDetailDAO(cipbh.dbSession)
-	ssd, serr := sdDAO.CreateFromParams(ctx, tx, ipb.ID.String(), *cdb.GetStrPtr(cdbm.IPBlockStatusReady),
-		cdb.GetStrPtr("IP Block is ready for use"))
-	if serr != nil {
-		logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for IPBlock", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for IPBlock", nil)
-	}
-
-	// commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing IPBlock transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create db entry for IPBlock", nil)
-	}
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	// Create response
 	apiInstance := model.NewAPIIPBlock(ipb, []cdbm.StatusDetail{*ssd}, nil)
@@ -1016,45 +1005,34 @@ func (uipbh UpdateIPBlockHandler) Handle(c echo.Context) error {
 	}
 
 	// Update IPBlock in DB
+	var ssds []cdbm.StatusDetail
+	ipb, err = cdb.WithTxResult(ctx, uipbh.dbSession, func(tx *cdb.Tx) (*cdbm.IPBlock, error) {
+		updated, derr := ipbDAO.Update(
+			ctx,
+			tx,
+			cdbm.IPBlockUpdateInput{
+				IPBlockID:   ipbID,
+				Name:        apiRequest.Name,
+				Description: apiRequest.Description,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating IPBlock in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to update IPBlock", nil)
+		}
 
-	// Start a database transaction
-	tx, err := cdb.BeginTx(ctx, uipbh.dbSession, &sql.TxOptions{})
+		sdDAO := cdbm.NewStatusDetailDAO(uipbh.dbSession)
+		var sderr error
+		ssds, _, sderr = sdDAO.GetAllByEntityID(ctx, tx, updated.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if sderr != nil {
+			logger.Error().Err(sderr).Msg("error retrieving Status Details for IPBlock from DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Status Details for IPBlock", nil)
+		}
+		return updated, nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating instance", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update IPBlock due to DB transaction error")
 	}
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	ipb, err = ipbDAO.Update(
-		ctx,
-		tx,
-		cdbm.IPBlockUpdateInput{
-			IPBlockID:   ipbID,
-			Name:        apiRequest.Name,
-			Description: apiRequest.Description,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating IPBlock in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update IPBlock", nil)
-	}
-
-	sdDAO := cdbm.NewStatusDetailDAO(uipbh.dbSession)
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, ipb.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for IPBlock from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for IPBlock", nil)
-	}
-
-	// Commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Instance", nil)
-	}
-	txCommitted = true
 
 	// Create response
 	apiInstance := model.NewAPIIPBlock(ipb, ssds, nil)
@@ -1175,39 +1153,24 @@ func (dipbh DeleteIPBlockHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("%v Allocations exist for IP Block, unable to delete", acCount), nil)
 	}
 
-	// start a database transaction
-	tx, err := cdb.BeginTx(ctx, dipbh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating IP Block, DB error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	err = cdb.WithTx(ctx, dipbh.dbSession, func(tx *cdb.Tx) error {
+		// Delete IPBlock in DB
+		if derr := ipbDAO.Delete(ctx, tx, ipbID); derr != nil {
+			logger.Error().Err(derr).Msg("error deleting IP Block in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Error deleting IP Block, DB error", nil)
+		}
 
-	// Delete IPBlock in DB
-	err = ipbDAO.Delete(ctx, tx, ipbID)
+		// delete IPAM entry for this ipBlock
+		ipamStorage := ipam.NewIpamStorage(dipbh.dbSession.DB, tx.GetBunTx())
+		if derr := ipam.DeleteIpamEntryForIPBlock(ctx, ipamStorage, ipb.Prefix, ipb.PrefixLength, ipb.RoutingType, ipb.InfrastructureProviderID.String(), ipb.SiteID.String()); derr != nil {
+			logger.Error().Err(derr).Msg("failed to delete IPAM record for IP Block")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Could not delete IPAM entry for IP Block. Details: %s", derr.Error()), nil)
+		}
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error deleting IP Block in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error deleting IP Block, DB error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete IPBlock due to DB transaction error")
 	}
-
-	// delete IPAM entry for this ipBlock
-	ipamStorage := ipam.NewIpamStorage(dipbh.dbSession.DB, tx.GetBunTx())
-	err = ipam.DeleteIpamEntryForIPBlock(ctx, ipamStorage, ipb.Prefix, ipb.PrefixLength, ipb.RoutingType, ipb.InfrastructureProviderID.String(), ipb.SiteID.String())
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to delete IPAM record for IP Block")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Could not delete IPAM entry for IP Block. Details: %s", err.Error()), nil)
-	}
-
-	// commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing IP Block transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create db entry for IP Block", nil)
-	}
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	// Create response
 	logger.Info().Msg("finishing API handler")

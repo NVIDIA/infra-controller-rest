@@ -164,6 +164,11 @@ tags:
     description: |-
       Expected Power Shelf identifies a Power Shelf that is expected to be discovered at a Site. Infrastructure Providers can pre-register Expected Power Shelves using BMC
       credentials and serial numbers to help with Power Shelf discovery and ingestion.
+  - name: Expected Rack
+    description: |-
+      Expected Rack identifies a Rack that is expected to be discovered at a Site. Infrastructure Providers can pre-register Expected Racks with an operator-supplied
+      rack identifier and a Rack Profile reference to help with Rack discovery and ingestion. Chassis identity and physical location information are conveyed via
+      well-known label keys (`chassis.manufacturer`, `chassis.serial-number`, `chassis.model`, `location.region`, `location.datacenter`, `location.room`, `location.position`).
   - name: Expected Switch
     description: |-
       Expected Switch identifies a Switch that is expected to be discovered at a Site. Infrastructure Providers can pre-register Expected Switches using BMC, NvOS credentials
@@ -989,7 +994,7 @@ paths:
 
         User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no Site specific configuration modifiable by Tenant.
+        Infrastructure Provider updating the Site must be the owner of the Site. At present, there are no other Site specific configurations modifiable by Tenant.
       requestBody:
         content:
           application/json:
@@ -1326,7 +1331,8 @@ paths:
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-        Tenant management of Allocation is not supported in MVP.
+        To successfully create a compute Allocation, there must be enough unallocated Machines associated with the Instance Type to satisfy the constraint value.
+        For network Allocation, the source site-level IP Block must have an available prefix with length equal to constraint value.
       requestBody:
         content:
           application/json:
@@ -3983,6 +3989,347 @@ paths:
           $ref: '#/components/responses/NotFoundError'
       tags:
         - Expected Power Shelf
+  '/v2/org/{org}/nico/expected-rack':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+    post:
+      summary: Create Expected Rack
+      operationId: create-expected-rack
+      description: |-
+        Create an Expected Rack to pre-register a rack expected to be discovered at a Site. The `rackId` is an operator-supplied string identifier (not a UUID) that uniquely identifies the rack within the Site.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also create Expected Racks if they have an account with the Site's Infrastructure Provider.
+
+        Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpectedRackCreateRequest'
+            examples:
+              example-1:
+                value:
+                  siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                  rackId: rack-01
+                  rackProfileId: rp-standard-42u
+                  name: Rack 01
+                  description: Production rack in row A
+                  labels:
+                    chassis.manufacturer: NVIDIA
+                    chassis.serial-number: NVRK0001001
+                    chassis.model: GB200-NVL72
+                    location.region: us-west-2
+                    location.datacenter: phx-dc01
+                    location.room: room-1
+                    location.position: A1
+        description: Expected Rack creation request
+        required: true
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+    get:
+      summary: Retrieve all Expected Racks
+      operationId: get-all-expected-rack
+      description: |-
+        Retrieve all Expected Racks.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_PROVIDER_VIEWER` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Racks if they have an account with the Site's Infrastructure Provider (siteId query parameter is required for Tenants).
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          description: ID of the Site to filter Expected Racks by
+        - schema:
+            type: string
+            enum:
+              - Site
+          in: query
+          name: includeRelation
+          description: Related entity to expand
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+        - schema:
+            type: string
+            enum:
+              - RACK_ID_ASC
+              - RACK_ID_DESC
+              - RACK_PROFILE_ID_ASC
+              - RACK_PROFILE_ID_DESC
+              - CREATED_ASC
+              - CREATED_DESC
+              - UPDATED_ASC
+              - UPDATED_DESC
+          in: query
+          name: orderBy
+          description: Ordering for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpectedRack'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":30,"orderBy": "CREATED_DESC"}'
+              description: Pagination result in JSON format
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+    put:
+      summary: Replace all Expected Racks
+      operationId: replace-all-expected-rack
+      description: |-
+        Replace the full set of Expected Racks for a Site with the provided list. All existing Expected Racks for the Site that are not in the request body will be deleted, and any new Expected Racks in the request will be created. Existing Expected Racks with matching `rackId` values will be updated.
+
+        Every entry in `expectedRacks` must reference the same `siteId` as the top-level `siteId`. `rackId` values must be unique within the request. The `expectedRacks` array may be empty to clear all Expected Racks for the Site.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also replace Expected Racks if they have an account with the Site's Infrastructure Provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpectedRackList'
+            examples:
+              example-1:
+                value:
+                  siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                  expectedRacks:
+                    - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                      rackId: rack-01
+                      rackProfileId: rp-standard-42u
+                      name: Rack 01
+                      description: Production rack in row A
+                      labels:
+                        chassis.manufacturer: NVIDIA
+                        chassis.serial-number: NVRK0001001
+                        chassis.model: GB200-NVL72
+                        location.datacenter: phx-dc01
+                        location.position: A1
+                    - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+                      rackId: rack-02
+                      rackProfileId: rp-standard-42u
+                      name: Rack 02
+                      description: Production rack in row A
+                      labels:
+                        chassis.manufacturer: NVIDIA
+                        chassis.serial-number: NVRK0001002
+                        chassis.model: GB200-NVL72
+                        location.datacenter: phx-dc01
+                        location.position: A2
+        description: Replace-all Expected Racks request
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+  '/v2/org/{org}/nico/expected-rack/all':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+    delete:
+      summary: Delete all Expected Racks
+      operationId: delete-all-expected-rack
+      description: |-
+        Delete all Expected Racks for a Site.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Infrastructure Provider must own the Expected Racks.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also delete Expected Racks if they have an account with the Site's Infrastructure Provider.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site whose Expected Racks should be deleted
+      responses:
+        '204':
+          description: All Expected Racks deleted successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Expected Rack
+  '/v2/org/{org}/nico/expected-rack/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: ID of the Expected Rack
+    get:
+      summary: Retrieve Expected Rack
+      operationId: get-expected-rack
+      description: |-
+        Retrieve a specific Expected Rack by its `id`.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` or `FORGE_PROVIDER_VIEWER` role.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also retrieve Expected Racks if they have an account with the Site's Infrastructure Provider.
+      parameters:
+        - schema:
+            type: string
+            enum:
+              - Site
+          in: query
+          name: includeRelation
+          description: Related entity to expand
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Expected Rack
+    patch:
+      summary: Update Expected Rack
+      operationId: update-expected-rack
+      description: |-
+        Update an existing Expected Rack identified by its `id`.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Infrastructure Provider must own the Expected Rack.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also update Expected Racks if they have an account with the Site's Infrastructure Provider.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExpectedRackUpdateRequest'
+            examples:
+              example-1:
+                value:
+                  rackProfileId: rp-standard-48u
+                  name: Rack 01 (updated)
+                  description: Production rack in row A, upgraded chassis
+                  labels:
+                    chassis.manufacturer: NVIDIA
+                    chassis.serial-number: NVRK0001001
+                    chassis.model: GB200-NVL72
+                    location.datacenter: phx-dc01
+                    location.position: A1
+        description: Expected Rack update request
+        required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExpectedRack'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Expected Rack
+    delete:
+      summary: Delete Expected Rack
+      operationId: delete-expected-rack
+      description: |-
+        Delete an existing Expected Rack identified by its `id`.
+
+        Org must have an Infrastructure Provider entity. User must have `FORGE_PROVIDER_ADMIN` role.
+
+        Infrastructure Provider must own the Expected Rack.
+
+        Alternatively, Tenant Admins with `TargetedInstanceCreation` capability can also delete Expected Racks if they have an account with the Site's Infrastructure Provider.
+      responses:
+        '204':
+          description: Expected Rack deleted successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Expected Rack
   '/v2/org/{org}/nico/expected-switch':
     parameters:
       - schema:
@@ -5605,6 +5952,8 @@ paths:
         Associate a Machine to an Instance Type
 
         Org must have an Infrastructure Provider entity that owns the Instance Type and the Machine. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        The Machine's capabilities must be a superset of the Instance Type's required capabilities for the association to succeed.
       requestBody:
         content:
           application/json:
@@ -5614,9 +5963,9 @@ paths:
               example-1:
                 value:
                   machineIds:
-                    - 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                    - 59c8d465-69f1-447f-80f8-1bc85627a03b
-                    - 0a44ffc3-39ba-46c6-b483-be00a1e2cc27
+                    - fm100ht4v4mce2qstjnl8970nnj3ie6ecek4mtjn27pea4kre5gsa49jg0g
+                    - fm100htrh18t1lrjg2pqagkh3sfigr9m65dejvkq168ako07sc0uibpp5q0
+                    - fm100ht68sf2m52idrpslcjkpdj5r3tb3j5o0bkfubhoglbq47u18nknfog
   '/v2/org/{org}/nico/instance/type/{instanceTypeId}/machine/{machineAssociationId}':
     parameters:
       - schema:
@@ -11930,7 +12279,9 @@ components:
         org:
           type: string
         orgDisplayName:
-          type: string
+          type:
+            - string
+            - 'null'
         created:
           type: string
           format: date-time
@@ -12068,7 +12419,9 @@ components:
           type: string
           description: Name/external ID of Tenant's organization
         orgDisplayName:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Display name of Tenant's organization
         created:
           type: string
@@ -12393,7 +12746,9 @@ components:
           maxLength: 256
           description: Name of the Site
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description for the Site
         org:
           type: string
@@ -12401,21 +12756,31 @@ components:
           type: string
           format: uuid
         siteControllerVersion:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Site Controller software
         siteAgentVersion:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Site Agent software
         registrationToken:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Token that can be used to register a Site. Value only exposed to Provider
         registrationTokenExpiration:
-          type: string
+          type:
+            - string
+            - 'null'
           format: date-time
-          description: Date/time when registration token  expires. Value only exposed to Provider
+          description: Date/time when registration token expires. Value only exposed to Provider
           readOnly: true
         serialConsoleHostname:
-          type: string
+          type:
+            - string
+            - 'null'
           format: hostname
         isSerialConsoleEnabled:
           type: boolean
@@ -12619,10 +12984,14 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Description for the Site
         serialConsoleHostname:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Hostname to reach Serial Console for the Site
           format: hostname
         location:
@@ -12631,6 +13000,36 @@ components:
           $ref: '#/components/schemas/SiteContact'
       required:
         - name
+    SiteCapabilitiesUpdateRequest:
+      title: SiteCapabilitiesUpdateRequest
+      type: object
+      description: Request to modify Site's capabilities. Partial update allowed, only specify capabilities that should be updated.
+      properties:
+        nativeNetworking:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable native networking for the Site
+        networkSecurityGroup:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable network security groups for the Site
+        nvLinkPartition:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable NVLink partition support for the Site
+        rackLevelAdministration:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable rack-level administration for the Site
+        imageBasedOperatingSystem:
+          type:
+            - boolean
+            - 'null'
+          description: Enable or disable image-based operating system support for the Site
     SiteUpdateRequest:
       title: SiteUpdateRequest
       type: object
@@ -12648,16 +13047,22 @@ components:
             email: johndoe@nvidia.com
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update name of the Site. Can only be updated by Provider
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update description for the Site. Can only be updated by Provider
         renewRegistrationToken:
           type: boolean
           description: Set to true to issue a new registration token. Can only be updated by Provider
         serialConsoleHostname:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Hostname to reach Serial Console for the Site. Can only be updated by Provider
           format: hostname
         isSerialConsoleEnabled:
@@ -12680,6 +13085,9 @@ components:
           $ref: '#/components/schemas/SiteLocation'
         contact:
           $ref: '#/components/schemas/SiteContact'
+        capabilities:
+          $ref: '#/components/schemas/SiteCapabilitiesUpdateRequest'
+          description: Modify Site capabilities. Can only be updated by Provider. Partial update allowed, only specify capabilities that should be updated.
     SiteLocation:
       title: SiteLocation
       type: object
@@ -12749,7 +13157,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Detailed description of the Allocation
         infrastructureProviderId:
           type: string
@@ -12815,7 +13225,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Detailed description for the Allocation
         tenantId:
           type: string
@@ -12842,12 +13254,16 @@ components:
           description: Echo Studios resource allocation in SJC4
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update name of the Allocation
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Update description of the Allocation
     AllocationConstraint:
       title: AllocationConstraint
@@ -12902,17 +13318,18 @@ components:
         resourceTypeId:
           type: string
           format: uuid
-          description: ID of the Resource Type that the Allocation Constraint applies to. For InstanceType, this is the ID of the Instance Type. For IPBlock, this is the ID of the IP Block.
+          description: 'ID of the Resource Type that acts as the source of the Allocation. For resource type: `InstanceType`, this is the ID of the Instance Type whose associated Machines are allocated to the Tenant. For resource type `IPBlock`, this is the ID of the Site level IP Block from where a prefix is allocated to the Tenant.'
         constraintType:
           type: string
-          description: Type of the Allocation Constraint. Please note that OnDemand and Preemptible are not supported by current implementation.
+          description: 'Type of the Allocation Constraint. `Reserved` is the only constraint type supported by current implementation.'
           enum:
             - Reserved
             - OnDemand
             - Preemptible
         constraintValue:
           type: integer
-          description: Value of the Allocation Constraint. For InstanceType, this value represents number of Machines allocated for Tenant. For IPBlock, this value represents the prefix Length of the IP Block.
+          description: |-
+            Value of the Allocation Constraint. For resource type: `InstanceType`, this value represents number of Machines associated with the Instance Type that is allocated to the Tenant. For resource type `IPBlock`, this value represents the prefix length of the IP Block allocated to the Tenant.
         derivedResourceId:
           type:
             - string
@@ -13032,7 +13449,9 @@ components:
           maxLength: 256
           description: Name of the VPC
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 'Description of the VPC, can be empty'
         org:
           type: string
@@ -13054,7 +13473,9 @@ components:
           format: uuid
           description: 'Legacy attribute, contains the same value as ID'
         networkVirtualizationType:
-          type: string
+          type:
+            - string
+            - 'null'
           enum:
             - ETHERNET_VIRTUALIZER
             - FNN
@@ -13168,7 +13589,9 @@ components:
           maxLength: 256
           description: Name of the VPC
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description for the VPC
         siteId:
           type: string
@@ -13222,12 +13645,16 @@ components:
           description: Virtual network for machines executing Spark jobs v1
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
           description: Updated name of the VPC
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Updated description of the VPC
         networkSecurityGroupId:
           type:
@@ -13502,7 +13929,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -13557,7 +13986,9 @@ components:
           example: 24
           description: Max value depends on prefix length of parent IP Block
         routingType:
-          type: string
+          type:
+            - string
+            - 'null'
           enum:
             - Public
             - DatacenterOnly
@@ -13606,15 +14037,21 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         vpcId:
           type: string
           format: uuid
         ipv4BlockId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         ipv6BlockId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         prefixLength:
           type: integer
@@ -13635,7 +14072,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
       required:
         - name
     InfiniBandPartition:
@@ -13673,7 +14112,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -13780,7 +14221,9 @@ components:
           maxLength: 256
           description: Name of the Partition to create
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the Partition
         siteId:
           type: string
@@ -13805,7 +14248,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         labels:
           $ref: '#/components/schemas/Labels'
           description: String key value pairs describing Partition labels. Up to 10 key value pairs can be specified
@@ -13841,7 +14286,9 @@ components:
           maxLength: 256
           description: Name of the NVLink Logical Partition
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the NVLink Logical Partition
         siteId:
           type: string
@@ -13896,7 +14343,9 @@ components:
           maxLength: 256
           description: Name of the NVLink Logical Partition to create
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the NVLink Logical Partition
         siteId:
           type: string
@@ -13914,12 +14363,16 @@ components:
       description: Request data to update an NVLink Logical Partition
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
           description: Updated name for the NVLink Logical Partition
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Updated description for the NVLink Logical Partition
     OperatingSystem:
       title: OperatingSystem
@@ -14083,7 +14536,9 @@ components:
           maxLength: 256
           description: Name of the Operating System
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the Operating System
         infrastructureProviderId:
           type:
@@ -14098,7 +14553,9 @@ components:
           format: uuid
           description: Specified if a Tenant owns the Operating System
         type:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Type of the Operating System
           enum:
             - iPXE
@@ -14229,7 +14686,9 @@ components:
         status:
           $ref: '#/components/schemas/SshKeyGroupStatus'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Key Group on Site
           example: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
         created:
@@ -14288,7 +14747,9 @@ components:
           maxLength: 256
           description: Name of the Operating System
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description of the Operating System
         infrastructureProviderId:
           type:
@@ -14526,9 +14987,13 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         controllerMachineType:
-          type: string
+          type:
+            - string
+            - 'null'
         infrastructureProviderId:
           type: string
           format: uuid
@@ -14660,14 +15125,18 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
         labels:
           $ref: '#/components/schemas/Labels'
         controllerMachineType:
-          type: string
+          type:
+            - string
+            - 'null'
         machineCapabilities:
           type: array
           items:
@@ -14683,11 +15152,15 @@ components:
       description: Request data to update an Instance Type
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         labels:
           $ref: '#/components/schemas/Labels'
         machineCapabilities:
@@ -14983,7 +15456,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Description for the Instance
         tenantId:
           type: string
@@ -14998,7 +15473,9 @@ components:
           format: uuid
           description: ID of the Site where the Instance is located
         instanceTypeId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         vpcId:
           type: string
@@ -15014,7 +15491,9 @@ components:
             - string
             - 'null'
         operatingSystemId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         networkSecurityGroupId:
           type:
@@ -15265,11 +15744,15 @@ components:
           format: uuid
           description: ID of the Tenant creating the Instance
         instanceTypeId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the Instance Type to use for Instance
         machineId:
-          type: string
+          type:
+            - string
+            - 'null'
           description: ID of of specific Machine to use for Instance. Requires Targeted Instance Creation capability enabled for Tenant
         vpcId:
           type: string
@@ -15691,7 +16174,9 @@ components:
             - Other
           description: Category of the issue
         summary:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Short summary describing the issue
         details:
           type:
@@ -15998,14 +16483,18 @@ components:
           format: uuid
           description: ID of the NVLink Logical Partition associated with this interface
         nvLinkDomainId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the NVLink Domain associated with this Interface
         deviceInstance:
           type: integer
           description: 'Index of the device, used to identify the GPU associated with this Interface'
         gpuGuid:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Unique ID of the GPU
         status:
           $ref: '#/components/schemas/NVLinkInterfaceStatus'
@@ -16536,7 +17025,9 @@ components:
         filter:
           $ref: '#/components/schemas/RackFilter'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Target firmware version.
     BringUpRackRequest:
       title: BringUpRackRequest
@@ -16647,7 +17138,9 @@ components:
         filter:
           $ref: '#/components/schemas/TrayFilter'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Target firmware version.
     UpdatePowerStateRequest:
       title: UpdatePowerStateRequest
@@ -16709,7 +17202,9 @@ components:
           format: uuid
           description: ID of the Site
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Target firmware version.
       examples:
         - siteId: 550e8400-e29b-41d4-a716-446655440000
@@ -16854,7 +17349,9 @@ components:
           type: string
           description: 'ID of the Machine at Site, now same as the primary ID'
         controllerMachineType:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Denotes architecture (x86 vs ARM) of the Machine
         hwSkuDeviceType:
           type:
@@ -16862,13 +17359,19 @@ components:
             - 'null'
           description: 'SKU derived device type of the machine, e.g. cpu, gpu, cache, storage, etc.'
         vendor:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Name of the vendor of the Machine
         productName:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Product name of the Machine
         serialNumber:
-          type: string
+          type:
+            - string
+            - 'null'
           description: 'Serial number of the Machine, only visible to Provider'
         machineCapabilities:
           type: array
@@ -17040,10 +17543,14 @@ components:
         machineId:
           type: string
         controllerInterfaceId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         controllerSegmentId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
         attachedDpuMachineID:
           type:
@@ -17055,12 +17562,16 @@ components:
             - 'null'
           format: uuid
         hostname:
-          type: string
+          type:
+            - string
+            - 'null'
           format: hostname
         isPrimary:
           type: boolean
         macAddress:
-          type: string
+          type:
+            - string
+            - 'null'
         ipAddresses:
           type: array
           description: Array of IP addresses
@@ -17145,14 +17656,22 @@ components:
           firmwareRevision: '6.00'
       properties:
         ip:
-          type: string
+          type:
+            - string
+            - 'null'
           format: ipv4
         mac:
-          type: string
+          type:
+            - string
+            - 'null'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
         firmwareRevision:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineDMIData:
       title: MachineDMIData
       type: object
@@ -17167,19 +17686,33 @@ components:
           chassisSerial: J1050ACR
       properties:
         boardName:
-          type: string
+          type:
+            - string
+            - 'null'
         boardSerial:
-          type: string
+          type:
+            - string
+            - 'null'
         boardVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         biosDate:
-          type: string
+          type:
+            - string
+            - 'null'
         biosVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         productSerial:
-          type: string
+          type:
+            - string
+            - 'null'
         chassisSerial:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineGPUInfo:
       title: MachineGPUInfo
       type: object
@@ -17195,21 +17728,37 @@ components:
           pciBusId: '00000000:17:00.0'
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
         serial:
-          type: string
+          type:
+            - string
+            - 'null'
         driverVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         vbiosVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         inforomVersion:
-          type: string
+          type:
+            - string
+            - 'null'
         totalMemory:
-          type: string
+          type:
+            - string
+            - 'null'
         frequency:
-          type: string
+          type:
+            - string
+            - 'null'
         pciBusId:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineHealth:
       title: MachineHealth
       type: object
@@ -17340,19 +17889,31 @@ components:
           slot: '0000:04:00.0'
       properties:
         macAddress:
-          type: string
+          type:
+            - string
+            - 'null'
         vendor:
-          type: string
+          type:
+            - string
+            - 'null'
         device:
-          type: string
+          type:
+            - string
+            - 'null'
         path:
-          type: string
+          type:
+            - string
+            - 'null'
         numaNode:
           type: integer
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         slot:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineInfiniBandInterface:
       title: MachineInfiniBandInterface
       description: Describes information about an Infiniband Interface of a Machine
@@ -17367,19 +17928,31 @@ components:
           slot: '0000:ca:00.0'
       properties:
         guid:
-          type: string
+          type:
+            - string
+            - 'null'
         vendor:
-          type: string
+          type:
+            - string
+            - 'null'
         device:
-          type: string
+          type:
+            - string
+            - 'null'
         path:
-          type: string
+          type:
+            - string
+            - 'null'
         numaNode:
           type: integer
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         slot:
-          type: string
+          type:
+            - string
+            - 'null'
     MachineInstanceType:
       title: MachineInstanceType
       type: object
@@ -17421,20 +17994,21 @@ components:
     MachineInstanceTypeCreateRequest:
       title: MachineInstanceTypeCreateRequest
       type: object
-      description: Associates one or more Machines with an Instance Type
+      description: |-
+        Associates one or more Machines with an Instance Type.
+
+        The Machine's capabilities must be a superset of the Instance Type's required capabilities for the association to succeed.
       examples:
         - machineIds:
-            - 497f6eca-6276-4993-bfeb-53cbbbba6f08
-            - 59c8d465-69f1-447f-80f8-1bc85627a03b
-            - 0a44ffc3-39ba-46c6-b483-be00a1e2cc27
+            - fm100ht4v4mce2qstjnl8970nnj3ie6ecek4mtjn27pea4kre5gsa49jg0g
+            - fm100htrh18t1lrjg2pqagkh3sfigr9m65dejvkq168ako07sc0uibpp5q0
+            - fm100ht68sf2m52idrpslcjkpdj5r3tb3j5o0bkfubhoglbq47u18nknfog
       properties:
         machineIds:
           type: array
-          format: uuid
           minItems: 1
           items:
             type: string
-            format: uuid
       required:
         - machineIds
     ExpectedMachine:
@@ -18128,6 +18702,227 @@ components:
         labels:
           $ref: '#/components/schemas/Labels'
           description: User-defined key-value pairs for organizing and categorizing Expected Power Shelves
+    ExpectedRack:
+      title: ExpectedRack
+      type: object
+      description: |-
+        An Expected Rack represents a rack that is expected to be discovered at a Site. The `rackId` is an operator-supplied string identifier (not a UUID) that uniquely identifies the rack within the Site. Each Expected Rack references a Rack Profile that describes the rack's expected layout and capabilities.
+
+        Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      examples:
+        - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
+          rackId: rack-01
+          siteId: f97df110-f4de-492e-8849-4a6af68026b0
+          rackProfileId: rp-standard-42u
+          name: Rack 01
+          description: Production rack in row A
+          labels:
+            chassis.manufacturer: NVIDIA
+            chassis.serial-number: NVRK0001001
+            chassis.model: GB200-NVL72
+            location.region: us-west-2
+            location.datacenter: phx-dc01
+            location.room: room-1
+            location.position: A1
+          created: '2019-08-24T14:15:22Z'
+          updated: '2019-08-24T14:15:22Z'
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier (UUID) for the Expected Rack
+          readOnly: true
+        rackId:
+          type: string
+          description: Operator-supplied identifier for the rack (string, not UUID). Unique within a Site.
+          readOnly: true
+        siteId:
+          type: string
+          format: uuid
+          description: ID of the Site the Expected Rack belongs to
+          readOnly: true
+        rackProfileId:
+          type: string
+          description: Identifier of the Rack Profile this rack conforms to
+        name:
+          type: string
+          description: Human-readable name of the Expected Rack
+        description:
+          type: string
+          description: Human-readable description of the Expected Rack
+        labels:
+          $ref: '#/components/schemas/Labels'
+          description: |-
+            User-defined key-value pairs for organizing and categorizing Expected Racks. Well-known keys (`chassis.*`, `location.*`) are used to convey chassis identity and physical location.
+        created:
+          type: string
+          format: date-time
+          description: ISO 8601 datetime when the Expected Rack was created
+          readOnly: true
+        updated:
+          type: string
+          format: date-time
+          description: ISO 8601 datetime when the Expected Rack was last updated
+          readOnly: true
+    ExpectedRackCreateRequest:
+      title: ExpectedRackCreateRequest
+      type: object
+      description: |-
+        Request data to create a new Expected Rack.
+
+        The `rackId` is an operator-supplied string identifier (not a UUID) that must be unique within the Site. Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      examples:
+        - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+          rackId: rack-01
+          rackProfileId: rp-standard-42u
+          name: Rack 01
+          description: Production rack in row A
+          labels:
+            chassis.manufacturer: NVIDIA
+            chassis.serial-number: NVRK0001001
+            chassis.model: GB200-NVL72
+            location.region: us-west-2
+            location.datacenter: phx-dc01
+            location.room: room-1
+            location.position: A1
+      properties:
+        siteId:
+          type: string
+          format: uuid
+          description: ID of the Site the Expected Rack belongs to
+        rackId:
+          type: string
+          minLength: 1
+          description: Operator-supplied identifier for the rack (string, not UUID). Must be non-empty and unique within the Site.
+        rackProfileId:
+          type: string
+          minLength: 1
+          description: Identifier of the Rack Profile this rack conforms to. Must be non-empty.
+        name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable name of the Expected Rack
+        description:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable description of the Expected Rack
+        labels:
+          $ref: '#/components/schemas/Labels'
+          description: |-
+            User-defined key-value pairs for organizing and categorizing Expected Racks. Well-known keys (`chassis.*`, `location.*`) are used to convey chassis identity and physical location.
+      required:
+        - siteId
+        - rackId
+        - rackProfileId
+    ExpectedRackList:
+      title: ExpectedRackList
+      type: object
+      description: |-
+        Replace-all request body for Expected Racks. The `expectedRacks` array contains the full desired set of Expected Racks for the Site identified by `siteId`. All entries must reference the same `siteId` as the top-level field, and `rackId` values must be unique within the request. The array may be empty to clear all Expected Racks for the Site.
+      examples:
+        - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+          expectedRacks:
+            - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+              rackId: rack-01
+              rackProfileId: rp-standard-42u
+              name: Rack 01
+              description: Production rack in row A
+              labels:
+                chassis.manufacturer: NVIDIA
+                chassis.serial-number: NVRK0001001
+                chassis.model: GB200-NVL72
+                location.datacenter: phx-dc01
+                location.position: A1
+            - siteId: f97df110-f4de-492e-8849-4a6af68026b0
+              rackId: rack-02
+              rackProfileId: rp-standard-42u
+              name: Rack 02
+              description: Production rack in row A
+              labels:
+                chassis.manufacturer: NVIDIA
+                chassis.serial-number: NVRK0001002
+                chassis.model: GB200-NVL72
+                location.datacenter: phx-dc01
+                location.position: A2
+      properties:
+        siteId:
+          type: string
+          format: uuid
+          description: ID of the Site whose Expected Racks should be replaced
+        expectedRacks:
+          type: array
+          description: |-
+            The full desired set of Expected Racks for the Site. Every entry must reference the same `siteId` as the top-level field, and `rackId` values must be unique within the request. May be empty to clear all Expected Racks for the Site.
+          items:
+            $ref: '#/components/schemas/ExpectedRackCreateRequest'
+      required:
+        - siteId
+        - expectedRacks
+    ExpectedRackUpdateRequest:
+      title: ExpectedRackUpdateRequest
+      type: object
+      description: |-
+        Request data to update an existing Expected Rack.
+
+        For single updates (PATCH /expected-rack/{id}), the `id` field is optional in the body and will be ignored if provided (the `id` from the URL path is used).
+
+        Chassis identity and physical location information are conveyed via well-known label keys in `labels`:
+        - `chassis.manufacturer`, `chassis.serial-number`, `chassis.model`
+        - `location.region`, `location.datacenter`, `location.room`, `location.position`
+      examples:
+        - rackProfileId: rp-standard-48u
+          name: Rack 01 (updated)
+          description: Production rack in row A, upgraded chassis
+          labels:
+            chassis.manufacturer: NVIDIA
+            chassis.serial-number: NVRK0001001
+            chassis.model: GB200-NVL72
+            location.datacenter: phx-dc01
+            location.position: A1
+      properties:
+        id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+          description: |-
+            Unique identifier (UUID) of the Expected Rack to update. Optional for single Expected Rack update (must be empty or match the id from the URL path).
+        rackId:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Optional new operator-supplied rack identifier. If provided, must be non-empty and unique within the Site.
+        rackProfileId:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Optional new Rack Profile identifier. If provided, must be non-empty.
+        name:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable name of the Expected Rack
+        description:
+          type:
+            - string
+            - 'null'
+          minLength: 1
+          description: Human-readable description of the Expected Rack
+        labels:
+          $ref: '#/components/schemas/Labels'
+          description: |-
+            User-defined key-value pairs for organizing and categorizing Expected Racks. Well-known keys (`chassis.*`, `location.*`) are used to convey chassis identity and physical location.
     ExpectedSwitch:
       title: ExpectedSwitch
       type: object
@@ -18741,7 +19536,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -18890,7 +19687,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -18926,11 +19725,15 @@ components:
           description: This is the primary IP overlay for SJC4. All IPs are publicly routable
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
     NetworkSecurityGroup:
       type: object
       examples:
@@ -18968,7 +19771,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -19030,7 +19835,9 @@ components:
           minLength: 2
           maxLength: 256
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteId:
           type: string
           format: uuid
@@ -19187,7 +19994,9 @@ components:
         status:
           type: string
         message:
-          type: string
+          type:
+            - string
+            - 'null'
         created:
           type: string
           format: date-time
@@ -19268,7 +20077,9 @@ components:
           format: uuid
           description: ID of the Tenane the SSH Key Group belongs to
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the SSH Key Group
           example: fbc692b61ffef6fbfc38a3833f6b7e7ae508da75
         sshKeys:
@@ -19336,7 +20147,9 @@ components:
         status:
           $ref: '#/components/schemas/SshKeyGroupSiteAssociationStatus'
         version:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Version of the Key Group on Site
           example: a94a8fe5ccb19ba61c4c0873d391e987982fbbd3
         created:
@@ -19372,7 +20185,9 @@ components:
         name:
           type: string
         description:
-          type: string
+          type:
+            - string
+            - 'null'
         siteIds:
           type: array
           items:
@@ -19496,7 +20311,9 @@ components:
         - name: sre-ssh-reno-integration
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
     DpuExtensionService:
       title: DpuExtensionService
       type: object
@@ -19739,13 +20556,19 @@ components:
                   path: /var/log/busybox.log
       properties:
         name:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Name for the DPU Extension Service. Must be unique for a given Tenant
         description:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Optional description for the DPU Extension Service
         data:
-          type: string
+          type:
+            - string
+            - 'null'
           description: Deployment spec for the DPU Extension Service
         credentials:
           $ref: '#/components/schemas/DpuExtensionServiceCredentials'
@@ -19923,12 +20746,18 @@ components:
           format: uuid
           readOnly: true
         email:
-          type: string
+          type:
+            - string
+            - 'null'
           format: email
         firstName:
-          type: string
+          type:
+            - string
+            - 'null'
         lastName:
-          type: string
+          type:
+            - string
+            - 'null'
         created:
           type: string
           format: date-time
@@ -20104,11 +20933,15 @@ components:
           type: boolean
           description: Indicates whether Service Account is enabled
         infrastructureProviderId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the Infrastructure Provider associated with Service Account
         tenantId:
-          type: string
+          type:
+            - string
+            - 'null'
           format: uuid
           description: ID of the Tenant associated with Service Account
       examples:

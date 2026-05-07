@@ -41,7 +41,7 @@ type FirmwareUpdateRequest struct {
 	// ID of the Site
 	SiteId string `json:"siteId"`
 	// Target firmware version.
-	Version *string `json:"version,omitempty"`
+	Version NullableString `json:"version,omitempty"`
 }
 
 type _FirmwareUpdateRequest FirmwareUpdateRequest
@@ -88,36 +88,47 @@ func (o *FirmwareUpdateRequest) SetSiteId(v string) {
 	o.SiteId = v
 }
 
-// GetVersion returns the Version field value if set, zero value otherwise.
+// GetVersion returns the Version field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *FirmwareUpdateRequest) GetVersion() string {
-	if o == nil || IsNil(o.Version) {
+	if o == nil || IsNil(o.Version.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Version
+	return *o.Version.Get()
 }
 
 // GetVersionOk returns a tuple with the Version field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *FirmwareUpdateRequest) GetVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.Version) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Version, true
+	return o.Version.Get(), o.Version.IsSet()
 }
 
 // HasVersion returns a boolean if a field has been set.
 func (o *FirmwareUpdateRequest) HasVersion() bool {
-	if o != nil && !IsNil(o.Version) {
+	if o != nil && o.Version.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVersion gets a reference to the given string and assigns it to the Version field.
+// SetVersion gets a reference to the given NullableString and assigns it to the Version field.
 func (o *FirmwareUpdateRequest) SetVersion(v string) {
-	o.Version = &v
+	o.Version.Set(&v)
+}
+
+// SetVersionNil sets the value for Version to be an explicit nil
+func (o *FirmwareUpdateRequest) SetVersionNil() {
+	o.Version.Set(nil)
+}
+
+// UnsetVersion ensures that no value is present for Version, not even an explicit nil
+func (o *FirmwareUpdateRequest) UnsetVersion() {
+	o.Version.Unset()
 }
 
 func (o FirmwareUpdateRequest) MarshalJSON() ([]byte, error) {
@@ -131,8 +142,8 @@ func (o FirmwareUpdateRequest) MarshalJSON() ([]byte, error) {
 func (o FirmwareUpdateRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["siteId"] = o.SiteId
-	if !IsNil(o.Version) {
-		toSerialize["version"] = o.Version
+	if o.Version.IsSet() {
+		toSerialize["version"] = o.Version.Get()
 	}
 	return toSerialize, nil
 }

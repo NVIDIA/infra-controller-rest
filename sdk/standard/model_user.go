@@ -38,10 +38,10 @@ var _ MappedNullable = &User{}
 // User Details of the user collected from authentication tokens
 type User struct {
 	// Unique identifier for the given user.
-	Id        *string `json:"id,omitempty"`
-	Email     *string `json:"email,omitempty"`
-	FirstName *string `json:"firstName,omitempty"`
-	LastName  *string `json:"lastName,omitempty"`
+	Id        *string        `json:"id,omitempty"`
+	Email     NullableString `json:"email,omitempty"`
+	FirstName NullableString `json:"firstName,omitempty"`
+	LastName  NullableString `json:"lastName,omitempty"`
 	// The date that the user was created.
 	Created *time.Time `json:"created,omitempty"`
 	Updated *time.Time `json:"updated,omitempty"`
@@ -96,100 +96,133 @@ func (o *User) SetId(v string) {
 	o.Id = &v
 }
 
-// GetEmail returns the Email field value if set, zero value otherwise.
+// GetEmail returns the Email field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *User) GetEmail() string {
-	if o == nil || IsNil(o.Email) {
+	if o == nil || IsNil(o.Email.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Email
+	return *o.Email.Get()
 }
 
 // GetEmailOk returns a tuple with the Email field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *User) GetEmailOk() (*string, bool) {
-	if o == nil || IsNil(o.Email) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Email, true
+	return o.Email.Get(), o.Email.IsSet()
 }
 
 // HasEmail returns a boolean if a field has been set.
 func (o *User) HasEmail() bool {
-	if o != nil && !IsNil(o.Email) {
+	if o != nil && o.Email.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetEmail gets a reference to the given string and assigns it to the Email field.
+// SetEmail gets a reference to the given NullableString and assigns it to the Email field.
 func (o *User) SetEmail(v string) {
-	o.Email = &v
+	o.Email.Set(&v)
 }
 
-// GetFirstName returns the FirstName field value if set, zero value otherwise.
+// SetEmailNil sets the value for Email to be an explicit nil
+func (o *User) SetEmailNil() {
+	o.Email.Set(nil)
+}
+
+// UnsetEmail ensures that no value is present for Email, not even an explicit nil
+func (o *User) UnsetEmail() {
+	o.Email.Unset()
+}
+
+// GetFirstName returns the FirstName field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *User) GetFirstName() string {
-	if o == nil || IsNil(o.FirstName) {
+	if o == nil || IsNil(o.FirstName.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.FirstName
+	return *o.FirstName.Get()
 }
 
 // GetFirstNameOk returns a tuple with the FirstName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *User) GetFirstNameOk() (*string, bool) {
-	if o == nil || IsNil(o.FirstName) {
+	if o == nil {
 		return nil, false
 	}
-	return o.FirstName, true
+	return o.FirstName.Get(), o.FirstName.IsSet()
 }
 
 // HasFirstName returns a boolean if a field has been set.
 func (o *User) HasFirstName() bool {
-	if o != nil && !IsNil(o.FirstName) {
+	if o != nil && o.FirstName.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetFirstName gets a reference to the given string and assigns it to the FirstName field.
+// SetFirstName gets a reference to the given NullableString and assigns it to the FirstName field.
 func (o *User) SetFirstName(v string) {
-	o.FirstName = &v
+	o.FirstName.Set(&v)
 }
 
-// GetLastName returns the LastName field value if set, zero value otherwise.
+// SetFirstNameNil sets the value for FirstName to be an explicit nil
+func (o *User) SetFirstNameNil() {
+	o.FirstName.Set(nil)
+}
+
+// UnsetFirstName ensures that no value is present for FirstName, not even an explicit nil
+func (o *User) UnsetFirstName() {
+	o.FirstName.Unset()
+}
+
+// GetLastName returns the LastName field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *User) GetLastName() string {
-	if o == nil || IsNil(o.LastName) {
+	if o == nil || IsNil(o.LastName.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.LastName
+	return *o.LastName.Get()
 }
 
 // GetLastNameOk returns a tuple with the LastName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *User) GetLastNameOk() (*string, bool) {
-	if o == nil || IsNil(o.LastName) {
+	if o == nil {
 		return nil, false
 	}
-	return o.LastName, true
+	return o.LastName.Get(), o.LastName.IsSet()
 }
 
 // HasLastName returns a boolean if a field has been set.
 func (o *User) HasLastName() bool {
-	if o != nil && !IsNil(o.LastName) {
+	if o != nil && o.LastName.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetLastName gets a reference to the given string and assigns it to the LastName field.
+// SetLastName gets a reference to the given NullableString and assigns it to the LastName field.
 func (o *User) SetLastName(v string) {
-	o.LastName = &v
+	o.LastName.Set(&v)
+}
+
+// SetLastNameNil sets the value for LastName to be an explicit nil
+func (o *User) SetLastNameNil() {
+	o.LastName.Set(nil)
+}
+
+// UnsetLastName ensures that no value is present for LastName, not even an explicit nil
+func (o *User) UnsetLastName() {
+	o.LastName.Unset()
 }
 
 // GetCreated returns the Created field value if set, zero value otherwise.
@@ -269,14 +302,14 @@ func (o User) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Id) {
 		toSerialize["id"] = o.Id
 	}
-	if !IsNil(o.Email) {
-		toSerialize["email"] = o.Email
+	if o.Email.IsSet() {
+		toSerialize["email"] = o.Email.Get()
 	}
-	if !IsNil(o.FirstName) {
-		toSerialize["firstName"] = o.FirstName
+	if o.FirstName.IsSet() {
+		toSerialize["firstName"] = o.FirstName.Get()
 	}
-	if !IsNil(o.LastName) {
-		toSerialize["lastName"] = o.LastName
+	if o.LastName.IsSet() {
+		toSerialize["lastName"] = o.LastName.Get()
 	}
 	if !IsNil(o.Created) {
 		toSerialize["created"] = o.Created

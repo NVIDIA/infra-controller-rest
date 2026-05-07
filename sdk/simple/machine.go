@@ -79,9 +79,9 @@ func NewMachineManager(client *Client) MachineManager {
 
 func machineFromStandard(api standard.Machine) Machine {
 	m := Machine{
-		Vendor:       api.Vendor,
-		ProductName:  api.ProductName,
-		SerialNumber: api.SerialNumber,
+		Vendor:       api.Vendor.Get(),
+		ProductName:  api.ProductName.Get(),
+		SerialNumber: api.SerialNumber.Get(),
 		Labels:       api.Labels,
 	}
 	if api.Id != nil {
@@ -149,18 +149,18 @@ func machineFromStandard(api standard.Machine) Machine {
 		mai := MachineAdminInterface{
 			ID:          mi.Id,
 			IsPrimary:   mi.IsPrimary,
-			MacAddress:  mi.MacAddress,
+			MacAddress:  mi.MacAddress.Get(),
 			IpAddresses: mi.IpAddresses,
 			Created:     mi.Created,
 			Updated:     mi.Updated,
 		}
 		m.AdminInterfaces = append(m.AdminInterfaces, mai)
-		if m.Hostname == nil && mi.Hostname != nil && (mi.IsPrimary != nil && *mi.IsPrimary) {
-			m.Hostname = mi.Hostname
+		if m.Hostname == nil && mi.Hostname.IsSet() && (mi.IsPrimary != nil && *mi.IsPrimary) {
+			m.Hostname = mi.Hostname.Get()
 		}
 	}
-	if m.Hostname == nil && len(api.MachineInterfaces) > 0 && api.MachineInterfaces[0].Hostname != nil {
-		m.Hostname = api.MachineInterfaces[0].Hostname
+	if m.Hostname == nil && len(api.MachineInterfaces) > 0 && api.MachineInterfaces[0].Hostname.IsSet() {
+		m.Hostname = api.MachineInterfaces[0].Hostname.Get()
 	}
 	return m
 }

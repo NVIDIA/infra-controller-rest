@@ -39,13 +39,13 @@ var _ MappedNullable = &MachineInterface{}
 type MachineInterface struct {
 	Id                    *string        `json:"id,omitempty"`
 	MachineId             *string        `json:"machineId,omitempty"`
-	ControllerInterfaceId *string        `json:"controllerInterfaceId,omitempty"`
-	ControllerSegmentId   *string        `json:"controllerSegmentId,omitempty"`
+	ControllerInterfaceId NullableString `json:"controllerInterfaceId,omitempty"`
+	ControllerSegmentId   NullableString `json:"controllerSegmentId,omitempty"`
 	AttachedDpuMachineID  NullableString `json:"attachedDpuMachineID,omitempty"`
 	SubnetId              NullableString `json:"subnetId,omitempty"`
-	Hostname              *string        `json:"hostname,omitempty"`
+	Hostname              NullableString `json:"hostname,omitempty"`
 	IsPrimary             *bool          `json:"isPrimary,omitempty"`
-	MacAddress            *string        `json:"macAddress,omitempty"`
+	MacAddress            NullableString `json:"macAddress,omitempty"`
 	// Array of IP addresses
 	IpAddresses []string   `json:"ipAddresses,omitempty"`
 	Created     *time.Time `json:"created,omitempty"`
@@ -133,68 +133,90 @@ func (o *MachineInterface) SetMachineId(v string) {
 	o.MachineId = &v
 }
 
-// GetControllerInterfaceId returns the ControllerInterfaceId field value if set, zero value otherwise.
+// GetControllerInterfaceId returns the ControllerInterfaceId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineInterface) GetControllerInterfaceId() string {
-	if o == nil || IsNil(o.ControllerInterfaceId) {
+	if o == nil || IsNil(o.ControllerInterfaceId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.ControllerInterfaceId
+	return *o.ControllerInterfaceId.Get()
 }
 
 // GetControllerInterfaceIdOk returns a tuple with the ControllerInterfaceId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineInterface) GetControllerInterfaceIdOk() (*string, bool) {
-	if o == nil || IsNil(o.ControllerInterfaceId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ControllerInterfaceId, true
+	return o.ControllerInterfaceId.Get(), o.ControllerInterfaceId.IsSet()
 }
 
 // HasControllerInterfaceId returns a boolean if a field has been set.
 func (o *MachineInterface) HasControllerInterfaceId() bool {
-	if o != nil && !IsNil(o.ControllerInterfaceId) {
+	if o != nil && o.ControllerInterfaceId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetControllerInterfaceId gets a reference to the given string and assigns it to the ControllerInterfaceId field.
+// SetControllerInterfaceId gets a reference to the given NullableString and assigns it to the ControllerInterfaceId field.
 func (o *MachineInterface) SetControllerInterfaceId(v string) {
-	o.ControllerInterfaceId = &v
+	o.ControllerInterfaceId.Set(&v)
 }
 
-// GetControllerSegmentId returns the ControllerSegmentId field value if set, zero value otherwise.
+// SetControllerInterfaceIdNil sets the value for ControllerInterfaceId to be an explicit nil
+func (o *MachineInterface) SetControllerInterfaceIdNil() {
+	o.ControllerInterfaceId.Set(nil)
+}
+
+// UnsetControllerInterfaceId ensures that no value is present for ControllerInterfaceId, not even an explicit nil
+func (o *MachineInterface) UnsetControllerInterfaceId() {
+	o.ControllerInterfaceId.Unset()
+}
+
+// GetControllerSegmentId returns the ControllerSegmentId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineInterface) GetControllerSegmentId() string {
-	if o == nil || IsNil(o.ControllerSegmentId) {
+	if o == nil || IsNil(o.ControllerSegmentId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.ControllerSegmentId
+	return *o.ControllerSegmentId.Get()
 }
 
 // GetControllerSegmentIdOk returns a tuple with the ControllerSegmentId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineInterface) GetControllerSegmentIdOk() (*string, bool) {
-	if o == nil || IsNil(o.ControllerSegmentId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ControllerSegmentId, true
+	return o.ControllerSegmentId.Get(), o.ControllerSegmentId.IsSet()
 }
 
 // HasControllerSegmentId returns a boolean if a field has been set.
 func (o *MachineInterface) HasControllerSegmentId() bool {
-	if o != nil && !IsNil(o.ControllerSegmentId) {
+	if o != nil && o.ControllerSegmentId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetControllerSegmentId gets a reference to the given string and assigns it to the ControllerSegmentId field.
+// SetControllerSegmentId gets a reference to the given NullableString and assigns it to the ControllerSegmentId field.
 func (o *MachineInterface) SetControllerSegmentId(v string) {
-	o.ControllerSegmentId = &v
+	o.ControllerSegmentId.Set(&v)
+}
+
+// SetControllerSegmentIdNil sets the value for ControllerSegmentId to be an explicit nil
+func (o *MachineInterface) SetControllerSegmentIdNil() {
+	o.ControllerSegmentId.Set(nil)
+}
+
+// UnsetControllerSegmentId ensures that no value is present for ControllerSegmentId, not even an explicit nil
+func (o *MachineInterface) UnsetControllerSegmentId() {
+	o.ControllerSegmentId.Unset()
 }
 
 // GetAttachedDpuMachineID returns the AttachedDpuMachineID field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -283,36 +305,47 @@ func (o *MachineInterface) UnsetSubnetId() {
 	o.SubnetId.Unset()
 }
 
-// GetHostname returns the Hostname field value if set, zero value otherwise.
+// GetHostname returns the Hostname field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineInterface) GetHostname() string {
-	if o == nil || IsNil(o.Hostname) {
+	if o == nil || IsNil(o.Hostname.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Hostname
+	return *o.Hostname.Get()
 }
 
 // GetHostnameOk returns a tuple with the Hostname field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineInterface) GetHostnameOk() (*string, bool) {
-	if o == nil || IsNil(o.Hostname) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Hostname, true
+	return o.Hostname.Get(), o.Hostname.IsSet()
 }
 
 // HasHostname returns a boolean if a field has been set.
 func (o *MachineInterface) HasHostname() bool {
-	if o != nil && !IsNil(o.Hostname) {
+	if o != nil && o.Hostname.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetHostname gets a reference to the given string and assigns it to the Hostname field.
+// SetHostname gets a reference to the given NullableString and assigns it to the Hostname field.
 func (o *MachineInterface) SetHostname(v string) {
-	o.Hostname = &v
+	o.Hostname.Set(&v)
+}
+
+// SetHostnameNil sets the value for Hostname to be an explicit nil
+func (o *MachineInterface) SetHostnameNil() {
+	o.Hostname.Set(nil)
+}
+
+// UnsetHostname ensures that no value is present for Hostname, not even an explicit nil
+func (o *MachineInterface) UnsetHostname() {
+	o.Hostname.Unset()
 }
 
 // GetIsPrimary returns the IsPrimary field value if set, zero value otherwise.
@@ -347,36 +380,47 @@ func (o *MachineInterface) SetIsPrimary(v bool) {
 	o.IsPrimary = &v
 }
 
-// GetMacAddress returns the MacAddress field value if set, zero value otherwise.
+// GetMacAddress returns the MacAddress field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineInterface) GetMacAddress() string {
-	if o == nil || IsNil(o.MacAddress) {
+	if o == nil || IsNil(o.MacAddress.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.MacAddress
+	return *o.MacAddress.Get()
 }
 
 // GetMacAddressOk returns a tuple with the MacAddress field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineInterface) GetMacAddressOk() (*string, bool) {
-	if o == nil || IsNil(o.MacAddress) {
+	if o == nil {
 		return nil, false
 	}
-	return o.MacAddress, true
+	return o.MacAddress.Get(), o.MacAddress.IsSet()
 }
 
 // HasMacAddress returns a boolean if a field has been set.
 func (o *MachineInterface) HasMacAddress() bool {
-	if o != nil && !IsNil(o.MacAddress) {
+	if o != nil && o.MacAddress.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetMacAddress gets a reference to the given string and assigns it to the MacAddress field.
+// SetMacAddress gets a reference to the given NullableString and assigns it to the MacAddress field.
 func (o *MachineInterface) SetMacAddress(v string) {
-	o.MacAddress = &v
+	o.MacAddress.Set(&v)
+}
+
+// SetMacAddressNil sets the value for MacAddress to be an explicit nil
+func (o *MachineInterface) SetMacAddressNil() {
+	o.MacAddress.Set(nil)
+}
+
+// UnsetMacAddress ensures that no value is present for MacAddress, not even an explicit nil
+func (o *MachineInterface) UnsetMacAddress() {
+	o.MacAddress.Unset()
 }
 
 // GetIpAddresses returns the IpAddresses field value if set, zero value otherwise.
@@ -491,11 +535,11 @@ func (o MachineInterface) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.MachineId) {
 		toSerialize["machineId"] = o.MachineId
 	}
-	if !IsNil(o.ControllerInterfaceId) {
-		toSerialize["controllerInterfaceId"] = o.ControllerInterfaceId
+	if o.ControllerInterfaceId.IsSet() {
+		toSerialize["controllerInterfaceId"] = o.ControllerInterfaceId.Get()
 	}
-	if !IsNil(o.ControllerSegmentId) {
-		toSerialize["controllerSegmentId"] = o.ControllerSegmentId
+	if o.ControllerSegmentId.IsSet() {
+		toSerialize["controllerSegmentId"] = o.ControllerSegmentId.Get()
 	}
 	if o.AttachedDpuMachineID.IsSet() {
 		toSerialize["attachedDpuMachineID"] = o.AttachedDpuMachineID.Get()
@@ -503,14 +547,14 @@ func (o MachineInterface) ToMap() (map[string]interface{}, error) {
 	if o.SubnetId.IsSet() {
 		toSerialize["subnetId"] = o.SubnetId.Get()
 	}
-	if !IsNil(o.Hostname) {
-		toSerialize["hostname"] = o.Hostname
+	if o.Hostname.IsSet() {
+		toSerialize["hostname"] = o.Hostname.Get()
 	}
 	if !IsNil(o.IsPrimary) {
 		toSerialize["isPrimary"] = o.IsPrimary
 	}
-	if !IsNil(o.MacAddress) {
-		toSerialize["macAddress"] = o.MacAddress
+	if o.MacAddress.IsSet() {
+		toSerialize["macAddress"] = o.MacAddress.Get()
 	}
 	if !IsNil(o.IpAddresses) {
 		toSerialize["ipAddresses"] = o.IpAddresses

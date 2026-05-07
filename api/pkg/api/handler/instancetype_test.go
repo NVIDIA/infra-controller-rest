@@ -1558,7 +1558,7 @@ func TestGetInstanceTypeHandler_Handle(t *testing.T) {
 	}
 
 	// build vpc
-	vpc1 := common.TestBuildVPC(t, dbSession, "Test-Controller-VPC", ip, tn1, st, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc1 := common.TestBuildVPC(t, dbSession, "Test-Controller-VPC", ip, tn1, st, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
 	assert.NotNil(t, vpc1)
 
 	// build os

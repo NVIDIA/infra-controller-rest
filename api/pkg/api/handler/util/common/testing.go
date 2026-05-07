@@ -435,8 +435,12 @@ func TestBuildMachineCapability(t *testing.T, dbSession *cdb.Session, mID *strin
 }
 
 // TestBuildVPC creates a test VPC
-func TestBuildVPC(t *testing.T, dbSession *cdb.Session, name string, ip *cdbm.InfrastructureProvider, tn *cdbm.Tenant, st *cdbm.Site, cnvID *uuid.UUID, labels map[string]string, status string, user *cdbm.User) *cdbm.Vpc {
+func TestBuildVPC(t *testing.T, dbSession *cdb.Session, name string, ip *cdbm.InfrastructureProvider, tn *cdbm.Tenant, st *cdbm.Site, cnvID *uuid.UUID, networkVirtualizationType *string, labels map[string]string, status string, user *cdbm.User) *cdbm.Vpc {
 	vDAO := cdbm.NewVpcDAO(dbSession)
+
+	if networkVirtualizationType == nil {
+		networkVirtualizationType = cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer)
+	}
 
 	input := cdbm.VpcCreateInput{
 		Name:                      name,
@@ -445,7 +449,7 @@ func TestBuildVPC(t *testing.T, dbSession *cdb.Session, name string, ip *cdbm.In
 		InfrastructureProviderID:  ip.ID,
 		TenantID:                  tn.ID,
 		SiteID:                    st.ID,
-		NetworkVirtualizationType: cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer),
+		NetworkVirtualizationType: networkVirtualizationType,
 		ControllerVpcID:           cnvID,
 		Labels:                    labels,
 		Status:                    status,

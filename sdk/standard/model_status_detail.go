@@ -37,10 +37,10 @@ var _ MappedNullable = &StatusDetail{}
 
 // StatusDetail Describes the details of a status transition for a resource
 type StatusDetail struct {
-	Status  *string    `json:"status,omitempty"`
-	Message *string    `json:"message,omitempty"`
-	Created *time.Time `json:"created,omitempty"`
-	Updated *time.Time `json:"updated,omitempty"`
+	Status  *string        `json:"status,omitempty"`
+	Message NullableString `json:"message,omitempty"`
+	Created *time.Time     `json:"created,omitempty"`
+	Updated *time.Time     `json:"updated,omitempty"`
 }
 
 // NewStatusDetail instantiates a new StatusDetail object
@@ -92,36 +92,47 @@ func (o *StatusDetail) SetStatus(v string) {
 	o.Status = &v
 }
 
-// GetMessage returns the Message field value if set, zero value otherwise.
+// GetMessage returns the Message field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *StatusDetail) GetMessage() string {
-	if o == nil || IsNil(o.Message) {
+	if o == nil || IsNil(o.Message.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Message
+	return *o.Message.Get()
 }
 
 // GetMessageOk returns a tuple with the Message field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *StatusDetail) GetMessageOk() (*string, bool) {
-	if o == nil || IsNil(o.Message) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Message, true
+	return o.Message.Get(), o.Message.IsSet()
 }
 
 // HasMessage returns a boolean if a field has been set.
 func (o *StatusDetail) HasMessage() bool {
-	if o != nil && !IsNil(o.Message) {
+	if o != nil && o.Message.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetMessage gets a reference to the given string and assigns it to the Message field.
+// SetMessage gets a reference to the given NullableString and assigns it to the Message field.
 func (o *StatusDetail) SetMessage(v string) {
-	o.Message = &v
+	o.Message.Set(&v)
+}
+
+// SetMessageNil sets the value for Message to be an explicit nil
+func (o *StatusDetail) SetMessageNil() {
+	o.Message.Set(nil)
+}
+
+// UnsetMessage ensures that no value is present for Message, not even an explicit nil
+func (o *StatusDetail) UnsetMessage() {
+	o.Message.Unset()
 }
 
 // GetCreated returns the Created field value if set, zero value otherwise.
@@ -201,8 +212,8 @@ func (o StatusDetail) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Status) {
 		toSerialize["status"] = o.Status
 	}
-	if !IsNil(o.Message) {
-		toSerialize["message"] = o.Message
+	if o.Message.IsSet() {
+		toSerialize["message"] = o.Message.Get()
 	}
 	if !IsNil(o.Created) {
 		toSerialize["created"] = o.Created

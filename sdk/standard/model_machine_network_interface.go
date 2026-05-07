@@ -36,13 +36,13 @@ var _ MappedNullable = &MachineNetworkInterface{}
 
 // MachineNetworkInterface Describes information about an Ethernet Interface of a Machine
 type MachineNetworkInterface struct {
-	MacAddress  *string `json:"macAddress,omitempty"`
-	Vendor      *string `json:"vendor,omitempty"`
-	Device      *string `json:"device,omitempty"`
-	Path        *string `json:"path,omitempty"`
-	NumaNode    *int32  `json:"numaNode,omitempty"`
-	Description *string `json:"description,omitempty"`
-	Slot        *string `json:"slot,omitempty"`
+	MacAddress  NullableString `json:"macAddress,omitempty"`
+	Vendor      NullableString `json:"vendor,omitempty"`
+	Device      NullableString `json:"device,omitempty"`
+	Path        NullableString `json:"path,omitempty"`
+	NumaNode    *int32         `json:"numaNode,omitempty"`
+	Description NullableString `json:"description,omitempty"`
+	Slot        NullableString `json:"slot,omitempty"`
 }
 
 // NewMachineNetworkInterface instantiates a new MachineNetworkInterface object
@@ -62,132 +62,176 @@ func NewMachineNetworkInterfaceWithDefaults() *MachineNetworkInterface {
 	return &this
 }
 
-// GetMacAddress returns the MacAddress field value if set, zero value otherwise.
+// GetMacAddress returns the MacAddress field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineNetworkInterface) GetMacAddress() string {
-	if o == nil || IsNil(o.MacAddress) {
+	if o == nil || IsNil(o.MacAddress.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.MacAddress
+	return *o.MacAddress.Get()
 }
 
 // GetMacAddressOk returns a tuple with the MacAddress field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineNetworkInterface) GetMacAddressOk() (*string, bool) {
-	if o == nil || IsNil(o.MacAddress) {
+	if o == nil {
 		return nil, false
 	}
-	return o.MacAddress, true
+	return o.MacAddress.Get(), o.MacAddress.IsSet()
 }
 
 // HasMacAddress returns a boolean if a field has been set.
 func (o *MachineNetworkInterface) HasMacAddress() bool {
-	if o != nil && !IsNil(o.MacAddress) {
+	if o != nil && o.MacAddress.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetMacAddress gets a reference to the given string and assigns it to the MacAddress field.
+// SetMacAddress gets a reference to the given NullableString and assigns it to the MacAddress field.
 func (o *MachineNetworkInterface) SetMacAddress(v string) {
-	o.MacAddress = &v
+	o.MacAddress.Set(&v)
 }
 
-// GetVendor returns the Vendor field value if set, zero value otherwise.
+// SetMacAddressNil sets the value for MacAddress to be an explicit nil
+func (o *MachineNetworkInterface) SetMacAddressNil() {
+	o.MacAddress.Set(nil)
+}
+
+// UnsetMacAddress ensures that no value is present for MacAddress, not even an explicit nil
+func (o *MachineNetworkInterface) UnsetMacAddress() {
+	o.MacAddress.Unset()
+}
+
+// GetVendor returns the Vendor field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineNetworkInterface) GetVendor() string {
-	if o == nil || IsNil(o.Vendor) {
+	if o == nil || IsNil(o.Vendor.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Vendor
+	return *o.Vendor.Get()
 }
 
 // GetVendorOk returns a tuple with the Vendor field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineNetworkInterface) GetVendorOk() (*string, bool) {
-	if o == nil || IsNil(o.Vendor) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Vendor, true
+	return o.Vendor.Get(), o.Vendor.IsSet()
 }
 
 // HasVendor returns a boolean if a field has been set.
 func (o *MachineNetworkInterface) HasVendor() bool {
-	if o != nil && !IsNil(o.Vendor) {
+	if o != nil && o.Vendor.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVendor gets a reference to the given string and assigns it to the Vendor field.
+// SetVendor gets a reference to the given NullableString and assigns it to the Vendor field.
 func (o *MachineNetworkInterface) SetVendor(v string) {
-	o.Vendor = &v
+	o.Vendor.Set(&v)
 }
 
-// GetDevice returns the Device field value if set, zero value otherwise.
+// SetVendorNil sets the value for Vendor to be an explicit nil
+func (o *MachineNetworkInterface) SetVendorNil() {
+	o.Vendor.Set(nil)
+}
+
+// UnsetVendor ensures that no value is present for Vendor, not even an explicit nil
+func (o *MachineNetworkInterface) UnsetVendor() {
+	o.Vendor.Unset()
+}
+
+// GetDevice returns the Device field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineNetworkInterface) GetDevice() string {
-	if o == nil || IsNil(o.Device) {
+	if o == nil || IsNil(o.Device.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Device
+	return *o.Device.Get()
 }
 
 // GetDeviceOk returns a tuple with the Device field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineNetworkInterface) GetDeviceOk() (*string, bool) {
-	if o == nil || IsNil(o.Device) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Device, true
+	return o.Device.Get(), o.Device.IsSet()
 }
 
 // HasDevice returns a boolean if a field has been set.
 func (o *MachineNetworkInterface) HasDevice() bool {
-	if o != nil && !IsNil(o.Device) {
+	if o != nil && o.Device.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDevice gets a reference to the given string and assigns it to the Device field.
+// SetDevice gets a reference to the given NullableString and assigns it to the Device field.
 func (o *MachineNetworkInterface) SetDevice(v string) {
-	o.Device = &v
+	o.Device.Set(&v)
 }
 
-// GetPath returns the Path field value if set, zero value otherwise.
+// SetDeviceNil sets the value for Device to be an explicit nil
+func (o *MachineNetworkInterface) SetDeviceNil() {
+	o.Device.Set(nil)
+}
+
+// UnsetDevice ensures that no value is present for Device, not even an explicit nil
+func (o *MachineNetworkInterface) UnsetDevice() {
+	o.Device.Unset()
+}
+
+// GetPath returns the Path field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineNetworkInterface) GetPath() string {
-	if o == nil || IsNil(o.Path) {
+	if o == nil || IsNil(o.Path.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Path
+	return *o.Path.Get()
 }
 
 // GetPathOk returns a tuple with the Path field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineNetworkInterface) GetPathOk() (*string, bool) {
-	if o == nil || IsNil(o.Path) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Path, true
+	return o.Path.Get(), o.Path.IsSet()
 }
 
 // HasPath returns a boolean if a field has been set.
 func (o *MachineNetworkInterface) HasPath() bool {
-	if o != nil && !IsNil(o.Path) {
+	if o != nil && o.Path.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetPath gets a reference to the given string and assigns it to the Path field.
+// SetPath gets a reference to the given NullableString and assigns it to the Path field.
 func (o *MachineNetworkInterface) SetPath(v string) {
-	o.Path = &v
+	o.Path.Set(&v)
+}
+
+// SetPathNil sets the value for Path to be an explicit nil
+func (o *MachineNetworkInterface) SetPathNil() {
+	o.Path.Set(nil)
+}
+
+// UnsetPath ensures that no value is present for Path, not even an explicit nil
+func (o *MachineNetworkInterface) UnsetPath() {
+	o.Path.Unset()
 }
 
 // GetNumaNode returns the NumaNode field value if set, zero value otherwise.
@@ -222,68 +266,90 @@ func (o *MachineNetworkInterface) SetNumaNode(v int32) {
 	o.NumaNode = &v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineNetworkInterface) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || IsNil(o.Description.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.Description.Get()
 }
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineNetworkInterface) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Description, true
+	return o.Description.Get(), o.Description.IsSet()
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *MachineNetworkInterface) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && o.Description.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription gets a reference to the given NullableString and assigns it to the Description field.
 func (o *MachineNetworkInterface) SetDescription(v string) {
-	o.Description = &v
+	o.Description.Set(&v)
 }
 
-// GetSlot returns the Slot field value if set, zero value otherwise.
+// SetDescriptionNil sets the value for Description to be an explicit nil
+func (o *MachineNetworkInterface) SetDescriptionNil() {
+	o.Description.Set(nil)
+}
+
+// UnsetDescription ensures that no value is present for Description, not even an explicit nil
+func (o *MachineNetworkInterface) UnsetDescription() {
+	o.Description.Unset()
+}
+
+// GetSlot returns the Slot field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineNetworkInterface) GetSlot() string {
-	if o == nil || IsNil(o.Slot) {
+	if o == nil || IsNil(o.Slot.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Slot
+	return *o.Slot.Get()
 }
 
 // GetSlotOk returns a tuple with the Slot field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineNetworkInterface) GetSlotOk() (*string, bool) {
-	if o == nil || IsNil(o.Slot) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Slot, true
+	return o.Slot.Get(), o.Slot.IsSet()
 }
 
 // HasSlot returns a boolean if a field has been set.
 func (o *MachineNetworkInterface) HasSlot() bool {
-	if o != nil && !IsNil(o.Slot) {
+	if o != nil && o.Slot.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSlot gets a reference to the given string and assigns it to the Slot field.
+// SetSlot gets a reference to the given NullableString and assigns it to the Slot field.
 func (o *MachineNetworkInterface) SetSlot(v string) {
-	o.Slot = &v
+	o.Slot.Set(&v)
+}
+
+// SetSlotNil sets the value for Slot to be an explicit nil
+func (o *MachineNetworkInterface) SetSlotNil() {
+	o.Slot.Set(nil)
+}
+
+// UnsetSlot ensures that no value is present for Slot, not even an explicit nil
+func (o *MachineNetworkInterface) UnsetSlot() {
+	o.Slot.Unset()
 }
 
 func (o MachineNetworkInterface) MarshalJSON() ([]byte, error) {
@@ -296,26 +362,26 @@ func (o MachineNetworkInterface) MarshalJSON() ([]byte, error) {
 
 func (o MachineNetworkInterface) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.MacAddress) {
-		toSerialize["macAddress"] = o.MacAddress
+	if o.MacAddress.IsSet() {
+		toSerialize["macAddress"] = o.MacAddress.Get()
 	}
-	if !IsNil(o.Vendor) {
-		toSerialize["vendor"] = o.Vendor
+	if o.Vendor.IsSet() {
+		toSerialize["vendor"] = o.Vendor.Get()
 	}
-	if !IsNil(o.Device) {
-		toSerialize["device"] = o.Device
+	if o.Device.IsSet() {
+		toSerialize["device"] = o.Device.Get()
 	}
-	if !IsNil(o.Path) {
-		toSerialize["path"] = o.Path
+	if o.Path.IsSet() {
+		toSerialize["path"] = o.Path.Get()
 	}
 	if !IsNil(o.NumaNode) {
 		toSerialize["numaNode"] = o.NumaNode
 	}
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if o.Description.IsSet() {
+		toSerialize["description"] = o.Description.Get()
 	}
-	if !IsNil(o.Slot) {
-		toSerialize["slot"] = o.Slot
+	if o.Slot.IsSet() {
+		toSerialize["slot"] = o.Slot.Get()
 	}
 	return toSerialize, nil
 }

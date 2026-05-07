@@ -42,11 +42,11 @@ type NVLinkInterface struct {
 	// ID of the NVLink Logical Partition associated with this interface
 	NvLinkLogicalPartitionId *string `json:"nvLinkLogicalPartitionId,omitempty"`
 	// ID of the NVLink Domain associated with this Interface
-	NvLinkDomainId *string `json:"nvLinkDomainId,omitempty"`
+	NvLinkDomainId NullableString `json:"nvLinkDomainId,omitempty"`
 	// Index of the device, used to identify the GPU associated with this Interface
 	DeviceInstance *int32 `json:"deviceInstance,omitempty"`
 	// Unique ID of the GPU
-	GpuGuid *string                `json:"gpuGuid,omitempty"`
+	GpuGuid NullableString         `json:"gpuGuid,omitempty"`
 	Status  *NVLinkInterfaceStatus `json:"status,omitempty"`
 	Created *time.Time             `json:"created,omitempty"`
 	Updated *time.Time             `json:"updated,omitempty"`
@@ -165,36 +165,47 @@ func (o *NVLinkInterface) SetNvLinkLogicalPartitionId(v string) {
 	o.NvLinkLogicalPartitionId = &v
 }
 
-// GetNvLinkDomainId returns the NvLinkDomainId field value if set, zero value otherwise.
+// GetNvLinkDomainId returns the NvLinkDomainId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *NVLinkInterface) GetNvLinkDomainId() string {
-	if o == nil || IsNil(o.NvLinkDomainId) {
+	if o == nil || IsNil(o.NvLinkDomainId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.NvLinkDomainId
+	return *o.NvLinkDomainId.Get()
 }
 
 // GetNvLinkDomainIdOk returns a tuple with the NvLinkDomainId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *NVLinkInterface) GetNvLinkDomainIdOk() (*string, bool) {
-	if o == nil || IsNil(o.NvLinkDomainId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.NvLinkDomainId, true
+	return o.NvLinkDomainId.Get(), o.NvLinkDomainId.IsSet()
 }
 
 // HasNvLinkDomainId returns a boolean if a field has been set.
 func (o *NVLinkInterface) HasNvLinkDomainId() bool {
-	if o != nil && !IsNil(o.NvLinkDomainId) {
+	if o != nil && o.NvLinkDomainId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetNvLinkDomainId gets a reference to the given string and assigns it to the NvLinkDomainId field.
+// SetNvLinkDomainId gets a reference to the given NullableString and assigns it to the NvLinkDomainId field.
 func (o *NVLinkInterface) SetNvLinkDomainId(v string) {
-	o.NvLinkDomainId = &v
+	o.NvLinkDomainId.Set(&v)
+}
+
+// SetNvLinkDomainIdNil sets the value for NvLinkDomainId to be an explicit nil
+func (o *NVLinkInterface) SetNvLinkDomainIdNil() {
+	o.NvLinkDomainId.Set(nil)
+}
+
+// UnsetNvLinkDomainId ensures that no value is present for NvLinkDomainId, not even an explicit nil
+func (o *NVLinkInterface) UnsetNvLinkDomainId() {
+	o.NvLinkDomainId.Unset()
 }
 
 // GetDeviceInstance returns the DeviceInstance field value if set, zero value otherwise.
@@ -229,36 +240,47 @@ func (o *NVLinkInterface) SetDeviceInstance(v int32) {
 	o.DeviceInstance = &v
 }
 
-// GetGpuGuid returns the GpuGuid field value if set, zero value otherwise.
+// GetGpuGuid returns the GpuGuid field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *NVLinkInterface) GetGpuGuid() string {
-	if o == nil || IsNil(o.GpuGuid) {
+	if o == nil || IsNil(o.GpuGuid.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.GpuGuid
+	return *o.GpuGuid.Get()
 }
 
 // GetGpuGuidOk returns a tuple with the GpuGuid field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *NVLinkInterface) GetGpuGuidOk() (*string, bool) {
-	if o == nil || IsNil(o.GpuGuid) {
+	if o == nil {
 		return nil, false
 	}
-	return o.GpuGuid, true
+	return o.GpuGuid.Get(), o.GpuGuid.IsSet()
 }
 
 // HasGpuGuid returns a boolean if a field has been set.
 func (o *NVLinkInterface) HasGpuGuid() bool {
-	if o != nil && !IsNil(o.GpuGuid) {
+	if o != nil && o.GpuGuid.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetGpuGuid gets a reference to the given string and assigns it to the GpuGuid field.
+// SetGpuGuid gets a reference to the given NullableString and assigns it to the GpuGuid field.
 func (o *NVLinkInterface) SetGpuGuid(v string) {
-	o.GpuGuid = &v
+	o.GpuGuid.Set(&v)
+}
+
+// SetGpuGuidNil sets the value for GpuGuid to be an explicit nil
+func (o *NVLinkInterface) SetGpuGuidNil() {
+	o.GpuGuid.Set(nil)
+}
+
+// UnsetGpuGuid ensures that no value is present for GpuGuid, not even an explicit nil
+func (o *NVLinkInterface) UnsetGpuGuid() {
+	o.GpuGuid.Unset()
 }
 
 // GetStatus returns the Status field value if set, zero value otherwise.
@@ -376,14 +398,14 @@ func (o NVLinkInterface) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.NvLinkLogicalPartitionId) {
 		toSerialize["nvLinkLogicalPartitionId"] = o.NvLinkLogicalPartitionId
 	}
-	if !IsNil(o.NvLinkDomainId) {
-		toSerialize["nvLinkDomainId"] = o.NvLinkDomainId
+	if o.NvLinkDomainId.IsSet() {
+		toSerialize["nvLinkDomainId"] = o.NvLinkDomainId.Get()
 	}
 	if !IsNil(o.DeviceInstance) {
 		toSerialize["deviceInstance"] = o.DeviceInstance
 	}
-	if !IsNil(o.GpuGuid) {
-		toSerialize["gpuGuid"] = o.GpuGuid
+	if o.GpuGuid.IsSet() {
+		toSerialize["gpuGuid"] = o.GpuGuid.Get()
 	}
 	if !IsNil(o.Status) {
 		toSerialize["status"] = o.Status

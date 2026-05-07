@@ -62,7 +62,8 @@ Create an Allocation for the org.
 
 Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
-Tenant management of Allocation is not supported in MVP.
+To successfully create a compute Allocation, there must be enough unallocated Machines associated with the Instance Type to satisfy the constraint value.
+For network Allocation, the source site-level IP Block must have an available prefix with length equal to constraint value.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

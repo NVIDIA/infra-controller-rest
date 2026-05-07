@@ -146,12 +146,12 @@ func toStandardInstanceCreateRequest(request InstanceCreateRequest, sshKeyGroupI
 	apiReq := standard.InstanceCreateRequest{
 		Name:           request.Name,
 		TenantId:       am.TenantID,
-		MachineId:      &request.MachineID,
 		VpcId:          vpcID,
 		Labels:         request.Labels,
 		SshKeyGroupIds: sshKeyGroupIDs,
 		Interfaces:     []standard.InterfaceCreateRequest{defaultIface},
 	}
+	apiReq.MachineId.Set(&request.MachineID)
 	if request.Description != nil {
 		apiReq.Description.Set(request.Description)
 	}

@@ -52,7 +52,7 @@ func NewIpBlockManager(client *Client) IpBlockManager {
 func ipBlockFromStandard(api standard.IpBlock) IpBlock {
 	ib := IpBlock{
 		Name:            api.Name,
-		Description:     api.Description,
+		Description:     api.Description.Get(),
 		SiteID:          api.SiteId,
 		ProtocolVersion: api.ProtocolVersion,
 	}

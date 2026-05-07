@@ -45,9 +45,9 @@ type InstanceCreateRequest struct {
 	// ID of the Tenant creating the Instance
 	TenantId string `json:"tenantId"`
 	// ID of the Instance Type to use for Instance
-	InstanceTypeId *string `json:"instanceTypeId,omitempty"`
+	InstanceTypeId NullableString `json:"instanceTypeId,omitempty"`
 	// ID of of specific Machine to use for Instance. Requires Targeted Instance Creation capability enabled for Tenant
-	MachineId *string `json:"machineId,omitempty"`
+	MachineId NullableString `json:"machineId,omitempty"`
 	// ID of the VPC the Instance should belong to
 	VpcId string `json:"vpcId"`
 	// IDs of additional VPCs the Instance should attach to through non-primary interfaces. This field may only be specified when every entry in `interfaces` uses `vpcPrefixId`. IDs must be unique, must be valid UUIDs, and must not include the primary `vpcId`.
@@ -192,68 +192,90 @@ func (o *InstanceCreateRequest) SetTenantId(v string) {
 	o.TenantId = v
 }
 
-// GetInstanceTypeId returns the InstanceTypeId field value if set, zero value otherwise.
+// GetInstanceTypeId returns the InstanceTypeId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *InstanceCreateRequest) GetInstanceTypeId() string {
-	if o == nil || IsNil(o.InstanceTypeId) {
+	if o == nil || IsNil(o.InstanceTypeId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.InstanceTypeId
+	return *o.InstanceTypeId.Get()
 }
 
 // GetInstanceTypeIdOk returns a tuple with the InstanceTypeId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *InstanceCreateRequest) GetInstanceTypeIdOk() (*string, bool) {
-	if o == nil || IsNil(o.InstanceTypeId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.InstanceTypeId, true
+	return o.InstanceTypeId.Get(), o.InstanceTypeId.IsSet()
 }
 
 // HasInstanceTypeId returns a boolean if a field has been set.
 func (o *InstanceCreateRequest) HasInstanceTypeId() bool {
-	if o != nil && !IsNil(o.InstanceTypeId) {
+	if o != nil && o.InstanceTypeId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetInstanceTypeId gets a reference to the given string and assigns it to the InstanceTypeId field.
+// SetInstanceTypeId gets a reference to the given NullableString and assigns it to the InstanceTypeId field.
 func (o *InstanceCreateRequest) SetInstanceTypeId(v string) {
-	o.InstanceTypeId = &v
+	o.InstanceTypeId.Set(&v)
 }
 
-// GetMachineId returns the MachineId field value if set, zero value otherwise.
+// SetInstanceTypeIdNil sets the value for InstanceTypeId to be an explicit nil
+func (o *InstanceCreateRequest) SetInstanceTypeIdNil() {
+	o.InstanceTypeId.Set(nil)
+}
+
+// UnsetInstanceTypeId ensures that no value is present for InstanceTypeId, not even an explicit nil
+func (o *InstanceCreateRequest) UnsetInstanceTypeId() {
+	o.InstanceTypeId.Unset()
+}
+
+// GetMachineId returns the MachineId field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *InstanceCreateRequest) GetMachineId() string {
-	if o == nil || IsNil(o.MachineId) {
+	if o == nil || IsNil(o.MachineId.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.MachineId
+	return *o.MachineId.Get()
 }
 
 // GetMachineIdOk returns a tuple with the MachineId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *InstanceCreateRequest) GetMachineIdOk() (*string, bool) {
-	if o == nil || IsNil(o.MachineId) {
+	if o == nil {
 		return nil, false
 	}
-	return o.MachineId, true
+	return o.MachineId.Get(), o.MachineId.IsSet()
 }
 
 // HasMachineId returns a boolean if a field has been set.
 func (o *InstanceCreateRequest) HasMachineId() bool {
-	if o != nil && !IsNil(o.MachineId) {
+	if o != nil && o.MachineId.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetMachineId gets a reference to the given string and assigns it to the MachineId field.
+// SetMachineId gets a reference to the given NullableString and assigns it to the MachineId field.
 func (o *InstanceCreateRequest) SetMachineId(v string) {
-	o.MachineId = &v
+	o.MachineId.Set(&v)
+}
+
+// SetMachineIdNil sets the value for MachineId to be an explicit nil
+func (o *InstanceCreateRequest) SetMachineIdNil() {
+	o.MachineId.Set(nil)
+}
+
+// UnsetMachineId ensures that no value is present for MachineId, not even an explicit nil
+func (o *InstanceCreateRequest) UnsetMachineId() {
+	o.MachineId.Unset()
 }
 
 // GetVpcId returns the VpcId field value
@@ -779,11 +801,11 @@ func (o InstanceCreateRequest) ToMap() (map[string]interface{}, error) {
 		toSerialize["description"] = o.Description.Get()
 	}
 	toSerialize["tenantId"] = o.TenantId
-	if !IsNil(o.InstanceTypeId) {
-		toSerialize["instanceTypeId"] = o.InstanceTypeId
+	if o.InstanceTypeId.IsSet() {
+		toSerialize["instanceTypeId"] = o.InstanceTypeId.Get()
 	}
-	if !IsNil(o.MachineId) {
-		toSerialize["machineId"] = o.MachineId
+	if o.MachineId.IsSet() {
+		toSerialize["machineId"] = o.MachineId.Get()
 	}
 	toSerialize["vpcId"] = o.VpcId
 	if !IsNil(o.SecondaryVpcIds) {

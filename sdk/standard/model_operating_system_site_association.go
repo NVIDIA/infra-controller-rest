@@ -40,9 +40,9 @@ type OperatingSystemSiteAssociation struct {
 	Site   *SiteSummary       `json:"site,omitempty"`
 	Status *SshKeyGroupStatus `json:"status,omitempty"`
 	// Version of the Key Group on Site
-	Version *string    `json:"version,omitempty"`
-	Created *time.Time `json:"created,omitempty"`
-	Updated *time.Time `json:"updated,omitempty"`
+	Version NullableString `json:"version,omitempty"`
+	Created *time.Time     `json:"created,omitempty"`
+	Updated *time.Time     `json:"updated,omitempty"`
 }
 
 // NewOperatingSystemSiteAssociation instantiates a new OperatingSystemSiteAssociation object
@@ -126,36 +126,47 @@ func (o *OperatingSystemSiteAssociation) SetStatus(v SshKeyGroupStatus) {
 	o.Status = &v
 }
 
-// GetVersion returns the Version field value if set, zero value otherwise.
+// GetVersion returns the Version field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *OperatingSystemSiteAssociation) GetVersion() string {
-	if o == nil || IsNil(o.Version) {
+	if o == nil || IsNil(o.Version.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Version
+	return *o.Version.Get()
 }
 
 // GetVersionOk returns a tuple with the Version field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *OperatingSystemSiteAssociation) GetVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.Version) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Version, true
+	return o.Version.Get(), o.Version.IsSet()
 }
 
 // HasVersion returns a boolean if a field has been set.
 func (o *OperatingSystemSiteAssociation) HasVersion() bool {
-	if o != nil && !IsNil(o.Version) {
+	if o != nil && o.Version.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVersion gets a reference to the given string and assigns it to the Version field.
+// SetVersion gets a reference to the given NullableString and assigns it to the Version field.
 func (o *OperatingSystemSiteAssociation) SetVersion(v string) {
-	o.Version = &v
+	o.Version.Set(&v)
+}
+
+// SetVersionNil sets the value for Version to be an explicit nil
+func (o *OperatingSystemSiteAssociation) SetVersionNil() {
+	o.Version.Set(nil)
+}
+
+// UnsetVersion ensures that no value is present for Version, not even an explicit nil
+func (o *OperatingSystemSiteAssociation) UnsetVersion() {
+	o.Version.Unset()
 }
 
 // GetCreated returns the Created field value if set, zero value otherwise.
@@ -238,8 +249,8 @@ func (o OperatingSystemSiteAssociation) ToMap() (map[string]interface{}, error) 
 	if !IsNil(o.Status) {
 		toSerialize["status"] = o.Status
 	}
-	if !IsNil(o.Version) {
-		toSerialize["version"] = o.Version
+	if o.Version.IsSet() {
+		toSerialize["version"] = o.Version.Get()
 	}
 	if !IsNil(o.Created) {
 		toSerialize["created"] = o.Created

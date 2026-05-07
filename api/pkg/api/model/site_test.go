@@ -299,6 +299,7 @@ func TestAPISiteUpdateRequest_Validate(t *testing.T) {
 		SerialConsoleIdleTimeout      *int
 		SerialConsoleMaxSessionLength *int
 		IsSerialConsoleSSHKeysEnabled *bool
+		Capabilities                  *APISiteCapabilitiesUpdateRequest
 	}
 	tests := []struct {
 		name       string
@@ -379,6 +380,26 @@ func TestAPISiteUpdateRequest_Validate(t *testing.T) {
 			isTenant: true,
 			wantErr:  true,
 		},
+		{
+			name: "validate update request failure, Tenant configuring capabilities not allowed",
+			fields: fields{
+				Capabilities: &APISiteCapabilitiesUpdateRequest{
+					NativeNetworking: cdb.GetBoolPtr(true),
+				},
+			},
+			isTenant: true,
+			wantErr:  true,
+		},
+		{
+			name: "validate update request success, Provider configuring capabilities",
+			fields: fields{
+				Capabilities: &APISiteCapabilitiesUpdateRequest{
+					NativeNetworking: cdb.GetBoolPtr(false),
+				},
+			},
+			isProvider: true,
+			wantErr:    false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -391,6 +412,7 @@ func TestAPISiteUpdateRequest_Validate(t *testing.T) {
 				SerialConsoleIdleTimeout:      tt.fields.SerialConsoleIdleTimeout,
 				SerialConsoleMaxSessionLength: tt.fields.SerialConsoleMaxSessionLength,
 				IsSerialConsoleSSHKeysEnabled: tt.fields.IsSerialConsoleSSHKeysEnabled,
+				Capabilities:                  tt.fields.Capabilities,
 			}
 			err := asur.Validate(tt.isProvider, tt.isTenant)
 

@@ -36,13 +36,13 @@ var _ MappedNullable = &MachineDMIData{}
 
 // MachineDMIData Describes DMI data of a Machine
 type MachineDMIData struct {
-	BoardName     *string `json:"boardName,omitempty"`
-	BoardSerial   *string `json:"boardSerial,omitempty"`
-	BoardVersion  *string `json:"boardVersion,omitempty"`
-	BiosDate      *string `json:"biosDate,omitempty"`
-	BiosVersion   *string `json:"biosVersion,omitempty"`
-	ProductSerial *string `json:"productSerial,omitempty"`
-	ChassisSerial *string `json:"chassisSerial,omitempty"`
+	BoardName     NullableString `json:"boardName,omitempty"`
+	BoardSerial   NullableString `json:"boardSerial,omitempty"`
+	BoardVersion  NullableString `json:"boardVersion,omitempty"`
+	BiosDate      NullableString `json:"biosDate,omitempty"`
+	BiosVersion   NullableString `json:"biosVersion,omitempty"`
+	ProductSerial NullableString `json:"productSerial,omitempty"`
+	ChassisSerial NullableString `json:"chassisSerial,omitempty"`
 }
 
 // NewMachineDMIData instantiates a new MachineDMIData object
@@ -62,228 +62,305 @@ func NewMachineDMIDataWithDefaults() *MachineDMIData {
 	return &this
 }
 
-// GetBoardName returns the BoardName field value if set, zero value otherwise.
+// GetBoardName returns the BoardName field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetBoardName() string {
-	if o == nil || IsNil(o.BoardName) {
+	if o == nil || IsNil(o.BoardName.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.BoardName
+	return *o.BoardName.Get()
 }
 
 // GetBoardNameOk returns a tuple with the BoardName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetBoardNameOk() (*string, bool) {
-	if o == nil || IsNil(o.BoardName) {
+	if o == nil {
 		return nil, false
 	}
-	return o.BoardName, true
+	return o.BoardName.Get(), o.BoardName.IsSet()
 }
 
 // HasBoardName returns a boolean if a field has been set.
 func (o *MachineDMIData) HasBoardName() bool {
-	if o != nil && !IsNil(o.BoardName) {
+	if o != nil && o.BoardName.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetBoardName gets a reference to the given string and assigns it to the BoardName field.
+// SetBoardName gets a reference to the given NullableString and assigns it to the BoardName field.
 func (o *MachineDMIData) SetBoardName(v string) {
-	o.BoardName = &v
+	o.BoardName.Set(&v)
 }
 
-// GetBoardSerial returns the BoardSerial field value if set, zero value otherwise.
+// SetBoardNameNil sets the value for BoardName to be an explicit nil
+func (o *MachineDMIData) SetBoardNameNil() {
+	o.BoardName.Set(nil)
+}
+
+// UnsetBoardName ensures that no value is present for BoardName, not even an explicit nil
+func (o *MachineDMIData) UnsetBoardName() {
+	o.BoardName.Unset()
+}
+
+// GetBoardSerial returns the BoardSerial field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetBoardSerial() string {
-	if o == nil || IsNil(o.BoardSerial) {
+	if o == nil || IsNil(o.BoardSerial.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.BoardSerial
+	return *o.BoardSerial.Get()
 }
 
 // GetBoardSerialOk returns a tuple with the BoardSerial field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetBoardSerialOk() (*string, bool) {
-	if o == nil || IsNil(o.BoardSerial) {
+	if o == nil {
 		return nil, false
 	}
-	return o.BoardSerial, true
+	return o.BoardSerial.Get(), o.BoardSerial.IsSet()
 }
 
 // HasBoardSerial returns a boolean if a field has been set.
 func (o *MachineDMIData) HasBoardSerial() bool {
-	if o != nil && !IsNil(o.BoardSerial) {
+	if o != nil && o.BoardSerial.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetBoardSerial gets a reference to the given string and assigns it to the BoardSerial field.
+// SetBoardSerial gets a reference to the given NullableString and assigns it to the BoardSerial field.
 func (o *MachineDMIData) SetBoardSerial(v string) {
-	o.BoardSerial = &v
+	o.BoardSerial.Set(&v)
 }
 
-// GetBoardVersion returns the BoardVersion field value if set, zero value otherwise.
+// SetBoardSerialNil sets the value for BoardSerial to be an explicit nil
+func (o *MachineDMIData) SetBoardSerialNil() {
+	o.BoardSerial.Set(nil)
+}
+
+// UnsetBoardSerial ensures that no value is present for BoardSerial, not even an explicit nil
+func (o *MachineDMIData) UnsetBoardSerial() {
+	o.BoardSerial.Unset()
+}
+
+// GetBoardVersion returns the BoardVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetBoardVersion() string {
-	if o == nil || IsNil(o.BoardVersion) {
+	if o == nil || IsNil(o.BoardVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.BoardVersion
+	return *o.BoardVersion.Get()
 }
 
 // GetBoardVersionOk returns a tuple with the BoardVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetBoardVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.BoardVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.BoardVersion, true
+	return o.BoardVersion.Get(), o.BoardVersion.IsSet()
 }
 
 // HasBoardVersion returns a boolean if a field has been set.
 func (o *MachineDMIData) HasBoardVersion() bool {
-	if o != nil && !IsNil(o.BoardVersion) {
+	if o != nil && o.BoardVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetBoardVersion gets a reference to the given string and assigns it to the BoardVersion field.
+// SetBoardVersion gets a reference to the given NullableString and assigns it to the BoardVersion field.
 func (o *MachineDMIData) SetBoardVersion(v string) {
-	o.BoardVersion = &v
+	o.BoardVersion.Set(&v)
 }
 
-// GetBiosDate returns the BiosDate field value if set, zero value otherwise.
+// SetBoardVersionNil sets the value for BoardVersion to be an explicit nil
+func (o *MachineDMIData) SetBoardVersionNil() {
+	o.BoardVersion.Set(nil)
+}
+
+// UnsetBoardVersion ensures that no value is present for BoardVersion, not even an explicit nil
+func (o *MachineDMIData) UnsetBoardVersion() {
+	o.BoardVersion.Unset()
+}
+
+// GetBiosDate returns the BiosDate field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetBiosDate() string {
-	if o == nil || IsNil(o.BiosDate) {
+	if o == nil || IsNil(o.BiosDate.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.BiosDate
+	return *o.BiosDate.Get()
 }
 
 // GetBiosDateOk returns a tuple with the BiosDate field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetBiosDateOk() (*string, bool) {
-	if o == nil || IsNil(o.BiosDate) {
+	if o == nil {
 		return nil, false
 	}
-	return o.BiosDate, true
+	return o.BiosDate.Get(), o.BiosDate.IsSet()
 }
 
 // HasBiosDate returns a boolean if a field has been set.
 func (o *MachineDMIData) HasBiosDate() bool {
-	if o != nil && !IsNil(o.BiosDate) {
+	if o != nil && o.BiosDate.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetBiosDate gets a reference to the given string and assigns it to the BiosDate field.
+// SetBiosDate gets a reference to the given NullableString and assigns it to the BiosDate field.
 func (o *MachineDMIData) SetBiosDate(v string) {
-	o.BiosDate = &v
+	o.BiosDate.Set(&v)
 }
 
-// GetBiosVersion returns the BiosVersion field value if set, zero value otherwise.
+// SetBiosDateNil sets the value for BiosDate to be an explicit nil
+func (o *MachineDMIData) SetBiosDateNil() {
+	o.BiosDate.Set(nil)
+}
+
+// UnsetBiosDate ensures that no value is present for BiosDate, not even an explicit nil
+func (o *MachineDMIData) UnsetBiosDate() {
+	o.BiosDate.Unset()
+}
+
+// GetBiosVersion returns the BiosVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetBiosVersion() string {
-	if o == nil || IsNil(o.BiosVersion) {
+	if o == nil || IsNil(o.BiosVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.BiosVersion
+	return *o.BiosVersion.Get()
 }
 
 // GetBiosVersionOk returns a tuple with the BiosVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetBiosVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.BiosVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.BiosVersion, true
+	return o.BiosVersion.Get(), o.BiosVersion.IsSet()
 }
 
 // HasBiosVersion returns a boolean if a field has been set.
 func (o *MachineDMIData) HasBiosVersion() bool {
-	if o != nil && !IsNil(o.BiosVersion) {
+	if o != nil && o.BiosVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetBiosVersion gets a reference to the given string and assigns it to the BiosVersion field.
+// SetBiosVersion gets a reference to the given NullableString and assigns it to the BiosVersion field.
 func (o *MachineDMIData) SetBiosVersion(v string) {
-	o.BiosVersion = &v
+	o.BiosVersion.Set(&v)
 }
 
-// GetProductSerial returns the ProductSerial field value if set, zero value otherwise.
+// SetBiosVersionNil sets the value for BiosVersion to be an explicit nil
+func (o *MachineDMIData) SetBiosVersionNil() {
+	o.BiosVersion.Set(nil)
+}
+
+// UnsetBiosVersion ensures that no value is present for BiosVersion, not even an explicit nil
+func (o *MachineDMIData) UnsetBiosVersion() {
+	o.BiosVersion.Unset()
+}
+
+// GetProductSerial returns the ProductSerial field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetProductSerial() string {
-	if o == nil || IsNil(o.ProductSerial) {
+	if o == nil || IsNil(o.ProductSerial.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.ProductSerial
+	return *o.ProductSerial.Get()
 }
 
 // GetProductSerialOk returns a tuple with the ProductSerial field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetProductSerialOk() (*string, bool) {
-	if o == nil || IsNil(o.ProductSerial) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ProductSerial, true
+	return o.ProductSerial.Get(), o.ProductSerial.IsSet()
 }
 
 // HasProductSerial returns a boolean if a field has been set.
 func (o *MachineDMIData) HasProductSerial() bool {
-	if o != nil && !IsNil(o.ProductSerial) {
+	if o != nil && o.ProductSerial.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetProductSerial gets a reference to the given string and assigns it to the ProductSerial field.
+// SetProductSerial gets a reference to the given NullableString and assigns it to the ProductSerial field.
 func (o *MachineDMIData) SetProductSerial(v string) {
-	o.ProductSerial = &v
+	o.ProductSerial.Set(&v)
 }
 
-// GetChassisSerial returns the ChassisSerial field value if set, zero value otherwise.
+// SetProductSerialNil sets the value for ProductSerial to be an explicit nil
+func (o *MachineDMIData) SetProductSerialNil() {
+	o.ProductSerial.Set(nil)
+}
+
+// UnsetProductSerial ensures that no value is present for ProductSerial, not even an explicit nil
+func (o *MachineDMIData) UnsetProductSerial() {
+	o.ProductSerial.Unset()
+}
+
+// GetChassisSerial returns the ChassisSerial field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineDMIData) GetChassisSerial() string {
-	if o == nil || IsNil(o.ChassisSerial) {
+	if o == nil || IsNil(o.ChassisSerial.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.ChassisSerial
+	return *o.ChassisSerial.Get()
 }
 
 // GetChassisSerialOk returns a tuple with the ChassisSerial field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineDMIData) GetChassisSerialOk() (*string, bool) {
-	if o == nil || IsNil(o.ChassisSerial) {
+	if o == nil {
 		return nil, false
 	}
-	return o.ChassisSerial, true
+	return o.ChassisSerial.Get(), o.ChassisSerial.IsSet()
 }
 
 // HasChassisSerial returns a boolean if a field has been set.
 func (o *MachineDMIData) HasChassisSerial() bool {
-	if o != nil && !IsNil(o.ChassisSerial) {
+	if o != nil && o.ChassisSerial.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetChassisSerial gets a reference to the given string and assigns it to the ChassisSerial field.
+// SetChassisSerial gets a reference to the given NullableString and assigns it to the ChassisSerial field.
 func (o *MachineDMIData) SetChassisSerial(v string) {
-	o.ChassisSerial = &v
+	o.ChassisSerial.Set(&v)
+}
+
+// SetChassisSerialNil sets the value for ChassisSerial to be an explicit nil
+func (o *MachineDMIData) SetChassisSerialNil() {
+	o.ChassisSerial.Set(nil)
+}
+
+// UnsetChassisSerial ensures that no value is present for ChassisSerial, not even an explicit nil
+func (o *MachineDMIData) UnsetChassisSerial() {
+	o.ChassisSerial.Unset()
 }
 
 func (o MachineDMIData) MarshalJSON() ([]byte, error) {
@@ -296,26 +373,26 @@ func (o MachineDMIData) MarshalJSON() ([]byte, error) {
 
 func (o MachineDMIData) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.BoardName) {
-		toSerialize["boardName"] = o.BoardName
+	if o.BoardName.IsSet() {
+		toSerialize["boardName"] = o.BoardName.Get()
 	}
-	if !IsNil(o.BoardSerial) {
-		toSerialize["boardSerial"] = o.BoardSerial
+	if o.BoardSerial.IsSet() {
+		toSerialize["boardSerial"] = o.BoardSerial.Get()
 	}
-	if !IsNil(o.BoardVersion) {
-		toSerialize["boardVersion"] = o.BoardVersion
+	if o.BoardVersion.IsSet() {
+		toSerialize["boardVersion"] = o.BoardVersion.Get()
 	}
-	if !IsNil(o.BiosDate) {
-		toSerialize["biosDate"] = o.BiosDate
+	if o.BiosDate.IsSet() {
+		toSerialize["biosDate"] = o.BiosDate.Get()
 	}
-	if !IsNil(o.BiosVersion) {
-		toSerialize["biosVersion"] = o.BiosVersion
+	if o.BiosVersion.IsSet() {
+		toSerialize["biosVersion"] = o.BiosVersion.Get()
 	}
-	if !IsNil(o.ProductSerial) {
-		toSerialize["productSerial"] = o.ProductSerial
+	if o.ProductSerial.IsSet() {
+		toSerialize["productSerial"] = o.ProductSerial.Get()
 	}
-	if !IsNil(o.ChassisSerial) {
-		toSerialize["chassisSerial"] = o.ChassisSerial
+	if o.ChassisSerial.IsSet() {
+		toSerialize["chassisSerial"] = o.ChassisSerial.Get()
 	}
 	return toSerialize, nil
 }

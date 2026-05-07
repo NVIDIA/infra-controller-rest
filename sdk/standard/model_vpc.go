@@ -42,7 +42,7 @@ type VPC struct {
 	// Name of the VPC
 	Name *string `json:"name,omitempty"`
 	// Description of the VPC, can be empty
-	Description *string `json:"description,omitempty"`
+	Description NullableString `json:"description,omitempty"`
 	// Organization the VPC belongs to
 	Org *string `json:"org,omitempty"`
 	// ID of the Tenant the VPC belongs to
@@ -52,7 +52,7 @@ type VPC struct {
 	// Legacy attribute, contains the same value as ID
 	ControllerVpcId NullableString `json:"controllerVpcId,omitempty"`
 	// Network virtualization type of the VPC
-	NetworkVirtualizationType *string `json:"networkVirtualizationType,omitempty"`
+	NetworkVirtualizationType NullableString `json:"networkVirtualizationType,omitempty"`
 	// Routing profile type for the VPC. Populated when Site has Native Networking enabled and network virtualization type is `FNN`.
 	RoutingProfile NullableString `json:"routingProfile,omitempty"`
 	// Explicitly requested VNI for the VPC if one was requested at creation time
@@ -158,36 +158,47 @@ func (o *VPC) SetName(v string) {
 	o.Name = &v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *VPC) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || IsNil(o.Description.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.Description.Get()
 }
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *VPC) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Description, true
+	return o.Description.Get(), o.Description.IsSet()
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *VPC) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && o.Description.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription gets a reference to the given NullableString and assigns it to the Description field.
 func (o *VPC) SetDescription(v string) {
-	o.Description = &v
+	o.Description.Set(&v)
+}
+
+// SetDescriptionNil sets the value for Description to be an explicit nil
+func (o *VPC) SetDescriptionNil() {
+	o.Description.Set(nil)
+}
+
+// UnsetDescription ensures that no value is present for Description, not even an explicit nil
+func (o *VPC) UnsetDescription() {
+	o.Description.Unset()
 }
 
 // GetOrg returns the Org field value if set, zero value otherwise.
@@ -329,36 +340,47 @@ func (o *VPC) UnsetControllerVpcId() {
 	o.ControllerVpcId.Unset()
 }
 
-// GetNetworkVirtualizationType returns the NetworkVirtualizationType field value if set, zero value otherwise.
+// GetNetworkVirtualizationType returns the NetworkVirtualizationType field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *VPC) GetNetworkVirtualizationType() string {
-	if o == nil || IsNil(o.NetworkVirtualizationType) {
+	if o == nil || IsNil(o.NetworkVirtualizationType.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.NetworkVirtualizationType
+	return *o.NetworkVirtualizationType.Get()
 }
 
 // GetNetworkVirtualizationTypeOk returns a tuple with the NetworkVirtualizationType field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *VPC) GetNetworkVirtualizationTypeOk() (*string, bool) {
-	if o == nil || IsNil(o.NetworkVirtualizationType) {
+	if o == nil {
 		return nil, false
 	}
-	return o.NetworkVirtualizationType, true
+	return o.NetworkVirtualizationType.Get(), o.NetworkVirtualizationType.IsSet()
 }
 
 // HasNetworkVirtualizationType returns a boolean if a field has been set.
 func (o *VPC) HasNetworkVirtualizationType() bool {
-	if o != nil && !IsNil(o.NetworkVirtualizationType) {
+	if o != nil && o.NetworkVirtualizationType.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetNetworkVirtualizationType gets a reference to the given string and assigns it to the NetworkVirtualizationType field.
+// SetNetworkVirtualizationType gets a reference to the given NullableString and assigns it to the NetworkVirtualizationType field.
 func (o *VPC) SetNetworkVirtualizationType(v string) {
-	o.NetworkVirtualizationType = &v
+	o.NetworkVirtualizationType.Set(&v)
+}
+
+// SetNetworkVirtualizationTypeNil sets the value for NetworkVirtualizationType to be an explicit nil
+func (o *VPC) SetNetworkVirtualizationTypeNil() {
+	o.NetworkVirtualizationType.Set(nil)
+}
+
+// UnsetNetworkVirtualizationType ensures that no value is present for NetworkVirtualizationType, not even an explicit nil
+func (o *VPC) UnsetNetworkVirtualizationType() {
+	o.NetworkVirtualizationType.Unset()
 }
 
 // GetRoutingProfile returns the RoutingProfile field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -784,8 +806,8 @@ func (o VPC) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if o.Description.IsSet() {
+		toSerialize["description"] = o.Description.Get()
 	}
 	if !IsNil(o.Org) {
 		toSerialize["org"] = o.Org
@@ -799,8 +821,8 @@ func (o VPC) ToMap() (map[string]interface{}, error) {
 	if o.ControllerVpcId.IsSet() {
 		toSerialize["controllerVpcId"] = o.ControllerVpcId.Get()
 	}
-	if !IsNil(o.NetworkVirtualizationType) {
-		toSerialize["networkVirtualizationType"] = o.NetworkVirtualizationType
+	if o.NetworkVirtualizationType.IsSet() {
+		toSerialize["networkVirtualizationType"] = o.NetworkVirtualizationType.Get()
 	}
 	if o.RoutingProfile.IsSet() {
 		toSerialize["routingProfile"] = o.RoutingProfile.Get()

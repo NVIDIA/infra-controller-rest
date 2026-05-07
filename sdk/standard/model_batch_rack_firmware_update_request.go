@@ -42,7 +42,7 @@ type BatchRackFirmwareUpdateRequest struct {
 	SiteId string      `json:"siteId"`
 	Filter *RackFilter `json:"filter,omitempty"`
 	// Target firmware version.
-	Version *string `json:"version,omitempty"`
+	Version NullableString `json:"version,omitempty"`
 }
 
 type _BatchRackFirmwareUpdateRequest BatchRackFirmwareUpdateRequest
@@ -121,36 +121,47 @@ func (o *BatchRackFirmwareUpdateRequest) SetFilter(v RackFilter) {
 	o.Filter = &v
 }
 
-// GetVersion returns the Version field value if set, zero value otherwise.
+// GetVersion returns the Version field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *BatchRackFirmwareUpdateRequest) GetVersion() string {
-	if o == nil || IsNil(o.Version) {
+	if o == nil || IsNil(o.Version.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Version
+	return *o.Version.Get()
 }
 
 // GetVersionOk returns a tuple with the Version field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *BatchRackFirmwareUpdateRequest) GetVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.Version) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Version, true
+	return o.Version.Get(), o.Version.IsSet()
 }
 
 // HasVersion returns a boolean if a field has been set.
 func (o *BatchRackFirmwareUpdateRequest) HasVersion() bool {
-	if o != nil && !IsNil(o.Version) {
+	if o != nil && o.Version.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVersion gets a reference to the given string and assigns it to the Version field.
+// SetVersion gets a reference to the given NullableString and assigns it to the Version field.
 func (o *BatchRackFirmwareUpdateRequest) SetVersion(v string) {
-	o.Version = &v
+	o.Version.Set(&v)
+}
+
+// SetVersionNil sets the value for Version to be an explicit nil
+func (o *BatchRackFirmwareUpdateRequest) SetVersionNil() {
+	o.Version.Set(nil)
+}
+
+// UnsetVersion ensures that no value is present for Version, not even an explicit nil
+func (o *BatchRackFirmwareUpdateRequest) UnsetVersion() {
+	o.Version.Unset()
 }
 
 func (o BatchRackFirmwareUpdateRequest) MarshalJSON() ([]byte, error) {
@@ -167,8 +178,8 @@ func (o BatchRackFirmwareUpdateRequest) ToMap() (map[string]interface{}, error) 
 	if !IsNil(o.Filter) {
 		toSerialize["filter"] = o.Filter
 	}
-	if !IsNil(o.Version) {
-		toSerialize["version"] = o.Version
+	if o.Version.IsSet() {
+		toSerialize["version"] = o.Version.Get()
 	}
 	return toSerialize, nil
 }

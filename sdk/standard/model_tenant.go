@@ -42,7 +42,7 @@ type Tenant struct {
 	// Name/external ID of Tenant's organization
 	Org *string `json:"org,omitempty"`
 	// Display name of Tenant's organization
-	OrgDisplayName *string `json:"orgDisplayName,omitempty"`
+	OrgDisplayName NullableString `json:"orgDisplayName,omitempty"`
 	// Date/time the Tenant was created
 	Created *time.Time `json:"created,omitempty"`
 	// Date/time when Tenant was last updated
@@ -132,36 +132,47 @@ func (o *Tenant) SetOrg(v string) {
 	o.Org = &v
 }
 
-// GetOrgDisplayName returns the OrgDisplayName field value if set, zero value otherwise.
+// GetOrgDisplayName returns the OrgDisplayName field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Tenant) GetOrgDisplayName() string {
-	if o == nil || IsNil(o.OrgDisplayName) {
+	if o == nil || IsNil(o.OrgDisplayName.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.OrgDisplayName
+	return *o.OrgDisplayName.Get()
 }
 
 // GetOrgDisplayNameOk returns a tuple with the OrgDisplayName field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Tenant) GetOrgDisplayNameOk() (*string, bool) {
-	if o == nil || IsNil(o.OrgDisplayName) {
+	if o == nil {
 		return nil, false
 	}
-	return o.OrgDisplayName, true
+	return o.OrgDisplayName.Get(), o.OrgDisplayName.IsSet()
 }
 
 // HasOrgDisplayName returns a boolean if a field has been set.
 func (o *Tenant) HasOrgDisplayName() bool {
-	if o != nil && !IsNil(o.OrgDisplayName) {
+	if o != nil && o.OrgDisplayName.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetOrgDisplayName gets a reference to the given string and assigns it to the OrgDisplayName field.
+// SetOrgDisplayName gets a reference to the given NullableString and assigns it to the OrgDisplayName field.
 func (o *Tenant) SetOrgDisplayName(v string) {
-	o.OrgDisplayName = &v
+	o.OrgDisplayName.Set(&v)
+}
+
+// SetOrgDisplayNameNil sets the value for OrgDisplayName to be an explicit nil
+func (o *Tenant) SetOrgDisplayNameNil() {
+	o.OrgDisplayName.Set(nil)
+}
+
+// UnsetOrgDisplayName ensures that no value is present for OrgDisplayName, not even an explicit nil
+func (o *Tenant) UnsetOrgDisplayName() {
+	o.OrgDisplayName.Unset()
 }
 
 // GetCreated returns the Created field value if set, zero value otherwise.
@@ -276,8 +287,8 @@ func (o Tenant) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Org) {
 		toSerialize["org"] = o.Org
 	}
-	if !IsNil(o.OrgDisplayName) {
-		toSerialize["orgDisplayName"] = o.OrgDisplayName
+	if o.OrgDisplayName.IsSet() {
+		toSerialize["orgDisplayName"] = o.OrgDisplayName.Get()
 	}
 	if !IsNil(o.Created) {
 		toSerialize["created"] = o.Created

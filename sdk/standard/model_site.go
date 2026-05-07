@@ -41,18 +41,18 @@ type Site struct {
 	// Name of the Site
 	Name *string `json:"name,omitempty"`
 	// Optional description for the Site
-	Description              *string `json:"description,omitempty"`
-	Org                      *string `json:"org,omitempty"`
-	InfrastructureProviderId *string `json:"infrastructureProviderId,omitempty"`
+	Description              NullableString `json:"description,omitempty"`
+	Org                      *string        `json:"org,omitempty"`
+	InfrastructureProviderId *string        `json:"infrastructureProviderId,omitempty"`
 	// Version of the Site Controller software
-	SiteControllerVersion *string `json:"siteControllerVersion,omitempty"`
+	SiteControllerVersion NullableString `json:"siteControllerVersion,omitempty"`
 	// Version of the Site Agent software
-	SiteAgentVersion *string `json:"siteAgentVersion,omitempty"`
+	SiteAgentVersion NullableString `json:"siteAgentVersion,omitempty"`
 	// Token that can be used to register a Site. Value only exposed to Provider
-	RegistrationToken *string `json:"registrationToken,omitempty"`
-	// Date/time when registration token  expires. Value only exposed to Provider
-	RegistrationTokenExpiration *time.Time `json:"registrationTokenExpiration,omitempty"`
-	SerialConsoleHostname       *string    `json:"serialConsoleHostname,omitempty"`
+	RegistrationToken NullableString `json:"registrationToken,omitempty"`
+	// Date/time when registration token expires. Value only exposed to Provider
+	RegistrationTokenExpiration NullableTime   `json:"registrationTokenExpiration,omitempty"`
+	SerialConsoleHostname       NullableString `json:"serialConsoleHostname,omitempty"`
 	// Indicates if Serial Console is enabled for the Site by the Provider
 	IsSerialConsoleEnabled *bool `json:"isSerialConsoleEnabled,omitempty"`
 	// Maximum idle time in seconds before Serial Console is disconnected
@@ -154,36 +154,47 @@ func (o *Site) SetName(v string) {
 	o.Name = &v
 }
 
-// GetDescription returns the Description field value if set, zero value otherwise.
+// GetDescription returns the Description field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Site) GetDescription() string {
-	if o == nil || IsNil(o.Description) {
+	if o == nil || IsNil(o.Description.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Description
+	return *o.Description.Get()
 }
 
 // GetDescriptionOk returns a tuple with the Description field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Site) GetDescriptionOk() (*string, bool) {
-	if o == nil || IsNil(o.Description) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Description, true
+	return o.Description.Get(), o.Description.IsSet()
 }
 
 // HasDescription returns a boolean if a field has been set.
 func (o *Site) HasDescription() bool {
-	if o != nil && !IsNil(o.Description) {
+	if o != nil && o.Description.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetDescription gets a reference to the given string and assigns it to the Description field.
+// SetDescription gets a reference to the given NullableString and assigns it to the Description field.
 func (o *Site) SetDescription(v string) {
-	o.Description = &v
+	o.Description.Set(&v)
+}
+
+// SetDescriptionNil sets the value for Description to be an explicit nil
+func (o *Site) SetDescriptionNil() {
+	o.Description.Set(nil)
+}
+
+// UnsetDescription ensures that no value is present for Description, not even an explicit nil
+func (o *Site) UnsetDescription() {
+	o.Description.Unset()
 }
 
 // GetOrg returns the Org field value if set, zero value otherwise.
@@ -250,164 +261,219 @@ func (o *Site) SetInfrastructureProviderId(v string) {
 	o.InfrastructureProviderId = &v
 }
 
-// GetSiteControllerVersion returns the SiteControllerVersion field value if set, zero value otherwise.
+// GetSiteControllerVersion returns the SiteControllerVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Site) GetSiteControllerVersion() string {
-	if o == nil || IsNil(o.SiteControllerVersion) {
+	if o == nil || IsNil(o.SiteControllerVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.SiteControllerVersion
+	return *o.SiteControllerVersion.Get()
 }
 
 // GetSiteControllerVersionOk returns a tuple with the SiteControllerVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Site) GetSiteControllerVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.SiteControllerVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.SiteControllerVersion, true
+	return o.SiteControllerVersion.Get(), o.SiteControllerVersion.IsSet()
 }
 
 // HasSiteControllerVersion returns a boolean if a field has been set.
 func (o *Site) HasSiteControllerVersion() bool {
-	if o != nil && !IsNil(o.SiteControllerVersion) {
+	if o != nil && o.SiteControllerVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSiteControllerVersion gets a reference to the given string and assigns it to the SiteControllerVersion field.
+// SetSiteControllerVersion gets a reference to the given NullableString and assigns it to the SiteControllerVersion field.
 func (o *Site) SetSiteControllerVersion(v string) {
-	o.SiteControllerVersion = &v
+	o.SiteControllerVersion.Set(&v)
 }
 
-// GetSiteAgentVersion returns the SiteAgentVersion field value if set, zero value otherwise.
+// SetSiteControllerVersionNil sets the value for SiteControllerVersion to be an explicit nil
+func (o *Site) SetSiteControllerVersionNil() {
+	o.SiteControllerVersion.Set(nil)
+}
+
+// UnsetSiteControllerVersion ensures that no value is present for SiteControllerVersion, not even an explicit nil
+func (o *Site) UnsetSiteControllerVersion() {
+	o.SiteControllerVersion.Unset()
+}
+
+// GetSiteAgentVersion returns the SiteAgentVersion field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Site) GetSiteAgentVersion() string {
-	if o == nil || IsNil(o.SiteAgentVersion) {
+	if o == nil || IsNil(o.SiteAgentVersion.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.SiteAgentVersion
+	return *o.SiteAgentVersion.Get()
 }
 
 // GetSiteAgentVersionOk returns a tuple with the SiteAgentVersion field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Site) GetSiteAgentVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.SiteAgentVersion) {
+	if o == nil {
 		return nil, false
 	}
-	return o.SiteAgentVersion, true
+	return o.SiteAgentVersion.Get(), o.SiteAgentVersion.IsSet()
 }
 
 // HasSiteAgentVersion returns a boolean if a field has been set.
 func (o *Site) HasSiteAgentVersion() bool {
-	if o != nil && !IsNil(o.SiteAgentVersion) {
+	if o != nil && o.SiteAgentVersion.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSiteAgentVersion gets a reference to the given string and assigns it to the SiteAgentVersion field.
+// SetSiteAgentVersion gets a reference to the given NullableString and assigns it to the SiteAgentVersion field.
 func (o *Site) SetSiteAgentVersion(v string) {
-	o.SiteAgentVersion = &v
+	o.SiteAgentVersion.Set(&v)
 }
 
-// GetRegistrationToken returns the RegistrationToken field value if set, zero value otherwise.
+// SetSiteAgentVersionNil sets the value for SiteAgentVersion to be an explicit nil
+func (o *Site) SetSiteAgentVersionNil() {
+	o.SiteAgentVersion.Set(nil)
+}
+
+// UnsetSiteAgentVersion ensures that no value is present for SiteAgentVersion, not even an explicit nil
+func (o *Site) UnsetSiteAgentVersion() {
+	o.SiteAgentVersion.Unset()
+}
+
+// GetRegistrationToken returns the RegistrationToken field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Site) GetRegistrationToken() string {
-	if o == nil || IsNil(o.RegistrationToken) {
+	if o == nil || IsNil(o.RegistrationToken.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.RegistrationToken
+	return *o.RegistrationToken.Get()
 }
 
 // GetRegistrationTokenOk returns a tuple with the RegistrationToken field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Site) GetRegistrationTokenOk() (*string, bool) {
-	if o == nil || IsNil(o.RegistrationToken) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RegistrationToken, true
+	return o.RegistrationToken.Get(), o.RegistrationToken.IsSet()
 }
 
 // HasRegistrationToken returns a boolean if a field has been set.
 func (o *Site) HasRegistrationToken() bool {
-	if o != nil && !IsNil(o.RegistrationToken) {
+	if o != nil && o.RegistrationToken.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetRegistrationToken gets a reference to the given string and assigns it to the RegistrationToken field.
+// SetRegistrationToken gets a reference to the given NullableString and assigns it to the RegistrationToken field.
 func (o *Site) SetRegistrationToken(v string) {
-	o.RegistrationToken = &v
+	o.RegistrationToken.Set(&v)
 }
 
-// GetRegistrationTokenExpiration returns the RegistrationTokenExpiration field value if set, zero value otherwise.
+// SetRegistrationTokenNil sets the value for RegistrationToken to be an explicit nil
+func (o *Site) SetRegistrationTokenNil() {
+	o.RegistrationToken.Set(nil)
+}
+
+// UnsetRegistrationToken ensures that no value is present for RegistrationToken, not even an explicit nil
+func (o *Site) UnsetRegistrationToken() {
+	o.RegistrationToken.Unset()
+}
+
+// GetRegistrationTokenExpiration returns the RegistrationTokenExpiration field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Site) GetRegistrationTokenExpiration() time.Time {
-	if o == nil || IsNil(o.RegistrationTokenExpiration) {
+	if o == nil || IsNil(o.RegistrationTokenExpiration.Get()) {
 		var ret time.Time
 		return ret
 	}
-	return *o.RegistrationTokenExpiration
+	return *o.RegistrationTokenExpiration.Get()
 }
 
 // GetRegistrationTokenExpirationOk returns a tuple with the RegistrationTokenExpiration field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Site) GetRegistrationTokenExpirationOk() (*time.Time, bool) {
-	if o == nil || IsNil(o.RegistrationTokenExpiration) {
+	if o == nil {
 		return nil, false
 	}
-	return o.RegistrationTokenExpiration, true
+	return o.RegistrationTokenExpiration.Get(), o.RegistrationTokenExpiration.IsSet()
 }
 
 // HasRegistrationTokenExpiration returns a boolean if a field has been set.
 func (o *Site) HasRegistrationTokenExpiration() bool {
-	if o != nil && !IsNil(o.RegistrationTokenExpiration) {
+	if o != nil && o.RegistrationTokenExpiration.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetRegistrationTokenExpiration gets a reference to the given time.Time and assigns it to the RegistrationTokenExpiration field.
+// SetRegistrationTokenExpiration gets a reference to the given NullableTime and assigns it to the RegistrationTokenExpiration field.
 func (o *Site) SetRegistrationTokenExpiration(v time.Time) {
-	o.RegistrationTokenExpiration = &v
+	o.RegistrationTokenExpiration.Set(&v)
 }
 
-// GetSerialConsoleHostname returns the SerialConsoleHostname field value if set, zero value otherwise.
+// SetRegistrationTokenExpirationNil sets the value for RegistrationTokenExpiration to be an explicit nil
+func (o *Site) SetRegistrationTokenExpirationNil() {
+	o.RegistrationTokenExpiration.Set(nil)
+}
+
+// UnsetRegistrationTokenExpiration ensures that no value is present for RegistrationTokenExpiration, not even an explicit nil
+func (o *Site) UnsetRegistrationTokenExpiration() {
+	o.RegistrationTokenExpiration.Unset()
+}
+
+// GetSerialConsoleHostname returns the SerialConsoleHostname field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *Site) GetSerialConsoleHostname() string {
-	if o == nil || IsNil(o.SerialConsoleHostname) {
+	if o == nil || IsNil(o.SerialConsoleHostname.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.SerialConsoleHostname
+	return *o.SerialConsoleHostname.Get()
 }
 
 // GetSerialConsoleHostnameOk returns a tuple with the SerialConsoleHostname field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Site) GetSerialConsoleHostnameOk() (*string, bool) {
-	if o == nil || IsNil(o.SerialConsoleHostname) {
+	if o == nil {
 		return nil, false
 	}
-	return o.SerialConsoleHostname, true
+	return o.SerialConsoleHostname.Get(), o.SerialConsoleHostname.IsSet()
 }
 
 // HasSerialConsoleHostname returns a boolean if a field has been set.
 func (o *Site) HasSerialConsoleHostname() bool {
-	if o != nil && !IsNil(o.SerialConsoleHostname) {
+	if o != nil && o.SerialConsoleHostname.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetSerialConsoleHostname gets a reference to the given string and assigns it to the SerialConsoleHostname field.
+// SetSerialConsoleHostname gets a reference to the given NullableString and assigns it to the SerialConsoleHostname field.
 func (o *Site) SetSerialConsoleHostname(v string) {
-	o.SerialConsoleHostname = &v
+	o.SerialConsoleHostname.Set(&v)
+}
+
+// SetSerialConsoleHostnameNil sets the value for SerialConsoleHostname to be an explicit nil
+func (o *Site) SetSerialConsoleHostnameNil() {
+	o.SerialConsoleHostname.Set(nil)
+}
+
+// UnsetSerialConsoleHostname ensures that no value is present for SerialConsoleHostname, not even an explicit nil
+func (o *Site) UnsetSerialConsoleHostname() {
+	o.SerialConsoleHostname.Unset()
 }
 
 // GetIsSerialConsoleEnabled returns the IsSerialConsoleEnabled field value if set, zero value otherwise.
@@ -864,8 +930,8 @@ func (o Site) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Name) {
 		toSerialize["name"] = o.Name
 	}
-	if !IsNil(o.Description) {
-		toSerialize["description"] = o.Description
+	if o.Description.IsSet() {
+		toSerialize["description"] = o.Description.Get()
 	}
 	if !IsNil(o.Org) {
 		toSerialize["org"] = o.Org
@@ -873,20 +939,20 @@ func (o Site) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.InfrastructureProviderId) {
 		toSerialize["infrastructureProviderId"] = o.InfrastructureProviderId
 	}
-	if !IsNil(o.SiteControllerVersion) {
-		toSerialize["siteControllerVersion"] = o.SiteControllerVersion
+	if o.SiteControllerVersion.IsSet() {
+		toSerialize["siteControllerVersion"] = o.SiteControllerVersion.Get()
 	}
-	if !IsNil(o.SiteAgentVersion) {
-		toSerialize["siteAgentVersion"] = o.SiteAgentVersion
+	if o.SiteAgentVersion.IsSet() {
+		toSerialize["siteAgentVersion"] = o.SiteAgentVersion.Get()
 	}
-	if !IsNil(o.RegistrationToken) {
-		toSerialize["registrationToken"] = o.RegistrationToken
+	if o.RegistrationToken.IsSet() {
+		toSerialize["registrationToken"] = o.RegistrationToken.Get()
 	}
-	if !IsNil(o.RegistrationTokenExpiration) {
-		toSerialize["registrationTokenExpiration"] = o.RegistrationTokenExpiration
+	if o.RegistrationTokenExpiration.IsSet() {
+		toSerialize["registrationTokenExpiration"] = o.RegistrationTokenExpiration.Get()
 	}
-	if !IsNil(o.SerialConsoleHostname) {
-		toSerialize["serialConsoleHostname"] = o.SerialConsoleHostname
+	if o.SerialConsoleHostname.IsSet() {
+		toSerialize["serialConsoleHostname"] = o.SerialConsoleHostname.Get()
 	}
 	if !IsNil(o.IsSerialConsoleEnabled) {
 		toSerialize["isSerialConsoleEnabled"] = o.IsSerialConsoleEnabled

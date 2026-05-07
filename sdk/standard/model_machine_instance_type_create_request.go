@@ -36,7 +36,7 @@ import (
 // checks if the MachineInstanceTypeCreateRequest type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &MachineInstanceTypeCreateRequest{}
 
-// MachineInstanceTypeCreateRequest Associates one or more Machines with an Instance Type
+// MachineInstanceTypeCreateRequest Associates one or more Machines with an Instance Type.  The Machine's capabilities must be a superset of the Instance Type's required capabilities for the association to succeed.
 type MachineInstanceTypeCreateRequest struct {
 	MachineIds []string `json:"machineIds"`
 }

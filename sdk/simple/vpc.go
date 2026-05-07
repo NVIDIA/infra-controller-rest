@@ -93,9 +93,9 @@ func vpcFromStandard(api standard.VPC) Vpc {
 	if api.Name != nil {
 		v.Name = *api.Name
 	}
-	v.Description = api.Description
-	if api.NetworkVirtualizationType != nil {
-		v.NetworkVirtualizationType = *api.NetworkVirtualizationType
+	v.Description = api.Description.Get()
+	if api.NetworkVirtualizationType.IsSet() {
+		v.NetworkVirtualizationType = *api.NetworkVirtualizationType.Get()
 	}
 	if api.Created != nil {
 		v.Created = *api.Created

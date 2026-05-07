@@ -36,10 +36,10 @@ var _ MappedNullable = &MachineBMCInfo{}
 
 // MachineBMCInfo Describes BMC information of a Machine
 type MachineBMCInfo struct {
-	Ip               *string `json:"ip,omitempty"`
-	Mac              *string `json:"mac,omitempty"`
-	Version          *string `json:"version,omitempty"`
-	FirmwareRevision *string `json:"firmwareRevision,omitempty"`
+	Ip               NullableString `json:"ip,omitempty"`
+	Mac              NullableString `json:"mac,omitempty"`
+	Version          NullableString `json:"version,omitempty"`
+	FirmwareRevision NullableString `json:"firmwareRevision,omitempty"`
 }
 
 // NewMachineBMCInfo instantiates a new MachineBMCInfo object
@@ -59,132 +59,176 @@ func NewMachineBMCInfoWithDefaults() *MachineBMCInfo {
 	return &this
 }
 
-// GetIp returns the Ip field value if set, zero value otherwise.
+// GetIp returns the Ip field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineBMCInfo) GetIp() string {
-	if o == nil || IsNil(o.Ip) {
+	if o == nil || IsNil(o.Ip.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Ip
+	return *o.Ip.Get()
 }
 
 // GetIpOk returns a tuple with the Ip field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineBMCInfo) GetIpOk() (*string, bool) {
-	if o == nil || IsNil(o.Ip) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Ip, true
+	return o.Ip.Get(), o.Ip.IsSet()
 }
 
 // HasIp returns a boolean if a field has been set.
 func (o *MachineBMCInfo) HasIp() bool {
-	if o != nil && !IsNil(o.Ip) {
+	if o != nil && o.Ip.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetIp gets a reference to the given string and assigns it to the Ip field.
+// SetIp gets a reference to the given NullableString and assigns it to the Ip field.
 func (o *MachineBMCInfo) SetIp(v string) {
-	o.Ip = &v
+	o.Ip.Set(&v)
 }
 
-// GetMac returns the Mac field value if set, zero value otherwise.
+// SetIpNil sets the value for Ip to be an explicit nil
+func (o *MachineBMCInfo) SetIpNil() {
+	o.Ip.Set(nil)
+}
+
+// UnsetIp ensures that no value is present for Ip, not even an explicit nil
+func (o *MachineBMCInfo) UnsetIp() {
+	o.Ip.Unset()
+}
+
+// GetMac returns the Mac field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineBMCInfo) GetMac() string {
-	if o == nil || IsNil(o.Mac) {
+	if o == nil || IsNil(o.Mac.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Mac
+	return *o.Mac.Get()
 }
 
 // GetMacOk returns a tuple with the Mac field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineBMCInfo) GetMacOk() (*string, bool) {
-	if o == nil || IsNil(o.Mac) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Mac, true
+	return o.Mac.Get(), o.Mac.IsSet()
 }
 
 // HasMac returns a boolean if a field has been set.
 func (o *MachineBMCInfo) HasMac() bool {
-	if o != nil && !IsNil(o.Mac) {
+	if o != nil && o.Mac.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetMac gets a reference to the given string and assigns it to the Mac field.
+// SetMac gets a reference to the given NullableString and assigns it to the Mac field.
 func (o *MachineBMCInfo) SetMac(v string) {
-	o.Mac = &v
+	o.Mac.Set(&v)
 }
 
-// GetVersion returns the Version field value if set, zero value otherwise.
+// SetMacNil sets the value for Mac to be an explicit nil
+func (o *MachineBMCInfo) SetMacNil() {
+	o.Mac.Set(nil)
+}
+
+// UnsetMac ensures that no value is present for Mac, not even an explicit nil
+func (o *MachineBMCInfo) UnsetMac() {
+	o.Mac.Unset()
+}
+
+// GetVersion returns the Version field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineBMCInfo) GetVersion() string {
-	if o == nil || IsNil(o.Version) {
+	if o == nil || IsNil(o.Version.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.Version
+	return *o.Version.Get()
 }
 
 // GetVersionOk returns a tuple with the Version field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineBMCInfo) GetVersionOk() (*string, bool) {
-	if o == nil || IsNil(o.Version) {
+	if o == nil {
 		return nil, false
 	}
-	return o.Version, true
+	return o.Version.Get(), o.Version.IsSet()
 }
 
 // HasVersion returns a boolean if a field has been set.
 func (o *MachineBMCInfo) HasVersion() bool {
-	if o != nil && !IsNil(o.Version) {
+	if o != nil && o.Version.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetVersion gets a reference to the given string and assigns it to the Version field.
+// SetVersion gets a reference to the given NullableString and assigns it to the Version field.
 func (o *MachineBMCInfo) SetVersion(v string) {
-	o.Version = &v
+	o.Version.Set(&v)
 }
 
-// GetFirmwareRevision returns the FirmwareRevision field value if set, zero value otherwise.
+// SetVersionNil sets the value for Version to be an explicit nil
+func (o *MachineBMCInfo) SetVersionNil() {
+	o.Version.Set(nil)
+}
+
+// UnsetVersion ensures that no value is present for Version, not even an explicit nil
+func (o *MachineBMCInfo) UnsetVersion() {
+	o.Version.Unset()
+}
+
+// GetFirmwareRevision returns the FirmwareRevision field value if set, zero value otherwise (both if not set or set to explicit null).
 func (o *MachineBMCInfo) GetFirmwareRevision() string {
-	if o == nil || IsNil(o.FirmwareRevision) {
+	if o == nil || IsNil(o.FirmwareRevision.Get()) {
 		var ret string
 		return ret
 	}
-	return *o.FirmwareRevision
+	return *o.FirmwareRevision.Get()
 }
 
 // GetFirmwareRevisionOk returns a tuple with the FirmwareRevision field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineBMCInfo) GetFirmwareRevisionOk() (*string, bool) {
-	if o == nil || IsNil(o.FirmwareRevision) {
+	if o == nil {
 		return nil, false
 	}
-	return o.FirmwareRevision, true
+	return o.FirmwareRevision.Get(), o.FirmwareRevision.IsSet()
 }
 
 // HasFirmwareRevision returns a boolean if a field has been set.
 func (o *MachineBMCInfo) HasFirmwareRevision() bool {
-	if o != nil && !IsNil(o.FirmwareRevision) {
+	if o != nil && o.FirmwareRevision.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetFirmwareRevision gets a reference to the given string and assigns it to the FirmwareRevision field.
+// SetFirmwareRevision gets a reference to the given NullableString and assigns it to the FirmwareRevision field.
 func (o *MachineBMCInfo) SetFirmwareRevision(v string) {
-	o.FirmwareRevision = &v
+	o.FirmwareRevision.Set(&v)
+}
+
+// SetFirmwareRevisionNil sets the value for FirmwareRevision to be an explicit nil
+func (o *MachineBMCInfo) SetFirmwareRevisionNil() {
+	o.FirmwareRevision.Set(nil)
+}
+
+// UnsetFirmwareRevision ensures that no value is present for FirmwareRevision, not even an explicit nil
+func (o *MachineBMCInfo) UnsetFirmwareRevision() {
+	o.FirmwareRevision.Unset()
 }
 
 func (o MachineBMCInfo) MarshalJSON() ([]byte, error) {
@@ -197,17 +241,17 @@ func (o MachineBMCInfo) MarshalJSON() ([]byte, error) {
 
 func (o MachineBMCInfo) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.Ip) {
-		toSerialize["ip"] = o.Ip
+	if o.Ip.IsSet() {
+		toSerialize["ip"] = o.Ip.Get()
 	}
-	if !IsNil(o.Mac) {
-		toSerialize["mac"] = o.Mac
+	if o.Mac.IsSet() {
+		toSerialize["mac"] = o.Mac.Get()
 	}
-	if !IsNil(o.Version) {
-		toSerialize["version"] = o.Version
+	if o.Version.IsSet() {
+		toSerialize["version"] = o.Version.Get()
 	}
-	if !IsNil(o.FirmwareRevision) {
-		toSerialize["firmwareRevision"] = o.FirmwareRevision
+	if o.FirmwareRevision.IsSet() {
+		toSerialize["firmwareRevision"] = o.FirmwareRevision.Get()
 	}
 	return toSerialize, nil
 }
