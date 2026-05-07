@@ -156,8 +156,8 @@ func TestOperatingSystemHandler_Create(t *testing.T) {
 	wrun.Mock.On("Get", mock.Anything, mock.Anything).Return(nil)
 
 	tempClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		mock.AnythingOfType("func(internal.Context, uuid.UUID, string) error"), mock.AnythingOfType("uuid.UUID"),
-		mock.AnythingOfType("string")).Return(wrun, nil)
+		mock.AnythingOfType("func(internal.Context, []uuid.UUID, uuid.UUID) error"), mock.AnythingOfType("[]uuid.UUID"),
+		mock.AnythingOfType("uuid.UUID")).Return(wrun, nil)
 
 	tsc.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
 		"CreateOsImage", mock.Anything).Return(wrun, nil)
@@ -1552,8 +1552,8 @@ func TestOperatingSystemHandler_Update(t *testing.T) {
 	wrun.Mock.On("Get", mock.Anything, mock.Anything).Return(nil)
 
 	tempClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		mock.AnythingOfType("func(internal.Context, uuid.UUID, string) error"), mock.AnythingOfType("uuid.UUID"),
-		mock.AnythingOfType("string")).Return(wrun, nil)
+		mock.AnythingOfType("func(internal.Context, []uuid.UUID, uuid.UUID) error"), mock.AnythingOfType("[]uuid.UUID"),
+		mock.AnythingOfType("uuid.UUID")).Return(wrun, nil)
 
 	tsc.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
 		"UpdateOsImage", mock.Anything).Return(wrun, nil)
@@ -2064,8 +2064,8 @@ func TestOperatingSystemHandler_Delete(t *testing.T) {
 	wrun.Mock.On("Get", mock.Anything, mock.Anything).Return(nil)
 
 	tempClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
-		mock.AnythingOfType("func(internal.Context, uuid.UUID, string) error"), mock.AnythingOfType("uuid.UUID"),
-		mock.AnythingOfType("string")).Return(wrun, nil)
+		mock.AnythingOfType("func(internal.Context, []uuid.UUID, uuid.UUID) error"), mock.AnythingOfType("[]uuid.UUID"),
+		mock.AnythingOfType("uuid.UUID")).Return(wrun, nil)
 
 	tsc.Mock.On("ExecuteWorkflow", mock.Anything, mock.AnythingOfType("internal.StartWorkflowOptions"),
 		"DeleteOsImage", mock.Anything).Return(wrun, nil)

@@ -40,7 +40,7 @@ func (s *DeleteOperatingSystemByIDTestSuite) Test_DeleteOperatingSystemByID_Succ
 	s.env.OnActivity(osManager.DeleteOperatingSystemViaSiteAgent, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	// execute DeleteOperatingSystem workflow
-	s.env.ExecuteWorkflow(DeleteOperatingSystemByID, siteID.String(), operatingSystemID)
+	s.env.ExecuteWorkflow(DeleteOperatingSystemByID, []uuid.UUID{siteID}, operatingSystemID)
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 }
@@ -57,7 +57,7 @@ func (s *DeleteOperatingSystemByIDTestSuite) Test_DeleteOperatingSystemByID_Acti
 	s.env.OnActivity(osManager.DeleteOperatingSystemViaSiteAgent, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("DeleteOperatingSystemViaSiteAgent Failure"))
 
 	// execute DeleteOperatingSystemByID workflow
-	s.env.ExecuteWorkflow(DeleteOperatingSystemByID, siteID.String(), operatingSystemID)
+	s.env.ExecuteWorkflow(DeleteOperatingSystemByID, []uuid.UUID{siteID}, operatingSystemID)
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
