@@ -886,7 +886,7 @@ func TestIPBlockHandler_Get(t *testing.T) {
 	sip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Service Provider", sOrg, su)
 	stn := testSiteBuildTenant(t, dbSession, "Test Service Tenant", sOrg, su)
 
-	ss := testSiteBuildSite(t, dbSession, sip, "test-service-site", cdbm.SiteStatusRegistered, su, nil, nil)
+	ss := testSiteBuildSite(t, dbSession, sip, "test-service-site", cdbm.SiteStatusRegistered, su, nil, nil, nil)
 	common.TestBuildTenantSite(t, dbSession, stn, ss, su)
 
 	sipb := testIPBlockBuildIPBlock(t, dbSession, "site-prefix-1", ss, sip, nil, cdbm.IPBlockRoutingTypeDatacenterOnly, "172.168.1.0", 24, cdbm.IPBlockProtocolVersionV4, true, cdbm.IPBlockStatusPending, su)
@@ -1304,7 +1304,7 @@ func TestIPBlockHandler_GetAll(t *testing.T) {
 	sip := testSiteBuildInfrastructureProvider(t, dbSession, "Test Service Provider", sOrg, su)
 	stn := testSiteBuildTenant(t, dbSession, "Test Service Tenant", sOrg, su)
 
-	ss := testSiteBuildSite(t, dbSession, sip, "test-service-site", cdbm.SiteStatusRegistered, su, nil, nil)
+	ss := testSiteBuildSite(t, dbSession, sip, "test-service-site", cdbm.SiteStatusRegistered, su, nil, nil, nil)
 	common.TestBuildTenantSite(t, dbSession, stn, ss, su)
 
 	sipb := testIPBlockBuildIPBlock(t, dbSession, "site-prefix-1", ss, sip, nil, cdbm.IPBlockRoutingTypeDatacenterOnly, "172.168.1.0", 24, cdbm.IPBlockProtocolVersionV4, true, cdbm.IPBlockStatusPending, su)

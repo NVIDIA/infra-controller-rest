@@ -445,7 +445,7 @@ func TestBuildActionCommand_ReservedBodyPropertyPrefixed(t *testing.T) {
 }
 
 // TestNewApp_DpuExtensionServiceCreate_DoesNotPanic loads the real embedded
-// OpenAPI spec and runs `cli dpu-extension-service create --help`. Prior
+// OpenAPI spec and runs `nicocli dpu-extension-service create --help`. Prior
 // to the reserved-flag fix this invocation panics with
 // "create flag redefined: data" during urfave/cli flag-set construction.
 func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
@@ -457,8 +457,69 @@ func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
 	})
 }
 
+// TestBuildActionCommand_UsageTextUsesBinaryName guards against regressing the
+// dynamic usage string back to the literal "cli" prefix. Per-command --help
+// output renders UsageText, so a wrong prefix shows up as
+// "USAGE: cli site list" even though the binary is nicocli.
+func TestBuildActionCommand_UsageTextUsesBinaryName(t *testing.T) {
+	spec := &Spec{
+		Paths: map[string]PathItem{
+			"/v2/org/{org}/nico/site/{siteId}": {
+				Get: &Operation{
+					OperationID: "get-site",
+					Tags:        []string{"Site"},
+					Parameters: []Parameter{
+						{Name: "siteId", In: "path"},
+					},
+				},
+			},
+		},
+	}
+
+	ro := resolvedOp{
+		tag:    "Site",
+		action: "get",
+		method: "GET",
+		path:   "/v2/org/{org}/nico/site/{siteId}",
+		op:     spec.Paths["/v2/org/{org}/nico/site/{siteId}"].Get,
+	}
+
+	cmd := buildActionCommand(spec, ro, "")
+	assert.Equal(t, "nicocli site get <siteId>", cmd.UsageText)
+	assert.False(t, strings.HasPrefix(cmd.UsageText, "cli "),
+		"UsageText must not start with the literal word 'cli '; got %q", cmd.UsageText)
+}
+
+// TestBuildCommands_AllUsageTextStartsWithBinaryName walks every dynamically
+// built command from the embedded spec and asserts that the per-command
+// UsageText begins with the actual binary name. This is the broadest form of
+// the regression -- every leaf command renders UsageText in --help.
+func TestBuildCommands_AllUsageTextStartsWithBinaryName(t *testing.T) {
+	spec, err := ParseSpec(openapi.Spec)
+	require.NoError(t, err, "ParseSpec failed")
+
+	cmds := BuildCommands(spec)
+	require.NotEmpty(t, cmds, "BuildCommands returned no commands")
+
+	var visit func(path string, children []*cli.Command)
+	visit = func(path string, children []*cli.Command) {
+		for _, c := range children {
+			full := path + " " + c.Name
+			if c.UsageText != "" {
+				assert.Truef(t, strings.HasPrefix(c.UsageText, "nicocli "),
+					"command %q UsageText %q must start with %q",
+					full, c.UsageText, "nicocli ")
+			}
+			if len(c.Subcommands) > 0 {
+				visit(full, c.Subcommands)
+			}
+		}
+	}
+	visit("nicocli", cmds)
+}
+
 func TestDetectMisorderedFlags(t *testing.T) {
-	usage := "cli machine update <machineId>"
+	usage := "nicocli machine update <machineId>"
 	tests := []struct {
 		name         string
 		args         []string

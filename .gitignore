@@ -20,3 +20,4 @@ build/
 ref/
 .debug/
 .cursor
+.claude/

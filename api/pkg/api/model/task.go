@@ -85,3 +85,16 @@ func (r *APIGetTaskRequest) Validate() error {
 	}
 	return nil
 }
+
+// APICancelTaskRequest is the request body for cancelling a task by ID.
+type APICancelTaskRequest struct {
+	SiteID string `json:"siteId"`
+}
+
+// Validate validates the cancel task request
+func (r *APICancelTaskRequest) Validate() error {
+	if r.SiteID == "" {
+		return fmt.Errorf("siteId is required")
+	}
+	return nil
+}

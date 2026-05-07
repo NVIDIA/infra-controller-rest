@@ -212,8 +212,8 @@ auth:
     token_url: http://localhost:8080/realms/nico-dev/protocol/openid-connect/token
     client_id: nico-api
     client_secret: nico-local-secret
-    username: admin@example.com
-    password: adminpassword
+    # Run 'nicocli login' to authenticate; it will prompt for username/password
+    # and persist the resulting bearer token (and refresh token) here.
 
   # Option 4: NGC API key
   # api_key:

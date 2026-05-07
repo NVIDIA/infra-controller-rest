@@ -593,10 +593,9 @@ func (ssd SiteSQLDAO) Update(ctx context.Context, tx *db.Tx, input SiteUpdateInp
 	}
 
 	if input.Config != nil {
-
 		_, err := db.GetIDB(tx, ssd.dbSession).NewUpdate().
 			Model(st).
-			Set("config = config || ?::jsonb", input.Config).
+			Set("config = config || ?::jsonb, updated = current_timestamp", input.Config).
 			Where("id = ?", st.ID).
 			Exec(ctx)
 

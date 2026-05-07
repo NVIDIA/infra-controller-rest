@@ -1322,8 +1322,8 @@ func TestSiteSQLDAO_Update(t *testing.T) {
 		InventoryReceived:             &curTime,
 		Status:                        SiteStatusRegistered,
 		Config: &SiteConfig{
-			NetworkSecurityGroup: true,
 			NativeNetworking:     true,
+			NetworkSecurityGroup: true,
 		},
 	}
 
@@ -1383,7 +1383,7 @@ func TestSiteSQLDAO_Update(t *testing.T) {
 				InventoryReceived:             db.GetTimePtr(curTime),
 				Status:                        db.GetStrPtr(ust.Status),
 				Config: &SiteConfigUpdateInput{
-					NativeNetworking: db.GetBoolPtr(true), // One field should have been set in  in the site `st` and this will set another field to match the site `ust.`
+					NativeNetworking: db.GetBoolPtr(true),
 				},
 			},
 			want:               ust,

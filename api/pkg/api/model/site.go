@@ -67,6 +67,43 @@ func (ascr APISiteCreateRequest) Validate() error {
 	return nil
 }
 
+type APISiteCapabilitiesUpdateRequest struct {
+	NativeNetworking          *bool `json:"nativeNetworking"`
+	NetworkSecurityGroup      *bool `json:"networkSecurityGroup"`
+	NVLinkPartition           *bool `json:"nvLinkPartition"`
+	RackLevelAdministration   *bool `json:"rackLevelAdministration"`
+	ImageBasedOperatingSystem *bool `json:"imageBasedOperatingSystem"`
+}
+
+func (ascur APISiteCapabilitiesUpdateRequest) ToSiteConfig(existing *cdbm.SiteConfig) *cdbm.SiteConfig {
+	cfg := existing
+	if cfg == nil {
+		cfg = &cdbm.SiteConfig{}
+	}
+
+	if ascur.NativeNetworking != nil {
+		cfg.NativeNetworking = *ascur.NativeNetworking
+	}
+
+	if ascur.NetworkSecurityGroup != nil {
+		cfg.NetworkSecurityGroup = *ascur.NetworkSecurityGroup
+	}
+
+	if ascur.NVLinkPartition != nil {
+		cfg.NVLinkPartition = *ascur.NVLinkPartition
+	}
+
+	if ascur.RackLevelAdministration != nil {
+		cfg.RackLevelAdministration = *ascur.RackLevelAdministration
+	}
+
+	if ascur.ImageBasedOperatingSystem != nil {
+		cfg.ImageBasedOperatingSystem = *ascur.ImageBasedOperatingSystem
+	}
+
+	return cfg
+}
+
 // APISiteUpdateRequest captures the request data for updating a new site
 type APISiteUpdateRequest struct {
 	// Name is the name of the site
@@ -89,6 +126,8 @@ type APISiteUpdateRequest struct {
 	Location *APISiteLocation `json:"location"`
 	// Contact updates contact for the site
 	Contact *APISiteContact `json:"contact"`
+	// Capabilities updates capabilities for the site
+	Capabilities *APISiteCapabilitiesUpdateRequest `json:"capabilities"`
 }
 
 // Validate validates Site update request data
@@ -116,6 +155,7 @@ func (asur APISiteUpdateRequest) Validate(isProvider bool, isTenant bool) error 
 			validation.Field(&asur.SerialConsoleHostname, validation.Nil.Error(ErrMsgNotConfigurableByTenant)),
 			validation.Field(&asur.SerialConsoleIdleTimeout, validation.Nil.Error(ErrMsgNotConfigurableByTenant)),
 			validation.Field(&asur.SerialConsoleMaxSessionLength, validation.Nil.Error(ErrMsgNotConfigurableByTenant)),
+			validation.Field(&asur.Capabilities, validation.Nil.Error(ErrMsgNotConfigurableByTenant)),
 		)
 	}
 

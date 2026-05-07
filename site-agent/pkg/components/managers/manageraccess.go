@@ -22,6 +22,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedrack"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instance"
@@ -146,6 +147,11 @@ func (m *Manager) ExpectedMachine() *expectedmachine.API {
 // ExpectedPowerShelf - Add ExpectedPowerShelf Manager instance here
 func (m *Manager) ExpectedPowerShelf() *expectedpowershelf.API {
 	return expectedpowershelf.NewExpectedPowerShelfManager(m.Data.EB, m.API, m.Conf)
+}
+
+// ExpectedRack - Add ExpectedRack Manager instance here
+func (m *Manager) ExpectedRack() *expectedrack.API {
+	return expectedrack.NewExpectedRackManager(m.Data.EB, m.API, m.Conf)
 }
 
 // ExpectedSwitch - Add ExpectedSwitch Manager instance here

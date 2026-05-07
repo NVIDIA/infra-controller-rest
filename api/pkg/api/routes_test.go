@@ -65,6 +65,7 @@ func TestNewAPIRoutes(t *testing.T) {
 		"nvlink-logical-partition": 4,
 		"expected-machine":         5,
 		"expected-power-shelf":     5,
+		"expected-rack":            7,
 		"expected-switch":          5,
 		"instance-type":            5,
 		"machine":                  5,
@@ -81,7 +82,7 @@ func TestNewAPIRoutes(t *testing.T) {
 		"machine-validation":       11,
 		"dpu-extension-service":    7,
 		"sku":                      2,
-		"rack":                     11,
+		"rack":                     12,
 		"tray":                     8,
 		"stats":                    4,
 	}

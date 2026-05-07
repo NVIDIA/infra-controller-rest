@@ -59,6 +59,7 @@ type ManagerAPI struct {
 	NetworkSecurityGroup   NetworkSecurityGroupInterface
 	ExpectedMachine        ExpectedMachineInterface
 	ExpectedPowerShelf     ExpectedPowerShelfInterface
+	ExpectedRack           ExpectedRackInterface
 	ExpectedSwitch         ExpectedSwitchInterface
 	SKU                    SKUInterface
 	DpuExtensionService    DpuExtensionServiceInterface

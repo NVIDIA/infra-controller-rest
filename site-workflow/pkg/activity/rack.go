@@ -307,6 +307,44 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *rlav1.GetTasksBy
 	return response, nil
 }
 
+// CancelTask cancels a task by its UUID via RLA.
+//
+// Cancel is best-effort: RLA marks the task Terminated and terminates the
+// underlying Temporal workflow if one was scheduled. Already-finished tasks
+// (Succeeded/Failed) cannot be cancelled and the RLA call returns an error.
+func (mr *ManageRack) CancelTask(ctx context.Context, request *rlav1.CancelTaskRequest) (*rlav1.CancelTaskResponse, error) {
+	logger := log.With().Str("Activity", "CancelTask").Logger()
+	logger.Info().Msg("Starting activity")
+
+	var err error
+
+	switch {
+	case request == nil:
+		err = errors.New("received empty cancel task request")
+	case request.GetTaskId() == nil || request.GetTaskId().GetId() == "":
+		err = errors.New("received cancel task request without task ID")
+	}
+
+	if err != nil {
+		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
+	}
+
+	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := rla.CancelTask(ctx, request)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Failed to cancel task using RLA API")
+		return nil, swe.WrapErr(err)
+	}
+
+	logger.Info().Str("TaskID", request.GetTaskId().GetId()).Msg("Completed activity")
+
+	return response, nil
+}
+
 // UpgradeFirmware upgrades firmware on racks or components via RLA
 func (mr *ManageRack) UpgradeFirmware(ctx context.Context, request *rlav1.UpgradeFirmwareRequest) (*rlav1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Activity", "UpgradeFirmware").Logger()

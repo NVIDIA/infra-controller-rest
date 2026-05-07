@@ -720,6 +720,69 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 	}
 }
 
+func TestManageRack_CancelTask(t *testing.T) {
+	tests := []struct {
+		name        string
+		request     *rlav1.CancelTaskRequest
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:        "nil request returns error",
+			request:     nil,
+			wantErr:     true,
+			errContains: "empty cancel task request",
+		},
+		{
+			name:        "request with nil task ID returns error",
+			request:     &rlav1.CancelTaskRequest{},
+			wantErr:     true,
+			errContains: "without task ID",
+		},
+		{
+			name: "request with empty task ID returns error",
+			request: &rlav1.CancelTaskRequest{
+				TaskId: &rlav1.UUID{Id: ""},
+			},
+			wantErr:     true,
+			errContains: "without task ID",
+		},
+		{
+			name: "successful request",
+			request: &rlav1.CancelTaskRequest{
+				TaskId: &rlav1.UUID{Id: "test-task-id"},
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRlaClient := cClient.NewMockRlaClient()
+			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
+			rlaAtomicClient.SwapClient(mockRlaClient)
+			manageRack := NewManageRack(rlaAtomicClient)
+
+			ctx := context.Background()
+			result, err := manageRack.CancelTask(ctx, tt.request)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+			assert.NotNil(t, result.GetTask())
+			assert.Equal(t, tt.request.GetTaskId().GetId(), result.GetTask().GetId().GetId())
+			assert.Equal(t, rlav1.TaskStatus_TASK_STATUS_TERMINATED, result.GetTask().GetStatus())
+		})
+	}
+}
+
 func TestManageRack_UpgradeFirmware(t *testing.T) {
 	tests := []struct {
 		name        string
