@@ -1368,7 +1368,7 @@ func TestNVLinkInterfaceSQLDAO_DeleteAllBySiteID(t *testing.T) {
 		// Default selects (which exclude soft-deleted rows) should not return them.
 		notFound := &NVLinkInterface{}
 		err = dbSession.DB.NewSelect().Model(notFound).Where("id = ?", id).Scan(context.Background())
-		assert.Error(t, err, "soft-deleted row for id %s should not appear in default selects", id)
+		require.Error(t, err, "soft-deleted row for id %s should not appear in default selects", id)
 	}
 
 	// The interface scoped to the other site must be left untouched.

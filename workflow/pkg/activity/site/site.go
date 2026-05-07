@@ -99,6 +99,8 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 	skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(mst.dbSession)
 	skgiaDAO := cdbm.NewSSHKeyGroupInstanceAssociationDAO(mst.dbSession)
 	nsgDAO := cdbm.NewNetworkSecurityGroupDAO(mst.dbSession)
+	osDAO := cdbm.NewOperatingSystemDAO(mst.dbSession)
+	ossaDAO := cdbm.NewOperatingSystemSiteAssociationDAO(mst.dbSession)
 	desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(mst.dbSession)
 	skuDAO := cdbm.NewSkuDAO(mst.dbSession)
 	esDAO := cdbm.NewExpectedSwitchDAO(mst.dbSession)
@@ -295,6 +297,21 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		}
 	}
 
+	// Delete VPC Peerings
+	vpps, _, err := vpDAO.GetAll(ctx, nil, cdbm.VpcPeeringFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve VPC Peerings from DB by Site ID")
+		return err
+	}
+
+	for _, vpp := range vpps {
+		serr := vpDAO.Delete(ctx, nil, vpp.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("VPC Peering ID", vpp.ID.String()).Msg("error deleting VPC Peering record in DB")
+			return serr
+		}
+	}
+
 	// Delete VPCs
 	// Check if VPCs exist
 	vpcs, _, err := vpcDAO.GetAll(ctx, nil, cdbm.VpcFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
@@ -308,21 +325,6 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		serr := vpcDAO.DeleteByID(ctx, nil, vpc.ID)
 		if serr != nil && serr != cdb.ErrDoesNotExist {
 			logger.Error().Err(serr).Str("VPC ID", vpc.ID.String()).Msg("error deleting VPC record in DB")
-			return serr
-		}
-	}
-
-	// Delete VPC Peerings
-	vpps, _, err := vpDAO.GetAll(ctx, nil, cdbm.VpcPeeringFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve VPC Peerings from DB by Site ID")
-		return err
-	}
-
-	for _, vpp := range vpps {
-		serr := vpDAO.Delete(ctx, nil, vpp.ID)
-		if serr != nil && serr != cdb.ErrDoesNotExist {
-			logger.Error().Err(serr).Str("VPC Peering ID", vpp.ID.String()).Msg("error deleting VPC Peering record in DB")
 			return serr
 		}
 	}
@@ -411,6 +413,55 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		if serr != nil && serr != cdb.ErrDoesNotExist {
 			logger.Error().Err(serr).Str("Network Security Group ID", nsg.ID).Msg("error deleting Network Security Group record in DB")
 			return serr
+		}
+	}
+
+	// Delete operating system site associations. After the
+	// associations for this site are removed, walk the set of
+	// operating systems they referenced and delete any image-typed
+	// OS whose only remaining site association was the one we just
+	// removed. iPXE-typed OSes (and image OSes that are still
+	// associated with at least one other site) are intentionally
+	// left in place: only image OSes whose lifecycle was tied
+	// solely to this site are cleaned up.
+	ossas, _, err := ossaDAO.GetAll(ctx, nil, cdbm.OperatingSystemSiteAssociationFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Operating System Site Associations from DB by Site ID")
+		return err
+	}
+
+	candidateOsIDSet := make(map[uuid.UUID]struct{}, len(ossas))
+	candidateOsIDs := make([]uuid.UUID, 0, len(ossas))
+	for _, ossa := range ossas {
+		candidateOsIDSet[ossa.OperatingSystemID] = struct{}{}
+		candidateOsIDs = append(candidateOsIDs, ossa.OperatingSystemID)
+		serr := ossaDAO.Delete(ctx, nil, ossa.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("Operating System Site Association ID", ossa.ID.String()).Msg("error deleting Operating System Site Association record in DB")
+			return serr
+		}
+	}
+	if len(candidateOsIDs) > 0 {
+		// Soft-deleted associations are excluded from GetAll by default, so any rows returned here are associations on
+		// OTHER sites that are still keeping the OS alive.
+		remainingOssas, _, err := ossaDAO.GetAll(ctx, nil, cdbm.OperatingSystemSiteAssociationFilterInput{OperatingSystemIDs: candidateOsIDs}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+		if err != nil {
+			logger.Error().Err(err).Msg("failed to retrieve remaining Operating System Site Associations by Operating System IDs")
+			return err
+		}
+
+		for _, r := range remainingOssas {
+			delete(candidateOsIDSet, r.OperatingSystemID)
+		}
+
+		if len(candidateOsIDSet) > 0 {
+			for osID := range candidateOsIDSet {
+				serr := osDAO.Delete(ctx, nil, osID)
+				if serr != nil && serr != cdb.ErrDoesNotExist {
+					logger.Error().Err(serr).Str("Operating System ID", osID.String()).Msg("error deleting orphaned Operating System record in DB")
+					return serr
+				}
+			}
 		}
 	}
 
