@@ -55,7 +55,7 @@ import (
 )
 
 const (
-	NVLinkInterfaceStatusSyncGraceWindow = 3 * 60 * time.Second
+	NVLinkInterfaceStatusSyncGraceWindow = 90 * time.Second
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -3154,7 +3154,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 						// This interface is already ready, we don't need to re-issue the NVLink interface
 						existingReadyNvlIfcsCount++
 					} else {
-						if mostRecentNvlIfc.Updated.Before(time.Now().Add(-NVLinkInterfaceStatusSyncGraceWindow)) {
+						if mostRecentNvlIfc.Updated.After(time.Now().Add(-NVLinkInterfaceStatusSyncGraceWindow)) {
 							if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusPending {
 								existingPendingNvlIfcsCount++
 							} else if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusDeleting {

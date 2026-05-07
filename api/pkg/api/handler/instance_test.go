@@ -3992,6 +3992,19 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	inst13pfNvl4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, inst13PendingFresh.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusPending)
 	assert.NotNil(t, inst13pfNvl4)
 
+	// Instance with four Deleting NVLink rows (devices 0–3 across nvllp1/nvllp2); same multiset re-request must re-issue new Pending rows.
+	instFourDeletingNVLink := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-four-all-deleting", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instFourDeletingNVLink)
+
+	inst4DelNvl1 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instFourDeletingNVLink.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusDeleting)
+	inst4DelNvl2 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instFourDeletingNVLink.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 1, cdbm.NVLinkInterfaceStatusDeleting)
+	inst4DelNvl3 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instFourDeletingNVLink.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 2, cdbm.NVLinkInterfaceStatusDeleting)
+	inst4DelNvl4 := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instFourDeletingNVLink.ID, nvllp2.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 3, cdbm.NVLinkInterfaceStatusDeleting)
+	assert.NotNil(t, inst4DelNvl1)
+	assert.NotNil(t, inst4DelNvl2)
+	assert.NotNil(t, inst4DelNvl3)
+	assert.NotNil(t, inst4DelNvl4)
+
 	mc6 := testInstanceBuildMachine(t, dbSession, ip.ID, st2.ID, cdb.GetBoolPtr(false), nil)
 	assert.NotNil(t, mc6)
 
@@ -5741,7 +5754,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
-			name: "test Instance update API endpoint success when NVLink interfaces unchanged — pending rows older than grace window count toward multiset no-op",
+			name: "test Instance update API endpoint success when NVLink pending rows older than 90s grace — re-issued (stale Updated timestamps)",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -5778,7 +5791,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
-			name: "test Instance update API endpoint success when NVLink pending rows are recent — excluded from unchanged match, interfaces replaced",
+			name: "test Instance update API endpoint success when NVLink interfaces pending and updated within 90s — multiset no-op (no DB re-issue)",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -5795,16 +5808,61 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
 					},
 				},
-				reqInstance:              inst13PendingFresh.ID.String(),
+				reqInstance:                     inst13PendingFresh.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				nvLinkGpuConfigsVerifyCountOnly: true,
+				beforeHandle: func(t *testing.T) {
+					// Ensure timestamps are within NVLinkInterfaceStatusSyncGraceWindow but not "just now" only.
+					recent := time.Now().UTC().Add(-45 * time.Second)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE instance_id = ?",
+						recent,
+						inst13PendingFresh.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues when four NVLink rows exist as Deleting — same multiset request (deviceInstance 0–3) creates four new Pending",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					IpxeScript: os2.IpxeScript,
+					// Same four bindings as DB (nvllp1: 0,1 and nvllp2: 2,3); order shuffled. All rows Deleting → must not no-op.
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 3},
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 2},
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
+					},
+				},
+				reqInstance:              instFourDeletingNVLink.ID.String(),
 				reqOrg:                   tnOrg1,
 				reqUser:                  tnu1,
 				respCode:                 http.StatusOK,
 				respNoOfNVLinkInterfaces: cdb.GetIntPtr(4),
 				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
-					*inst13pfNvl1,
-					*inst13pfNvl2,
-					*inst13pfNvl3,
-					*inst13pfNvl4,
+					*inst4DelNvl1, *inst4DelNvl2, *inst4DelNvl3, *inst4DelNvl4,
+				},
+				beforeHandle: func(t *testing.T) {
+					recent := time.Now().UTC().Add(-45 * time.Second)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE instance_id = ?",
+						recent,
+						instFourDeletingNVLink.ID,
+					)
+					require.NoError(t, err)
 				},
 			},
 			wantErr:                     false,
