@@ -1260,7 +1260,7 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 
 	}
 
-	// Block deletion while non-terminated Instances are still associated via NVLink Interfaces
+	// Block deletion while Instances referenced by NVLink Interfaces still exist in the DB
 	nvlifcDAO := cdbm.NewNVLinkInterfaceDAO(dibph.dbSession)
 	nvInterfaces, _, err := nvlifcDAO.GetAll(ctx, nil, cdbm.NVLinkInterfaceFilterInput{
 		NVLinkLogicalPartitionIDs: []uuid.UUID{nvllpID},
@@ -1279,13 +1279,10 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 		instanceDAO := cdbm.NewInstanceDAO(dibph.dbSession)
 		activeCount, err := instanceDAO.GetCount(ctx, nil, cdbm.InstanceFilterInput{
 			InstanceIDs: instanceIDSet.ToSlice(),
-			Statuses: []string{cdbm.InstanceStatusPending, cdbm.InstanceStatusProvisioning,
-				cdbm.InstanceStatusConfiguring, cdbm.InstanceStatusReady, cdbm.InstanceStatusUpdating,
-				cdbm.InstancePowerStatusBootCompleted, cdbm.InstancePowerStatusRebooting},
 		})
 		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving count of active Instances from DB for NVLink Logical Partition interface check")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of active Instances for NVLink Logical Partition", nil)
+			logger.Error().Err(err).Msg("error retrieving count of Instances from DB for NVLink Logical Partition interface check")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of Instances for NVLink Logical Partition", nil)
 		}
 		if activeCount > 0 {
 			logger.Warn().Int("active_instance_count", activeCount).Msg("NVLink Logical Partition has active Instances associated via interfaces")

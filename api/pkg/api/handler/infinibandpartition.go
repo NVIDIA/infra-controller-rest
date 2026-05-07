@@ -1027,7 +1027,7 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Tenant for InfiniBand Partition in request does not match Tenant in org", nil)
 	}
 
-	// Block deletion while non-terminated Instances are still associated via InfiniBand Interfaces
+	// Block deletion while Instances referenced by InfiniBand Interfaces still exist in the DB
 	ibiDAO := cdbm.NewInfiniBandInterfaceDAO(dibph.dbSession)
 	ibInterfaces, _, err := ibiDAO.GetAll(ctx, nil, cdbm.InfiniBandInterfaceFilterInput{
 		InfiniBandPartitionIDs: []uuid.UUID{ibpID},
@@ -1044,13 +1044,10 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		instanceDAO := cdbm.NewInstanceDAO(dibph.dbSession)
 		activeCount, err := instanceDAO.GetCount(ctx, nil, cdbm.InstanceFilterInput{
 			InstanceIDs: instanceIDSet.ToSlice(),
-			Statuses: []string{cdbm.InstanceStatusPending, cdbm.InstanceStatusProvisioning,
-				cdbm.InstanceStatusConfiguring, cdbm.InstanceStatusReady, cdbm.InstanceStatusUpdating,
-				cdbm.InstancePowerStatusBootCompleted, cdbm.InstancePowerStatusRebooting},
 		})
 		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving count of active Instances from DB for InfiniBand Partition interface check")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of active Instances for InfiniBand Partition", nil)
+			logger.Error().Err(err).Msg("error retrieving count of Instances from DB for InfiniBand Partition interface check")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of Instances for InfiniBand Partition", nil)
 		}
 		if activeCount > 0 {
 			logger.Warn().Int("active_instance_count", activeCount).Msg("InfiniBand Partition has active Instances associated via interfaces")
