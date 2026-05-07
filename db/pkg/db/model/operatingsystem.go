@@ -164,6 +164,14 @@ func (osip *OperatingSystemIpxeParameter) ToProto() *ws.IpxeTemplateParameter {
 
 // OperatingSystemIpxeArtifact holds a single iPXE artifact descriptor (stored as JSONB).
 // These are only populated for iPXE-based OS definitions synced from carbide-core.
+//
+// Note: the proto IpxeTemplateArtifact has a `cached_url` field that is
+// intentionally NOT represented here. cached_url is a per-site value populated
+// by carbide-core after a successful download; there is no meaningful global
+// value for it on the rest side. The push activity must therefore never
+// emit cached_url to core (so existing per-site values are preserved), and
+// the inbound (pull) activity must never store cached_url on the global
+// OperatingSystem row.
 type OperatingSystemIpxeArtifact struct {
 	Name          string  `json:"name"`
 	URL           string  `json:"url"`
@@ -171,10 +179,10 @@ type OperatingSystemIpxeArtifact struct {
 	AuthType      *string `json:"authType"`
 	AuthToken     *string `json:"authToken"`
 	CacheStrategy string  `json:"cacheStrategy"`
-	CachedURL     *string `json:"cachedUrl"`
 }
 
-// FromProto converts a proto IpxeTemplateArtifact to an OperatingSystemIpxeArtifact
+// FromProto converts a proto IpxeTemplateArtifact to an OperatingSystemIpxeArtifact.
+// The proto's cached_url field is intentionally ignored — see the type doc.
 func (osia *OperatingSystemIpxeArtifact) FromProto(protoArtifact *ws.IpxeTemplateArtifact) {
 	osia.Name = protoArtifact.Name
 	osia.URL = protoArtifact.Url
@@ -187,7 +195,6 @@ func (osia *OperatingSystemIpxeArtifact) FromProto(protoArtifact *ws.IpxeTemplat
 		cacheStrategy = OperatingSystemIpxeArtifactCacheStrategyCacheAsNeeded
 	}
 	osia.CacheStrategy = cacheStrategy
-	osia.CachedURL = protoArtifact.CachedUrl
 }
 
 // ToProto converts an OperatingSystemIpxeArtifact to a proto IpxeTemplateArtifact
@@ -199,7 +206,7 @@ func (osia *OperatingSystemIpxeArtifact) ToProto() *ws.IpxeTemplateArtifact {
 		AuthType:      osia.AuthType,
 		AuthToken:     osia.AuthToken,
 		CacheStrategy: OperatingSystemIpxeArtifactCacheStrategyToProtoMap[osia.CacheStrategy],
-		CachedUrl:     osia.CachedURL,
+		CachedUrl:     nil, // rest side never update core local value for CachedUrl: it is managed on the core side.
 	}
 }
 

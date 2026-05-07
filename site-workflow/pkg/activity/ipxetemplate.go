@@ -40,7 +40,7 @@ func (mii *ManageIpxeTemplateInventory) DiscoverIpxeTemplateInventory(ctx contex
 	logger.Info().Msg("Starting activity")
 
 	workflowOptions := tClient.StartWorkflowOptions{
-		ID:        fmt.Sprintf("update-ipxetemplate-inventory-%s", mii.config.SiteID.String()),
+		ID:        fmt.Sprintf("update-ipxe-template-inventory-%s", mii.config.SiteID.String()),
 		TaskQueue: mii.config.TemporalPublishQueue,
 	}
 	workflowName := "UpdateIpxeTemplateInventory"
