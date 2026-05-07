@@ -24,12 +24,12 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
-	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	temporalClient "go.temporal.io/sdk/client"
 	tp "go.temporal.io/sdk/temporal"
 
+	goset "github.com/deckarep/golang-set/v2"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -1027,7 +1027,7 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Tenant for InfiniBand Partition in request does not match Tenant in org", nil)
 	}
 
-	// Verify that no InfiniBand Interfaces reference this partition
+	// Block deletion while non-terminated Instances are still associated via InfiniBand Interfaces
 	ibiDAO := cdbm.NewInfiniBandInterfaceDAO(dibph.dbSession)
 	ibInterfaces, _, err := ibiDAO.GetAll(ctx, nil, cdbm.InfiniBandInterfaceFilterInput{
 		InfiniBandPartitionIDs: []uuid.UUID{ibpID},
@@ -1036,13 +1036,27 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		logger.Error().Err(err).Msg("error retrieving InfiniBand Interfaces from DB for InfiniBand Partition")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve InfiniBand Interfaces for InfiniBand Partition", nil)
 	}
-	if len(ibInterfaces) > 0 {
-		var ibiIDs []string
-		for _, ibi := range ibInterfaces {
-			ibiIDs = append(ibiIDs, ibi.ID.String())
+	instanceIDSet := goset.NewSet[uuid.UUID]()
+	for _, ibi := range ibInterfaces {
+		instanceIDSet.Add(ibi.InstanceID)
+	}
+	if instanceIDSet.Cardinality() > 0 {
+		instanceDAO := cdbm.NewInstanceDAO(dibph.dbSession)
+		activeCount, err := instanceDAO.GetCount(ctx, nil, cdbm.InstanceFilterInput{
+			InstanceIDs: instanceIDSet.ToSlice(),
+			Statuses: []string{cdbm.InstanceStatusPending, cdbm.InstanceStatusProvisioning,
+				cdbm.InstanceStatusConfiguring, cdbm.InstanceStatusReady, cdbm.InstanceStatusUpdating,
+				cdbm.InstancePowerStatusBootCompleted, cdbm.InstancePowerStatusRebooting},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("error retrieving count of active Instances from DB for InfiniBand Partition interface check")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of active Instances for InfiniBand Partition", nil)
 		}
-		logger.Warn().Msg("InfiniBand Partition is being used by one or more InfiniBand Interfaces")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "InfiniBand Partition is being used by one or more InfiniBand Interfaces", validation.Errors{"infiniBandInterfaceIds": errors.New(strings.Join(ibiIDs, ", "))})
+		if activeCount > 0 {
+			logger.Warn().Int("active_instance_count", activeCount).Msg("InfiniBand Partition has active Instances associated via interfaces")
+			msg := fmt.Sprintf("%d active Instances are associated with this InfiniBand Partition, unable to delete", activeCount)
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, msg, nil)
+		}
 	}
 
 	sdDAO := cdbm.NewStatusDetailDAO(dibph.dbSession)

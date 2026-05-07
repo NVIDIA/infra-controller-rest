@@ -1742,14 +1742,15 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 		"DeleteNVLinkLogicalPartition", mock.Anything).Return(wrun, nil)
 
 	tests := []struct {
-		fields             fields
-		name               string
-		reqOrgName         string
-		user               *cdbm.User
-		nvllpID            string
-		expectedErr        bool
-		expectedStatus     int
-		verifyChildSpanner bool
+		fields               fields
+		name                 string
+		reqOrgName           string
+		user                 *cdbm.User
+		nvllpID              string
+		expectedErr          bool
+		expectedStatus       int
+		verifyChildSpanner   bool
+		expectedErrorMessage string
 	}{
 		{
 			fields: fields{
@@ -1842,12 +1843,13 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 				scp:       scp,
 				cfg:       cfg,
 			},
-			name:           "error when partition has NVLink Interfaces",
-			reqOrgName:     tnOrg4,
-			user:           tnu4,
-			nvllpID:        nvllp4.ID.String(),
-			expectedErr:    true,
-			expectedStatus: http.StatusBadRequest,
+			name:                 "error when active Instances are associated via NVLink Interfaces",
+			reqOrgName:           tnOrg4,
+			user:                 tnu4,
+			nvllpID:              nvllp4.ID.String(),
+			expectedErr:          true,
+			expectedStatus:       http.StatusBadRequest,
+			expectedErrorMessage: "1 active Instances are associated with this NVLink Logical Partition, unable to delete",
 		},
 		{
 			fields: fields{
@@ -1913,6 +1915,15 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 
 			assert.Equal(t, tc.expectedStatus, rec.Code)
 			assert.Equal(t, tc.expectedErr, rec.Code != http.StatusAccepted)
+
+			if tc.expectedErrorMessage != "" {
+				require.NotEmpty(t, rec.Body.Bytes())
+				var payload struct {
+					Message string `json:"message"`
+				}
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &payload))
+				require.Equal(t, tc.expectedErrorMessage, payload.Message)
+			}
 
 			if !tc.expectedErr {
 				// Check that NVLinkLogical Partition status is set to deleting

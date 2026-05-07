@@ -43,6 +43,7 @@ import (
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
+	goset "github.com/deckarep/golang-set/v2"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -1259,6 +1260,7 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 
 	}
 
+	// Block deletion while non-terminated Instances are still associated via NVLink Interfaces
 	nvlifcDAO := cdbm.NewNVLinkInterfaceDAO(dibph.dbSession)
 	nvInterfaces, _, err := nvlifcDAO.GetAll(ctx, nil, cdbm.NVLinkInterfaceFilterInput{
 		NVLinkLogicalPartitionIDs: []uuid.UUID{nvllpID},
@@ -1267,13 +1269,29 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 		logger.Error().Err(err).Msg("error retrieving NVLink Interfaces from DB for NVLink Logical Partition")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve NVLink Interfaces for NVLink Logical Partition", nil)
 	}
-	if len(nvInterfaces) > 0 {
-		var nvlifcIDs []string
-		for _, nvlifc := range nvInterfaces {
-			nvlifcIDs = append(nvlifcIDs, nvlifc.ID.String())
+
+	instanceIDSet := goset.NewSet[uuid.UUID]()
+	for _, nvlifc := range nvInterfaces {
+		instanceIDSet.Add(nvlifc.InstanceID)
+	}
+
+	if instanceIDSet.Cardinality() > 0 {
+		instanceDAO := cdbm.NewInstanceDAO(dibph.dbSession)
+		activeCount, err := instanceDAO.GetCount(ctx, nil, cdbm.InstanceFilterInput{
+			InstanceIDs: instanceIDSet.ToSlice(),
+			Statuses: []string{cdbm.InstanceStatusPending, cdbm.InstanceStatusProvisioning,
+				cdbm.InstanceStatusConfiguring, cdbm.InstanceStatusReady, cdbm.InstanceStatusUpdating,
+				cdbm.InstancePowerStatusBootCompleted, cdbm.InstancePowerStatusRebooting},
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("error retrieving count of active Instances from DB for NVLink Logical Partition interface check")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of active Instances for NVLink Logical Partition", nil)
 		}
-		logger.Warn().Msg("NVLink Logical Partition is being used by one or more NVLink Interfaces")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "NVLink Logical Partition is being used by one or more NVLink Interfaces", validation.Errors{"nvLinkInterfaceIds": errors.New(strings.Join(nvlifcIDs, ", "))})
+		if activeCount > 0 {
+			logger.Warn().Int("active_instance_count", activeCount).Msg("NVLink Logical Partition has active Instances associated via interfaces")
+			msg := fmt.Sprintf("%d active Instances are associated with this NVLink Logical Partition, unable to delete", activeCount)
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, msg, nil)
+		}
 	}
 
 	// Start a DB transaction
