@@ -34,6 +34,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sshkeygroup"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/subnet"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/tenant"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/tenantidentity"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpc"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpcpeering"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpcprefix"
@@ -72,6 +73,7 @@ func NewAPIHandlers() {
 		DpuExtensionService:    &dpuextensionservice.API{},
 		NVLinkLogicalPartition: &nvlinklogicalpartition.API{},
 		FlowGrpc:               &flowgrpc.API{},
+		TenantIdentity:         &tenantidentity.API{},
 	}
 }
 
@@ -118,6 +120,7 @@ func (Managers *Manager) NewInstance() {
 	Managers.NVLinkLogicalPartition()
 	Managers.FlowGrpc()
 	Managers.VpcPeering()
+	Managers.TenantIdentity()
 }
 
 // Init - initialize all managers
@@ -167,6 +170,7 @@ func (Managers *Manager) Init() {
 	Managers.NVLinkLogicalPartition().Init()
 	Managers.FlowGrpc().Init()
 	Managers.VpcPeering().Init()
+	Managers.TenantIdentity().Init()
 }
 
 // Start - start all managers

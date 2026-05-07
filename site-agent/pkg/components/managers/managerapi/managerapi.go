@@ -51,6 +51,7 @@ type ManagerAPI struct {
 	DpuExtensionService    DpuExtensionServiceInterface
 	NVLinkLogicalPartition NVLinkLogicalPartitionInterface
 	FlowGrpc               FlowGrpcInterface
+	TenantIdentity         TenantIdentityInterface
 }
 
 // ManagerConf - Conf struct

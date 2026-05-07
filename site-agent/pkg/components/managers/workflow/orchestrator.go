@@ -276,6 +276,8 @@ func workflowOrchestrator() error {
 	ManagerAccess.API.NVLinkLogicalPartition.RegisterSubscriber()
 	ManagerAccess.API.NVLinkLogicalPartition.RegisterPublisher()
 
+	ManagerAccess.API.TenantIdentity.RegisterSubscriber()
+
 	// Flow workflows (only registered if Flow gRPC is enabled)
 	if ManagerAccess.Conf.EB.FlowGrpc.Enabled {
 		if ManagerAccess.API.FlowGrpc != nil {

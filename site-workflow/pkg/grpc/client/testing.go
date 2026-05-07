@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	wflows "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
@@ -1519,6 +1520,108 @@ func (mcgsc *MockCoreGrpcServiceClient) NVLinkLogicalPartitionsForTenant(ctx con
 	}
 
 	return out, nil
+}
+
+/* Machine Identity (JWT-SVID) mock methods */
+
+// SetTenantIdentityConfiguration returns a minimally-populated response echoing the
+// incoming config. On simulated first-create the two timestamps are equal.
+func (mcgsc *MockCoreGrpcServiceClient) SetTenantIdentityConfiguration(ctx context.Context, in *wflows.SetTenantIdentityConfigRequest, opts ...grpc.CallOption) (*wflows.TenantIdentityConfigResponse, error) {
+	now := timestamppb.Now()
+	return &wflows.TenantIdentityConfigResponse{
+		OrganizationId: in.GetOrganizationId(),
+		Config:         in.GetConfig(),
+		SigningKeys: []*wflows.TenantIdentitySigningKey{
+			{Kid: uuid.NewString(), Alg: "ES256", CurrentSigner: true},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) GetTenantIdentityConfiguration(ctx context.Context, in *wflows.GetTenantIdentityConfigRequest, opts ...grpc.CallOption) (*wflows.TenantIdentityConfigResponse, error) {
+	now := timestamppb.Now()
+	return &wflows.TenantIdentityConfigResponse{
+		OrganizationId: in.GetOrganizationId(),
+		Config: &wflows.TenantIdentityConfig{
+			Enabled:         true,
+			Issuer:          "https://carbide.example.com/iss",
+			DefaultAudience: "openbao",
+			TokenTtlSec:     600,
+		},
+		SigningKeys: []*wflows.TenantIdentitySigningKey{
+			{Kid: "mock-key-id", Alg: "ES256", CurrentSigner: true},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) DeleteTenantIdentityConfiguration(ctx context.Context, in *wflows.GetTenantIdentityConfigRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) SetTokenDelegation(ctx context.Context, in *wflows.TokenDelegationRequest, opts ...grpc.CallOption) (*wflows.TokenDelegationResponse, error) {
+	now := timestamppb.Now()
+	out := &wflows.TokenDelegationResponse{
+		OrganizationId:       in.GetOrganizationId(),
+		TokenEndpoint:        in.GetConfig().GetTokenEndpoint(),
+		SubjectTokenAudience: in.GetConfig().GetSubjectTokenAudience(),
+		CreatedAt:            now,
+		UpdatedAt:            now,
+	}
+	if basic := in.GetConfig().GetClientSecretBasic(); basic != nil {
+		out.AuthMethodConfig = &wflows.TokenDelegationResponse_ClientSecretBasic{
+			ClientSecretBasic: &wflows.ClientSecretBasicResponse{
+				ClientId:         basic.GetClientId(),
+				ClientSecretHash: "sha256:mock-hash",
+			},
+		}
+	}
+	return out, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) GetTokenDelegation(ctx context.Context, in *wflows.GetTokenDelegationRequest, opts ...grpc.CallOption) (*wflows.TokenDelegationResponse, error) {
+	now := timestamppb.Now()
+	return &wflows.TokenDelegationResponse{
+		OrganizationId:       in.GetOrganizationId(),
+		TokenEndpoint:        "https://auth.example.com/oauth2/token",
+		SubjectTokenAudience: "mock-exchange-audience",
+		AuthMethodConfig: &wflows.TokenDelegationResponse_ClientSecretBasic{
+			ClientSecretBasic: &wflows.ClientSecretBasicResponse{
+				ClientId:         "mock-client-id",
+				ClientSecretHash: "sha256:mock-hash",
+			},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
+	}, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) DeleteTokenDelegation(ctx context.Context, in *wflows.GetTokenDelegationRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	return &emptypb.Empty{}, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) GetJWKS(ctx context.Context, in *wflows.JwksRequest, opts ...grpc.CallOption) (*wflows.Jwks, error) {
+	use := "sig"
+	if in.GetKind() == wflows.JwksKind_Spiffe {
+		use = "jwt-svid"
+	}
+	jwks := `{"keys":[{"kty":"EC","use":"` + use + `","crv":"P-256","kid":"mock-key-id",` +
+		`"x":"mock-x","y":"mock-y","alg":"ES256"}]}`
+	return &wflows.Jwks{Jwks: jwks}, nil
+}
+
+func (mcgsc *MockCoreGrpcServiceClient) GetOpenIDConfiguration(ctx context.Context, in *wflows.OpenIdConfigRequest, opts ...grpc.CallOption) (*wflows.OpenIdConfiguration, error) {
+	iss := "https://carbide.example.com/iss"
+	return &wflows.OpenIdConfiguration{
+		Issuer:                           iss,
+		JwksUri:                          iss + "/.well-known/jwks.json",
+		ResponseTypesSupported:           []string{"token"},
+		SubjectTypesSupported:            []string{"public"},
+		IdTokenSigningAlgValuesSupported: []string{},
+		SpiffeJwksUri:                    iss + "/.well-known/spiffe/jwks.json",
+	}, nil
 }
 
 // NewMockCoreGrpcClient creates a new mock CoreGrpcClient

@@ -25,6 +25,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sshkeygroup"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/subnet"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/tenant"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/tenantidentity"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpc"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpcpeering"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/vpcprefix"
@@ -163,4 +164,9 @@ func (m *Manager) NVLinkLogicalPartition() *nvlinklogicalpartition.API {
 // FlowGrpc - Add Flow gRPC Manager instance here
 func (m *Manager) FlowGrpc() *flowgrpc.API {
 	return flowgrpc.NewFlowGrpcManager(m.Data.EB, m.API, m.Conf)
+}
+
+// TenantIdentity - Add TenantIdentity Manager instance here
+func (m *Manager) TenantIdentity() *tenantidentity.API {
+	return tenantidentity.NewTenantIdentityManager(m.Data.EB, m.API, m.Conf)
 }

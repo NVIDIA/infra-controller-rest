@@ -1885,7 +1885,7 @@ func TestCreateExpectedMachineHandler_BmcCredentialsForwardedToWorkflow(t *testi
 	reqBody, err := json.Marshal(rawBody)
 	assert.Nil(t, err)
 
-	req := httptest.NewRequest(http.MethodPost, "/v2/org/"+org+"/carbide/expected-machine", bytes.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPost, "/v2/org/"+org+"/nico/expected-machine", bytes.NewReader(reqBody))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	req = req.WithContext(context.Background())
 
@@ -1978,7 +1978,7 @@ func TestUpdateExpectedMachineHandler_BmcCredentialsForwardedToWorkflow(t *testi
 	reqBody, err := json.Marshal(rawBody)
 	assert.Nil(t, err)
 
-	url := "/v2/org/" + org + "/carbide/expected-machine/" + testEM.ID.String()
+	url := "/v2/org/" + org + "/nico/expected-machine/" + testEM.ID.String()
 	req := httptest.NewRequest(http.MethodPatch, url, bytes.NewReader(reqBody))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	req = req.WithContext(context.Background())

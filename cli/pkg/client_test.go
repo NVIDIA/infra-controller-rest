@@ -36,7 +36,7 @@ func TestClientDoRefreshesTokenOnUnauthorizedAndRetries(t *testing.T) {
 		return "refreshed-token", nil
 	}
 
-	body, _, err := client.Do("GET", "/v2/org/{org}/carbide/test", nil, nil, nil)
+	body, _, err := client.Do("GET", "/v2/org/{org}/nico/test", nil, nil, nil)
 	require.NoError(t, err)
 	require.Equal(t, `{"ok":true}`, string(body))
 	require.Equal(t, 2, requests)
@@ -62,7 +62,7 @@ func TestClientDoRetriesUnauthorizedAtMostThreeTimes(t *testing.T) {
 		events = append(events, event)
 	}
 
-	_, _, err := client.Do("GET", "/v2/org/{org}/carbide/test", nil, nil, nil)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/test", nil, nil, nil)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "err = %T, want *APIError", err)
 	require.Equal(t, http.StatusUnauthorized, apiErr.StatusCode)
@@ -100,7 +100,7 @@ func TestClientDoDoesNotReplayNonIdempotentRequestAfterUnauthorized(t *testing.T
 		events = append(events, event)
 	}
 
-	_, _, err := client.Do("POST", "/v2/org/{org}/carbide/test", nil, nil, []byte(`{"name":"x"}`))
+	_, _, err := client.Do("POST", "/v2/org/{org}/nico/test", nil, nil, []byte(`{"name":"x"}`))
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "err = %T, want *APIError", err)
 	require.Equal(t, http.StatusUnauthorized, apiErr.StatusCode)
@@ -126,7 +126,7 @@ func TestClientDoReturnsRefreshErrorWithoutRetrying(t *testing.T) {
 		return "", errors.New("refresh failed")
 	}
 
-	_, _, err := client.Do("GET", "/v2/org/{org}/carbide/test", nil, nil, nil)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/test", nil, nil, nil)
 	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), "refresh failed"), "err = %v", err)
 	require.Equal(t, 1, requests)
@@ -148,7 +148,7 @@ func TestClientDoReturnsEmptyTokenErrorWithoutRetrying(t *testing.T) {
 		return "", nil
 	}
 
-	_, _, err := client.Do("GET", "/v2/org/{org}/carbide/test", nil, nil, nil)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/test", nil, nil, nil)
 	require.Error(t, err)
 	require.True(t, strings.Contains(err.Error(), "no token returned"), "err = %v", err)
 	require.Equal(t, 1, requests)
@@ -162,7 +162,7 @@ func TestClientDoReturnsUnauthorizedWhenNoRefreshFunc(t *testing.T) {
 	defer server.Close()
 
 	client := NewClient(server.URL, "test-org", "stale-token", nil, false)
-	_, _, err := client.Do("GET", "/v2/org/{org}/carbide/test", nil, nil, nil)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/test", nil, nil, nil)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "err = %T, want *APIError", err)
 	require.Equal(t, http.StatusUnauthorized, apiErr.StatusCode)
@@ -181,7 +181,7 @@ func TestClientDoDoesNotRefreshOnForbidden(t *testing.T) {
 		return "new-token", nil
 	}
 
-	_, _, err := client.Do("GET", "/v2/org/{org}/carbide/test", nil, nil, nil)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/test", nil, nil, nil)
 	apiErr, ok := err.(*APIError)
 	require.True(t, ok, "err = %T, want *APIError", err)
 	require.Equal(t, http.StatusForbidden, apiErr.StatusCode)

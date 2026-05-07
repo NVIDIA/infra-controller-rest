@@ -233,6 +233,13 @@ func InitAPIServer(cfg *config.Config, dbSession *cdb.Session, tc tsdkClient.Cli
 		e.Add(commonAPIRoute.Method, commonAPIRoute.Path, commonAPIRoute.Handler.Handle)
 	}
 
+	// Public .well-known/* tenant-identity routes — no auth, JWT verifiers
+	wellKnownRoutes := api.NewWellKnownRoutes(dbSession, scp, cfg)
+	versionPrefix := "/" + cfg.GetAPIRouteVersion()
+	for _, r := range wellKnownRoutes {
+		e.Add(r.Method, versionPrefix+r.Path, r.Handler.Handle)
+	}
+
 	// Versioned routes
 	// Add middlewares for versioned group
 	routeGroup := e.Group("/" + cfg.GetAPIRouteVersion())

@@ -118,6 +118,15 @@ func TestOperationAction(t *testing.T) {
 		{"batch-update-expected-machines", "batch-update"},
 		{"get-metadata", "get"},
 		{"get-user", "get"},
+		{"update-identity-config", "update"},
+		{"get-identity-config", "get"},
+		{"delete-identity-config", "delete"},
+		{"update-token-delegation", "update"},
+		{"get-token-delegation", "get"},
+		{"delete-token-delegation", "delete"},
+		{"get-jwks", "get"},
+		{"get-spiffe-jwks", "get"},
+		{"get-openid-configuration", "get"},
 	}
 
 	for _, tt := range tests {
@@ -146,6 +155,15 @@ func TestExtractResourceSuffix(t *testing.T) {
 		{"batch-update-expected-machines", "expected-machines"},
 		{"get-site-status-history", "site-status-history"},
 		{"get-instance-status-history", "instance-status-history"},
+		{"update-identity-config", "identity-config"},
+		{"get-identity-config", "identity-config"},
+		{"delete-identity-config", "identity-config"},
+		{"update-token-delegation", "token-delegation"},
+		{"get-token-delegation", "token-delegation"},
+		{"delete-token-delegation", "token-delegation"},
+		{"get-jwks", "jwks"},
+		{"get-spiffe-jwks", "spiffe-jwks"},
+		{"get-openid-configuration", "openid-configuration"},
 	}
 
 	for _, tt := range tests {

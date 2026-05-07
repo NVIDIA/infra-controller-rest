@@ -1375,7 +1375,7 @@ func IsProviderOrTenant(ctx context.Context, logger zerolog.Logger, dbSession *c
 // This function can be used across handlers to reduce duplication of initialization logic.
 func SetupHandler(modelName, handlerName string, c echo.Context, s *cutil.TracerSpan) (org string, user *cdbm.User, ctx context.Context, logger zerolog.Logger, hs oteltrace.Span) {
 	// Get org
-	org = c.Param("orgName")
+	org = strings.ToLower(c.Param("orgName"))
 
 	// Get context
 	ctx = c.Request().Context()

@@ -149,6 +149,16 @@ func AllCommands() []Command {
 		{Name: "audit list", Description: "List audit log entries", Run: cmdAuditList},
 		{Name: "audit get", Description: "Get audit log entry details", Run: cmdAuditGet},
 
+		{Name: "tenant-identity spiffe-jwks get", Description: "Fetch SPIFFE JWKS (.well-known/spiffe/jwks.json)", Run: cmdTenantIdentityWellKnownSpiffeJWKS},
+		{Name: "tenant-identity jwks get", Description: "Fetch OIDC JWKS (.well-known/jwks.json)", Run: cmdTenantIdentityWellKnownJWKS},
+		{Name: "tenant-identity openid-configuration get", Description: "Fetch OIDC discovery document (.well-known/openid-configuration)", Run: cmdTenantIdentityWellKnownOpenID},
+		{Name: "tenant-identity token-delegation delete", Description: "Delete RFC 8693 token delegation settings", Run: cmdTenantIdentityTokenDelegationDelete},
+		{Name: "tenant-identity token-delegation update", Description: "Create or update token delegation settings", Run: cmdTenantIdentityTokenDelegationUpdate},
+		{Name: "tenant-identity token-delegation get", Description: "Get RFC 8693 token delegation settings", Run: cmdTenantIdentityTokenDelegationGet},
+		{Name: "tenant-identity delete", Description: "Delete tenant identity configuration for a site", Run: cmdTenantIdentityConfigDelete},
+		{Name: "tenant-identity update", Description: "Create or update tenant identity configuration", Run: cmdTenantIdentityConfigUpdate},
+		{Name: "tenant-identity get", Description: "Get tenant identity configuration for a site", Run: cmdTenantIdentityConfigGet},
+
 		{Name: "metadata get", Description: "Get API metadata", Run: cmdMetadataGet},
 		{Name: "user current", Description: "Get current user", Run: cmdUserCurrent},
 		{Name: "tenant current", Description: "Get current tenant", Run: cmdTenantCurrent},
@@ -3531,6 +3541,287 @@ func cmdAuditGet(s *Session, args []string) error {
 	}
 	LogCmd(s, "audit", "get", item.ID)
 	return getAndPrint(s, apiPath(s, "audit/{id}"), item.ID)
+}
+
+func tenantIdentitySitePath(s *Session, tail string) string {
+	return fmt.Sprintf("/v2/org/{org}/%s/site/{siteID}/%s", s.Client.APIName, tail)
+}
+
+func resolveTenantIdentitySite(s *Session, ctx context.Context, args []string) (*NamedItem, error) {
+	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
+		return s.Resolver.ResolveWithArgs(ctx, "site", "Site", args)
+	}
+	if sid := strings.TrimSpace(s.Scope.SiteID); sid != "" {
+		name := s.Scope.SiteName
+		if name == "" {
+			name = s.Resolver.ResolveID("site", sid)
+		}
+		return &NamedItem{ID: sid, Name: name}, nil
+	}
+	return s.Resolver.Resolve(ctx, "site", "Site")
+}
+
+func splitCommaList(s string) []string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	var out []string
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+func cmdTenantIdentityConfigGet(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "get", site.ID)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, "identity/config"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("getting tenant identity config: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdTenantIdentityConfigUpdate(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	defaultAudience, err := PromptText("defaultAudience — JWT aud claim (required)", true)
+	if err != nil {
+		return err
+	}
+	issuer, err := PromptText("issuer — JWT iss / OIDC issuer (https://, http://, or spiffe://) (required)", true)
+	if err != nil {
+		return err
+	}
+	allowedStr, err := PromptText("allowedAudiences — comma-separated allowlist. Empty = only defaultAudience allowed; when non-empty, must include defaultAudience", false)
+	if err != nil {
+		return err
+	}
+	ttlStr, err := PromptText("tokenTtlSeconds — issued-token TTL seconds, must be >= 1; Core enforces a per-site window (required)", true)
+	if err != nil {
+		return err
+	}
+	subjectPrefix, err := PromptText("subjectPrefix — SPIFFE ID prefix, e.g. spiffe://issuer-trust-domain; must share trust domain with issuer (optional)", false)
+	if err != nil {
+		return err
+	}
+	enabledChoice, err := PromptChoice("enabled — issue JWT-SVIDs for this org", []string{"true", "false"}, "true")
+	if err != nil {
+		return err
+	}
+	rotate, err := PromptConfirm("rotateKey — regenerate the per-org signing keypair? (default no)")
+	if err != nil {
+		return err
+	}
+
+	overlapStr := ""
+	if rotate {
+		overlapStr, err = PromptText("signingKeyOverlapSeconds — seconds previous key stays in JWKS (required; must be >= tokenTtlSeconds)", true)
+		if err != nil {
+			return err
+		}
+	}
+
+	body := map[string]interface{}{
+		"enabled":         enabledChoice == "true",
+		"issuer":          strings.TrimSpace(issuer),
+		"defaultAudience": defaultAudience,
+	}
+	if auds := splitCommaList(allowedStr); len(auds) > 0 {
+		body["allowedAudiences"] = auds
+	}
+	ttlU64, perr := strconv.ParseUint(strings.TrimSpace(ttlStr), 10, 32)
+	if perr != nil {
+		return fmt.Errorf("invalid tokenTtlSeconds: %w", perr)
+	}
+	body["tokenTtlSeconds"] = uint32(ttlU64)
+	if strings.TrimSpace(subjectPrefix) != "" {
+		body["subjectPrefix"] = strings.TrimSpace(subjectPrefix)
+	}
+	if rotate {
+		body["rotateKey"] = true
+		ovU64, perr := strconv.ParseUint(strings.TrimSpace(overlapStr), 10, 32)
+		if perr != nil {
+			return fmt.Errorf("invalid signingKeyOverlapSeconds: %w", perr)
+		}
+		body["signingKeyOverlapSeconds"] = uint32(ovU64)
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "update", site.ID)
+	bodyOut, _, err := s.Client.Do("PUT", tenantIdentitySitePath(s, "identity/config"), map[string]string{"siteID": site.ID}, nil, payload)
+	if err != nil {
+		return fmt.Errorf("updating tenant identity config: %w", err)
+	}
+	fmt.Printf("%s Tenant identity configuration saved for site %s\n", Green("OK"), site.Name)
+	return printDetailJSON(os.Stdout, bodyOut)
+}
+
+func cmdTenantIdentityConfigDelete(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Delete tenant identity configuration for site %s (%s)?", site.Name, site.ID))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		fmt.Println(Dim("Cancelled."))
+		return nil
+	}
+	LogCmd(s, "tenant-identity", "delete", site.ID)
+	_, _, err = s.Client.Do("DELETE", tenantIdentitySitePath(s, "identity/config"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("deleting tenant identity config: %w", err)
+	}
+	fmt.Printf("%s Machine identity configuration deleted for site %s\n", Green("OK"), site.Name)
+	return nil
+}
+
+func cmdTenantIdentityTokenDelegationGet(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "token-delegation", "get", site.ID)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, "identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("getting token delegation: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdTenantIdentityTokenDelegationUpdate(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	tokenEndpoint, err := PromptText("tokenEndpoint — RFC 8693 token exchange URL (https:// or http:// per site allowlist) (required)", true)
+	if err != nil {
+		return err
+	}
+	subjectAud, err := PromptText("subjectTokenAudience — aud on intermediate JWT-SVID (required)", true)
+	if err != nil {
+		return err
+	}
+	useSecret, err := PromptConfirm("clientSecretBasic — attach OAuth2 client_secret_basic credentials? (default no)")
+	if err != nil {
+		return err
+	}
+	body := map[string]interface{}{
+		"tokenEndpoint":        strings.TrimSpace(tokenEndpoint),
+		"subjectTokenAudience": strings.TrimSpace(subjectAud),
+	}
+	if useSecret {
+		cid, err := PromptText("clientSecretBasic.clientId (required)", true)
+		if err != nil {
+			return err
+		}
+		sec, err := PromptText("clientSecretBasic.clientSecret (required, write-only)", true)
+		if err != nil {
+			return err
+		}
+		body["clientSecretBasic"] = map[string]string{
+			"clientId":     strings.TrimSpace(cid),
+			"clientSecret": sec,
+		}
+	}
+
+	payload, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "token-delegation", "update", site.ID)
+	bodyOut, _, err := s.Client.Do("PUT", tenantIdentitySitePath(s, "identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, payload)
+	if err != nil {
+		return fmt.Errorf("updating token delegation: %w", err)
+	}
+	fmt.Printf("%s Token delegation saved for site %s\n", Green("OK"), site.Name)
+	return printDetailJSON(os.Stdout, bodyOut)
+}
+
+func cmdTenantIdentityTokenDelegationDelete(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Delete token delegation for site %s (%s)?", site.Name, site.ID))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		fmt.Println(Dim("Cancelled."))
+		return nil
+	}
+	LogCmd(s, "tenant-identity", "token-delegation", "delete", site.ID)
+	_, _, err = s.Client.Do("DELETE", tenantIdentitySitePath(s, "identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("deleting token delegation: %w", err)
+	}
+	fmt.Printf("%s Token delegation deleted for site %s\n", Green("OK"), site.Name)
+	return nil
+}
+
+func cmdTenantIdentityWellKnownJWKS(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "jwks", "get", site.ID)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, ".well-known/jwks.json"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("fetching JWKS: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdTenantIdentityWellKnownSpiffeJWKS(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "spiffe-jwks", "get", site.ID)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, ".well-known/spiffe/jwks.json"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("fetching SPIFFE JWKS: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdTenantIdentityWellKnownOpenID(s *Session, args []string) error {
+	ctx := context.Background()
+	site, err := resolveTenantIdentitySite(s, ctx, args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tenant-identity", "openid-configuration", "get", site.ID)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, ".well-known/openid-configuration"), map[string]string{"siteID": site.ID}, nil, nil)
+	if err != nil {
+		return fmt.Errorf("fetching OpenID configuration: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
 }
 
 // -- Singleton / info commands --

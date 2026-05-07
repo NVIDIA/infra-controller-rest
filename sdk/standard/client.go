@@ -105,6 +105,8 @@ type APIClient struct {
 
 	TenantAccountAPI *TenantAccountAPIService
 
+	TenantIdentityAPI *TenantIdentityAPIService
+
 	TrayAPI *TrayAPIService
 
 	UserAPI *UserAPIService
@@ -159,6 +161,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.TaskAPI = (*TaskAPIService)(&c.common)
 	c.TenantAPI = (*TenantAPIService)(&c.common)
 	c.TenantAccountAPI = (*TenantAccountAPIService)(&c.common)
+	c.TenantIdentityAPI = (*TenantIdentityAPIService)(&c.common)
 	c.TrayAPI = (*TrayAPIService)(&c.common)
 	c.UserAPI = (*UserAPIService)(&c.common)
 	c.VPCAPI = (*VPCAPIService)(&c.common)
@@ -587,7 +590,10 @@ func addFile(w *multipart.Writer, fieldName, path string) error {
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	err = file.Close()
+	if err != nil {
+		return err
+	}
 
 	part, err := w.CreateFormFile(fieldName, filepath.Base(path))
 	if err != nil {
