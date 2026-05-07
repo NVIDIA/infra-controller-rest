@@ -183,32 +183,80 @@ make kind-down              # tear down cluster
 
 DB and API model types that round-trip with a workflow-schema (`cwssaws`)
 or Flow (`flowv1`) protobuf types carry conversion as receiver methods, not
-free functions. The naming and shape are uniform so call sites are
-predictable:
+free functions. The convention layers cleanly so call sites are
+predictable and every entity has the same surface:
 
-1. **One model type ↔ one proto type:** `func (m *T) ToProto(...) *protoT`
-   and `func (m *T) FromProto(p *protoT, ...)`. `FromProto` mutates the
-   receiver, treats a `nil` proto as a no-op, and returns no error —
-   callers pre-validate anything risky like UUID strings, and the method
-   leaves the receiver field unchanged on parse failure.
-2. **Side inputs that are not on the model** (BMC credentials, a linked
-   machine ID resolved by the caller, a fallback timestamp) are passed as
-   additional arguments — preferably grouped into a `XCredentials` struct
-   declared next to the model, with a comment explaining why the field
-   isn't persisted.
-3. **One model type → multiple proto request types:** when the same
-   record produces, for example, both a Create and an Update request, use
-   `ToCreateRequestProto()` / `ToUpdateRequestProto()` (see `Tenant`).
-4. **Sub-messages of a proto request:** when a request DTO produces a
+1. **Primary entity ↔ proto entity** lives on the DB model:
+   `func (m *T) ToProto(...) *protoT` and
+   `func (m *T) FromProto(p *protoT, ...)` — symmetric pair, defined
+   together. `FromProto` mutates the receiver and returns no error.
+   The field-level contract is:
+   - A `nil` proto is a no-op (receiver untouched).
+   - Required ID fields (e.g. `m.ID`) are preserved on a missing or
+     unparseable proto value, because callers pre-validate UUIDs
+     before calling.
+   - Optional pointer fields are cleared when the proto omits them
+     **or** when the proto value is invalid (e.g. an unparseable
+     UUID). For example, `(*Vpc).FromProto` clears
+     `NVLinkLogicalPartitionID` in both cases so the receiver ends
+     up as a clean reset rather than a partial merge.
+2. **Per-API-request → proto request** lives on the corresponding API
+   request type, not on the entity:
+   `func (req *APIXCreateRequest) ToProto(...) *protoXCreateRequest`,
+   `func (req *APIXUpdateRequest) ToProto(...) *protoXUpdateRequest`.
+   These methods commonly read the canonical fields via the entity's
+   `ToProto()` (passed in or fetched) and overlay request-specific
+   fields. Putting them on the API request type keeps the entity
+   surface focused on the canonical representation. When the API
+   request type uses `*T` to distinguish "field not provided" (nil)
+   from "explicitly clear" (non-nil pointer to zero value), the
+   request's `ToProto` is responsible for preserving that distinction
+   on the wire — overriding the entity-derived value when the API
+   request touched the field, even if the post-merge entity has the
+   same zero value.
+
+   **`ToProto` does not return errors.** It trusts that the request
+   has already been validated and that the handler has performed any
+   cross-context checks Validate cannot see. Validation lives in
+   `(req *APIXCreateRequest).Validate() error`, which is the
+   universal pre-`ToProto` step and must be called before the request
+   reaches `ToProto`. Anything `ToProto` would otherwise have to
+   double-check — width casts on bounded request fields, enum-value
+   checks, cross-field structural rules — belongs in `Validate`
+   instead, so the translation step stays a focused mapper.
+
+   **What stays in the handler:** authorization (RBAC, tenant
+   privileges, cross-resource ownership lookups), and validation that
+   depends on context `Validate` cannot see (site config defaults
+   resolved at request time, DAO lookups, etc.). These run before
+   `ToProto` so that by the time it executes the request is safe to
+   trust.
+3. **Entity-level request shapes that don't have an API request body**
+   (e.g. delete by path-param, maintenance / metadata-update flows that
+   carry no client payload) stay on the entity:
+   `func (m *T) ToDeletionRequestProto() *protoXDeletionRequest`,
+   `func (m *T) ToMaintenanceRequestProto(...) *protoXMaintenanceRequest`.
+4. **Side inputs that are not on the model** (BMC credentials, a linked
+   machine ID resolved by the caller, a fallback timestamp, validated /
+   converted enum values) are passed as additional arguments —
+   preferably grouped into a `XCredentials` struct declared next to the
+   model, with a comment explaining why the field isn't persisted.
+5. **Sub-messages of a proto request:** when a request DTO produces a
    reusable piece of a proto request that is shared across multiple
    request types (e.g. `OperationTargetSpec`, `[]*Filter`), name the
    method after the sub-message it returns: `ToTargetSpec()`,
    `ToFilters()` (see `RackFilter`, `APIRackGetAllRequest`).
-5. **Constructor wrappers for `FromProto`:** API model types that are
+6. **Constructor wrappers for `FromProto`:** API model types that are
    constructed from a proto in handlers commonly expose a
    `func NewAPIX(p *protoX) *APIX` wrapper that returns `nil` for a `nil`
    proto and otherwise builds the value and calls `FromProto`. See
    `NewAPITray`, `NewAPIRack`.
+
+`Vpc` is the reference implementation for rules 1–3:
+`(*cdbm.Vpc).ToProto/FromProto` cover the entity↔proto round-trip,
+`(*model.APIVpcCreateRequest).ToProto` / `(*model.APIVpcUpdateRequest).ToProto`
+cover request-shape conversion, and `(*cdbm.Vpc).ToDeletionRequestProto`
+stays on the entity because there's no API request body for delete.
 
 ## Git Workflow
 

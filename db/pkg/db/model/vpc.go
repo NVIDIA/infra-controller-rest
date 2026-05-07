@@ -148,24 +148,97 @@ func (vpc *Vpc) toMetadataProto() *cwssaws.Metadata {
 	return md
 }
 
+// ToProto converts this VPC into its workflow proto representation.
+// Used as the canonical entity-to-proto conversion; request-shape
+// protos (create / update) are produced by `ToProto` methods on the
+// corresponding API request types in api/pkg/api/model/vpc.go.
+//
+// `NetworkVirtualizationType` is mapped from the DB column's string
+// value to the workflow enum (defaulting to `ETHERNET_VIRTUALIZER`
+// when the string is set but unrecognized, matching the pre-refactor
+// handler behaviour). It is omitted from the proto when the DB
+// column is nil.
+func (vpc *Vpc) ToProto() *cwssaws.Vpc {
+	proto := &cwssaws.Vpc{
+		Id:                     &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
+		Name:                   vpc.Name,
+		TenantOrganizationId:   vpc.Org,
+		NetworkSecurityGroupId: vpc.NetworkSecurityGroupID,
+		Metadata:               vpc.toMetadataProto(),
+	}
+	if vpc.NVLinkLogicalPartitionID != nil {
+		proto.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
+	}
+	if vpc.NetworkVirtualizationType != nil {
+		nwvt := cwssaws.VpcVirtualizationType_ETHERNET_VIRTUALIZER
+		if *vpc.NetworkVirtualizationType == cwssaws.VpcVirtualizationType_FNN.String() {
+			nwvt = cwssaws.VpcVirtualizationType_FNN
+		}
+		proto.NetworkVirtualizationType = &nwvt
+	}
+	return proto
+}
+
+// FromProto populates this VPC from its workflow proto representation.
+// A nil proto is a no-op. This is the inverse of `ToProto` and exists
+// for convention symmetry — currently no code path on the cloud side
+// reconstructs a full VPC entity from a `cwssaws.Vpc` (the site is the
+// destination, not the source), but the method is provided so future
+// reconciliation flows have a single canonical entry point.
+//
+// Field-level contract:
+//   - `vpc.ID` is preserved on a missing or unparseable `proto.Id`,
+//     because callers pre-validate the UUID before calling.
+//   - `Name` is sourced from `proto.Metadata.Name` when set, falling
+//     back to the (deprecated) top-level `proto.Name` so the method
+//     keeps working through the deprecation window.
+//   - Optional pointer fields (NetworkSecurityGroupID,
+//     NVLinkLogicalPartitionID) are cleared when the proto omits them
+//     OR when the proto value is invalid (e.g. an unparseable UUID).
+//     This makes `FromProto` a clean reset rather than a partial
+//     merge, matching the Expected* pattern.
+func (vpc *Vpc) FromProto(proto *cwssaws.Vpc) {
+	if proto == nil {
+		return
+	}
+	if proto.Id != nil {
+		if id, err := uuid.Parse(proto.Id.Value); err == nil {
+			vpc.ID = id
+		}
+	}
+	vpc.Name = proto.Name
+	if proto.Metadata != nil && proto.Metadata.Name != "" {
+		vpc.Name = proto.Metadata.Name
+	}
+	vpc.Org = proto.TenantOrganizationId
+	vpc.NetworkSecurityGroupID = proto.NetworkSecurityGroupId
+	if proto.DefaultNvlinkLogicalPartitionId != nil {
+		if id, err := uuid.Parse(proto.DefaultNvlinkLogicalPartitionId.Value); err == nil {
+			vpc.NVLinkLogicalPartitionID = &id
+		} else {
+			vpc.NVLinkLogicalPartitionID = nil
+		}
+	} else {
+		vpc.NVLinkLogicalPartitionID = nil
+	}
+	if proto.Metadata != nil {
+		vpc.Description = nil
+		if proto.Metadata.Description != "" {
+			desc := proto.Metadata.Description
+			vpc.Description = &desc
+		}
+		vpc.Labels = LabelsFromProtoMetadata(proto.Metadata)
+	} else {
+		vpc.Description = nil
+		vpc.Labels = nil
+	}
+}
+
 // ToDeletionRequestProto builds the workflow request that asks a Site to
 // delete this VPC.
 func (vpc *Vpc) ToDeletionRequestProto() *cwssaws.VpcDeletionRequest {
 	return &cwssaws.VpcDeletionRequest{
 		Id: &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
-	}
-}
-
-// ToUpdateRequestProto builds the workflow request that pushes this
-// VPC's name, description, labels, and current
-// `NetworkSecurityGroupID` association to a Site. The handler may
-// further set `DefaultNvlinkLogicalPartitionId` after calling this when
-// the API request changes that field.
-func (vpc *Vpc) ToUpdateRequestProto() *cwssaws.VpcUpdateRequest {
-	return &cwssaws.VpcUpdateRequest{
-		Id:                     &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
-		NetworkSecurityGroupId: vpc.NetworkSecurityGroupID,
-		Metadata:               vpc.toMetadataProto(),
 	}
 }
 

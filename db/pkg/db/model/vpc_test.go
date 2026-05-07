@@ -1517,56 +1517,189 @@ func TestVpc_ToDeletionRequestProto(t *testing.T) {
 	assert.Equal(t, id.String(), req.Id.Value)
 }
 
-func TestVpc_ToUpdateRequestProto(t *testing.T) {
+func TestVpc_ToProto(t *testing.T) {
 	id := uuid.New()
 	desc := "primary"
 	nsg := "nsg-1"
+	nvllpID := uuid.New()
 
-	t.Run("sets id, metadata, and NSG when present", func(t *testing.T) {
+	t.Run("populates id, org, metadata, NSG, and NVLink partition", func(t *testing.T) {
 		v := &Vpc{
-			ID:                     id,
-			Name:                   "vpc-a",
-			Description:            &desc,
-			NetworkSecurityGroupID: &nsg,
-			Labels:                 map[string]string{"env": "prod"},
+			ID:                       id,
+			Org:                      "org-1",
+			Name:                     "vpc-a",
+			Description:              &desc,
+			NetworkSecurityGroupID:   &nsg,
+			NVLinkLogicalPartitionID: &nvllpID,
+			Labels:                   map[string]string{"env": "prod"},
 		}
-		req := v.ToUpdateRequestProto()
-		require.NotNil(t, req)
-		require.NotNil(t, req.Id)
-		assert.Equal(t, id.String(), req.Id.Value)
-		require.NotNil(t, req.NetworkSecurityGroupId)
-		assert.Equal(t, "nsg-1", *req.NetworkSecurityGroupId)
-		require.NotNil(t, req.Metadata)
-		assert.Equal(t, "vpc-a", req.Metadata.Name)
-		assert.Equal(t, "primary", req.Metadata.Description)
-		require.Len(t, req.Metadata.Labels, 1)
-		assert.Equal(t, "env", req.Metadata.Labels[0].Key)
-		require.NotNil(t, req.Metadata.Labels[0].Value)
-		assert.Equal(t, "prod", *req.Metadata.Labels[0].Value)
+		got := v.ToProto()
+		require.NotNil(t, got)
+		require.NotNil(t, got.Id)
+		assert.Equal(t, id.String(), got.Id.Value)
+		assert.Equal(t, "vpc-a", got.Name)
+		assert.Equal(t, "org-1", got.TenantOrganizationId)
+		require.NotNil(t, got.NetworkSecurityGroupId)
+		assert.Equal(t, "nsg-1", *got.NetworkSecurityGroupId)
+		require.NotNil(t, got.Metadata)
+		assert.Equal(t, "vpc-a", got.Metadata.Name)
+		assert.Equal(t, "primary", got.Metadata.Description)
+		require.Len(t, got.Metadata.Labels, 1)
+		assert.Equal(t, "env", got.Metadata.Labels[0].Key)
+		require.NotNil(t, got.Metadata.Labels[0].Value)
+		assert.Equal(t, "prod", *got.Metadata.Labels[0].Value)
+		require.NotNil(t, got.DefaultNvlinkLogicalPartitionId)
+		assert.Equal(t, nvllpID.String(), got.DefaultNvlinkLogicalPartitionId.Value)
 	})
 
 	t.Run("nil description and labels yield zero-value metadata", func(t *testing.T) {
-		v := &Vpc{ID: id, Name: "vpc-a"}
-		req := v.ToUpdateRequestProto()
-		require.NotNil(t, req.Metadata)
-		assert.Equal(t, "", req.Metadata.Description)
-		assert.Nil(t, req.Metadata.Labels)
-		assert.Nil(t, req.NetworkSecurityGroupId)
+		v := &Vpc{ID: id, Org: "org-1", Name: "vpc-a"}
+		got := v.ToProto()
+		require.NotNil(t, got.Metadata)
+		assert.Equal(t, "", got.Metadata.Description)
+		assert.Nil(t, got.Metadata.Labels)
+		assert.Nil(t, got.NetworkSecurityGroupId)
+		assert.Nil(t, got.DefaultNvlinkLogicalPartitionId)
 	})
 
-	t.Run("uses ControllerVpcID for the request Id when set", func(t *testing.T) {
+	t.Run("uses ControllerVpcID for the proto Id when set", func(t *testing.T) {
 		ctrlID := uuid.New()
 		v := &Vpc{ID: id, ControllerVpcID: &ctrlID, Name: "vpc-a"}
-		req := v.ToUpdateRequestProto()
-		require.NotNil(t, req.Id)
-		assert.Equal(t, ctrlID.String(), req.Id.Value)
+		got := v.ToProto()
+		require.NotNil(t, got.Id)
+		assert.Equal(t, ctrlID.String(), got.Id.Value)
 	})
 
 	t.Run("explicit NSG clear preserves empty string (distinct from nil)", func(t *testing.T) {
 		empty := ""
 		v := &Vpc{ID: id, Name: "vpc-a", NetworkSecurityGroupID: &empty}
-		req := v.ToUpdateRequestProto()
-		require.NotNil(t, req.NetworkSecurityGroupId)
-		assert.Equal(t, "", *req.NetworkSecurityGroupId)
+		got := v.ToProto()
+		require.NotNil(t, got.NetworkSecurityGroupId)
+		assert.Equal(t, "", *got.NetworkSecurityGroupId)
+	})
+
+	t.Run("maps NetworkVirtualizationType FNN string to the FNN enum", func(t *testing.T) {
+		fnn := VpcFNN
+		v := &Vpc{ID: id, Name: "vpc-a", NetworkVirtualizationType: &fnn}
+		got := v.ToProto()
+		require.NotNil(t, got.NetworkVirtualizationType)
+		assert.Equal(t, cwssaws.VpcVirtualizationType_FNN, *got.NetworkVirtualizationType)
+	})
+
+	t.Run("maps NetworkVirtualizationType ethernet string to ETHERNET_VIRTUALIZER", func(t *testing.T) {
+		eth := VpcEthernetVirtualizer
+		v := &Vpc{ID: id, Name: "vpc-a", NetworkVirtualizationType: &eth}
+		got := v.ToProto()
+		require.NotNil(t, got.NetworkVirtualizationType)
+		assert.Equal(t, cwssaws.VpcVirtualizationType_ETHERNET_VIRTUALIZER, *got.NetworkVirtualizationType)
+	})
+
+	t.Run("omits NetworkVirtualizationType when the entity has none", func(t *testing.T) {
+		v := &Vpc{ID: id, Name: "vpc-a"}
+		got := v.ToProto()
+		assert.Nil(t, got.NetworkVirtualizationType)
+	})
+}
+
+func TestVpc_FromProto(t *testing.T) {
+	id := uuid.New()
+	nvllpID := uuid.New()
+	nsg := "nsg-1"
+
+	t.Run("nil proto leaves receiver unchanged", func(t *testing.T) {
+		v := &Vpc{ID: id, Name: "preserved", Org: "org-1"}
+		v.FromProto(nil)
+		assert.Equal(t, id, v.ID)
+		assert.Equal(t, "preserved", v.Name)
+		assert.Equal(t, "org-1", v.Org)
+	})
+
+	t.Run("invalid id leaves vpc.ID unchanged", func(t *testing.T) {
+		v := &Vpc{ID: id}
+		v.FromProto(&cwssaws.Vpc{
+			Id:   &cwssaws.VpcId{Value: "not-a-uuid"},
+			Name: "vpc-a",
+		})
+		assert.Equal(t, id, v.ID)
+		assert.Equal(t, "vpc-a", v.Name)
+	})
+
+	t.Run("populates fields from proto", func(t *testing.T) {
+		v := &Vpc{}
+		v.FromProto(&cwssaws.Vpc{
+			Id:                              &cwssaws.VpcId{Value: id.String()},
+			Name:                            "vpc-a",
+			TenantOrganizationId:            "org-1",
+			NetworkSecurityGroupId:          &nsg,
+			DefaultNvlinkLogicalPartitionId: &cwssaws.NVLinkLogicalPartitionId{Value: nvllpID.String()},
+			Metadata: &cwssaws.Metadata{
+				Name:        "vpc-a",
+				Description: "primary",
+				Labels: []*cwssaws.Label{
+					{Key: "env", Value: db.GetStrPtr("prod")},
+				},
+			},
+		})
+		assert.Equal(t, id, v.ID)
+		assert.Equal(t, "vpc-a", v.Name)
+		assert.Equal(t, "org-1", v.Org)
+		require.NotNil(t, v.NetworkSecurityGroupID)
+		assert.Equal(t, "nsg-1", *v.NetworkSecurityGroupID)
+		require.NotNil(t, v.NVLinkLogicalPartitionID)
+		assert.Equal(t, nvllpID, *v.NVLinkLogicalPartitionID)
+		require.NotNil(t, v.Description)
+		assert.Equal(t, "primary", *v.Description)
+		assert.Equal(t, map[string]string{"env": "prod"}, v.Labels)
+	})
+
+	t.Run("missing optional fields are explicitly cleared", func(t *testing.T) {
+		stale := "stale"
+		staleNvllp := uuid.New()
+		v := &Vpc{
+			ID:                       id,
+			Description:              &stale,
+			NetworkSecurityGroupID:   &stale,
+			NVLinkLogicalPartitionID: &staleNvllp,
+			Labels:                   map[string]string{"old": "val"},
+		}
+		v.FromProto(&cwssaws.Vpc{
+			Id:   &cwssaws.VpcId{Value: id.String()},
+			Name: "vpc-a",
+		})
+		assert.Nil(t, v.NetworkSecurityGroupID)
+		assert.Nil(t, v.NVLinkLogicalPartitionID)
+		assert.Nil(t, v.Description)
+		assert.Nil(t, v.Labels)
+	})
+
+	t.Run("invalid NVLink partition id clears the field", func(t *testing.T) {
+		staleNvllp := uuid.New()
+		v := &Vpc{ID: id, NVLinkLogicalPartitionID: &staleNvllp}
+		v.FromProto(&cwssaws.Vpc{
+			Id:                              &cwssaws.VpcId{Value: id.String()},
+			Name:                            "vpc-a",
+			DefaultNvlinkLogicalPartitionId: &cwssaws.NVLinkLogicalPartitionId{Value: "not-a-uuid"},
+		})
+		assert.Nil(t, v.NVLinkLogicalPartitionID)
+	})
+
+	t.Run("prefers Metadata.Name over the deprecated top-level Name field", func(t *testing.T) {
+		v := &Vpc{}
+		v.FromProto(&cwssaws.Vpc{
+			Id:       &cwssaws.VpcId{Value: id.String()},
+			Name:     "deprecated-top-level",
+			Metadata: &cwssaws.Metadata{Name: "metadata-name"},
+		})
+		assert.Equal(t, "metadata-name", v.Name)
+	})
+
+	t.Run("falls back to top-level Name when Metadata.Name is empty", func(t *testing.T) {
+		v := &Vpc{}
+		v.FromProto(&cwssaws.Vpc{
+			Id:       &cwssaws.VpcId{Value: id.String()},
+			Name:     "top-level-fallback",
+			Metadata: &cwssaws.Metadata{Name: ""},
+		})
+		assert.Equal(t, "top-level-fallback", v.Name)
 	})
 }

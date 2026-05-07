@@ -26,6 +26,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/google/uuid"
@@ -170,6 +171,42 @@ func (ascr APIVpcCreateRequest) Validate() error {
 	return err
 }
 
+// ToProto builds the workflow request that asks a Site to create a new
+// VPC for this API request. `vpc` is the just-persisted DB record;
+// its `ToProto()` is the source of the canonical wire fields
+// (ID/Name/NSG/Labels/Description/NVLink/NetworkVirtualizationType),
+// and `vpc.RoutingProfile` carries the normalised Site-facing value
+// for the optional routing-profile field.
+//
+// The method trusts that the request has already been Validated and
+// that the handler has performed any cross-context checks Validate
+// cannot see (e.g. resolved network-virtualization against site
+// config). Specifically, the VNI cast is safe because Validate
+// bounds `Vni` to `[0, MaxUint16]`.
+func (ascr APIVpcCreateRequest) ToProto(vpc *cdbm.Vpc) *cwssaws.VpcCreationRequest {
+	var vni *uint32
+	if ascr.Vni != nil {
+		v := uint32(*ascr.Vni)
+		vni = &v
+	}
+	var routingProfile *string
+	if ascr.RoutingProfile != nil {
+		routingProfile = vpc.RoutingProfile
+	}
+	vpcProto := vpc.ToProto()
+	return &cwssaws.VpcCreationRequest{
+		Id:                              vpcProto.Id,
+		Name:                            vpcProto.Name,
+		TenantOrganizationId:            vpcProto.TenantOrganizationId,
+		NetworkVirtualizationType:       vpcProto.NetworkVirtualizationType,
+		RoutingProfileType:              routingProfile,
+		NetworkSecurityGroupId:          vpcProto.NetworkSecurityGroupId,
+		Vni:                             vni,
+		Metadata:                        vpcProto.Metadata,
+		DefaultNvlinkLogicalPartitionId: vpcProto.DefaultNvlinkLogicalPartitionId,
+	}
+}
+
 // APIVpcUpdateRequest captures the request data for updating a new VPC
 type APIVpcUpdateRequest struct {
 	// Name is the name of the VPC
@@ -206,6 +243,43 @@ func (asur APIVpcUpdateRequest) Validate() error {
 	}
 
 	return err
+}
+
+// ToProto builds the workflow request that pushes this Update's
+// merged-into-DB state to a Site. The persisted `vpc` is the source of
+// the wire fields because the handler has already merged the request's
+// (sparse) update fields into the entity by the time this is called;
+// sending the post-merge state matches the pre-existing handler
+// behaviour and keeps unchanged fields populated.
+//
+// `*string` and `*NVLinkLogicalPartitionId` overrides are applied for
+// `NetworkSecurityGroupID` and `NVLinkLogicalPartitionID` so the
+// API-level distinction between "not provided" (nil) and "explicitly
+// clear" (non-nil pointer to empty string) survives onto the wire:
+//   - nil  -> use the entity-derived value (post-merge DB state).
+//   - &""  -> send the empty value through, so the Site sees a detach.
+//   - &"x" -> send the (already-validated) DB value through; the entity
+//     is the source of truth so any normalisation done at persist
+//     time is preserved.
+func (asur APIVpcUpdateRequest) ToProto(vpc *cdbm.Vpc) *cwssaws.VpcUpdateRequest {
+	vpcProto := vpc.ToProto()
+	req := &cwssaws.VpcUpdateRequest{
+		Id:                              vpcProto.Id,
+		NetworkSecurityGroupId:          vpcProto.NetworkSecurityGroupId,
+		DefaultNvlinkLogicalPartitionId: vpcProto.DefaultNvlinkLogicalPartitionId,
+		Metadata:                        vpcProto.Metadata,
+	}
+	if asur.NetworkSecurityGroupID != nil {
+		req.NetworkSecurityGroupId = asur.NetworkSecurityGroupID
+	}
+	if asur.NVLinkLogicalPartitionID != nil {
+		if *asur.NVLinkLogicalPartitionID == "" {
+			req.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: ""}
+		} else if vpc.NVLinkLogicalPartitionID != nil {
+			req.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
+		}
+	}
+	return req
 }
 
 // APIVpcVirtualizationUpdateRequest captures the request data for updating virtualization type for a give VPC
