@@ -1046,9 +1046,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		nsgID              string
 		skuID              string
 		dpuDeploymentID    uuid.UUID
-		tenantSiteID       uuid.UUID
-		allocationID       uuid.UUID
-		allocConstraintID  uuid.UUID
 		interfaceIDs       []uuid.UUID
 		ibInterfaceIDs     []uuid.UUID
 		nvlinkInterfaceIDs []uuid.UUID
@@ -1091,10 +1088,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		)
 		require.NoError(t, err)
 
-		// Allocation + constraint
-		allocation := util.TestBuildAllocation(t, dbSession, ip, tenant, site, "alloc-"+tag)
-		allocConstraint := util.TestBuildAllocationContraints(t, dbSession, allocation, cdbm.AllocationResourceTypeInstanceType, instanceType.ID, cdbm.AllocationConstraintTypeReserved, 1, ipu)
-
 		// VPC Prefix needs an IPBlock.
 		ipBlock := util.TestBuildBuildIPBlock(t, dbSession, "ipblock-"+tag, site, ip, &tenant.ID, cdbm.IPBlockRoutingTypeDatacenterOnly, "10.0.0.0/16", 16, cdbm.IPBlockProtocolVersionV4, true, cdbm.IPBlockStatusReady, ipu)
 		vpcPrefix := util.TestBuildVPCPrefix(t, dbSession, "vpfx-"+tag, site, tenant, vpc.ID, &ipBlock.ID, cdb.GetStrPtr("10.1.0.0/24"), cdb.GetIntPtr(24), "Pending", ipu)
@@ -1121,9 +1114,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		// DPU extension service + deployment
 		des := util.TestBuildDpuExtensionService(t, dbSession, "des-"+tag, site, tenant, "test-type", cdb.GetStrPtr("v1"), nil, []string{"v1"}, cdbm.DpuExtensionServiceStatusReady, ipu)
 		desd := util.TestBuildDpuExtensionServiceDeployment(t, dbSession, des.ID, site.ID, tenant.ID, instance.ID, "v1", cdbm.DpuExtensionServiceStatusReady, ipu)
-
-		// Tenant <-> Site association
-		tsa := util.TestBuildTenantSiteAssociation(t, dbSession, tenant.Org, tenant.ID, site.ID, ipu.ID)
 
 		// SKU (hard delete)
 		sku := util.TestBuildSku(t, dbSession, "sku-"+tag, site)
@@ -1155,9 +1145,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 			nsgID:              nsg.ID,
 			skuID:              sku.ID,
 			dpuDeploymentID:    desd.ID,
-			tenantSiteID:       tsa.ID,
-			allocationID:       allocation.ID,
-			allocConstraintID:  allocConstraint.ID,
 			interfaceIDs:       []uuid.UUID{iface1.ID, iface2.ID},
 			ibInterfaceIDs:     []uuid.UUID{ibi.ID},
 			nvlinkInterfaceIDs: []uuid.UUID{nvli.ID},
@@ -1222,10 +1209,7 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 	assertGone("ssh_key_group_instance_association", &cdbm.SSHKeyGroupInstanceAssociation{}, "skgia.id", site1Resources.sshKeyGroupInstID)
 	assertGone("network_security_group", &cdbm.NetworkSecurityGroup{}, "nsg.id", site1Resources.nsgID)
 	assertGone("dpu_extension_service_deployment", &cdbm.DpuExtensionServiceDeployment{}, "desd.id", site1Resources.dpuDeploymentID)
-	assertGone("tenant_site", &cdbm.TenantSite{}, "ts.id", site1Resources.tenantSiteID)
 	assertGone("sku", &cdbm.SKU{}, "sk.id", site1Resources.skuID)
-	assertGone("allocation", &cdbm.Allocation{}, "a.id", site1Resources.allocationID)
-	assertGone("allocation_constraint", &cdbm.AllocationConstraint{}, "ac.id", site1Resources.allocConstraintID)
 	assertGone("expected_machine", &cdbm.ExpectedMachine{}, "em.id", site1Resources.expectedMachineID)
 	assertGone("expected_switch", &cdbm.ExpectedSwitch{}, "es.id", site1Resources.expectedSwitchID)
 	assertGone("expected_power_shelf", &cdbm.ExpectedPowerShelf{}, "eps.id", site1Resources.expectedShelfID)
@@ -1248,10 +1232,7 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 	assertPresent("ssh_key_group_instance_association", &cdbm.SSHKeyGroupInstanceAssociation{}, "skgia.id", site2Resources.sshKeyGroupInstID)
 	assertPresent("network_security_group", &cdbm.NetworkSecurityGroup{}, "nsg.id", site2Resources.nsgID)
 	assertPresent("dpu_extension_service_deployment", &cdbm.DpuExtensionServiceDeployment{}, "desd.id", site2Resources.dpuDeploymentID)
-	assertPresent("tenant_site", &cdbm.TenantSite{}, "ts.id", site2Resources.tenantSiteID)
 	assertPresent("sku", &cdbm.SKU{}, "sk.id", site2Resources.skuID)
-	assertPresent("allocation", &cdbm.Allocation{}, "a.id", site2Resources.allocationID)
-	assertPresent("allocation_constraint", &cdbm.AllocationConstraint{}, "ac.id", site2Resources.allocConstraintID)
 	assertPresent("expected_machine", &cdbm.ExpectedMachine{}, "em.id", site2Resources.expectedMachineID)
 	assertPresent("expected_switch", &cdbm.ExpectedSwitch{}, "es.id", site2Resources.expectedSwitchID)
 	assertPresent("expected_power_shelf", &cdbm.ExpectedPowerShelf{}, "eps.id", site2Resources.expectedShelfID)

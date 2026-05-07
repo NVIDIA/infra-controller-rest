@@ -63,7 +63,7 @@ type ManageSite struct {
 // DeleteSiteComponentsFromDB is a Temporal activity that initiates delete for instance type, machine,
 // machine interface, machine capability, operating system, instance, subnet, vpc, vpc peering, vpc prefix,
 // infiniband partition, nvlink logical partition, dpu extension service deployment,
-// interface, nvlink interface, infiniband interface, ssh key group, tenant site, sku, allocation, and allocation constraint
+// interface, nvlink interface, infiniband interface, ssh key group, and sku.
 func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uuid.UUID, infrastructureProviderID uuid.UUID, purgeMachines bool) error {
 	logger := log.With().Str("Activity", "DeleteSiteComponentsFromDB").Str("Site ID", siteID.String()).
 		Str("InfrastructureProvider ID", infrastructureProviderID.String()).Bool("Purge Machines", purgeMachines).Logger()
@@ -100,10 +100,7 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 	skgiaDAO := cdbm.NewSSHKeyGroupInstanceAssociationDAO(mst.dbSession)
 	nsgDAO := cdbm.NewNetworkSecurityGroupDAO(mst.dbSession)
 	desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(mst.dbSession)
-	tsDAO := cdbm.NewTenantSiteDAO(mst.dbSession)
 	skuDAO := cdbm.NewSkuDAO(mst.dbSession)
-	aDAO := cdbm.NewAllocationDAO(mst.dbSession)
-	acDAO := cdbm.NewAllocationConstraintDAO(mst.dbSession)
 	esDAO := cdbm.NewExpectedSwitchDAO(mst.dbSession)
 	epsDAO := cdbm.NewExpectedPowerShelfDAO(mst.dbSession)
 	emDAO := cdbm.NewExpectedMachineDAO(mst.dbSession)
@@ -432,21 +429,6 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		}
 	}
 
-	// Delete Tenant Sites
-	tsas, _, err := tsDAO.GetAll(ctx, nil, cdbm.TenantSiteFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Tenant Sites from DB by Site ID")
-		return err
-	}
-
-	for _, ts := range tsas {
-		serr := tsDAO.Delete(ctx, nil, ts.ID)
-		if serr != nil && serr != cdb.ErrDoesNotExist {
-			logger.Error().Err(serr).Str("Tenant Site ID", ts.ID.String()).Msg("error deleting Tenant Site record in DB")
-			return serr
-		}
-	}
-
 	// Delete Skus
 	skus, _, err := skuDAO.GetAll(ctx, nil, cdbm.SkuFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)})
 	if err != nil {
@@ -459,40 +441,6 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		if serr != nil && serr != cdb.ErrDoesNotExist {
 			logger.Error().Err(serr).Str("SKU ID", sku.ID).Msg("error deleting SKU record in DB")
 			return serr
-		}
-	}
-
-	// Delete Allocations
-	allocs, _, err := aDAO.GetAll(ctx, nil, cdbm.AllocationFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Allocations from DB by Site ID")
-		return err
-	}
-
-	allocationIDs := make([]uuid.UUID, 0, len(allocs))
-	for _, alloc := range allocs {
-		allocationIDs = append(allocationIDs, alloc.ID)
-		serr := aDAO.Delete(ctx, nil, alloc.ID)
-		if serr != nil && serr != cdb.ErrDoesNotExist {
-			logger.Error().Err(serr).Str("Allocation ID", alloc.ID.String()).Msg("error deleting Allocation record in DB")
-			return serr
-		}
-	}
-
-	// Delete Allocation Constraints
-	if len(allocationIDs) > 0 {
-		accs, _, err := acDAO.GetAll(ctx, nil, allocationIDs, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
-		if err != nil {
-			logger.Error().Err(err).Msg("failed to retrieve Allocation Constraints from DB by Site ID")
-			return err
-		}
-
-		for _, acc := range accs {
-			serr := acDAO.DeleteByID(ctx, nil, acc.ID)
-			if serr != nil && serr != cdb.ErrDoesNotExist {
-				logger.Error().Err(serr).Str("Allocation Constraint ID", acc.ID.String()).Msg("error deleting Allocation Constraint record in DB")
-				return serr
-			}
 		}
 	}
 
