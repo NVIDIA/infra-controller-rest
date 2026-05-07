@@ -167,22 +167,6 @@ func (cvph CreateVpcPeeringHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Both VPCs must be in Ready state to proceed with peering", nil)
 	}
 
-	// Check if peering already exists
-	vpcPeeringDAO := cdbm.NewVpcPeeringDAO(cvph.dbSession)
-	existingPeerings, _, err := vpcPeeringDAO.GetAll(ctx, nil, cdbm.VpcPeeringFilterInput{
-		VpcIDs: []uuid.UUID{vpc1ID},
-	}, cdbp.PageInput{}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error checking for existing VPC Peering")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to check for existing VPC Peering, DB error", nil)
-	}
-	for _, peering := range existingPeerings {
-		// One of the VPC IDs must match the VPC ID, so we only need to check if either one equals the peer VPC ID
-		if peering.Vpc1ID == vpc2ID || peering.Vpc2ID == vpc2ID {
-			return cutil.NewAPIErrorResponse(c, http.StatusConflict, "VPC Peering already exists between VPCs specified in request data", nil)
-		}
-	}
-
 	// Determine if the two VPCs belong to different tenants
 	isMultiTenant := vpc1.TenantID != vpc2.TenantID
 
@@ -263,6 +247,22 @@ func (cvph CreateVpcPeeringHandler) Handle(c echo.Context) error {
 	if !providerAuthorized && !tenantAuthorized {
 		logger.Warn().Msg("User does not have access to create the VPC Peering")
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have access to create the VPC Peering", nil)
+	}
+
+	// Check if peering already exists
+	vpcPeeringDAO := cdbm.NewVpcPeeringDAO(cvph.dbSession)
+	existingPeerings, _, err := vpcPeeringDAO.GetAll(ctx, nil, cdbm.VpcPeeringFilterInput{
+		VpcIDs: []uuid.UUID{vpc1ID},
+	}, cdbp.PageInput{}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("error checking for existing VPC Peering")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to check for existing VPC Peering, DB error", nil)
+	}
+	for _, peering := range existingPeerings {
+		// One of the VPC IDs must match the VPC ID, so we only need to check if either one equals the peer VPC ID.
+		if peering.Vpc1ID == vpc2ID || peering.Vpc2ID == vpc2ID {
+			return cutil.NewAPIErrorResponse(c, http.StatusConflict, "VPC Peering already exists between VPCs specified in request data", nil)
+		}
 	}
 
 	var infrastructureProviderID *uuid.UUID
