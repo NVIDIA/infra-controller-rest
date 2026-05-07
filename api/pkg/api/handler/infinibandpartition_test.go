@@ -1497,14 +1497,15 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 		"DeleteInfiniBandPartitionV2", mock.Anything).Return(wrun, nil)
 
 	tests := []struct {
-		fields             fields
-		name               string
-		reqOrgName         string
-		user               *cdbm.User
-		ibpID              string
-		expectedErr        bool
-		expectedStatus     int
-		verifyChildSpanner bool
+		fields                              fields
+		name                                string
+		reqOrgName                          string
+		user                                *cdbm.User
+		ibpID                               string
+		expectedErr                         bool
+		expectedStatus                      int
+		verifyChildSpanner                  bool
+		verifyInfiniBandInterfaceIDsPayload bool
 	}{
 		{
 			fields: fields{
@@ -1597,12 +1598,13 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 				scp:       scp,
 				cfg:       cfg,
 			},
-			name:           "error when partition has InfiniBand Interfaces",
-			reqOrgName:     tnOrg1,
-			user:           tnu1,
-			ibpID:          ibpBlocked.ID.String(),
-			expectedErr:    true,
-			expectedStatus: http.StatusBadRequest,
+			name:                                "error when partition has InfiniBand Interfaces",
+			reqOrgName:                          tnOrg1,
+			user:                                tnu1,
+			ibpID:                               ibpBlocked.ID.String(),
+			expectedErr:                         true,
+			expectedStatus:                      http.StatusBadRequest,
+			verifyInfiniBandInterfaceIDsPayload: true,
 		},
 		{
 			fields: fields{
@@ -1668,6 +1670,19 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 
 			assert.Equal(t, tc.expectedStatus, rec.Code)
 			assert.Equal(t, tc.expectedErr, rec.Code != http.StatusAccepted)
+
+			if tc.verifyInfiniBandInterfaceIDsPayload {
+				require.NotEmpty(t, rec.Body.Bytes())
+				var envelope map[string]json.RawMessage
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &envelope))
+				dataRaw, ok := envelope["data"]
+				require.True(t, ok, "response JSON missing data: %s", rec.Body.String())
+				var data map[string]string
+				require.NoError(t, json.Unmarshal(dataRaw, &data))
+				ids, ok := data["infiniBandInterfaceIds"]
+				require.True(t, ok, "data missing infiniBandInterfaceIds key: %s", string(dataRaw))
+				require.NotEmpty(t, ids)
+			}
 
 			if !tc.expectedErr {
 				// Check that InfiniBand Partition status is set to deleting
