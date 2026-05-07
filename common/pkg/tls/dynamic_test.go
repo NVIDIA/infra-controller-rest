@@ -20,6 +20,7 @@ package tls
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -249,4 +250,39 @@ func TestDynTLSCfg(t *testing.T) {
 	caCertPool = x509.NewCertPool()
 	caCertPool.AppendCertsFromPEM([]byte(test2Cert))
 	assert.True(t, caCertPool.Equal(sCfg.RootCAs))
+}
+
+// TestDynTLSCfg_RefreshClearsStickyError verifies that a successful refresh
+// clears any error stored from a prior failed refresh. Without this, a
+// transient cert/key mismatch (e.g. when k8s remounts a Secret and writes
+// the two files non-atomically) would poison the tls config until the
+// process restarted, even after the files settled into a consistent state.
+func TestDynTLSCfg_RefreshClearsStickyError(t *testing.T) {
+	dir, err := os.MkdirTemp("", "certs-sticky")
+	require.NoError(t, err)
+	defer os.RemoveAll(dir)
+
+	key := filepath.Join(dir, "t.key")
+	require.NoError(t, os.WriteFile(key, []byte(test1Key), 0600))
+	cert := filepath.Join(dir, "t.pem")
+	require.NoError(t, os.WriteFile(cert, []byte(test1Cert), 0644))
+	ca := filepath.Join(dir, "ca.pem")
+	require.NoError(t, os.WriteFile(ca, []byte(testCaCert), 0644))
+
+	d, err := NewDynTLSCfg(key, cert, ca)
+	require.NoError(t, err)
+	defer d.Close()
+
+	// Simulate a prior failed refresh leaving a sticky error behind
+	// (the bug this test guards against).
+	d.Lock()
+	d.err = errors.New("simulated prior refresh failure")
+	d.Unlock()
+
+	d.refresh()
+
+	d.Lock()
+	gotErr := d.err
+	d.Unlock()
+	assert.NoError(t, gotErr, "refresh() should clear sticky error from prior failed attempt")
 }
