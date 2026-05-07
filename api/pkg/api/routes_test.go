@@ -82,7 +82,7 @@ func TestNewAPIRoutes(t *testing.T) {
 		"machine-validation":       11,
 		"dpu-extension-service":    7,
 		"sku":                      2,
-		"rack":                     11,
+		"rack":                     12,
 		"tray":                     8,
 		"stats":                    4,
 	}

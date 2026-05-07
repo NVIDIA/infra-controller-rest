@@ -414,7 +414,8 @@ func (mv ManageVpc) UpdateVpcMetadata(ctx context.Context, siteID uuid.UUID, tc 
 		TaskQueue: queue.SiteTaskQueue,
 	}
 
-	// Prepare the config update request workflow object
+	// Prepare the config update request workflow object. NetworkSecurityGroupId is
+	// intentionally omitted: this activity only syncs metadata fields.
 	updateVpcRequest := &cwssaws.VpcUpdateRequest{
 		Id: &cwssaws.VpcId{Value: vpc.ID.String()},
 		Metadata: &cwssaws.Metadata{

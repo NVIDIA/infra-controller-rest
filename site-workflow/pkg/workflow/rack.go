@@ -305,6 +305,43 @@ func GetRackTask(ctx workflow.Context, request *rlav1.GetTasksByIDsRequest) (*rl
 	return &response, nil
 }
 
+// CancelRackTask is a workflow to cancel a rack task by its UUID via RLA.
+//
+// Cancel is best-effort: RLA marks the task Terminated and terminates the
+// underlying Temporal workflow if one was scheduled. The returned task carries
+// the post-cancel status reported by RLA.
+func CancelRackTask(ctx workflow.Context, request *rlav1.CancelTaskRequest) (*rlav1.CancelTaskResponse, error) {
+	logger := log.With().Str("Workflow", "Rack").Str("Action", "CancelRackTask").Logger()
+
+	logger.Info().Msg("Starting workflow")
+
+	retrypolicy := &temporal.RetryPolicy{
+		InitialInterval:    1 * time.Second,
+		BackoffCoefficient: 2.0,
+		MaximumInterval:    10 * time.Second,
+		MaximumAttempts:    2,
+	}
+	options := workflow.ActivityOptions{
+		StartToCloseTimeout: 2 * time.Minute,
+		RetryPolicy:         retrypolicy,
+	}
+
+	ctx = workflow.WithActivityOptions(ctx, options)
+
+	var rackManager activity.ManageRack
+	var response rlav1.CancelTaskResponse
+
+	err := workflow.ExecuteActivity(ctx, rackManager.CancelTask, request).Get(ctx, &response)
+	if err != nil {
+		logger.Error().Err(err).Str("Activity", "CancelTask").Msg("Failed to execute activity from workflow")
+		return nil, err
+	}
+
+	logger.Info().Msg("Completing workflow")
+
+	return &response, nil
+}
+
 // UpgradeFirmware is a workflow to upgrade firmware on racks or components via RLA
 func UpgradeFirmware(ctx workflow.Context, request *rlav1.UpgradeFirmwareRequest) (*rlav1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "UpgradeFirmware").Logger()

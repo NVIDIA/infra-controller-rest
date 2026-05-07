@@ -18,8 +18,10 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -207,6 +209,170 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 			assert.Equal(t, "Running", apiTask.Status)
 			assert.Equal(t, "Power on rack", apiTask.Description)
 			assert.Equal(t, "Processing", apiTask.Message)
+		})
+	}
+}
+
+func TestCancelTaskHandler_Handle(t *testing.T) {
+	e := echo.New()
+	dbSession := testRackInitDB(t)
+	defer dbSession.Close()
+
+	cfg := common.GetTestConfig()
+	tcfg, _ := cfg.GetTemporalConfig()
+	scp := sc.NewClientPool(tcfg)
+
+	org := "test-org"
+	_, site, _ := testRackSetupTestData(t, dbSession, org)
+
+	siteNoRLA := &cdbm.Site{
+		ID:                       uuid.New(),
+		Name:                     "test-site-no-rla-cancel",
+		Org:                      org,
+		InfrastructureProviderID: site.InfrastructureProviderID,
+		Status:                   cdbm.SiteStatusRegistered,
+		Config:                   &cdbm.SiteConfig{},
+	}
+	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	assert.Nil(t, err)
+
+	providerUser := testRackBuildUser(t, dbSession, "provider-user-task-cancel", org, []string{authz.ProviderAdminRole})
+	tenantUser := testRackBuildUser(t, dbSession, "tenant-user-task-cancel", org, []string{authz.TenantAdminRole})
+
+	handler := NewCancelTaskHandler(dbSession, nil, scp, cfg)
+
+	taskUUID := uuid.New().String()
+
+	cancelledTask := &rlav1.Task{
+		Id:          &rlav1.UUID{Id: taskUUID},
+		Operation:   "power_on",
+		RackId:      &rlav1.UUID{Id: uuid.New().String()},
+		Description: "Power on rack",
+		Status:      rlav1.TaskStatus_TASK_STATUS_TERMINATED,
+		Message:     "Cancelled by user",
+	}
+
+	tracer := oteltrace.NewNoopTracerProvider().Tracer("test")
+	ctx := context.Background()
+
+	tests := []struct {
+		name           string
+		reqOrg         string
+		user           *cdbm.User
+		taskUUID       string
+		body           any
+		mockTask       *rlav1.Task
+		mockExecErr    error
+		expectedStatus int
+	}{
+		{
+			name:           "success - cancel task returns 202 Accepted",
+			reqOrg:         org,
+			user:           providerUser,
+			taskUUID:       taskUUID,
+			body:           model.APICancelTaskRequest{SiteID: site.ID.String()},
+			mockTask:       cancelledTask,
+			expectedStatus: http.StatusAccepted,
+		},
+		{
+			name:           "failure - RLA not enabled on site",
+			reqOrg:         org,
+			user:           providerUser,
+			taskUUID:       taskUUID,
+			body:           model.APICancelTaskRequest{SiteID: siteNoRLA.ID.String()},
+			expectedStatus: http.StatusPreconditionFailed,
+		},
+		{
+			name:           "failure - missing siteId",
+			reqOrg:         org,
+			user:           providerUser,
+			taskUUID:       taskUUID,
+			body:           model.APICancelTaskRequest{},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "failure - invalid siteId",
+			reqOrg:         org,
+			user:           providerUser,
+			taskUUID:       taskUUID,
+			body:           model.APICancelTaskRequest{SiteID: uuid.New().String()},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "failure - invalid task UUID",
+			reqOrg:         org,
+			user:           providerUser,
+			taskUUID:       "not-a-uuid",
+			body:           model.APICancelTaskRequest{SiteID: site.ID.String()},
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			name:           "failure - tenant access denied",
+			reqOrg:         org,
+			user:           tenantUser,
+			taskUUID:       taskUUID,
+			body:           model.APICancelTaskRequest{SiteID: site.ID.String()},
+			expectedStatus: http.StatusForbidden,
+		},
+		{
+			name:           "failure - workflow scheduling error",
+			reqOrg:         org,
+			user:           providerUser,
+			taskUUID:       taskUUID,
+			body:           model.APICancelTaskRequest{SiteID: site.ID.String()},
+			mockExecErr:    errors.New("temporal scheduling failed"),
+			expectedStatus: http.StatusInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockTemporalClient := &tmocks.Client{}
+			mockWorkflowRun := &tmocks.WorkflowRun{}
+			mockWorkflowRun.On("GetID").Return("test-workflow-id")
+			if tt.mockTask != nil {
+				mockWorkflowRun.Mock.On("Get", mock.Anything, mock.Anything).Run(func(args mock.Arguments) {
+					resp := args.Get(1).(*rlav1.CancelTaskResponse)
+					resp.Task = tt.mockTask
+				}).Return(nil)
+			}
+			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "CancelRackTask", mock.Anything).Return(mockWorkflowRun, tt.mockExecErr)
+			scp.IDClientMap[site.ID.String()] = mockTemporalClient
+
+			path := fmt.Sprintf("/v2/org/%s/nico/rack/task/%s/cancel", tt.reqOrg, tt.taskUUID)
+
+			bodyBytes, err := json.Marshal(tt.body)
+			require.NoError(t, err)
+
+			req := httptest.NewRequest(http.MethodPost, path, bytes.NewReader(bodyBytes))
+			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+			rec := httptest.NewRecorder()
+
+			ec := e.NewContext(req, rec)
+			ec.SetParamNames("orgName", "id")
+			ec.SetParamValues(tt.reqOrg, tt.taskUUID)
+			ec.Set("user", tt.user)
+
+			ctx = context.WithValue(ctx, otelecho.TracerKey, tracer)
+			ec.SetRequest(ec.Request().WithContext(ctx))
+
+			err = handler.Handle(ec)
+
+			if tt.expectedStatus != rec.Code {
+				t.Errorf("CancelTaskHandler.Handle() status = %v, want %v, response: %v, err: %v", rec.Code, tt.expectedStatus, rec.Body.String(), err)
+			}
+
+			require.Equal(t, tt.expectedStatus, rec.Code)
+			if tt.expectedStatus != http.StatusAccepted {
+				return
+			}
+
+			var apiTask model.APIRackTask
+			err = json.Unmarshal(rec.Body.Bytes(), &apiTask)
+			assert.NoError(t, err)
+			assert.Equal(t, taskUUID, apiTask.ID)
+			assert.Equal(t, "Terminated", apiTask.Status)
+			assert.Equal(t, "Cancelled by user", apiTask.Message)
 		})
 	}
 }

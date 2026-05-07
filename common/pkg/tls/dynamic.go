@@ -206,4 +206,11 @@ func (d *DynTLSCfg) refresh() {
 		d.cachedCert = &cert
 		d.cacheUpdated = true
 	}
+
+	// A complete refresh succeeded — clear any sticky error from a prior
+	// failed attempt. Without this, a single transient mismatch (e.g. when
+	// cert and key files are updated non-atomically by a k8s secret remount)
+	// would poison the config until the process restarted, even after files
+	// settle into a consistent state.
+	d.err = nil
 }

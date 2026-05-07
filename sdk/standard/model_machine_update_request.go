@@ -43,9 +43,8 @@ type MachineUpdateRequest struct {
 	// Set to `true` to enable maintenance mode and to `false` to disable maintenance mode. Can be set by Provider or Privileged Tenant.
 	SetMaintenanceMode NullableBool `json:"setMaintenanceMode,omitempty"`
 	// Optional message describing the reason for moving Machine into maintenance mode. Can be updated by Provider or Privileged Tenant.
-	MaintenanceMessage NullableString `json:"maintenanceMessage,omitempty"`
-	// Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.
-	Labels map[string]string `json:"labels,omitempty"`
+	MaintenanceMessage NullableString    `json:"maintenanceMessage,omitempty"`
+	Labels             map[string]string `json:"labels,omitempty"`
 }
 
 // NewMachineUpdateRequest instantiates a new MachineUpdateRequest object

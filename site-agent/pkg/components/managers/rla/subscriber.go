@@ -69,6 +69,10 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.GetRackTask)
 	ManagerAccess.Data.EB.Log.Info().Msg("RLA: Successfully registered GetRackTask workflow")
 
+	// Register CancelRackTask workflow
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CancelRackTask)
+	ManagerAccess.Data.EB.Log.Info().Msg("RLA: Successfully registered CancelRackTask workflow")
+
 	// Register activities
 	rackManager := swa.NewManageRack(ManagerAccess.Data.EB.Managers.RLA.Client)
 
@@ -107,6 +111,10 @@ func (api *API) RegisterSubscriber() error {
 	// Register GetTaskByID activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(rackManager.GetTaskByID)
 	ManagerAccess.Data.EB.Log.Info().Msg("RLA: Successfully registered GetTaskByID activity")
+
+	// Register CancelTask activity
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(rackManager.CancelTask)
+	ManagerAccess.Data.EB.Log.Info().Msg("RLA: Successfully registered CancelTask activity")
 
 	// Register the tray subscribers here
 	ManagerAccess.Data.EB.Log.Info().Msg("RLA: Registering tray workflows")
