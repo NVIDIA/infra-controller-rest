@@ -267,7 +267,7 @@ func (csh CreateVpcPrefixHandler) Handle(c echo.Context) error {
 
 	createVpcPrefixRequest := &cwssaws.VpcPrefixCreationRequest{
 		Id:    &cwssaws.VpcPrefixId{Value: vpcPrefix.ID.String()},
-		VpcId: &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+		VpcId: &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
 		Config: &cwssaws.VpcPrefixConfig{
 			Prefix: vpcPrefix.Prefix,
 		},
