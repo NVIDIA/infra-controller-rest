@@ -103,14 +103,6 @@ func GetSiteInstanceID(i *cdbm.Instance) *uuid.UUID {
 	}
 }
 
-func GetSiteVpcID(v *cdbm.Vpc) *uuid.UUID {
-	if v.ControllerVpcID != nil {
-		return v.ControllerVpcID
-	} else {
-		return &v.ID
-	}
-}
-
 func GetSiteNetworkSegmentID(s *cdbm.Subnet) *uuid.UUID {
 	if s.ControllerNetworkSegmentID != nil {
 		return s.ControllerNetworkSegmentID
