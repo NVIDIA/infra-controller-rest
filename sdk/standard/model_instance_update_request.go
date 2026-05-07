@@ -58,17 +58,16 @@ type InstanceUpdateRequest struct {
 	// Whether the custom iPXE data should be used for every boot.
 	AlwaysBootWithCustomIpxe NullableBool `json:"alwaysBootWithCustomIpxe,omitempty"`
 	// Indicates whether the Phone Home service should be enabled or disabled for Instance
-	PhoneHomeEnabled NullableBool `json:"phoneHomeEnabled,omitempty"`
-	// Update labels of the Instance. The labels will be entirely replaced by those sent in the request. Any labels not included in the request will be removed. To retain existing labels, first fetch them and include them along with this request.
-	Labels map[string]string `json:"labels,omitempty"`
+	PhoneHomeEnabled NullableBool      `json:"phoneHomeEnabled,omitempty"`
+	Labels           map[string]string `json:"labels,omitempty"`
 	// IDs of additional VPCs the Instance should attach to through non-primary interfaces. This field may only be specified when every entry in `interfaces` uses `vpcPrefixId`. IDs must be unique, must be valid UUIDs, and must not include the primary `vpcId`.
 	SecondaryVpcIds []string `json:"secondaryVpcIds,omitempty"`
 	// Update Interfaces of the Instance
 	Interfaces []InterfaceCreateRequest `json:"interfaces,omitempty"`
 	// Update InfiniBand Interfaces of the Instance
 	InfinibandInterfaces []InfiniBandInterfaceCreateRequest `json:"infinibandInterfaces,omitempty"`
-	// Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references one GPU index (`deviceInstance`) and one NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions.
-	NvLinkInterfaces []NVLinkInterfaceCreateRequest `json:"nvLinkInterfaces,omitempty"`
+	// Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references a GPU index (`deviceInstance`) and an NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions. Partial updates are not allowed, specified interfaces will delete or replace existing Interfaces. Updating is not allowed if Instance's VPC has `nvLinkLogicalPartitionId` attribute set.
+	NvLinkInterfaces []NVLinkInterfaceCreateOrUpdateRequest `json:"nvLinkInterfaces,omitempty"`
 	// Updated set of DPU Extension Services to deploy to the DPUs of this Instance
 	DpuExtensionServiceDeployments []DpuExtensionServiceDeploymentRequest `json:"dpuExtensionServiceDeployments,omitempty"`
 }
@@ -724,9 +723,9 @@ func (o *InstanceUpdateRequest) SetInfinibandInterfaces(v []InfiniBandInterfaceC
 }
 
 // GetNvLinkInterfaces returns the NvLinkInterfaces field value if set, zero value otherwise.
-func (o *InstanceUpdateRequest) GetNvLinkInterfaces() []NVLinkInterfaceCreateRequest {
+func (o *InstanceUpdateRequest) GetNvLinkInterfaces() []NVLinkInterfaceCreateOrUpdateRequest {
 	if o == nil || IsNil(o.NvLinkInterfaces) {
-		var ret []NVLinkInterfaceCreateRequest
+		var ret []NVLinkInterfaceCreateOrUpdateRequest
 		return ret
 	}
 	return o.NvLinkInterfaces
@@ -734,7 +733,7 @@ func (o *InstanceUpdateRequest) GetNvLinkInterfaces() []NVLinkInterfaceCreateReq
 
 // GetNvLinkInterfacesOk returns a tuple with the NvLinkInterfaces field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *InstanceUpdateRequest) GetNvLinkInterfacesOk() ([]NVLinkInterfaceCreateRequest, bool) {
+func (o *InstanceUpdateRequest) GetNvLinkInterfacesOk() ([]NVLinkInterfaceCreateOrUpdateRequest, bool) {
 	if o == nil || IsNil(o.NvLinkInterfaces) {
 		return nil, false
 	}
@@ -750,8 +749,8 @@ func (o *InstanceUpdateRequest) HasNvLinkInterfaces() bool {
 	return false
 }
 
-// SetNvLinkInterfaces gets a reference to the given []NVLinkInterfaceCreateRequest and assigns it to the NvLinkInterfaces field.
-func (o *InstanceUpdateRequest) SetNvLinkInterfaces(v []NVLinkInterfaceCreateRequest) {
+// SetNvLinkInterfaces gets a reference to the given []NVLinkInterfaceCreateOrUpdateRequest and assigns it to the NvLinkInterfaces field.
+func (o *InstanceUpdateRequest) SetNvLinkInterfaces(v []NVLinkInterfaceCreateOrUpdateRequest) {
 	o.NvLinkInterfaces = v
 }
 

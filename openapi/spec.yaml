@@ -15812,7 +15812,7 @@ components:
           type: array
           description: Define Interfaces to associate Instance GPUs with NVLink Logical Partitions. A subset of GPUs may be specified (it is not required to include all GPUs). Each item references one GPU index (`deviceInstance`) and one NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions.
           items:
-            $ref: '#/components/schemas/NVLinkInterfaceCreateRequest'
+            $ref: '#/components/schemas/NVLinkInterfaceCreateOrUpdateRequest'
         sshKeyGroupIds:
           type: array
           description: Specify list of SSH Key Group IDs that will provide Serial over LAN access
@@ -15959,7 +15959,7 @@ components:
           type: array
           description: NVLink interface configuration shared across all instances. A subset of GPUs may be specified. Each item references one GPU index (`deviceInstance`) and one NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions.
           items:
-            $ref: '#/components/schemas/NVLinkInterfaceCreateRequest'
+            $ref: '#/components/schemas/NVLinkInterfaceCreateOrUpdateRequest'
         sshKeyGroupIds:
           type: array
           description: SSH Key Group IDs that will provide Serial over LAN access to all instances
@@ -16131,9 +16131,9 @@ components:
             $ref: '#/components/schemas/InfiniBandInterfaceCreateRequest'
         nvLinkInterfaces:
           type: array
-          description: Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references one GPU index (`deviceInstance`) and one NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions.
+          description: Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references a GPU index (`deviceInstance`) and an NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions. Partial updates are not allowed, specified interfaces will delete or replace existing Interfaces. Updating is not allowed if Instance's VPC has `nvLinkLogicalPartitionId` attribute set.
           items:
-            $ref: '#/components/schemas/NVLinkInterfaceCreateRequest'
+            $ref: '#/components/schemas/NVLinkInterfaceCreateOrUpdateRequest'
         dpuExtensionServiceDeployments:
           type: array
           description: Updated set of DPU Extension Services to deploy to the DPUs of this Instance
@@ -16516,8 +16516,8 @@ components:
         - Ready
         - Deleting
         - Error
-    NVLinkInterfaceCreateRequest:
-      title: NVLinkInterfaceCreateRequest
+    NVLinkInterfaceCreateOrUpdateRequest:
+      title: NVLinkInterfaceCreateOrUpdateRequest
       type: object
       examples:
         - nvLinklogicalPartitionId: 505e07bc-86bf-489a-807d-92dc8b80e6ff
