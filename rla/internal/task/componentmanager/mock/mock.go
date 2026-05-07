@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
@@ -61,7 +62,7 @@ func NewWithDelay(componentType devicetypes.ComponentType, delay time.Duration) 
 
 // FactoryFor creates a factory function for the specified component type.
 func FactoryFor(componentType devicetypes.ComponentType) componentmanager.ManagerFactory {
-	return func(providers *componentmanager.ProviderRegistry) (componentmanager.ComponentManager, error) {
+	return func(providers *providerapi.ProviderRegistry) (componentmanager.ComponentManager, error) {
 		return New(componentType), nil
 	}
 }

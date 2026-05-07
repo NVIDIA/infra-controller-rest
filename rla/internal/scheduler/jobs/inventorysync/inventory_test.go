@@ -33,7 +33,8 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
@@ -865,14 +866,13 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 	}
 }
 
-func defaultComponentManagerTestConfig() componentmanager.Config {
-	return componentmanager.Config{
+func defaultComponentManagerTestConfig() cmconfig.Config {
+	return cmconfig.Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
 			devicetypes.ComponentTypeCompute:    "mock",
 			devicetypes.ComponentTypeNVLSwitch:  "mock",
 			devicetypes.ComponentTypePowerShelf: "mock",
 		},
-		Providers:       componentmanager.LegacyProviderConfig{},
-		ProviderConfigs: map[string]componentmanager.ProviderConfig{},
+		ProviderConfigs: map[string]providerapi.ProviderConfig{},
 	}
 }

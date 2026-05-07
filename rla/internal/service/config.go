@@ -28,7 +28,8 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/certs"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/clients/temporal"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor"
 	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
@@ -78,8 +79,8 @@ type Config struct {
 	DBConf           cdb.Config
 	ExecutorConf     executor.ExecutorConfig
 	RLAConfig        config.Config
-	CMConfig         componentmanager.Config
-	ProviderRegistry *componentmanager.ProviderRegistry
+	CMConfig         cmconfig.Config
+	ProviderRegistry *providerapi.ProviderRegistry
 
 	// DevMode enables developer options such as gRPC reflection and debug
 	// logging. Must not be set in staging/production environments.

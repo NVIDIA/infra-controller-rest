@@ -23,6 +23,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
@@ -56,11 +58,11 @@ func TestRegistryInitializeErrors(t *testing.T) {
 	t.Run("factory not registered", func(t *testing.T) {
 		registry := NewRegistry()
 
-		err := registry.Initialize(Config{
+		err := registry.Initialize(cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
 				devicetypes.ComponentTypeCompute: "mock",
 			},
-		}, NewProviderRegistry())
+		}, providerapi.NewProviderRegistry())
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrComponentManagerFactoryNotRegistered))
@@ -75,16 +77,16 @@ func TestRegistryInitializeErrors(t *testing.T) {
 		registry.RegisterFactory(
 			devicetypes.ComponentTypeCompute,
 			"known",
-			func(*ProviderRegistry) (ComponentManager, error) {
+			func(*providerapi.ProviderRegistry) (ComponentManager, error) {
 				return nil, nil
 			},
 		)
 
-		err := registry.Initialize(Config{
+		err := registry.Initialize(cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
 				devicetypes.ComponentTypeCompute: "missing",
 			},
-		}, NewProviderRegistry())
+		}, providerapi.NewProviderRegistry())
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrUnknownComponentManagerImplementation))
@@ -102,16 +104,16 @@ func TestRegistryInitializeErrors(t *testing.T) {
 		registry.RegisterFactory(
 			devicetypes.ComponentTypeCompute,
 			"broken",
-			func(*ProviderRegistry) (ComponentManager, error) {
+			func(*providerapi.ProviderRegistry) (ComponentManager, error) {
 				return nil, rootErr
 			},
 		)
 
-		err := registry.Initialize(Config{
+		err := registry.Initialize(cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
 				devicetypes.ComponentTypeCompute: "broken",
 			},
-		}, NewProviderRegistry())
+		}, providerapi.NewProviderRegistry())
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrManagerCreationFailed))
@@ -139,76 +141,5 @@ func TestRegistryFindManager(t *testing.T) {
 		manager := registry.FindManager(devicetypes.ComponentTypeCompute)
 
 		require.Nil(t, manager)
-	})
-}
-
-func TestParseConfigUnknownComponentTypeError(t *testing.T) {
-	_, err := parseConfigWithBuiltins(t, `
-component_managers:
-  madeup: mock
-`)
-
-	require.Error(t, err)
-	require.True(t, errors.Is(err, ErrUnknownComponentType))
-
-	var componentTypeErr UnknownComponentTypeError
-	require.True(t, errors.As(err, &componentTypeErr))
-	require.Equal(t, "madeup", componentTypeErr.Name)
-}
-
-type testProvider struct {
-	name string
-}
-
-func (p *testProvider) Name() string {
-	return p.name
-}
-
-type otherProvider struct {
-	name string
-}
-
-func (p *otherProvider) Name() string {
-	return p.name
-}
-
-func TestGetTypedErrors(t *testing.T) {
-	t.Run("provider registry not configured", func(t *testing.T) {
-		var registry *ProviderRegistry
-
-		provider, err := GetTyped[*testProvider](registry, "missing")
-
-		require.Nil(t, provider)
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrProviderRegistryNotConfigured))
-	})
-
-	t.Run("provider not found", func(t *testing.T) {
-		registry := NewProviderRegistry()
-
-		provider, err := GetTyped[*testProvider](registry, "missing")
-
-		require.Nil(t, provider)
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrUnknownProvider))
-
-		var providerErr UnknownProviderError
-		require.True(t, errors.As(err, &providerErr))
-		require.Equal(t, "missing", providerErr.Name)
-	})
-
-	t.Run("provider type mismatch", func(t *testing.T) {
-		registry := NewProviderRegistry()
-		registry.Register(&otherProvider{name: "provider"})
-
-		provider, err := GetTyped[*testProvider](registry, "provider")
-
-		require.Nil(t, provider)
-		require.Error(t, err)
-		require.True(t, errors.Is(err, ErrProviderTypeMismatch))
-
-		var mismatchErr ProviderTypeMismatchError
-		require.True(t, errors.As(err, &mismatchErr))
-		require.Equal(t, "provider", mismatchErr.Name)
 	})
 }

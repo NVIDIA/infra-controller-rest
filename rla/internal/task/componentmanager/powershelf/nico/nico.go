@@ -27,6 +27,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
@@ -47,8 +48,8 @@ func New(nicoClient nicoapi.Client) *Manager {
 }
 
 // Factory creates a new Manager from the provided providers.
-func Factory(providerRegistry *componentmanager.ProviderRegistry) (componentmanager.ComponentManager, error) {
-	provider, err := componentmanager.GetTyped[*nicoprovider.Provider](
+func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.ComponentManager, error) {
+	provider, err := providerapi.GetTyped[*nicoprovider.Provider](
 		providerRegistry,
 		nicoprovider.ProviderName,
 	)

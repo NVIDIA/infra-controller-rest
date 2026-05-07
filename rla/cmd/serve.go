@@ -34,16 +34,9 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
 	svc "github.com/NVIDIA/infra-controller-rest/rla/internal/service"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
-	computenico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/nico"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/mock"
-	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nico"
-	nvlswitchnsm "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nvswitchmanager"
-	powershelfnico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/powershelf/nico"
-	powershelfpsm "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/powershelf/psm"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
+	cmbuiltin "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/builtin"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	temporalmanager "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/manager"
 	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
 )
@@ -90,52 +83,52 @@ func init() {
 	}
 
 	serveCmd.Flags().IntVarP(&port, "listen-port", "p", defaultServicePort, "Port for the gRPC server") //nolint:lll
-	// Component manager config: priority is CLI flag > env var > default prod config
+	// Component manager config: priority is CLI flag > env var > service default config.
 	serveCmd.Flags().StringVarP(&componentMgrConfig, "component-config", "c", "", "Path to component manager config file (YAML)")               //nolint:lll
 	serveCmd.Flags().BoolVar(&devMode, "dev-mode", false, "Enable developer options (gRPC reflection, debug logging). Not for production use.") //nolint:lll
 }
 
-// initProviderRegistry creates and initializes the provider registry based on configuration.
-func initProviderRegistry(config componentmanager.Config) (*componentmanager.ProviderRegistry, error) {
-	providerRegistry := componentmanager.NewProviderRegistry()
+// initProviderRegistry creates and initializes the provider registry from
+// decoded provider configs.
+func initProviderRegistry(
+	ctx context.Context,
+	config cmconfig.Config,
+) (*providerapi.ProviderRegistry, error) {
+	providerRegistry := providerapi.NewProviderRegistry()
 
-	// Initialize NICo provider if configured
-	if config.Providers.NICo != nil {
-		nicoProvider, err := nico.New(*config.Providers.NICo)
-		if err != nil {
-			log.Warn().Err(err).Msg("Unable to create NICo GRPC client (power control may not work)")
-		} else {
-			providerRegistry.Register(nicoProvider)
-			log.Info().
-				Dur("timeout", config.Providers.NICo.Timeout).
-				Msg("Initialized NICo provider")
+	for name, providerConfig := range config.ProviderConfigs {
+		// loadComponentManagerConfig builds ProviderConfigs through the service
+		// decoders, which either return a concrete config or an error, so nil
+		// provider configs are rejected before startup reaches this point.
+		configName := providerConfig.Name()
+		if name != configName {
+			return nil, providerapi.ProviderConfigNameMismatchError{
+				Name:       name,
+				ConfigName: configName,
+			}
 		}
-	}
 
-	// Initialize PSM provider if configured
-	if config.Providers.PSM != nil {
-		psmProvider, err := psm.New(*config.Providers.PSM)
+		provider, err := providerConfig.NewProvider(ctx)
 		if err != nil {
-			log.Warn().Err(err).Msg("Unable to create PSM client (powershelf operations may not work)")
-		} else {
-			providerRegistry.Register(psmProvider)
-			log.Info().
-				Dur("timeout", config.Providers.PSM.Timeout).
-				Msg("Initialized PSM provider")
+			return nil, fmt.Errorf("create provider %q: %w", name, err)
 		}
-	}
+		if provider == nil {
+			return nil, providerapi.ProviderNotConfiguredError{Name: name}
+		}
 
-	// Initialize NV-Switch Manager provider if configured
-	if config.Providers.NVSwitchManager != nil {
-		nsmProvider, err := nvswitchmanager.New(*config.Providers.NVSwitchManager)
-		if err != nil {
-			log.Warn().Err(err).Msg("Unable to create NV-Switch Manager client (NVLSwitch operations may not work)")
-		} else {
-			providerRegistry.Register(nsmProvider)
-			log.Info().
-				Dur("timeout", config.Providers.NVSwitchManager.Timeout).
-				Msg("Initialized NV-Switch Manager provider")
+		providerName := provider.Name()
+		if providerName != name {
+			return nil, providerapi.ProviderNameMismatchError{
+				Name:         name,
+				ProviderName: providerName,
+			}
 		}
+		if err := providerRegistry.Register(provider); err != nil {
+			return nil, err
+		}
+		log.Info().
+			Str("provider", name).
+			Msg("Initialized provider")
 	}
 
 	// Log all registered providers
@@ -147,39 +140,6 @@ func initProviderRegistry(config componentmanager.Config) (*componentmanager.Pro
 	return providerRegistry, nil
 }
 
-// initComponentManagerRegistry creates and initializes the component manager registry.
-func initComponentManagerRegistry(config componentmanager.Config, providerRegistry *componentmanager.ProviderRegistry) (*componentmanager.Registry, error) {
-	registry := componentmanager.NewRegistry()
-
-	// Register all available component manager factories
-	var computePowerDelay time.Duration
-	if config.Providers.NICo != nil {
-		computePowerDelay = config.Providers.NICo.ComputePowerDelay
-	}
-	computenico.Register(registry, computePowerDelay)
-	nvlswitchnico.Register(registry)
-	nvlswitchnsm.Register(registry)
-	powershelfnico.Register(registry)
-	powershelfpsm.Register(registry)
-	mock.RegisterAll(registry)
-
-	// Initialize registry with the config and providers
-	if err := registry.Initialize(config, providerRegistry); err != nil {
-		return nil, fmt.Errorf("failed to initialize component managers: %w", err)
-	}
-
-	// Log registered implementations
-	impls := registry.ListRegisteredImplementations()
-	for compType, names := range impls {
-		log.Debug().
-			Str("component_type", compType.String()).
-			Strs("implementations", names).
-			Msg("Registered component manager implementations")
-	}
-
-	return registry, nil
-}
-
 // loadComponentManagerConfig loads the component manager configuration with the following priority:
 //
 //  1. CLI flag: --component-config / -c <path>
@@ -188,14 +148,14 @@ func initComponentManagerRegistry(config componentmanager.Config, providerRegist
 //  2. Environment variable: COMPONENT_MANAGER_CONFIG=<path>
 //     Example: COMPONENT_MANAGER_CONFIG=/etc/rla/componentmanager.yaml
 //
-//  3. Embedded default: componentmanager.DefaultProdConfig()
+//  3. Embedded default: builtin service config
 //     Used when no config file is provided. The primary production path.
-//     Uses real implementations (NICo for compute/nvlswitch, PSM for powershelf).
+//     Uses the component manager implementation map defined by builtin.
 //
 // The config specifies:
 //   - Which component manager implementations to use (nico, psm, mock)
 //   - Provider settings (timeouts, endpoints)
-func loadComponentManagerConfig() (componentmanager.Config, error) {
+func loadComponentManagerConfig() (cmconfig.Config, error) {
 	// Priority 1: CLI flag
 	configPath := componentMgrConfig
 
@@ -207,12 +167,12 @@ func loadComponentManagerConfig() (componentmanager.Config, error) {
 	// Load from file if a path was specified
 	if configPath != "" {
 		log.Info().Str("config_path", configPath).Msg("Loading component manager config from file")
-		return componentmanager.LoadConfig(configPath)
+		return cmbuiltin.LoadConfig(configPath)
 	}
 
-	// Priority 3: Embedded production config
-	log.Info().Msg("Using embedded production config (nico + psm)")
-	return componentmanager.DefaultProdConfig(), nil
+	// Priority 3: Embedded service config
+	log.Info().Msg("Using embedded component manager service config")
+	return cmbuiltin.LoadConfig("")
 }
 
 // doServe is the main entry point for the serve subcommand. It loads all
@@ -249,6 +209,8 @@ func doServe() {
 		log.Fatal().Msgf("failed to retrieve Temporal conn information: %v", err)
 	}
 
+	ctx := context.Background()
+
 	// Load component manager configuration
 	cmConfig, err := loadComponentManagerConfig()
 	if err != nil {
@@ -256,13 +218,16 @@ func doServe() {
 	}
 
 	// Initialize provider registry (creates API clients based on config)
-	providerRegistry, err := initProviderRegistry(cmConfig)
+	providerRegistry, err := initProviderRegistry(ctx, cmConfig)
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize provider registry: %v", err)
 	}
 
 	// Initialize component manager registry
-	cmRegistry, err := initComponentManagerRegistry(cmConfig, providerRegistry)
+	cmRegistry, err := cmbuiltin.NewComponentManagerRegistry(
+		cmConfig,
+		providerRegistry,
+	)
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize component manager registry: %v", err)
 	}
@@ -275,10 +240,8 @@ func doServe() {
 		ComponentManagerRegistry: cmRegistry,
 	}
 
-	ctx := context.Background()
-
 	if os.Getenv("REPORT_NICO_API_VERSION") != "" {
-		// Do some basic nico-core-api requests, mainly for early testing; this code can be removed when we're doing actual communication
+		// Do some basic nico-api requests, mainly for early testing; this code can be removed when we're doing actual communication
 		go func() {
 			client, err := nicoapi.NewClient(time.Minute)
 			if err != nil {

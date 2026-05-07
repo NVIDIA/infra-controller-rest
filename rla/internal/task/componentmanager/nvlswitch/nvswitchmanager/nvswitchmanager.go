@@ -25,6 +25,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	nsmprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
@@ -50,8 +51,8 @@ func New(nsmClient nsmapi.Client) *Manager {
 
 // Factory creates a new Manager from the provided providers.
 // It retrieves the NVSwitchManager provider from the registry and uses its client.
-func Factory(providerRegistry *componentmanager.ProviderRegistry) (componentmanager.ComponentManager, error) {
-	provider, err := componentmanager.GetTyped[*nsmprovider.Provider](
+func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.ComponentManager, error) {
+	provider, err := providerapi.GetTyped[*nsmprovider.Provider](
 		providerRegistry,
 		nsmprovider.ProviderName,
 	)

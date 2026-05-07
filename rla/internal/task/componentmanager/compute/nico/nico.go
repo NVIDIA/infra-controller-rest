@@ -31,6 +31,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
@@ -67,9 +68,9 @@ func New(nicoClient nicoapi.Client, powerDelay time.Duration) *Manager {
 // powerDelay is the inter-component stagger for power control calls.
 func Register(registry *componentmanager.Registry, powerDelay time.Duration) {
 	factory := func(
-		providerRegistry *componentmanager.ProviderRegistry,
+		providerRegistry *providerapi.ProviderRegistry,
 	) (componentmanager.ComponentManager, error) {
-		provider, err := componentmanager.GetTyped[*nicoprovider.Provider](
+		provider, err := providerapi.GetTyped[*nicoprovider.Provider](
 			providerRegistry,
 			nicoprovider.ProviderName,
 		)

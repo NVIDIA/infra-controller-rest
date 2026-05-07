@@ -54,14 +54,14 @@ type Provider interface {
 }
 ```
 
-Providers wrap API clients and are registered in the `ProviderRegistry`. Component managers retrieve providers by name to get their required API clients.
+Providers wrap API clients and are registered in the `providerapi.ProviderRegistry`. Component managers retrieve providers by name to get their required API clients.
 
 ### ProviderRegistry
 
-Manages provider instances. Component manager factories use `GetTyped[T]()` to retrieve type-safe providers:
+Manages provider instances. Component manager factories use `providerapi.GetTyped[T]()` to retrieve type-safe providers:
 
 ```go
-provider, err := componentmanager.GetTyped[*nico.Provider](
+provider, err := providerapi.GetTyped[*nico.Provider](
     providerRegistry,
     nico.ProviderName,
 )
@@ -83,7 +83,7 @@ type ComponentManager interface {
 ### ManagerFactory
 
 ```go
-type ManagerFactory func(providers *ProviderRegistry) (ComponentManager, error)
+type ManagerFactory func(providers *providerapi.ProviderRegistry) (ComponentManager, error)
 ```
 
 Factory functions create component manager instances. They receive the `ProviderRegistry` to retrieve any required providers.
@@ -102,7 +102,7 @@ The `Registry` stores factories and active managers:
 ```
 internal/task/componentmanager/
 ├── componentmanager.go      # ComponentManager interface, Registry
-├── provider.go              # Provider interface, ProviderRegistry
+├── providerapi/             # Provider interfaces and registries
 ├── config.go                # Configuration parsing
 ├── mock/
 │   └── mock.go              # Generic mock implementation
@@ -184,56 +184,51 @@ func (p *Provider) Client() myapi.Client {
 
 ### Step 2: Add Configuration Support
 
-Update `internal/task/componentmanager/config.go`:
+Provider-specific configuration lives with the provider package. Add a
+`ConfigDecoder` that implements the `providerapi.ProviderConfigDecoder`
+interface:
 
 ```go
-import (
-    // ... existing imports
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
-)
+type ConfigDecoder struct{}
 
-type ProviderConfig struct {
-    NICo *nico.Config
-    PSM     *psm.Config
-    MyAPI   *myapi.Config  // Add new provider config
+func (ConfigDecoder) Name() string {
+    return ProviderName
 }
 
-type rawProviderConfig struct {
-    NICo *rawNICoConfig `yaml:"nico"`
-    PSM     *rawPSMConfig     `yaml:"psm"`
-    MyAPI   *rawMyAPIConfig   `yaml:"myapi"`  // Add raw config
+func (ConfigDecoder) DefaultConfig() providerapi.ProviderConfig {
+    return &Config{Timeout: DefaultTimeout}
 }
 
-type rawMyAPIConfig struct {
-    Timeout string `yaml:"timeout"`
+func (d ConfigDecoder) DecodeYAML(raw yaml.Node) (providerapi.ProviderConfig, error) {
+    config := d.DefaultConfig().(*Config)
+    // Decode provider-specific YAML into config.
+    return config, nil
 }
 ```
 
-Update `ParseConfig()` and `deriveProviders()` to handle the new provider.
+Generic YAML parsing and validation lives in
+`internal/task/componentmanager/config`. That package should not import
+provider implementations directly.
 
-### Step 3: Register the Provider
+### Step 3: Register the Provider Decoder
 
-Update `cmd/serve.go` in `initProviderRegistry()`:
+Update the service-supported provider catalog in
+`internal/task/componentmanager/builtin`:
 
 ```go
-import (
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
-)
-
-func initProviderRegistry(config componentmanager.Config) (...) {
-    // ... existing providers ...
-
-    // Initialize MyAPI provider if configured
-    if config.Providers.MyAPI != nil {
-        myapiProvider, err := myapi.New(*config.Providers.MyAPI)
-        if err != nil {
-            log.Warn().Err(err).Msg("Unable to create MyAPI client")
-        } else {
-            providerRegistry.Register(myapiProvider)
-        }
+func serviceProviderConfigDecoders() []providerapi.ProviderConfigDecoder {
+    return []providerapi.ProviderConfigDecoder{
+        nico.ConfigDecoder{},
+        psm.ConfigDecoder{},
+        myapi.ConfigDecoder{},
     }
 }
 ```
+
+`cmd/serve.go` does not need provider-specific construction code. It loads the
+service config through `builtin.LoadConfig`, then creates providers from the
+decoded generic provider configs. Built-in provider decoders and component
+manager factory registration both live in `internal/task/componentmanager/builtin`.
 
 ---
 
@@ -253,6 +248,7 @@ import (
     "fmt"
 
     "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
     myapiprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
     "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
     "github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
@@ -272,8 +268,8 @@ func New(client myapi.Client) *Manager {
 }
 
 // Factory creates a Manager from the ProviderRegistry.
-func Factory(providers *componentmanager.ProviderRegistry) (componentmanager.ComponentManager, error) {
-    provider, err := componentmanager.GetTyped[*myapiprovider.Provider](
+func Factory(providers *providerapi.ProviderRegistry) (componentmanager.ComponentManager, error) {
+    provider, err := providerapi.GetTyped[*myapiprovider.Provider](
         providers,
         myapiprovider.ProviderName,
     )
@@ -311,23 +307,19 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 
 ### Step 2: Register the Implementation
 
-Update `cmd/serve.go` in `initComponentManagerRegistry()`:
+Update the service-supported manager catalog in
+`internal/task/componentmanager/builtin`:
 
 ```go
 import (
     myimpl "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/myimpl"
 )
 
-func initComponentManagerRegistry(...) (*componentmanager.Registry, error) {
-    registry := componentmanager.NewRegistry()
-
-    // Register all available component manager factories
-    computenico.Register(registry)
-    myimpl.Register(registry)  // Add new implementation
-    // ... other registrations ...
-    mock.RegisterAll(registry)
-
-    // ...
+func serviceComponentManagerRegistrars(config cmconfig.Config) ([]componentManagerRegistrar, error) {
+    return []componentManagerRegistrar{
+        // ... existing registrations ...
+        myimpl.Register, // Add new implementation
+    }, nil
 }
 ```
 

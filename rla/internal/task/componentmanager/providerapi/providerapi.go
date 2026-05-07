@@ -121,8 +121,13 @@ func (r *ProviderConfigDecoderRegistry) Register(decoder ProviderConfigDecoder) 
 	return nil
 }
 
-// Get retrieves a provider config decoder by name.
+// Get retrieves a provider config decoder by name. A nil registry behaves like
+// an empty registry.
 func (r *ProviderConfigDecoderRegistry) Get(name string) (ProviderConfigDecoder, bool) {
+	if r == nil {
+		return nil, false
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -130,8 +135,13 @@ func (r *ProviderConfigDecoderRegistry) Get(name string) (ProviderConfigDecoder,
 	return decoder, ok
 }
 
-// List returns the names of all registered provider config decoders.
+// List returns the names of all registered provider config decoders. A nil
+// registry behaves like an empty registry.
 func (r *ProviderConfigDecoderRegistry) List() []string {
+	if r == nil {
+		return nil
+	}
+
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

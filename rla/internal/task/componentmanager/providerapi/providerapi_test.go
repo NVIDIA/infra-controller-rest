@@ -107,3 +107,41 @@ func TestProviderConfigDecoderRegistryRegisterValidation(t *testing.T) {
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrProviderConfigDecoderRegistryNotConfigured))
 }
+
+func TestProviderConfigDecoderRegistryNilReadMethods(t *testing.T) {
+	var registry *ProviderConfigDecoderRegistry
+
+	decoder, ok := registry.Get("missing")
+
+	assert.Nil(t, decoder)
+	assert.False(t, ok)
+	assert.Nil(t, registry.List())
+}
+
+func TestProviderRegistry(t *testing.T) {
+	registry := NewProviderRegistry()
+	provider := testProvider{name: "test"}
+
+	require.NoError(t, registry.Register(provider))
+	err := registry.Register(provider)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrDuplicateProvider))
+
+	var duplicateErr DuplicateProviderError
+	require.True(t, errors.As(err, &duplicateErr))
+	assert.Equal(t, "test", duplicateErr.Name)
+
+	assert.Equal(t, provider, registry.Get("test"))
+	assert.Nil(t, registry.Get("missing"))
+	assert.True(t, registry.Has("test"))
+	assert.False(t, registry.Has("missing"))
+	assert.ElementsMatch(t, []string{"test"}, registry.List())
+}
+
+func TestProviderRegistryNilReadMethods(t *testing.T) {
+	var registry *ProviderRegistry
+
+	assert.Nil(t, registry.Get("missing"))
+	assert.False(t, registry.Has("missing"))
+	assert.Nil(t, registry.List())
+}

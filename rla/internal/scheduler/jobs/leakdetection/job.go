@@ -25,7 +25,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico" //nolint
 	taskmanager "github.com/NVIDIA/infra-controller-rest/rla/internal/task/manager"
 )
@@ -41,7 +41,7 @@ type Job struct {
 // provider is not registered (e.g. non-production environment).
 func New(
 	taskMgr taskmanager.Manager,
-	providers *componentmanager.ProviderRegistry,
+	providers *providerapi.ProviderRegistry,
 	cfg config.Config,
 ) (*Job, error) {
 	if cfg.DisableLeakDetection {
@@ -49,7 +49,7 @@ func New(
 		return nil, nil
 	}
 
-	nicoProvider, err := componentmanager.GetTyped[*nicoprovider.Provider](
+	nicoProvider, err := providerapi.GetTyped[*nicoprovider.Provider](
 		providers, nicoprovider.ProviderName,
 	)
 	if err != nil {

@@ -22,6 +22,8 @@ import (
 	"fmt"
 	"sort"
 
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
@@ -45,34 +47,61 @@ var (
 	// ErrManagerCreationFailed reports that a registered manager factory failed.
 	ErrManagerCreationFailed = errors.New("component manager creation failed")
 
+	// ErrConfigNotConfigured reports that a nil component manager config was
+	// provided where a config value is required.
+	ErrConfigNotConfigured = cmconfig.ErrConfigNotConfigured
+
 	// ErrUnknownComponentType reports an unrecognized component type in config.
-	ErrUnknownComponentType = errors.New("unknown component type")
+	ErrUnknownComponentType = cmconfig.ErrUnknownComponentType
+
+	// ErrComponentManagerImplementationNameEmpty reports that a component type
+	// was configured without an implementation name.
+	ErrComponentManagerImplementationNameEmpty = cmconfig.ErrComponentManagerImplementationNameEmpty
+
+	// ErrComponentManagersNotConfigured reports that the service config has no
+	// component manager entries.
+	ErrComponentManagersNotConfigured = cmconfig.ErrComponentManagersNotConfigured
 
 	// ErrProviderRegistryNotConfigured reports that the provider registry is not
 	// available.
-	ErrProviderRegistryNotConfigured = errors.New("provider registry is not configured")
+	ErrProviderRegistryNotConfigured = providerapi.ErrProviderRegistryNotConfigured
+
+	// ErrProviderNotConfigured reports that a provider or provider config is not
+	// available.
+	ErrProviderNotConfigured = providerapi.ErrProviderNotConfigured
 
 	// ErrUnknownProvider reports that a provider name is not known in the
 	// current provider context.
-	ErrUnknownProvider = errors.New("unknown provider")
+	ErrUnknownProvider = providerapi.ErrUnknownProvider
 
 	// ErrProviderTypeMismatch reports that a provider exists but has a different
 	// concrete type than the caller requested.
-	ErrProviderTypeMismatch = errors.New("provider type mismatch")
+	ErrProviderTypeMismatch = providerapi.ErrProviderTypeMismatch
 
-	// ErrProviderNameEmpty reports an empty provider name in configuration.
-	ErrProviderNameEmpty = errors.New("provider name is empty")
+	// ErrProviderNameEmpty reports an empty provider name.
+	ErrProviderNameEmpty = providerapi.ErrProviderNameEmpty
+
+	// ErrDuplicateProvider reports that a provider is already registered.
+	ErrDuplicateProvider = providerapi.ErrDuplicateProvider
+
+	// ErrProviderConfigNameMismatch reports that a provider config's name does
+	// not match the name it was registered under.
+	ErrProviderConfigNameMismatch = providerapi.ErrProviderConfigNameMismatch
+
+	// ErrProviderNameMismatch reports that a created provider's name does not
+	// match the provider config name.
+	ErrProviderNameMismatch = providerapi.ErrProviderNameMismatch
 
 	// ErrDuplicateProviderConfig reports duplicate provider configuration after
 	// provider names are normalized.
-	ErrDuplicateProviderConfig = errors.New("duplicate provider config")
+	ErrDuplicateProviderConfig = cmconfig.ErrDuplicateProviderConfig
 
 	// ErrProviderConfigDecoderNotRegistered reports that a provider is required
 	// but no config decoder is registered for it.
-	ErrProviderConfigDecoderNotRegistered = errors.New("provider config decoder is not registered")
+	ErrProviderConfigDecoderNotRegistered = cmconfig.ErrProviderConfigDecoderNotRegistered
 
-	// ErrProviderConfigTypeMismatch reports that a provider config decoder
-	// returned the wrong typed config for the provider.
+	// ErrProviderConfigTypeMismatch reports that a provider config has a
+	// different concrete type than the caller expected.
 	ErrProviderConfigTypeMismatch = errors.New("provider config type mismatch")
 )
 
@@ -162,74 +191,43 @@ func (e ManagerCreationError) Is(target error) bool {
 }
 
 // UnknownComponentTypeError includes the unrecognized component type string.
-type UnknownComponentTypeError struct {
-	Name string
-}
+type UnknownComponentTypeError = cmconfig.UnknownComponentTypeError
 
-func (e UnknownComponentTypeError) Error() string {
-	return fmt.Sprintf("%s: %s", ErrUnknownComponentType, e.Name)
-}
-
-func (e UnknownComponentTypeError) Is(target error) bool {
-	return target == ErrUnknownComponentType
-}
+// ComponentManagerImplementationNameEmptyError includes the component type
+// whose configured implementation name is empty.
+type ComponentManagerImplementationNameEmptyError = cmconfig.ComponentManagerImplementationNameEmptyError
 
 // UnknownProviderError includes the unknown provider name.
-type UnknownProviderError struct {
-	Name string
-}
+type UnknownProviderError = providerapi.UnknownProviderError
 
-func (e UnknownProviderError) Error() string {
-	return fmt.Sprintf("%s: %s", ErrUnknownProvider, e.Name)
-}
-
-func (e UnknownProviderError) Is(target error) bool {
-	return target == ErrUnknownProvider
-}
+// ProviderNotConfiguredError includes the provider name that is required but
+// not configured.
+type ProviderNotConfiguredError = providerapi.ProviderNotConfiguredError
 
 // ProviderTypeMismatchError includes the provider name with the unexpected
 // concrete type.
-type ProviderTypeMismatchError struct {
-	Name string
-}
+type ProviderTypeMismatchError = providerapi.ProviderTypeMismatchError
 
-func (e ProviderTypeMismatchError) Error() string {
-	return fmt.Sprintf("provider '%s' is not of expected type", e.Name)
-}
+// DuplicateProviderError includes the duplicate provider name.
+type DuplicateProviderError = providerapi.DuplicateProviderError
 
-func (e ProviderTypeMismatchError) Is(target error) bool {
-	return target == ErrProviderTypeMismatch
-}
+// ProviderConfigNameMismatchError includes the provider config map key and the
+// name returned by the config.
+type ProviderConfigNameMismatchError = providerapi.ProviderConfigNameMismatchError
+
+// ProviderNameMismatchError includes the expected provider name and the name
+// returned by the created provider.
+type ProviderNameMismatchError = providerapi.ProviderNameMismatchError
 
 // DuplicateProviderConfigError includes the normalized duplicate provider name.
-type DuplicateProviderConfigError struct {
-	Name string
-}
-
-func (e DuplicateProviderConfigError) Error() string {
-	return fmt.Sprintf("duplicate provider config for %q", e.Name)
-}
-
-func (e DuplicateProviderConfigError) Is(target error) bool {
-	return target == ErrDuplicateProviderConfig
-}
+type DuplicateProviderConfigError = cmconfig.DuplicateProviderConfigError
 
 // ProviderConfigDecoderNotRegisteredError includes the provider name with no
 // registered config decoder.
-type ProviderConfigDecoderNotRegisteredError struct {
-	Name string
-}
+type ProviderConfigDecoderNotRegisteredError = cmconfig.ProviderConfigDecoderNotRegisteredError
 
-func (e ProviderConfigDecoderNotRegisteredError) Error() string {
-	return fmt.Sprintf("provider config decoder %q is not registered", e.Name)
-}
-
-func (e ProviderConfigDecoderNotRegisteredError) Is(target error) bool {
-	return target == ErrProviderConfigDecoderNotRegistered
-}
-
-// ProviderConfigTypeMismatchError includes the provider config type returned by
-// a decoder and the type expected by the current bootstrap path.
+// ProviderConfigTypeMismatchError includes the provider config type and the
+// type expected by the caller.
 type ProviderConfigTypeMismatchError struct {
 	Name string
 	Got  any

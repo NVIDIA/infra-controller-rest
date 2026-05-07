@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package componentmanager
+package config
 
 import (
 	"context"
@@ -29,7 +29,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
-	cmbuiltin "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/builtin"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager"
@@ -45,7 +44,7 @@ func (c customProviderConfig) Name() string {
 	return c.name
 }
 
-func (c customProviderConfig) NewProvider(context.Context) (Provider, error) {
+func (c customProviderConfig) NewProvider(context.Context) (providerapi.Provider, error) {
 	return nil, nil
 }
 
@@ -57,11 +56,11 @@ func (d customProviderConfigDecoder) Name() string {
 	return d.name
 }
 
-func (d customProviderConfigDecoder) DefaultConfig() ProviderConfig {
+func (d customProviderConfigDecoder) DefaultConfig() providerapi.ProviderConfig {
 	return customProviderConfig{name: d.name}
 }
 
-func (d customProviderConfigDecoder) DecodeYAML(raw yaml.Node) (ProviderConfig, error) {
+func (d customProviderConfigDecoder) DecodeYAML(raw yaml.Node) (providerapi.ProviderConfig, error) {
 	return d.DefaultConfig(), nil
 }
 
@@ -86,19 +85,18 @@ providers:
 	assert.Equal(t, nvswitchmanager.ProviderName, config.ComponentManagers[devicetypes.ComponentTypeNVLSwitch])
 	assert.Equal(t, psm.ProviderName, config.ComponentManagers[devicetypes.ComponentTypePowerShelf])
 
-	require.NotNil(t, config.Providers.NICo)
-	assert.Equal(t, 45*time.Second, config.Providers.NICo.Timeout)
-	assert.Equal(t, 0*time.Second, config.Providers.NICo.ComputePowerDelay)
+	nicoConfig, ok := config.ProviderConfigs[nico.ProviderName].(*nico.Config)
+	require.True(t, ok)
+	assert.Equal(t, 45*time.Second, nicoConfig.Timeout)
+	assert.Equal(t, 0*time.Second, nicoConfig.ComputePowerDelay)
 
-	require.NotNil(t, config.Providers.PSM)
-	assert.Equal(t, 20*time.Second, config.Providers.PSM.Timeout)
+	psmConfig, ok := config.ProviderConfigs[psm.ProviderName].(*psm.Config)
+	require.True(t, ok)
+	assert.Equal(t, 20*time.Second, psmConfig.Timeout)
 
-	require.NotNil(t, config.Providers.NVSwitchManager)
-	assert.Equal(t, 90*time.Second, config.Providers.NVSwitchManager.Timeout)
-
-	assert.Same(t, config.Providers.NICo, config.ProviderConfigs[nico.ProviderName])
-	assert.Same(t, config.Providers.PSM, config.ProviderConfigs[psm.ProviderName])
-	assert.Same(t, config.Providers.NVSwitchManager, config.ProviderConfigs[nvswitchmanager.ProviderName])
+	nsmConfig, ok := config.ProviderConfigs[nvswitchmanager.ProviderName].(*nvswitchmanager.Config)
+	require.True(t, ok)
+	assert.Equal(t, 90*time.Second, nsmConfig.Timeout)
 }
 
 func TestParseConfigDerivesProviders(t *testing.T) {
@@ -162,7 +160,7 @@ component_managers:
 	}
 }
 
-func TestParseConfigKeepsExplicitProviderBehavior(t *testing.T) {
+func TestParseConfigCompletesMissingExplicitProviders(t *testing.T) {
 	config, err := parseConfigWithBuiltins(t, `
 component_managers:
   compute: nico
@@ -173,14 +171,24 @@ providers:
 `)
 	require.NoError(t, err)
 
-	assert.Nil(t, config.Providers.NICo)
-	require.NotNil(t, config.Providers.PSM)
-	assert.Equal(t, 20*time.Second, config.Providers.PSM.Timeout)
-	assert.False(t, config.HasProvider(nico.ProviderName))
+	assert.True(t, config.HasProvider(nico.ProviderName))
 	assert.True(t, config.HasProvider(psm.ProviderName))
+
+	nicoConfig, ok := config.ProviderConfigs[nico.ProviderName].(*nico.Config)
+	require.True(t, ok)
+	assert.Equal(t, nico.DefaultTimeout, nicoConfig.Timeout)
+	assert.Equal(
+		t,
+		nico.DefaultComputePowerDelay,
+		nicoConfig.ComputePowerDelay,
+	)
+
+	psmConfig, ok := config.ProviderConfigs[psm.ProviderName].(*psm.Config)
+	require.True(t, ok)
+	assert.Equal(t, 20*time.Second, psmConfig.Timeout)
 }
 
-func TestParseConfigTreatsEmptyProvidersAsExplicit(t *testing.T) {
+func TestParseConfigCompletesEmptyProviders(t *testing.T) {
 	config, err := parseConfigWithBuiltins(t, `
 component_managers:
   compute: nico
@@ -188,9 +196,10 @@ providers: {}
 `)
 	require.NoError(t, err)
 
-	assert.Empty(t, config.ProviderConfigs)
-	assert.Nil(t, config.Providers.NICo)
-	assert.False(t, config.HasProvider(nico.ProviderName))
+	assert.True(t, config.HasProvider(nico.ProviderName))
+
+	err = config.Validate(serviceProviderConfigDecoderRegistry(t))
+	require.NoError(t, err)
 }
 
 func TestParseConfigErrors(t *testing.T) {
@@ -208,10 +217,10 @@ component_managers:
 providers:
   madeup: {}
 `,
-			wantErr: ErrUnknownProvider,
+			wantErr: providerapi.ErrUnknownProvider,
 			checkErr: func(t *testing.T, err error) {
 				t.Helper()
-				var providerErr UnknownProviderError
+				var providerErr providerapi.UnknownProviderError
 				require.True(t, errors.As(err, &providerErr))
 				assert.Equal(t, "madeup", providerErr.Name)
 			},
@@ -225,9 +234,23 @@ component_managers:
 			wantErr: ErrUnknownComponentType,
 			checkErr: func(t *testing.T, err error) {
 				t.Helper()
-				var componentTypeErr UnknownComponentTypeError
-				require.True(t, errors.As(err, &componentTypeErr))
-				assert.Equal(t, "madeup", componentTypeErr.Name)
+				var ctErr UnknownComponentTypeError
+				require.True(t, errors.As(err, &ctErr))
+				assert.Equal(t, "madeup", ctErr.Name)
+			},
+		},
+		{
+			name: "empty implementation name",
+			configYAML: `
+component_managers:
+  compute: " "
+`,
+			wantErr: ErrComponentManagerImplementationNameEmpty,
+			checkErr: func(t *testing.T, err error) {
+				t.Helper()
+				var nameErr ComponentManagerImplementationNameEmptyError
+				require.True(t, errors.As(err, &nameErr))
+				assert.Equal(t, devicetypes.ComponentTypeCompute, nameErr.ComponentType)
 			},
 		},
 		{
@@ -322,15 +345,53 @@ providers:
 
 	assert.True(t, config.HasProvider("custom"))
 	assert.Equal(t, customProviderConfig{name: "custom"}, config.ProviderConfigs["custom"])
-	assert.Nil(t, config.Providers.NICo)
-	assert.Nil(t, config.Providers.PSM)
-	assert.Nil(t, config.Providers.NVSwitchManager)
 }
 
 func TestParseConfigRequiresDecoderRegistry(t *testing.T) {
 	_, err := ParseConfig([]byte(`component_managers: {}`), nil)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, providerapi.ErrProviderConfigDecoderRegistryNotConfigured))
+	assert.True(t, errors.Is(err, ErrProviderConfigDecoderRegistryRequired))
+}
+
+func TestNewConfigRequiresDecoderRegistry(t *testing.T) {
+	_, err := New(map[devicetypes.ComponentType]string{}, nil)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrProviderConfigDecoderRegistryRequired))
+}
+
+func TestValidateRequiresConfig(t *testing.T) {
+	var config *Config
+
+	err := config.Validate(serviceProviderConfigDecoderRegistry(t))
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrConfigNotConfigured))
+}
+
+func TestRequiredProviderNamesRequiresDecoderRegistry(t *testing.T) {
+	config := Config{}
+	names, err := config.requiredProviderNames(nil)
+	require.NoError(t, err)
+	assert.Empty(t, names)
+}
+
+func TestRequiredProviderNamesReturnsSortedNames(t *testing.T) {
+	registry := providerapi.NewProviderConfigDecoderRegistry()
+	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "zeta"}))
+	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "alpha"}))
+	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "middle"}))
+
+	config := Config{
+		ComponentManagers: map[devicetypes.ComponentType]string{
+			devicetypes.ComponentTypeCompute:    "zeta",
+			devicetypes.ComponentTypeNVLSwitch:  "alpha",
+			devicetypes.ComponentTypePowerShelf: "middle",
+		},
+	}
+	names, err := config.requiredProviderNames(registry)
+
+	require.NoError(t, err)
+	assert.Equal(t, []string{"alpha", "middle", "zeta"}, names)
 }
 
 func assertInvalidProviderConfigField(
@@ -347,10 +408,10 @@ func assertInvalidProviderConfigField(
 	assert.Equal(t, field, fieldErr.Field)
 }
 
-func TestHasProviderFallsBackToLegacyFields(t *testing.T) {
+func TestHasProviderUsesProviderConfigs(t *testing.T) {
 	config := Config{
-		Providers: LegacyProviderConfig{
-			NICo: &nico.Config{},
+		ProviderConfigs: map[string]providerapi.ProviderConfig{
+			nico.ProviderName: &nico.Config{},
 		},
 	}
 
@@ -358,18 +419,24 @@ func TestHasProviderFallsBackToLegacyFields(t *testing.T) {
 	assert.False(t, config.HasProvider(psm.ProviderName))
 }
 
-func TestDefaultConfigCompatibility(t *testing.T) {
-	prod := DefaultProdConfig()
-	require.NotNil(t, prod.Providers.NICo)
-	require.NotNil(t, prod.Providers.PSM)
-	assert.True(t, prod.HasProvider(nico.ProviderName))
-	assert.True(t, prod.HasProvider(psm.ProviderName))
+func TestNewConfigDerivesDefaultProviderConfigs(t *testing.T) {
+	config, err := New(
+		map[devicetypes.ComponentType]string{
+			devicetypes.ComponentTypeCompute: nico.ProviderName,
+		},
+		serviceProviderConfigDecoderRegistry(t),
+	)
+	require.NoError(t, err)
 
-	testConfig := defaultTestConfig()
-	assert.Nil(t, testConfig.Providers.NICo)
-	assert.Nil(t, testConfig.Providers.PSM)
-	assert.Nil(t, testConfig.Providers.NVSwitchManager)
-	assert.False(t, testConfig.HasProvider(nico.ProviderName))
+	assert.True(t, config.HasProvider(nico.ProviderName))
+	nicoConfig, ok := config.ProviderConfigs[nico.ProviderName].(*nico.Config)
+	require.True(t, ok)
+	assert.Equal(t, nico.DefaultTimeout, nicoConfig.Timeout)
+	assert.Equal(
+		t,
+		nico.DefaultComputePowerDelay,
+		nicoConfig.ComputePowerDelay,
+	)
 }
 
 func TestLoadConfig(t *testing.T) {
@@ -380,7 +447,7 @@ component_managers:
 `), 0o600)
 	require.NoError(t, err)
 
-	config, err := LoadConfig(path)
+	config, err := LoadConfig(path, serviceProviderConfigDecoderRegistry(t))
 	require.NoError(t, err)
 	assert.True(t, config.HasProvider(nico.ProviderName))
 }
@@ -395,21 +462,14 @@ func providerConfigNames(config Config) []string {
 
 func parseConfigWithBuiltins(t *testing.T, data string) (Config, error) {
 	t.Helper()
-	decoders, err := cmbuiltin.NewServiceProviderConfigDecoderRegistry()
-	if err != nil {
-		return Config{}, err
-	}
-	return ParseConfig([]byte(data), decoders)
+	return ParseConfig([]byte(data), serviceProviderConfigDecoderRegistry(t))
 }
 
-func defaultTestConfig() Config {
-	return Config{
-		ComponentManagers: map[devicetypes.ComponentType]string{
-			devicetypes.ComponentTypeCompute:    "mock",
-			devicetypes.ComponentTypeNVLSwitch:  "mock",
-			devicetypes.ComponentTypePowerShelf: "mock",
-		},
-		Providers:       LegacyProviderConfig{},
-		ProviderConfigs: map[string]ProviderConfig{},
-	}
+func serviceProviderConfigDecoderRegistry(t *testing.T) *providerapi.ProviderConfigDecoderRegistry {
+	t.Helper()
+	registry := providerapi.NewProviderConfigDecoderRegistry()
+	require.NoError(t, registry.Register(nico.ConfigDecoder{}))
+	require.NoError(t, registry.Register(psm.ConfigDecoder{}))
+	require.NoError(t, registry.Register(nvswitchmanager.ConfigDecoder{}))
+	return registry
 }

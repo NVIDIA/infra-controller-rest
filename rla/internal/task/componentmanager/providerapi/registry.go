@@ -15,30 +15,12 @@
  * limitations under the License.
  */
 
-package componentmanager
+package providerapi
 
 import (
+	"strings"
 	"sync"
-
-	"github.com/rs/zerolog/log"
-
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 )
-
-// Provider is a marker interface for API client providers.
-// Each provider wraps an API client and exposes it to component manager implementations.
-type Provider = providerapi.Provider
-
-// ProviderConfig is a decoded provider-specific configuration that can create
-// its provider.
-type ProviderConfig = providerapi.ProviderConfig
-
-// ProviderConfigDecoder owns provider-specific config defaults and YAML
-// decoding.
-type ProviderConfigDecoder = providerapi.ProviderConfigDecoder
-
-// ProviderConfigDecoderRegistry manages provider config decoders by provider name.
-type ProviderConfigDecoderRegistry = providerapi.ProviderConfigDecoderRegistry
 
 // ProviderRegistry manages API providers for component manager implementations.
 // It allows implementations to request their required providers by name.
@@ -55,29 +37,38 @@ func NewProviderRegistry() *ProviderRegistry {
 }
 
 // Register adds a provider to the registry.
-// Returns false if a provider with the same name already exists.
-func (pr *ProviderRegistry) Register(provider Provider) bool {
+// It returns an error when the provider cannot be registered.
+func (pr *ProviderRegistry) Register(provider Provider) error {
+	if pr == nil {
+		return ErrProviderRegistryNotConfigured
+	}
+	if provider == nil {
+		return ErrProviderNotConfigured
+	}
+
+	name := strings.TrimSpace(provider.Name())
+	if name == "" {
+		return ErrProviderNameEmpty
+	}
+
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
 
-	name := provider.Name()
 	if _, exists := pr.providers[name]; exists {
-		log.Warn().
-			Str("provider", name).
-			Msg("Provider already registered, skipping")
-		return false
+		return DuplicateProviderError{Name: name}
 	}
 
 	pr.providers[name] = provider
-	log.Debug().
-		Str("provider", name).
-		Msg("Registered provider")
-	return true
+	return nil
 }
 
-// Get retrieves a provider by name.
-// Returns nil if the provider is not found.
+// Get retrieves a provider by name. It returns nil if the provider is not found
+// or the registry is nil.
 func (pr *ProviderRegistry) Get(name string) Provider {
+	if pr == nil {
+		return nil
+	}
+
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
 	return pr.providers[name]
@@ -104,16 +95,26 @@ func GetTyped[T Provider](pr *ProviderRegistry, name string) (T, error) {
 	return typed, nil
 }
 
-// Has checks if a provider with the given name is registered.
+// Has checks if a provider with the given name is registered. A nil registry
+// behaves like an empty registry.
 func (pr *ProviderRegistry) Has(name string) bool {
+	if pr == nil {
+		return false
+	}
+
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
 	_, exists := pr.providers[name]
 	return exists
 }
 
-// List returns the names of all registered providers.
+// List returns the names of all registered providers. A nil registry behaves
+// like an empty registry.
 func (pr *ProviderRegistry) List() []string {
+	if pr == nil {
+		return nil
+	}
+
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
 

@@ -28,9 +28,9 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 )
 
-// NewServiceProviderConfigDecoderRegistry creates the provider config decoder
+// newServiceProviderConfigDecoderRegistry creates the provider config decoder
 // registry used by the RLA service.
-func NewServiceProviderConfigDecoderRegistry() (*providerapi.ProviderConfigDecoderRegistry, error) {
+func newServiceProviderConfigDecoderRegistry() (*providerapi.ProviderConfigDecoderRegistry, error) {
 	registry := providerapi.NewProviderConfigDecoderRegistry()
 
 	for _, decoder := range serviceProviderConfigDecoders() {

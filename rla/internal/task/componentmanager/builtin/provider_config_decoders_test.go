@@ -28,8 +28,8 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 )
 
-func TestNewServiceProviderConfigDecoderRegistry(t *testing.T) {
-	registry, err := NewServiceProviderConfigDecoderRegistry()
+func TestServiceProviderConfigDecoderRegistry(t *testing.T) {
+	registry, err := newServiceProviderConfigDecoderRegistry()
 	require.NoError(t, err)
 
 	assert.ElementsMatch(

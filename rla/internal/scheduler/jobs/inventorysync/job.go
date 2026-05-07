@@ -29,7 +29,8 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                       //nolint
 	nvswitchmanagerprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager" //nolint
 	psmprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"                         //nolint
@@ -42,7 +43,7 @@ type Job struct {
 	psmClient  psmapi.Client
 	nsmClient  nsmapi.Client
 	pool       *cdb.Session
-	cmConfig   componentmanager.Config
+	cmConfig   cmconfig.Config
 }
 
 // New constructs an inventory sync Job using clients sourced from the provider
@@ -52,9 +53,9 @@ type Job struct {
 func New(
 	ctx context.Context,
 	dbConf *cdb.Config,
-	providers *componentmanager.ProviderRegistry,
+	providers *providerapi.ProviderRegistry,
 	cfg config.Config,
-	cmConfig componentmanager.Config,
+	cmConfig cmconfig.Config,
 ) (*Job, error) {
 	if cfg.DisableInventory {
 		log.Info().Msg("Inventory disabled by configuration")
@@ -65,7 +66,7 @@ func New(
 		return nil, fmt.Errorf("database configuration is nil")
 	}
 
-	nicoProvider, err := componentmanager.GetTyped[*nicoprovider.Provider](
+	nicoProvider, err := providerapi.GetTyped[*nicoprovider.Provider](
 		providers, nicoprovider.ProviderName,
 	)
 	if err != nil {
@@ -78,7 +79,7 @@ func New(
 	// PSM provider is optional: only needed when the powershelf component
 	// manager is configured to use the PSM implementation.
 	var psmClient psmapi.Client
-	psmProvider, err := componentmanager.GetTyped[*psmprovider.Provider](
+	psmProvider, err := providerapi.GetTyped[*psmprovider.Provider](
 		providers, psmprovider.ProviderName,
 	)
 	if err != nil {
@@ -92,7 +93,7 @@ func New(
 	// NVSwitch Manager provider is optional: only needed when the nvlswitch
 	// component manager is configured to use the nvswitchmanager implementation.
 	var nsmClient nsmapi.Client
-	nsmProvider, err := componentmanager.GetTyped[*nvswitchmanagerprovider.Provider](
+	nsmProvider, err := providerapi.GetTyped[*nvswitchmanagerprovider.Provider](
 		providers, nvswitchmanagerprovider.ProviderName,
 	)
 	if err != nil {

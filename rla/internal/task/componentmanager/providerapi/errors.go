@@ -45,6 +45,36 @@ var (
 	// ErrInvalidProviderConfigField reports that a provider config field value
 	// was invalid.
 	ErrInvalidProviderConfigField = errors.New("invalid provider config field")
+
+	// ErrProviderRegistryNotConfigured reports that the provider registry is not
+	// available.
+	ErrProviderRegistryNotConfigured = errors.New("provider registry is not configured")
+
+	// ErrProviderNotConfigured reports that a provider or provider config is not
+	// available.
+	ErrProviderNotConfigured = errors.New("provider is not configured")
+
+	// ErrUnknownProvider reports that a provider name is not known in the
+	// current provider context.
+	ErrUnknownProvider = errors.New("unknown provider")
+
+	// ErrProviderTypeMismatch reports that a provider exists but has a different
+	// concrete type than the caller requested.
+	ErrProviderTypeMismatch = errors.New("provider type mismatch")
+
+	// ErrProviderNameEmpty reports an empty provider name.
+	ErrProviderNameEmpty = errors.New("provider name is empty")
+
+	// ErrDuplicateProvider reports that a provider is already registered.
+	ErrDuplicateProvider = errors.New("duplicate provider")
+
+	// ErrProviderConfigNameMismatch reports that a provider config's name does
+	// not match the name it was registered under.
+	ErrProviderConfigNameMismatch = errors.New("provider config name mismatch")
+
+	// ErrProviderNameMismatch reports that a created provider's name does not
+	// match the provider config name.
+	ErrProviderNameMismatch = errors.New("provider name mismatch")
 )
 
 // ProviderConfigDecoderAlreadyRegisteredError includes the duplicate provider
@@ -104,4 +134,99 @@ func (e InvalidProviderConfigFieldError) Unwrap() error {
 
 func (e InvalidProviderConfigFieldError) Is(target error) bool {
 	return target == ErrInvalidProviderConfigField
+}
+
+// UnknownProviderError includes the unknown provider name.
+type UnknownProviderError struct {
+	Name string
+}
+
+func (e UnknownProviderError) Error() string {
+	return fmt.Sprintf("%s: %s", ErrUnknownProvider, e.Name)
+}
+
+func (e UnknownProviderError) Is(target error) bool {
+	return target == ErrUnknownProvider
+}
+
+// ProviderNotConfiguredError includes the provider name that is required but
+// not configured.
+type ProviderNotConfiguredError struct {
+	Name string
+}
+
+func (e ProviderNotConfiguredError) Error() string {
+	if e.Name == "" {
+		return ErrProviderNotConfigured.Error()
+	}
+	return fmt.Sprintf("%s: %s", ErrProviderNotConfigured, e.Name)
+}
+
+func (e ProviderNotConfiguredError) Is(target error) bool {
+	return target == ErrProviderNotConfigured
+}
+
+// ProviderTypeMismatchError includes the provider name with the unexpected
+// concrete type.
+type ProviderTypeMismatchError struct {
+	Name string
+}
+
+func (e ProviderTypeMismatchError) Error() string {
+	return fmt.Sprintf("provider '%s' is not of expected type", e.Name)
+}
+
+func (e ProviderTypeMismatchError) Is(target error) bool {
+	return target == ErrProviderTypeMismatch
+}
+
+// DuplicateProviderError includes the duplicate provider name.
+type DuplicateProviderError struct {
+	Name string
+}
+
+func (e DuplicateProviderError) Error() string {
+	return fmt.Sprintf("duplicate provider: %s", e.Name)
+}
+
+func (e DuplicateProviderError) Is(target error) bool {
+	return target == ErrDuplicateProvider
+}
+
+// ProviderConfigNameMismatchError includes the provider config map key and the
+// name returned by the config.
+type ProviderConfigNameMismatchError struct {
+	Name       string
+	ConfigName string
+}
+
+func (e ProviderConfigNameMismatchError) Error() string {
+	return fmt.Sprintf(
+		"provider config name mismatch: configured as %q but config returned %q",
+		e.Name,
+		e.ConfigName,
+	)
+}
+
+func (e ProviderConfigNameMismatchError) Is(target error) bool {
+	return target == ErrProviderConfigNameMismatch
+}
+
+// ProviderNameMismatchError includes the expected provider name and the name
+// returned by the created provider.
+type ProviderNameMismatchError struct {
+	Name         string
+	ProviderName string
+}
+
+func (e ProviderNameMismatchError) Error() string {
+	return fmt.Sprintf(
+		"provider name mismatch: expected %q but provider returned %q",
+		e.Name,
+		e.ProviderName,
+	)
+}
+
+func (e ProviderNameMismatchError) Is(target error) bool {
+	return target == ErrProviderNameMismatch
 }

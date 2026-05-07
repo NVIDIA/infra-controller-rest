@@ -23,6 +23,8 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
@@ -77,7 +79,7 @@ type FirmwareConsistencyChecker interface {
 
 // ManagerFactory is a function that creates a ComponentManager instance.
 // It receives a ProviderRegistry from which it can retrieve the providers it needs.
-type ManagerFactory func(providers *ProviderRegistry) (ComponentManager, error)
+type ManagerFactory func(providers *providerapi.ProviderRegistry) (ComponentManager, error)
 
 // Registry maintains a collection of component manager factories and active managers.
 // It allows dynamic registration and selection of implementations per component type.
@@ -127,7 +129,10 @@ func (r *Registry) RegisterFactory(
 
 // Initialize creates and activates component managers based on the provided configuration.
 // The config maps component types to implementation names.
-func (r *Registry) Initialize(config Config, providers *ProviderRegistry) error {
+func (r *Registry) Initialize(
+	config cmconfig.Config,
+	providers *providerapi.ProviderRegistry,
+) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

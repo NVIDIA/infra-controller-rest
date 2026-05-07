@@ -16,10 +16,12 @@ Timing parameters for power control and firmware update operations are configure
 | File | Purpose |
 |------|---------|
 | `componentmanager.test.yaml` | Testing/development configuration using mock implementations |
-| *(embedded)* | Production configuration embedded in the binary via `DefaultProdConfig()` |
+| *(embedded)* | Service default embedded in the binary via `builtin.LoadConfig("")` |
 
 The production config is compiled into the binary. No YAML file is needed for production
 deployments. A YAML file is only required when overriding defaults (e.g., for testing).
+When a YAML file path is supplied, the file is authoritative and is not merged
+with the embedded defaults.
 
 ## Configuration Structure
 
@@ -32,13 +34,18 @@ component_managers:
   powershelf: <implementation>
 ```
 
-Maps each component type to its implementation. Available implementations:
+Maps each component type to its implementation. Service-loaded YAML files must
+include at least one `component_managers` entry. Partial maps are supported:
+missing component types are not filled from embedded defaults and remain
+unconfigured until explicitly added.
+
+Available implementations:
 
 | Component Type | Available Implementations | Description |
 |----------------|---------------------------|-------------|
 | `compute` | `nico`, `mock` | Manages compute nodes |
-| `nvlswitch` | `nico`, `mock` | Manages NVLink switches |
-| `powershelf` | `psm`, `mock` | Manages power shelves |
+| `nvlswitch` | `nico`, `nvswitchmanager`, `mock` | Manages NVLink switches |
+| `powershelf` | `nico`, `psm`, `mock` | Manages power shelves |
 
 ### Providers
 
@@ -47,22 +54,29 @@ providers:
   nico:
     timeout: "<duration>"
     compute_power_delay: "<duration>"
+  nvswitchmanager:
+    timeout: "<duration>"
   psm:
     timeout: "<duration>"
 ```
 
-Configures API client providers. **A provider is enabled if its section is present** in the configuration.
+Configures API client providers. Provider configs are completed from
+`component_managers` using provider defaults. If `providers` is present, entries
+in that section override defaults for those providers; any required provider not
+listed there is still added with its default config. `providers: {}` is
+equivalent to omitting the section for provider-backed component managers.
 
 | Provider | Used By | Description |
 |----------|---------|-------------|
-| `nico` | compute, nvlswitch | NICo API for machine management |
-| `psm` | powershelf | Power Shelf Manager API |
+| `nico` | compute, nvlswitch, powershelf/nico | NICo API for machine management |
+| `nvswitchmanager` | nvlswitch/nvswitchmanager | NV-Switch Manager API for NVLink switch management |
+| `psm` | powershelf/psm | Power Shelf Manager API |
 
 #### Provider Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `timeout` | duration string | `1m` (nico), `30s` (psm) | gRPC call timeout |
+| `timeout` | duration string | `1m` (nico, nvswitchmanager), `30s` (psm) | gRPC call timeout |
 | `compute_power_delay` | duration string | `2s` (nico only) | Delay between sequential power control calls for compute trays. Prevents overwhelming the power delivery system. Set to `0s` to disable. |
 
 Duration strings use Go format: `30s`, `1m`, `2m30s`, etc.
@@ -71,18 +85,17 @@ Duration strings use Go format: `30s`, `1m`, `2m30s`, etc.
 
 ### Production Configuration (embedded default)
 
-```go
-// Equivalent to DefaultProdConfig() in internal/task/componentmanager/config.go
+```yaml
+# Equivalent to builtin.LoadConfig("")
 component_managers:
   compute: nico
   nvlswitch: nico
-  powershelf: psm
+  powershelf: nico
 
 providers:
   nico:
     timeout: "1m"
-  psm:
-    timeout: "30s"
+    compute_power_delay: "2s"
 ```
 
 ### Test Configuration
@@ -111,21 +124,38 @@ providers:
     timeout: "30s"
 ```
 
-## Provider Auto-Detection
+## Provider Completion
 
-If the `providers` section is omitted entirely, providers are automatically enabled based on the component manager implementations:
+Providers are automatically enabled based on the component manager implementations:
 
 - If any component uses `nico` → NICo provider is enabled with defaults
-- If any component uses `psm` → PSM provider is enabled with defaults
+- If `nvlswitch` uses `nvswitchmanager` → NV-Switch Manager provider is enabled with defaults
+- If `powershelf` uses `psm` → PSM provider is enabled with defaults
 
 This allows minimal configuration:
 
 ```yaml
 component_managers:
   compute: nico
-  nvlswitch: nico
+  nvlswitch: nvswitchmanager
   powershelf: psm
 # Providers auto-enabled based on implementations above
+```
+
+Provider entries can override only the providers that need non-default settings:
+
+```yaml
+component_managers:
+  compute: nico
+  nvlswitch: nvswitchmanager
+  powershelf: psm
+
+providers:
+  nvswitchmanager:
+    timeout: "1m30s"
+  psm:
+    timeout: "45s"
+# nico is still added with defaults
 ```
 
 ## Usage
@@ -134,7 +164,7 @@ Set the configuration file path via:
 
 1. **Command line flag**: `--component-config <path>`
 2. **Environment variable**: `COMPONENT_MANAGER_CONFIG=<path>`
-3. **Default**: embedded production config (nico + psm)
+3. **Default**: embedded service config
 
 ## Timing Parameters
 

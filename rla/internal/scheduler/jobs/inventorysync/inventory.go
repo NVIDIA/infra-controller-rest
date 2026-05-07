@@ -33,7 +33,7 @@ import (
 	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
 )
 
@@ -48,7 +48,7 @@ func runInventoryOne(
 	nicoClient nicoapi.Client,
 	psmClient psmapi.Client,
 	nsmClient nsmapi.Client,
-	cmConfig componentmanager.Config,
+	cmConfig cmconfig.Config,
 ) {
 	var allDrifts []model.ComponentDrift
 

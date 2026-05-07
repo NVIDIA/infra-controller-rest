@@ -26,6 +26,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
 	psmprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
@@ -52,9 +53,9 @@ func New(psmClient psmapi.Client) *Manager {
 // Factory creates a new Manager from the provided providers.
 // It retrieves the PSMProvider from the registry and uses its client.
 func Factory(
-	providerRegistry *componentmanager.ProviderRegistry,
+	providerRegistry *providerapi.ProviderRegistry,
 ) (componentmanager.ComponentManager, error) {
-	provider, err := componentmanager.GetTyped[*psmprovider.Provider](
+	provider, err := providerapi.GetTyped[*psmprovider.Provider](
 		providerRegistry,
 		psmprovider.ProviderName,
 	)
