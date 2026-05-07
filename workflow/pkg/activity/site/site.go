@@ -62,8 +62,9 @@ type ManageSite struct {
 
 // DeleteSiteComponentsFromDB is a Temporal activity that initiates delete for instance type, machine,
 // machine interface, machine capability, operating system, instance, subnet, vpc, vpc peering, vpc prefix,
-// infiniband partition, nvlink logical partition, dpu extension service deployment,
-// interface, nvlink interface, infiniband interface, ssh key group, and sku.
+// infiniband partition, nvlink logical partition, dpu extension service deployment, interface,
+// nvlink interface, infiniband interface, ssh key group associations to site and instance, sku, expected machine,
+// expected switch and expected power shelf.
 func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uuid.UUID, infrastructureProviderID uuid.UUID, purgeMachines bool) error {
 	logger := log.With().Str("Activity", "DeleteSiteComponentsFromDB").Str("Site ID", siteID.String()).
 		Str("InfrastructureProvider ID", infrastructureProviderID.String()).Bool("Purge Machines", purgeMachines).Logger()
@@ -416,14 +417,9 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		}
 	}
 
-	// Delete operating system site associations. After the
-	// associations for this site are removed, walk the set of
-	// operating systems they referenced and delete any image-typed
-	// OS whose only remaining site association was the one we just
-	// removed. iPXE-typed OSes (and image OSes that are still
-	// associated with at least one other site) are intentionally
-	// left in place: only image OSes whose lifecycle was tied
-	// solely to this site are cleaned up.
+	// Delete operating system site associations. After the associations for this site are removed, walk the set of
+	// operating systems they referenced and delete any OS whose only remaining site association was the one we just
+	// removed.
 	ossas, _, err := ossaDAO.GetAll(ctx, nil, cdbm.OperatingSystemSiteAssociationFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to retrieve Operating System Site Associations from DB by Site ID")
