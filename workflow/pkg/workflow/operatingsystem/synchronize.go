@@ -19,6 +19,10 @@ package operatingsystem
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -41,9 +45,9 @@ const (
 )
 
 // CreateOrUpdateOperatingSystemByID is a Temporal workflow that creates or updates an Operating System by ID via Site Agent
-func CreateOrUpdateOperatingSystemByID(ctx workflow.Context, siteID uuid.UUID, operatingSystemID uuid.UUID) error {
+func CreateOrUpdateOperatingSystemByID(ctx workflow.Context, siteIDs []uuid.UUID, operatingSystemID uuid.UUID) error {
 	logger := log.With().Str("Workflow", "CreateOrUpdateOperatingSystemByID").
-		Str("Site ID", siteID.String()).Str("OperatingSystemID", operatingSystemID.String()).Logger()
+		Int("Site ID Count", len(siteIDs)).Str("OperatingSystemID", operatingSystemID.String()).Logger()
 
 	logger.Info().Msg("starting workflow")
 
@@ -62,10 +66,12 @@ func CreateOrUpdateOperatingSystemByID(ctx workflow.Context, siteID uuid.UUID, o
 
 	var osManager osActivity.ManageOperatingSystem
 
-	err := workflow.ExecuteActivity(ctx, osManager.CreateOrUpdateOperatingSystemViaSiteAgent, siteID, operatingSystemID).Get(ctx, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to execute activity: CreateOrUpdateOperatingSystemViaSiteAgent")
-		return err
+	for _, siteID := range siteIDs {
+		err := workflow.ExecuteActivity(ctx, osManager.CreateOrUpdateOperatingSystemViaSiteAgent, siteID, operatingSystemID).Get(ctx, nil)
+		if err != nil {
+			logger.Error().Err(err).Str("Site ID", siteID.String()).Msg("failed to execute activity: CreateOrUpdateOperatingSystemViaSiteAgent")
+			return err
+		}
 	}
 
 	logger.Info().Msg("completing workflow")
@@ -74,14 +80,25 @@ func CreateOrUpdateOperatingSystemByID(ctx workflow.Context, siteID uuid.UUID, o
 }
 
 // ExecuteCreateOrUpdateOperatingSystemByIDWorkflow triggers the CreateOrUpdateOperatingSystemByID workflow
-func ExecuteCreateOrUpdateOperatingSystemByIDWorkflow(ctx context.Context, tc client.Client, siteID uuid.UUID, operatingSystemID uuid.UUID) (*string, error) {
+func ExecuteCreateOrUpdateOperatingSystemByIDWorkflow(ctx context.Context, tc client.Client, siteIDs []uuid.UUID, operatingSystemID uuid.UUID) (*string, error) {
+	// Get SHA1 hash of siteIDs in hex format
+	siteIDStrings := make([]string, len(siteIDs))
+	for i, siteID := range siteIDs {
+		siteIDStrings[i] = siteID.String()
+	}
+	sort.Strings(siteIDStrings)
+
+	siteIDStringsHash := sha1.New()
+	siteIDStringsHash.Write([]byte(strings.Join(siteIDStrings, "-")))
+	siteIDStringsHashHex := hex.EncodeToString(siteIDStringsHash.Sum(nil))
+
 	workflowOptions := client.StartWorkflowOptions{
-		ID:                    "operating-system-create-or-update-by-id-" + siteID.String() + "-" + operatingSystemID.String(),
+		ID:                    "operating-system-create-or-update-by-id-" + operatingSystemID.String() + "-" + siteIDStringsHashHex,
 		TaskQueue:             queue.CloudTaskQueue,
 		WorkflowIDReusePolicy: temporalEnums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 	}
 
-	we, err := tc.ExecuteWorkflow(ctx, workflowOptions, CreateOrUpdateOperatingSystemByID, siteID, operatingSystemID)
+	we, err := tc.ExecuteWorkflow(ctx, workflowOptions, CreateOrUpdateOperatingSystemByID, siteIDs, operatingSystemID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to execute CreateOrUpdateOperatingSystemByID workflow")
 		return nil, err

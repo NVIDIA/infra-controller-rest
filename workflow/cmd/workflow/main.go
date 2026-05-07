@@ -273,7 +273,8 @@ func main() {
 		w.RegisterWorkflow(ibpWorkflow.DeleteInfiniBandPartitionByID)
 
 		// Operating System sync workflow (REST → core push for non-image OS)
-		w.RegisterWorkflow(operatingSystemWorkflow.SynchronizeOperatingSystem)
+		w.RegisterWorkflow(operatingSystemWorkflow.CreateOrUpdateOperatingSystemByID)
+		w.RegisterWorkflow(operatingSystemWorkflow.DeleteOperatingSystemByID)
 	} else if tcfg.Namespace == cwfn.SiteNamespace {
 		// Workflows triggered by Site Agent
 		// Machine Workflows

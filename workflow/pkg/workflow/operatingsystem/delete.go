@@ -19,6 +19,10 @@ package operatingsystem
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,8 +37,9 @@ import (
 )
 
 // DeleteOperatingSystemByID is a Temporal workflow to delete an Operating System by ID asynchronously through system worker
-func DeleteOperatingSystemByID(ctx workflow.Context, siteID uuid.UUID, operatingSystemID uuid.UUID) error {
-	logger := log.With().Str("Workflow", "DeleteOperatingSystemByID").Str("Site ID", siteID.String()).Str("OperatingSystemID", operatingSystemID.String()).Logger()
+func DeleteOperatingSystemByID(ctx workflow.Context, siteIDs []uuid.UUID, operatingSystemID uuid.UUID) error {
+	logger := log.With().Str("Workflow", "DeleteOperatingSystemByID").
+		Int("Site ID Count", len(siteIDs)).Str("OperatingSystemID", operatingSystemID.String()).Logger()
 
 	logger.Info().Msg("Starting workflow")
 
@@ -53,10 +58,12 @@ func DeleteOperatingSystemByID(ctx workflow.Context, siteID uuid.UUID, operating
 
 	var osManager osActivity.ManageOperatingSystem
 
-	err := workflow.ExecuteActivity(ctx, osManager.DeleteOperatingSystemViaSiteAgent, siteID, operatingSystemID).Get(ctx, nil)
-	if err != nil {
-		logger.Error().Err(err).Str("Activity", "DeleteOperatingSystemViaSiteAgent").Msg("Failed to execute activity from workflow")
-		return err
+	for _, siteID := range siteIDs {
+		err := workflow.ExecuteActivity(ctx, osManager.DeleteOperatingSystemViaSiteAgent, siteID, operatingSystemID).Get(ctx, nil)
+		if err != nil {
+			logger.Error().Err(err).Str("Site ID", siteID.String()).Msg("Failed to execute activity: DeleteOperatingSystemViaSiteAgent")
+			return err
+		}
 	}
 
 	logger.Info().Msg("Completing workflow")
@@ -65,13 +72,24 @@ func DeleteOperatingSystemByID(ctx workflow.Context, siteID uuid.UUID, operating
 }
 
 // ExecuteDeleteOperatingSystemByIDWorkflow is a helper function to trigger execution of DeleteOperatingSystemByID workflow
-func ExecuteDeleteOperatingSystemByIDWorkflow(ctx context.Context, tc client.Client, siteID uuid.UUID, operatingSystemID uuid.UUID) (*string, error) {
+func ExecuteDeleteOperatingSystemByIDWorkflow(ctx context.Context, tc client.Client, siteIDs []uuid.UUID, operatingSystemID uuid.UUID) (*string, error) {
+	// Get SHA1 hash of siteIDs in hex format
+	siteIDStrings := make([]string, len(siteIDs))
+	for i, siteID := range siteIDs {
+		siteIDStrings[i] = siteID.String()
+	}
+	sort.Strings(siteIDStrings)
+
+	siteIDStringsHash := sha1.New()
+	siteIDStringsHash.Write([]byte(strings.Join(siteIDStrings, "-")))
+	siteIDStringsHashHex := hex.EncodeToString(siteIDStringsHash.Sum(nil))
+
 	workflowOptions := client.StartWorkflowOptions{
-		ID:        "operating-system-delete-by-id-" + siteID.String() + "-" + operatingSystemID.String(),
+		ID:        "operating-system-delete-by-id-" + operatingSystemID.String() + "-" + siteIDStringsHashHex,
 		TaskQueue: queue.CloudTaskQueue,
 	}
 
-	we, err := tc.ExecuteWorkflow(ctx, workflowOptions, DeleteOperatingSystemByID, siteID, operatingSystemID)
+	we, err := tc.ExecuteWorkflow(ctx, workflowOptions, DeleteOperatingSystemByID, siteIDs, operatingSystemID)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to execute workflow: DeleteOperatingSystemByID")
 		return nil, err

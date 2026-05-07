@@ -412,15 +412,20 @@ func (csh CreateOperatingSystemHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Operating System Site associations from DB", nil)
 	}
 
+	targetSiteIDs := make([]uuid.UUID, len(targetSites))
+	for i, site := range targetSites {
+		targetSiteIDs[i] = site.ID
+	}
+
 	// Trigger async workflow before committing so a failure to enqueue rolls back the transaction.
 	// Note: first run WILL fail since data is not committed so we rely on retry. We choose that initial inocuous failure vs failing to queue silently.
 	if cdbm.IsIPXEType(osType) && len(dbossa) > 0 {
-		wid, werr := osWorkflow.ExecuteSynchronizeOperatingSystemWorkflow(ctx, csh.tc, os.ID, osWorkflow.SyncOperationCreate)
+		wid, werr := osWorkflow.ExecuteCreateOrUpdateOperatingSystemByIDWorkflow(ctx, csh.tc, targetSiteIDs, os.ID)
 		if werr != nil {
 			logger.Error().Err(werr).Msg("failed to trigger SynchronizeOperatingSystem workflow for create")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to trigger Operating System synchronization workflow", nil)
 		}
-		logger.Info().Str("Workflow ID", *wid).Msg("triggered async SynchronizeOperatingSystem workflow for create")
+		logger.Info().Str("Workflow ID", *wid).Interface("Site IDs", targetSiteIDs).Msg("triggered async CreateOrUpdateOperatingSystemByID workflow for create")
 	}
 
 	// Commit transaction.
@@ -1172,13 +1177,20 @@ func (ush UpdateOperatingSystemHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Operating System Site associations from DB", nil)
 	}
 
-	// Trigger async workflow before committing so a failure to enqueue rolls back the transaction.
-	wid, werr := osWorkflow.ExecuteSynchronizeOperatingSystemWorkflow(ctx, ush.tc, uos.ID, osWorkflow.SyncOperationUpdate)
-	if werr != nil {
-		logger.Error().Err(werr).Msg("failed to trigger SynchronizeOperatingSystem workflow for update")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to trigger Operating System synchronization workflow", nil)
+	if len(dbossas) > 0 && cdbm.IsIPXEType(os.Type) {
+		targetSiteIDs := make([]uuid.UUID, len(dbossas))
+		for i, dbossa := range dbossas {
+			targetSiteIDs[i] = dbossa.SiteID
+		}
+
+		// Trigger async workflow before committing so a failure to enqueue rolls back the transaction.
+		wid, werr := osWorkflow.ExecuteCreateOrUpdateOperatingSystemByIDWorkflow(ctx, ush.tc, targetSiteIDs, uos.ID)
+		if werr != nil {
+			logger.Error().Err(werr).Interface("Site IDs", targetSiteIDs).Msg("failed to trigger CreateOrUpdateOperatingSystemByID workflow for update")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to trigger Oprating System update on Sites", nil)
+		}
+		logger.Info().Str("Workflow ID", *wid).Interface("Site IDs", targetSiteIDs).Msg("triggered async CreateOrUpdateOperatingSystemByID workflow for update on Sites")
 	}
-	logger.Info().Str("Workflow ID", *wid).Msg("triggered async SynchronizeOperatingSystem workflow for update")
 
 	// Commit transaction.
 	err = tx.Commit()
@@ -1304,7 +1316,8 @@ func (dsh DeleteOperatingSystemHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Operating System Site associations from DB", nil)
 	}
 
-	// For image-based OS, verify all associated sites are in Registered state.
+	// For image-based OS, verify all associated sites are in Registered state
+	// TODO: Do we not want this for iPXE-based OSes?
 	if os.Type == cdbm.OperatingSystemTypeImage {
 		for _, dbosa := range ossasToDelete {
 			if dbosa.Site.Status != cdbm.SiteStatusRegistered {
@@ -1399,12 +1412,16 @@ func (dsh DeleteOperatingSystemHandler) Handle(c echo.Context) error {
 
 	// Trigger async workflow before committing so a failure to enqueue rolls back the transaction.
 	if len(ossasToDelete) > 0 && cdbm.IsIPXEType(os.Type) {
-		wid, werr := osWorkflow.ExecuteSynchronizeOperatingSystemWorkflow(ctx, dsh.tc, os.ID, osWorkflow.SyncOperationDelete)
-		if werr != nil {
-			logger.Error().Err(werr).Msg("failed to trigger SynchronizeOperatingSystem workflow for delete")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to trigger Operating System synchronization workflow", nil)
+		targetSiteIDs := make([]uuid.UUID, len(ossasToDelete))
+		for i, ossa := range ossasToDelete {
+			targetSiteIDs[i] = ossa.SiteID
 		}
-		logger.Info().Str("Workflow ID", *wid).Msg("triggered async SynchronizeOperatingSystem workflow for delete")
+		wid, werr := osWorkflow.ExecuteDeleteOperatingSystemByIDWorkflow(ctx, dsh.tc, targetSiteIDs, os.ID)
+		if werr != nil {
+			logger.Error().Err(werr).Interface("Site IDs", targetSiteIDs).Msg("failed to trigger DeleteOperatingSystemByID workflow for delete")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to trigger Operating System deletion on Sites", nil)
+		}
+		logger.Info().Str("Workflow ID", *wid).Interface("Site IDs", targetSiteIDs).Msg("triggered async DeleteOperatingSystemByID workflow for delete on Sites")
 	}
 
 	// Commit transaction.
@@ -1468,41 +1485,6 @@ func (dsh DeleteOperatingSystemHandler) Handle(c echo.Context) error {
 	logger.Info().Msg("finishing API handler")
 	return c.String(http.StatusAccepted, "Deletion request was accepted")
 
-}
-
-// ipxeTemplateIdFromString converts a nullable string UUID to the proto IpxeTemplateId message.
-func ipxeTemplateIdFromString(id *string) *cwssaws.IpxeTemplateId {
-	if id == nil {
-		return nil
-	}
-	return &cwssaws.IpxeTemplateId{Value: *id}
-}
-
-// dbParamsToProto converts DB model iPXE parameters to the proto representation.
-func dbParamsToProto(params []cdbm.OperatingSystemIpxeParameter) []*cwssaws.IpxeTemplateParameter {
-	result := make([]*cwssaws.IpxeTemplateParameter, 0, len(params))
-	for _, p := range params {
-		result = append(result, &cwssaws.IpxeTemplateParameter{Name: p.Name, Value: p.Value})
-	}
-	return result
-}
-
-// dbArtifactsToProto converts DB model iPXE artifacts to the proto representation.
-// CacheStrategy is stored as the proto enum's string name (e.g. "CACHE_AS_NEEDED").
-func dbArtifactsToProto(artifacts []cdbm.OperatingSystemIpxeArtifact) []*cwssaws.IpxeTemplateArtifact {
-	result := make([]*cwssaws.IpxeTemplateArtifact, 0, len(artifacts))
-	for _, a := range artifacts {
-		strategy := cwssaws.IpxeTemplateArtifactCacheStrategy(cwssaws.IpxeTemplateArtifactCacheStrategy_value[a.CacheStrategy])
-		result = append(result, &cwssaws.IpxeTemplateArtifact{
-			Name:          a.Name,
-			Url:           a.URL,
-			Sha:           a.SHA,
-			AuthType:      a.AuthType,
-			AuthToken:     a.AuthToken,
-			CacheStrategy: strategy,
-		})
-	}
-	return result
 }
 
 // getTenantSiteIDs returns the IDs of all sites the given tenant has access to.
