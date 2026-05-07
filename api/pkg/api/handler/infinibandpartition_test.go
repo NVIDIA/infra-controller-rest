@@ -1411,6 +1411,26 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 	ibp3 := testBuildIBPartition(t, dbSession, "test-ibp-3", tnOrg3, site2, tn3, nil, nil, false)
 	assert.NotNil(t, ibp3)
 
+	ibpBlocked := testBuildIBPartition(t, dbSession, "test-ibp-blocked", tnOrg1, site1, tn1, nil, nil, false)
+	assert.NotNil(t, ibpBlocked)
+
+	ipuIBDel := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, []string{authz.ProviderAdminRole})
+	alIBDel := testInstanceSiteBuildAllocation(t, dbSession, site1, tn1, "test-allocation-ibp-delete", ipuIBDel)
+	assert.NotNil(t, alIBDel)
+	istIBDel := testInstanceBuildInstanceType(t, dbSession, ip1, "test-inst-type-ibp-delete", site1, cdbm.InstanceStatusReady)
+	assert.NotNil(t, istIBDel)
+	_ = testInstanceSiteBuildAllocationContraints(t, dbSession, alIBDel, cdbm.AllocationResourceTypeInstanceType, istIBDel.ID, cdbm.AllocationConstraintTypeReserved, 5, ipuIBDel)
+	mcIBDel := testInstanceBuildMachine(t, dbSession, ip1.ID, site1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIBDel)
+	_ = testInstanceBuildMachineInstanceType(t, dbSession, mcIBDel, istIBDel)
+	osIBDel := testInstanceBuildOperatingSystem(t, dbSession, "test-os-ibp-delete", tn1, cdbm.OperatingSystemTypeImage, false, nil, false, cdbm.OperatingSystemStatusReady, tnu1)
+	assert.NotNil(t, osIBDel)
+	vpcIBDel := testInstanceBuildVPC(t, dbSession, "test-vpc-ibp-delete", ip1, tn1, site1, cdb.GetUUIDPtr(uuid.New()), nil, cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), nil, cdbm.VpcStatusReady, tnu1)
+	assert.NotNil(t, vpcIBDel)
+	instIBDel := testInstanceBuildInstance(t, dbSession, "test-inst-ibp-delete", tn1.ID, ip1.ID, site1.ID, &istIBDel.ID, vpcIBDel.ID, cdb.GetStrPtr(mcIBDel.ID), &osIBDel.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIBDel)
+	_ = testInstanceBuildIBInterface(t, dbSession, instIBDel, site1, ibpBlocked, 0, false, cdb.GetIntPtr(1), cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+
 	// OTEL Spanner configuration
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
@@ -1567,6 +1587,20 @@ func TestInfiniBandPartitionHandler_Delete(t *testing.T) {
 			reqOrgName:     tnOrg4,
 			user:           tnu4,
 			ibpID:          ibp1.ID.String(),
+			expectedErr:    true,
+			expectedStatus: http.StatusBadRequest,
+		},
+		{
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			name:           "error when partition has InfiniBand Interfaces",
+			reqOrgName:     tnOrg1,
+			user:           tnu1,
+			ibpID:          ibpBlocked.ID.String(),
 			expectedErr:    true,
 			expectedStatus: http.StatusBadRequest,
 		},

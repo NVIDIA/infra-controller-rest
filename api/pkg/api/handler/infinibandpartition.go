@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"net/http"
 	"slices"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	temporalClient "go.temporal.io/sdk/client"
@@ -1024,6 +1025,24 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 	if ibp.TenantID != orgTenant.ID {
 		logger.Warn().Msg("Tenant in InfiniBand Partition does not belong to Tenant in org")
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Tenant for InfiniBand Partition in request does not match Tenant in org", nil)
+	}
+
+	// Verify that no InfiniBand Interfaces reference this partition
+	ibiDAO := cdbm.NewInfiniBandInterfaceDAO(dibph.dbSession)
+	ibInterfaces, _, err := ibiDAO.GetAll(ctx, nil, cdbm.InfiniBandInterfaceFilterInput{
+		InfiniBandPartitionIDs: []uuid.UUID{ibpID},
+	}, paginator.PageInput{Limit: cdb.GetIntPtr(paginator.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("error retrieving InfiniBand Interfaces from DB for InfiniBand Partition")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve InfiniBand Interfaces for InfiniBand Partition", nil)
+	}
+	if len(ibInterfaces) > 0 {
+		var ibiIDs []string
+		for _, ibi := range ibInterfaces {
+			ibiIDs = append(ibiIDs, ibi.ID.String())
+		}
+		logger.Warn().Msg("InfiniBand Partition is being used by one or more InfiniBand Interfaces")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "InfiniBand Partition is being used by one or more InfiniBand Interfaces", validation.Errors{"infiniBandInterfaceIds": errors.New(strings.Join(ibiIDs, ", "))})
 	}
 
 	sdDAO := cdbm.NewStatusDetailDAO(dibph.dbSession)

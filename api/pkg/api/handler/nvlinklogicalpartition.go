@@ -1259,6 +1259,23 @@ func (dibph DeleteNVLinkLogicalPartitionHandler) Handle(c echo.Context) error {
 
 	}
 
+	nvlifcDAO := cdbm.NewNVLinkInterfaceDAO(dibph.dbSession)
+	nvInterfaces, _, err := nvlifcDAO.GetAll(ctx, nil, cdbm.NVLinkInterfaceFilterInput{
+		NVLinkLogicalPartitionIDs: []uuid.UUID{nvllpID},
+	}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("error retrieving NVLink Interfaces from DB for NVLink Logical Partition")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve NVLink Interfaces for NVLink Logical Partition", nil)
+	}
+	if len(nvInterfaces) > 0 {
+		var nvlifcIDs []string
+		for _, nvlifc := range nvInterfaces {
+			nvlifcIDs = append(nvlifcIDs, nvlifc.ID.String())
+		}
+		logger.Warn().Msg("NVLink Logical Partition is being used by one or more NVLink Interfaces")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "NVLink Logical Partition is being used by one or more NVLink Interfaces", validation.Errors{"nvLinkInterfaceIds": errors.New(strings.Join(nvlifcIDs, ", "))})
+	}
+
 	// Start a DB transaction
 	tx, err := cdb.BeginTx(ctx, dibph.dbSession, &sql.TxOptions{})
 	if err != nil {
