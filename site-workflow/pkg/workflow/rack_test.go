@@ -888,6 +888,77 @@ func TestGetRackTaskTestSuite(t *testing.T) {
 	suite.Run(t, new(GetRackTaskTestSuite))
 }
 
+// CancelRackTaskTestSuite tests the CancelRackTask workflow
+type CancelRackTaskTestSuite struct {
+	suite.Suite
+	testsuite.WorkflowTestSuite
+
+	env *testsuite.TestWorkflowEnvironment
+}
+
+func (s *CancelRackTaskTestSuite) SetupTest() {
+	s.env = s.NewTestWorkflowEnvironment()
+}
+
+func (s *CancelRackTaskTestSuite) AfterTest(suiteName, testName string) {
+	s.env.AssertExpectations(s.T())
+}
+
+func (s *CancelRackTaskTestSuite) Test_CancelRackTask_Success() {
+	var rackManager rActivity.ManageRack
+
+	taskID := "test-task-id"
+	request := &rlav1.CancelTaskRequest{
+		TaskId: &rlav1.UUID{Id: taskID},
+	}
+
+	expectedResponse := &rlav1.CancelTaskResponse{
+		Task: &rlav1.Task{
+			Id:      &rlav1.UUID{Id: taskID},
+			Status:  rlav1.TaskStatus_TASK_STATUS_TERMINATED,
+			Message: "Cancelled by user",
+		},
+	}
+
+	s.env.RegisterActivity(rackManager.CancelTask)
+	s.env.OnActivity(rackManager.CancelTask, mock.Anything, mock.Anything).Return(expectedResponse, nil)
+
+	s.env.ExecuteWorkflow(CancelRackTask, request)
+	s.True(s.env.IsWorkflowCompleted())
+	s.NoError(s.env.GetWorkflowError())
+
+	var response rlav1.CancelTaskResponse
+	s.NoError(s.env.GetWorkflowResult(&response))
+	s.Equal(taskID, response.GetTask().GetId().GetId())
+	s.Equal(rlav1.TaskStatus_TASK_STATUS_TERMINATED, response.GetTask().GetStatus())
+}
+
+func (s *CancelRackTaskTestSuite) Test_CancelRackTask_ActivityFails() {
+	var rackManager rActivity.ManageRack
+
+	request := &rlav1.CancelTaskRequest{
+		TaskId: &rlav1.UUID{Id: "test-task-id"},
+	}
+
+	errMsg := "RLA cancel rejected: task already finished"
+
+	s.env.RegisterActivity(rackManager.CancelTask)
+	s.env.OnActivity(rackManager.CancelTask, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
+
+	s.env.ExecuteWorkflow(CancelRackTask, request)
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+
+	var applicationErr *temporal.ApplicationError
+	s.True(errors.As(err, &applicationErr))
+	s.Equal(errMsg, applicationErr.Error())
+}
+
+func TestCancelRackTaskTestSuite(t *testing.T) {
+	suite.Run(t, new(CancelRackTaskTestSuite))
+}
+
 // UpgradeFirmwareTestSuite tests the UpgradeFirmware workflow
 type UpgradeFirmwareTestSuite struct {
 	suite.Suite

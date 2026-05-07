@@ -1817,7 +1817,7 @@ func (c *MockRLAClient) CancelTask(ctx context.Context, in *rlav1.CancelTaskRequ
 	if in != nil && in.GetTaskId() != nil {
 		out.Task = &rlav1.Task{
 			Id:     in.GetTaskId(),
-			Status: rlav1.TaskStatus_TASK_STATUS_FAILED,
+			Status: rlav1.TaskStatus_TASK_STATUS_TERMINATED,
 		}
 	}
 	return out, nil

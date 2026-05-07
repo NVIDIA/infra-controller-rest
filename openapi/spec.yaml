@@ -10278,6 +10278,80 @@ paths:
           $ref: '#/components/responses/NotFoundError'
       tags:
         - Rack
+  '/v2/org/{org}/nico/rack/task/{id}/cancel':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Task
+    post:
+      summary: Cancel a Task
+      operationId: cancel-rack-task
+      description: |-
+        Cancel a Task.
+
+        Cancellation is best-effort and idempotent: tasks in non-terminal
+        states (`Pending`, `Running`, `Waiting`) are marked `Terminated`
+        and any underlying Temporal workflow is terminated. Cancelling an
+        already-`Terminated` task returns the same task without changes.
+        Tasks that have already finished (`Succeeded` or `Failed`) cannot
+        be cancelled.
+
+        Tasks are site-scoped; `siteId` must be the Site where the task was
+        created. Org must have an Infrastructure Provider entity. User must
+        have `FORGE_PROVIDER_ADMIN` authorization role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - siteId
+              properties:
+                siteId:
+                  type: string
+                  format: uuid
+                  description: ID of the Site that owns the task (tasks are site-scoped).
+            examples:
+              example-1:
+                value:
+                  siteId: 660e8400-e29b-41d4-a716-446655440000
+      responses:
+        '202':
+          description: |-
+            Accepted. The cancellation request was accepted and the task as
+            last reported by RLA is returned. Clients should `GET` the task
+            to observe the final state, since cancellation is best-effort
+            and the underlying workflow may still be terminating.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RackTask'
+              examples:
+                example-1:
+                  value:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    status: Terminated
+                    description: Power on rack components
+                    message: Cancelled by user
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Rack
   '/v2/org/{org}/nico/tray':
     parameters:
       - schema:

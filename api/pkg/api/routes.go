@@ -885,6 +885,11 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Handler: apiHandler.NewGetTaskHandler(dbSession, tc, scp, cfg),
 		},
 		{
+			Path:    apiPathPrefix + "/rack/task/:id/cancel",
+			Method:  http.MethodPost,
+			Handler: apiHandler.NewCancelTaskHandler(dbSession, tc, scp, cfg),
+		},
+		{
 			Path:    apiPathPrefix + "/rack",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetAllRackHandler(dbSession, tc, scp, cfg),
