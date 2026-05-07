@@ -76,9 +76,6 @@ func TestSetupSchema(t *testing.T, dbSession *cdb.Session) {
 	// create VpcPeering table (depends on VPC and Site)
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.VpcPeering)(nil))
 	assert.Nil(t, err)
-	// create Fabric table (depends on Site and InfrastructureProvider)
-	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Fabric)(nil))
-	assert.Nil(t, err)
 	// create Domain table
 	err = dbSession.DB.ResetModel(context.Background(), (*cdbm.Domain)(nil))
 	assert.Nil(t, err)
@@ -763,26 +760,13 @@ func TestBuildVpcPeering(t *testing.T, dbSession *cdb.Session, vpc1ID, vpc2ID, s
 		SiteID:                   siteID,
 		InfrastructureProviderID: &ipID,
 		TenantID:                 &tenantID,
-		Status:                   cdbm.VpcPeeringStatusPending,
+		IsMultiTenant:            false,
+		Status:                   cdbm.VpcPeeringStatusReady,
 		CreatedBy:                createdBy,
 	}
 	_, err := dbSession.DB.NewInsert().Model(vp).Exec(context.Background())
 	assert.Nil(t, err)
 	return vp
-}
-
-// TestBuildFabric inserts a Fabric row for the given site.
-func TestBuildFabric(t *testing.T, dbSession *cdb.Session, id string, site *cdbm.Site, ipID uuid.UUID, status string) *cdbm.Fabric {
-	fb := &cdbm.Fabric{
-		ID:                       id,
-		Org:                      site.Org,
-		SiteID:                   site.ID,
-		InfrastructureProviderID: ipID,
-		Status:                   status,
-	}
-	_, err := dbSession.DB.NewInsert().Model(fb).Exec(context.Background())
-	assert.Nil(t, err)
-	return fb
 }
 
 // TestBuildNetworkSecurityGroup inserts a minimal NetworkSecurityGroup row for
@@ -805,7 +789,7 @@ func TestBuildNetworkSecurityGroup(t *testing.T, dbSession *cdb.Session, name st
 }
 
 // TestBuildExpectedMachine inserts a minimal ExpectedMachine row for the given
-// site. The table has no soft-delete column, so cleanup is a hard delete.
+// site.
 func TestBuildExpectedMachine(t *testing.T, dbSession *cdb.Session, site *cdbm.Site, bmcMacAddress, chassisSerialNumber string, user *cdbm.User) *cdbm.ExpectedMachine {
 	em := &cdbm.ExpectedMachine{
 		ID:                  uuid.New(),
@@ -820,7 +804,7 @@ func TestBuildExpectedMachine(t *testing.T, dbSession *cdb.Session, site *cdbm.S
 }
 
 // TestBuildExpectedSwitch inserts a minimal ExpectedSwitch row for the given
-// site. The table has no soft-delete column, so cleanup is a hard delete.
+// site.
 func TestBuildExpectedSwitch(t *testing.T, dbSession *cdb.Session, site *cdbm.Site, bmcMacAddress, switchSerialNumber string, user *cdbm.User) *cdbm.ExpectedSwitch {
 	es := &cdbm.ExpectedSwitch{
 		ID:                 uuid.New(),
@@ -835,7 +819,7 @@ func TestBuildExpectedSwitch(t *testing.T, dbSession *cdb.Session, site *cdbm.Si
 }
 
 // TestBuildExpectedPowerShelf inserts a minimal ExpectedPowerShelf row for the
-// given site. The table has no soft-delete column, so cleanup is a hard delete.
+// given site.
 func TestBuildExpectedPowerShelf(t *testing.T, dbSession *cdb.Session, site *cdbm.Site, bmcMacAddress, shelfSerialNumber string, user *cdbm.User) *cdbm.ExpectedPowerShelf {
 	eps := &cdbm.ExpectedPowerShelf{
 		ID:                uuid.New(),

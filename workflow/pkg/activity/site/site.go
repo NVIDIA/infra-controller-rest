@@ -189,10 +189,12 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 
 	// Delete ethernet interfaces based on instances
 	// since they are not directly associated with the site
-	err = ifcDAO.DeleteAllByInstanceIDs(ctx, nil, instanceIDs)
-	if err != nil {
-		logger.Error().Err(err).Msg("error deleting Interfaces for Instances from DB")
-		return err
+	if len(instanceIDs) > 0 {
+		err = ifcDAO.DeleteAllByInstanceIDs(ctx, nil, instanceIDs)
+		if err != nil {
+			logger.Error().Err(err).Msg("error deleting Interfaces for Instances from DB")
+			return err
+		}
 	}
 
 	// Delete InfiniBand interfaces
@@ -446,6 +448,7 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 			return err
 		}
 
+		// remove operating systems that are not orphaned
 		for _, r := range remainingOssas {
 			delete(candidateOsIDSet, r.OperatingSystemID)
 		}

@@ -1762,12 +1762,16 @@ func TestInterfaceSQLDAO_DeleteAllByInstanceIDs(t *testing.T) {
 
 	ifc1a, err := ifcd.Create(ctx, nil, makeIfaceInput(instance1.ID))
 	require.NoError(t, err)
+	require.NotNil(t, ifc1a)
 	ifc1b, err := ifcd.Create(ctx, nil, makeIfaceInput(instance1.ID))
 	require.NoError(t, err)
+	require.NotNil(t, ifc1b)
 	ifc2, err := ifcd.Create(ctx, nil, makeIfaceInput(instance2.ID))
 	require.NoError(t, err)
+	require.NotNil(t, ifc2)
 	ifc3, err := ifcd.Create(ctx, nil, makeIfaceInput(instance3.ID))
 	require.NoError(t, err)
+	require.NotNil(t, ifc3)
 
 	// OTEL Spanner configuration
 	_, _, ctx = testCommonTraceProviderSetup(t, ctx)
