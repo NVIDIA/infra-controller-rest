@@ -888,7 +888,7 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetSkuHandler(dbSession, tc, cfg),
 		},
-		// Rack endpoints (RLA)
+		// Rack endpoints (Flow)
 		{
 			Path:    apiPathPrefix + "/rack/task/:id",
 			Method:  http.MethodGet,
@@ -949,7 +949,7 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodPost,
 			Handler: apiHandler.NewBringUpRackHandler(dbSession, tc, scp, cfg),
 		},
-		// Tray endpoints (RLA)
+		// Tray endpoints (Flow)
 		{
 			Path:    apiPathPrefix + "/tray",
 			Method:  http.MethodGet,

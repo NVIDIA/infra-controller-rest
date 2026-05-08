@@ -38,7 +38,7 @@ import (
 	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 )
 
@@ -157,8 +157,8 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	rlaRequest := &rlav1.GetTasksByIDsRequest{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	flowRequest := &flowv1.GetTasksByIDsRequest{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}
 
 	workflowOptions := tClient.StartWorkflowOptions{
@@ -172,14 +172,14 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRackTask", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRackTask", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to schedule GetRackTask workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to schedule Task retrieval workflow", nil)
 	}
 
-	var rlaResponse rlav1.GetTasksByIDsResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.GetTasksByIDsResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -190,7 +190,7 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute Task retrieval workflow on Site: %s", unwrapErr), nil)
 	}
 
-	tasks := rlaResponse.GetTasks()
+	tasks := flowResponse.GetTasks()
 	if len(tasks) == 0 {
 		return cutil.NewAPIErrorResponse(c, http.StatusNotFound, "Task not found", nil)
 	}
@@ -210,8 +210,8 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 // (Pending, Running, Waiting) are marked Terminated and any underlying
 // Temporal workflow is terminated. Already-Terminated tasks are returned
 // unchanged. Tasks that have already finished (Succeeded or Failed) cannot
-// be cancelled and yield an error from RLA. The handler returns 202 Accepted
-// with the task as last reported by RLA.
+// be cancelled and yield an error from Flow. The handler returns 202 Accepted
+// with the task as last reported by Flow.
 type CancelTaskHandler struct {
 	dbSession  *cdb.Session
 	tc         tClient.Client
@@ -315,7 +315,7 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Site specified in request doesn't belong to current org's Provider", nil)
 	}
 
-	// Verify the Site has Rack Level Administration enabled (Tasks only exist on RLA sites)
+	// Verify the Site has Rack Level Administration enabled (Tasks only exist on Flow sites)
 	siteConfig := &cdbm.SiteConfig{}
 	if site.Config != nil {
 		siteConfig = site.Config
@@ -332,8 +332,8 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	rlaRequest := &rlav1.CancelTaskRequest{
-		TaskId: &rlav1.UUID{Id: taskID},
+	flowRequest := &flowv1.CancelTaskRequest{
+		TaskId: &flowv1.UUID{Id: taskID},
 	}
 
 	workflowID := fmt.Sprintf("task-cancel-%s", taskID)
@@ -348,14 +348,14 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CancelRackTask", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CancelRackTask", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to schedule CancelRackTask workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to schedule Task cancellation workflow", nil)
 	}
 
-	var rlaResponse rlav1.CancelTaskResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.CancelTaskResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -366,7 +366,7 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute Task cancellation workflow on Site: %s", unwrapErr), nil)
 	}
 
-	apiTask := model.NewAPIRackTask(rlaResponse.GetTask())
+	apiTask := model.NewAPIRackTask(flowResponse.GetTask())
 
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusAccepted, apiTask)

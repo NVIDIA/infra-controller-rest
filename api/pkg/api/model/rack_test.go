@@ -20,7 +20,7 @@ package model
 import (
 	"testing"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +30,7 @@ func TestNewAPIRack(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		rack           *rlav1.Rack
+		rack           *flowv1.Rack
 		withComponents bool
 		want           *APIRack
 	}{
@@ -42,16 +42,16 @@ func TestNewAPIRack(t *testing.T) {
 		},
 		{
 			name: "basic rack without components",
-			rack: &rlav1.Rack{
-				Info: &rlav1.DeviceInfo{
-					Id:           &rlav1.UUID{Id: "test-rack-id"},
+			rack: &flowv1.Rack{
+				Info: &flowv1.DeviceInfo{
+					Id:           &flowv1.UUID{Id: "test-rack-id"},
 					Name:         "test-rack",
 					Manufacturer: "NVIDIA",
 					Model:        &model,
 					SerialNumber: "SN12345",
 					Description:  &description,
 				},
-				Location: &rlav1.Location{
+				Location: &flowv1.Location{
 					Region:     "us-west-2",
 					Datacenter: "DC1",
 					Room:       "Room-A",
@@ -77,33 +77,33 @@ func TestNewAPIRack(t *testing.T) {
 		},
 		{
 			name: "rack with components",
-			rack: &rlav1.Rack{
-				Info: &rlav1.DeviceInfo{
-					Id:   &rlav1.UUID{Id: "rack-with-components"},
+			rack: &flowv1.Rack{
+				Info: &flowv1.DeviceInfo{
+					Id:   &flowv1.UUID{Id: "rack-with-components"},
 					Name: "rack-1",
 				},
-				Components: []*rlav1.Component{
+				Components: []*flowv1.Component{
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-						Info: &rlav1.DeviceInfo{
-							Id:           &rlav1.UUID{Id: "comp-1"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+						Info: &flowv1.DeviceInfo{
+							Id:           &flowv1.UUID{Id: "comp-1"},
 							Name:         "compute-node-1",
 							SerialNumber: "CSN001",
 							Manufacturer: "NVIDIA",
 						},
 						FirmwareVersion: "1.0.0",
-						Position: &rlav1.RackPosition{
+						Position: &flowv1.RackPosition{
 							SlotId: 1,
 						},
 						ComponentId: "nico-machine-123",
 					},
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_TORSWITCH,
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "comp-2"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_TORSWITCH,
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "comp-2"},
 							Name: "switch-1",
 						},
-						Position: &rlav1.RackPosition{
+						Position: &flowv1.RackPosition{
 							SlotId: 48,
 						},
 					},
@@ -135,16 +135,16 @@ func TestNewAPIRack(t *testing.T) {
 		},
 		{
 			name: "rack with components but withComponents=false",
-			rack: &rlav1.Rack{
-				Info: &rlav1.DeviceInfo{
-					Id:   &rlav1.UUID{Id: "rack-id"},
+			rack: &flowv1.Rack{
+				Info: &flowv1.DeviceInfo{
+					Id:   &flowv1.UUID{Id: "rack-id"},
 					Name: "rack-name",
 				},
-				Components: []*rlav1.Component{
+				Components: []*flowv1.Component{
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "comp-1"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "comp-1"},
 							Name: "compute-node-1",
 						},
 					},
@@ -248,7 +248,7 @@ func TestAPIBringUpRackRequest_Validate(t *testing.T) {
 func TestNewAPIBringUpRackResponse(t *testing.T) {
 	tests := []struct {
 		name     string
-		resp     *rlav1.SubmitTaskResponse
+		resp     *flowv1.SubmitTaskResponse
 		expected *APIBringUpRackResponse
 	}{
 		{
@@ -258,21 +258,21 @@ func TestNewAPIBringUpRackResponse(t *testing.T) {
 		},
 		{
 			name: "single task ID",
-			resp: &rlav1.SubmitTaskResponse{
-				TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+			resp: &flowv1.SubmitTaskResponse{
+				TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 			},
 			expected: &APIBringUpRackResponse{TaskIDs: []string{"task-1"}},
 		},
 		{
 			name: "multiple task IDs",
-			resp: &rlav1.SubmitTaskResponse{
-				TaskIds: []*rlav1.UUID{{Id: "task-1"}, {Id: "task-2"}},
+			resp: &flowv1.SubmitTaskResponse{
+				TaskIds: []*flowv1.UUID{{Id: "task-1"}, {Id: "task-2"}},
 			},
 			expected: &APIBringUpRackResponse{TaskIDs: []string{"task-1", "task-2"}},
 		},
 		{
 			name:     "empty task IDs",
-			resp:     &rlav1.SubmitTaskResponse{},
+			resp:     &flowv1.SubmitTaskResponse{},
 			expected: &APIBringUpRackResponse{TaskIDs: []string{}},
 		},
 	}

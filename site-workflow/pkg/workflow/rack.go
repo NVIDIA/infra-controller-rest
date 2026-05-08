@@ -23,13 +23,13 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
-// GetRack is a workflow to get a rack by its UUID from RLA
-func GetRack(ctx workflow.Context, request *rlav1.GetRackInfoByIDRequest) (*rlav1.GetRackInfoResponse, error) {
+// GetRack is a workflow to get a rack by its UUID from Flow
+func GetRack(ctx workflow.Context, request *flowv1.GetRackInfoByIDRequest) (*flowv1.GetRackInfoResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "Get").Logger()
 	if request != nil && request.Id != nil {
 		logger = log.With().Str("Workflow", "Rack").Str("Action", "Get").Str("RackID", request.Id.Id).Logger()
@@ -54,7 +54,7 @@ func GetRack(ctx workflow.Context, request *rlav1.GetRackInfoByIDRequest) (*rlav
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.GetRackInfoResponse
+	var response flowv1.GetRackInfoResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.GetRack, request).Get(ctx, &response)
 	if err != nil {
@@ -67,8 +67,8 @@ func GetRack(ctx workflow.Context, request *rlav1.GetRackInfoByIDRequest) (*rlav
 	return &response, nil
 }
 
-// GetRacks is a workflow to get a list of racks from RLA with optional filters
-func GetRacks(ctx workflow.Context, request *rlav1.GetListOfRacksRequest) (*rlav1.GetListOfRacksResponse, error) {
+// GetRacks is a workflow to get a list of racks from Flow with optional filters
+func GetRacks(ctx workflow.Context, request *flowv1.GetListOfRacksRequest) (*flowv1.GetListOfRacksResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "GetAll").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -90,7 +90,7 @@ func GetRacks(ctx workflow.Context, request *rlav1.GetListOfRacksRequest) (*rlav
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.GetListOfRacksResponse
+	var response flowv1.GetListOfRacksResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.GetRacks, request).Get(ctx, &response)
 	if err != nil {
@@ -103,9 +103,9 @@ func GetRacks(ctx workflow.Context, request *rlav1.GetListOfRacksRequest) (*rlav
 	return &response, nil
 }
 
-// ValidateRackComponents is a workflow to validate rack components by comparing expected vs actual state via RLA.
+// ValidateRackComponents is a workflow to validate rack components by comparing expected vs actual state via Flow.
 // Supports validating a single rack, multiple racks with filters, or all racks in a site.
-func ValidateRackComponents(ctx workflow.Context, request *rlav1.ValidateComponentsRequest) (*rlav1.ValidateComponentsResponse, error) {
+func ValidateRackComponents(ctx workflow.Context, request *flowv1.ValidateComponentsRequest) (*flowv1.ValidateComponentsResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "ValidateRackComponents").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -127,7 +127,7 @@ func ValidateRackComponents(ctx workflow.Context, request *rlav1.ValidateCompone
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.ValidateComponentsResponse
+	var response flowv1.ValidateComponentsResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.ValidateRackComponents, request).Get(ctx, &response)
 	if err != nil {
@@ -140,8 +140,8 @@ func ValidateRackComponents(ctx workflow.Context, request *rlav1.ValidateCompone
 	return &response, nil
 }
 
-// PowerOnRack is a workflow to power on a rack or its specified components via RLA
-func PowerOnRack(ctx workflow.Context, request *rlav1.PowerOnRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// PowerOnRack is a workflow to power on a rack or its specified components via Flow
+func PowerOnRack(ctx workflow.Context, request *flowv1.PowerOnRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "PowerOnRack").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -160,7 +160,7 @@ func PowerOnRack(ctx workflow.Context, request *rlav1.PowerOnRackRequest) (*rlav
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.PowerOnRack, request).Get(ctx, &response)
 	if err != nil {
@@ -173,8 +173,8 @@ func PowerOnRack(ctx workflow.Context, request *rlav1.PowerOnRackRequest) (*rlav
 	return &response, nil
 }
 
-// PowerOffRack is a workflow to power off a rack or its specified components via RLA
-func PowerOffRack(ctx workflow.Context, request *rlav1.PowerOffRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// PowerOffRack is a workflow to power off a rack or its specified components via Flow
+func PowerOffRack(ctx workflow.Context, request *flowv1.PowerOffRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "PowerOffRack").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -193,7 +193,7 @@ func PowerOffRack(ctx workflow.Context, request *rlav1.PowerOffRackRequest) (*rl
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.PowerOffRack, request).Get(ctx, &response)
 	if err != nil {
@@ -206,8 +206,8 @@ func PowerOffRack(ctx workflow.Context, request *rlav1.PowerOffRackRequest) (*rl
 	return &response, nil
 }
 
-// PowerResetRack is a workflow to reset (power cycle) a rack or its specified components via RLA
-func PowerResetRack(ctx workflow.Context, request *rlav1.PowerResetRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// PowerResetRack is a workflow to reset (power cycle) a rack or its specified components via Flow
+func PowerResetRack(ctx workflow.Context, request *flowv1.PowerResetRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "PowerResetRack").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -226,7 +226,7 @@ func PowerResetRack(ctx workflow.Context, request *rlav1.PowerResetRackRequest) 
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.PowerResetRack, request).Get(ctx, &response)
 	if err != nil {
@@ -239,8 +239,8 @@ func PowerResetRack(ctx workflow.Context, request *rlav1.PowerResetRackRequest) 
 	return &response, nil
 }
 
-// BringUpRack is a workflow to bring up a rack or its specified components via RLA
-func BringUpRack(ctx workflow.Context, request *rlav1.BringUpRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// BringUpRack is a workflow to bring up a rack or its specified components via Flow
+func BringUpRack(ctx workflow.Context, request *flowv1.BringUpRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "BringUpRack").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -259,7 +259,7 @@ func BringUpRack(ctx workflow.Context, request *rlav1.BringUpRackRequest) (*rlav
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.BringUpRack, request).Get(ctx, &response)
 	if err != nil {
@@ -273,7 +273,7 @@ func BringUpRack(ctx workflow.Context, request *rlav1.BringUpRackRequest) (*rlav
 }
 
 // GetRackTask is a workflow to get a rack task by its UUID
-func GetRackTask(ctx workflow.Context, request *rlav1.GetTasksByIDsRequest) (*rlav1.GetTasksByIDsResponse, error) {
+func GetRackTask(ctx workflow.Context, request *flowv1.GetTasksByIDsRequest) (*flowv1.GetTasksByIDsResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "GetRackTask").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -292,7 +292,7 @@ func GetRackTask(ctx workflow.Context, request *rlav1.GetTasksByIDsRequest) (*rl
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.GetTasksByIDsResponse
+	var response flowv1.GetTasksByIDsResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.GetTaskByID, request).Get(ctx, &response)
 	if err != nil {
@@ -305,12 +305,12 @@ func GetRackTask(ctx workflow.Context, request *rlav1.GetTasksByIDsRequest) (*rl
 	return &response, nil
 }
 
-// CancelRackTask is a workflow to cancel a rack task by its UUID via RLA.
+// CancelRackTask is a workflow to cancel a rack task by its UUID via Flow.
 //
-// Cancel is best-effort: RLA marks the task Terminated and terminates the
+// Cancel is best-effort: Flow marks the task Terminated and terminates the
 // underlying Temporal workflow if one was scheduled. The returned task carries
-// the post-cancel status reported by RLA.
-func CancelRackTask(ctx workflow.Context, request *rlav1.CancelTaskRequest) (*rlav1.CancelTaskResponse, error) {
+// the post-cancel status reported by Flow.
+func CancelRackTask(ctx workflow.Context, request *flowv1.CancelTaskRequest) (*flowv1.CancelTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "CancelRackTask").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -329,7 +329,7 @@ func CancelRackTask(ctx workflow.Context, request *rlav1.CancelTaskRequest) (*rl
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.CancelTaskResponse
+	var response flowv1.CancelTaskResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.CancelTask, request).Get(ctx, &response)
 	if err != nil {
@@ -342,8 +342,8 @@ func CancelRackTask(ctx workflow.Context, request *rlav1.CancelTaskRequest) (*rl
 	return &response, nil
 }
 
-// UpgradeFirmware is a workflow to upgrade firmware on racks or components via RLA
-func UpgradeFirmware(ctx workflow.Context, request *rlav1.UpgradeFirmwareRequest) (*rlav1.SubmitTaskResponse, error) {
+// UpgradeFirmware is a workflow to upgrade firmware on racks or components via Flow
+func UpgradeFirmware(ctx workflow.Context, request *flowv1.UpgradeFirmwareRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Workflow", "Rack").Str("Action", "UpgradeFirmware").Logger()
 
 	logger.Info().Msg("Starting workflow")
@@ -362,7 +362,7 @@ func UpgradeFirmware(ctx workflow.Context, request *rlav1.UpgradeFirmwareRequest
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var rackManager activity.ManageRack
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 
 	err := workflow.ExecuteActivity(ctx, rackManager.UpgradeFirmware, request).Get(ctx, &response)
 	if err != nil {

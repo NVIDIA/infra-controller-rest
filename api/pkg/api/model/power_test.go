@@ -20,7 +20,7 @@ package model
 import (
 	"testing"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -87,7 +87,7 @@ func TestAPIUpdatePowerStateRequest_Validate(t *testing.T) {
 func TestNewAPIUpdatePowerStateResponse(t *testing.T) {
 	tests := []struct {
 		name     string
-		resp     *rlav1.SubmitTaskResponse
+		resp     *flowv1.SubmitTaskResponse
 		expected *APIUpdatePowerStateResponse
 	}{
 		{
@@ -97,8 +97,8 @@ func TestNewAPIUpdatePowerStateResponse(t *testing.T) {
 		},
 		{
 			name: "response with task IDs",
-			resp: &rlav1.SubmitTaskResponse{
-				TaskIds: []*rlav1.UUID{
+			resp: &flowv1.SubmitTaskResponse{
+				TaskIds: []*flowv1.UUID{
 					{Id: "task-1"},
 					{Id: "task-2"},
 				},
@@ -107,8 +107,8 @@ func TestNewAPIUpdatePowerStateResponse(t *testing.T) {
 		},
 		{
 			name: "response with empty task IDs",
-			resp: &rlav1.SubmitTaskResponse{
-				TaskIds: []*rlav1.UUID{},
+			resp: &flowv1.SubmitTaskResponse{
+				TaskIds: []*flowv1.UUID{},
 			},
 			expected: &APIUpdatePowerStateResponse{TaskIDs: []string{}},
 		},

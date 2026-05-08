@@ -41,18 +41,18 @@ RUN go mod download
 
 COPY common/ ./common/
 COPY db/ ./db/
-COPY rla/ ./rla/
+COPY flow/ ./flow/
 
-WORKDIR /workspace/rla
+WORKDIR /workspace/flow
 
 # Build with version information injected via ldflags
 RUN VERSION=$(grep -v '^#' /workspace/VERSION | tr -d '[:space:]' 2>/dev/null || echo "dev") && \
     BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
     GIT_COMMIT=${CI_COMMIT_SHORT_SHA:-$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")} && \
     go build -ldflags "-extldflags '-static' \
-    -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.Version=${VERSION}' \
-    -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.BuildTime=${BUILD_TIME}' \
-    -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.GitCommit=${GIT_COMMIT}'" \
+    -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.Version=${VERSION}' \
+    -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.BuildTime=${BUILD_TIME}' \
+    -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.GitCommit=${GIT_COMMIT}'" \
     -o /app/rla \
     .
 

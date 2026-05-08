@@ -34,7 +34,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/common/pkg/util/labels"
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	cclient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
@@ -206,14 +206,14 @@ func NewManageExpectedRackInventory(siteID uuid.UUID, nicoCoreAtomicClient *ccli
 // ManageExpectedRack is an activity wrapper for Expected Rack management
 type ManageExpectedRack struct {
 	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	RlaAtomicClient      *cclient.RlaAtomicClient
+	FlowAtomicClient     *cclient.FlowAtomicClient
 }
 
 // NewManageExpectedRack returns a new ManageExpectedRack client
-func NewManageExpectedRack(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedRack {
+func NewManageExpectedRack(nicoClient *cclient.NICoCoreAtomicClient, flowClient *cclient.FlowAtomicClient) ManageExpectedRack {
 	return ManageExpectedRack{
 		NICoCoreAtomicClient: nicoClient,
-		RlaAtomicClient:      rlaClient,
+		FlowAtomicClient:     flowClient,
 	}
 }
 
@@ -400,8 +400,8 @@ func (mer *ManageExpectedRack) DeleteAllExpectedRacksOnSite(ctx context.Context)
 	return nil
 }
 
-// CreateExpectedRackOnRLA creates an Expected Rack in RLA via CreateExpectedRack.
-// Best-effort: if the RLA client is not configured, the activity logs and returns nil
+// CreateExpectedRackOnRLA creates an Expected Rack in Flow via CreateExpectedRack.
+// Best-effort: if the Flow client is not configured, the activity logs and returns nil
 // so the workflow can continue. RPC failures are surfaced as errors so the workflow
 // can decide how to handle them (typically log and ignore).
 func (mer *ManageExpectedRack) CreateExpectedRackOnRLA(ctx context.Context, request *cwssaws.ExpectedRack) error {
@@ -411,25 +411,25 @@ func (mer *ManageExpectedRack) CreateExpectedRackOnRLA(ctx context.Context, requ
 
 	// Validate request
 	if request == nil {
-		return temporal.NewNonRetryableApplicationError("received empty create Expected Rack request for RLA", swe.ErrTypeInvalidRequest, errors.New("nil request"))
+		return temporal.NewNonRetryableApplicationError("received empty create Expected Rack request for Flow", swe.ErrTypeInvalidRequest, errors.New("nil request"))
 	}
 
-	// If RLA client is not configured, skip gracefully
-	if mer.RlaAtomicClient == nil {
-		logger.Warn().Msg("RLA client not configured, skipping RLA expected rack creation")
+	// If Flow client is not configured, skip gracefully
+	if mer.FlowAtomicClient == nil {
+		logger.Warn().Msg("Flow client not configured, skipping Flow expected rack creation")
 		return nil
 	}
 
-	rlaClient := mer.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		logger.Warn().Msg("RLA client not connected, skipping RLA expected rack creation")
+	flowClient := mer.FlowAtomicClient.GetClient()
+	if flowClient == nil {
+		logger.Warn().Msg("Flow client not connected, skipping Flow expected rack creation")
 		return nil
 	}
 
 	rack := expectedRackToRLARack(request)
-	_, err := rlaClient.Rla().CreateExpectedRack(ctx, &rlav1.CreateExpectedRackRequest{Rack: rack})
+	_, err := flowClient.Flow().CreateExpectedRack(ctx, &flowv1.CreateExpectedRackRequest{Rack: rack})
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create Expected Rack on RLA")
+		logger.Warn().Err(err).Msg("Failed to create Expected Rack on Flow")
 		return swe.WrapErr(err)
 	}
 
@@ -452,12 +452,12 @@ func labelValue(labels []*cwssaws.Label, key string) string {
 	return ""
 }
 
-// expectedRackToRLARack converts a NICo ExpectedRack proto to an RLA Rack proto.
+// expectedRackToRLARack converts a NICo ExpectedRack proto to an Flow Rack proto.
 // Chassis identity (manufacturer/serial/model) and physical location (region/datacenter/
 // room/position) are read from well-known label keys defined in
 // common/pkg/util/labels. Missing labels are tolerated and rendered as empty
-// strings on the RLA side.
-func expectedRackToRLARack(rack *cwssaws.ExpectedRack) *rlav1.Rack {
+// strings on the Flow side.
+func expectedRackToRLARack(rack *cwssaws.ExpectedRack) *flowv1.Rack {
 	rackLabels := rack.GetMetadata().GetLabels()
 
 	manufacturer := labelValue(rackLabels, labels.RackLabelChassisManufacturer)
@@ -469,8 +469,8 @@ func expectedRackToRLARack(rack *cwssaws.ExpectedRack) *rlav1.Rack {
 	room := labelValue(rackLabels, labels.RackLabelLocationRoom)
 	position := labelValue(rackLabels, labels.RackLabelLocationPosition)
 
-	deviceInfo := &rlav1.DeviceInfo{
-		Id:           &rlav1.UUID{Id: rack.GetRackId().GetId()},
+	deviceInfo := &flowv1.DeviceInfo{
+		Id:           &flowv1.UUID{Id: rack.GetRackId().GetId()},
 		Name:         rack.GetMetadata().GetName(),
 		Manufacturer: manufacturer,
 		SerialNumber: serialNumber,
@@ -484,14 +484,14 @@ func expectedRackToRLARack(rack *cwssaws.ExpectedRack) *rlav1.Rack {
 		deviceInfo.Description = &description
 	}
 
-	location := &rlav1.Location{
+	location := &flowv1.Location{
 		Region:     region,
 		Datacenter: datacenter,
 		Room:       room,
 		Position:   position,
 	}
 
-	return &rlav1.Rack{
+	return &flowv1.Rack{
 		Info:     deviceInfo,
 		Location: location,
 	}

@@ -23,15 +23,15 @@ import (
 	"testing"
 
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestManageRack_GetRack(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.GetRackInfoByIDRequest
-		mockResp    *rlav1.GetRackInfoResponse
+		request     *flowv1.GetRackInfoByIDRequest
+		mockResp    *flowv1.GetRackInfoResponse
 		mockErr     error
 		wantErr     bool
 		errContains string
@@ -46,7 +46,7 @@ func TestManageRack_GetRack(t *testing.T) {
 		},
 		{
 			name: "request with nil ID returns error",
-			request: &rlav1.GetRackInfoByIDRequest{
+			request: &flowv1.GetRackInfoByIDRequest{
 				Id: nil,
 			},
 			mockResp:    nil,
@@ -56,8 +56,8 @@ func TestManageRack_GetRack(t *testing.T) {
 		},
 		{
 			name: "request with empty ID returns error",
-			request: &rlav1.GetRackInfoByIDRequest{
-				Id: &rlav1.UUID{Id: ""},
+			request: &flowv1.GetRackInfoByIDRequest{
+				Id: &flowv1.UUID{Id: ""},
 			},
 			mockResp:    nil,
 			mockErr:     nil,
@@ -66,14 +66,14 @@ func TestManageRack_GetRack(t *testing.T) {
 		},
 		{
 			name: "successful request",
-			request: &rlav1.GetRackInfoByIDRequest{
-				Id:             &rlav1.UUID{Id: "test-rack-id"},
+			request: &flowv1.GetRackInfoByIDRequest{
+				Id:             &flowv1.UUID{Id: "test-rack-id"},
 				WithComponents: true,
 			},
-			mockResp: &rlav1.GetRackInfoResponse{
-				Rack: &rlav1.Rack{
-					Info: &rlav1.DeviceInfo{
-						Id:   &rlav1.UUID{Id: "test-rack-id"},
+			mockResp: &flowv1.GetRackInfoResponse{
+				Rack: &flowv1.Rack{
+					Info: &flowv1.DeviceInfo{
+						Id:   &flowv1.UUID{Id: "test-rack-id"},
 						Name: "Test Rack",
 					},
 				},
@@ -82,9 +82,9 @@ func TestManageRack_GetRack(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "RLA client error",
-			request: &rlav1.GetRackInfoByIDRequest{
-				Id: &rlav1.UUID{Id: "test-rack-id"},
+			name: "Flow client error",
+			request: &flowv1.GetRackInfoByIDRequest{
+				Id: &flowv1.UUID{Id: "test-rack-id"},
 			},
 			mockResp:    nil,
 			mockErr:     errors.New("connection refused"),
@@ -95,15 +95,15 @@ func TestManageRack_GetRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock RLA client
-			mockRlaClient := cClient.NewMockRlaClient()
+			// Create mock Flow client
+			mockFlowClient := cClient.NewMockFlowClient()
 
 			// Create atomic client and swap with mock
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
 
 			// Create ManageRack instance
-			manageRack := NewManageRack(rlaAtomicClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -135,17 +135,17 @@ func TestManageRack_GetRack(t *testing.T) {
 func TestManageRack_GetRacks(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.GetListOfRacksRequest
-		mockResp    *rlav1.GetListOfRacksResponse
+		request     *flowv1.GetListOfRacksRequest
+		mockResp    *flowv1.GetListOfRacksResponse
 		mockErr     error
 		wantErr     bool
 		errContains string
 	}{
 		{
 			name:    "successful request - empty list",
-			request: &rlav1.GetListOfRacksRequest{},
-			mockResp: &rlav1.GetListOfRacksResponse{
-				Racks: []*rlav1.Rack{},
+			request: &flowv1.GetListOfRacksRequest{},
+			mockResp: &flowv1.GetListOfRacksResponse{
+				Racks: []*flowv1.Rack{},
 				Total: 0,
 			},
 			mockErr: nil,
@@ -153,20 +153,20 @@ func TestManageRack_GetRacks(t *testing.T) {
 		},
 		{
 			name: "successful request - multiple racks",
-			request: &rlav1.GetListOfRacksRequest{
+			request: &flowv1.GetListOfRacksRequest{
 				WithComponents: true,
 			},
-			mockResp: &rlav1.GetListOfRacksResponse{
-				Racks: []*rlav1.Rack{
+			mockResp: &flowv1.GetListOfRacksResponse{
+				Racks: []*flowv1.Rack{
 					{
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "rack-1"},
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "rack-1"},
 							Name: "Rack 1",
 						},
 					},
 					{
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "rack-2"},
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "rack-2"},
 							Name: "Rack 2",
 						},
 					},
@@ -177,8 +177,8 @@ func TestManageRack_GetRacks(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:        "RLA client error",
-			request:     &rlav1.GetListOfRacksRequest{},
+			name:        "Flow client error",
+			request:     &flowv1.GetListOfRacksRequest{},
 			mockResp:    nil,
 			mockErr:     errors.New("internal server error"),
 			wantErr:     true,
@@ -188,15 +188,15 @@ func TestManageRack_GetRacks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock RLA client
-			mockRlaClient := cClient.NewMockRlaClient()
+			// Create mock Flow client
+			mockFlowClient := cClient.NewMockFlowClient()
 
 			// Create atomic client and swap with mock
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
 
 			// Create ManageRack instance
-			manageRack := NewManageRack(rlaAtomicClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -233,8 +233,8 @@ func TestManageRack_GetRacks(t *testing.T) {
 func TestManageRack_ValidateRackComponents(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.ValidateComponentsRequest
-		mockResp    *rlav1.ValidateComponentsResponse
+		request     *flowv1.ValidateComponentsRequest
+		mockResp    *flowv1.ValidateComponentsResponse
 		mockErr     error
 		wantErr     bool
 		errContains string
@@ -249,14 +249,14 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 		},
 		{
 			name: "successful request - no diffs",
-			request: &rlav1.ValidateComponentsRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.ValidateComponentsRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -264,8 +264,8 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 					},
 				},
 			},
-			mockResp: &rlav1.ValidateComponentsResponse{
-				Diffs:           []*rlav1.ComponentDiff{},
+			mockResp: &flowv1.ValidateComponentsResponse{
+				Diffs:           []*flowv1.ComponentDiff{},
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
@@ -277,14 +277,14 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 		},
 		{
 			name: "successful request - with diffs",
-			request: &rlav1.ValidateComponentsRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.ValidateComponentsRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -292,10 +292,10 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 					},
 				},
 			},
-			mockResp: &rlav1.ValidateComponentsResponse{
-				Diffs: []*rlav1.ComponentDiff{
+			mockResp: &flowv1.ValidateComponentsResponse{
+				Diffs: []*flowv1.ComponentDiff{
 					{
-						Type:        rlav1.DiffType_DIFF_TYPE_MISSING,
+						Type:        flowv1.DiffType_DIFF_TYPE_MISSING,
 						ComponentId: "comp-1",
 					},
 				},
@@ -309,15 +309,15 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "RLA client error",
-			request: &rlav1.ValidateComponentsRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			name: "Flow client error",
+			request: &flowv1.ValidateComponentsRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -334,15 +334,15 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock RLA client
-			mockRlaClient := cClient.NewMockRlaClient()
+			// Create mock Flow client
+			mockFlowClient := cClient.NewMockFlowClient()
 
 			// Create atomic client and swap with mock
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
 
 			// Create ManageRack instance
-			manageRack := NewManageRack(rlaAtomicClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -376,7 +376,7 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 func TestManageRack_PowerOnRack(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.PowerOnRackRequest
+		request     *flowv1.PowerOnRackRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -388,14 +388,14 @@ func TestManageRack_PowerOnRack(t *testing.T) {
 		},
 		{
 			name: "successful request",
-			request: &rlav1.PowerOnRackRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.PowerOnRackRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -410,10 +410,10 @@ func TestManageRack_PowerOnRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.PowerOnRack(ctx, tt.request)
@@ -436,7 +436,7 @@ func TestManageRack_PowerOnRack(t *testing.T) {
 func TestManageRack_PowerOffRack(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.PowerOffRackRequest
+		request     *flowv1.PowerOffRackRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -448,14 +448,14 @@ func TestManageRack_PowerOffRack(t *testing.T) {
 		},
 		{
 			name: "successful request",
-			request: &rlav1.PowerOffRackRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.PowerOffRackRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -468,14 +468,14 @@ func TestManageRack_PowerOffRack(t *testing.T) {
 		},
 		{
 			name: "successful forced request",
-			request: &rlav1.PowerOffRackRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.PowerOffRackRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -491,10 +491,10 @@ func TestManageRack_PowerOffRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.PowerOffRack(ctx, tt.request)
@@ -517,7 +517,7 @@ func TestManageRack_PowerOffRack(t *testing.T) {
 func TestManageRack_PowerResetRack(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.PowerResetRackRequest
+		request     *flowv1.PowerResetRackRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -529,14 +529,14 @@ func TestManageRack_PowerResetRack(t *testing.T) {
 		},
 		{
 			name: "successful request",
-			request: &rlav1.PowerResetRackRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.PowerResetRackRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -549,14 +549,14 @@ func TestManageRack_PowerResetRack(t *testing.T) {
 		},
 		{
 			name: "successful forced request",
-			request: &rlav1.PowerResetRackRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.PowerResetRackRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -572,10 +572,10 @@ func TestManageRack_PowerResetRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.PowerResetRack(ctx, tt.request)
@@ -598,7 +598,7 @@ func TestManageRack_PowerResetRack(t *testing.T) {
 func TestManageRack_BringUpRack(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.BringUpRackRequest
+		request     *flowv1.BringUpRackRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -610,14 +610,14 @@ func TestManageRack_BringUpRack(t *testing.T) {
 		},
 		{
 			name: "successful request",
-			request: &rlav1.BringUpRackRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.BringUpRackRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -632,10 +632,10 @@ func TestManageRack_BringUpRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.BringUpRack(ctx, tt.request)
@@ -658,7 +658,7 @@ func TestManageRack_BringUpRack(t *testing.T) {
 func TestManageRack_GetTaskByID(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.GetTasksByIDsRequest
+		request     *flowv1.GetTasksByIDsRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -670,23 +670,23 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 		},
 		{
 			name: "request with empty task IDs returns error",
-			request: &rlav1.GetTasksByIDsRequest{
-				TaskIds: []*rlav1.UUID{},
+			request: &flowv1.GetTasksByIDsRequest{
+				TaskIds: []*flowv1.UUID{},
 			},
 			wantErr:     true,
 			errContains: "without task IDs",
 		},
 		{
 			name: "successful request - single task",
-			request: &rlav1.GetTasksByIDsRequest{
-				TaskIds: []*rlav1.UUID{{Id: "test-task-id"}},
+			request: &flowv1.GetTasksByIDsRequest{
+				TaskIds: []*flowv1.UUID{{Id: "test-task-id"}},
 			},
 			wantErr: false,
 		},
 		{
 			name: "successful request - multiple task IDs",
-			request: &rlav1.GetTasksByIDsRequest{
-				TaskIds: []*rlav1.UUID{
+			request: &flowv1.GetTasksByIDsRequest{
+				TaskIds: []*flowv1.UUID{
 					{Id: "task-1"},
 					{Id: "task-2"},
 				},
@@ -697,10 +697,10 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.GetTaskByID(ctx, tt.request)
@@ -723,7 +723,7 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 func TestManageRack_CancelTask(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.CancelTaskRequest
+		request     *flowv1.CancelTaskRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -735,22 +735,22 @@ func TestManageRack_CancelTask(t *testing.T) {
 		},
 		{
 			name:        "request with nil task ID returns error",
-			request:     &rlav1.CancelTaskRequest{},
+			request:     &flowv1.CancelTaskRequest{},
 			wantErr:     true,
 			errContains: "without task ID",
 		},
 		{
 			name: "request with empty task ID returns error",
-			request: &rlav1.CancelTaskRequest{
-				TaskId: &rlav1.UUID{Id: ""},
+			request: &flowv1.CancelTaskRequest{
+				TaskId: &flowv1.UUID{Id: ""},
 			},
 			wantErr:     true,
 			errContains: "without task ID",
 		},
 		{
 			name: "successful request",
-			request: &rlav1.CancelTaskRequest{
-				TaskId: &rlav1.UUID{Id: "test-task-id"},
+			request: &flowv1.CancelTaskRequest{
+				TaskId: &flowv1.UUID{Id: "test-task-id"},
 			},
 			wantErr: false,
 		},
@@ -758,10 +758,10 @@ func TestManageRack_CancelTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.CancelTask(ctx, tt.request)
@@ -778,7 +778,7 @@ func TestManageRack_CancelTask(t *testing.T) {
 			assert.NotNil(t, result)
 			assert.NotNil(t, result.GetTask())
 			assert.Equal(t, tt.request.GetTaskId().GetId(), result.GetTask().GetId().GetId())
-			assert.Equal(t, rlav1.TaskStatus_TASK_STATUS_TERMINATED, result.GetTask().GetStatus())
+			assert.Equal(t, flowv1.TaskStatus_TASK_STATUS_TERMINATED, result.GetTask().GetStatus())
 		})
 	}
 }
@@ -786,7 +786,7 @@ func TestManageRack_CancelTask(t *testing.T) {
 func TestManageRack_UpgradeFirmware(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.UpgradeFirmwareRequest
+		request     *flowv1.UpgradeFirmwareRequest
 		wantErr     bool
 		errContains string
 	}{
@@ -798,14 +798,14 @@ func TestManageRack_UpgradeFirmware(t *testing.T) {
 		},
 		{
 			name: "successful request without version",
-			request: &rlav1.UpgradeFirmwareRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.UpgradeFirmwareRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "test-rack-id"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "test-rack-id"},
 									},
 								},
 							},
@@ -818,16 +818,16 @@ func TestManageRack_UpgradeFirmware(t *testing.T) {
 		},
 		{
 			name: "successful request with version",
-			request: func() *rlav1.UpgradeFirmwareRequest {
+			request: func() *flowv1.UpgradeFirmwareRequest {
 				version := "24.11.0"
-				return &rlav1.UpgradeFirmwareRequest{
-					TargetSpec: &rlav1.OperationTargetSpec{
-						Targets: &rlav1.OperationTargetSpec_Racks{
-							Racks: &rlav1.RackTargets{
-								Targets: []*rlav1.RackTarget{
+				return &flowv1.UpgradeFirmwareRequest{
+					TargetSpec: &flowv1.OperationTargetSpec{
+						Targets: &flowv1.OperationTargetSpec_Racks{
+							Racks: &flowv1.RackTargets{
+								Targets: []*flowv1.RackTarget{
 									{
-										Identifier: &rlav1.RackTarget_Id{
-											Id: &rlav1.UUID{Id: "test-rack-id"},
+										Identifier: &flowv1.RackTarget_Id{
+											Id: &flowv1.UUID{Id: "test-rack-id"},
 										},
 									},
 								},
@@ -844,10 +844,10 @@ func TestManageRack_UpgradeFirmware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRlaClient := cClient.NewMockRlaClient()
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
-			manageRack := NewManageRack(rlaAtomicClient)
+			mockFlowClient := cClient.NewMockFlowClient()
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
+			manageRack := NewManageRack(flowAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.UpgradeFirmware(ctx, tt.request)

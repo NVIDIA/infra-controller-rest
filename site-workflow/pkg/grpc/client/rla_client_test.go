@@ -26,10 +26,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
-func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
+func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 	// Generate files for MD5 hash testing
 	clientCertPath := "/tmp/rla_tls.crt"
 	serverCAPath := "/tmp/rla_ca.crt"
@@ -53,7 +53,7 @@ func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
 	serverCAMD5 := serverCAMD5Hash[:]
 
 	type fields struct {
-		Config *RlaClientConfig
+		Config *FlowClientConfig
 	}
 	tests := []struct {
 		name              string
@@ -65,7 +65,7 @@ func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
 		{
 			name: "test that we can get the initial cert md5s",
 			fields: fields{
-				Config: &RlaClientConfig{
+				Config: &FlowClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -76,7 +76,7 @@ func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rac := &RlaAtomicClient{
+			rac := &FlowAtomicClient{
 				Config: tt.fields.Config,
 			}
 			gotClientCertMD5, gotServerCAMD5, err := rac.GetInitialCertMD5()
@@ -92,35 +92,35 @@ func TestRlaAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 }
 
-func TestRlaAtomicClient_GetRLAClient_ReturnsErrWhenUninitialized(t *testing.T) {
-	rac := &RlaAtomicClient{
+func TestFlowAtomicClient_GetRLAClient_ReturnsErrWhenUninitialized(t *testing.T) {
+	rac := &FlowAtomicClient{
 		value: &atomic.Value{},
 	}
 	// GetRLAClient should return ErrClientNotConnected when no client has been stored,
 	// rather than panicking on a nil-pointer deref.
-	rla, err := rac.GetRLAClient()
-	assert.Nil(t, rla)
+	flow, err := rac.GetRLAClient()
+	assert.Nil(t, flow)
 	assert.ErrorIs(t, err, ErrClientNotConnected)
 }
 
-func TestRlaAtomicClient_GetRLAClient_ReturnsRLAAfterSwap(t *testing.T) {
-	rac := &RlaAtomicClient{
+func TestFlowAtomicClient_GetRLAClient_ReturnsRLAAfterSwap(t *testing.T) {
+	rac := &FlowAtomicClient{
 		value: &atomic.Value{},
 	}
-	// Once a RlaClient with a populated rla field is stored, GetRLAClient
+	// Once a FlowClient with a populated flow field is stored, GetRLAClient
 	// should return that exact inner client. We construct a stub via
-	// rlav1.NewRLAClient(nil); it isn't usable for real RPCs but is a non-nil
-	// rlav1.RLAClient interface value, which is all we need to exercise the
+	// flowv1.NewRLAClient(nil); it isn't usable for real RPCs but is a non-nil
+	// flowv1.RLAClient interface value, which is all we need to exercise the
 	// success path.
-	expected := rlav1.NewRLAClient((*grpc.ClientConn)(nil))
-	rac.value.Store(&RlaClient{rla: expected})
+	expected := flowv1.NewRLAClient((*grpc.ClientConn)(nil))
+	rac.value.Store(&FlowClient{flow: expected})
 	got, err := rac.GetRLAClient()
 	assert.NoError(t, err)
 	assert.NotNil(t, got)
 	assert.Equal(t, expected, got)
 }
 
-func TestRlaAtomicClient_CheckCertificates(t *testing.T) {
+func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
 	// Generate files for MD5 hash testing
 	clientCertPath := "/tmp/rla_tls.crt"
 	serverCAPath := "/tmp/rla_ca.crt"
@@ -150,7 +150,7 @@ func TestRlaAtomicClient_CheckCertificates(t *testing.T) {
 	lastServerCAMD5 := val[:]
 
 	type fields struct {
-		Config *RlaClientConfig
+		Config *FlowClientConfig
 	}
 	type args struct {
 		lastClientCertMD5 []byte
@@ -166,7 +166,7 @@ func TestRlaAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns true when the certificates have changed",
 			fields: fields{
-				Config: &RlaClientConfig{
+				Config: &FlowClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -180,7 +180,7 @@ func TestRlaAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns false when the certificates have not changed",
 			fields: fields{
-				Config: &RlaClientConfig{
+				Config: &FlowClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -194,7 +194,7 @@ func TestRlaAtomicClient_CheckCertificates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rac := &RlaAtomicClient{
+			rac := &FlowAtomicClient{
 				Config: tt.fields.Config,
 			}
 			got, _, _, err := rac.CheckCertificates(tt.args.lastClientCertMD5, tt.args.lastServerCAMD5)

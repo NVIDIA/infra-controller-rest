@@ -58,7 +58,7 @@ jobs:
           - name: credsmgr
             path: ./cert-manager/cmd/credsmgr
           - name: rla
-            path: ./rla
+            path: ./flow
           - name: psm
             path: ./powershelf-manager
           - name: nsm
