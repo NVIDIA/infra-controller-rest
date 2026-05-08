@@ -18,6 +18,7 @@
 package api
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
@@ -63,7 +64,7 @@ func TestNewAPIRoutes(t *testing.T) {
 		"infiniband-partition":     5,
 		"nvlink-interface":         2,
 		"nvlink-logical-partition": 4,
-		"expected-machine":         5,
+		"expected-machine":         7,
 		"expected-power-shelf":     5,
 		"expected-rack":            7,
 		"expected-switch":          5,
@@ -116,6 +117,42 @@ func TestNewAPIRoutes(t *testing.T) {
 			for _, route := range got {
 				assert.Contains(t, route.Path, "/org/:orgName/"+cfg.GetAPIName())
 			}
+
+			expectedMachineBatchPath := "/org/:orgName/" + cfg.GetAPIName() + "/expected-machine/batch"
+			assertRouteExists(t, got, http.MethodPost, expectedMachineBatchPath)
+			assertRouteExists(t, got, http.MethodPatch, expectedMachineBatchPath)
+			assertRouteBefore(t, got, http.MethodPatch, expectedMachineBatchPath, http.MethodPatch, "/org/:orgName/"+cfg.GetAPIName()+"/expected-machine/:id")
 		})
 	}
+}
+
+func assertRouteExists(t *testing.T, routes []Route, method, path string) {
+	t.Helper()
+
+	for _, route := range routes {
+		if route.Method == method && route.Path == path {
+			return
+		}
+	}
+
+	assert.Failf(t, "route not found", "missing %s %s", method, path)
+}
+
+func assertRouteBefore(t *testing.T, routes []Route, firstMethod, firstPath, secondMethod, secondPath string) {
+	t.Helper()
+
+	firstIndex := -1
+	secondIndex := -1
+	for i, route := range routes {
+		if route.Method == firstMethod && route.Path == firstPath {
+			firstIndex = i
+		}
+		if route.Method == secondMethod && route.Path == secondPath {
+			secondIndex = i
+		}
+	}
+
+	assert.NotEqual(t, -1, firstIndex, "missing %s %s", firstMethod, firstPath)
+	assert.NotEqual(t, -1, secondIndex, "missing %s %s", secondMethod, secondPath)
+	assert.Less(t, firstIndex, secondIndex, "%s %s must be registered before %s %s", firstMethod, firstPath, secondMethod, secondPath)
 }

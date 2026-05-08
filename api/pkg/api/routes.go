@@ -427,6 +427,16 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Handler: apiHandler.NewGetAllExpectedMachineHandler(dbSession, cfg),
 		},
 		{
+			Path:    apiPathPrefix + "/expected-machine/batch",
+			Method:  http.MethodPost,
+			Handler: apiHandler.NewCreateExpectedMachinesHandler(dbSession, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-machine/batch",
+			Method:  http.MethodPatch,
+			Handler: apiHandler.NewUpdateExpectedMachinesHandler(dbSession, scp, cfg),
+		},
+		{
 			Path:    apiPathPrefix + "/expected-machine/:id",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetExpectedMachineHandler(dbSession, cfg),
