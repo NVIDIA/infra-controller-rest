@@ -23,16 +23,16 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
-	computenico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/nico"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/mock"
-	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nico"
-	nvlswitchnsm "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nvswitchmanager"
-	powershelfnico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/powershelf/nico"
-	powershelfpsm "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/powershelf/psm"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/mock"
+	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nico"
+	nvlswitchnsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nvswitchmanager"
+	powershelfnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/nico"
+	powershelfpsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/psm"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 )
 
 type componentManagerRegistrar func(*componentmanager.Registry)

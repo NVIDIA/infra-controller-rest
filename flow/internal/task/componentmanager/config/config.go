@@ -21,8 +21,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // Config holds the component manager configuration.

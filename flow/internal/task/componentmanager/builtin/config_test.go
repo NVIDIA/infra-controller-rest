@@ -26,10 +26,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/psm"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 func TestDefaultServiceComponentManagers(t *testing.T) {

@@ -20,11 +20,11 @@ package builtin
 import (
 	"fmt"
 
-	computenico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/nico"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/nvlswitch/nico"
-	powershelfnico "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/powershelf/nico"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nico"
+	powershelfnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/nico"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // defaultServiceComponentManagers returns the component manager implementation

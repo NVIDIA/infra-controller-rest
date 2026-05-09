@@ -26,12 +26,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/mock"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/mock"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 type testProviderConfig struct {

@@ -20,13 +20,6 @@ package providerapi
 import (
 	"strings"
 	"sync"
-<<<<<<<< HEAD:flow/internal/task/componentmanager/providerapi/registry.go
-========
-
-	"github.com/rs/zerolog/log"
-
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
->>>>>>>> origin/main:flow/internal/task/componentmanager/provider.go
 )
 
 // ProviderRegistry manages API providers for component manager implementations.
