@@ -97,9 +97,15 @@ func initProviderRegistry(
 	providerRegistry := providerapi.NewProviderRegistry()
 
 	for name, providerConfig := range config.ProviderConfigs {
-		// loadComponentManagerConfig builds ProviderConfigs through the service
-		// decoders, which either return a concrete config or an error, so nil
-		// provider configs are rejected before startup reaches this point.
+		// loadComponentManagerConfig builds ProviderConfigs through the
+		// service decoders, which either return a concrete config or an
+		// error. The nil check below is defensive: a custom decoder
+		// registry passed to cmconfig.ParseConfig is not bound by that
+		// invariant, so we reject nil configs here rather than panic on
+		// providerConfig.Name().
+		if providerConfig == nil {
+			return nil, providerapi.ProviderNotConfiguredError{Name: name}
+		}
 		configName := providerConfig.Name()
 		if name != configName {
 			return nil, providerapi.ProviderConfigNameMismatchError{

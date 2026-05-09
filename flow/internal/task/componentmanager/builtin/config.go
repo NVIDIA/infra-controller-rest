@@ -63,10 +63,6 @@ func LoadConfig(path string) (cmconfig.Config, error) {
 		}
 	}
 
-	if err != nil {
-		return cmconfig.Config{}, err
-	}
-
 	if err := config.Validate(decoders); err != nil {
 		return cmconfig.Config{}, fmt.Errorf("validate loaded config: %w", err)
 	}

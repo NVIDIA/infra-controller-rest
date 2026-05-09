@@ -34,6 +34,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/psmapi"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
@@ -58,7 +59,7 @@ func runInventoryOne(
 
 	// Sync NVL switches: dispatch based on configured component manager
 	var nvlSwitchDrifts []model.ComponentDrift
-	if cmConfig.ComponentManagers[devicetypes.ComponentTypeNVLSwitch] == "nico" {
+	if cmConfig.ComponentManagers[devicetypes.ComponentTypeNVLSwitch] == nicoprovider.ProviderName {
 		nvlSwitchDrifts = syncNVSwitchesNICo(ctx, pool, nicoClient)
 	} else {
 		nvlSwitchDrifts = syncNVSwitches(ctx, pool, nicoClient, nsmClient)
@@ -67,7 +68,7 @@ func runInventoryOne(
 
 	// Sync powershelves: dispatch based on configured component manager
 	var powershelfDrifts []model.ComponentDrift
-	if cmConfig.ComponentManagers[devicetypes.ComponentTypePowerShelf] == "nico" {
+	if cmConfig.ComponentManagers[devicetypes.ComponentTypePowerShelf] == nicoprovider.ProviderName {
 		powershelfDrifts = syncPowershelvesNICo(ctx, pool, nicoClient)
 	} else {
 		powershelfDrifts = syncPowershelves(ctx, pool, nicoClient, psmClient)
