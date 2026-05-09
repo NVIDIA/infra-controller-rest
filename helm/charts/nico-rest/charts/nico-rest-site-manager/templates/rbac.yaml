@@ -39,7 +39,7 @@ rules:
   # TODO: remove forge.nvidia.io rules once all site agents have migrated to nico.nvidia.io.
   - apiGroups: ["forge.nvidia.io"]
     resources: ["sites"]
-    verbs: ["get", "list", "watch", "update", "patch", "delete"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["forge.nvidia.io"]
     resources: ["sites/status"]
     verbs: ["get", "update", "patch"]
@@ -81,7 +81,7 @@ rules:
   # TODO: remove forge.nvidia.io rules once all site agents have migrated to nico.nvidia.io.
   - apiGroups: ["forge.nvidia.io"]
     resources: ["sites"]
-    verbs: ["get", "list", "watch", "update", "patch", "delete"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   - apiGroups: ["forge.nvidia.io"]
     resources: ["sites/status"]
     verbs: ["get", "update", "patch"]
