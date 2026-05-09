@@ -23,21 +23,21 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 )
 
-// RLAExpansion - RLA Expansion
-type RLAExpansion interface{}
+// FlowExpansion - Flow Expansion
+type FlowExpansion interface{}
 
-// RLAInterface - interface to RLA
-type RLAInterface interface {
-	// List all the apis of RLA here
+// FlowInterface - interface to Flow
+type FlowInterface interface {
+	// List all the apis of Flow here
 	Init()
 	Start()
 	CreateGRPCClient() error
-	GetGRPCClient() *client.RlaClient
+	GetGRPCClient() *client.FlowClient
 	UpdateGRPCClientState(err error)
-	CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.RlaClient, err error)
+	CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.FlowClient, err error)
 	RegisterGRPC()
 	RegisterSubscriber() error
 	GetState() []string
 	GetGRPCClientVersion() int64
-	RLAExpansion
+	FlowExpansion
 }

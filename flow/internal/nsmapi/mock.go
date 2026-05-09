@@ -20,7 +20,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/common/utils"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/common/utils"
 	"github.com/google/uuid"
 )
 

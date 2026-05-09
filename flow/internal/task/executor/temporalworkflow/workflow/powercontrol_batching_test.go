@@ -30,13 +30,13 @@ import (
 	"go.temporal.io/sdk/testsuite"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 
-	activitypkg "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/activity"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
-	taskdef "github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
+	activitypkg "github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/activity"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operationrules"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
+	taskdef "github.com/NVIDIA/infra-controller-rest/flow/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/component"
 )
 
 // TestPowerControlWorkflowWithBatching tests the new workflow-level batching implementation

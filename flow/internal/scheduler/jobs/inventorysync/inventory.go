@@ -27,14 +27,14 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/common/utils"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
-	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/common/utils"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/db/model"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
+	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/psmapi"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 const driftFieldSerialNumber = "serial_number"

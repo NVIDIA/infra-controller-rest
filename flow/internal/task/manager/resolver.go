@@ -23,11 +23,11 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/operation"
-	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/rack"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/operation"
+	identifier "github.com/NVIDIA/infra-controller-rest/flow/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/rack"
 )
 
 // TargetFetcher provides the methods needed to fetch racks and components for target resolution.

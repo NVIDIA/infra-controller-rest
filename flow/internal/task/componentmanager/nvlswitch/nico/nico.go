@@ -25,14 +25,14 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
-	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
+	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 const (

@@ -18,8 +18,8 @@
 package nico
 
 import (
-	pb "github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi/gen"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
+	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 )
 
 // ExtractPowerState derives an operations.PowerStatus from the first

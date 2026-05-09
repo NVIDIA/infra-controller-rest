@@ -138,7 +138,7 @@ package myapi
 import (
     "time"
     "github.com/rs/zerolog/log"
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/myapi"  // Your API client
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/myapi"  // Your API client
 )
 
 const (
@@ -247,12 +247,12 @@ import (
     "context"
     "fmt"
 
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-    myapiprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/myapi"
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-    "github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
-    "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+    myapiprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/myapi"
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
+    "github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 const ImplementationName = "myimpl"
@@ -312,7 +312,7 @@ Update the service-supported manager catalog in
 
 ```go
 import (
-    myimpl "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/compute/myimpl"
+    myimpl "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/myimpl"
 )
 
 func serviceComponentManagerRegistrars(config cmconfig.Config) ([]componentManagerRegistrar, error) {

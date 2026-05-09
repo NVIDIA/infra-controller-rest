@@ -3,19 +3,41 @@
 
 ## Table of Contents
 
+<<<<<<< HEAD
 - [rla.proto](#rla-proto)
     - [ActualComponent](#v1-ActualComponent)
     - [AttachRacksToNVLDomainRequest](#v1-AttachRacksToNVLDomainRequest)
     - [BMCInfo](#v1-BMCInfo)
     - [BuildInfo](#v1-BuildInfo)
+=======
+- [flow.proto](#flow-proto)
+    - [AddComponentRequest](#v1-AddComponentRequest)
+    - [AddComponentResponse](#v1-AddComponentResponse)
+    - [AddTaskScheduleScopeRequest](#v1-AddTaskScheduleScopeRequest)
+    - [AddTaskScheduleScopeResponse](#v1-AddTaskScheduleScopeResponse)
+    - [AssociateRuleWithRackRequest](#v1-AssociateRuleWithRackRequest)
+    - [AttachRacksToNVLDomainRequest](#v1-AttachRacksToNVLDomainRequest)
+    - [BMCInfo](#v1-BMCInfo)
+    - [BringUpRackRequest](#v1-BringUpRackRequest)
+    - [BuildInfo](#v1-BuildInfo)
+    - [CancelTaskRequest](#v1-CancelTaskRequest)
+    - [CancelTaskResponse](#v1-CancelTaskResponse)
+    - [CheckScheduleConflictsRequest](#v1-CheckScheduleConflictsRequest)
+    - [CheckScheduleConflictsResponse](#v1-CheckScheduleConflictsResponse)
+>>>>>>> origin/main
     - [Component](#v1-Component)
     - [ComponentDiff](#v1-ComponentDiff)
     - [ComponentTarget](#v1-ComponentTarget)
     - [ComponentTargets](#v1-ComponentTargets)
+<<<<<<< HEAD
+=======
+    - [ComponentTypes](#v1-ComponentTypes)
+>>>>>>> origin/main
     - [CreateExpectedRackRequest](#v1-CreateExpectedRackRequest)
     - [CreateExpectedRackResponse](#v1-CreateExpectedRackResponse)
     - [CreateNVLDomainRequest](#v1-CreateNVLDomainRequest)
     - [CreateNVLDomainResponse](#v1-CreateNVLDomainResponse)
+<<<<<<< HEAD
     - [DetachRacksFromNVLDomainRequest](#v1-DetachRacksFromNVLDomainRequest)
     - [DeviceInfo](#v1-DeviceInfo)
     - [DeviceSerialInfo](#v1-DeviceSerialInfo)
@@ -28,10 +50,34 @@
     - [GetComponentInfoResponse](#v1-GetComponentInfoResponse)
     - [GetExpectedComponentsRequest](#v1-GetExpectedComponentsRequest)
     - [GetExpectedComponentsResponse](#v1-GetExpectedComponentsResponse)
+=======
+    - [CreateOperationRuleRequest](#v1-CreateOperationRuleRequest)
+    - [CreateOperationRuleResponse](#v1-CreateOperationRuleResponse)
+    - [CreateTaskScheduleRequest](#v1-CreateTaskScheduleRequest)
+    - [DeleteComponentRequest](#v1-DeleteComponentRequest)
+    - [DeleteComponentResponse](#v1-DeleteComponentResponse)
+    - [DeleteOperationRuleRequest](#v1-DeleteOperationRuleRequest)
+    - [DeleteRackRequest](#v1-DeleteRackRequest)
+    - [DeleteRackResponse](#v1-DeleteRackResponse)
+    - [DeleteTaskScheduleRequest](#v1-DeleteTaskScheduleRequest)
+    - [DetachRacksFromNVLDomainRequest](#v1-DetachRacksFromNVLDomainRequest)
+    - [DeviceInfo](#v1-DeviceInfo)
+    - [DeviceSerialInfo](#v1-DeviceSerialInfo)
+    - [DisassociateRuleFromRackRequest](#v1-DisassociateRuleFromRackRequest)
+    - [ExternalRef](#v1-ExternalRef)
+    - [FieldDiff](#v1-FieldDiff)
+    - [Filter](#v1-Filter)
+    - [GetComponentInfoByIDRequest](#v1-GetComponentInfoByIDRequest)
+    - [GetComponentInfoBySerialRequest](#v1-GetComponentInfoBySerialRequest)
+    - [GetComponentInfoResponse](#v1-GetComponentInfoResponse)
+    - [GetComponentsRequest](#v1-GetComponentsRequest)
+    - [GetComponentsResponse](#v1-GetComponentsResponse)
+>>>>>>> origin/main
     - [GetListOfNVLDomainsRequest](#v1-GetListOfNVLDomainsRequest)
     - [GetListOfNVLDomainsResponse](#v1-GetListOfNVLDomainsResponse)
     - [GetListOfRacksRequest](#v1-GetListOfRacksRequest)
     - [GetListOfRacksResponse](#v1-GetListOfRacksResponse)
+<<<<<<< HEAD
     - [GetRackInfoByIDRequest](#v1-GetRackInfoByIDRequest)
     - [GetRackInfoBySerialRequest](#v1-GetRackInfoBySerialRequest)
     - [GetRackInfoResponse](#v1-GetRackInfoResponse)
@@ -40,10 +86,34 @@
     - [GetTasksByIDsRequest](#v1-GetTasksByIDsRequest)
     - [GetTasksByIDsResponse](#v1-GetTasksByIDsResponse)
     - [Identifier](#v1-Identifier)
+=======
+    - [GetOperationRuleRequest](#v1-GetOperationRuleRequest)
+    - [GetRackInfoByIDRequest](#v1-GetRackInfoByIDRequest)
+    - [GetRackInfoBySerialRequest](#v1-GetRackInfoBySerialRequest)
+    - [GetRackInfoResponse](#v1-GetRackInfoResponse)
+    - [GetRackRuleAssociationRequest](#v1-GetRackRuleAssociationRequest)
+    - [GetRackRuleAssociationResponse](#v1-GetRackRuleAssociationResponse)
+    - [GetRacksForNVLDomainRequest](#v1-GetRacksForNVLDomainRequest)
+    - [GetRacksForNVLDomainResponse](#v1-GetRacksForNVLDomainResponse)
+    - [GetTaskScheduleRequest](#v1-GetTaskScheduleRequest)
+    - [GetTasksByIDsRequest](#v1-GetTasksByIDsRequest)
+    - [GetTasksByIDsResponse](#v1-GetTasksByIDsResponse)
+    - [Identifier](#v1-Identifier)
+    - [IngestRackRequest](#v1-IngestRackRequest)
+    - [ListOperationRulesRequest](#v1-ListOperationRulesRequest)
+    - [ListOperationRulesResponse](#v1-ListOperationRulesResponse)
+    - [ListRackRuleAssociationsRequest](#v1-ListRackRuleAssociationsRequest)
+    - [ListRackRuleAssociationsResponse](#v1-ListRackRuleAssociationsResponse)
+    - [ListTaskScheduleScopesRequest](#v1-ListTaskScheduleScopesRequest)
+    - [ListTaskScheduleScopesResponse](#v1-ListTaskScheduleScopesResponse)
+    - [ListTaskSchedulesRequest](#v1-ListTaskSchedulesRequest)
+    - [ListTaskSchedulesResponse](#v1-ListTaskSchedulesResponse)
+>>>>>>> origin/main
     - [ListTasksRequest](#v1-ListTasksRequest)
     - [ListTasksResponse](#v1-ListTasksResponse)
     - [Location](#v1-Location)
     - [NVLDomain](#v1-NVLDomain)
+<<<<<<< HEAD
     - [OperationTargetSpec](#v1-OperationTargetSpec)
     - [Pagination](#v1-Pagination)
     - [PatchRackRequest](#v1-PatchRackRequest)
@@ -59,15 +129,70 @@
     - [SubmitTaskResponse](#v1-SubmitTaskResponse)
     - [Task](#v1-Task)
     - [UUID](#v1-UUID)
+=======
+    - [OperationRule](#v1-OperationRule)
+    - [OperationTargetSpec](#v1-OperationTargetSpec)
+    - [OrderBy](#v1-OrderBy)
+    - [Pagination](#v1-Pagination)
+    - [PatchComponentRequest](#v1-PatchComponentRequest)
+    - [PatchComponentResponse](#v1-PatchComponentResponse)
+    - [PatchRackRequest](#v1-PatchRackRequest)
+    - [PatchRackResponse](#v1-PatchRackResponse)
+    - [PauseTaskScheduleRequest](#v1-PauseTaskScheduleRequest)
+    - [PowerOffRackRequest](#v1-PowerOffRackRequest)
+    - [PowerOnRackRequest](#v1-PowerOnRackRequest)
+    - [PowerResetRackRequest](#v1-PowerResetRackRequest)
+    - [PurgeComponentRequest](#v1-PurgeComponentRequest)
+    - [PurgeComponentResponse](#v1-PurgeComponentResponse)
+    - [PurgeRackRequest](#v1-PurgeRackRequest)
+    - [PurgeRackResponse](#v1-PurgeRackResponse)
+    - [QueueOptions](#v1-QueueOptions)
+    - [Rack](#v1-Rack)
+    - [RackPosition](#v1-RackPosition)
+    - [RackRuleAssociation](#v1-RackRuleAssociation)
+    - [RackTarget](#v1-RackTarget)
+    - [RackTargets](#v1-RackTargets)
+    - [RemoveTaskScheduleScopeRequest](#v1-RemoveTaskScheduleScopeRequest)
+    - [ResumeTaskScheduleRequest](#v1-ResumeTaskScheduleRequest)
+    - [ScheduleConfig](#v1-ScheduleConfig)
+    - [ScheduleSpec](#v1-ScheduleSpec)
+    - [ScheduledOperation](#v1-ScheduledOperation)
+    - [SetRuleAsDefaultRequest](#v1-SetRuleAsDefaultRequest)
+    - [StringQueryInfo](#v1-StringQueryInfo)
+    - [SubmitTaskResponse](#v1-SubmitTaskResponse)
+    - [Task](#v1-Task)
+    - [TaskSchedule](#v1-TaskSchedule)
+    - [TaskScheduleScope](#v1-TaskScheduleScope)
+    - [TriggerTaskScheduleRequest](#v1-TriggerTaskScheduleRequest)
+    - [UUID](#v1-UUID)
+    - [UpdateOperationRuleRequest](#v1-UpdateOperationRuleRequest)
+    - [UpdateTaskScheduleRequest](#v1-UpdateTaskScheduleRequest)
+    - [UpdateTaskScheduleScopeRequest](#v1-UpdateTaskScheduleScopeRequest)
+    - [UpdateTaskScheduleScopeResponse](#v1-UpdateTaskScheduleScopeResponse)
+>>>>>>> origin/main
     - [UpgradeFirmwareRequest](#v1-UpgradeFirmwareRequest)
     - [ValidateComponentsRequest](#v1-ValidateComponentsRequest)
     - [ValidateComponentsResponse](#v1-ValidateComponentsResponse)
     - [VersionRequest](#v1-VersionRequest)
   
     - [BMCType](#v1-BMCType)
+<<<<<<< HEAD
     - [ComponentType](#v1-ComponentType)
     - [DiffType](#v1-DiffType)
     - [PowerControlOp](#v1-PowerControlOp)
+=======
+    - [ComponentFilterField](#v1-ComponentFilterField)
+    - [ComponentOrderByField](#v1-ComponentOrderByField)
+    - [ComponentType](#v1-ComponentType)
+    - [ConflictStrategy](#v1-ConflictStrategy)
+    - [DiffType](#v1-DiffType)
+    - [OperationType](#v1-OperationType)
+    - [OverlapPolicy](#v1-OverlapPolicy)
+    - [PowerControlOp](#v1-PowerControlOp)
+    - [RackFilterField](#v1-RackFilterField)
+    - [RackOrderByField](#v1-RackOrderByField)
+    - [ScheduleSpecType](#v1-ScheduleSpecType)
+>>>>>>> origin/main
     - [TaskExecutorType](#v1-TaskExecutorType)
     - [TaskStatus](#v1-TaskStatus)
   
@@ -77,6 +202,7 @@
 
 
 
+<<<<<<< HEAD
 <a name="rla-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -88,10 +214,24 @@
 
 ### ActualComponent
 ActualComponent represents a component&#39;s actual state from external systems (e.g., NICo, PSM)
+=======
+<a name="flow-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## flow.proto
+
+
+
+<a name="v1-AddComponentRequest"></a>
+
+### AddComponentRequest
+AddComponent - add a single component to an existing rack
+>>>>>>> origin/main
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | type | [ComponentType](#v1-ComponentType) |  |  |
 | info | [DeviceInfo](#v1-DeviceInfo) |  |  |
 | firmware_version | [string](#string) |  |  |
@@ -105,6 +245,78 @@ When this component was last observed |
 | power_state | [string](#string) |  | Current power state |
 | health_status | [string](#string) |  | Health status from source system |
 | source | [string](#string) |  | Data source (e.g., &#34;nico&#34;, &#34;psm&#34;) |
+=======
+| component | [Component](#v1-Component) |  | Required: the component to add; component.rack_id must be set |
+
+
+
+
+
+
+<a name="v1-AddComponentResponse"></a>
+
+### AddComponentResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| component | [Component](#v1-Component) |  | The created component |
+
+
+
+
+
+
+<a name="v1-AddTaskScheduleScopeRequest"></a>
+
+### AddTaskScheduleScopeRequest
+AddTaskScheduleScopeRequest adds one or more scope entries to a schedule.
+Supports rack-level targeting (with optional component-type filter) and
+component-level targeting (specific components by UUID or external reference).
+For component-level targets the server resolves which rack each component
+belongs to and groups them into per-rack scope entries automatically.
+Racks already present in the scope have their component filter merged with the
+incoming filter rather than erroring; racks not yet present are added.
+Existing racks are never removed — use UpdateTaskScheduleScope for replace semantics.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| schedule_id | [UUID](#v1-UUID) |  |  |
+| target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  |  |
+
+
+
+
+
+
+<a name="v1-AddTaskScheduleScopeResponse"></a>
+
+### AddTaskScheduleScopeResponse
+AddTaskScheduleScopeResponse returns the newly created scope entries.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| scopes | [TaskScheduleScope](#v1-TaskScheduleScope) | repeated |  |
+
+
+
+
+
+
+<a name="v1-AssociateRuleWithRackRequest"></a>
+
+### AssociateRuleWithRackRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rack_id | [UUID](#v1-UUID) |  |  |
+| rule_id | [UUID](#v1-UUID) |  |  |
+>>>>>>> origin/main
 
 
 
@@ -138,8 +350,28 @@ When this component was last observed |
 | type | [BMCType](#v1-BMCType) |  |  |
 | mac_address | [string](#string) |  |  |
 | ip_address | [string](#string) | optional |  |
+<<<<<<< HEAD
 | user | [string](#string) | optional |  |
 | password | [string](#string) | optional |  |
+=======
+
+
+
+
+
+
+<a name="v1-BringUpRackRequest"></a>
+
+### BringUpRackRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Target racks for bring-up |
+| description | [string](#string) |  | optional task description |
+| rule_id | [UUID](#v1-UUID) | optional | optional: override rule resolution with a specific rule |
+>>>>>>> origin/main
 
 
 
@@ -163,6 +395,84 @@ When this component was last observed |
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-CancelTaskRequest"></a>
+
+### CancelTaskRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| task_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-CancelTaskResponse"></a>
+
+### CancelTaskResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| task | [Task](#v1-Task) |  |  |
+
+
+
+
+
+
+<a name="v1-CheckScheduleConflictsRequest"></a>
+
+### CheckScheduleConflictsRequest
+CheckScheduleConflictsRequest checks whether a proposed scheduled operation
+would conflict with any existing enabled schedules.
+The operation oneof mirrors CreateTaskScheduleRequest: the target_spec
+embedded in the operation message defines which racks are checked.
+
+This call is advisory and intentionally coarse: it matches on operation
+type and code only, without intersecting component-type filters or explicit
+component UUID lists. As a result it may return false positives — two
+schedules that target disjoint component sets on the same rack will appear
+to conflict here even if their tasks would never collide at runtime.
+Execution-time conflict detection (the task manager&#39;s conflict rules) remains
+the authoritative backstop. The caller may proceed even when conflicts are
+returned.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| operation | [ScheduledOperation](#v1-ScheduledOperation) |  |  |
+| exclude_schedule_id | [UUID](#v1-UUID) | optional | exclude_schedule_id omits a schedule from the conflict check results. Pass the ID of the schedule being updated so its current definition is not returned as a conflict against the proposed replacement operation. |
+
+
+
+
+
+
+<a name="v1-CheckScheduleConflictsResponse"></a>
+
+### CheckScheduleConflictsResponse
+CheckScheduleConflictsResponse lists the existing enabled schedules whose
+operations may conflict with the proposed operation at execution time.
+An empty list means no conflicts were detected.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| conflicts | [TaskSchedule](#v1-TaskSchedule) | repeated |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-Component"></a>
 
 ### Component
@@ -178,6 +488,10 @@ When this component was last observed |
 | bmcs | [BMCInfo](#v1-BMCInfo) | repeated |  |
 | component_id | [string](#string) |  | Component&#39;s own ID from its source system (e.g., NICo machine_id for Compute) |
 | rack_id | [UUID](#v1-UUID) |  |  |
+<<<<<<< HEAD
+=======
+| power_state | [string](#string) |  | Current power state (synced from external system by inventory loop) |
+>>>>>>> origin/main
 
 
 
@@ -193,10 +507,18 @@ When this component was last observed |
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | type | [DiffType](#v1-DiffType) |  |  |
+<<<<<<< HEAD
 | component_id | [string](#string) |  |  |
 | expected | [Component](#v1-Component) |  | Populated when type is ONLY_IN_EXPECTED |
 | actual | [ActualComponent](#v1-ActualComponent) |  | Populated when type is ONLY_IN_ACTUAL |
 | field_diffs | [FieldDiff](#v1-FieldDiff) | repeated | Populated when type is DRIFT - lists the fields that differ |
+=======
+| component_id | [string](#string) |  | Component ID assigned by the component manager service |
+| expected | [Component](#v1-Component) |  | Populated when type is MISSING |
+| actual | [Component](#v1-Component) |  |  |
+| field_diffs | [FieldDiff](#v1-FieldDiff) | repeated | Populated when type is DRIFT |
+| id | [UUID](#v1-UUID) |  | RLA internal component UUID |
+>>>>>>> origin/main
 
 
 
@@ -211,7 +533,11 @@ ComponentTarget identifies a specific component
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | uuid | [string](#string) |  | RLA internal UUID |
+=======
+| id | [UUID](#v1-UUID) |  | Component UUID |
+>>>>>>> origin/main
 | external | [ExternalRef](#v1-ExternalRef) |  | External system reference |
 
 
@@ -234,6 +560,24 @@ ComponentTargets contains one or more component targets
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-ComponentTypes"></a>
+
+### ComponentTypes
+ComponentTypes contains one or more component type filters
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| types | [ComponentType](#v1-ComponentType) | repeated |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-CreateExpectedRackRequest"></a>
 
 ### CreateExpectedRackRequest
@@ -294,6 +638,144 @@ ComponentTargets contains one or more component targets
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-CreateOperationRuleRequest"></a>
+
+### CreateOperationRuleRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| description | [string](#string) |  |  |
+| operation_type | [OperationType](#v1-OperationType) |  |  |
+| operation_code | [string](#string) |  | Specific operation code (e.g., &#34;power_on&#34;, &#34;upgrade&#34;) |
+| rule_definition_json | [string](#string) |  | JSON-encoded RuleDefinition |
+| is_default | [bool](#bool) |  |  |
+
+
+
+
+
+
+<a name="v1-CreateOperationRuleResponse"></a>
+
+### CreateOperationRuleResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-CreateTaskScheduleRequest"></a>
+
+### CreateTaskScheduleRequest
+CreateTaskScheduleRequest creates a new TaskSchedule.
+The target_spec on the operation message defines the initial scope; it follows
+the same targeting rules as AddTaskScheduleScope (rack-level or component-level).
+Use AddTaskScheduleScope / RemoveTaskScheduleScope to modify the scope after creation.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| schedule | [ScheduleConfig](#v1-ScheduleConfig) |  |  |
+| operation | [ScheduledOperation](#v1-ScheduledOperation) |  |  |
+
+
+
+
+
+
+<a name="v1-DeleteComponentRequest"></a>
+
+### DeleteComponentRequest
+DeleteComponent - soft-delete a single component by UUID
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  | Required: component UUID to delete |
+
+
+
+
+
+
+<a name="v1-DeleteComponentResponse"></a>
+
+### DeleteComponentResponse
+
+
+
+
+
+
+
+<a name="v1-DeleteOperationRuleRequest"></a>
+
+### DeleteOperationRuleRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rule_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-DeleteRackRequest"></a>
+
+### DeleteRackRequest
+DeleteRack - soft-delete a rack and cascade to its components
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  | Required: rack UUID to soft-delete |
+
+
+
+
+
+
+<a name="v1-DeleteRackResponse"></a>
+
+### DeleteRackResponse
+
+
+
+
+
+
+
+<a name="v1-DeleteTaskScheduleRequest"></a>
+
+### DeleteTaskScheduleRequest
+DeleteTaskScheduleRequest permanently deletes a TaskSchedule and all its
+scope entries. In-flight tasks are not cancelled.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-DetachRacksFromNVLDomainRequest"></a>
 
 ### DetachRacksFromNVLDomainRequest
@@ -345,6 +827,26 @@ ComponentTargets contains one or more component targets
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-DisassociateRuleFromRackRequest"></a>
+
+### DisassociateRuleFromRackRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rack_id | [UUID](#v1-UUID) |  |  |
+| operation_type | [OperationType](#v1-OperationType) |  |  |
+| operation_code | [string](#string) |  | Specific operation code |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-ExternalRef"></a>
 
 ### ExternalRef
@@ -380,14 +882,22 @@ The component type determines which external system to query
 
 
 
+<<<<<<< HEAD
 <a name="v1-GetActualComponentsRequest"></a>
 
 ### GetActualComponentsRequest
 
+=======
+<a name="v1-Filter"></a>
+
+### Filter
+Filter represents a single filter condition
+>>>>>>> origin/main
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Flexible targeting: rack(s) with optional type filter, or specific components |
 | pagination | [Pagination](#v1-Pagination) | optional |  |
 
@@ -406,6 +916,11 @@ The component type determines which external system to query
 | ----- | ---- | ----- | ----------- |
 | components | [ActualComponent](#v1-ActualComponent) | repeated |  |
 | total | [int32](#int32) |  |  |
+=======
+| rack_field | [RackFilterField](#v1-RackFilterField) |  | For rack queries |
+| component_field | [ComponentFilterField](#v1-ComponentFilterField) |  | For component queries |
+| query_info | [StringQueryInfo](#v1-StringQueryInfo) |  |  |
+>>>>>>> origin/main
 
 
 
@@ -460,25 +975,45 @@ The component type determines which external system to query
 
 
 
+<<<<<<< HEAD
 <a name="v1-GetExpectedComponentsRequest"></a>
 
 ### GetExpectedComponentsRequest
 GetExpectedComponents - retrieves expected components from local database
+=======
+<a name="v1-GetComponentsRequest"></a>
+
+### GetComponentsRequest
+GetComponents - retrieves components from local database
+>>>>>>> origin/main
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Flexible targeting: rack(s) with optional type filter, or specific components |
 | pagination | [Pagination](#v1-Pagination) | optional |  |
+=======
+| target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) | optional | Optional: Flexible targeting: rack(s) with optional type filter, or specific components. If not provided, queries all components. |
+| filters | [Filter](#v1-Filter) | repeated | Filter conditions for component queries |
+| pagination | [Pagination](#v1-Pagination) | optional |  |
+| order_by | [OrderBy](#v1-OrderBy) | optional |  |
+>>>>>>> origin/main
 
 
 
 
 
 
+<<<<<<< HEAD
 <a name="v1-GetExpectedComponentsResponse"></a>
 
 ### GetExpectedComponentsResponse
+=======
+<a name="v1-GetComponentsResponse"></a>
+
+### GetComponentsResponse
+>>>>>>> origin/main
 
 
 
@@ -532,9 +1067,16 @@ GetExpectedComponents - retrieves expected components from local database
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | info | [StringQueryInfo](#v1-StringQueryInfo) |  |  |
 | with_components | [bool](#bool) |  |  |
 | pagination | [Pagination](#v1-Pagination) | optional |  |
+=======
+| filters | [Filter](#v1-Filter) | repeated | Filter conditions for rack queries |
+| with_components | [bool](#bool) |  |  |
+| pagination | [Pagination](#v1-Pagination) | optional |  |
+| order_by | [OrderBy](#v1-OrderBy) | optional |  |
+>>>>>>> origin/main
 
 
 
@@ -557,6 +1099,24 @@ GetExpectedComponents - retrieves expected components from local database
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-GetOperationRuleRequest"></a>
+
+### GetOperationRuleRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rule_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-GetRackInfoByIDRequest"></a>
 
 ### GetRackInfoByIDRequest
@@ -604,6 +1164,41 @@ GetExpectedComponents - retrieves expected components from local database
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-GetRackRuleAssociationRequest"></a>
+
+### GetRackRuleAssociationRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rack_id | [UUID](#v1-UUID) |  |  |
+| operation_type | [OperationType](#v1-OperationType) |  |  |
+| operation_code | [string](#string) |  | Specific operation code |
+
+
+
+
+
+
+<a name="v1-GetRackRuleAssociationResponse"></a>
+
+### GetRackRuleAssociationResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rule_id | [UUID](#v1-UUID) |  | Empty if no association exists |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-GetRacksForNVLDomainRequest"></a>
 
 ### GetRacksForNVLDomainRequest
@@ -634,6 +1229,24 @@ GetExpectedComponents - retrieves expected components from local database
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-GetTaskScheduleRequest"></a>
+
+### GetTaskScheduleRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-GetTasksByIDsRequest"></a>
 
 ### GetTasksByIDsRequest
@@ -680,6 +1293,155 @@ GetExpectedComponents - retrieves expected components from local database
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-IngestRackRequest"></a>
+
+### IngestRackRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Target racks for ingestion |
+| filters | [Filter](#v1-Filter) | repeated | Filter conditions for component queries (e.g. by type, name) |
+| description | [string](#string) |  | optional task description |
+| rule_id | [UUID](#v1-UUID) | optional | optional: override rule resolution with a specific rule |
+
+
+
+
+
+
+<a name="v1-ListOperationRulesRequest"></a>
+
+### ListOperationRulesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| operation_type | [OperationType](#v1-OperationType) | optional |  |
+| is_default | [bool](#bool) | optional |  |
+| offset | [int32](#int32) | optional |  |
+| limit | [int32](#int32) | optional |  |
+
+
+
+
+
+
+<a name="v1-ListOperationRulesResponse"></a>
+
+### ListOperationRulesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rules | [OperationRule](#v1-OperationRule) | repeated |  |
+| total_count | [int32](#int32) |  |  |
+
+
+
+
+
+
+<a name="v1-ListRackRuleAssociationsRequest"></a>
+
+### ListRackRuleAssociationsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rack_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-ListRackRuleAssociationsResponse"></a>
+
+### ListRackRuleAssociationsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| associations | [RackRuleAssociation](#v1-RackRuleAssociation) | repeated |  |
+
+
+
+
+
+
+<a name="v1-ListTaskScheduleScopesRequest"></a>
+
+### ListTaskScheduleScopesRequest
+ListTaskScheduleScopesRequest returns all scope entries for a given schedule.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| schedule_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-ListTaskScheduleScopesResponse"></a>
+
+### ListTaskScheduleScopesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| scopes | [TaskScheduleScope](#v1-TaskScheduleScope) | repeated |  |
+
+
+
+
+
+
+<a name="v1-ListTaskSchedulesRequest"></a>
+
+### ListTaskSchedulesRequest
+ListTaskSchedulesRequest lists TaskSchedules with optional filters.
+Results are ordered by creation time ascending.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rack_id | [UUID](#v1-UUID) | optional | if set, return only schedules with a scope on this rack |
+| pagination | [Pagination](#v1-Pagination) | optional |  |
+| enabled_only | [bool](#bool) | optional | if true, return only enabled (non-paused) schedules |
+
+
+
+
+
+
+<a name="v1-ListTaskSchedulesResponse"></a>
+
+### ListTaskSchedulesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| task_schedules | [TaskSchedule](#v1-TaskSchedule) | repeated |  |
+| total | [int32](#int32) |  | total matching count before pagination |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-ListTasksRequest"></a>
 
 ### ListTasksRequest
@@ -746,6 +1508,32 @@ GetExpectedComponents - retrieves expected components from local database
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-OperationRule"></a>
+
+### OperationRule
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+| name | [string](#string) |  |  |
+| description | [string](#string) |  |  |
+| operation_type | [OperationType](#v1-OperationType) |  |  |
+| operation_code | [string](#string) |  | Specific operation code (e.g., &#34;power_on&#34;, &#34;upgrade&#34;) |
+| rule_definition_json | [string](#string) |  | JSON-encoded RuleDefinition |
+| is_default | [bool](#bool) |  |  |
+| created_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| updated_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-OperationTargetSpec"></a>
 
 ### OperationTargetSpec
@@ -764,6 +1552,26 @@ or component-level targeting (by UUID or external reference), but not both.
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-OrderBy"></a>
+
+### OrderBy
+OrderBy represents ordering specification
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rack_field | [RackOrderByField](#v1-RackOrderByField) |  | For rack queries |
+| component_field | [ComponentOrderByField](#v1-ComponentOrderByField) |  | For component queries |
+| direction | [string](#string) |  | ASC or DESC |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-Pagination"></a>
 
 ### Pagination
@@ -780,6 +1588,44 @@ or component-level targeting (by UUID or external reference), but not both.
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-PatchComponentRequest"></a>
+
+### PatchComponentRequest
+PatchComponent - update a single component&#39;s fields
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  | Required: component UUID |
+| firmware_version | [string](#string) | optional | Update firmware version |
+| position | [RackPosition](#v1-RackPosition) | optional | Update slot_id, tray_idx, host_id |
+| description | [string](#string) | optional | Update description (JSON string) |
+| rack_id | [UUID](#v1-UUID) | optional | Re-assign to a different rack |
+| bmcs | [BMCInfo](#v1-BMCInfo) | repeated | Update BMCs (matched by MAC address; create if new) |
+
+
+
+
+
+
+<a name="v1-PatchComponentResponse"></a>
+
+### PatchComponentResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| component | [Component](#v1-Component) |  | The updated component |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-PatchRackRequest"></a>
 
 ### PatchRackRequest
@@ -810,6 +1656,26 @@ or component-level targeting (by UUID or external reference), but not both.
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-PauseTaskScheduleRequest"></a>
+
+### PauseTaskScheduleRequest
+PauseTaskScheduleRequest disables a TaskSchedule without deleting it.
+The schedule will not fire until resumed. Has no effect if already paused.
+Returns an error for a one-time schedule that has already fired.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-PowerOffRackRequest"></a>
 
 ### PowerOffRackRequest
@@ -821,6 +1687,11 @@ or component-level targeting (by UUID or external reference), but not both.
 | target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Flexible targeting: rack(s) with optional type filter, or specific components |
 | forced | [bool](#bool) |  |  |
 | description | [string](#string) |  | optional task description |
+<<<<<<< HEAD
+=======
+| queue_options | [QueueOptions](#v1-QueueOptions) | optional |  |
+| rule_id | [UUID](#v1-UUID) | optional | optional: override rule resolution with a specific rule |
+>>>>>>> origin/main
 
 
 
@@ -837,6 +1708,11 @@ or component-level targeting (by UUID or external reference), but not both.
 | ----- | ---- | ----- | ----------- |
 | target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Flexible targeting: rack(s) with optional type filter, or specific components |
 | description | [string](#string) |  | optional task description |
+<<<<<<< HEAD
+=======
+| queue_options | [QueueOptions](#v1-QueueOptions) | optional |  |
+| rule_id | [UUID](#v1-UUID) | optional | optional: override rule resolution with a specific rule |
+>>>>>>> origin/main
 
 
 
@@ -854,6 +1730,77 @@ or component-level targeting (by UUID or external reference), but not both.
 | target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Flexible targeting: rack(s) with optional type filter, or specific components |
 | forced | [bool](#bool) |  |  |
 | description | [string](#string) |  | optional task description |
+<<<<<<< HEAD
+=======
+| queue_options | [QueueOptions](#v1-QueueOptions) | optional |  |
+| rule_id | [UUID](#v1-UUID) | optional | optional: override rule resolution with a specific rule |
+
+
+
+
+
+
+<a name="v1-PurgeComponentRequest"></a>
+
+### PurgeComponentRequest
+PurgeComponent - permanently remove a soft-deleted component
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  | Required: component UUID to purge (must already be soft-deleted) |
+
+
+
+
+
+
+<a name="v1-PurgeComponentResponse"></a>
+
+### PurgeComponentResponse
+
+
+
+
+
+
+
+<a name="v1-PurgeRackRequest"></a>
+
+### PurgeRackRequest
+PurgeRack - permanently remove a soft-deleted rack and its components
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  | Required: rack UUID to purge (must already be soft-deleted) |
+
+
+
+
+
+
+<a name="v1-PurgeRackResponse"></a>
+
+### PurgeRackResponse
+
+
+
+
+
+
+
+<a name="v1-QueueOptions"></a>
+
+### QueueOptions
+QueueOptions controls how a task behaves when a conflict is detected.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| conflict_strategy | [ConflictStrategy](#v1-ConflictStrategy) |  | How to handle the task when a conflict is detected. Defaults to CONFLICT_STRATEGY_REJECT (wire value 0). |
+| queue_timeout_seconds | [int32](#int32) |  | How long (seconds) to wait in queue before expiring. 0 means use the server default (~1h). Only relevant when conflict_strategy is CONFLICT_STRATEGY_QUEUE. |
+>>>>>>> origin/main
 
 
 
@@ -894,17 +1841,51 @@ or component-level targeting (by UUID or external reference), but not both.
 
 
 
+<<<<<<< HEAD
 <a name="v1-RackTarget"></a>
 
 ### RackTarget
 RackTarget identifies a rack and optionally filters by component types
+=======
+<a name="v1-RackRuleAssociation"></a>
+
+### RackRuleAssociation
+
+>>>>>>> origin/main
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | id | [string](#string) |  | Rack UUID |
 | name | [string](#string) |  | Rack name |
 | component_types | [ComponentType](#v1-ComponentType) | repeated | Optional: component types to include. Empty = ALL components in rack |
+=======
+| rack_id | [UUID](#v1-UUID) |  |  |
+| operation_type | [OperationType](#v1-OperationType) |  |  |
+| operation_code | [string](#string) |  | Specific operation code (e.g., &#34;power_on&#34;, &#34;upgrade&#34;) |
+| rule_id | [UUID](#v1-UUID) |  |  |
+| created_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| updated_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="v1-RackTarget"></a>
+
+### RackTarget
+RackTarget identifies a rack and optionally filters by component type.
+To target specific components, use the component-level APIs instead.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  | Rack UUID |
+| name | [string](#string) |  | Rack name |
+| component_types | [ComponentType](#v1-ComponentType) | repeated | Optional: filter by component type. Omit (or send empty list) to include all components in the rack. |
+>>>>>>> origin/main
 
 
 
@@ -926,6 +1907,119 @@ RackTargets contains one or more rack targets
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-RemoveTaskScheduleScopeRequest"></a>
+
+### RemoveTaskScheduleScopeRequest
+RemoveTaskScheduleScopeRequest removes a single rack scope entry by its scope ID.
+In-flight tasks for that rack are not cancelled.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| scope_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-ResumeTaskScheduleRequest"></a>
+
+### ResumeTaskScheduleRequest
+ResumeTaskScheduleRequest re-enables a paused TaskSchedule. For interval
+and cron schedules, next_run_at is recomputed from the current time so the
+schedule does not fire immediately. Has no effect if already enabled.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+<a name="v1-ScheduleConfig"></a>
+
+### ScheduleConfig
+ScheduleConfig groups the scheduling fields shared by multiple request types.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| spec | [ScheduleSpec](#v1-ScheduleSpec) |  |  |
+| overlap_policy | [OverlapPolicy](#v1-OverlapPolicy) |  |  |
+
+
+
+
+
+
+<a name="v1-ScheduleSpec"></a>
+
+### ScheduleSpec
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [ScheduleSpecType](#v1-ScheduleSpecType) |  |  |
+| spec | [string](#string) |  |  |
+| timezone | [string](#string) |  | IANA timezone for interpreting cron specs (e.g. &#34;America/New_York&#34;). Defaults to &#34;UTC&#34;. Ignored for interval and one-time specs. |
+
+
+
+
+
+
+<a name="v1-ScheduledOperation"></a>
+
+### ScheduledOperation
+ScheduledOperation is the shared operation oneof used by
+CreateTaskScheduleRequest and CheckScheduleConflictsRequest.
+Centralising it here means a single proto change adds support for a new
+operation type in both RPCs, and the Go conversion logic lives in one place.
+
+Note: the embedded request messages (e.g. PowerOnRackRequest) may carry a
+description field, but it is ignored when used inside a ScheduledOperation.
+The dispatcher generates task descriptions automatically at fire time in the
+form &#34;&lt;schedule name&gt; — &lt;RFC3339 timestamp&gt;&#34;.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| power_on | [PowerOnRackRequest](#v1-PowerOnRackRequest) |  |  |
+| power_off | [PowerOffRackRequest](#v1-PowerOffRackRequest) |  |  |
+| power_reset | [PowerResetRackRequest](#v1-PowerResetRackRequest) |  |  |
+| bring_up | [BringUpRackRequest](#v1-BringUpRackRequest) |  |  |
+| upgrade_firmware | [UpgradeFirmwareRequest](#v1-UpgradeFirmwareRequest) |  |  |
+| ingest | [IngestRackRequest](#v1-IngestRackRequest) |  |  |
+
+
+
+
+
+
+<a name="v1-SetRuleAsDefaultRequest"></a>
+
+### SetRuleAsDefaultRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rule_id | [UUID](#v1-UUID) |  |  |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-StringQueryInfo"></a>
 
 ### StringQueryInfo
@@ -975,6 +2069,85 @@ RackTargets contains one or more rack targets
 | execution_id | [string](#string) |  |  |
 | status | [TaskStatus](#v1-TaskStatus) |  |  |
 | message | [string](#string) |  |  |
+<<<<<<< HEAD
+=======
+| queue_expires_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional | queue_expires_at is set only for waiting tasks; absent for all other statuses. |
+| created_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| finished_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional |  |
+| applied_rule_id | [UUID](#v1-UUID) | optional |  |
+| updated_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| started_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional |  |
+
+
+
+
+
+
+<a name="v1-TaskSchedule"></a>
+
+### TaskSchedule
+TaskSchedule defines when (spec) and what (operation) should run automatically.
+Which racks to target is tracked separately in TaskScheduleScope rows and
+managed via AddTaskScheduleScope / RemoveTaskScheduleScope / ListTaskScheduleScopes.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+| name | [string](#string) |  | unique, human-readable identifier |
+| spec | [ScheduleSpec](#v1-ScheduleSpec) |  | when to fire (interval, cron, or one-time) |
+| overlap_policy | [OverlapPolicy](#v1-OverlapPolicy) |  |  |
+| enabled | [bool](#bool) |  | false = paused (will not fire) |
+| next_run_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional | absent for disabled or fully-fired one-time schedules |
+| last_run_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional | absent if the schedule has never fired |
+| created_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| updated_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| operation_type | [string](#string) |  | operation_type identifies the kind of operation this schedule runs. Values: &#34;POWER_ON&#34;, &#34;POWER_OFF&#34;, &#34;POWER_RESET&#34;, &#34;BRING_UP&#34;, &#34;INGEST&#34;, &#34;UPGRADE_FIRMWARE&#34;, &#34;DOWNGRADE_FIRMWARE&#34;, &#34;ROLLBACK_FIRMWARE&#34;. |
+| description | [string](#string) |  | description is a human-readable summary of the operation and its key parameters, e.g. &#34;Power Reset (forced)&#34; or &#34;Upgrade Firmware to v2.3.1&#34;. |
+
+
+
+
+
+
+<a name="v1-TaskScheduleScope"></a>
+
+### TaskScheduleScope
+TaskScheduleScope represents one rack target in a schedule&#39;s scope.
+Each scope entry causes one task to be submitted per schedule firing.
+last_task_id tracks the task produced for this rack by the most recent firing;
+the dispatcher uses it for the overlap check. Absent if no task has fired yet
+for this scope (e.g. a newly added rack).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+| schedule_id | [UUID](#v1-UUID) |  |  |
+| rack_id | [UUID](#v1-UUID) |  |  |
+| types | [ComponentTypes](#v1-ComponentTypes) |  | types filters by component type (e.g. COMPUTE, POWERSHELF). |
+| components | [ComponentTargets](#v1-ComponentTargets) |  | components targets specific components by UUID or external reference. |
+| last_task_id | [UUID](#v1-UUID) |  | absent until the first firing for this scope |
+| created_at | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="v1-TriggerTaskScheduleRequest"></a>
+
+### TriggerTaskScheduleRequest
+TriggerTaskScheduleRequest fires a TaskSchedule immediately, regardless of
+next_run_at or enabled state. The overlap policy is not consulted — all
+scopes are submitted unconditionally. Returns an error for a one-time
+schedule that has already fired.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+>>>>>>> origin/main
 
 
 
@@ -996,6 +2169,90 @@ RackTargets contains one or more rack targets
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-UpdateOperationRuleRequest"></a>
+
+### UpdateOperationRuleRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| rule_id | [UUID](#v1-UUID) |  |  |
+| name | [string](#string) | optional |  |
+| description | [string](#string) | optional |  |
+| rule_definition_json | [string](#string) | optional | JSON-encoded RuleDefinition |
+
+
+
+
+
+
+<a name="v1-UpdateTaskScheduleRequest"></a>
+
+### UpdateTaskScheduleRequest
+UpdateTaskScheduleRequest updates the scheduling config of an existing
+TaskSchedule. To modify which racks are targeted, use
+AddTaskScheduleScope / RemoveTaskScheduleScope instead.
+
+update_mask is required and controls which fields are written. Supported paths:
+  &#34;schedule.name&#34;           – display name
+  &#34;schedule.overlap_policy&#34; – overlap behaviour
+  &#34;schedule.spec&#34;           – full spec block (type &#43; spec string &#43; next_run_at recomputed)
+  &#34;schedule.spec.timezone&#34;  – timezone only (spec type/string unchanged)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [UUID](#v1-UUID) |  |  |
+| schedule | [ScheduleConfig](#v1-ScheduleConfig) |  |  |
+| update_mask | [google.protobuf.FieldMask](#google-protobuf-FieldMask) |  |  |
+
+
+
+
+
+
+<a name="v1-UpdateTaskScheduleScopeRequest"></a>
+
+### UpdateTaskScheduleScopeRequest
+UpdateTaskScheduleScopeRequest reconciles the schedule&#39;s scope against the
+desired target_spec: racks present in desired_scope but not in the current scope
+are added; racks present in the current scope but absent from desired_scope are
+removed; racks present in both have their component_filter updated if changed.
+For component-level targets the server resolves rack membership automatically.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| schedule_id | [UUID](#v1-UUID) |  |  |
+| desired_scope | [OperationTargetSpec](#v1-OperationTargetSpec) |  |  |
+
+
+
+
+
+
+<a name="v1-UpdateTaskScheduleScopeResponse"></a>
+
+### UpdateTaskScheduleScopeResponse
+UpdateTaskScheduleScopeResponse returns the complete scope after reconciliation.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| scopes | [TaskScheduleScope](#v1-TaskScheduleScope) | repeated |  |
+| added | [int32](#int32) |  | number of scope entries added |
+| removed | [int32](#int32) |  | number of scope entries removed |
+| updated | [int32](#int32) |  | number of scope entries with updated component_filter |
+
+
+
+
+
+
+>>>>>>> origin/main
 <a name="v1-UpgradeFirmwareRequest"></a>
 
 ### UpgradeFirmwareRequest
@@ -1009,6 +2266,11 @@ RackTargets contains one or more rack targets
 | start_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional | optional: scheduled start time |
 | end_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) | optional | optional: scheduled end time |
 | description | [string](#string) |  | optional: task description |
+<<<<<<< HEAD
+=======
+| queue_options | [QueueOptions](#v1-QueueOptions) | optional |  |
+| rule_id | [UUID](#v1-UUID) | optional | optional: override rule resolution with a specific rule |
+>>>>>>> origin/main
 
 
 
@@ -1023,7 +2285,14 @@ RackTargets contains one or more rack targets
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+<<<<<<< HEAD
 | target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) |  | Flexible targeting: rack(s) with optional type filter, or specific components |
+=======
+| target_spec | [OperationTargetSpec](#v1-OperationTargetSpec) | optional | Optional: Flexible targeting: rack(s) with optional type filter, or specific components. If not provided, returns all drifts. |
+| filters | [Filter](#v1-Filter) | repeated | Filter conditions for component queries |
+| pagination | [Pagination](#v1-Pagination) | optional |  |
+| order_by | [OrderBy](#v1-OrderBy) | optional |  |
+>>>>>>> origin/main
 
 
 
@@ -1040,8 +2309,15 @@ RackTargets contains one or more rack targets
 | ----- | ---- | ----- | ----------- |
 | diffs | [ComponentDiff](#v1-ComponentDiff) | repeated |  |
 | total_diffs | [int32](#int32) |  |  |
+<<<<<<< HEAD
 | only_in_expected_count | [int32](#int32) |  | Summary counts |
 | only_in_actual_count | [int32](#int32) |  |  |
+=======
+| missing_count | [int32](#int32) |  | Summary counts
+
+Expected by RLA but not found in the component manager service |
+| unexpected_count | [int32](#int32) |  | Found in the component manager service but not expected by RLA |
+>>>>>>> origin/main
 | drift_count | [int32](#int32) |  |  |
 | match_count | [int32](#int32) |  |  |
 
@@ -1075,6 +2351,39 @@ Version API messages
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-ComponentFilterField"></a>
+
+### ComponentFilterField
+ComponentFilterField represents the supported filter field types for component queries
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COMPONENT_FILTER_FIELD_UNSPECIFIED | 0 |  |
+| COMPONENT_FILTER_FIELD_NAME | 1 | Filter by component name |
+| COMPONENT_FILTER_FIELD_MANUFACTURER | 2 | Filter by manufacturer |
+| COMPONENT_FILTER_FIELD_MODEL | 3 | Filter by model (stored in description JSONB) |
+| COMPONENT_FILTER_FIELD_TYPE | 4 | Filter by component type (use ComponentType enum string values in StringQueryInfo) |
+
+
+
+<a name="v1-ComponentOrderByField"></a>
+
+### ComponentOrderByField
+ComponentOrderByField represents the supported order by field types for component queries
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COMPONENT_ORDER_BY_FIELD_UNSPECIFIED | 0 |  |
+| COMPONENT_ORDER_BY_FIELD_NAME | 1 | Order by component name |
+| COMPONENT_ORDER_BY_FIELD_MANUFACTURER | 2 | Order by manufacturer |
+| COMPONENT_ORDER_BY_FIELD_MODEL | 3 | Order by model |
+| COMPONENT_ORDER_BY_FIELD_TYPE | 4 | Order by component type |
+
+
+
+>>>>>>> origin/main
 <a name="v1-ComponentType"></a>
 
 ### ComponentType
@@ -1092,6 +2401,22 @@ Version API messages
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-ConflictStrategy"></a>
+
+### ConflictStrategy
+ConflictStrategy controls how a task behaves when a conflict is detected.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| CONFLICT_STRATEGY_UNSPECIFIED | 0 | CONFLICT_STRATEGY_UNSPECIFIED defaults to REJECT. Wire value 0 preserves backward compatibility with the former bool false (reject). |
+| CONFLICT_STRATEGY_QUEUE | 1 | CONFLICT_STRATEGY_QUEUE queues the task until the conflicting task completes. Wire value 1 preserves backward compatibility with the former bool true (queue). |
+| CONFLICT_STRATEGY_REJECT | 2 | CONFLICT_STRATEGY_REJECT immediately rejects the task when a conflict is detected. |
+
+
+
+>>>>>>> origin/main
 <a name="v1-DiffType"></a>
 
 ### DiffType
@@ -1100,12 +2425,47 @@ Version API messages
 | Name | Number | Description |
 | ---- | ------ | ----------- |
 | DIFF_TYPE_UNKNOWN | 0 |  |
+<<<<<<< HEAD
 | DIFF_TYPE_ONLY_IN_EXPECTED | 1 | In local DB but not in source system |
 | DIFF_TYPE_ONLY_IN_ACTUAL | 2 | In source system but not in local DB |
+=======
+| DIFF_TYPE_MISSING | 1 | Expected by RLA but not found in the component manager service |
+| DIFF_TYPE_UNEXPECTED | 2 | Found in the component manager service but not expected by RLA |
+>>>>>>> origin/main
 | DIFF_TYPE_DRIFT | 3 | In both but with field differences |
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-OperationType"></a>
+
+### OperationType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OPERATION_TYPE_UNKNOWN | 0 |  |
+| OPERATION_TYPE_POWER_CONTROL | 1 |  |
+| OPERATION_TYPE_FIRMWARE_CONTROL | 2 |  |
+
+
+
+<a name="v1-OverlapPolicy"></a>
+
+### OverlapPolicy
+OverlapPolicy controls what happens when a schedule fires while the previous
+execution for the same scope is still active.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| OVERLAP_POLICY_UNSPECIFIED | 0 |  |
+| OVERLAP_POLICY_SKIP | 1 | skip this firing cycle for any scope whose last task is still active |
+| OVERLAP_POLICY_QUEUE | 2 | submit unconditionally; the task manager queues behind the active task |
+
+
+
+>>>>>>> origin/main
 <a name="v1-PowerControlOp"></a>
 
 ### PowerControlOp
@@ -1129,6 +2489,51 @@ graceful restart |
 
 
 
+<<<<<<< HEAD
+=======
+<a name="v1-RackFilterField"></a>
+
+### RackFilterField
+RackFilterField represents the supported filter field types for rack queries
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RACK_FILTER_FIELD_UNSPECIFIED | 0 |  |
+| RACK_FILTER_FIELD_NAME | 1 | Filter by rack name |
+| RACK_FILTER_FIELD_MANUFACTURER | 2 | Filter by manufacturer |
+| RACK_FILTER_FIELD_MODEL | 3 | Filter by model (stored in description JSONB) |
+
+
+
+<a name="v1-RackOrderByField"></a>
+
+### RackOrderByField
+RackOrderByField represents the supported order by field types for rack queries
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| RACK_ORDER_BY_FIELD_UNSPECIFIED | 0 |  |
+| RACK_ORDER_BY_FIELD_NAME | 1 | Order by rack name |
+| RACK_ORDER_BY_FIELD_MANUFACTURER | 2 | Order by manufacturer |
+| RACK_ORDER_BY_FIELD_MODEL | 3 | Order by model |
+
+
+
+<a name="v1-ScheduleSpecType"></a>
+
+### ScheduleSpecType
+
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SCHEDULE_SPEC_TYPE_UNSPECIFIED | 0 |  |
+| SCHEDULE_SPEC_TYPE_INTERVAL | 1 | spec is a Go duration string, e.g. &#34;24h&#34; |
+| SCHEDULE_SPEC_TYPE_CRON | 2 | spec is a 5-field cron expression |
+| SCHEDULE_SPEC_TYPE_ONE_TIME | 3 | spec is an RFC3339 timestamp |
+
+
+
+>>>>>>> origin/main
 <a name="v1-TaskExecutorType"></a>
 
 ### TaskExecutorType
@@ -1153,6 +2558,11 @@ graceful restart |
 | TASK_STATUS_RUNNING | 2 |  |
 | TASK_STATUS_COMPLETED | 3 |  |
 | TASK_STATUS_FAILED | 4 |  |
+<<<<<<< HEAD
+=======
+| TASK_STATUS_TERMINATED | 5 |  |
+| TASK_STATUS_WAITING | 6 | TASK_STATUS_WAITING means the task was queued because a conflicting task is active on the rack. It will be promoted automatically when the rack becomes available, or can be cancelled explicitly via CancelTask. |
+>>>>>>> origin/main
 
 
  
@@ -1167,6 +2577,7 @@ graceful restart |
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
+<<<<<<< HEAD
 | Version | [VersionRequest](#v1-VersionRequest) | [BuildInfo](#v1-BuildInfo) | What version of RLA is this service running? |
 | CreateExpectedRack | [CreateExpectedRackRequest](#v1-CreateExpectedRackRequest) | [CreateExpectedRackResponse](#v1-CreateExpectedRackResponse) |  |
 | PatchRack | [PatchRackRequest](#v1-PatchRackRequest) | [PatchRackResponse](#v1-PatchRackResponse) |  |
@@ -1176,10 +2587,49 @@ graceful restart |
 | GetComponentInfoBySerial | [GetComponentInfoBySerialRequest](#v1-GetComponentInfoBySerialRequest) | [GetComponentInfoResponse](#v1-GetComponentInfoResponse) |  |
 | GetListOfRacks | [GetListOfRacksRequest](#v1-GetListOfRacksRequest) | [GetListOfRacksResponse](#v1-GetListOfRacksResponse) |  |
 | CreateNVLDomain | [CreateNVLDomainRequest](#v1-CreateNVLDomainRequest) | [CreateNVLDomainResponse](#v1-CreateNVLDomainResponse) |  |
+=======
+| Version | [VersionRequest](#v1-VersionRequest) | [BuildInfo](#v1-BuildInfo) | Version |
+| CreateTaskSchedule | [CreateTaskScheduleRequest](#v1-CreateTaskScheduleRequest) | [TaskSchedule](#v1-TaskSchedule) | Task schedules |
+| GetTaskSchedule | [GetTaskScheduleRequest](#v1-GetTaskScheduleRequest) | [TaskSchedule](#v1-TaskSchedule) |  |
+| ListTaskSchedules | [ListTaskSchedulesRequest](#v1-ListTaskSchedulesRequest) | [ListTaskSchedulesResponse](#v1-ListTaskSchedulesResponse) |  |
+| UpdateTaskSchedule | [UpdateTaskScheduleRequest](#v1-UpdateTaskScheduleRequest) | [TaskSchedule](#v1-TaskSchedule) |  |
+| PauseTaskSchedule | [PauseTaskScheduleRequest](#v1-PauseTaskScheduleRequest) | [TaskSchedule](#v1-TaskSchedule) |  |
+| ResumeTaskSchedule | [ResumeTaskScheduleRequest](#v1-ResumeTaskScheduleRequest) | [TaskSchedule](#v1-TaskSchedule) |  |
+| DeleteTaskSchedule | [DeleteTaskScheduleRequest](#v1-DeleteTaskScheduleRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
+| TriggerTaskSchedule | [TriggerTaskScheduleRequest](#v1-TriggerTaskScheduleRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
+| AddTaskScheduleScope | [AddTaskScheduleScopeRequest](#v1-AddTaskScheduleScopeRequest) | [AddTaskScheduleScopeResponse](#v1-AddTaskScheduleScopeResponse) | add one or more racks to a schedule&#39;s scope |
+| RemoveTaskScheduleScope | [RemoveTaskScheduleScopeRequest](#v1-RemoveTaskScheduleScopeRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) | remove a single rack from a schedule&#39;s scope by scope ID |
+| UpdateTaskScheduleScope | [UpdateTaskScheduleScopeRequest](#v1-UpdateTaskScheduleScopeRequest) | [UpdateTaskScheduleScopeResponse](#v1-UpdateTaskScheduleScopeResponse) | reconcile the full scope against a desired target_spec |
+| ListTaskScheduleScopes | [ListTaskScheduleScopesRequest](#v1-ListTaskScheduleScopesRequest) | [ListTaskScheduleScopesResponse](#v1-ListTaskScheduleScopesResponse) | list all racks in a schedule&#39;s scope |
+| CheckScheduleConflicts | [CheckScheduleConflictsRequest](#v1-CheckScheduleConflictsRequest) | [CheckScheduleConflictsResponse](#v1-CheckScheduleConflictsResponse) | advisory: returns existing schedules that may conflict with a proposed operation |
+| CreateExpectedRack | [CreateExpectedRackRequest](#v1-CreateExpectedRackRequest) | [CreateExpectedRackResponse](#v1-CreateExpectedRackResponse) | Rack CRUD |
+| GetRackInfoByID | [GetRackInfoByIDRequest](#v1-GetRackInfoByIDRequest) | [GetRackInfoResponse](#v1-GetRackInfoResponse) |  |
+| GetRackInfoBySerial | [GetRackInfoBySerialRequest](#v1-GetRackInfoBySerialRequest) | [GetRackInfoResponse](#v1-GetRackInfoResponse) |  |
+| GetListOfRacks | [GetListOfRacksRequest](#v1-GetListOfRacksRequest) | [GetListOfRacksResponse](#v1-GetListOfRacksResponse) |  |
+| PatchRack | [PatchRackRequest](#v1-PatchRackRequest) | [PatchRackResponse](#v1-PatchRackResponse) |  |
+| DeleteRack | [DeleteRackRequest](#v1-DeleteRackRequest) | [DeleteRackResponse](#v1-DeleteRackResponse) |  |
+| PurgeRack | [PurgeRackRequest](#v1-PurgeRackRequest) | [PurgeRackResponse](#v1-PurgeRackResponse) |  |
+| UpgradeFirmware | [UpgradeFirmwareRequest](#v1-UpgradeFirmwareRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) | Rack operations |
+| BringUpRack | [BringUpRackRequest](#v1-BringUpRackRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
+| IngestRack | [IngestRackRequest](#v1-IngestRackRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
+| PowerOnRack | [PowerOnRackRequest](#v1-PowerOnRackRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
+| PowerOffRack | [PowerOffRackRequest](#v1-PowerOffRackRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
+| PowerResetRack | [PowerResetRackRequest](#v1-PowerResetRackRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
+| GetComponentInfoByID | [GetComponentInfoByIDRequest](#v1-GetComponentInfoByIDRequest) | [GetComponentInfoResponse](#v1-GetComponentInfoResponse) | Component CRUD |
+| GetComponentInfoBySerial | [GetComponentInfoBySerialRequest](#v1-GetComponentInfoBySerialRequest) | [GetComponentInfoResponse](#v1-GetComponentInfoResponse) |  |
+| GetComponents | [GetComponentsRequest](#v1-GetComponentsRequest) | [GetComponentsResponse](#v1-GetComponentsResponse) |  |
+| ValidateComponents | [ValidateComponentsRequest](#v1-ValidateComponentsRequest) | [ValidateComponentsResponse](#v1-ValidateComponentsResponse) |  |
+| AddComponent | [AddComponentRequest](#v1-AddComponentRequest) | [AddComponentResponse](#v1-AddComponentResponse) |  |
+| PatchComponent | [PatchComponentRequest](#v1-PatchComponentRequest) | [PatchComponentResponse](#v1-PatchComponentResponse) |  |
+| DeleteComponent | [DeleteComponentRequest](#v1-DeleteComponentRequest) | [DeleteComponentResponse](#v1-DeleteComponentResponse) |  |
+| PurgeComponent | [PurgeComponentRequest](#v1-PurgeComponentRequest) | [PurgeComponentResponse](#v1-PurgeComponentResponse) |  |
+| CreateNVLDomain | [CreateNVLDomainRequest](#v1-CreateNVLDomainRequest) | [CreateNVLDomainResponse](#v1-CreateNVLDomainResponse) | NVL Domain |
+>>>>>>> origin/main
 | AttachRacksToNVLDomain | [AttachRacksToNVLDomainRequest](#v1-AttachRacksToNVLDomainRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
 | DetachRacksFromNVLDomain | [DetachRacksFromNVLDomainRequest](#v1-DetachRacksFromNVLDomainRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
 | GetListOfNVLDomains | [GetListOfNVLDomainsRequest](#v1-GetListOfNVLDomainsRequest) | [GetListOfNVLDomainsResponse](#v1-GetListOfNVLDomainsResponse) |  |
 | GetRacksForNVLDomain | [GetRacksForNVLDomainRequest](#v1-GetRacksForNVLDomainRequest) | [GetRacksForNVLDomainResponse](#v1-GetRacksForNVLDomainResponse) |  |
+<<<<<<< HEAD
 | UpgradeFirmware | [UpgradeFirmwareRequest](#v1-UpgradeFirmwareRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
 | GetExpectedComponents | [GetExpectedComponentsRequest](#v1-GetExpectedComponentsRequest) | [GetExpectedComponentsResponse](#v1-GetExpectedComponentsResponse) | Components APIs |
 | GetActualComponents | [GetActualComponentsRequest](#v1-GetActualComponentsRequest) | [GetActualComponentsResponse](#v1-GetActualComponentsResponse) |  |
@@ -1189,6 +2639,21 @@ graceful restart |
 | PowerResetRack | [PowerResetRackRequest](#v1-PowerResetRackRequest) | [SubmitTaskResponse](#v1-SubmitTaskResponse) |  |
 | ListTasks | [ListTasksRequest](#v1-ListTasksRequest) | [ListTasksResponse](#v1-ListTasksResponse) | Query for tasks |
 | GetTasksByIDs | [GetTasksByIDsRequest](#v1-GetTasksByIDsRequest) | [GetTasksByIDsResponse](#v1-GetTasksByIDsResponse) |  |
+=======
+| ListTasks | [ListTasksRequest](#v1-ListTasksRequest) | [ListTasksResponse](#v1-ListTasksResponse) | Tasks |
+| GetTasksByIDs | [GetTasksByIDsRequest](#v1-GetTasksByIDsRequest) | [GetTasksByIDsResponse](#v1-GetTasksByIDsResponse) |  |
+| CancelTask | [CancelTaskRequest](#v1-CancelTaskRequest) | [CancelTaskResponse](#v1-CancelTaskResponse) |  |
+| CreateOperationRule | [CreateOperationRuleRequest](#v1-CreateOperationRuleRequest) | [CreateOperationRuleResponse](#v1-CreateOperationRuleResponse) | Operation rules |
+| UpdateOperationRule | [UpdateOperationRuleRequest](#v1-UpdateOperationRuleRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
+| DeleteOperationRule | [DeleteOperationRuleRequest](#v1-DeleteOperationRuleRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
+| GetOperationRule | [GetOperationRuleRequest](#v1-GetOperationRuleRequest) | [OperationRule](#v1-OperationRule) |  |
+| ListOperationRules | [ListOperationRulesRequest](#v1-ListOperationRulesRequest) | [ListOperationRulesResponse](#v1-ListOperationRulesResponse) |  |
+| SetRuleAsDefault | [SetRuleAsDefaultRequest](#v1-SetRuleAsDefaultRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
+| AssociateRuleWithRack | [AssociateRuleWithRackRequest](#v1-AssociateRuleWithRackRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) | Rack-rule associations |
+| DisassociateRuleFromRack | [DisassociateRuleFromRackRequest](#v1-DisassociateRuleFromRackRequest) | [.google.protobuf.Empty](#google-protobuf-Empty) |  |
+| GetRackRuleAssociation | [GetRackRuleAssociationRequest](#v1-GetRackRuleAssociationRequest) | [GetRackRuleAssociationResponse](#v1-GetRackRuleAssociationResponse) |  |
+| ListRackRuleAssociations | [ListRackRuleAssociationsRequest](#v1-ListRackRuleAssociationsRequest) | [ListRackRuleAssociationsResponse](#v1-ListRackRuleAssociationsResponse) |  |
+>>>>>>> origin/main
 
  
 

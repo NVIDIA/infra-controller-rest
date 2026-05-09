@@ -22,12 +22,12 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico" //nolint
-	taskmanager "github.com/NVIDIA/infra-controller-rest/rla/internal/task/manager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/scheduler/types"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico" //nolint
+	taskmanager "github.com/NVIDIA/infra-controller-rest/flow/internal/task/manager"
 )
 
 // Job implements scheduler.Job for the leak detection task.

@@ -26,17 +26,17 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/converter/dao"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
-	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
-	identifier "github.com/NVIDIA/infra-controller-rest/rla/pkg/common/Identifier"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/errors"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/rackopreport"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/nvldomain"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/rack"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/converter/dao"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/db/model"
+	dbquery "github.com/NVIDIA/infra-controller-rest/flow/internal/db/query"
+	identifier "github.com/NVIDIA/infra-controller-rest/flow/pkg/common/Identifier"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/errors"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/rackopreport"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/nvldomain"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/rack"
 )
 
 // PostgresStore implements the Store interface using PostgreSQL.

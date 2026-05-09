@@ -25,8 +25,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/flow/pkg/certs"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/client"
 )
 
 // Flag names for the global persistent flags.

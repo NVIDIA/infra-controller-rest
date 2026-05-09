@@ -23,9 +23,9 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 func TestRegistryGetManager(t *testing.T) {

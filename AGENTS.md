@@ -42,7 +42,7 @@ infra-controller-rest/
 ├── nvswitch-manager/     # NVSwitch firmware management (NSM)
 ├── openapi/              # OpenAPI spec and SDK generation
 ├── powershelf-manager/   # Power shelf management (PSM)
-├── rla/                  # Rack Level Agent (RLA) logic
+├── flow/                 # Carbide Flow logic
 ├── sdk/                  # Go API client (simple and standard variants)
 ├── site-agent/           # On-site agent for datacenter
 ├── site-manager/         # Site management service (sitemgr)
@@ -148,8 +148,8 @@ make publish-openapi
 ```bash
 make nico-proto          # fetch proto files from nico-core
 make nico-protogen       # generate Go code from protos
-make rla-proto              # fetch RLA proto files
-make rla-protogen           # generate Go code from RLA protos
+make flow-proto             # fetch Flow proto files
+make flow-protogen          # generate Go code from Flow protos
 ```
 
 ### Local Development (Kind cluster)

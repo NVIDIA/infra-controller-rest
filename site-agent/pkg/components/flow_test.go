@@ -22,19 +22,19 @@ import (
 	"os"
 	"testing"
 
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/rla"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flow"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel"
 )
 
-// TestRlaRack - test the RLA grpc client
+// TestRlaRack - test the Flow grpc client
 func TestRlaRack(t *testing.T) {
 	TestInitElektra(t)
-	grpcClient := testElektra.manager.API.RLA.GetGRPCClient()
+	grpcClient := testElektra.manager.API.Flow.GetGRPCClient()
 
-	var rack *rlav1.Rack
+	var rack *flowv1.Rack
 
 	tcs := []struct {
 		descr     string
@@ -59,27 +59,27 @@ func TestRlaRack(t *testing.T) {
 				ctx := context.Background()
 
 				// First create the rack in mock server (setup, not counted in metrics)
-				createReq := &rlav1.CreateExpectedRackRequest{
-					Rack: &rlav1.Rack{
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: rackID},
+				createReq := &flowv1.CreateExpectedRackRequest{
+					Rack: &flowv1.Rack{
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: rackID},
 							Name: "test-rack",
 						},
 					},
 				}
-				_, createErr := grpcClient.Rla().CreateExpectedRack(ctx, createReq)
+				_, createErr := grpcClient.Flow().CreateExpectedRack(ctx, createReq)
 				assert.Nil(t, createErr)
 
 				// Now test GetRackInfoByID
-				ctx, span := otel.Tracer(os.Getenv("LS_SERVICE_NAME")).Start(ctx, "RlaTest-GetRack")
+				ctx, span := otel.Tracer(os.Getenv("LS_SERVICE_NAME")).Start(ctx, "FlowTest-GetRack")
 
-				getRequest := &rlav1.GetRackInfoByIDRequest{
-					Id: &rlav1.UUID{Id: rackID},
+				getRequest := &flowv1.GetRackInfoByIDRequest{
+					Id: &flowv1.UUID{Id: rackID},
 				}
 
-				response, err := grpcClient.Rla().GetRackInfoByID(ctx, getRequest)
+				response, err := grpcClient.Flow().GetRackInfoByID(ctx, getRequest)
 				span.End()
-				rla.ManagerAccess.API.RLA.UpdateGRPCClientState(err)
+				flow.ManagerAccess.API.Flow.UpdateGRPCClientState(err)
 				if err != nil {
 					t.Log(err.Error())
 				}
@@ -90,18 +90,18 @@ func TestRlaRack(t *testing.T) {
 				assert.Equal(t, rackID, response.Rack.Info.Id.Id)
 				rpcSucc++
 				assert.Equal(t, 0,
-					int(rla.ManagerAccess.Data.EB.Managers.RLA.State.GrpcFail.Load()))
+					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcFail.Load()))
 				assert.Equal(t, rpcSucc,
-					int(rla.ManagerAccess.Data.EB.Managers.RLA.State.GrpcSucc.Load()))
+					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcSucc.Load()))
 				rack = response.Rack
 				t.Log("GRPCResponse", response)
 			case "list":
 				ctx := context.Background()
-				ctx, span := otel.Tracer(os.Getenv("LS_SERVICE_NAME")).Start(ctx, "RlaTest-GetListOfRacks")
-				listRequest := &rlav1.GetListOfRacksRequest{}
-				resq, err := grpcClient.Rla().GetListOfRacks(ctx, listRequest)
+				ctx, span := otel.Tracer(os.Getenv("LS_SERVICE_NAME")).Start(ctx, "FlowTest-GetListOfRacks")
+				listRequest := &flowv1.GetListOfRacksRequest{}
+				resq, err := grpcClient.Flow().GetListOfRacks(ctx, listRequest)
 				span.End()
-				rla.ManagerAccess.API.RLA.UpdateGRPCClientState(err)
+				flow.ManagerAccess.API.Flow.UpdateGRPCClientState(err)
 				if err != nil {
 					t.Log(err.Error())
 				}
@@ -121,9 +121,9 @@ func TestRlaRack(t *testing.T) {
 				}
 				rpcSucc++
 				assert.Equal(t, 0,
-					int(rla.ManagerAccess.Data.EB.Managers.RLA.State.GrpcFail.Load()))
+					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcFail.Load()))
 				assert.Equal(t, rpcSucc,
-					int(rla.ManagerAccess.Data.EB.Managers.RLA.State.GrpcSucc.Load()))
+					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcSucc.Load()))
 				t.Log("GRPCResponse", resq)
 			default:
 				panic("invalid operation name")

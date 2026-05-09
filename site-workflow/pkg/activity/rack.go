@@ -25,24 +25,24 @@ import (
 
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"go.temporal.io/sdk/temporal"
 )
 
-// ManageRack is an activity wrapper for Rack management via RLA
+// ManageRack is an activity wrapper for Rack management via Flow
 type ManageRack struct {
-	RlaAtomicClient *cClient.RlaAtomicClient
+	FlowAtomicClient *cClient.FlowAtomicClient
 }
 
 // NewManageRack returns a new ManageRack client
-func NewManageRack(rlaClient *cClient.RlaAtomicClient) ManageRack {
+func NewManageRack(flowClient *cClient.FlowAtomicClient) ManageRack {
 	return ManageRack{
-		RlaAtomicClient: rlaClient,
+		FlowAtomicClient: flowClient,
 	}
 }
 
-// GetRack retrieves a rack by its UUID from RLA
-func (mr *ManageRack) GetRack(ctx context.Context, request *rlav1.GetRackInfoByIDRequest) (*rlav1.GetRackInfoResponse, error) {
+// GetRack retrieves a rack by its UUID from Flow
+func (mr *ManageRack) GetRack(ctx context.Context, request *flowv1.GetRackInfoByIDRequest) (*flowv1.GetRackInfoResponse, error) {
 	logger := log.With().Str("Activity", "GetRack").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -60,15 +60,15 @@ func (mr *ManageRack) GetRack(ctx context.Context, request *rlav1.GetRackInfoByI
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.GetRackInfoByID(ctx, request)
+	response, err := flow.GetRackInfoByID(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get rack by ID using RLA API")
+		logger.Warn().Err(err).Msg("Failed to get rack by ID using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -77,25 +77,25 @@ func (mr *ManageRack) GetRack(ctx context.Context, request *rlav1.GetRackInfoByI
 	return response, nil
 }
 
-// GetRacks retrieves a list of racks from RLA with optional filters
-func (mr *ManageRack) GetRacks(ctx context.Context, request *rlav1.GetListOfRacksRequest) (*rlav1.GetListOfRacksResponse, error) {
+// GetRacks retrieves a list of racks from Flow with optional filters
+func (mr *ManageRack) GetRacks(ctx context.Context, request *flowv1.GetListOfRacksRequest) (*flowv1.GetListOfRacksResponse, error) {
 	logger := log.With().Str("Activity", "GetRacks").Logger()
 	logger.Info().Msg("Starting activity")
 
 	// Request can be nil or empty for getting all racks
 	if request == nil {
-		request = &rlav1.GetListOfRacksRequest{}
+		request = &flowv1.GetListOfRacksRequest{}
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.GetListOfRacks(ctx, request)
+	response, err := flow.GetListOfRacks(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get list of racks using RLA API")
+		logger.Warn().Err(err).Msg("Failed to get list of racks using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -104,9 +104,9 @@ func (mr *ManageRack) GetRacks(ctx context.Context, request *rlav1.GetListOfRack
 	return response, nil
 }
 
-// ValidateRackComponents validates rack components by comparing expected vs actual state via RLA.
+// ValidateRackComponents validates rack components by comparing expected vs actual state via Flow.
 // Supports validating a single rack, multiple racks with filters, or all racks in a site.
-func (mr *ManageRack) ValidateRackComponents(ctx context.Context, request *rlav1.ValidateComponentsRequest) (*rlav1.ValidateComponentsResponse, error) {
+func (mr *ManageRack) ValidateRackComponents(ctx context.Context, request *flowv1.ValidateComponentsRequest) (*flowv1.ValidateComponentsResponse, error) {
 	logger := log.With().Str("Activity", "ValidateRackComponents").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -122,15 +122,15 @@ func (mr *ManageRack) ValidateRackComponents(ctx context.Context, request *rlav1
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.ValidateComponents(ctx, request)
+	response, err := flow.ValidateComponents(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to validate rack components using RLA API")
+		logger.Warn().Err(err).Msg("Failed to validate rack components using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -139,8 +139,8 @@ func (mr *ManageRack) ValidateRackComponents(ctx context.Context, request *rlav1
 	return response, nil
 }
 
-// PowerOnRack powers on a rack or its specified components via RLA
-func (mr *ManageRack) PowerOnRack(ctx context.Context, request *rlav1.PowerOnRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// PowerOnRack powers on a rack or its specified components via Flow
+func (mr *ManageRack) PowerOnRack(ctx context.Context, request *flowv1.PowerOnRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Activity", "PowerOnRack").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -156,15 +156,15 @@ func (mr *ManageRack) PowerOnRack(ctx context.Context, request *rlav1.PowerOnRac
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.PowerOnRack(ctx, request)
+	response, err := flow.PowerOnRack(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to power on rack using RLA API")
+		logger.Warn().Err(err).Msg("Failed to power on rack using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -173,8 +173,8 @@ func (mr *ManageRack) PowerOnRack(ctx context.Context, request *rlav1.PowerOnRac
 	return response, nil
 }
 
-// PowerOffRack powers off a rack or its specified components via RLA
-func (mr *ManageRack) PowerOffRack(ctx context.Context, request *rlav1.PowerOffRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// PowerOffRack powers off a rack or its specified components via Flow
+func (mr *ManageRack) PowerOffRack(ctx context.Context, request *flowv1.PowerOffRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Activity", "PowerOffRack").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -190,15 +190,15 @@ func (mr *ManageRack) PowerOffRack(ctx context.Context, request *rlav1.PowerOffR
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.PowerOffRack(ctx, request)
+	response, err := flow.PowerOffRack(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to power off rack using RLA API")
+		logger.Warn().Err(err).Msg("Failed to power off rack using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -207,8 +207,8 @@ func (mr *ManageRack) PowerOffRack(ctx context.Context, request *rlav1.PowerOffR
 	return response, nil
 }
 
-// PowerResetRack resets (power cycles) a rack or its specified components via RLA
-func (mr *ManageRack) PowerResetRack(ctx context.Context, request *rlav1.PowerResetRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// PowerResetRack resets (power cycles) a rack or its specified components via Flow
+func (mr *ManageRack) PowerResetRack(ctx context.Context, request *flowv1.PowerResetRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Activity", "PowerResetRack").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -224,15 +224,15 @@ func (mr *ManageRack) PowerResetRack(ctx context.Context, request *rlav1.PowerRe
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.PowerResetRack(ctx, request)
+	response, err := flow.PowerResetRack(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to power reset rack using RLA API")
+		logger.Warn().Err(err).Msg("Failed to power reset rack using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -241,8 +241,8 @@ func (mr *ManageRack) PowerResetRack(ctx context.Context, request *rlav1.PowerRe
 	return response, nil
 }
 
-// BringUpRack brings up a rack or its specified components via RLA
-func (mr *ManageRack) BringUpRack(ctx context.Context, request *rlav1.BringUpRackRequest) (*rlav1.SubmitTaskResponse, error) {
+// BringUpRack brings up a rack or its specified components via Flow
+func (mr *ManageRack) BringUpRack(ctx context.Context, request *flowv1.BringUpRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Activity", "BringUpRack").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -257,14 +257,14 @@ func (mr *ManageRack) BringUpRack(ctx context.Context, request *rlav1.BringUpRac
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.BringUpRack(ctx, request)
+	response, err := flow.BringUpRack(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to bring up rack using RLA API")
+		logger.Warn().Err(err).Msg("Failed to bring up rack using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -273,8 +273,8 @@ func (mr *ManageRack) BringUpRack(ctx context.Context, request *rlav1.BringUpRac
 	return response, nil
 }
 
-// GetTaskByID retrieves a task by its UUID from RLA
-func (mr *ManageRack) GetTaskByID(ctx context.Context, request *rlav1.GetTasksByIDsRequest) (*rlav1.GetTasksByIDsResponse, error) {
+// GetTaskByID retrieves a task by its UUID from Flow
+func (mr *ManageRack) GetTaskByID(ctx context.Context, request *flowv1.GetTasksByIDsRequest) (*flowv1.GetTasksByIDsResponse, error) {
 	logger := log.With().Str("Activity", "GetTaskByID").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -291,14 +291,14 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *rlav1.GetTasksBy
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.GetTasksByIDs(ctx, request)
+	response, err := flow.GetTasksByIDs(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get task by ID using RLA API")
+		logger.Warn().Err(err).Msg("Failed to get task by ID using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -307,12 +307,12 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *rlav1.GetTasksBy
 	return response, nil
 }
 
-// CancelTask cancels a task by its UUID via RLA.
+// CancelTask cancels a task by its UUID via Flow.
 //
-// Cancel is best-effort: RLA marks the task Terminated and terminates the
+// Cancel is best-effort: Flow marks the task Terminated and terminates the
 // underlying Temporal workflow if one was scheduled. Already-finished tasks
-// (Succeeded/Failed) cannot be cancelled and the RLA call returns an error.
-func (mr *ManageRack) CancelTask(ctx context.Context, request *rlav1.CancelTaskRequest) (*rlav1.CancelTaskResponse, error) {
+// (Succeeded/Failed) cannot be cancelled and the Flow call returns an error.
+func (mr *ManageRack) CancelTask(ctx context.Context, request *flowv1.CancelTaskRequest) (*flowv1.CancelTaskResponse, error) {
 	logger := log.With().Str("Activity", "CancelTask").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -329,14 +329,14 @@ func (mr *ManageRack) CancelTask(ctx context.Context, request *rlav1.CancelTaskR
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.CancelTask(ctx, request)
+	response, err := flow.CancelTask(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to cancel task using RLA API")
+		logger.Warn().Err(err).Msg("Failed to cancel task using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -345,8 +345,8 @@ func (mr *ManageRack) CancelTask(ctx context.Context, request *rlav1.CancelTaskR
 	return response, nil
 }
 
-// UpgradeFirmware upgrades firmware on racks or components via RLA
-func (mr *ManageRack) UpgradeFirmware(ctx context.Context, request *rlav1.UpgradeFirmwareRequest) (*rlav1.SubmitTaskResponse, error) {
+// UpgradeFirmware upgrades firmware on racks or components via Flow
+func (mr *ManageRack) UpgradeFirmware(ctx context.Context, request *flowv1.UpgradeFirmwareRequest) (*flowv1.SubmitTaskResponse, error) {
 	logger := log.With().Str("Activity", "UpgradeFirmware").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -361,14 +361,14 @@ func (mr *ManageRack) UpgradeFirmware(ctx context.Context, request *rlav1.Upgrad
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	rla, err := mr.RlaAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.UpgradeFirmware(ctx, request)
+	response, err := flow.UpgradeFirmware(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to upgrade firmware using RLA API")
+		logger.Warn().Err(err).Msg("Failed to upgrade firmware using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 

@@ -55,9 +55,9 @@ gen-doc: ## Generate gRPC API documentation (Markdown for GitLab, HTML for local
 	@which protoc-gen-doc > /dev/null || go install github.com/pseudomuto/protoc-gen-doc/cmd/protoc-gen-doc@latest
 	@mkdir -p docs
 	protoc --doc_out=./docs --doc_opt=markdown,grpc-api.md \
-		-I proto/v1 proto/v1/rla.proto
+		-I proto/v1 proto/v1/flow.proto
 	protoc --doc_out=./docs --doc_opt=html,grpc-api.html \
-		-I proto/v1 proto/v1/rla.proto
+		-I proto/v1 proto/v1/flow.proto
 	@echo "Generated docs/grpc-api.md (for GitLab) and docs/grpc-api.html (for local)"
 
 rla:
@@ -66,9 +66,9 @@ rla:
 	BUILD_TIME=$$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
 	GIT_COMMIT=$$(git rev-parse --short HEAD 2>/dev/null || echo "unknown") && \
 	go build -C build \
-		-ldflags "-X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.Version=$${VERSION}' \
-		          -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.BuildTime=$${BUILD_TIME}' \
-		          -X 'github.com/NVIDIA/infra-controller-rest/rla/pkg/metadata.GitCommit=$${GIT_COMMIT}'" \
+		-ldflags "-X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.Version=$${VERSION}' \
+		          -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.BuildTime=$${BUILD_TIME}' \
+		          -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.GitCommit=$${GIT_COMMIT}'" \
 		..
 
 container: rla

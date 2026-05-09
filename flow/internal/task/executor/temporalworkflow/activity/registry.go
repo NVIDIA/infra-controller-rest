@@ -18,8 +18,8 @@
 package activity
 
 import (
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/task"
 )
 
 // Activities holds the per-manager-instance dependencies for all Temporal

@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // Target represents a batch of components of the same type for activity execution.

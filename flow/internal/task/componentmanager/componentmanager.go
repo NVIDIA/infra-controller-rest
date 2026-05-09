@@ -23,11 +23,11 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operations"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // ComponentManager defines the interface for managing various types of

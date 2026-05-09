@@ -30,8 +30,8 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	dbmodel "github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
-	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
+	dbmodel "github.com/NVIDIA/infra-controller-rest/flow/internal/db/model"
+	dbquery "github.com/NVIDIA/infra-controller-rest/flow/internal/db/query"
 )
 
 // ListOptions filters results from List.

@@ -28,7 +28,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/common/utils"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/common/utils"
 )
 
 // fixed UUIDs for deterministic test output.

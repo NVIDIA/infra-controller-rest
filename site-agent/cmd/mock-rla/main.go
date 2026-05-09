@@ -23,9 +23,9 @@ import (
 	gsv "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/server"
 )
 
-// Test the RLA grpc client
+// Test the Flow grpc client
 func main() {
 	toutPtr := flag.Int("tout", 300, "grpc server timeout")
 	flag.Parse()
-	gsv.RlaTest(*toutPtr)
+	gsv.FlowTest(*toutPtr)
 }

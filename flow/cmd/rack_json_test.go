@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/types"
 )
 
 func TestReadRackJSONData(t *testing.T) {

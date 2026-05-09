@@ -26,7 +26,7 @@ import (
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	dbtestutil "github.com/NVIDIA/infra-controller-rest/db/pkg/db/testutil"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/migrations"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/db/migrations"
 )
 
 func UnitTestDB(ctx context.Context, t *testing.T, dbConf cdb.Config) (*cdb.Session, error) {

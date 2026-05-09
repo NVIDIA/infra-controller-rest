@@ -28,13 +28,13 @@ import (
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/alert"
-	taskcommon "github.com/NVIDIA/infra-controller-rest/rla/internal/task/common"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/activity"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/operationrules"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/task"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/alert"
+	taskcommon "github.com/NVIDIA/infra-controller-rest/flow/internal/task/common"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/activity"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operationrules"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/task"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // sendAlert dispatches an alert on a best-effort basis. The call must never

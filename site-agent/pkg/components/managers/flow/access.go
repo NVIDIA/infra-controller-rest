@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package rla
+package flow
 
 import (
 	Manager "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
@@ -30,8 +30,8 @@ var ManagerAccess *Manager.ManagerAccess
 //nolint:all
 type API struct{} //nolint:all
 
-// NewRLAManager - returns a new instance of helm manager
-func NewRLAManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
+// NewFlowManager - returns a new instance of helm manager
+func NewFlowManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
 	ManagerAccess = &Manager.ManagerAccess{
 		Data: &Manager.ManagerData{
 			EB: superForge,

@@ -28,14 +28,14 @@ import (
 	"github.com/uptrace/bun"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/common/utils"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/common/utils"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/db/model"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/psmapi"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // TestInventory is the main test for the inventory package

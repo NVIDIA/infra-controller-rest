@@ -28,8 +28,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/client"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/types"
 )
 
 // TestExternalUsability verifies that all public types and functions are

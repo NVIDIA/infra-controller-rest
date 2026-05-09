@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -29,7 +29,7 @@ import (
 func TestNewAPIRackTask(t *testing.T) {
 	tests := []struct {
 		name     string
-		task     *rlav1.Task
+		task     *flowv1.Task
 		expected *APIRackTask
 	}{
 		{
@@ -39,12 +39,12 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with all fields",
-			task: &rlav1.Task{
-				Id:          &rlav1.UUID{Id: "task-123"},
+			task: &flowv1.Task{
+				Id:          &flowv1.UUID{Id: "task-123"},
 				Operation:   "power_on",
-				RackId:      &rlav1.UUID{Id: "rack-456"},
+				RackId:      &flowv1.UUID{Id: "rack-456"},
 				Description: "Power on rack components",
-				Status:      rlav1.TaskStatus_TASK_STATUS_RUNNING,
+				Status:      flowv1.TaskStatus_TASK_STATUS_RUNNING,
 				Message:     "Processing 3 of 5 components",
 			},
 			expected: &APIRackTask{
@@ -56,10 +56,10 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with pending status",
-			task: &rlav1.Task{
-				Id:          &rlav1.UUID{Id: "task-001"},
+			task: &flowv1.Task{
+				Id:          &flowv1.UUID{Id: "task-001"},
 				Description: "Firmware upgrade",
-				Status:      rlav1.TaskStatus_TASK_STATUS_PENDING,
+				Status:      flowv1.TaskStatus_TASK_STATUS_PENDING,
 			},
 			expected: &APIRackTask{
 				ID:          "task-001",
@@ -69,10 +69,10 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with completed status maps to succeeded",
-			task: &rlav1.Task{
-				Id:          &rlav1.UUID{Id: "task-002"},
+			task: &flowv1.Task{
+				Id:          &flowv1.UUID{Id: "task-002"},
 				Description: "Bring up rack",
-				Status:      rlav1.TaskStatus_TASK_STATUS_COMPLETED,
+				Status:      flowv1.TaskStatus_TASK_STATUS_COMPLETED,
 				Message:     "All components ready",
 			},
 			expected: &APIRackTask{
@@ -84,10 +84,10 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with failed status",
-			task: &rlav1.Task{
-				Id:          &rlav1.UUID{Id: "task-003"},
+			task: &flowv1.Task{
+				Id:          &flowv1.UUID{Id: "task-003"},
 				Description: "Power off rack",
-				Status:      rlav1.TaskStatus_TASK_STATUS_FAILED,
+				Status:      flowv1.TaskStatus_TASK_STATUS_FAILED,
 				Message:     "BMC unreachable",
 			},
 			expected: &APIRackTask{
@@ -99,9 +99,9 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with unknown status",
-			task: &rlav1.Task{
-				Id:     &rlav1.UUID{Id: "task-004"},
-				Status: rlav1.TaskStatus_TASK_STATUS_UNKNOWN,
+			task: &flowv1.Task{
+				Id:     &flowv1.UUID{Id: "task-004"},
+				Status: flowv1.TaskStatus_TASK_STATUS_UNKNOWN,
 			},
 			expected: &APIRackTask{
 				ID:     "task-004",
@@ -110,9 +110,9 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with nil ID",
-			task: &rlav1.Task{
+			task: &flowv1.Task{
 				Description: "Orphan task",
-				Status:      rlav1.TaskStatus_TASK_STATUS_PENDING,
+				Status:      flowv1.TaskStatus_TASK_STATUS_PENDING,
 			},
 			expected: &APIRackTask{
 				Status:      "Pending",
@@ -121,9 +121,9 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with terminated status",
-			task: &rlav1.Task{
-				Id:      &rlav1.UUID{Id: "task-005"},
-				Status:  rlav1.TaskStatus_TASK_STATUS_TERMINATED,
+			task: &flowv1.Task{
+				Id:      &flowv1.UUID{Id: "task-005"},
+				Status:  flowv1.TaskStatus_TASK_STATUS_TERMINATED,
 				Message: "Expired: queue timeout reached",
 			},
 			expected: &APIRackTask{
@@ -134,9 +134,9 @@ func TestNewAPIRackTask(t *testing.T) {
 		},
 		{
 			name: "task with waiting status",
-			task: &rlav1.Task{
-				Id:     &rlav1.UUID{Id: "task-006"},
-				Status: rlav1.TaskStatus_TASK_STATUS_WAITING,
+			task: &flowv1.Task{
+				Id:     &flowv1.UUID{Id: "task-006"},
+				Status: flowv1.TaskStatus_TASK_STATUS_WAITING,
 			},
 			expected: &APIRackTask{
 				ID:     "task-006",
@@ -165,9 +165,9 @@ func TestNewAPIRackTask_Timestamps(t *testing.T) {
 	startTime := time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)
 	endTime := time.Date(2026, 1, 1, 11, 0, 0, 0, time.UTC)
 
-	task := &rlav1.Task{
-		Id:         &rlav1.UUID{Id: "task-ts"},
-		Status:     rlav1.TaskStatus_TASK_STATUS_COMPLETED,
+	task := &flowv1.Task{
+		Id:         &flowv1.UUID{Id: "task-ts"},
+		Status:     flowv1.TaskStatus_TASK_STATUS_COMPLETED,
 		CreatedAt:  timestamppb.New(createdTime),
 		UpdatedAt:  timestamppb.New(updatedTime),
 		StartedAt:  timestamppb.New(startTime),

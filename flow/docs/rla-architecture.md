@@ -504,7 +504,7 @@ Temporal provides durable workflow execution for long-running operations.
 
 ## gRPC API Summary
 
-**Proto Definition**: `internal/proto/v1/rla.proto`
+**Proto Definition**: `flow/proto/v1/flow.proto`
 
 ### Inventory APIs
 

@@ -24,9 +24,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	dbquery "github.com/NVIDIA/infra-controller-rest/rla/internal/db/query"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/utils"
+	dbquery "github.com/NVIDIA/infra-controller-rest/flow/internal/db/query"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/utils"
 )
 
 var defaultRackPagination = dbquery.Pagination{

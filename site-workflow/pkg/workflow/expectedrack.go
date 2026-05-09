@@ -81,7 +81,7 @@ func DiscoverExpectedRackInventory(ctx workflow.Context) error {
 }
 
 // CreateExpectedRack is a workflow to create a new Expected Rack using the
-// CreateExpectedRackOnSite activity, then also creates the rack in RLA via
+// CreateExpectedRackOnSite activity, then also creates the rack in Flow via
 // CreateExpectedRackOnRLA (best-effort).
 func CreateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) error {
 	logger := log.With().Str("Workflow", "ExpectedRack").Str("Action", "Create").Str("ID", request.GetRackId().GetId()).Str("RackProfileID", request.GetRackType()).Logger()
@@ -99,10 +99,10 @@ func CreateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) err
 		return err
 	}
 
-	// Then write to RLA (best-effort: log warning but don't fail the workflow)
+	// Then write to Flow (best-effort: log warning but don't fail the workflow)
 	err = workflow.ExecuteActivity(ctx, expectedRackManager.CreateExpectedRackOnRLA, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedRackOnRLA").Msg("Failed to create rack on RLA, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedRackOnRLA").Msg("Failed to create rack on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")
@@ -112,7 +112,7 @@ func CreateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) err
 
 // UpdateExpectedRack is a workflow to update an Expected Rack using the
 // UpdateExpectedRackOnSite activity.
-// TODO: Add RLA PatchComponent dual-write when update/delete RLA support is implemented
+// TODO: Add Flow PatchComponent dual-write when update/delete Flow support is implemented
 func UpdateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) error {
 	logger := log.With().Str("Workflow", "ExpectedRack").Str("Action", "Update").Str("ID", request.GetRackId().GetId()).Str("RackProfileID", request.GetRackType()).Logger()
 
@@ -135,7 +135,7 @@ func UpdateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) err
 
 // DeleteExpectedRack is a workflow to delete an Expected Rack using the
 // DeleteExpectedRackOnSite activity.
-// TODO: Add RLA PatchComponent dual-write when update/delete RLA support is implemented
+// TODO: Add Flow PatchComponent dual-write when update/delete Flow support is implemented
 func DeleteExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRackRequest) error {
 	logger := log.With().Str("Workflow", "ExpectedRack").Str("Action", "Delete").Str("ID", request.GetRackId()).Logger()
 

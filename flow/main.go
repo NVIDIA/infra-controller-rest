@@ -16,7 +16,7 @@
  */
 package main
 
-import "github.com/NVIDIA/infra-controller-rest/rla/cmd"
+import "github.com/NVIDIA/infra-controller-rest/flow/cmd"
 
 func main() {
 	cmd.Execute()

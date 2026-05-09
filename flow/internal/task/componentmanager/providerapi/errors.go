@@ -45,6 +45,7 @@ var (
 	// ErrInvalidProviderConfigField reports that a provider config field value
 	// was invalid.
 	ErrInvalidProviderConfigField = errors.New("invalid provider config field")
+<<<<<<< HEAD
 
 	// ErrProviderRegistryNotConfigured reports that the provider registry is not
 	// available.
@@ -75,6 +76,8 @@ var (
 	// ErrProviderNameMismatch reports that a created provider's name does not
 	// match the provider config name.
 	ErrProviderNameMismatch = errors.New("provider name mismatch")
+=======
+>>>>>>> origin/main
 )
 
 // ProviderConfigDecoderAlreadyRegisteredError includes the duplicate provider
@@ -135,6 +138,7 @@ func (e InvalidProviderConfigFieldError) Unwrap() error {
 func (e InvalidProviderConfigFieldError) Is(target error) bool {
 	return target == ErrInvalidProviderConfigField
 }
+<<<<<<< HEAD
 
 // UnknownProviderError includes the unknown provider name.
 type UnknownProviderError struct {
@@ -230,3 +234,5 @@ func (e ProviderNameMismatchError) Error() string {
 func (e ProviderNameMismatchError) Is(target error) bool {
 	return target == ErrProviderNameMismatch
 }
+=======
+>>>>>>> origin/main

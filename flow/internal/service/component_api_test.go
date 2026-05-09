@@ -26,14 +26,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	inventorymanager "github.com/NVIDIA/infra-controller-rest/rla/internal/inventory/manager"
-	inventorystore "github.com/NVIDIA/infra-controller-rest/rla/internal/inventory/store"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/bmc"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/rack"
-	pb "github.com/NVIDIA/infra-controller-rest/rla/pkg/proto/v1"
+	inventorymanager "github.com/NVIDIA/infra-controller-rest/flow/internal/inventory/manager"
+	inventorystore "github.com/NVIDIA/infra-controller-rest/flow/internal/inventory/store"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/rack"
+	pb "github.com/NVIDIA/infra-controller-rest/flow/pkg/proto/v1"
 )
 
 // --- Minimal mock for inventorymanager.Manager ---

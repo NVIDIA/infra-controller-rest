@@ -24,16 +24,16 @@ import (
 	"github.com/rs/zerolog/log"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/psmapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/scheduler/types"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	nicoprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nico"                       //nolint
-	nvswitchmanagerprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/nvswitchmanager" //nolint
-	psmprovider "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providers/psm"                         //nolint
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/psmapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/scheduler/types"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"                       //nolint
+	nvswitchmanagerprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nvswitchmanager" //nolint
+	psmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/psm"                         //nolint
 )
 
 // Job implements scheduler.Job for the inventory sync task.

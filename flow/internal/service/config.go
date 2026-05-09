@@ -25,13 +25,13 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/common/pkg/endpoint"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/certs"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/clients/temporal"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor"
-	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/certs"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/clients/temporal"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/config"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/flow/pkg/certs"
 )
 
 const (

@@ -31,14 +31,14 @@ import (
 	"go.temporal.io/sdk/worker"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapi"
-	svc "github.com/NVIDIA/infra-controller-rest/rla/internal/service"
-	cmbuiltin "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/builtin"
-	cmconfig "github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/task/componentmanager/providerapi"
-	temporalmanager "github.com/NVIDIA/infra-controller-rest/rla/internal/task/executor/temporalworkflow/manager"
-	pkgcerts "github.com/NVIDIA/infra-controller-rest/rla/pkg/certs"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
+	svc "github.com/NVIDIA/infra-controller-rest/flow/internal/service"
+	cmbuiltin "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/builtin"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	temporalmanager "github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/manager"
+	pkgcerts "github.com/NVIDIA/infra-controller-rest/flow/pkg/certs"
 )
 
 const (

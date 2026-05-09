@@ -25,14 +25,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/NVIDIA/infra-controller-rest/common/pkg/credential"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/model"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/location"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/utils"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/bmc"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/component"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/rack"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/db/model"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/location"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/utils"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/component"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/rack"
 )
 
 func TestBMCConversion(t *testing.T) {

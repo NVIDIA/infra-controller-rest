@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package rlatypes
+package flowtypes
 
 import (
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"go.uber.org/atomic"
 )
 
-// State - RLA state
+// State - Flow state
 type State struct {
 	// GrpcFail the number of times the rpc has failed
 	GrpcFail atomic.Uint64
@@ -36,23 +36,23 @@ type State struct {
 	WflowMetrics WorkflowMetrics
 }
 
-// RLA represents the gRPC client for RLA and state
-type RLA struct {
-	Client *client.RlaAtomicClient
+// Flow represents the gRPC client for Flow and state
+type Flow struct {
+	Client *client.FlowAtomicClient
 	State  *State
 }
 
-// NewRLAInstance creates a new instance of RLA
-func NewRLAInstance() *RLA {
-	rla := &RLA{
+// NewFlowInstance creates a new instance of Flow
+func NewFlowInstance() *Flow {
+	f := &Flow{
 		State:  &State{},
-		Client: client.NewRlaAtomicClient(&client.RlaClientConfig{}),
+		Client: client.NewFlowAtomicClient(&client.FlowClientConfig{}),
 	}
 
-	return rla
+	return f
 }
 
-// GetClient returns the RLA client
-func (c *RLA) GetClient() *client.RlaClient {
+// GetClient returns the Flow client
+func (c *Flow) GetClient() *client.FlowClient {
 	return c.Client.GetClient()
 }

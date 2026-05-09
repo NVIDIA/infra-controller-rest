@@ -20,7 +20,7 @@ package model
 import (
 	"fmt"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 // ========== Firmware Update Request ==========
@@ -46,8 +46,8 @@ type APIUpdateFirmwareResponse struct {
 	TaskIDs []string `json:"taskIds"`
 }
 
-// FromProto converts an RLA SubmitTaskResponse to an APIUpdateFirmwareResponse
-func (r *APIUpdateFirmwareResponse) FromProto(resp *rlav1.SubmitTaskResponse) {
+// FromProto converts an Flow SubmitTaskResponse to an APIUpdateFirmwareResponse
+func (r *APIUpdateFirmwareResponse) FromProto(resp *flowv1.SubmitTaskResponse) {
 	if resp == nil {
 		r.TaskIDs = []string{}
 		return
@@ -58,8 +58,8 @@ func (r *APIUpdateFirmwareResponse) FromProto(resp *rlav1.SubmitTaskResponse) {
 	}
 }
 
-// NewAPIUpdateFirmwareResponse creates an APIUpdateFirmwareResponse from an RLA SubmitTaskResponse
-func NewAPIUpdateFirmwareResponse(resp *rlav1.SubmitTaskResponse) *APIUpdateFirmwareResponse {
+// NewAPIUpdateFirmwareResponse creates an APIUpdateFirmwareResponse from an Flow SubmitTaskResponse
+func NewAPIUpdateFirmwareResponse(resp *flowv1.SubmitTaskResponse) *APIUpdateFirmwareResponse {
 	r := &APIUpdateFirmwareResponse{}
 	r.FromProto(resp)
 	return r

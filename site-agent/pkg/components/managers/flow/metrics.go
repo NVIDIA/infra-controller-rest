@@ -15,20 +15,20 @@
  * limitations under the License.
  */
 
-package rla
+package flow
 
 import (
 	"time"
 
-	rlatypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/rla"
+	flowtypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/flow"
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
-	metricsNamespace         = "elektra_site_agent"
-	metricRLAGrpcLatency     = "rla_grpc_client_latency_seconds"
-	metricRLAWorkflowLatency = "rla_workflow_latency_seconds"
+	metricsNamespace          = "elektra_site_agent"
+	metricFlowGrpcLatency     = "flow_grpc_client_latency_seconds"
+	metricFlowWorkflowLatency = "flow_workflow_latency_seconds"
 )
 
 type grpcClientMetrics struct {
@@ -40,7 +40,7 @@ func makeGrpcClientMetrics() client.Metrics {
 		responseLatency: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: metricsNamespace,
-				Name:      metricRLAGrpcLatency,
+				Name:      metricFlowGrpcLatency,
 				Help:      "Response latency of each RPC",
 				Buckets:   []float64{0.0005, 0.001, 0.005, 0.010, 0.025, 0.050, 0.100, 0.250, 0.500, 1.0, 2.5, 5.0, 10.0},
 			},
@@ -59,12 +59,12 @@ type wflowMetrics struct {
 	latency *prometheus.HistogramVec
 }
 
-func newWorkflowMetrics() rlatypes.WorkflowMetrics {
+func newWorkflowMetrics() flowtypes.WorkflowMetrics {
 	metrics := &wflowMetrics{
 		latency: prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Namespace: metricsNamespace,
-				Name:      metricRLAWorkflowLatency,
+				Name:      metricFlowWorkflowLatency,
 				Help:      "Latency of each workflow",
 				Buckets:   []float64{0.0005, 0.001, 0.005, 0.010, 0.025, 0.050, 0.100, 0.250, 0.500, 1.0, 2.5, 5.0, 10.0},
 			},
@@ -74,7 +74,7 @@ func newWorkflowMetrics() rlatypes.WorkflowMetrics {
 	return metrics
 }
 
-func (m *wflowMetrics) RecordLatency(activity string, status rlatypes.WorkflowStatus, duration time.Duration) {
+func (m *wflowMetrics) RecordLatency(activity string, status flowtypes.WorkflowStatus, duration time.Duration) {
 	ManagerAccess.Data.EB.Log.Debug().Msgf("activity=%s, status=%s, duration=%v", activity, status, duration)
 	m.latency.WithLabelValues(activity, string(status)).Observe(duration.Seconds())
 }

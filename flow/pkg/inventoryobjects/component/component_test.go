@@ -21,9 +21,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/deviceinfo"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/common/devicetypes"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/inventoryobjects/bmc"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/deviceinfo"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/inventoryobjects/bmc"
 	"github.com/stretchr/testify/assert"
 )
 

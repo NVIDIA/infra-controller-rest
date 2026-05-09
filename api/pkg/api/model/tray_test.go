@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,22 +30,22 @@ import (
 func TestProtoToAPIComponentTypeName(t *testing.T) {
 	tests := []struct {
 		name string
-		ct   rlav1.ComponentType
+		ct   flowv1.ComponentType
 		want string
 	}{
 		{
 			name: "compute type",
-			ct:   rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
+			ct:   flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
 			want: "Compute",
 		},
 		{
 			name: "nvlswitch type",
-			ct:   rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+			ct:   flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
 			want: "NVLSwitch",
 		},
 		{
 			name: "powershelf type",
-			ct:   rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF,
+			ct:   flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF,
 			want: "PowerShelf",
 		},
 	}
@@ -64,7 +64,7 @@ func TestNewAPITray(t *testing.T) {
 
 	tests := []struct {
 		name string
-		comp *rlav1.Component
+		comp *flowv1.Component
 		want *APITray
 	}{
 		{
@@ -74,10 +74,10 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "basic compute tray",
-			comp: &rlav1.Component{
-				Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-				Info: &rlav1.DeviceInfo{
-					Id:           &rlav1.UUID{Id: "tray-id-123"},
+			comp: &flowv1.Component{
+				Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+				Info: &flowv1.DeviceInfo{
+					Id:           &flowv1.UUID{Id: "tray-id-123"},
 					Name:         "compute-tray-1",
 					Manufacturer: "NVIDIA",
 					Model:        &model,
@@ -86,19 +86,19 @@ func TestNewAPITray(t *testing.T) {
 				},
 				FirmwareVersion: "2.1.0",
 				ComponentId:     "nico-machine-456",
-				Position: &rlav1.RackPosition{
+				Position: &flowv1.RackPosition{
 					SlotId:  1,
 					TrayIdx: 0,
 					HostId:  1,
 				},
-				Bmcs: []*rlav1.BMCInfo{
+				Bmcs: []*flowv1.BMCInfo{
 					{
-						Type:       rlav1.BMCType_BMC_TYPE_HOST,
+						Type:       flowv1.BMCType_BMC_TYPE_HOST,
 						MacAddress: "00:11:22:33:44:55",
 						IpAddress:  cdb.GetStrPtr("192.168.1.100"),
 					},
 				},
-				RackId: &rlav1.UUID{Id: "rack-id-789"},
+				RackId: &flowv1.UUID{Id: "rack-id-789"},
 			},
 			want: &APITray{
 				ID:              "tray-id-123",
@@ -127,16 +127,16 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "switch tray without optional fields",
-			comp: &rlav1.Component{
-				Type: rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
-				Info: &rlav1.DeviceInfo{
-					Id:           &rlav1.UUID{Id: "switch-tray-id"},
+			comp: &flowv1.Component{
+				Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+				Info: &flowv1.DeviceInfo{
+					Id:           &flowv1.UUID{Id: "switch-tray-id"},
 					Name:         "switch-tray-1",
 					Manufacturer: "NVIDIA",
 					SerialNumber: "SSN001",
 				},
 				FirmwareVersion: "1.5.0",
-				Position: &rlav1.RackPosition{
+				Position: &flowv1.RackPosition{
 					SlotId:  24,
 					TrayIdx: 1,
 				},
@@ -157,18 +157,18 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "powershelf tray",
-			comp: &rlav1.Component{
-				Type: rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF,
-				Info: &rlav1.DeviceInfo{
-					Id:           &rlav1.UUID{Id: "power-tray-id"},
+			comp: &flowv1.Component{
+				Type: flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF,
+				Info: &flowv1.DeviceInfo{
+					Id:           &flowv1.UUID{Id: "power-tray-id"},
 					Name:         "powershelf-1",
 					Manufacturer: "NVIDIA",
 					SerialNumber: "PSN001",
 				},
-				Position: &rlav1.RackPosition{
+				Position: &flowv1.RackPosition{
 					SlotId: 48,
 				},
-				RackId: &rlav1.UUID{Id: "rack-abc"},
+				RackId: &flowv1.UUID{Id: "rack-abc"},
 			},
 			want: &APITray{
 				ID:           "power-tray-id",
@@ -186,10 +186,10 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "tray with minimal info and explicit type",
-			comp: &rlav1.Component{
-				Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-				Info: &rlav1.DeviceInfo{
-					Id: &rlav1.UUID{Id: "minimal-tray"},
+			comp: &flowv1.Component{
+				Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+				Info: &flowv1.DeviceInfo{
+					Id: &flowv1.UUID{Id: "minimal-tray"},
 				},
 			},
 			want: &APITray{
@@ -199,9 +199,9 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "tray with unspecified type falls back to unknown",
-			comp: &rlav1.Component{
-				Info: &rlav1.DeviceInfo{
-					Id: &rlav1.UUID{Id: "untyped-tray"},
+			comp: &flowv1.Component{
+				Info: &flowv1.DeviceInfo{
+					Id: &flowv1.UUID{Id: "untyped-tray"},
 				},
 			},
 			want: &APITray{
@@ -211,8 +211,8 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "tray without info",
-			comp: &rlav1.Component{
-				Type:        rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
+			comp: &flowv1.Component{
+				Type:        flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
 				ComponentId: "compute-component-123",
 			},
 			want: &APITray{
@@ -222,10 +222,10 @@ func TestNewAPITray(t *testing.T) {
 		},
 		{
 			name: "tray without position",
-			comp: &rlav1.Component{
-				Type: rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
-				Info: &rlav1.DeviceInfo{
-					Id:   &rlav1.UUID{Id: "switch-tray-id"},
+			comp: &flowv1.Component{
+				Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+				Info: &flowv1.DeviceInfo{
+					Id:   &flowv1.UUID{Id: "switch-tray-id"},
 					Name: "switch-1",
 				},
 			},
@@ -287,7 +287,7 @@ func TestNewAPITray(t *testing.T) {
 
 func TestAPITrayPosition_FromProto(t *testing.T) {
 	pos := &APITrayPosition{}
-	pos.FromProto(&rlav1.RackPosition{SlotId: 2, TrayIdx: 1, HostId: 0})
+	pos.FromProto(&flowv1.RackPosition{SlotId: 2, TrayIdx: 1, HostId: 0})
 	assert.Equal(t, int32(2), pos.SlotID)
 	assert.Equal(t, int32(1), pos.TrayIdx)
 	assert.Equal(t, int32(0), pos.HostID)
@@ -297,16 +297,16 @@ func TestAPITrayPosition_FromProto(t *testing.T) {
 }
 
 func TestAPITray_FromProto(t *testing.T) {
-	comp := &rlav1.Component{
-		Type:            rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
+	comp := &flowv1.Component{
+		Type:            flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
 		ComponentId:     "comp-1",
 		FirmwareVersion: "1.0",
-		Info: &rlav1.DeviceInfo{
-			Id:   &rlav1.UUID{Id: "tray-uuid"},
+		Info: &flowv1.DeviceInfo{
+			Id:   &flowv1.UUID{Id: "tray-uuid"},
 			Name: "My Tray",
 		},
-		Position: &rlav1.RackPosition{SlotId: 3, TrayIdx: 0, HostId: 1},
-		RackId:   &rlav1.UUID{Id: "rack-uuid"},
+		Position: &flowv1.RackPosition{SlotId: 3, TrayIdx: 0, HostId: 1},
+		RackId:   &flowv1.UUID{Id: "rack-uuid"},
 	}
 	at := &APITray{}
 	at.FromProto(comp)
@@ -472,12 +472,12 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 	tests := []struct {
 		name     string
 		request  *APITrayGetAllRequest
-		validate func(t *testing.T, req *rlav1.GetComponentsRequest)
+		validate func(t *testing.T, req *flowv1.GetComponentsRequest)
 	}{
 		{
 			name:    "empty request - no TargetSpec, queries all components",
 			request: &APITrayGetAllRequest{},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				assert.Nil(t, req.TargetSpec)
 				assert.Empty(t, req.Filters)
 			},
@@ -487,7 +487,7 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 			request: &APITrayGetAllRequest{
 				RackID: &rackID,
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				require.NotNil(t, req.TargetSpec)
 				rackTargets := req.TargetSpec.GetRacks()
 				require.NotNil(t, rackTargets)
@@ -501,7 +501,7 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 			request: &APITrayGetAllRequest{
 				RackName: &rackName,
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				require.NotNil(t, req.TargetSpec)
 				rackTargets := req.TargetSpec.GetRacks()
 				require.NotNil(t, rackTargets)
@@ -515,10 +515,10 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 			request: &APITrayGetAllRequest{
 				Type: &trayType,
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				assert.Nil(t, req.TargetSpec)
 				require.Len(t, req.Filters, 1)
-				assert.Equal(t, rlav1.ComponentFilterField_COMPONENT_FILTER_FIELD_TYPE, req.Filters[0].GetComponentField())
+				assert.Equal(t, flowv1.ComponentFilterField_COMPONENT_FILTER_FIELD_TYPE, req.Filters[0].GetComponentField())
 				assert.Contains(t, req.Filters[0].GetQueryInfo().GetPatterns(), "Compute")
 			},
 		},
@@ -528,13 +528,13 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 				RackID: &rackID,
 				Type:   &trayType,
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				require.NotNil(t, req.TargetSpec)
 				rackTargets := req.TargetSpec.GetRacks()
 				require.NotNil(t, rackTargets)
 				require.Len(t, rackTargets.Targets, 1)
 				assert.Equal(t, rackID, rackTargets.Targets[0].GetId().GetId())
-				assert.Contains(t, rackTargets.Targets[0].ComponentTypes, rlav1.ComponentType_COMPONENT_TYPE_COMPUTE)
+				assert.Contains(t, rackTargets.Targets[0].ComponentTypes, flowv1.ComponentType_COMPONENT_TYPE_COMPUTE)
 			},
 		},
 		{
@@ -542,7 +542,7 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 			request: &APITrayGetAllRequest{
 				IDs: []string{id1, id2},
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				require.NotNil(t, req.TargetSpec)
 				compTargets := req.TargetSpec.GetComponents()
 				require.NotNil(t, compTargets)
@@ -557,7 +557,7 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 				ComponentIDs: []string{"comp-1", "comp-2"},
 				Type:         &trayType,
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				require.NotNil(t, req.TargetSpec)
 				compTargets := req.TargetSpec.GetComponents()
 				require.NotNil(t, compTargets)
@@ -565,7 +565,7 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 				for _, target := range compTargets.Targets {
 					ext := target.GetExternal()
 					require.NotNil(t, ext)
-					assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_COMPUTE, ext.Type)
+					assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_COMPUTE, ext.Type)
 				}
 			},
 		},
@@ -576,7 +576,7 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 				ComponentIDs: []string{"comp-1"},
 				Type:         &trayType,
 			},
-			validate: func(t *testing.T, req *rlav1.GetComponentsRequest) {
+			validate: func(t *testing.T, req *flowv1.GetComponentsRequest) {
 				require.NotNil(t, req.TargetSpec)
 				compTargets := req.TargetSpec.GetComponents()
 				require.NotNil(t, compTargets)

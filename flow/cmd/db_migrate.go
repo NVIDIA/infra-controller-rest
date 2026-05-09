@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
-	"github.com/NVIDIA/infra-controller-rest/rla/internal/db/migrations"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/db/migrations"
 )
 
 var (

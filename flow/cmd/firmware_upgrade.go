@@ -27,8 +27,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/client"
-	"github.com/NVIDIA/infra-controller-rest/rla/pkg/types"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/client"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/types"
 )
 
 const (

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package rla
+package flow
 
 import (
 	"sync"
@@ -31,65 +31,65 @@ import (
 // kicked off once even if creategRPC gets called multiple times
 var checkCertsOnce sync.Once
 
-func createGrpcClient() (conn *client.RlaClient, err error) {
+func createGrpcClient() (conn *client.FlowClient, err error) {
 	// Initialize contextual logger
-	logger := log.With().Str("Method", "RlaClient.createRlaGrpcRPC").Logger()
+	logger := log.With().Str("Method", "FlowClient.createRlaGrpcRPC").Logger()
 	logger.Info().Msg("GRPC: Starting GRPC client")
 
 	// Initialize the GRPC client configuration
-	ManagerAccess.Data.EB.Managers.RLA.Client.Config = &client.RlaClientConfig{
-		Address:        ManagerAccess.Conf.EB.RLA.Address,
-		Secure:         ManagerAccess.Conf.EB.RLA.Secure,
-		ServerCAPath:   ManagerAccess.Conf.EB.RLA.ServerCAPath,
-		SkipServerAuth: ManagerAccess.Conf.EB.RLA.SkipServerAuth,
-		ClientCertPath: ManagerAccess.Conf.EB.RLA.ClientCertPath,
-		ClientKeyPath:  ManagerAccess.Conf.EB.RLA.ClientKeyPath,
+	ManagerAccess.Data.EB.Managers.Flow.Client.Config = &client.FlowClientConfig{
+		Address:        ManagerAccess.Conf.EB.Flow.Address,
+		Secure:         ManagerAccess.Conf.EB.Flow.Secure,
+		ServerCAPath:   ManagerAccess.Conf.EB.Flow.ServerCAPath,
+		SkipServerAuth: ManagerAccess.Conf.EB.Flow.SkipServerAuth,
+		ClientCertPath: ManagerAccess.Conf.EB.Flow.ClientCertPath,
+		ClientKeyPath:  ManagerAccess.Conf.EB.Flow.ClientKeyPath,
 		ClientMetrics:  makeGrpcClientMetrics(),
 	}
-	logger.Info().Interface("GRPCConfig", ManagerAccess.Data.EB.Managers.RLA.Client.Config).Msg("Initializing GRPC client")
+	logger.Info().Interface("GRPCConfig", ManagerAccess.Data.EB.Managers.Flow.Client.Config).Msg("Initializing GRPC client")
 
 	// Get initial certificate MD5 hashes
-	initialClientMD5, initialServerMD5, err := ManagerAccess.Data.EB.Managers.RLA.Client.GetInitialCertMD5()
+	initialClientMD5, initialServerMD5, err := ManagerAccess.Data.EB.Managers.Flow.Client.GetInitialCertMD5()
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to get initial certificate MD5 hashes")
 		return nil, err
 	}
-	newClient, err := client.NewRlaClient(ManagerAccess.Data.EB.Managers.RLA.Client.Config)
+	newClient, err := client.NewFlowClient(ManagerAccess.Data.EB.Managers.Flow.Client.Config)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to initialize GRPC client")
 		return nil, err
 	}
 
 	// Since this is initial creation, there's no old client to manage. SwapClient still used for consistency.
-	_ = ManagerAccess.Data.EB.Managers.RLA.Client.SwapClient(newClient)
+	_ = ManagerAccess.Data.EB.Managers.Flow.Client.SwapClient(newClient)
 	logger.Info().Msg("Successfully initialized GRPC client")
 
 	// Start the certificate check and reload routine in a background goroutine
 	checkCertsOnce.Do(func() {
-		go ManagerAccess.Data.EB.Managers.RLA.Client.CheckAndReloadCerts(initialClientMD5, initialServerMD5)
+		go ManagerAccess.Data.EB.Managers.Flow.Client.CheckAndReloadCerts(initialClientMD5, initialServerMD5)
 		logger.Info().Msg("Started certificate reload routine")
 	})
 
-	return ManagerAccess.Data.EB.Managers.RLA.GetClient(), nil
+	return ManagerAccess.Data.EB.Managers.Flow.GetClient(), nil
 }
 
 // CreateGRPCClient - creates the grpc connection handle
-func (RLA *API) CreateGRPCClient() error {
+func (Flow *API) CreateGRPCClient() error {
 	// Initialize the GRPC client
 	// We can handle advanced features later
 	_, err := createGrpcClient()
 	if err != nil {
-		ManagerAccess.Data.EB.Managers.RLA.State.HealthStatus.Store(uint64(computils.CompUnhealthy))
+		ManagerAccess.Data.EB.Managers.Flow.State.HealthStatus.Store(uint64(computils.CompUnhealthy))
 	} else {
-		ManagerAccess.Data.EB.Managers.RLA.State.HealthStatus.Store(uint64(computils.CompNotKnown))
+		ManagerAccess.Data.EB.Managers.Flow.State.HealthStatus.Store(uint64(computils.CompNotKnown))
 	}
 
 	return err
 }
 
 // GetGRPCClient - gets the grpc connection handle
-func (RLA *API) GetGRPCClient() *client.RlaClient {
-	return ManagerAccess.Data.EB.Managers.RLA.GetClient()
+func (Flow *API) GetGRPCClient() *client.FlowClient {
+	return ManagerAccess.Data.EB.Managers.Flow.GetClient()
 }
 
 // isGrpcUp Is grpc connection functional
@@ -101,21 +101,21 @@ func isGrpcUp(c codes.Code) bool {
 	return true
 }
 
-// UpdateGRPCClientState - updates RLA state
-func (RLA *API) UpdateGRPCClientState(err error) {
+// UpdateGRPCClientState - updates Flow state
+func (Flow *API) UpdateGRPCClientState(err error) {
 	defer computils.UpdateState(ManagerAccess.Data.EB)
 	if err == nil {
-		ManagerAccess.Data.EB.Managers.RLA.State.GrpcSucc.Inc()
-		ManagerAccess.Data.EB.Managers.RLA.State.HealthStatus.Store(uint64(computils.CompHealthy))
+		ManagerAccess.Data.EB.Managers.Flow.State.GrpcSucc.Inc()
+		ManagerAccess.Data.EB.Managers.Flow.State.HealthStatus.Store(uint64(computils.CompHealthy))
 		return
 	}
-	ManagerAccess.Data.EB.Managers.RLA.State.GrpcFail.Inc()
-	ManagerAccess.Data.EB.Managers.RLA.State.Err = err.Error()
+	ManagerAccess.Data.EB.Managers.Flow.State.GrpcFail.Inc()
+	ManagerAccess.Data.EB.Managers.Flow.State.Err = err.Error()
 	log.Error().Err(err).Msg("GRPC: Failed to send request to GRPC server")
 	st, ok := status.FromError(err)
 	if ok {
 		if !isGrpcUp(st.Code()) {
-			ManagerAccess.Data.EB.Managers.RLA.State.HealthStatus.Store(uint64(computils.CompUnhealthy))
+			ManagerAccess.Data.EB.Managers.Flow.State.HealthStatus.Store(uint64(computils.CompUnhealthy))
 			log.Error().Err(err).Msg("GRPC: connection down")
 		} else {
 			log.Info().Msgf("GRPC application error %v", st.Code())
