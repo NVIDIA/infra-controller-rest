@@ -157,7 +157,7 @@ func (m *VaultCredentialManager) getNVOSCredentialKey(mac net.HardwareAddr) stri
 	return fmt.Sprintf("%s/%s/%s", nvosCredentialPath, strings.ToUpper(mac.String()), nvosCredentialSuffix)
 }
 
-func (m *VaultCredentialManager) get(ctx context.Context, key string) (*credential.Credential, error) {
+func (m *VaultCredentialManager) get(_ context.Context, key string) (*credential.Credential, error) {
 	secret, err := m.client.Logical().Read(key)
 	if err != nil {
 		return nil, fmt.Errorf("vault read at %q: %w", key, err)
@@ -166,7 +166,7 @@ func (m *VaultCredentialManager) get(ctx context.Context, key string) (*credenti
 		return nil, fmt.Errorf("vault path %q: %w", key, errCredentialNotFound)
 	}
 
-	credData, ok := secret.Data["data"].(map[string]interface{})
+	credData, ok := secret.Data["data"].(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("unexpected secret data format at vault path %q", key)
 	}
@@ -183,7 +183,7 @@ func (m *VaultCredentialManager) get(ctx context.Context, key string) (*credenti
 	return cred, nil
 }
 
-func (m *VaultCredentialManager) put(ctx context.Context, key string, cred *credential.Credential) error {
+func (m *VaultCredentialManager) put(_ context.Context, key string, cred *credential.Credential) error {
 	if cred == nil || !cred.IsValid() {
 		return fmt.Errorf("valid credential not specified to Vault Manager")
 	}
@@ -196,25 +196,25 @@ func (m *VaultCredentialManager) put(ctx context.Context, key string, cred *cred
 	return err
 }
 
-func (m *VaultCredentialManager) delete(ctx context.Context, key string) error {
+func (m *VaultCredentialManager) delete(_ context.Context, key string) error {
 	_, err := m.client.Logical().Delete(key)
 	return err
 }
 
-func credentialToMap(cred *credential.Credential) map[string]interface{} {
+func credentialToMap(cred *credential.Credential) map[string]any {
 	if cred == nil {
 		return nil
 	}
-	return map[string]interface{}{
-		"UsernamePassword": map[string]interface{}{
+	return map[string]any{
+		"UsernamePassword": map[string]any{
 			"username": cred.User,
 			"password": cred.Password.Value,
 		},
 	}
 }
 
-func credentialFromMap(data map[string]interface{}) (*credential.Credential, error) {
-	nested, ok := data["UsernamePassword"].(map[string]interface{})
+func credentialFromMap(data map[string]any) (*credential.Credential, error) {
+	nested, ok := data["UsernamePassword"].(map[string]any)
 	if !ok {
 		return nil, errors.New("missing or invalid UsernamePassword field")
 	}
@@ -320,7 +320,7 @@ func (m *VaultCredentialManager) Keys(ctx context.Context) ([]net.HardwareAddr, 
 		return nil, errors.New("no credentials found")
 	}
 
-	keys, ok := secret.Data["keys"].([]interface{})
+	keys, ok := secret.Data["keys"].([]any)
 	if !ok {
 		return nil, errors.New("unexpected data format")
 	}

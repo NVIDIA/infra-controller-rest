@@ -331,7 +331,7 @@ func TestInMemoryBMCDelete(t *testing.T) {
 
 func TestInMemoryKeys(t *testing.T) {
 	testCases := map[string]struct {
-		putPairs    [][2]interface{} // [mac string, *credential.Credential]
+		putPairs    [][2]any // [mac string, *credential.Credential]
 		expectCount int
 		expectSet   map[string]bool
 	}{
@@ -341,14 +341,14 @@ func TestInMemoryKeys(t *testing.T) {
 			expectSet:   map[string]bool{},
 		},
 		"one entry returns that MAC": {
-			putPairs: [][2]interface{}{
+			putPairs: [][2]any{
 				{"00:11:22:33:44:55", newCredential("admin", "secret")},
 			},
 			expectCount: 1,
 			expectSet:   map[string]bool{"00:11:22:33:44:55": true},
 		},
 		"multiple entries return all MACs": {
-			putPairs: [][2]interface{}{
+			putPairs: [][2]any{
 				{"00:11:22:33:44:55", newCredential("admin", "a")},
 				{"66:77:88:99:00:11", newCredential("root", "r")},
 				{"aa:bb:cc:dd:ee:ff", newCredential("user", "u")},

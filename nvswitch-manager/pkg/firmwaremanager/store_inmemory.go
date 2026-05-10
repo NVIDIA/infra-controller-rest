@@ -59,6 +59,21 @@ func (s *InMemoryUpdateStore) Save(ctx context.Context, update *FirmwareUpdate) 
 	return nil
 }
 
+// SaveAll persists all firmware updates (insert or update) in a single transaction.
+func (s *InMemoryUpdateStore) SaveAll(ctx context.Context, updates []*FirmwareUpdate) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// Deep copy to avoid external mutations
+	for _, update := range updates {
+		stored := *update
+		stored.UpdatedAt = time.Now()
+		s.updates[update.ID] = &stored
+	}
+
+	return nil
+}
+
 // Get retrieves a firmware update by ID.
 func (s *InMemoryUpdateStore) Get(ctx context.Context, id uuid.UUID) (*FirmwareUpdate, error) {
 	s.mu.RLock()

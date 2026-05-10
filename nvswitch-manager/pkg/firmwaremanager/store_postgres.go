@@ -118,13 +118,10 @@ func fromModel(m *FirmwareUpdateModel) *FirmwareUpdate {
 	}
 }
 
-// Save persists a firmware update (insert or update).
-func (s *PostgresUpdateStore) Save(ctx context.Context, update *FirmwareUpdate) error {
-	update.UpdatedAt = time.Now()
-	model := toModel(update)
-
-	_, err := s.db.NewInsert().
-		Model(model).
+// upsertModels executes a bulk upsert for the given models using db (either *bun.DB or bun.Tx).
+func upsertModels(ctx context.Context, db bun.IDB, models []*FirmwareUpdateModel) error {
+	_, err := db.NewInsert().
+		Model(&models).
 		On("CONFLICT (id) DO UPDATE").
 		Set("state = EXCLUDED.state").
 		Set("version_from = EXCLUDED.version_from").
@@ -135,8 +132,33 @@ func (s *PostgresUpdateStore) Save(ctx context.Context, update *FirmwareUpdate) 
 		Set("last_checked_at = EXCLUDED.last_checked_at").
 		Set("updated_at = EXCLUDED.updated_at").
 		Exec(ctx)
-
 	return err
+}
+
+// Save persists a firmware update (insert or update).
+func (s *PostgresUpdateStore) Save(ctx context.Context, update *FirmwareUpdate) error {
+	update.UpdatedAt = time.Now()
+	return upsertModels(ctx, s.db, []*FirmwareUpdateModel{toModel(update)})
+}
+
+// SaveAll persists all firmware updates (insert or update) in a single transaction.
+// If any insert fails the entire batch is rolled back.
+func (s *PostgresUpdateStore) SaveAll(ctx context.Context, updates []*FirmwareUpdate) error {
+	if len(updates) == 0 {
+		return nil
+	}
+
+	return s.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		now := time.Now()
+
+		models := make([]*FirmwareUpdateModel, len(updates))
+		for i, update := range updates {
+			update.UpdatedAt = now
+			models[i] = toModel(update)
+		}
+
+		return upsertModels(ctx, tx, models)
+	})
 }
 
 // Get retrieves a firmware update by ID.
@@ -192,7 +214,7 @@ func (s *PostgresUpdateStore) GetPendingUpdates(ctx context.Context, limit int) 
 		Model(&queuedModels).
 		Where("state = ?", StateQueued).
 		Where(`(
-			predecessor_id IS NULL 
+			predecessor_id IS NULL
 			OR predecessor_id IN (SELECT id FROM firmware_update WHERE state = ?)
 		)`, StateCompleted).
 		OrderExpr("sequence_order ASC, created_at ASC").

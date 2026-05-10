@@ -189,7 +189,7 @@ func (s *SSHStrategy) executePowerCycle(ctx context.Context, update *FirmwareUpd
 // executeWaitReachable waits for the NVOS to become reachable.
 // This is async-aware: returns Wait while unreachable, Transition when reachable.
 // After becoming reachable, waits for PostReachabilityDelay to allow services to start.
-func (s *SSHStrategy) executeWaitReachable(ctx context.Context, update *FirmwareUpdate, tray *nvswitch.NVSwitchTray) StepOutcome {
+func (s *SSHStrategy) executeWaitReachable(_ context.Context, update *FirmwareUpdate, tray *nvswitch.NVSwitchTray) StepOutcome {
 	// Initialize or retrieve exec context
 	execCtx := update.ExecContext
 	if execCtx == nil {
@@ -474,7 +474,7 @@ func (s *SSHStrategy) executeInstall(ctx context.Context, update *FirmwareUpdate
 }
 
 // handleRebootWait handles the async wait for NVOS reboot completion.
-func (s *SSHStrategy) handleRebootWait(ctx context.Context, update *FirmwareUpdate, tray *nvswitch.NVSwitchTray, execCtx *ExecContext) StepOutcome {
+func (s *SSHStrategy) handleRebootWait(_ context.Context, update *FirmwareUpdate, tray *nvswitch.NVSwitchTray, execCtx *ExecContext) StepOutcome {
 	// Check for timeout
 	if time.Now().After(execCtx.DeadlineAt) {
 		return Failed(fmt.Errorf("timeout waiting for NVOS reboot"))
@@ -583,7 +583,7 @@ func (s *SSHStrategy) GetCurrentVersion(ctx context.Context, tray *nvswitch.NVSw
 		}
 		// Parse CPLD version from output
 		// Format varies, look for "CPLD1" line
-		for _, line := range strings.Split(output, "\n") {
+		for line := range strings.SplitSeq(output, "\n") {
 			if strings.Contains(line, "CPLD1") {
 				fields := strings.Fields(line)
 				if len(fields) >= 2 {
@@ -599,7 +599,7 @@ func (s *SSHStrategy) GetCurrentVersion(ctx context.Context, tray *nvswitch.NVSw
 			return "", fmt.Errorf("failed to get NVOS version: %w", err)
 		}
 		// Parse version from output
-		for _, line := range strings.Split(output, "\n") {
+		for line := range strings.SplitSeq(output, "\n") {
 			if strings.Contains(line, "version") {
 				fields := strings.Fields(line)
 				if len(fields) >= 2 {

@@ -246,7 +246,7 @@ func (s *ScriptStrategy) resolveToken(token string, tray *nvswitch.NVSwitchTray)
 
 // pollScriptProcess checks the status of a running script process without blocking.
 // Uses syscall.Wait4 with WNOHANG to poll process status.
-func (s *ScriptStrategy) pollScriptProcess(ctx context.Context, update *FirmwareUpdate) StepOutcome {
+func (s *ScriptStrategy) pollScriptProcess(_ context.Context, update *FirmwareUpdate) StepOutcome {
 	execCtx := update.ExecContext
 	pid := execCtx.PID
 

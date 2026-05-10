@@ -37,6 +37,9 @@ type UpdateStore interface {
 	// Save persists a firmware update (insert or update).
 	Save(ctx context.Context, update *FirmwareUpdate) error
 
+	// SaveAll persists all firmware updates (insert or update) in a single transaction.
+	SaveAll(ctx context.Context, updates []*FirmwareUpdate) error
+
 	// Get retrieves a firmware update by ID.
 	Get(ctx context.Context, id uuid.UUID) (*FirmwareUpdate, error)
 

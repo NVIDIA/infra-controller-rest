@@ -193,7 +193,11 @@ func (m *FirmwareManager) QueueUpdate(
 
 	for i, name := range componentNames {
 		component := nvswitch.Component(strings.ToUpper(name))
+
 		compDef := pkg.GetComponent(name)
+		if compDef == nil {
+			return nil, fmt.Errorf("component definition is `nil` for %s", name)
+		}
 
 		strategy := Strategy(compDef.Strategy)
 		if !strategy.IsValid() {
@@ -216,16 +220,28 @@ func (m *FirmwareManager) QueueUpdate(
 			update.VersionFrom = currentVersion
 		}
 
-		// Save to database
-		if err := m.store.Save(ctx, update); err != nil {
-			return nil, fmt.Errorf("failed to queue update for %s: %w", component, err)
-		}
-
-		log.Infof("Queued firmware update: id=%s, switch=%s, component=%s, strategy=%s, version=%s->%s, seq=%d",
-			update.ID, switchUUID, component, strategy, update.VersionFrom, update.VersionTo, update.SequenceOrder)
-
+		// Append to update list. This is to avoid partial writes to the store.
 		updates = append(updates, update)
 		prevID = &update.ID
+	}
+
+	// Save to database.
+	//
+	// NOTE: `SaveAll` uses a transaction which removes the risks of partial changes
+	// in the store if error happens.
+	if err := m.store.SaveAll(ctx, updates); err != nil {
+		compStrs := make([]string, len(updates))
+		for i, update := range updates {
+			compStrs[i] = string(update.Component)
+		}
+
+		return nil, fmt.Errorf("failed to queue updates for %s: %w", strings.Join(compStrs, ", "), err)
+	}
+
+	// Logging after all updates are successfully stored.
+	for _, update := range updates {
+		log.Infof("Queued firmware update: id=%s, switch=%s, component=%s, strategy=%s, version=%s->%s, seq=%d",
+			update.ID, switchUUID, update.Component, update.Strategy, update.VersionFrom, update.VersionTo, update.SequenceOrder)
 	}
 
 	return updates, nil
