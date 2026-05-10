@@ -38,6 +38,12 @@ type UpdateStore interface {
 	Save(ctx context.Context, update *FirmwareUpdate) error
 
 	// SaveAll persists all firmware updates (insert or update) in a single transaction.
+	// If any insert fails the entire batch is rolled back.
+	//
+	// All entries in updates must be non-nil. Nil validation is the caller's
+	// responsibility — this is an internal interface and nil entries indicate a
+	// programming error, not a runtime condition. Silently skipping or partially
+	// saving nil entries would mask bugs rather than surface them.
 	SaveAll(ctx context.Context, updates []*FirmwareUpdate) error
 
 	// Get retrieves a firmware update by ID.

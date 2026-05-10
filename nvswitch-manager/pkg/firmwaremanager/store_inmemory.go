@@ -60,6 +60,7 @@ func (s *InMemoryUpdateStore) Save(ctx context.Context, update *FirmwareUpdate) 
 }
 
 // SaveAll persists all firmware updates (insert or update) in a single transaction.
+// If any insert fails the entire batch is rolled back.
 func (s *InMemoryUpdateStore) SaveAll(ctx context.Context, updates []*FirmwareUpdate) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
