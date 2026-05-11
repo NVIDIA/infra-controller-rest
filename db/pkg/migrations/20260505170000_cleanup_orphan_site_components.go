@@ -51,6 +51,31 @@ func init() {
 			AND ifc.instance_id NOT IN (SELECT id FROM instance WHERE deleted IS NULL)`)
 		handleError(tx, err)
 
+		// Soft-delete orphaned operating systems before touching any
+		// operating_system_site_association rows. An OS is orphaned when
+		// every association pointing at it targets a missing or
+		// soft-deleted site. The candidate set is
+		// identified via OSSAs that still satisfy `deleted IS NULL`, so
+		// this step MUST run before the OSSA cleanup below; otherwise
+		// the subquery would return nothing.
+		_, err = tx.Exec(`
+			UPDATE operating_system os
+			SET deleted = CURRENT_TIMESTAMP, updated = CURRENT_TIMESTAMP
+			WHERE os.deleted IS NULL
+			AND os.id IN (
+				SELECT DISTINCT ossa.operating_system_id
+				FROM operating_system_site_association ossa
+				WHERE ossa.deleted IS NULL
+				AND ossa.site_id NOT IN (SELECT id FROM site WHERE deleted IS NULL)
+			)
+			AND NOT EXISTS (
+				SELECT 1 FROM operating_system_site_association ossa2
+				WHERE ossa2.operating_system_id = os.id
+				AND ossa2.deleted IS NULL
+				AND ossa2.site_id IN (SELECT id FROM site WHERE deleted IS NULL)
+			)`)
+		handleError(tx, err)
+
 		// Site-scoped tables with a soft_delete column: mark rows deleted
 		// when their site is missing or already soft-deleted.
 		softDeleteSiteScopedTables := []struct {
@@ -64,6 +89,7 @@ func init() {
 			{"ssh_key_group_instance_association", "skgia"},
 			{"network_security_group", "nsg"},
 			{"dpu_extension_service_deployment", "desd"},
+			{"operating_system_site_association", "ossa"},
 		}
 		for _, t := range softDeleteSiteScopedTables {
 			stmt := fmt.Sprintf(`
@@ -100,7 +126,7 @@ func init() {
 			handlePanic(terr, "failed to commit transaction")
 		}
 
-		fmt.Print(" [up migration] Soft-deleted orphan site-scoped rows across interface, vpc_prefix, vpc_peering, nvlink_logical_partition, ssh_key_group_site_association, ssh_key_group_instance_association, network_security_group, and dpu_extension_service_deployment; hard-deleted orphan rows from sku, expected_machine, expected_switch, and expected_power_shelf. ")
+		fmt.Print(" [up migration] Soft-deleted orphan site-scoped rows across interface, vpc_prefix, vpc_peering, nvlink_logical_partition, ssh_key_group_site_association, ssh_key_group_instance_association, network_security_group, dpu_extension_service_deployment, operating_system_site_association, and orphaned operating_system rows; hard-deleted orphan rows from sku, expected_machine, expected_switch, and expected_power_shelf. ")
 		return nil
 	}, func(_ context.Context, _ *bun.DB) error {
 		fmt.Print(" [down migration] No-op (data cleanup cannot be reversed). ")
