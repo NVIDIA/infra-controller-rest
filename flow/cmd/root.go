@@ -50,8 +50,8 @@ var (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "flow",
-	Short: "rack level abstraction",
-	Long:  `command to manage and access the information about racks`,
+	Short: "NICo Flow CLI",
+	Long:  `Command to manage and query racks, components, firmware, and operation rules in NICo Flow.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.

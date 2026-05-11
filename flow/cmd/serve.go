@@ -58,7 +58,7 @@ var (
 	// serveCmd represents the serve command
 	serveCmd = &cobra.Command{
 		Use:   "serve",
-		Short: "Start the Flow gPRC server",
+		Short: "Start the Flow gRPC server",
 		Long:  `Start the gRPC server to allow other services to manage the racks`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			for _, name := range clientOnlyFlags {

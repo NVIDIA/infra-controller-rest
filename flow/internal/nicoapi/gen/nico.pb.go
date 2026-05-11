@@ -487,7 +487,7 @@ type NetworkSegmentType int32
 const (
 	NetworkSegmentType_TENANT      NetworkSegmentType = 0
 	NetworkSegmentType_ADMIN       NetworkSegmentType = 1
-	NetworkSegmentType_UNDEFlowY   NetworkSegmentType = 2
+	NetworkSegmentType_UNDERLAY    NetworkSegmentType = 2
 	NetworkSegmentType_HOST_INBAND NetworkSegmentType = 3
 )
 
@@ -496,13 +496,13 @@ var (
 	NetworkSegmentType_name = map[int32]string{
 		0: "TENANT",
 		1: "ADMIN",
-		2: "UNDEFlowY",
+		2: "UNDERLAY",
 		3: "HOST_INBAND",
 	}
 	NetworkSegmentType_value = map[string]int32{
 		"TENANT":      0,
 		"ADMIN":       1,
-		"UNDEFlowY":   2,
+		"UNDERLAY":    2,
 		"HOST_INBAND": 3,
 	}
 )
@@ -53295,12 +53295,12 @@ const file_nico_proto_rawDesc = "" +
 	"\rDeletedFilter\x12\x1a\n" +
 	"\x16DELETED_FILTER_EXCLUDE\x10\x00\x12\x17\n" +
 	"\x13DELETED_FILTER_ONLY\x10\x01\x12\x1a\n" +
-	"\x16DELETED_FILTER_INCLUDE\x10\x02*K\n" +
+	"\x16DELETED_FILTER_INCLUDE\x10\x02*J\n" +
 	"\x12NetworkSegmentType\x12\n" +
 	"\n" +
 	"\x06TENANT\x10\x00\x12\t\n" +
-	"\x05ADMIN\x10\x01\x12\r\n" +
-	"\tUNDEFlowY\x10\x02\x12\x0f\n" +
+	"\x05ADMIN\x10\x01\x12\f\n" +
+	"\bUNDERLAY\x10\x02\x12\x0f\n" +
 	"\vHOST_INBAND\x10\x03*0\n" +
 	"\x12NetworkSegmentFlag\x12\t\n" +
 	"\x05NO_OP\x10\x00\x12\x0f\n" +
