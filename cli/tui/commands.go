@@ -64,6 +64,8 @@ func AllCommands() []Command {
 		{Name: "instance list", Description: "List all instances", Run: cmdInstanceList},
 		{Name: "instance get", Description: "Get instance details", Run: cmdInstanceGet},
 		{Name: "instance create", Description: "Create an instance on a machine", Run: cmdInstanceCreate},
+		{Name: "instance update", Description: "Update an instance (rename, change OS, rotate ssh key groups, trigger reboot)", Run: cmdInstanceUpdate},
+		{Name: "instance reboot", Description: "Reboot an instance, optionally with custom iPXE / pending updates", Run: cmdInstanceReboot},
 		{Name: "instance delete", Description: "Delete an instance", Run: cmdInstanceDelete},
 
 		{Name: "machine list", Description: "List machines", Run: cmdMachineList},
@@ -243,10 +245,27 @@ func readyMachineItemsForSite(machines []NamedItem, siteID string) []SelectItem 
 			continue
 		}
 		if strings.EqualFold(strings.TrimSpace(m.Status), "Ready") {
-			readyItems = append(readyItems, SelectItem{Label: m.Name, ID: m.ID})
+			readyItems = append(readyItems, SelectItem{Label: machineSelectLabel(m), ID: m.ID})
 		}
 	}
 	return readyItems
+}
+
+// machineSelectLabel formats a machine for the interactive select list. It
+// always includes the resolved display name (which may be a serial number when
+// no friendly labels are set) plus the full machine ID, so reviewers and
+// scripts that already track machines by ID can find them without having to
+// memorize serial-to-id mappings.
+func machineSelectLabel(m NamedItem) string {
+	name := strings.TrimSpace(m.Name)
+	id := strings.TrimSpace(m.ID)
+	if name == "" {
+		return id
+	}
+	if id == "" {
+		return name
+	}
+	return name + "  " + Dim(id)
 }
 
 // -- List commands --
@@ -1082,6 +1101,7 @@ func cmdSSHKeyGroupList(s *Session, _ []string) error {
 }
 
 func cmdSSHKeyGroupCreate(s *Session, _ []string) error {
+	ctx := context.Background()
 	name, err := PromptText("SSH key group name", true)
 	if err != nil {
 		return err
@@ -1091,11 +1111,11 @@ func cmdSSHKeyGroupCreate(s *Session, _ []string) error {
 		return err
 	}
 
-	siteIDsText, err := PromptText("Site IDs (comma-separated, optional)", false)
+	siteIDs, err := promptOptionalResourceIDs(s, ctx, "site", "site")
 	if err != nil {
 		return err
 	}
-	sshKeyIDsText, err := PromptText("SSH key IDs (comma-separated, optional)", false)
+	sshKeyIDs, err := promptOptionalResourceIDs(s, ctx, "ssh-key", "SSH key")
 	if err != nil {
 		return err
 	}
@@ -1104,10 +1124,10 @@ func cmdSSHKeyGroupCreate(s *Session, _ []string) error {
 	if strings.TrimSpace(desc) != "" {
 		body["description"] = strings.TrimSpace(desc)
 	}
-	if siteIDs := splitCommaSeparated(siteIDsText); len(siteIDs) > 0 {
+	if len(siteIDs) > 0 {
 		body["siteIds"] = siteIDs
 	}
-	if sshKeyIDs := splitCommaSeparated(sshKeyIDsText); len(sshKeyIDs) > 0 {
+	if len(sshKeyIDs) > 0 {
 		body["sshKeyIds"] = sshKeyIDs
 	}
 
@@ -2322,7 +2342,8 @@ func cmdInstanceGet(s *Session, args []string) error {
 }
 
 func cmdInstanceCreate(s *Session, _ []string) error {
-	vpc, err := s.Resolver.Resolve(context.Background(), "vpc", "VPC")
+	ctx := context.Background()
+	vpc, err := s.Resolver.Resolve(ctx, "vpc", "VPC")
 	if err != nil {
 		return err
 	}
@@ -2355,19 +2376,39 @@ func cmdInstanceCreate(s *Session, _ []string) error {
 	}
 
 	var osID *string
-	osList, osErr := s.Resolver.Fetch(context.Background(), "operating-system")
+	osList, osErr := s.Resolver.Fetch(ctx, "operating-system")
 	if osErr == nil && len(osList) > 0 {
 		useOS, confirmErr := PromptConfirm("Select an operating system?")
 		if confirmErr != nil {
 			return confirmErr
 		}
 		if useOS {
-			osItem, selectErr := s.Resolver.Resolve(context.Background(), "operating-system", "Operating System")
+			osItem, selectErr := s.Resolver.Resolve(ctx, "operating-system", "Operating System")
 			if selectErr != nil {
 				return selectErr
 			}
 			osID = &osItem.ID
 		}
+	}
+
+	// Scope vpc-prefix lookups to the selected VPC so the picker only offers
+	// prefixes that are actually attachable to this instance.
+	savedVpcID2, savedVpcName2 := s.Scope.VpcID, s.Scope.VpcName
+	s.Scope.VpcID, s.Scope.VpcName = vpc.ID, vpc.Name
+	s.Cache.InvalidateFiltered()
+	defer func() {
+		s.Scope.VpcID, s.Scope.VpcName = savedVpcID2, savedVpcName2
+		s.Cache.InvalidateFiltered()
+	}()
+
+	interfaces, err := promptInstanceInterfaces(s, ctx)
+	if err != nil {
+		return err
+	}
+
+	sshKeyGroupIDs, err := promptOptionalResourceIDs(s, ctx, "ssh-key-group", "SSH key group")
+	if err != nil {
+		return err
 	}
 
 	body := map[string]interface{}{
@@ -2377,6 +2418,12 @@ func cmdInstanceCreate(s *Session, _ []string) error {
 	}
 	if osID != nil {
 		body["operatingSystemId"] = *osID
+	}
+	if len(interfaces) > 0 {
+		body["interfaces"] = interfaces
+	}
+	if len(sshKeyGroupIDs) > 0 {
+		body["sshKeyGroupIds"] = sshKeyGroupIDs
 	}
 	LogCmd(s, "instance", "create", "--name", name, "--machine-id", machine.ID, "--vpc-id", vpc.ID)
 	bodyJSON, _ := json.Marshal(body)
@@ -2389,6 +2436,256 @@ func cmdInstanceCreate(s *Session, _ []string) error {
 	var created map[string]interface{}
 	json.Unmarshal(resp, &created)
 	fmt.Printf("%s Instance created: %s (%s)\n", Green("OK"), str(created, "name"), str(created, "id"))
+	return nil
+}
+
+// promptInstanceInterfaces builds the interfaces[] array for an instance
+// create request by walking the operator through one VPC-prefix-backed
+// interface at a time. The OpenAPI schema requires at least one entry, so
+// the first interface is always prompted; subsequent interfaces are opt-in.
+// Returns nil (not error) if no vpc-prefixes exist for the current VPC scope
+// so cmdInstanceCreate can still attempt the API call and surface the
+// server-side validation error instead of silently sending an empty array.
+func promptInstanceInterfaces(s *Session, ctx context.Context) ([]map[string]interface{}, error) {
+	prefixes, err := s.Resolver.Fetch(ctx, "vpc-prefix")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s could not list vpc-prefixes (%v); the API may reject this create if interfaces are required\n", Dim("note:"), err)
+		return nil, nil
+	}
+	if len(prefixes) == 0 {
+		fmt.Fprintf(os.Stderr, "%s no vpc-prefixes available for the selected VPC; the API may reject this create if interfaces are required\n", Dim("note:"))
+		return nil, nil
+	}
+	var ifaces []map[string]interface{}
+	usedPrefixes := make(map[string]bool)
+	for {
+		label := "VPC prefix for interface"
+		if len(ifaces) > 0 {
+			confirmLabel := fmt.Sprintf("Add another interface (have %d)?", len(ifaces))
+			more, confirmErr := PromptConfirm(confirmLabel)
+			if confirmErr != nil {
+				return ifaces, confirmErr
+			}
+			if !more {
+				return ifaces, nil
+			}
+		}
+		available := make([]NamedItem, 0, len(prefixes))
+		for _, p := range prefixes {
+			if !usedPrefixes[p.ID] {
+				available = append(available, p)
+			}
+		}
+		if len(available) == 0 {
+			fmt.Fprintf(os.Stderr, "%s no more vpc-prefixes to attach\n", Dim("note:"))
+			return ifaces, nil
+		}
+		picked, err := s.Resolver.SelectFromItems(label, available)
+		if err != nil {
+			return ifaces, err
+		}
+		usedPrefixes[picked.ID] = true
+		ifaces = append(ifaces, map[string]interface{}{
+			"vpcPrefixId": picked.ID,
+			"isPhysical":  true,
+		})
+	}
+}
+
+// promptOptionalResourceIDs offers a series of single-select pickers on the
+// given resource type, accumulating IDs until the user declines to add
+// another. Returns nil if the resource type has no items at all (so callers
+// can omit the field entirely from the request body).
+func promptOptionalResourceIDs(s *Session, ctx context.Context, resourceType, singular string) ([]string, error) {
+	items, err := s.Resolver.Fetch(ctx, resourceType)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "%s could not list %s (%v); skipping\n", Dim("note:"), resourceType, err)
+		return nil, nil
+	}
+	if len(items) == 0 {
+		return nil, nil
+	}
+	var ids []string
+	picked := make(map[string]bool)
+	for {
+		prompt := fmt.Sprintf("Add %s?", singular)
+		if len(ids) > 0 {
+			prompt = fmt.Sprintf("Add another %s (have %d)?", singular, len(ids))
+		}
+		more, err := PromptConfirm(prompt)
+		if err != nil {
+			return ids, err
+		}
+		if !more {
+			return ids, nil
+		}
+		available := make([]NamedItem, 0, len(items))
+		for _, item := range items {
+			if !picked[item.ID] {
+				available = append(available, item)
+			}
+		}
+		if len(available) == 0 {
+			fmt.Fprintf(os.Stderr, "%s no more %s available\n", Dim("note:"), resourceType)
+			return ids, nil
+		}
+		selected, err := s.Resolver.SelectFromItems(singular, available)
+		if err != nil {
+			return ids, err
+		}
+		ids = append(ids, selected.ID)
+		picked[selected.ID] = true
+	}
+}
+
+// instanceUpdateInputs collects the optional fields exposed by the TUI
+// instance update form. Extracted so cmdInstanceUpdate stays linear and
+// cmdInstanceReboot can drive a stripped-down version of the same flow.
+type instanceUpdateInputs struct {
+	name                 string
+	description          string
+	osID                 string
+	sshKeyGroupIDs       []string
+	triggerReboot        bool
+	rebootWithCustomIpxe bool
+	applyUpdatesOnReboot bool
+}
+
+func (u instanceUpdateInputs) toBody() map[string]interface{} {
+	body := map[string]interface{}{}
+	if strings.TrimSpace(u.name) != "" {
+		body["name"] = strings.TrimSpace(u.name)
+	}
+	if strings.TrimSpace(u.description) != "" {
+		body["description"] = strings.TrimSpace(u.description)
+	}
+	if strings.TrimSpace(u.osID) != "" {
+		body["operatingSystemId"] = strings.TrimSpace(u.osID)
+	}
+	if len(u.sshKeyGroupIDs) > 0 {
+		body["sshKeyGroupIds"] = u.sshKeyGroupIDs
+	}
+	if u.triggerReboot {
+		body["triggerReboot"] = true
+		if u.rebootWithCustomIpxe {
+			body["rebootWithCustomIpxe"] = true
+		}
+		if u.applyUpdatesOnReboot {
+			body["applyUpdatesOnReboot"] = true
+		}
+	}
+	return body
+}
+
+func cmdInstanceUpdate(s *Session, args []string) error {
+	ctx := context.Background()
+	item, err := s.Resolver.ResolveWithArgs(ctx, "instance", "Instance to update", args)
+	if err != nil {
+		return err
+	}
+	inputs := instanceUpdateInputs{}
+	inputs.name, err = PromptText("New name (optional)", false)
+	if err != nil {
+		return err
+	}
+	inputs.description, err = PromptText("New description (optional)", false)
+	if err != nil {
+		return err
+	}
+
+	if osList, osErr := s.Resolver.Fetch(ctx, "operating-system"); osErr == nil && len(osList) > 0 {
+		changeOS, confirmErr := PromptConfirm("Change operating system?")
+		if confirmErr != nil {
+			return confirmErr
+		}
+		if changeOS {
+			osItem, selectErr := s.Resolver.Resolve(ctx, "operating-system", "Operating System")
+			if selectErr != nil {
+				return selectErr
+			}
+			inputs.osID = osItem.ID
+		}
+	}
+
+	rotateGroups, err := PromptConfirm("Replace ssh key groups (this overwrites the existing list)?")
+	if err != nil {
+		return err
+	}
+	if rotateGroups {
+		inputs.sshKeyGroupIDs, err = promptOptionalResourceIDs(s, ctx, "ssh-key-group", "SSH key group")
+		if err != nil {
+			return err
+		}
+	}
+
+	inputs.triggerReboot, err = PromptConfirm("Trigger reboot now?")
+	if err != nil {
+		return err
+	}
+	if inputs.triggerReboot {
+		inputs.rebootWithCustomIpxe, err = PromptConfirm("Reboot with custom iPXE (one-time)?")
+		if err != nil {
+			return err
+		}
+		inputs.applyUpdatesOnReboot, err = PromptConfirm("Apply pending updates on reboot?")
+		if err != nil {
+			return err
+		}
+	}
+
+	body := inputs.toBody()
+	if len(body) == 0 {
+		return fmt.Errorf("no updates provided")
+	}
+
+	LogCmd(s, "instance", "update", item.ID)
+	bodyJSON, _ := json.Marshal(body)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "instance/{id}"), map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("updating instance: %w", err)
+	}
+	s.Cache.Invalidate("instance")
+	s.Cache.InvalidateFiltered()
+	var updated map[string]interface{}
+	json.Unmarshal(resp, &updated)
+	fmt.Printf("%s Instance updated: %s (%s)\n", Green("OK"), str(updated, "name"), str(updated, "id"))
+	return nil
+}
+
+func cmdInstanceReboot(s *Session, args []string) error {
+	ctx := context.Background()
+	item, err := s.Resolver.ResolveWithArgs(ctx, "instance", "Instance to reboot", args)
+	if err != nil {
+		return err
+	}
+	rebootWithCustomIpxe, err := PromptConfirm("Reboot with custom iPXE (one-time)?")
+	if err != nil {
+		return err
+	}
+	applyUpdatesOnReboot, err := PromptConfirm("Apply pending updates on reboot?")
+	if err != nil {
+		return err
+	}
+	confirm, err := PromptConfirm(fmt.Sprintf("Reboot instance %s (%s) now?", item.Name, item.ID))
+	if err != nil || !confirm {
+		return err
+	}
+
+	body := instanceUpdateInputs{
+		triggerReboot:        true,
+		rebootWithCustomIpxe: rebootWithCustomIpxe,
+		applyUpdatesOnReboot: applyUpdatesOnReboot,
+	}.toBody()
+
+	LogCmd(s, "instance", "update", item.ID, "--trigger-reboot=true")
+	bodyJSON, _ := json.Marshal(body)
+	_, _, err = s.Client.Do("PATCH", apiPath(s, "instance/{id}"), map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("rebooting instance: %w", err)
+	}
+	s.Cache.Invalidate("instance")
+	s.Cache.InvalidateFiltered()
+	fmt.Printf("%s Reboot requested for instance %s (%s)\n", Green("OK"), item.Name, item.ID)
 	return nil
 }
 
