@@ -159,6 +159,44 @@ func (es *ExpectedSwitch) ToProto(creds ExpectedSwitchCredentials) *cwssaws.Expe
 	return proto
 }
 
+// FromProto populates this ExpectedSwitch from a workflow proto reported
+// by a Site. A nil proto is a no-op. An invalid or missing
+// proto.ExpectedSwitchId leaves es.ID unchanged so the caller can validate
+// the proto's UUID before calling.
+func (es *ExpectedSwitch) FromProto(proto *cwssaws.ExpectedSwitch) {
+	if proto == nil {
+		return
+	}
+	if proto.ExpectedSwitchId != nil {
+		if id, err := uuid.Parse(proto.ExpectedSwitchId.Value); err == nil {
+			es.ID = id
+		}
+	}
+	es.BmcMacAddress = proto.BmcMacAddress
+	es.SwitchSerialNumber = proto.SwitchSerialNumber
+	if proto.BmcIpAddress != "" {
+		addr := proto.BmcIpAddress
+		es.BmcIpAddress = &addr
+	} else {
+		es.BmcIpAddress = nil
+	}
+	if proto.RackId != nil {
+		rackID := proto.RackId.Id
+		es.RackID = &rackID
+	} else {
+		es.RackID = nil
+	}
+	es.Name = proto.Name
+	es.Manufacturer = proto.Manufacturer
+	es.Model = proto.Model
+	es.Description = proto.Description
+	es.FirmwareVersion = proto.FirmwareVersion
+	es.SlotID = proto.SlotId
+	es.TrayIdx = proto.TrayIdx
+	es.HostID = proto.HostId
+	es.Labels = LabelsFromProtoMetadata(proto.Metadata)
+}
+
 // ExpectedSwitchCreateInput input parameters for Create method
 type ExpectedSwitchCreateInput struct {
 	ExpectedSwitchID   uuid.UUID

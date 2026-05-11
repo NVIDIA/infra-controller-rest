@@ -152,6 +152,44 @@ func (eps *ExpectedPowerShelf) ToProto(creds ExpectedPowerShelfCredentials) *cws
 	return proto
 }
 
+// FromProto populates this ExpectedPowerShelf from a workflow proto
+// reported by a Site. A nil proto is a no-op. An invalid or missing
+// proto.ExpectedPowerShelfId leaves eps.ID unchanged so the caller can
+// validate the proto's UUID before calling.
+func (eps *ExpectedPowerShelf) FromProto(proto *cwssaws.ExpectedPowerShelf) {
+	if proto == nil {
+		return
+	}
+	if proto.ExpectedPowerShelfId != nil {
+		if id, err := uuid.Parse(proto.ExpectedPowerShelfId.Value); err == nil {
+			eps.ID = id
+		}
+	}
+	eps.BmcMacAddress = proto.BmcMacAddress
+	eps.ShelfSerialNumber = proto.ShelfSerialNumber
+	if proto.BmcIpAddress != "" {
+		addr := proto.BmcIpAddress
+		eps.BmcIpAddress = &addr
+	} else {
+		eps.BmcIpAddress = nil
+	}
+	if proto.RackId != nil {
+		rackID := proto.RackId.Id
+		eps.RackID = &rackID
+	} else {
+		eps.RackID = nil
+	}
+	eps.Name = proto.Name
+	eps.Manufacturer = proto.Manufacturer
+	eps.Model = proto.Model
+	eps.Description = proto.Description
+	eps.FirmwareVersion = proto.FirmwareVersion
+	eps.SlotID = proto.SlotId
+	eps.TrayIdx = proto.TrayIdx
+	eps.HostID = proto.HostId
+	eps.Labels = LabelsFromProtoMetadata(proto.Metadata)
+}
+
 // ExpectedPowerShelfCreateInput input parameters for Create method
 type ExpectedPowerShelfCreateInput struct {
 	ExpectedPowerShelfID uuid.UUID

@@ -131,6 +131,31 @@ func (er *ExpectedRack) ToProto() *cwssaws.ExpectedRack {
 	return proto
 }
 
+// FromProto populates this ExpectedRack from a workflow proto reported
+// by a Site. ExpectedRacks are identified across systems by the
+// operator-supplied RackID string carried in proto.RackId; the DB-side
+// uuid.UUID `er.ID` is not on the proto and is set by the caller. A nil
+// proto is a no-op. A nil or empty proto.RackId leaves er.RackID
+// unchanged so the caller can validate the proto identifier before
+// calling.
+func (er *ExpectedRack) FromProto(proto *cwssaws.ExpectedRack) {
+	if proto == nil {
+		return
+	}
+	if proto.RackId != nil && proto.RackId.Id != "" {
+		er.RackID = proto.RackId.Id
+	}
+	er.RackProfileID = proto.RackType
+	if proto.Metadata != nil {
+		er.Name = proto.Metadata.Name
+		er.Description = proto.Metadata.Description
+	} else {
+		er.Name = ""
+		er.Description = ""
+	}
+	er.Labels = LabelsFromProtoMetadata(proto.Metadata)
+}
+
 var _ bun.BeforeAppendModelHook = (*ExpectedRack)(nil)
 
 // BeforeAppendModel is a hook that is called before the model is appended to the query

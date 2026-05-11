@@ -24,17 +24,17 @@ import (
 
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"go.temporal.io/sdk/temporal"
 )
 
-// ManageTray is an activity wrapper for Tray management via RLA
+// ManageTray is an activity wrapper for Tray management via Flow
 type ManageTray struct {
-	RlaAtomicClient *cClient.RlaAtomicClient
+	FlowAtomicClient *cClient.FlowAtomicClient
 }
 
-// GetTray retrieves a tray by its UUID from RLA
-func (mt *ManageTray) GetTray(ctx context.Context, request *rlav1.GetComponentInfoByIDRequest) (*rlav1.GetComponentInfoResponse, error) {
+// GetTray retrieves a tray by its UUID from Flow
+func (mt *ManageTray) GetTray(ctx context.Context, request *flowv1.GetComponentInfoByIDRequest) (*flowv1.GetComponentInfoResponse, error) {
 	logger := log.With().Str("Activity", "GetTray").Logger()
 	logger.Info().Msg("Starting activity")
 
@@ -52,15 +52,15 @@ func (mt *ManageTray) GetTray(ctx context.Context, request *rlav1.GetComponentIn
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mt.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mt.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.GetComponentInfoByID(ctx, request)
+	response, err := flow.GetComponentInfoByID(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get tray by ID using RLA API")
+		logger.Warn().Err(err).Msg("Failed to get tray by ID using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -69,25 +69,25 @@ func (mt *ManageTray) GetTray(ctx context.Context, request *rlav1.GetComponentIn
 	return response, nil
 }
 
-// GetTrays retrieves a list of trays from RLA with optional filters.
-func (mt *ManageTray) GetTrays(ctx context.Context, request *rlav1.GetComponentsRequest) (*rlav1.GetComponentsResponse, error) {
+// GetTrays retrieves a list of trays from Flow with optional filters.
+func (mt *ManageTray) GetTrays(ctx context.Context, request *flowv1.GetComponentsRequest) (*flowv1.GetComponentsResponse, error) {
 	logger := log.With().Str("Activity", "GetTrays").Logger()
 	logger.Info().Msg("Starting activity")
 
 	// Request can be nil or empty for getting all trays
 	if request == nil {
-		request = &rlav1.GetComponentsRequest{}
+		request = &flowv1.GetComponentsRequest{}
 	}
 
-	// Call RLA gRPC endpoint
-	rla, err := mt.RlaAtomicClient.GetRLAClient()
+	// Call Flow gRPC endpoint
+	flow, err := mt.FlowAtomicClient.GetRLAClient()
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := rla.GetComponents(ctx, request)
+	response, err := flow.GetComponents(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get list of trays using RLA API")
+		logger.Warn().Err(err).Msg("Failed to get list of trays using Flow API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -97,8 +97,8 @@ func (mt *ManageTray) GetTrays(ctx context.Context, request *rlav1.GetComponents
 }
 
 // NewManageTray returns a new ManageTray client
-func NewManageTray(rlaClient *cClient.RlaAtomicClient) ManageTray {
+func NewManageTray(flowClient *cClient.FlowAtomicClient) ManageTray {
 	return ManageTray{
-		RlaAtomicClient: rlaClient,
+		FlowAtomicClient: flowClient,
 	}
 }

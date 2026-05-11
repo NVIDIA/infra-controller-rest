@@ -42,7 +42,7 @@ import (
 	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 )
 
@@ -70,7 +70,7 @@ func NewGetRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Client
 
 // Handle godoc
 // @Summary Get a Rack
-// @Description Get a Rack by ID from RLA
+// @Description Get a Rack by ID from Flow
 // @Tags rack
 // @Accept json
 // @Produce json
@@ -168,9 +168,9 @@ func (grh GetRackHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request
-	rlaRequest := &rlav1.GetRackInfoByIDRequest{
-		Id:             &rlav1.UUID{Id: rackStrID},
+	// Build Flow request
+	flowRequest := &flowv1.GetRackInfoByIDRequest{
+		Id:             &flowv1.UUID{Id: rackStrID},
 		WithComponents: apiRequest.IncludeComponents,
 	}
 
@@ -186,15 +186,15 @@ func (grh GetRackHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRack", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRack", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute GetRack workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get Rack details", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.GetRackInfoResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.GetRackInfoResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -207,7 +207,7 @@ func (grh GetRackHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	protoRack := rlaResponse.GetRack()
+	protoRack := flowResponse.GetRack()
 	apiRack := model.NewAPIRack(protoRack, apiRequest.IncludeComponents)
 	if apiRack == nil {
 		return cutil.NewAPIErrorResponse(c, http.StatusNotFound, "Rack not found", nil)
@@ -242,7 +242,7 @@ func NewGetAllRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 
 // Handle godoc
 // @Summary Get all Racks
-// @Description Get all Racks from RLA with optional filters
+// @Description Get all Racks from Flow with optional filters
 // @Tags rack
 // @Accept json
 // @Produce json
@@ -349,15 +349,15 @@ func (garh GetAllRackHandler) Handle(c echo.Context) error {
 	}
 
 	// Build OrderBy from pagination
-	var orderBy *rlav1.OrderBy
+	var orderBy *flowv1.OrderBy
 	if pageRequest.OrderBy != nil {
 		orderBy = model.GetProtoRackOrderByFromQueryParam(pageRequest.OrderBy.Field, strings.ToUpper(pageRequest.OrderBy.Order))
 	}
 
 	// Build Pagination
-	var paginationProto *rlav1.Pagination
+	var paginationProto *flowv1.Pagination
 	if pageRequest.Offset != nil && pageRequest.Limit != nil {
-		paginationProto = &rlav1.Pagination{
+		paginationProto = &flowv1.Pagination{
 			Offset: int32(*pageRequest.Offset),
 			Limit:  int32(*pageRequest.Limit),
 		}
@@ -370,8 +370,8 @@ func (garh GetAllRackHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request from validated params
-	rlaRequest := &rlav1.GetListOfRacksRequest{
+	// Build Flow request from validated params
+	flowRequest := &flowv1.GetListOfRacksRequest{
 		Filters:        apiRequest.ToFilters(),
 		WithComponents: apiRequest.IncludeComponents,
 		Pagination:     paginationProto,
@@ -392,15 +392,15 @@ func (garh GetAllRackHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRacks", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRacks", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute GetRacks workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get Racks", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.GetListOfRacksResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.GetListOfRacksResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -413,13 +413,13 @@ func (garh GetAllRackHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	apiRacks := make([]*model.APIRack, 0, len(rlaResponse.GetRacks()))
-	for _, rack := range rlaResponse.GetRacks() {
+	apiRacks := make([]*model.APIRack, 0, len(flowResponse.GetRacks()))
+	for _, rack := range flowResponse.GetRacks() {
 		apiRacks = append(apiRacks, model.NewAPIRack(rack, apiRequest.IncludeComponents))
 	}
 
 	// Create pagination response header
-	total := int(rlaResponse.GetTotal())
+	total := int(flowResponse.GetTotal())
 	pageResponse := pagination.NewPageResponse(*pageRequest.PageNumber, *pageRequest.PageSize, total, pageRequest.OrderByStr)
 	pageHeader, err := json.Marshal(pageResponse)
 	if err != nil {
@@ -457,7 +457,7 @@ func NewValidateRackHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.C
 
 // Handle godoc
 // @Summary Validate a Rack
-// @Description Validate a Rack's components by comparing expected vs actual state via RLA
+// @Description Validate a Rack's components by comparing expected vs actual state via Flow
 // @Tags rack
 // @Accept json
 // @Produce json
@@ -549,15 +549,15 @@ func (vrh ValidateRackHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request - target the specific rack by ID
-	rlaRequest := &rlav1.ValidateComponentsRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	// Build Flow request - target the specific rack by ID
+	flowRequest := &flowv1.ValidateComponentsRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: rackStrID},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: rackStrID},
 							},
 						},
 					},
@@ -578,15 +578,15 @@ func (vrh ValidateRackHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute ValidateComponents workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to validate Rack", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.ValidateComponentsResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.ValidateComponentsResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -599,9 +599,9 @@ func (vrh ValidateRackHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	apiResult := model.NewAPIRackValidationResult(&rlaResponse)
+	apiResult := model.NewAPIRackValidationResult(&flowResponse)
 
-	logger.Info().Int32("TotalDiffs", rlaResponse.GetTotalDiffs()).Msg("finishing API handler")
+	logger.Info().Int32("TotalDiffs", flowResponse.GetTotalDiffs()).Msg("finishing API handler")
 
 	return c.JSON(http.StatusOK, apiResult)
 }
@@ -631,7 +631,7 @@ func NewValidateRacksHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 
 // Handle godoc
 // @Summary Validate Racks
-// @Description Validate Rack components by comparing expected vs actual state via RLA. If no filter is specified, validates all racks in the Site.
+// @Description Validate Rack components by comparing expected vs actual state via Flow. If no filter is specified, validates all racks in the Site.
 // @Tags rack
 // @Accept json
 // @Produce json
@@ -725,7 +725,7 @@ func (vrsh ValidateRacksHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	rlaRequest := &rlav1.ValidateComponentsRequest{
+	flowRequest := &flowv1.ValidateComponentsRequest{
 		Filters: apiRequest.ToFilters(),
 	}
 
@@ -743,15 +743,15 @@ func (vrsh ValidateRacksHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute ValidateComponents workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to validate Racks", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.ValidateComponentsResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.ValidateComponentsResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -764,9 +764,9 @@ func (vrsh ValidateRacksHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	apiResult := model.NewAPIRackValidationResult(&rlaResponse)
+	apiResult := model.NewAPIRackValidationResult(&flowResponse)
 
-	logger.Info().Int32("TotalDiffs", rlaResponse.GetTotalDiffs()).Msg("finishing API handler")
+	logger.Info().Int32("TotalDiffs", flowResponse.GetTotalDiffs()).Msg("finishing API handler")
 
 	return c.JSON(http.StatusOK, apiResult)
 }
@@ -883,13 +883,13 @@ func (pcrh UpdateRackPowerStateHandler) Handle(c echo.Context) error {
 	}
 
 	// Build TargetSpec for single rack by ID
-	targetSpec := &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Racks{
-			Racks: &rlav1.RackTargets{
-				Targets: []*rlav1.RackTarget{
+	targetSpec := &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Racks{
+			Racks: &flowv1.RackTargets{
+				Targets: []*flowv1.RackTarget{
 					{
-						Identifier: &rlav1.RackTarget_Id{
-							Id: &rlav1.UUID{Id: rackStrID},
+						Identifier: &flowv1.RackTarget_Id{
+							Id: &flowv1.UUID{Id: rackStrID},
 						},
 					},
 				},
@@ -897,14 +897,14 @@ func (pcrh UpdateRackPowerStateHandler) Handle(c echo.Context) error {
 		},
 	}
 
-	rlaResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.State,
+	flowResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.State,
 		fmt.Sprintf("rack-power-state-update-%s-%s", apiRequest.State, rackStrID), "Rack")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Str("State", apiRequest.State).Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(flowResp))
 }
 
 // ~~~~~ Batch Update Rack Power State Handler ~~~~~ //
@@ -1015,14 +1015,14 @@ func (pcrbh BatchUpdateRackPowerStateHandler) Handle(c echo.Context) error {
 	// Build TargetSpec from filter (nil filter = all racks)
 	targetSpec := request.Filter.ToTargetSpec()
 
-	rlaResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, request.State,
+	flowResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, request.State,
 		fmt.Sprintf("rack-power-state-batch-update-%s-%s", request.State, common.RequestHash(request.Filter)), "Rack")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Str("State", request.State).Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(flowResp))
 }
 
 // ~~~~~ Update Rack Firmware Handler ~~~~~ //
@@ -1135,13 +1135,13 @@ func (furh UpdateRackFirmwareHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	targetSpec := &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Racks{
-			Racks: &rlav1.RackTargets{
-				Targets: []*rlav1.RackTarget{
+	targetSpec := &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Racks{
+			Racks: &flowv1.RackTargets{
+				Targets: []*flowv1.RackTarget{
 					{
-						Identifier: &rlav1.RackTarget_Id{
-							Id: &rlav1.UUID{Id: rackStrID},
+						Identifier: &flowv1.RackTarget_Id{
+							Id: &flowv1.UUID{Id: rackStrID},
 						},
 					},
 				},
@@ -1149,14 +1149,14 @@ func (furh UpdateRackFirmwareHandler) Handle(c echo.Context) error {
 		},
 	}
 
-	rlaResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
+	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
 		fmt.Sprintf("rack-firmware-update-%s", rackStrID), "Rack")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(flowResp))
 }
 
 // ~~~~~ Batch Update Rack Firmware Handler ~~~~~ //
@@ -1267,14 +1267,14 @@ func (furbh BatchUpdateRackFirmwareHandler) Handle(c echo.Context) error {
 	// Build TargetSpec from filter (nil filter = all racks)
 	targetSpec := request.Filter.ToTargetSpec()
 
-	rlaResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
+	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
 		fmt.Sprintf("rack-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Rack")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(flowResp))
 }
 
 // ~~~~~ Bring Up Rack Handler ~~~~~ //
@@ -1388,13 +1388,13 @@ func (burh BringUpRackHandler) Handle(c echo.Context) error {
 	}
 
 	// Build TargetSpec for single rack by ID
-	targetSpec := &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Racks{
-			Racks: &rlav1.RackTargets{
-				Targets: []*rlav1.RackTarget{
+	targetSpec := &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Racks{
+			Racks: &flowv1.RackTargets{
+				Targets: []*flowv1.RackTarget{
 					{
-						Identifier: &rlav1.RackTarget_Id{
-							Id: &rlav1.UUID{Id: rackStrID},
+						Identifier: &flowv1.RackTarget_Id{
+							Id: &flowv1.UUID{Id: rackStrID},
 						},
 					},
 				},
@@ -1407,14 +1407,14 @@ func (burh BringUpRackHandler) Handle(c echo.Context) error {
 		description = fmt.Sprintf("API bring up Rack %s", rackStrID)
 	}
 
-	rlaResp, err := common.ExecuteBringUpRackWorkflow(ctx, c, logger, stc, targetSpec, description,
+	flowResp, err := common.ExecuteBringUpRackWorkflow(ctx, c, logger, stc, targetSpec, description,
 		fmt.Sprintf("rack-bringup-%s", rackStrID), "Rack")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIBringUpRackResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIBringUpRackResponse(flowResp))
 }
 
 // ~~~~~ Batch Bring Up Rack Handler ~~~~~ //
@@ -1530,12 +1530,12 @@ func (bbuh BatchBringUpRackHandler) Handle(c echo.Context) error {
 		description = "API batch bring up Racks"
 	}
 
-	rlaResp, err := common.ExecuteBringUpRackWorkflow(ctx, c, logger, stc, targetSpec, description,
+	flowResp, err := common.ExecuteBringUpRackWorkflow(ctx, c, logger, stc, targetSpec, description,
 		fmt.Sprintf("rack-bringup-batch-%s", common.RequestHash(request.Filter)), "Rack")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIBringUpRackResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIBringUpRackResponse(flowResp))
 }

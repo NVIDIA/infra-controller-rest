@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -687,16 +687,16 @@ func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
 }
 
 func TestManageExpectedMachine_CreateExpectedMachineOnRLA(t *testing.T) {
-	t.Run("nil RLA client skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedMachine{RlaAtomicClient: nil}
+	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedMachine{FlowAtomicClient: nil}
 		err := mm.CreateExpectedMachineOnRLA(context.Background(), &cwssaws.ExpectedMachine{
 			Id: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ChassisSerialNumber: "SN001",
 		})
 		assert.NoError(t, err)
 	})
 
-	t.Run("nil RLA client connection skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedMachine{RlaAtomicClient: cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})}
+	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedMachine{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
 		err := mm.CreateExpectedMachineOnRLA(context.Background(), &cwssaws.ExpectedMachine{
 			Id: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ChassisSerialNumber: "SN001",
 		})
@@ -705,8 +705,8 @@ func TestManageExpectedMachine_CreateExpectedMachineOnRLA(t *testing.T) {
 }
 
 func TestManageExpectedMachine_CreateExpectedMachinesOnRLA(t *testing.T) {
-	t.Run("nil RLA client skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedMachine{RlaAtomicClient: nil}
+	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedMachine{FlowAtomicClient: nil}
 		err := mm.CreateExpectedMachinesOnRLA(context.Background(), &cwssaws.BatchExpectedMachineOperationRequest{
 			ExpectedMachines: &cwssaws.ExpectedMachineList{
 				ExpectedMachines: []*cwssaws.ExpectedMachine{
@@ -717,8 +717,8 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnRLA(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("nil RLA client connection skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedMachine{RlaAtomicClient: cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})}
+	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedMachine{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
 		err := mm.CreateExpectedMachinesOnRLA(context.Background(), &cwssaws.BatchExpectedMachineOperationRequest{
 			ExpectedMachines: &cwssaws.ExpectedMachineList{
 				ExpectedMachines: []*cwssaws.ExpectedMachine{
@@ -750,7 +750,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 			HostId:              int32Ptr(3),
 		}
 		component := expectedMachineToRLAComponent(em)
-		assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_COMPUTE, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_COMPUTE, component.Type)
 		assert.Equal(t, "em-001", component.Info.Id.Id)
 		assert.Equal(t, "CHASSIS-001", component.Info.SerialNumber)
 		assert.Equal(t, "compute-node-1", component.Info.Name)
@@ -764,7 +764,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 		assert.Equal(t, int32(2), component.Position.TrayIdx)
 		assert.Equal(t, int32(3), component.Position.HostId)
 		if assert.Len(t, component.Bmcs, 1) {
-			assert.Equal(t, rlav1.BMCType_BMC_TYPE_HOST, component.Bmcs[0].Type)
+			assert.Equal(t, flowv1.BMCType_BMC_TYPE_HOST, component.Bmcs[0].Type)
 			assert.Equal(t, "AA:BB:CC:DD:EE:FF", component.Bmcs[0].MacAddress)
 		}
 		assert.NotNil(t, component.RackId)
@@ -776,7 +776,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 			Id: &cwssaws.UUID{Value: "em-002"}, BmcMacAddress: "11:22:33:44:55:66", ChassisSerialNumber: "CHASSIS-002",
 		}
 		component := expectedMachineToRLAComponent(em)
-		assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_COMPUTE, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_COMPUTE, component.Type)
 		assert.Equal(t, "em-002", component.ComponentId)
 		assert.Empty(t, component.Info.Name)
 		assert.Empty(t, component.Info.Manufacturer)

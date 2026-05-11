@@ -28,8 +28,103 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 )
+
+func TestExpectedSwitch_FromProto(t *testing.T) {
+	id := uuid.New()
+	rackID := "rack-1"
+	name := "sw-1"
+	manufacturer := "ACME"
+	model := "SW1"
+	description := "primary"
+	firmware := "1.2.3"
+	var slot, trayIdx, host int32 = 1, 2, 3
+
+	t.Run("nil proto leaves receiver unchanged", func(t *testing.T) {
+		es := &ExpectedSwitch{ID: id, BmcMacAddress: "aa:bb"}
+		es.FromProto(nil)
+
+		assert.Equal(t, id, es.ID)
+		assert.Equal(t, "aa:bb", es.BmcMacAddress)
+	})
+
+	t.Run("invalid id leaves es.ID unchanged", func(t *testing.T) {
+		es := &ExpectedSwitch{ID: id}
+		es.FromProto(&cwssaws.ExpectedSwitch{
+			ExpectedSwitchId: &cwssaws.UUID{Value: "not-a-uuid"},
+			BmcMacAddress:    "aa:bb",
+		})
+
+		assert.Equal(t, id, es.ID)
+		assert.Equal(t, "aa:bb", es.BmcMacAddress)
+	})
+
+	t.Run("populates all proto fields", func(t *testing.T) {
+		es := &ExpectedSwitch{}
+		es.FromProto(&cwssaws.ExpectedSwitch{
+			ExpectedSwitchId:   &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress:      "aa:bb:cc:dd:ee:ff",
+			SwitchSerialNumber: "SSN-1",
+			BmcIpAddress:       "10.0.0.1",
+			RackId:             &cwssaws.RackId{Id: rackID},
+			Name:               &name,
+			Manufacturer:       &manufacturer,
+			Model:              &model,
+			Description:        &description,
+			FirmwareVersion:    &firmware,
+			SlotId:             &slot,
+			TrayIdx:            &trayIdx,
+			HostId:             &host,
+			Metadata: &cwssaws.Metadata{
+				Labels: []*cwssaws.Label{
+					{Key: "env", Value: db.GetStrPtr("prod")},
+				},
+			},
+		})
+
+		assert.Equal(t, id, es.ID)
+		assert.Equal(t, "aa:bb:cc:dd:ee:ff", es.BmcMacAddress)
+		assert.Equal(t, "SSN-1", es.SwitchSerialNumber)
+		if assert.NotNil(t, es.BmcIpAddress) {
+			assert.Equal(t, "10.0.0.1", *es.BmcIpAddress)
+		}
+		if assert.NotNil(t, es.RackID) {
+			assert.Equal(t, rackID, *es.RackID)
+		}
+		assert.Equal(t, &name, es.Name)
+		assert.Equal(t, &manufacturer, es.Manufacturer)
+		assert.Equal(t, &model, es.Model)
+		assert.Equal(t, &description, es.Description)
+		assert.Equal(t, &firmware, es.FirmwareVersion)
+		assert.Equal(t, &slot, es.SlotID)
+		assert.Equal(t, &trayIdx, es.TrayIdx)
+		assert.Equal(t, &host, es.HostID)
+		assert.Equal(t, map[string]string{"env": "prod"}, es.Labels)
+	})
+
+	t.Run("empty BmcIpAddress yields nil pointer", func(t *testing.T) {
+		es := &ExpectedSwitch{BmcIpAddress: db.GetStrPtr("stale")}
+		es.FromProto(&cwssaws.ExpectedSwitch{
+			ExpectedSwitchId: &cwssaws.UUID{Value: id.String()},
+			BmcIpAddress:     "",
+		})
+
+		assert.Nil(t, es.BmcIpAddress)
+	})
+
+	t.Run("nil RackId clears es.RackID", func(t *testing.T) {
+		stale := "stale-rack"
+		es := &ExpectedSwitch{RackID: &stale}
+		es.FromProto(&cwssaws.ExpectedSwitch{
+			ExpectedSwitchId: &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress:    "aa:bb",
+		})
+
+		assert.Nil(t, es.RackID)
+	})
+}
 
 // reset the tables needed for ExpectedSwitch tests
 func testExpectedSwitchSetupSchema(t *testing.T, dbSession *db.Session) {

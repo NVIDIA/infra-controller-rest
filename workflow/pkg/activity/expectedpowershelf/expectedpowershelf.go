@@ -42,24 +42,6 @@ type ManageExpectedPowerShelf struct {
 	siteClientPool *sc.ClientPool
 }
 
-func getLabelsMapFromProto(eps *cwssaws.ExpectedPowerShelf) map[string]string {
-	if eps.Metadata == nil || eps.Metadata.Labels == nil {
-		return nil
-	}
-	result := map[string]string{}
-	for _, label := range eps.Metadata.Labels {
-		if label == nil || label.Key == "" {
-			continue
-		}
-		value := ""
-		if label.Value != nil {
-			value = *label.Value
-		}
-		result[label.Key] = value
-	}
-	return result
-}
-
 // Activity functions
 
 // UpdateExpectedPowerShelvesInDB is a Temporal activity that takes a collection of ExpectedPowerShelf data pushed by Site Agent and updates the DB
@@ -151,13 +133,9 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 			continue
 		}
 		reportedIDs[epsID] = true
-		reportedLabels := getLabelsMapFromProto(reps)
 
-		// Convert proto BmcIpAddress (string) to *string for DB
-		var bmcIpAddress *string
-		if reps.BmcIpAddress != "" {
-			bmcIpAddress = &reps.BmcIpAddress
-		}
+		reported := &cdbm.ExpectedPowerShelf{}
+		reported.FromProto(reps)
 
 		// Create a new Expected Power Shelf if it doesn't already exist in DB
 		cur, found := existingByID[epsID]
@@ -165,10 +143,10 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 			_, cerr := epsDAO.Create(ctx, nil, cdbm.ExpectedPowerShelfCreateInput{
 				ExpectedPowerShelfID: epsID,
 				SiteID:               siteID,
-				BmcMacAddress:        reps.BmcMacAddress,
-				ShelfSerialNumber:    reps.ShelfSerialNumber,
-				BmcIpAddress:         bmcIpAddress,
-				Labels:               reportedLabels,
+				BmcMacAddress:        reported.BmcMacAddress,
+				ShelfSerialNumber:    reported.ShelfSerialNumber,
+				BmcIpAddress:         reported.BmcIpAddress,
+				Labels:               reported.Labels,
 				CreatedBy:            siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
@@ -178,22 +156,23 @@ func (mei ManageExpectedPowerShelf) UpdateExpectedPowerShelvesInDB(ctx context.C
 		}
 
 		// update if any field differs
-		if cur.BmcMacAddress != reps.BmcMacAddress ||
-			cur.ShelfSerialNumber != reps.ShelfSerialNumber ||
-			!util.PtrsEqual(cur.BmcIpAddress, bmcIpAddress) ||
-			!reflect.DeepEqual(cur.Labels, reportedLabels) {
+		if cur.BmcMacAddress != reported.BmcMacAddress ||
+			cur.ShelfSerialNumber != reported.ShelfSerialNumber ||
+			!util.PtrsEqual(cur.BmcIpAddress, reported.BmcIpAddress) ||
+			!reflect.DeepEqual(cur.Labels, reported.Labels) {
 			// nil labels in nico can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
-			if cur.Labels != nil && reportedLabels == nil {
-				reportedLabels = map[string]string{}
+			labels := reported.Labels
+			if cur.Labels != nil && labels == nil {
+				labels = map[string]string{}
 			}
 			_, uerr := epsDAO.Update(ctx, nil, cdbm.ExpectedPowerShelfUpdateInput{
 				ExpectedPowerShelfID: cur.ID,
-				BmcMacAddress:        &reps.BmcMacAddress,
-				ShelfSerialNumber:    &reps.ShelfSerialNumber,
-				BmcIpAddress:         bmcIpAddress,
-				Labels:               reportedLabels,
+				BmcMacAddress:        &reported.BmcMacAddress,
+				ShelfSerialNumber:    &reported.ShelfSerialNumber,
+				BmcIpAddress:         reported.BmcIpAddress,
+				Labels:               labels,
 			})
 			if uerr != nil {
 				logger.Error().Err(uerr).Str("ExpectedPowerShelfID", cur.ID.String()).Msg("failed to update ExpectedPowerShelf in DB")

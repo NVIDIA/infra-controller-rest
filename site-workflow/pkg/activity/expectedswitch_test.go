@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -459,16 +459,16 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 }
 
 func TestManageExpectedSwitch_CreateExpectedSwitchOnRLA(t *testing.T) {
-	t.Run("nil RLA client skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedSwitch{RlaAtomicClient: nil}
+	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedSwitch{FlowAtomicClient: nil}
 		err := mm.CreateExpectedSwitchOnRLA(context.Background(), &cwssaws.ExpectedSwitch{
 			ExpectedSwitchId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", SwitchSerialNumber: "SW001",
 		})
 		assert.NoError(t, err)
 	})
 
-	t.Run("nil RLA client connection skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedSwitch{RlaAtomicClient: cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})}
+	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedSwitch{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
 		err := mm.CreateExpectedSwitchOnRLA(context.Background(), &cwssaws.ExpectedSwitch{
 			ExpectedSwitchId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", SwitchSerialNumber: "SW001",
 		})
@@ -496,7 +496,7 @@ func Test_expectedSwitchToRLAComponent(t *testing.T) {
 			HostId:             int32Ptr(0),
 		}
 		component := expectedSwitchToRLAComponent(es)
-		assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
 		assert.Equal(t, "es-001", component.Info.Id.Id)
 		assert.Equal(t, "SW-001", component.Info.SerialNumber)
 		assert.Equal(t, "nvl-switch-1", component.Info.Name)
@@ -521,7 +521,7 @@ func Test_expectedSwitchToRLAComponent(t *testing.T) {
 			SwitchSerialNumber: "SW-002",
 		}
 		component := expectedSwitchToRLAComponent(es)
-		assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
 		assert.Empty(t, component.Info.Name)
 		assert.Empty(t, component.Info.Manufacturer)
 		assert.Nil(t, component.Info.Model)

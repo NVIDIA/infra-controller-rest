@@ -185,7 +185,7 @@ jobs:
       - name: Regenerate protobuf code
         run: |
           cd workflow-schema && buf generate
-          cd rla && buf generate
+          cd flow && buf generate
 
       - name: Check for uncommitted changes
         run: |
@@ -197,7 +197,7 @@ jobs:
           if [ -z "$MEANINGFUL_DIFF" ] && [ -z "$UNTRACKED" ]; then
             echo "✓ Protobuf generated code is up to date."
           else
-            echo "::error::Protobuf generated code is out of date. Please run 'make core-protogen' and 'make rla-protogen' and commit the results."
+            echo "::error::Protobuf generated code is out of date. Please run 'make core-protogen' and 'make flow-protogen' and commit the results."
             echo ""
             echo "Changed files:"
             git status --porcelain
@@ -216,7 +216,10 @@ jobs:
   # Test Job - Unit tests per module with PostgreSQL service
   # ============================================================================
   test:
-    name: Test (${{ matrix.module }})
+    # Display name preserves the old "rla" label so existing branch-protection
+    # required-check names ("Test (rla)") keep matching after the rla -> flow
+    # directory rename. Drop this hack once branch protection is updated.
+    name: Test (${{ matrix.module == 'flow' && 'rla' || matrix.module }})
     runs-on: ubuntu-latest
     continue-on-error: false
     strategy:
@@ -231,7 +234,7 @@ jobs:
           - ipam
           - powershelf-manager
           - nvswitch-manager
-          - rla
+          - flow
           - site-agent
           - site-manager
           - site-workflow

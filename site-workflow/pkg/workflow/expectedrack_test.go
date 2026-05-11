@@ -102,7 +102,7 @@ func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_CoreSuccess_RL
 
 	// Mock CreateExpectedRackOnRLA activity (failure - workflow should still succeed)
 	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnRLA)
-	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnRLA, mock.Anything, mock.Anything).Return(errors.New("RLA unavailable"))
+	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnRLA, mock.Anything, mock.Anything).Return(errors.New("Flow unavailable"))
 
 	// Execute CreateExpectedRack workflow
 	certs.env.ExecuteWorkflow(CreateExpectedRack, request)

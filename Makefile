@@ -163,7 +163,7 @@ rla-mock-server-start: rla-mock-server-build
 	./build/mock-rla -tout 0 > build/mock-rla.log 2>&1 & echo $$! > build/mock-rla.pid
 	@echo "Waiting for RLA gRPC server to start..."
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		if grep -q "Started RLA API server" build/mock-rla.log 2>/dev/null; then \
+		if grep -q "Started Flow API server" build/mock-rla.log 2>/dev/null; then \
 			sleep 0.1; \
 			echo "RLA gRPC server is ready"; \
 			exit 0; \
@@ -259,18 +259,18 @@ core-protogen:
 	echo "Generating protobuf for Core"
 	cd workflow-schema && buf generate
 
-rla-proto:
-	RLA_DIR=rla \
-	ls "$${RLA_DIR}/proto/v1"; \
-	for file in "$${RLA_DIR}"/proto/v1/*.proto; do \
-		cp "$$file" "workflow-schema/rla/proto/v1/"; \
+flow-proto:
+	FLOW_DIR=flow \
+	ls "$${FLOW_DIR}/proto/v1"; \
+	for file in "$${FLOW_DIR}"/proto/v1/*.proto; do \
+		cp "$$file" "workflow-schema/flow/proto/v1/"; \
 		echo "Copied: $$file"; \
-		./workflow-schema/scripts/add-go-package-option.sh "workflow-schema/rla/proto/v1/$$(basename "$$file")" "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla"; \
+		./workflow-schema/scripts/add-go-package-option.sh "workflow-schema/flow/proto/v1/$$(basename "$$file")" "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow"; \
 	done
 
-rla-protogen:
-	echo "Generating protobuf for RLA"
-	cd workflow-schema/rla && buf generate
+flow-protogen:
+	echo "Generating protobuf for Flow"
+	cd workflow-schema/flow && buf generate
 
 # =============================================================================
 # Kind Local Deployment Targets

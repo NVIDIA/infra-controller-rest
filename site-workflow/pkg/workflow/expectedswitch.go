@@ -65,7 +65,7 @@ func DiscoverExpectedSwitchInventory(ctx workflow.Context) error {
 }
 
 // CreateExpectedSwitch is a workflow to create a new Expected Switch using the CreateExpectedSwitchOnSite activity,
-// then also creates the component in RLA via CreateExpectedSwitchOnRLA.
+// then also creates the component in Flow via CreateExpectedSwitchOnRLA.
 func CreateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch) error {
 	logger := log.With().Str("Workflow", "ExpectedSwitch").Str("Action", "Create").Str("ID", request.GetExpectedSwitchId().GetValue()).Str("Expected MAC address", request.BmcMacAddress).Str("Serial", request.SwitchSerialNumber).Logger()
 
@@ -96,10 +96,10 @@ func CreateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch)
 		return err
 	}
 
-	// Then write to RLA (best-effort: log warning but don't fail the workflow)
+	// Then write to Flow (best-effort: log warning but don't fail the workflow)
 	err = workflow.ExecuteActivity(ctx, expectedSwitchManager.CreateExpectedSwitchOnRLA, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedSwitchOnRLA").Msg("Failed to create component on RLA, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedSwitchOnRLA").Msg("Failed to create component on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")
@@ -108,7 +108,7 @@ func CreateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch)
 }
 
 // UpdateExpectedSwitch is a workflow to update an Expected Switch using the UpdateExpectedSwitchOnSite activity
-// TODO: Add RLA PatchComponent dual-write when update/delete RLA support is implemented
+// TODO: Add Flow PatchComponent dual-write when update/delete Flow support is implemented
 func UpdateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch) error {
 	logger := log.With().Str("Workflow", "ExpectedSwitch").Str("Action", "Update").Str("ID", request.GetExpectedSwitchId().GetValue()).Str("Expected MAC address", request.BmcMacAddress).Str("Serial", request.SwitchSerialNumber).Logger()
 
@@ -144,7 +144,7 @@ func UpdateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch)
 }
 
 // DeleteExpectedSwitch is a workflow to Delete an Expected Switch using the DeleteExpectedSwitchOnSite activity
-// TODO: Add RLA DeleteComponent dual-write when update/delete RLA support is implemented
+// TODO: Add Flow DeleteComponent dual-write when update/delete Flow support is implemented
 func DeleteExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitchRequest) error {
 	logger := log.With().Str("Workflow", "ExpectedSwitch").Str("Action", "Delete").Str("ID", request.GetExpectedSwitchId().GetValue()).Str("optional MAC address", request.BmcMacAddress).Logger()
 

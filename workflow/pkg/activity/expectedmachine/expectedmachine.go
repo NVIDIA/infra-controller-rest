@@ -42,24 +42,6 @@ type ManageExpectedMachine struct {
 	siteClientPool *sc.ClientPool
 }
 
-func getLabelsMapFromProto(em *cwssaws.ExpectedMachine) map[string]string {
-	if em.Metadata == nil || em.Metadata.Labels == nil {
-		return nil
-	}
-	result := map[string]string{}
-	for _, label := range em.Metadata.Labels {
-		if label == nil || label.Key == "" {
-			continue
-		}
-		value := ""
-		if label.Value != nil {
-			value = *label.Value
-		}
-		result[label.Key] = value
-	}
-	return result
-}
-
 // Activity functions
 
 // UpdateExpectedMachinesInDB is a Temporal activity that takes a collection of ExpectedMachine data pushed by Site Agent and updates the DB
@@ -160,7 +142,6 @@ func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context,
 			continue
 		}
 		reportedIDs[emID] = true
-		reportedLabels := getLabelsMapFromProto(rem)
 
 		// Extract linked Machine ID if available (matched by BmcMacAddress)
 		var linkedMachineID *string
@@ -170,18 +151,21 @@ func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context,
 			}
 		}
 
+		reported := &cdbm.ExpectedMachine{}
+		reported.FromProto(rem, linkedMachineID)
+
 		// Create a new Expected Machine if it doesn't already exist in DB
 		cur, found := existingByID[emID]
 		if !found {
 			_, cerr := emDAO.Create(ctx, nil, cdbm.ExpectedMachineCreateInput{
 				ExpectedMachineID:        emID,
 				SiteID:                   siteID,
-				BmcMacAddress:            rem.BmcMacAddress,
-				ChassisSerialNumber:      rem.ChassisSerialNumber,
-				SkuID:                    rem.SkuId,
-				FallbackDpuSerialNumbers: rem.FallbackDpuSerialNumbers,
-				Labels:                   reportedLabels,
-				MachineID:                linkedMachineID,
+				BmcMacAddress:            reported.BmcMacAddress,
+				ChassisSerialNumber:      reported.ChassisSerialNumber,
+				SkuID:                    reported.SkuID,
+				FallbackDpuSerialNumbers: reported.FallbackDpuSerialNumbers,
+				Labels:                   reported.Labels,
+				MachineID:                reported.MachineID,
 				CreatedBy:                siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
@@ -191,26 +175,27 @@ func (mei ManageExpectedMachine) UpdateExpectedMachinesInDB(ctx context.Context,
 		}
 
 		// update if any field differs
-		if cur.BmcMacAddress != rem.BmcMacAddress ||
-			cur.ChassisSerialNumber != rem.ChassisSerialNumber ||
-			!util.PtrsEqual(cur.SkuID, rem.SkuId) ||
-			!util.PtrsEqual(cur.MachineID, linkedMachineID) ||
-			!reflect.DeepEqual(cur.FallbackDpuSerialNumbers, rem.FallbackDpuSerialNumbers) ||
-			!reflect.DeepEqual(cur.Labels, reportedLabels) {
+		if cur.BmcMacAddress != reported.BmcMacAddress ||
+			cur.ChassisSerialNumber != reported.ChassisSerialNumber ||
+			!util.PtrsEqual(cur.SkuID, reported.SkuID) ||
+			!util.PtrsEqual(cur.MachineID, reported.MachineID) ||
+			!reflect.DeepEqual(cur.FallbackDpuSerialNumbers, reported.FallbackDpuSerialNumbers) ||
+			!reflect.DeepEqual(cur.Labels, reported.Labels) {
 			// nil labels in nico can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
-			if cur.Labels != nil && reportedLabels == nil {
-				reportedLabels = map[string]string{}
+			labels := reported.Labels
+			if cur.Labels != nil && labels == nil {
+				labels = map[string]string{}
 			}
 			_, uerr := emDAO.Update(ctx, nil, cdbm.ExpectedMachineUpdateInput{
 				ExpectedMachineID:        cur.ID,
-				BmcMacAddress:            &rem.BmcMacAddress,
-				ChassisSerialNumber:      &rem.ChassisSerialNumber,
-				SkuID:                    rem.SkuId,
-				MachineID:                linkedMachineID,
-				FallbackDpuSerialNumbers: rem.FallbackDpuSerialNumbers,
-				Labels:                   reportedLabels,
+				BmcMacAddress:            &reported.BmcMacAddress,
+				ChassisSerialNumber:      &reported.ChassisSerialNumber,
+				SkuID:                    reported.SkuID,
+				MachineID:                reported.MachineID,
+				FallbackDpuSerialNumbers: reported.FallbackDpuSerialNumbers,
+				Labels:                   labels,
 			})
 			if uerr != nil {
 				logger.Error().Err(uerr).Str("ExpectedMachineID", cur.ID.String()).Msg("failed to update ExpectedMachine in DB")

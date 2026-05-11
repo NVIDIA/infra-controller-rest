@@ -20,7 +20,7 @@ package model
 import (
 	"testing"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -62,7 +62,7 @@ func TestAPIUpdateFirmwareRequest_Validate(t *testing.T) {
 func TestNewAPIUpdateFirmwareResponse(t *testing.T) {
 	tests := []struct {
 		name     string
-		resp     *rlav1.SubmitTaskResponse
+		resp     *flowv1.SubmitTaskResponse
 		expected *APIUpdateFirmwareResponse
 	}{
 		{
@@ -72,21 +72,21 @@ func TestNewAPIUpdateFirmwareResponse(t *testing.T) {
 		},
 		{
 			name: "single task ID",
-			resp: &rlav1.SubmitTaskResponse{
-				TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+			resp: &flowv1.SubmitTaskResponse{
+				TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 			},
 			expected: &APIUpdateFirmwareResponse{TaskIDs: []string{"task-1"}},
 		},
 		{
 			name: "multiple task IDs",
-			resp: &rlav1.SubmitTaskResponse{
-				TaskIds: []*rlav1.UUID{{Id: "task-1"}, {Id: "task-2"}},
+			resp: &flowv1.SubmitTaskResponse{
+				TaskIds: []*flowv1.UUID{{Id: "task-1"}, {Id: "task-2"}},
 			},
 			expected: &APIUpdateFirmwareResponse{TaskIDs: []string{"task-1", "task-2"}},
 		},
 		{
 			name:     "empty task IDs",
-			resp:     &rlav1.SubmitTaskResponse{},
+			resp:     &flowv1.SubmitTaskResponse{},
 			expected: &APIUpdateFirmwareResponse{TaskIDs: []string{}},
 		},
 	}

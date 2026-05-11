@@ -56,7 +56,7 @@ import (
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 )
 
@@ -1636,43 +1636,43 @@ func ExecutePowerControlWorkflow(
 	c echo.Context,
 	logger zerolog.Logger,
 	stc tclient.Client,
-	targetSpec *rlav1.OperationTargetSpec,
+	targetSpec *flowv1.OperationTargetSpec,
 	state string,
 	workflowID string,
 	entityName string,
-) (*rlav1.SubmitTaskResponse, error) {
+) (*flowv1.SubmitTaskResponse, error) {
 	var workflowName string
-	var rlaRequest interface{}
+	var flowRequest interface{}
 
 	switch state {
 	case cam.PowerControlStateOn:
 		workflowName = "PowerOnRack"
-		rlaRequest = &rlav1.PowerOnRackRequest{
+		flowRequest = &flowv1.PowerOnRackRequest{
 			TargetSpec:  targetSpec,
 			Description: fmt.Sprintf("API power on %s", entityName),
 		}
 	case cam.PowerControlStateOff:
 		workflowName = "PowerOffRack"
-		rlaRequest = &rlav1.PowerOffRackRequest{
+		flowRequest = &flowv1.PowerOffRackRequest{
 			TargetSpec:  targetSpec,
 			Description: fmt.Sprintf("API power off %s", entityName),
 		}
 	case cam.PowerControlStateCycle:
 		workflowName = "PowerResetRack"
-		rlaRequest = &rlav1.PowerResetRackRequest{
+		flowRequest = &flowv1.PowerResetRackRequest{
 			TargetSpec:  targetSpec,
 			Description: fmt.Sprintf("API power cycle %s", entityName),
 		}
 	case cam.PowerControlStateForceOff:
 		workflowName = "PowerOffRack"
-		rlaRequest = &rlav1.PowerOffRackRequest{
+		flowRequest = &flowv1.PowerOffRackRequest{
 			TargetSpec:  targetSpec,
 			Forced:      true,
 			Description: fmt.Sprintf("API force power off %s", entityName),
 		}
 	case cam.PowerControlStateForceCycle:
 		workflowName = "PowerResetRack"
-		rlaRequest = &rlav1.PowerResetRackRequest{
+		flowRequest = &flowv1.PowerResetRackRequest{
 			TargetSpec:  targetSpec,
 			Forced:      true,
 			Description: fmt.Sprintf("API force power cycle %s", entityName),
@@ -1692,14 +1692,14 @@ func ExecutePowerControlWorkflow(
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, workflowName, rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, workflowName, flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg(fmt.Sprintf("failed to execute %s workflow", workflowName))
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to power control %s", entityName), nil)
 	}
 
-	var rlaResponse rlav1.SubmitTaskResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.SubmitTaskResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -1709,7 +1709,7 @@ func ExecutePowerControlWorkflow(
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to power control %s", entityName), nil)
 	}
 
-	return &rlaResponse, nil
+	return &flowResponse, nil
 }
 
 // ExecuteBringUpRackWorkflow builds a BringUpRackRequest, executes the BringUpRack
@@ -1719,12 +1719,12 @@ func ExecuteBringUpRackWorkflow(
 	c echo.Context,
 	logger zerolog.Logger,
 	stc tclient.Client,
-	targetSpec *rlav1.OperationTargetSpec,
+	targetSpec *flowv1.OperationTargetSpec,
 	description string,
 	workflowID string,
 	entityName string,
-) (*rlav1.SubmitTaskResponse, error) {
-	rlaRequest := &rlav1.BringUpRackRequest{
+) (*flowv1.SubmitTaskResponse, error) {
+	flowRequest := &flowv1.BringUpRackRequest{
 		TargetSpec:  targetSpec,
 		Description: description,
 	}
@@ -1740,14 +1740,14 @@ func ExecuteBringUpRackWorkflow(
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "BringUpRack", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "BringUpRack", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute BringUpRack workflow")
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to bring up %s", entityName), nil)
 	}
 
-	var rlaResponse rlav1.SubmitTaskResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.SubmitTaskResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -1757,7 +1757,7 @@ func ExecuteBringUpRackWorkflow(
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to bring up %s", entityName), nil)
 	}
 
-	return &rlaResponse, nil
+	return &flowResponse, nil
 }
 
 // ExecuteFirmwareUpdateWorkflow builds an UpgradeFirmwareRequest, executes the UpgradeFirmware
@@ -1767,12 +1767,12 @@ func ExecuteFirmwareUpdateWorkflow(
 	c echo.Context,
 	logger zerolog.Logger,
 	stc tclient.Client,
-	targetSpec *rlav1.OperationTargetSpec,
+	targetSpec *flowv1.OperationTargetSpec,
 	version *string,
 	workflowID string,
 	entityName string,
-) (*rlav1.SubmitTaskResponse, error) {
-	rlaRequest := &rlav1.UpgradeFirmwareRequest{
+) (*flowv1.SubmitTaskResponse, error) {
+	flowRequest := &flowv1.UpgradeFirmwareRequest{
 		TargetSpec:    targetSpec,
 		TargetVersion: version,
 		Description:   fmt.Sprintf("API firmware update %s", entityName),
@@ -1789,14 +1789,14 @@ func ExecuteFirmwareUpdateWorkflow(
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpgradeFirmware", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpgradeFirmware", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute UpgradeFirmware workflow")
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to upgrade firmware for %s", entityName), nil)
 	}
 
-	var rlaResponse rlav1.SubmitTaskResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.SubmitTaskResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -1806,5 +1806,5 @@ func ExecuteFirmwareUpdateWorkflow(
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to upgrade firmware for %s", entityName), nil)
 	}
 
-	return &rlaResponse, nil
+	return &flowResponse, nil
 }

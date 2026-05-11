@@ -42,24 +42,6 @@ type ManageExpectedSwitch struct {
 	siteClientPool *sc.ClientPool
 }
 
-func getLabelsMapFromProto(es *cwssaws.ExpectedSwitch) map[string]string {
-	if es.Metadata == nil || es.Metadata.Labels == nil {
-		return nil
-	}
-	result := map[string]string{}
-	for _, label := range es.Metadata.Labels {
-		if label == nil || label.Key == "" {
-			continue
-		}
-		value := ""
-		if label.Value != nil {
-			value = *label.Value
-		}
-		result[label.Key] = value
-	}
-	return result
-}
-
 // Activity functions
 
 // UpdateExpectedSwitchesInDB is a Temporal activity that takes a collection of ExpectedSwitch data pushed by Site Agent and updates the DB
@@ -151,7 +133,9 @@ func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, 
 			continue
 		}
 		reportedIDs[esID] = true
-		reportedLabels := getLabelsMapFromProto(res)
+
+		reported := &cdbm.ExpectedSwitch{}
+		reported.FromProto(res)
 
 		// Create a new Expected Switch if it doesn't already exist in DB
 		cur, found := existingByID[esID]
@@ -159,9 +143,9 @@ func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, 
 			_, cerr := esDAO.Create(ctx, nil, cdbm.ExpectedSwitchCreateInput{
 				ExpectedSwitchID:   esID,
 				SiteID:             siteID,
-				BmcMacAddress:      res.BmcMacAddress,
-				SwitchSerialNumber: res.SwitchSerialNumber,
-				Labels:             reportedLabels,
+				BmcMacAddress:      reported.BmcMacAddress,
+				SwitchSerialNumber: reported.SwitchSerialNumber,
+				Labels:             reported.Labels,
 				CreatedBy:          siteID, /* This would normally be a user ID, but that isn't something NICo provides */
 			})
 			if cerr != nil {
@@ -171,20 +155,21 @@ func (mei ManageExpectedSwitch) UpdateExpectedSwitchesInDB(ctx context.Context, 
 		}
 
 		// update if any field differs
-		if cur.BmcMacAddress != res.BmcMacAddress ||
-			cur.SwitchSerialNumber != res.SwitchSerialNumber ||
-			!reflect.DeepEqual(cur.Labels, reportedLabels) {
+		if cur.BmcMacAddress != reported.BmcMacAddress ||
+			cur.SwitchSerialNumber != reported.SwitchSerialNumber ||
+			!reflect.DeepEqual(cur.Labels, reported.Labels) {
 			// nil labels in nico can mean we need to clear out existing labels in DB
 			// but a nil value will not trigger an update in the DAO layer. We could use `Clear` but an empty map
 			// will save a call to the DB.
-			if cur.Labels != nil && reportedLabels == nil {
-				reportedLabels = map[string]string{}
+			labels := reported.Labels
+			if cur.Labels != nil && labels == nil {
+				labels = map[string]string{}
 			}
 			_, uerr := esDAO.Update(ctx, nil, cdbm.ExpectedSwitchUpdateInput{
 				ExpectedSwitchID:   cur.ID,
-				BmcMacAddress:      &res.BmcMacAddress,
-				SwitchSerialNumber: &res.SwitchSerialNumber,
-				Labels:             reportedLabels,
+				BmcMacAddress:      &reported.BmcMacAddress,
+				SwitchSerialNumber: &reported.SwitchSerialNumber,
+				Labels:             labels,
 			})
 			if uerr != nil {
 				logger.Error().Err(uerr).Str("ExpectedSwitchID", cur.ID.String()).Msg("failed to update ExpectedSwitch in DB")

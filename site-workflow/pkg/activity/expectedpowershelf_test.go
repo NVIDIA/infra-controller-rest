@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -459,16 +459,16 @@ func TestManageExpectedPowerShelf_DeleteExpectedPowerShelfOnSite(t *testing.T) {
 }
 
 func TestManageExpectedPowerShelf_CreateExpectedPowerShelfOnRLA(t *testing.T) {
-	t.Run("nil RLA client skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedPowerShelf{RlaAtomicClient: nil}
+	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedPowerShelf{FlowAtomicClient: nil}
 		err := mm.CreateExpectedPowerShelfOnRLA(context.Background(), &cwssaws.ExpectedPowerShelf{
 			ExpectedPowerShelfId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ShelfSerialNumber: "SHELF001",
 		})
 		assert.NoError(t, err)
 	})
 
-	t.Run("nil RLA client connection skips gracefully", func(t *testing.T) {
-		mm := ManageExpectedPowerShelf{RlaAtomicClient: cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})}
+	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
+		mm := ManageExpectedPowerShelf{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
 		err := mm.CreateExpectedPowerShelfOnRLA(context.Background(), &cwssaws.ExpectedPowerShelf{
 			ExpectedPowerShelfId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ShelfSerialNumber: "SHELF001",
 		})
@@ -497,7 +497,7 @@ func Test_expectedPowerShelfToRLAComponent(t *testing.T) {
 			HostId:               int32Ptr(0),
 		}
 		component := expectedPowerShelfToRLAComponent(eps)
-		assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF, component.Type)
 		assert.Equal(t, "eps-001", component.Info.Id.Id)
 		assert.Equal(t, "SHELF-001", component.Info.SerialNumber)
 		assert.Equal(t, "pdu-shelf-1", component.Info.Name)
@@ -523,7 +523,7 @@ func Test_expectedPowerShelfToRLAComponent(t *testing.T) {
 			ShelfSerialNumber: "SHELF-002",
 		}
 		component := expectedPowerShelfToRLAComponent(eps)
-		assert.Equal(t, rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF, component.Type)
 		assert.Empty(t, component.Info.Name)
 		assert.Empty(t, component.Info.Manufacturer)
 		assert.Nil(t, component.Info.Model)
