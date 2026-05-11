@@ -19,7 +19,6 @@ package rackopreport
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/google/uuid"
 
@@ -137,14 +136,30 @@ func (rr *RackOpReport) Finalize() string {
 		finalizedReport.Components = append(finalizedReport.Components, componentReport)
 	}
 
-	// Marshal to JSON
 	jsonBytes, err := json.MarshalIndent(finalizedReport, "", "  ")
 	if err != nil {
-		// Fallback to a simple JSON error message
-		return fmt.Sprintf(`{"error": "Failed to marshal report to JSON: %s"}`, err.Error())
+		return fallbackErrorJSON(err)
 	}
 
 	return string(jsonBytes)
+}
+
+// fallbackErrorJSON returns a JSON-safe error report string used when
+// marshaling the FinalizedReport unexpectedly fails. The error message is
+// embedded via json.Marshal so any double quotes, backslashes, or control
+// characters in err are properly escaped and the returned value is always
+// valid JSON.
+func fallbackErrorJSON(err error) string {
+	payload := struct {
+		Error string `json:"error"`
+	}{
+		Error: "Failed to marshal report to JSON: " + err.Error(),
+	}
+	b, mErr := json.Marshal(payload)
+	if mErr != nil {
+		return `{"error":"Failed to marshal report to JSON"}`
+	}
+	return string(b)
 }
 
 func compReportID(id uuid.UUID, serialInfo deviceinfo.SerialInfo) string {
