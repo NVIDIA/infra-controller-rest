@@ -16,10 +16,10 @@
 # limitations under the License.
 
 
-name=$(kubectl get pods -n rla | tail -1 | awk '{print $1}')
+name=$(kubectl get pods -n flow | tail -1 | awk '{print $1}')
 if [ "$name" = "NAME" ]; then
-    echo "rla pod is not running"
+    echo "flow pod is not running"
     exit 1
 fi
 
-kubectl delete pod -n rla $name
+exec kubectl logs -n flow $* $name

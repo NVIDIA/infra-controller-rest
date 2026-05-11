@@ -36,7 +36,7 @@ var defaultTaskPagination = dbquery.Pagination{
 	Total:  0,
 }
 
-// Task models the persisted task metadata managed by RLA.
+// Task models the persisted task metadata managed by Flow.
 type Task struct {
 	bun.BaseModel `bun:"table:task,alias:t"`
 

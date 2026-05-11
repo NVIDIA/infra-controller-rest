@@ -44,7 +44,7 @@ const (
 
 	// healthOverrideSource is the source tag written into health-report
 	// overrides so they can be matched on removal.
-	healthOverrideSource = "rla-power-control"
+	healthOverrideSource = "flow-power-control"
 )
 
 // Manager manages compute node components via the NICo API.

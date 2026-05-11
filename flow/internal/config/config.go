@@ -28,7 +28,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultLocation = "/etc/rla/rlaconfig.yaml"
+const defaultLocation = "/etc/flow/rlaconfig.yaml"
 
 // Config is a set of configuration operations that will be read from an environment specific config file
 type Config struct {
@@ -51,7 +51,7 @@ func defaultConfig() Config {
 // ReadConfig reads a configuration file if present and returns a Config with the details.  A config file with
 // invalid syntax will result in a fatal error.
 func ReadConfig() (config Config) {
-	filename := os.Getenv("RLA_CONFIG_FILE")
+	filename := os.Getenv("FLOW_CONFIG_FILE")
 	if filename == "" {
 		filename = defaultLocation
 	}

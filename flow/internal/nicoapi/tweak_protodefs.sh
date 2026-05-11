@@ -36,7 +36,7 @@ sedi -e '/^import.*dpa_rpc/d' nicoproto/nico.proto
 rm -f nicoproto/nmx_c.proto nicoproto/rack_manager.proto
 
 # dns.proto has duplicate Domain/DomainList/Metadata types that collide with nico.proto
-# when generated into the same Go package. RLA doesn't use DNS RPCs, so remove dns.proto
+# when generated into the same Go package. Flow doesn't use DNS RPCs, so remove dns.proto
 # and strip all dns references from nico.proto.
 rm -f nicoproto/dns.proto
 sedi -e '/^import.*dns\.proto/d' nicoproto/nico.proto

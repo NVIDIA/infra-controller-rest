@@ -124,7 +124,7 @@ func (m *Manager) PowerControl(
 	return nil
 }
 
-// mapPowerOperation maps RLA's PowerOperation to NV-Switch Manager's PowerAction.
+// mapPowerOperation maps Flow's PowerOperation to NV-Switch Manager's PowerAction.
 func mapPowerOperation(op operations.PowerOperation) (nsmapi.PowerAction, error) {
 	switch op {
 	case operations.PowerOperationPowerOn:

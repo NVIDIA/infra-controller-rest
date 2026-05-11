@@ -180,7 +180,7 @@ entries automatically.
 
 ## API Reference
 
-All RPCs live in the `RLA` gRPC service.
+All RPCs live in the `Flow` gRPC service.
 
 ### Schedule lifecycle
 

@@ -112,7 +112,7 @@ func (rt *RackTarget) Validate() error {
 // ComponentTarget identifies a specific component.
 // Either UUID or External must be set, but not both.
 type ComponentTarget struct {
-	UUID     uuid.UUID    // RLA internal UUID (one of UUID or External must be set)
+	UUID     uuid.UUID    // Flow internal UUID (one of UUID or External must be set)
 	External *ExternalRef // External system reference (one of UUID or External must be set)
 }
 

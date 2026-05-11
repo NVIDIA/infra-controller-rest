@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
-// Package client provides a gRPC client for interacting with the RLA service.
-// This package can be imported by external modules to communicate with RLA.
+// Package client provides a gRPC client for interacting with the Flow service.
+// This package can be imported by external modules to communicate with Flow.
 //
 // The client uses types from pkg/types, which can be imported independently
 // for interface definitions and mocking without gRPC dependencies.
@@ -37,13 +37,13 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/types"
 )
 
-// Client is the gRPC client for interacting with the RLA service.
+// Client is the gRPC client for interacting with the Flow service.
 type Client struct {
-	client pb.RLAClient
+	client pb.FlowClient
 	conn   *grpc.ClientConn
 }
 
-// New creates a new RLA gRPC client. If CertConfig is set, the connection uses
+// New creates a new Flow gRPC client. If CertConfig is set, the connection uses
 // mTLS; otherwise it falls back to insecure (plaintext) transport.
 func New(c Config) (*Client, error) {
 	if err := c.Validate(); err != nil {
@@ -68,7 +68,7 @@ func New(c Config) (*Client, error) {
 
 	return &Client{
 		conn:   conn,
-		client: pb.NewRLAClient(conn),
+		client: pb.NewFlowClient(conn),
 	}, nil
 }
 

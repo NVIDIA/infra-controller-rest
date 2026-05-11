@@ -55,11 +55,11 @@ func init() {
 // runRuleList is the RunE handler for ruleListCmd. It calls ListOperationRules
 // with any provided filters and prints the results as a tab-aligned table.
 func runRuleList(cmd *cobra.Command, args []string) error {
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
 	var opType *types.OperationType
 	var isDefault *bool
@@ -84,7 +84,7 @@ func runRuleList(cmd *cobra.Command, args []string) error {
 		opType = &opTypeVal
 	}
 
-	rules, totalCount, err := rlaClient.ListOperationRules(
+	rules, totalCount, err := flowClient.ListOperationRules(
 		context.Background(),
 		opType,
 		isDefault,

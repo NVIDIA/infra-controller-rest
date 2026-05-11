@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Package conflict provides data-driven task conflict detection for RLA.
+// Package conflict provides data-driven task conflict detection for Flow.
 //
 // The core abstraction is Rule, a declarative struct that defines which
 // operation pairs cannot coexist and at what scope.
@@ -40,7 +40,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// builtinRule is the code-defined selective conflict policy for RLA.
+// builtinRule is the code-defined selective conflict policy for Flow.
 // Only explicitly listed operation pairs conflict; everything else may coexist.
 //
 // All active tasks passed to Conflicts() are already pre-filtered to the same

@@ -38,7 +38,7 @@ import (
 type componentManagerRegistrar func(*componentmanager.Registry)
 
 // NewComponentManagerRegistry creates the component manager registry for the
-// RLA service using all component manager implementations compiled into the
+// Flow service using all component manager implementations compiled into the
 // binary.
 func NewComponentManagerRegistry(
 	config cmconfig.Config,
@@ -66,7 +66,7 @@ func NewComponentManagerRegistry(
 }
 
 // registerServiceComponentManagers registers all component manager factories
-// supported by the RLA service. Add a new compiled-in component manager here
+// supported by the Flow service. Add a new compiled-in component manager here
 // when adding a service-supported implementation.
 func registerServiceComponentManagers(
 	registry *componentmanager.Registry,
@@ -84,7 +84,7 @@ func registerServiceComponentManagers(
 }
 
 // serviceComponentManagerRegistrars returns all component manager factory
-// registrars supported by the RLA service. Add a new compiled-in component
+// registrars supported by the Flow service. Add a new compiled-in component
 // manager here when adding a service-supported implementation.
 func serviceComponentManagerRegistrars(
 	config cmconfig.Config,

@@ -55,16 +55,16 @@ Time formats supported:
 
 Examples:
   # Upgrade by rack IDs
-  rla firmware upgrade --rack-ids "uuid1,uuid2" --type compute
+  flow firmware upgrade --rack-ids "uuid1,uuid2" --type compute
 
   # Upgrade by rack names
-  rla firmware upgrade --rack-names "rack-name-1,rack-name-2" --type compute
+  flow firmware upgrade --rack-names "rack-name-1,rack-name-2" --type compute
 
   # Upgrade by component IDs
-  rla firmware upgrade --component-ids "machine1,machine2"
+  flow firmware upgrade --component-ids "machine1,machine2"
 
   # Upgrade with explicit time window
-  rla firmware upgrade --rack-names "rack-name-1" --type compute --start "2025-01-02T03:04:05" --end "2025-01-02T06:04:05"
+  flow firmware upgrade --rack-names "rack-name-1" --type compute --start "2025-01-02T03:04:05" --end "2025-01-02T06:04:05"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doFirmwareUpgrade()
@@ -173,12 +173,12 @@ func doFirmwareUpgrade() {
 
 	ctx := context.Background()
 
-	// Create RLA client
-	rlaClient, err := client.New(newGlobalClientConfig())
+	// Create Flow client
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
-		log.Fatal().Msgf("Failed to create RLA client: %v", err)
+		log.Fatal().Msgf("Failed to create Flow client: %v", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
 	// Execute based on the specified option
 	var result *client.UpgradeFirmwareResult
@@ -194,7 +194,7 @@ func doFirmwareUpgrade() {
 			Time("start_time", startTime).
 			Time("end_time", endTime).
 			Msg("Upgrading firmware by component IDs")
-		result, err = rlaClient.UpgradeFirmwareByMachineIDs(ctx, componentIDs, &startTime, &endTime)
+		result, err = flowClient.UpgradeFirmwareByMachineIDs(ctx, componentIDs, &startTime, &endTime)
 
 	case hasRackIDs:
 		rackIDs := parseUUIDList(firmwareUpgradeRackIDs)
@@ -207,7 +207,7 @@ func doFirmwareUpgrade() {
 			Time("start_time", startTime).
 			Time("end_time", endTime).
 			Msg("Upgrading firmware by rack IDs")
-		result, err = rlaClient.UpgradeFirmwareByRackIDs(ctx, rackIDs, componentType, &startTime, &endTime)
+		result, err = flowClient.UpgradeFirmwareByRackIDs(ctx, rackIDs, componentType, &startTime, &endTime)
 
 	case hasRackNames:
 		rackNames := parseCommaSeparatedList(firmwareUpgradeRackNames)
@@ -220,7 +220,7 @@ func doFirmwareUpgrade() {
 			Time("start_time", startTime).
 			Time("end_time", endTime).
 			Msg("Upgrading firmware by rack names")
-		result, err = rlaClient.UpgradeFirmwareByRackNames(ctx, rackNames, componentType, &startTime, &endTime)
+		result, err = flowClient.UpgradeFirmwareByRackNames(ctx, rackNames, componentType, &startTime, &endTime)
 	}
 
 	if err != nil {

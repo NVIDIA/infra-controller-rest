@@ -54,16 +54,16 @@ Output formats:
 
 Examples:
   # Compare compute components from racks by name
-  rla component diff --rack-names "rack-1,rack-2" --type compute
+  flow component diff --rack-names "rack-1,rack-2" --type compute
 
   # Compare components from rack by ID
-  rla component diff --rack-ids "uuid-1,uuid-2" --type compute
+  flow component diff --rack-ids "uuid-1,uuid-2" --type compute
 
   # Compare by component IDs
-  rla component diff --component-ids "machine-1,machine-2" --type compute
+  flow component diff --component-ids "machine-1,machine-2" --type compute
 
   # Output as table
-  rla component diff --rack-names "rack-1" --type compute --output table
+  flow component diff --rack-names "rack-1" --type compute --output table
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doDiffComponents()

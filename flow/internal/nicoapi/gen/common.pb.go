@@ -1237,9 +1237,9 @@ const file_common_proto_rawDesc = "" +
 	"\x1eSYSTEM_POWER_CONTROL_FORCE_OFF\x10\x03\x12)\n" +
 	"%SYSTEM_POWER_CONTROL_GRACEFUL_RESTART\x10\x04\x12&\n" +
 	"\"SYSTEM_POWER_CONTROL_FORCE_RESTART\x10\x05\x12&\n" +
-	"\"SYSTEM_POWER_CONTROL_AC_POWERCYCLE\x10\x06B\x93\x01\n" +
+	"\"SYSTEM_POWER_CONTROL_AC_POWERCYCLE\x10\x06B\x94\x01\n" +
 	"\n" +
-	"com.commonB\vCommonProtoP\x01Z@github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03CXX\xaa\x02\x06Common\xca\x02\x06Common\xe2\x02\x12Common\\GPBMetadata\xea\x02\x06Commonb\x06proto3"
+	"com.commonB\vCommonProtoP\x01ZAgithub.com/NVIDIA/infra-controller-rest/flow/internal/nicoapigrpc\xa2\x02\x03CXX\xaa\x02\x06Common\xca\x02\x06Common\xe2\x02\x12Common\\GPBMetadata\xea\x02\x06Commonb\x06proto3"
 
 var (
 	file_common_proto_rawDescOnce sync.Once

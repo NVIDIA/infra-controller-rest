@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Package cmd implements the rla CLI commands using Cobra. It provides
+// Package cmd implements the flow CLI commands using Cobra. It provides
 // subcommands for rack, component, firmware, power, rule, and ingest
 // operations, as well as a serve subcommand that starts the gRPC server.
 package cmd
@@ -49,7 +49,7 @@ var (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "rla",
+	Use:   "flow",
 	Short: "rack level abstraction",
 	Long:  `command to manage and access the information about racks`,
 }
@@ -64,8 +64,8 @@ func Execute() {
 }
 
 func init() {
-	rootCmd.PersistentFlags().StringVarP(&globalHost, flagHost, "H", "localhost", "RLA server host")
-	rootCmd.PersistentFlags().IntVarP(&globalPort, flagPort, "P", defaultServicePort, "RLA server port")
+	rootCmd.PersistentFlags().StringVarP(&globalHost, flagHost, "H", "localhost", "Flow server host")
+	rootCmd.PersistentFlags().IntVarP(&globalPort, flagPort, "P", defaultServicePort, "Flow server port")
 	rootCmd.PersistentFlags().StringVar(&globalCACert, "ca-cert", "", "Path to CA certificate file")
 	rootCmd.PersistentFlags().StringVar(&globalTLSCert, "tls-cert", "", "Path to TLS certificate file")
 	rootCmd.PersistentFlags().StringVar(&globalTLSKey, "tls-key", "", "Path to TLS private key file")

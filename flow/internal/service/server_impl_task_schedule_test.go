@@ -690,7 +690,7 @@ func TestBuildUpdateFields(t *testing.T) {
 	anyID := uuid.New()
 
 	// rs with nil store — safe for paths that never call Get.
-	rsNoDB := &RLAServerImpl{}
+	rsNoDB := &FlowServerImpl{}
 
 	t.Run("empty paths — error", func(t *testing.T) {
 		_, _, err := rsNoDB.buildUpdateFields(ctx, anyID, &pb.ScheduleConfig{}, nil, nil)
@@ -891,7 +891,7 @@ func TestBuildUpdateFields(t *testing.T) {
 	})
 
 	t.Run("spec alone: store Get fallback error propagates when existing is nil", func(t *testing.T) {
-		rs := &RLAServerImpl{taskScheduleStore: storeError(errors.New("db down"))}
+		rs := &FlowServerImpl{taskScheduleStore: storeError(errors.New("db down"))}
 		_, _, err := rs.buildUpdateFields(ctx, anyID,
 			&pb.ScheduleConfig{Spec: &pb.ScheduleSpec{
 				Type: pb.ScheduleSpecType_SCHEDULE_SPEC_TYPE_INTERVAL,
@@ -1041,7 +1041,7 @@ func TestResolveComponentTarget_ExternalID(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mgr := newMockManager()
 			tt.setup(mgr)
-			rs := &RLAServerImpl{inventoryManager: mgr}
+			rs := &FlowServerImpl{inventoryManager: mgr}
 
 			gotComp, gotRack, err := rs.resolveComponentTarget(context.Background(), tt.ct)
 			if tt.wantErr != "" {

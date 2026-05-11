@@ -2101,7 +2101,7 @@ message NetworkSegmentStateHistory {
 enum NetworkSegmentType {
   TENANT = 0;
   ADMIN = 1;
-  UNDERLAY = 2;
+  UNDEFlowY = 2;
   HOST_INBAND = 3;
 }
 

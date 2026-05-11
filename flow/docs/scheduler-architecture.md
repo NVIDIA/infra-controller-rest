@@ -1,6 +1,6 @@
 # Scheduler Architecture
 
-Internal job scheduling framework for RLA. Handles time-based, startup, and
+Internal job scheduling framework for Flow. Handles time-based, startup, and
 event-driven jobs with configurable overlap policies.
 
 ---

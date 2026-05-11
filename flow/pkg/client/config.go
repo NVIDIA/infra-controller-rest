@@ -24,7 +24,7 @@ import (
 	pkgcerts "github.com/NVIDIA/infra-controller-rest/flow/pkg/certs"
 )
 
-// Config represents the configuration needed to create a new RLA service
+// Config represents the configuration needed to create a new Flow service
 // gRPC client.
 type Config struct {
 	Host       string
@@ -50,7 +50,7 @@ func (c *Config) Validate() error {
 	return c.CertConfig.Validate()
 }
 
-// Target builds the target string for connecting to RLA gRPC server.
+// Target builds the target string for connecting to Flow gRPC server.
 func (c *Config) Target() string {
 	return fmt.Sprintf("%s:%v", c.Host, c.Port)
 }

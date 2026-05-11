@@ -33,10 +33,10 @@ This command is not yet implemented.
 
 Examples:
   # Get firmware version by rack names
-  rla firmware version --rack-names "rack-1,rack-2" --type compute
+  flow firmware version --rack-names "rack-1,rack-2" --type compute
 
   # Get firmware version by component IDs
-  rla firmware version --component-ids "machine-1,machine-2"
+  flow firmware version --component-ids "machine-1,machine-2"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Error: 'firmware version' command is not yet implemented")

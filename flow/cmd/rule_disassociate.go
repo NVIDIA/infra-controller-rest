@@ -72,13 +72,13 @@ func runRuleDisassociate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid rack ID: %w", err)
 	}
 
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
-	err = rlaClient.DisassociateRuleFromRack(context.Background(), rackID, opType, disassocOperation)
+	err = flowClient.DisassociateRuleFromRack(context.Background(), rackID, opType, disassocOperation)
 	if err != nil {
 		return fmt.Errorf("failed to disassociate rule from rack: %w", err)
 	}

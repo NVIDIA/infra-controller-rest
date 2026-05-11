@@ -38,7 +38,7 @@ operation type and operation combination.
 Only one rule can be the default for each (operation_type, operation) pair.
 
 Example:
-  rla rule set-default --id abc123-def4-5678-90ab-cdef12345678`,
+  flow rule set-default --id abc123-def4-5678-90ab-cdef12345678`,
 	RunE: runRuleSetDefault,
 }
 
@@ -62,13 +62,13 @@ func runRuleSetDefault(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid rule ID: %w", err)
 	}
 
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
-	err = rlaClient.SetRuleAsDefault(context.Background(), ruleID)
+	err = flowClient.SetRuleAsDefault(context.Background(), ruleID)
 	if err != nil {
 		return fmt.Errorf("failed to set rule as default: %w", err)
 	}

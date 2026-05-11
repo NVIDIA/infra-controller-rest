@@ -38,7 +38,7 @@ import (
 )
 
 const (
-	WorkflowQueue = "rla-tasks"
+	WorkflowQueue = "flow-tasks"
 )
 
 // Config holds all configuration required to build a Temporal-backed executor.

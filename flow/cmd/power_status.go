@@ -33,10 +33,10 @@ This command is not yet implemented.
 
 Examples:
   # Get power status by rack names
-  rla power status --rack-names "rack-1,rack-2" --type compute
+  flow power status --rack-names "rack-1,rack-2" --type compute
 
   # Get power status by component IDs
-  rla power status --component-ids "machine-1,machine-2"
+  flow power status --component-ids "machine-1,machine-2"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Error: 'power status' command is not yet implemented")

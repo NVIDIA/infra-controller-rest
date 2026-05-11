@@ -1,18 +1,18 @@
 # Examples
 
-This directory contains example input files for RLA CLI commands.
+This directory contains example input files for Flow CLI commands.
 
 ## Files
 
 ### `rack-create-example.json`
 
-Example input for `rla rack create`. Demonstrates a GB200 NVL72 rack with one
+Example input for `flow rack create`. Demonstrates a GB200 NVL72 rack with one
 of each component type: TOR switches, compute trays, NVL switches, and power
 shelves.
 
 **Usage:**
 ```bash
-rla rack create --file examples/rack-create-example.json
+flow rack create --file examples/rack-create-example.json
 ```
 
 **JSON format notes:**
@@ -30,20 +30,20 @@ rla rack create --file examples/rack-create-example.json
 
 ### `operation-rules-example.yaml`
 
-Canonical reference for operation rules loaded via `rla rule create`. Covers
+Canonical reference for operation rules loaded via `flow rule create`. Covers
 graceful and forceful power on/off, restart, firmware upgrade, and rack
 bring-up sequences.
 
 **Usage:**
 ```bash
 # Load rules (skip existing)
-rla rule create --from-yaml examples/operation-rules-example.yaml
+flow rule create --from-yaml examples/operation-rules-example.yaml
 
 # Overwrite existing rules
-rla rule create --from-yaml examples/operation-rules-example.yaml --overwrite
+flow rule create --from-yaml examples/operation-rules-example.yaml --overwrite
 
 # Validate without creating (dry-run)
-rla rule create --from-yaml examples/operation-rules-example.yaml --dry-run
+flow rule create --from-yaml examples/operation-rules-example.yaml --dry-run
 ```
 
 See `docs/operation-rules-guide.md` for a full explanation of the rule schema

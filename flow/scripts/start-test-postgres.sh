@@ -23,13 +23,13 @@
 #
 # The container will be accessible at localhost:30432
 # Credentials: postgres/postgres
-# Database: rla_test
+# Database: flow_test
 
-CONTAINER_NAME="rla-test-postgres"
+CONTAINER_NAME="flow-test-postgres"
 POSTGRES_PORT=30432
 POSTGRES_USER="postgres"
 POSTGRES_PASSWORD="postgres"
-POSTGRES_DB="rla_test"
+POSTGRES_DB="flow_test"
 
 case "$1" in
     stop)
@@ -83,7 +83,7 @@ case "$1" in
         echo "  Password: $POSTGRES_PASSWORD"
         echo "  Database: $POSTGRES_DB"
         echo ""
-        echo "Environment variables for RLA:"
+        echo "Environment variables for Flow:"
         echo "  export DB_ADDR=localhost"
         echo "  export DB_PORT=$POSTGRES_PORT"
         echo "  export DB_USER=$POSTGRES_USER"

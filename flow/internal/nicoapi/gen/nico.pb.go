@@ -487,7 +487,7 @@ type NetworkSegmentType int32
 const (
 	NetworkSegmentType_TENANT      NetworkSegmentType = 0
 	NetworkSegmentType_ADMIN       NetworkSegmentType = 1
-	NetworkSegmentType_UNDERLAY    NetworkSegmentType = 2
+	NetworkSegmentType_UNDEFlowY   NetworkSegmentType = 2
 	NetworkSegmentType_HOST_INBAND NetworkSegmentType = 3
 )
 
@@ -496,13 +496,13 @@ var (
 	NetworkSegmentType_name = map[int32]string{
 		0: "TENANT",
 		1: "ADMIN",
-		2: "UNDERLAY",
+		2: "UNDEFlowY",
 		3: "HOST_INBAND",
 	}
 	NetworkSegmentType_value = map[string]int32{
 		"TENANT":      0,
 		"ADMIN":       1,
-		"UNDERLAY":    2,
+		"UNDEFlowY":   2,
 		"HOST_INBAND": 3,
 	}
 )
@@ -48487,8 +48487,8 @@ func (x *AttestationResponse_AttestationMachineData) GetDeviceData() []*Attestat
 
 type DNSMessage_DNSQuestion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QName         *string                `protobuf:"bytes,1,opt,name=q_name,json=qName,proto3,oneof" json:"q_name,omitempty"` // FQDN including trailing dot
-	QType         *uint32                `protobuf:"varint,2,opt,name=q_type,json=qType,proto3,oneof" json:"q_type,omitempty"`
+	QName         *string                `protobuf:"bytes,1,opt,name=q_name,json=qName,proto3,oneof" json:"q_name,omitempty"`     // FQDN including trailing dot
+	QType         *uint32                `protobuf:"varint,2,opt,name=q_type,json=qType,proto3,oneof" json:"q_type,omitempty"`    //
 	QClass        *uint32                `protobuf:"varint,3,opt,name=q_class,json=qClass,proto3,oneof" json:"q_class,omitempty"` // Usually 1 (IN)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -53295,12 +53295,12 @@ const file_nico_proto_rawDesc = "" +
 	"\rDeletedFilter\x12\x1a\n" +
 	"\x16DELETED_FILTER_EXCLUDE\x10\x00\x12\x17\n" +
 	"\x13DELETED_FILTER_ONLY\x10\x01\x12\x1a\n" +
-	"\x16DELETED_FILTER_INCLUDE\x10\x02*J\n" +
+	"\x16DELETED_FILTER_INCLUDE\x10\x02*K\n" +
 	"\x12NetworkSegmentType\x12\n" +
 	"\n" +
 	"\x06TENANT\x10\x00\x12\t\n" +
-	"\x05ADMIN\x10\x01\x12\f\n" +
-	"\bUNDERLAY\x10\x02\x12\x0f\n" +
+	"\x05ADMIN\x10\x01\x12\r\n" +
+	"\tUNDEFlowY\x10\x02\x12\x0f\n" +
 	"\vHOST_INBAND\x10\x03*0\n" +
 	"\x12NetworkSegmentFlag\x12\t\n" +
 	"\x05NO_OP\x10\x00\x12\x0f\n" +
@@ -53946,8 +53946,8 @@ const file_nico_proto_rawDesc = "" +
 	"\x15GetComponentInventory\x12\".nico.GetComponentInventoryRequest\x1a#.nico.GetComponentInventoryResponse\x12f\n" +
 	"\x17UpdateComponentFirmware\x12$.nico.UpdateComponentFirmwareRequest\x1a%.nico.UpdateComponentFirmwareResponse\x12o\n" +
 	"\x1aGetComponentFirmwareStatus\x12'.nico.GetComponentFirmwareStatusRequest\x1a(.nico.GetComponentFirmwareStatusResponse\x12x\n" +
-	"\x1dListComponentFirmwareVersions\x12*.nico.ListComponentFirmwareVersionsRequest\x1a+.nico.ListComponentFirmwareVersionsResponseB\x87\x01\n" +
-	"\bcom.nicoB\tNicoProtoP\x01Z@github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03NXX\xaa\x02\x04Nico\xca\x02\x04Nico\xe2\x02\x10Nico\\GPBMetadata\xea\x02\x04Nicob\x06proto3"
+	"\x1dListComponentFirmwareVersions\x12*.nico.ListComponentFirmwareVersionsRequest\x1a+.nico.ListComponentFirmwareVersionsResponseB\x88\x01\n" +
+	"\bcom.nicoB\tNicoProtoP\x01ZAgithub.com/NVIDIA/infra-controller-rest/flow/internal/nicoapigrpc\xa2\x02\x03NXX\xaa\x02\x04Nico\xca\x02\x04Nico\xe2\x02\x10Nico\\GPBMetadata\xea\x02\x04Nicob\x06proto3"
 
 var (
 	file_nico_proto_rawDescOnce sync.Once

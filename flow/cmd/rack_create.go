@@ -45,13 +45,13 @@ Exactly one of --file or --json must be provided.
 
 Examples:
   # Create from inline JSON
-  rla rack create --json '{
+  flow rack create --json '{
     "info": {"name": "R1", "manufacturer": "NVIDIA", "serial_number": "SN001"},
     "location": {"region": "us-east", "datacenter": "DC1", "room": "A", "position": "1"}
   }'
 
   # Create from file
-  rla rack create --file /path/to/rack.json
+  flow rack create --file /path/to/rack.json
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doCreateRack()
