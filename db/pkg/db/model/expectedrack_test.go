@@ -860,16 +860,17 @@ func TestExpectedRackDAO_DeleteAll(t *testing.T) {
 	// Reset for the unscoped case
 	testExpectedRackSetupSchema(t, dbSession)
 
-	t.Run("DeleteAll without filter wipes everything", func(t *testing.T) {
-		_, _, _, _ = testExpectedRackDAOCreateExpectedRacks(ctx, t, dbSession)
+	t.Run("DeleteAll without filter is rejected", func(t *testing.T) {
+		expectedRacks, _, _, _ := testExpectedRackDAOCreateExpectedRacks(ctx, t, dbSession)
 
 		err := erd.DeleteAll(ctx, nil, ExpectedRackFilterInput{})
-		assert.NoError(t, err)
+		assert.ErrorIs(t, err, db.ErrInvalidParams)
 
+		// Records must be untouched after the rejection.
 		got, total, err := erd.GetAll(ctx, nil, ExpectedRackFilterInput{}, paginator.PageInput{}, nil)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(got))
-		assert.Equal(t, 0, total)
+		assert.Equal(t, len(expectedRacks), len(got))
+		assert.Equal(t, len(expectedRacks), total)
 	})
 }
 
