@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
@@ -43,7 +45,14 @@ func TestActivitiesReturnErrorWhenComponentManagerRegistryIsMissing(t *testing.T
 }
 
 func TestActivitiesReturnErrorWhenComponentManagerIsMissing(t *testing.T) {
-	acts := New(nil, componentmanager.NewRegistry())
+	registry, err := componentmanager.NewRegistry(
+		componentmanager.Catalog{},
+		cmconfig.Config{},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	acts := New(nil, registry)
 
 	for name, call := range activityCallsForMissingManagerTest(t, acts) {
 		t.Run(name, func(t *testing.T) {

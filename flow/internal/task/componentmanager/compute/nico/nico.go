@@ -64,9 +64,9 @@ func New(nicoClient nicoapi.Client, powerDelay time.Duration) *Manager {
 	}
 }
 
-// Register registers the NICo compute manager factory with the given registry.
-// powerDelay is the inter-component stagger for power control calls.
-func Register(registry *componentmanager.Registry, powerDelay time.Duration) {
+// Descriptor returns the NICo compute manager descriptor. powerDelay is the
+// inter-component stagger for power control calls.
+func Descriptor(powerDelay time.Duration) componentmanager.Descriptor {
 	factory := func(
 		providerRegistry *providerapi.ProviderRegistry,
 	) (componentmanager.ComponentManager, error) {
@@ -81,7 +81,12 @@ func Register(registry *componentmanager.Registry, powerDelay time.Duration) {
 		}
 		return New(provider.Client(), powerDelay), nil
 	}
-	registry.RegisterFactory(devicetypes.ComponentTypeCompute, ImplementationName, factory)
+	return componentmanager.Descriptor{
+		Type:              devicetypes.ComponentTypeCompute,
+		Implementation:    ImplementationName,
+		RequiredProviders: []string{nicoprovider.ProviderName},
+		Factory:           factory,
+	}
 }
 
 // Type returns the component type this manager handles.

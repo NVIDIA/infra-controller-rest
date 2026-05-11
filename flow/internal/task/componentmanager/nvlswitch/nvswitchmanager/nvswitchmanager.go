@@ -63,9 +63,14 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 	return New(provider.Client()), nil
 }
 
-// Register registers the NV-Switch Manager NVLSwitch manager factory with the given registry.
-func Register(registry *componentmanager.Registry) {
-	registry.RegisterFactory(devicetypes.ComponentTypeNVLSwitch, ImplementationName, Factory)
+// Descriptor returns the NV-Switch Manager NVLSwitch manager descriptor.
+func Descriptor() componentmanager.Descriptor {
+	return componentmanager.Descriptor{
+		Type:              devicetypes.ComponentTypeNVLSwitch,
+		Implementation:    ImplementationName,
+		RequiredProviders: []string{nsmprovider.ProviderName},
+		Factory:           Factory,
+	}
 }
 
 // Type returns the component type this manager handles.

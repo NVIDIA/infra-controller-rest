@@ -67,15 +67,28 @@ func FactoryFor(componentType devicetypes.ComponentType) componentmanager.Manage
 	}
 }
 
-// RegisterAll registers mock factories for all component types.
-func RegisterAll(registry *componentmanager.Registry) {
+// DescriptorFor returns a mock manager descriptor for the specified component
+// type.
+func DescriptorFor(componentType devicetypes.ComponentType) componentmanager.Descriptor {
+	return componentmanager.Descriptor{
+		Type:           componentType,
+		Implementation: ImplementationName,
+		Factory:        FactoryFor(componentType),
+	}
+}
+
+// Descriptors returns mock descriptors for all component types currently
+// supported by the RLA service.
+func Descriptors() []componentmanager.Descriptor {
+	descriptors := make([]componentmanager.Descriptor, 0, 3)
 	for _, ct := range []devicetypes.ComponentType{
 		devicetypes.ComponentTypeCompute,
 		devicetypes.ComponentTypeNVLSwitch,
 		devicetypes.ComponentTypePowerShelf,
 	} {
-		registry.RegisterFactory(ct, ImplementationName, FactoryFor(ct))
+		descriptors = append(descriptors, DescriptorFor(ct))
 	}
+	return descriptors
 }
 
 // Type returns the component type this manager handles.

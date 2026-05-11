@@ -66,9 +66,14 @@ func Factory(
 	return New(provider.Client()), nil
 }
 
-// Register registers the PSM PowerShelf manager factory with the given registry.
-func Register(registry *componentmanager.Registry) {
-	registry.RegisterFactory(devicetypes.ComponentTypePowerShelf, ImplementationName, Factory)
+// Descriptor returns the PSM PowerShelf manager descriptor.
+func Descriptor() componentmanager.Descriptor {
+	return componentmanager.Descriptor{
+		Type:              devicetypes.ComponentTypePowerShelf,
+		Implementation:    ImplementationName,
+		RequiredProviders: []string{psmprovider.ProviderName},
+		Factory:           Factory,
+	}
 }
 
 // Type returns the component type this manager handles.

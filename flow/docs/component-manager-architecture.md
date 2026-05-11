@@ -88,13 +88,20 @@ type ManagerFactory func(providers *providerapi.ProviderRegistry) (ComponentMana
 
 Factory functions create component manager instances. They receive the `ProviderRegistry` to retrieve any required providers.
 
-### Registry
+### Catalog and Registry
 
-The `Registry` stores factories and active managers:
-- `RegisterFactory()` - Register a factory for a component type + implementation name
-- `Initialize()` - Create managers based on configuration
+The `Catalog` stores validated descriptors for implementations compiled into a
+service binary:
+- `NewCatalog()` - Validate descriptors and index them by component type and
+  implementation
+- `ListImplementations()` - List supported implementations by component type
+
+The `Registry` stores active managers selected from a catalog:
+- `NewRegistry()` - Create managers based on configuration and the supplied
+  catalog
 - `GetManager()` - Retrieve active manager for a component type, returning a
   descriptive error when the registry is not configured or no manager is active
+- `GetDescriptor()` - Retrieve the descriptor selected for a component type
 - `FindManager()` - Probe for an active manager, returning nil when absent
 
 ## Directory Structure
@@ -279,9 +286,14 @@ func Factory(providers *providerapi.ProviderRegistry) (componentmanager.Componen
     return New(provider.Client()), nil
 }
 
-// Register registers this implementation with the registry.
-func Register(registry *componentmanager.Registry) {
-    registry.RegisterFactory(devicetypes.ComponentTypeCompute, ImplementationName, Factory)
+// Descriptor returns this implementation's descriptor.
+func Descriptor() componentmanager.Descriptor {
+    return componentmanager.Descriptor{
+        Type:              devicetypes.ComponentTypeCompute,
+        Implementation:    ImplementationName,
+        RequiredProviders: []string{myapiprovider.ProviderName},
+        Factory:           Factory,
+    }
 }
 
 // Type returns the component type.
@@ -315,11 +327,12 @@ import (
     myimpl "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/myimpl"
 )
 
-func serviceComponentManagerRegistrars(config cmconfig.Config) ([]componentManagerRegistrar, error) {
-    return []componentManagerRegistrar{
-        // ... existing registrations ...
-        myimpl.Register, // Add new implementation
-    }, nil
+func serviceCatalog(config cmconfig.Config) (componentmanager.Catalog, error) {
+    descriptors := []componentmanager.Descriptor{
+        // ... existing descriptors ...
+        myimpl.Descriptor(), // Add new implementation
+    }
+    return componentmanager.NewCatalog(descriptors)
 }
 ```
 
@@ -350,7 +363,7 @@ To add an entirely new component type (e.g., `gpu`):
 
 1. Add the type to `pkg/common/devicetypes/component.go`
 2. Create implementation(s) under `internal/task/componentmanager/gpu/<impl>/`
-3. Update the mock in `internal/task/componentmanager/mock/mock.go` to include it in `RegisterAll()`
+3. Update the mock in `internal/task/componentmanager/mock/mock.go` to include a descriptor for it
 4. Update configuration parsing to recognize the new type
 
 ---

@@ -59,9 +59,14 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 	return New(provider.Client()), nil
 }
 
-// Register registers the NICo PowerShelf manager factory with the given registry.
-func Register(registry *componentmanager.Registry) {
-	registry.RegisterFactory(devicetypes.ComponentTypePowerShelf, ImplementationName, Factory)
+// Descriptor returns the NICo PowerShelf manager descriptor.
+func Descriptor() componentmanager.Descriptor {
+	return componentmanager.Descriptor{
+		Type:              devicetypes.ComponentTypePowerShelf,
+		Implementation:    ImplementationName,
+		RequiredProviders: []string{nicoprovider.ProviderName},
+		Factory:           Factory,
+	}
 }
 
 func (m *Manager) Type() devicetypes.ComponentType {

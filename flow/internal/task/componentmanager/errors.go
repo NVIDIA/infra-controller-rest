@@ -40,6 +40,14 @@ var (
 	// registered for a component type.
 	ErrComponentManagerFactoryNotRegistered = errors.New("component manager factory is not registered")
 
+	// ErrComponentManagerFactoryNotConfigured reports that a descriptor was
+	// registered without a factory.
+	ErrComponentManagerFactoryNotConfigured = errors.New("component manager factory is not configured")
+
+	// ErrDuplicateDescriptor reports duplicate descriptor
+	// registration for the same component type and implementation.
+	ErrDuplicateDescriptor = errors.New("duplicate component manager descriptor")
+
 	// ErrUnknownComponentManagerImplementation reports that the configured
 	// implementation name is not registered for a component type.
 	ErrUnknownComponentManagerImplementation = errors.New("unknown component manager implementation")
@@ -139,23 +147,74 @@ func (e ComponentManagerFactoryNotRegisteredError) Is(target error) bool {
 	return target == ErrComponentManagerFactoryNotRegistered
 }
 
+// ComponentManagerFactoryNotConfiguredError includes the descriptor identity
+// that has no factory.
+type ComponentManagerFactoryNotConfiguredError struct {
+	ComponentType  devicetypes.ComponentType
+	Implementation string
+}
+
+func (e ComponentManagerFactoryNotConfiguredError) Error() string {
+	return fmt.Sprintf(
+		"factory is not configured for component type %s with implementation %q",
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+	)
+}
+
+func (e ComponentManagerFactoryNotConfiguredError) Is(target error) bool {
+	return target == ErrComponentManagerFactoryNotConfigured
+}
+
+// DuplicateDescriptorError includes the duplicate descriptor identity.
+type DuplicateDescriptorError struct {
+	ComponentType  devicetypes.ComponentType
+	Implementation string
+}
+
+func (e DuplicateDescriptorError) Error() string {
+	return fmt.Sprintf(
+		"duplicate component manager descriptor for component type %s with implementation %q",
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+	)
+}
+
+func (e DuplicateDescriptorError) Is(target error) bool {
+	return target == ErrDuplicateDescriptor
+}
+
 // UnknownComponentManagerImplementationError includes the implementation name
 // that was requested and the implementations that were available.
 type UnknownComponentManagerImplementationError struct {
 	ComponentType  devicetypes.ComponentType
 	Implementation string
 	Available      []string
+	RegisteredFor  []devicetypes.ComponentType
 }
 
 func (e UnknownComponentManagerImplementationError) Error() string {
 	available := append([]string(nil), e.Available...)
 	sort.Strings(available)
-	return fmt.Sprintf(
+	msg := fmt.Sprintf(
 		"unknown implementation '%s' for component type %s, available: %v",
 		e.Implementation,
 		devicetypes.ComponentTypeToString(e.ComponentType),
 		available,
 	)
+	if len(e.RegisteredFor) == 0 {
+		return msg
+	}
+
+	registeredFor := make([]string, 0, len(e.RegisteredFor))
+	for _, componentType := range e.RegisteredFor {
+		registeredFor = append(
+			registeredFor,
+			devicetypes.ComponentTypeToString(componentType),
+		)
+	}
+	sort.Strings(registeredFor)
+	return fmt.Sprintf("%s; registered for component types: %v", msg, registeredFor)
 }
 
 func (e UnknownComponentManagerImplementationError) Is(target error) bool {

@@ -19,9 +19,9 @@ package componentmanager
 
 import (
 	"context"
+	"slices"
+	"strings"
 	"sync"
-
-	"github.com/rs/zerolog/log"
 
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
@@ -81,83 +81,162 @@ type FirmwareConsistencyChecker interface {
 // It receives a ProviderRegistry from which it can retrieve the providers it needs.
 type ManagerFactory func(providers *providerapi.ProviderRegistry) (ComponentManager, error)
 
-// Registry maintains a collection of component manager factories and active managers.
-// It allows dynamic registration and selection of implementations per component type.
-type Registry struct {
-	mu        sync.RWMutex
-	factories map[devicetypes.ComponentType]map[string]ManagerFactory // type -> impl_name -> factory
-	active    map[devicetypes.ComponentType]ComponentManager          // type -> active manager
+// Descriptor describes a component manager implementation registered in
+// this process. The descriptor identity is Type plus Implementation; provider
+// names stay separate because one manager can require multiple providers and
+// one provider can serve multiple component manager implementations.
+type Descriptor struct {
+	Type              devicetypes.ComponentType
+	Implementation    string
+	RequiredProviders []string
+	Factory           ManagerFactory
 }
 
-// NewRegistry creates a new Registry instance.
-func NewRegistry() *Registry {
-	return &Registry{
-		factories: make(map[devicetypes.ComponentType]map[string]ManagerFactory),
-		active:    make(map[devicetypes.ComponentType]ComponentManager),
+// Catalog contains the component manager implementations supported by a
+// particular binary. Service-specific packages such as builtin own the list of
+// descriptors that goes into a catalog.
+type Catalog struct {
+	descriptors map[devicetypes.ComponentType]map[string]Descriptor // type -> impl_name -> descriptor
+}
+
+// NewCatalog validates descriptors and indexes them by component type and
+// implementation.
+func NewCatalog(descriptors []Descriptor) (Catalog, error) {
+	catalog := Catalog{
+		descriptors: make(map[devicetypes.ComponentType]map[string]Descriptor),
 	}
+
+	for _, descriptor := range descriptors {
+		descriptor, err := descriptor.normalize()
+		if err != nil {
+			return Catalog{}, err
+		}
+
+		if _, ok := catalog.descriptors[descriptor.Type]; !ok {
+			catalog.descriptors[descriptor.Type] = make(map[string]Descriptor)
+		}
+
+		if _, exists := catalog.descriptors[descriptor.Type][descriptor.Implementation]; exists {
+			return Catalog{}, DuplicateDescriptorError{
+				ComponentType:  descriptor.Type,
+				Implementation: descriptor.Implementation,
+			}
+		}
+
+		catalog.descriptors[descriptor.Type][descriptor.Implementation] = descriptor
+	}
+
+	return catalog, nil
 }
 
-// RegisterFactory registers a factory for a specific component type and implementation name.
-// Returns false if a factory with the same type and name already exists.
-func (r *Registry) RegisterFactory(
+// Get returns the descriptor for a component type and implementation.
+func (c Catalog) Get(
 	componentType devicetypes.ComponentType,
-	implName string,
-	factory ManagerFactory,
-) bool {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, ok := r.factories[componentType]; !ok {
-		r.factories[componentType] = make(map[string]ManagerFactory)
+	implementation string,
+) (Descriptor, bool) {
+	descriptors := c.descriptors[componentType]
+	if descriptors == nil {
+		return Descriptor{}, false
 	}
 
-	if _, exists := r.factories[componentType][implName]; exists {
-		log.Warn().
-			Str("component_type", devicetypes.ComponentTypeToString(componentType)).
-			Str("impl_name", implName).
-			Msg("Factory already registered, skipping")
-		return false
-	}
-
-	r.factories[componentType][implName] = factory
-	log.Debug().
-		Str("component_type", devicetypes.ComponentTypeToString(componentType)).
-		Str("impl_name", implName).
-		Msg("Registered component manager factory")
-	return true
+	descriptor, ok := descriptors[implementation]
+	return descriptor, ok
 }
 
-// Initialize creates and activates component managers based on the provided configuration.
-// The config maps component types to implementation names.
-func (r *Registry) Initialize(
+// Implementations returns the implementations registered for a component type.
+func (c Catalog) Implementations(
+	componentType devicetypes.ComponentType,
+) []string {
+	return descriptorImplementationNames(c.descriptors[componentType])
+}
+
+// ListImplementations returns all registered implementation names by component
+// type.
+func (c Catalog) ListImplementations() map[devicetypes.ComponentType][]string {
+	result := make(map[devicetypes.ComponentType][]string)
+	for componentType, descriptors := range c.descriptors {
+		result[componentType] = descriptorImplementationNames(descriptors)
+	}
+	return result
+}
+
+func (c Catalog) componentTypesForImplementation(
+	implementation string,
+) []devicetypes.ComponentType {
+	types := make([]devicetypes.ComponentType, 0)
+	for componentType, descriptors := range c.descriptors {
+		if _, ok := descriptors[implementation]; ok {
+			types = append(types, componentType)
+		}
+	}
+	slices.Sort(types)
+	return types
+}
+
+type activeManager struct {
+	descriptor Descriptor
+	manager    ComponentManager
+}
+
+// Registry maintains the active component managers selected from a catalog.
+type Registry struct {
+	mu     sync.RWMutex
+	active map[devicetypes.ComponentType]activeManager
+}
+
+// NewRegistry creates and initializes a Registry from the supplied catalog and
+// component manager configuration.
+func NewRegistry(
+	catalog Catalog,
+	config cmconfig.Config,
+	providers *providerapi.ProviderRegistry,
+) (*Registry, error) {
+	registry := &Registry{
+		active: make(map[devicetypes.ComponentType]activeManager),
+	}
+
+	if err := registry.initialize(catalog, config, providers); err != nil {
+		return nil, err
+	}
+
+	return registry, nil
+}
+
+func (r *Registry) initialize(
+	catalog Catalog,
 	config cmconfig.Config,
 	providers *providerapi.ProviderRegistry,
 ) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	activeManagers := make(
+		map[devicetypes.ComponentType]activeManager,
+		len(config.ComponentManagers),
+	)
 
 	for componentType, implName := range config.ComponentManagers {
-		factories, ok := r.factories[componentType]
+		descriptor, ok := catalog.Get(componentType, implName)
 		if !ok {
+			available := catalog.Implementations(componentType)
+			if len(available) == 0 {
+				return ComponentManagerFactoryNotRegisteredError{
+					ComponentType: componentType,
+				}
+			}
+
+			return UnknownComponentManagerImplementationError{
+				ComponentType:  componentType,
+				Implementation: implName,
+				Available:      available,
+				RegisteredFor:  catalog.componentTypesForImplementation(implName),
+			}
+		}
+
+		if descriptor.Factory == nil {
 			return ComponentManagerFactoryNotRegisteredError{
 				ComponentType: componentType,
 			}
 		}
 
-		factory, ok := factories[implName]
-		if !ok {
-			available := make([]string, 0, len(factories))
-			for name := range factories {
-				available = append(available, name)
-			}
-			return UnknownComponentManagerImplementationError{
-				ComponentType:  componentType,
-				Implementation: implName,
-				Available:      available,
-			}
-		}
-
-		manager, err := factory(providers)
+		manager, err := descriptor.Factory(providers)
 		if err != nil {
 			return ManagerCreationError{
 				ComponentType:  componentType,
@@ -166,12 +245,15 @@ func (r *Registry) Initialize(
 			}
 		}
 
-		r.active[componentType] = manager
-		log.Info().
-			Str("component_type", devicetypes.ComponentTypeToString(componentType)).
-			Str("impl_name", implName).
-			Msg("Initialized component manager")
+		activeManagers[componentType] = activeManager{
+			descriptor: descriptor,
+			manager:    manager,
+		}
 	}
+
+	r.mu.Lock()
+	r.active = activeManagers
+	r.mu.Unlock()
 
 	return nil
 }
@@ -188,7 +270,7 @@ func (r *Registry) FindManager(
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	return r.active[componentType]
+	return r.active[componentType].manager
 }
 
 // GetManager returns the active manager for the specified component type.
@@ -204,12 +286,32 @@ func (r *Registry) GetManager(
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	manager := r.active[componentType]
-	if manager == nil {
+	active := r.active[componentType]
+	if active.manager == nil {
 		return nil, ManagerNotConfiguredError{ComponentType: componentType}
 	}
 
-	return manager, nil
+	return active.manager, nil
+}
+
+// GetDescriptor returns the descriptor selected for the specified component
+// type.
+func (r *Registry) GetDescriptor(
+	componentType devicetypes.ComponentType,
+) (Descriptor, error) {
+	if r == nil {
+		return Descriptor{}, ErrRegistryNotConfigured
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	active, ok := r.active[componentType]
+	if !ok {
+		return Descriptor{}, ManagerNotConfiguredError{ComponentType: componentType}
+	}
+
+	return active.descriptor, nil
 }
 
 // GetAllManagers returns all active managers.
@@ -218,24 +320,59 @@ func (r *Registry) GetAllManagers() []ComponentManager {
 	defer r.mu.RUnlock()
 
 	managers := make([]ComponentManager, 0, len(r.active))
-	for _, manager := range r.active {
-		managers = append(managers, manager)
+	for _, active := range r.active {
+		managers = append(managers, active.manager)
 	}
 	return managers
 }
 
-// ListRegisteredImplementations returns a map of component types to their registered implementation names.
-func (r *Registry) ListRegisteredImplementations() map[devicetypes.ComponentType][]string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	result := make(map[devicetypes.ComponentType][]string)
-	for componentType, factories := range r.factories {
-		names := make([]string, 0, len(factories))
-		for name := range factories {
-			names = append(names, name)
+func (d Descriptor) normalize() (Descriptor, error) {
+	if d.Type == devicetypes.ComponentTypeUnknown {
+		return Descriptor{}, UnknownComponentTypeError{
+			Name: devicetypes.ComponentTypeToString(d.Type),
 		}
-		result[componentType] = names
 	}
-	return result
+
+	d.Implementation = strings.TrimSpace(d.Implementation)
+	if d.Implementation == "" {
+		return Descriptor{}, ComponentManagerImplementationNameEmptyError{
+			ComponentType: d.Type,
+		}
+	}
+
+	if d.Factory == nil {
+		return Descriptor{}, ComponentManagerFactoryNotConfiguredError{
+			ComponentType:  d.Type,
+			Implementation: d.Implementation,
+		}
+	}
+
+	requiredProviders := make([]string, 0, len(d.RequiredProviders))
+	seen := make(map[string]struct{}, len(d.RequiredProviders))
+	for _, name := range d.RequiredProviders {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return Descriptor{}, providerapi.ErrProviderNameEmpty
+		}
+		if _, ok := seen[name]; ok {
+			continue
+		}
+		seen[name] = struct{}{}
+		requiredProviders = append(requiredProviders, name)
+	}
+	slices.Sort(requiredProviders)
+	d.RequiredProviders = requiredProviders
+
+	return d, nil
+}
+
+func descriptorImplementationNames(
+	descriptors map[string]Descriptor,
+) []string {
+	names := make([]string, 0, len(descriptors))
+	for name := range descriptors {
+		names = append(names, name)
+	}
+	slices.Sort(names)
+	return names
 }

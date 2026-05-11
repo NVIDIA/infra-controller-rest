@@ -35,8 +35,6 @@ import (
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 )
 
-type componentManagerRegistrar func(*componentmanager.Registry)
-
 // NewComponentManagerRegistry creates the component manager registry for the
 // Flow service using all component manager implementations compiled into the
 // binary.
@@ -44,17 +42,17 @@ func NewComponentManagerRegistry(
 	config cmconfig.Config,
 	providers *providerapi.ProviderRegistry,
 ) (*componentmanager.Registry, error) {
-	registry := componentmanager.NewRegistry()
-
-	if err := registerServiceComponentManagers(registry, config); err != nil {
+	catalog, err := serviceCatalog(config)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := registry.Initialize(config, providers); err != nil {
+	registry, err := componentmanager.NewRegistry(catalog, config, providers)
+	if err != nil {
 		return nil, fmt.Errorf("initialize component managers: %w", err)
 	}
 
-	impls := registry.ListRegisteredImplementations()
+	impls := catalog.ListImplementations()
 	for compType, names := range impls {
 		log.Debug().
 			Str("component_type", compType.String()).
@@ -65,45 +63,38 @@ func NewComponentManagerRegistry(
 	return registry, nil
 }
 
-// registerServiceComponentManagers registers all component manager factories
-// supported by the Flow service. Add a new compiled-in component manager here
-// when adding a service-supported implementation.
-func registerServiceComponentManagers(
-	registry *componentmanager.Registry,
+// serviceCatalog builds the component manager catalog for the flow service.
+// The catalog contains the descriptors for all the built-in component
+// managers supported by the flow service.
+func serviceCatalog(
 	config cmconfig.Config,
-) error {
-	registrars, err := serviceComponentManagerRegistrars(config)
-	if err != nil {
-		return err
-	}
-
-	for _, registrar := range registrars {
-		registrar(registry)
-	}
-	return nil
-}
-
-// serviceComponentManagerRegistrars returns all component manager factory
-// registrars supported by the Flow service. Add a new compiled-in component
-// manager here when adding a service-supported implementation.
-func serviceComponentManagerRegistrars(
-	config cmconfig.Config,
-) ([]componentManagerRegistrar, error) {
+) (componentmanager.Catalog, error) {
 	computePowerDelay, err := nicoComputePowerDelay(config)
 	if err != nil {
-		return nil, err
+		return componentmanager.Catalog{}, err
 	}
 
-	return []componentManagerRegistrar{
-		func(registry *componentmanager.Registry) {
-			computenico.Register(registry, computePowerDelay)
-		},
-		nvlswitchnico.Register,
-		nvlswitchnsm.Register,
-		powershelfnico.Register,
-		powershelfpsm.Register,
-		mock.RegisterAll,
-	}, nil
+	// Add all component manager descriptors supported by the flow service.
+	descriptors := []componentmanager.Descriptor{
+		computenico.Descriptor(computePowerDelay),
+		nvlswitchnico.Descriptor(),
+		nvlswitchnsm.Descriptor(),
+		powershelfnico.Descriptor(),
+		powershelfpsm.Descriptor(),
+	}
+
+	// Add all mock component manager descriptors.
+	descriptors = append(descriptors, mock.Descriptors()...)
+
+	catalog, err := componentmanager.NewCatalog(descriptors)
+	if err != nil {
+		return componentmanager.Catalog{}, fmt.Errorf(
+			"build component manager catalog: %w",
+			err,
+		)
+	}
+
+	return catalog, nil
 }
 
 func nicoComputePowerDelay(config cmconfig.Config) (time.Duration, error) {
