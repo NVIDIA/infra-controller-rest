@@ -1323,14 +1323,18 @@ func (rs *FlowServerImpl) GetComponents(
 			case "model":
 				modelFilter = queryInfo
 			case "type":
-				// Convert string patterns to ComponentType enums
+				// Convert string patterns to ComponentType enums. Reject unknown
+				// type names rather than silently dropping them, which would
+				// otherwise turn a typo into "no type filter" and quietly
+				// broaden the result set.
 				if len(queryInfo.Patterns) > 0 {
 					componentTypes = make([]devicetypes.ComponentType, 0, len(queryInfo.Patterns))
 					for _, pattern := range queryInfo.Patterns {
 						ct := devicetypes.ComponentTypeFromString(pattern)
-						if ct != devicetypes.ComponentTypeUnknown {
-							componentTypes = append(componentTypes, ct)
+						if ct == devicetypes.ComponentTypeUnknown {
+							return nil, fmt.Errorf("unsupported component type filter: %s", pattern)
 						}
+						componentTypes = append(componentTypes, ct)
 					}
 				}
 			default:
@@ -1460,14 +1464,17 @@ func (rs *FlowServerImpl) ValidateComponents(
 			case "model":
 				modelFilter = queryInfo
 			case "type":
-				// Convert string patterns to ComponentType enums
+				// See note on the matching block in GetComponents: reject
+				// unknown type names so that filtering by a typo doesn't
+				// silently expand the result set.
 				if len(queryInfo.Patterns) > 0 {
 					componentTypes = make([]devicetypes.ComponentType, 0, len(queryInfo.Patterns))
 					for _, pattern := range queryInfo.Patterns {
 						ct := devicetypes.ComponentTypeFromString(pattern)
-						if ct != devicetypes.ComponentTypeUnknown {
-							componentTypes = append(componentTypes, ct)
+						if ct == devicetypes.ComponentTypeUnknown {
+							return nil, fmt.Errorf("unsupported component type filter: %s", pattern)
 						}
+						componentTypes = append(componentTypes, ct)
 					}
 				}
 			default:
@@ -1653,48 +1660,39 @@ func (rs *FlowServerImpl) applyComponentFilters(
 }
 
 // matchesStringQuery checks if a string matches the StringQueryInfo criteria.
+// With UseOR == true the value matches if any pattern matches; with UseOR ==
+// false (AND) the value must match every pattern.
 func (rs *FlowServerImpl) matchesStringQuery(value string, query dbquery.StringQueryInfo) bool {
 	if len(query.Patterns) == 0 {
 		return true
 	}
 
-	if query.IsWildcard {
-		// Wildcard matching: check if any pattern matches (using LIKE semantics)
-		for _, pattern := range query.Patterns {
-			normalizedPattern := pattern
-			if len(normalizedPattern) > 0 && normalizedPattern[0] != '%' && normalizedPattern[len(normalizedPattern)-1] != '%' {
-				normalizedPattern = "%" + normalizedPattern + "%"
-			}
-			if rs.matchesWildcard(value, normalizedPattern) {
-				if !query.UseOR {
-					return true
-				}
-			} else {
-				if query.UseOR {
-					continue
-				} else {
-					return false
-				}
-			}
+	matches := func(pattern string) bool {
+		if !query.IsWildcard {
+			return value == pattern
 		}
-		return !query.UseOR
-	} else {
-		// Exact matching: check if value matches any pattern
-		for _, pattern := range query.Patterns {
-			if value == pattern {
-				if !query.UseOR {
-					return true
-				}
-			} else {
-				if query.UseOR {
-					continue
-				} else {
-					return false
-				}
-			}
+		normalizedPattern := pattern
+		if len(normalizedPattern) > 0 && normalizedPattern[0] != '%' && normalizedPattern[len(normalizedPattern)-1] != '%' {
+			normalizedPattern = "%" + normalizedPattern + "%"
 		}
-		return !query.UseOR
+		return rs.matchesWildcard(value, normalizedPattern)
 	}
+
+	if query.UseOR {
+		for _, pattern := range query.Patterns {
+			if matches(pattern) {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, pattern := range query.Patterns {
+		if !matches(pattern) {
+			return false
+		}
+	}
+	return true
 }
 
 // matchesWildcard checks if a string matches a wildcard pattern (simple % matching).

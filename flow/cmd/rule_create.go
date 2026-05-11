@@ -217,7 +217,10 @@ func createRulesFromYAML() error {
 	for opType, opRules := range rules {
 		for operation, rule := range opRules {
 			// Check if rule already exists by listing and filtering
-			existing := findExistingRule(ctx, flowClient, opType, operation)
+			existing, err := findExistingRule(ctx, flowClient, opType, operation)
+			if err != nil {
+				return fmt.Errorf("failed to check existing rule %s (%s/%s): %w", rule.Name, opType, operation, err)
+			}
 
 			if existing != nil {
 				if !createOverwrite {
@@ -314,22 +317,22 @@ func showDryRunOutput(rules map[taskcommon.TaskType]map[string]*operationrules.O
 }
 
 // findExistingRule searches the server's rule list for a rule matching the
-// given operation type and operation code. Returns nil if none is found.
-func findExistingRule(ctx context.Context, flowClient *client.Client, opType taskcommon.TaskType, operation string) *types.OperationRule {
-	// List all rules and find matching one
+// given operation type and operation code. Returns (nil, nil) if no matching
+// rule is found, or (nil, err) if the underlying list call fails.
+func findExistingRule(ctx context.Context, flowClient *client.Client, opType taskcommon.TaskType, operation string) (*types.OperationRule, error) {
 	rules, _, err := flowClient.ListOperationRules(ctx, nil, nil, nil, nil)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	typesOpType := taskTypeToOperationType(opType)
 	for _, rule := range rules {
 		if rule.OperationType == typesOpType && rule.OperationCode == operation {
-			return rule
+			return rule, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // taskTypeToOperationType converts a taskcommon.TaskType to the corresponding

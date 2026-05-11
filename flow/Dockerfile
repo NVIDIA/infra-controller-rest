@@ -21,7 +21,7 @@
 FROM alpine
 
 # Libraries needed for go binaries
-RUN apk add libc6-compat
+RUN apk add --no-cache libc6-compat
 
 COPY build/flow /opt/flow/flow
 
