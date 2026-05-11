@@ -176,21 +176,37 @@ func TestAddComponent_Success(t *testing.T) {
 	assert.Equal(t, int32(1), resp.Component.Position.SlotId)
 }
 
-func TestAddComponent_MissingRackID(t *testing.T) {
+// TestAddComponent_NoRackID verifies that a component can be ingested
+// without a rack assignment. The component is stored with a nil RackID and
+// no rack existence check is performed.
+func TestAddComponent_NoRackID(t *testing.T) {
 	mgr := newMockManager()
 	server := &RLAServerImpl{inventoryManager: mgr}
 
+	compID := uuid.New()
 	req := &pb.AddComponentRequest{
 		Component: &pb.Component{
 			Type: pb.ComponentType_COMPONENT_TYPE_COMPUTE,
-			Info: &pb.DeviceInfo{Name: "node-01", Manufacturer: "NVIDIA", SerialNumber: "SN123"},
-			// rack_id not set
+			Info: &pb.DeviceInfo{
+				Id:           &pb.UUID{Id: compID.String()},
+				Name:         "node-01",
+				Manufacturer: "NVIDIA",
+				SerialNumber: "SN123",
+			},
+			// rack_id intentionally not set
 		},
 	}
 
-	_, err := server.AddComponent(context.Background(), req)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "rack_id is required")
+	resp, err := server.AddComponent(context.Background(), req)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.Component)
+	assert.Equal(t, "node-01", resp.Component.Info.Name)
+
+	// The component should be stored with RackID == uuid.Nil.
+	stored, ok := mgr.components[compID]
+	require.True(t, ok)
+	assert.Equal(t, uuid.Nil, stored.RackID)
 }
 
 func TestAddComponent_MissingComponent(t *testing.T) {
