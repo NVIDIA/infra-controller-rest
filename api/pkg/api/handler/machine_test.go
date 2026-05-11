@@ -1616,6 +1616,7 @@ func TestMachineHandler_Update(t *testing.T) {
 
 	tenant := testMachineBuildTenant(t, dbSession, ipOrg1, "testTenant1")
 	tenant2 := testMachineBuildTenant(t, dbSession, tnOrg2, "testTenant2")
+	_ = testMachineUpdateTenantCapability(t, dbSession, tenant2)
 	_ = common.TestBuildTenantAccount(t, dbSession, ip, &tenant2.ID, tnOrg2, cdbm.TenantAccountStatusReady, tnu2)
 
 	instanceType1 := testMachineBuildInstanceType(t, dbSession, ip, site, "testInstanceType1")

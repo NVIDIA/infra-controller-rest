@@ -64,7 +64,7 @@ const MachineMissingDelayThreshold = 24 * time.Hour
 
 const (
 	onlineRepairHealthOverrideSource = "tenant-reported-issue"
-	onlineRepairHealthAlertID      = "OnLineRepair"
+	onlineRepairHealthAlertID        = "OnLineRepair"
 )
 
 // ~~~~~ Utility for Gets ~~~~~ //
@@ -824,6 +824,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Machine update request data", verr)
 	}
 
+	// Validate if Tenant is allowed to update Machine or enter/exit online repair mode
 	if tenant != nil {
 		needsTenantAccount := tenant.Config.TargetedInstanceCreation || apiRequest.IsMachineOnlineRepairOperation()
 		if needsTenantAccount {
@@ -863,6 +864,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		}
 	}
 
+	// Validate in case of Provider, if Machine is allowed to enter/exit online repair mode
 	if infrastructureProvider != nil && apiRequest.IsMachineOnlineRepairOperation() {
 		if !machine.IsAssigned {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
@@ -1599,14 +1601,13 @@ func buildOnlineRepairHealthInsertRequest(machineID string, req *model.APIMachin
 	}
 	tgt := "tenant-reported"
 	alert := &cwssaws.HealthProbeAlert{
-		Id:              onlineRepairHealthAlertID,
-		Target:          &tgt,
-		Message:         msg,
-		TenantMessage:   cdb.GetStrPtr(fmt.Sprintf("TenantReportedIssue: %s", mhi.Summary)),
+		Id:            onlineRepairHealthAlertID,
+		Target:        &tgt,
+		Message:       msg,
+		TenantMessage: cdb.GetStrPtr(fmt.Sprintf("TenantReportedIssue: %s", mhi.Summary)),
 		Classifications: []string{
 			"PreventAllocations",
 			"PreventDeletion",
-			"PreventSuperTenantAllocation",
 			"SuppressExternalAlerting",
 		},
 	}
