@@ -577,8 +577,10 @@ func (erd ExpectedRackSQLDAO) Delete(ctx context.Context, tx *db.Tx, expectedRac
 	return nil
 }
 
-// DeleteAll deletes all ExpectedRacks matching the given filter (typically scoped by site)
-// Error is returned only if there is a db error
+// DeleteAll deletes all ExpectedRacks matching the given filter (typically
+// scoped by site). Callers must supply at least one filter; an empty filter
+// is rejected with db.ErrInvalidParams to prevent wiping the entire table.
+// Error is returned only if there is a db error or no filter was supplied.
 func (erd ExpectedRackSQLDAO) DeleteAll(ctx context.Context, tx *db.Tx, filter ExpectedRackFilterInput) error {
 	// Create a child span and set the attributes for current request
 	ctx, expectedRackDAOSpan := erd.tracerSpan.CreateChildInCurrentContext(ctx, "ExpectedRackDAO.DeleteAll")
@@ -618,9 +620,10 @@ func (erd ExpectedRackSQLDAO) DeleteAll(ctx context.Context, tx *db.Tx, filter E
 		}
 	}
 
-	// bun requires an explicit WHERE clause for bulk DELETE; gate unscoped deletes behind WHERE TRUE.
+	// Make sure at least one filter was provided; don't allow someone
+	// to delete all expected racks across all sites.
 	if !hasFilter {
-		query = query.Where("TRUE")
+		return db.ErrInvalidParams
 	}
 
 	_, err := query.Exec(ctx)
