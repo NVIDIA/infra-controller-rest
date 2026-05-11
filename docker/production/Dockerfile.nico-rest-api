@@ -51,6 +51,8 @@ COPY site-workflow/ ./site-workflow/
 COPY ipam/ ./ipam/
 COPY site-manager/ ./site-manager/
 COPY cert-manager/ ./cert-manager/
+COPY openapi/ ./openapi/
+COPY cli/ ./cli/
 
 # Create Temporal certs directory
 RUN mkdir -p /var/secrets/temporal/certs
@@ -66,6 +68,13 @@ RUN VERSION=$(grep -v '^#' /workspace/VERSION | tr -d '[:space:]' 2>/dev/null ||
         -o /app/api \
         ./cmd/api
 
+# Build the CLI client (shipped alongside the API as a debugging convenience)
+WORKDIR /workspace/cli
+RUN go build \
+        -ldflags "-extldflags '-static' -w -s" \
+        -o /app/nicocli \
+        ./cmd/cli
+
 # Final stage
 FROM nvcr.io/nvidia/distroless/go:v3.2.1 AS final
 
@@ -73,6 +82,7 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder --chown=nvs:nvs /app/api /app/api
+COPY --from=builder --chown=nvs:nvs /app/nicocli /app/nicocli
 
 # Copy Temporal certs directory
 COPY --from=builder --chown=nvs:nvs /var/secrets/temporal/certs /var/secrets/temporal/certs
