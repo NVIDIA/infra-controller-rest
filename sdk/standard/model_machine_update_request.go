@@ -34,7 +34,7 @@ import (
 // checks if the MachineUpdateRequest type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &MachineUpdateRequest{}
 
-// MachineUpdateRequest Request data to update Machine. Instance Type attribute updates, maintenance attribute updates and labels updates must be specified in separate requests. They cannot be proceessed at the same time.
+// MachineUpdateRequest Request data to update Machine. Instance Type attribute updates, maintenance attribute updates, labels updates, and in-pool online repair (enter or exit) must be specified in separate requests. They cannot be processed at the same time.
 type MachineUpdateRequest struct {
 	// Update the Instance Type of the Machine. Cannot be specified when clearing Instance Type. Can only be updated by Provider.
 	InstanceTypeId NullableString `json:"instanceTypeId,omitempty"`
@@ -43,9 +43,15 @@ type MachineUpdateRequest struct {
 	// Set to `true` to enable maintenance mode and to `false` to disable maintenance mode. Can be set by Provider or Privileged Tenant.
 	SetMaintenanceMode NullableBool `json:"setMaintenanceMode,omitempty"`
 	// Optional message describing the reason for moving Machine into maintenance mode. Can be updated by Provider or Privileged Tenant.
-	MaintenanceMessage NullableString `json:"maintenanceMessage,omitempty"`
-	// Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.
-	Labels map[string]string `json:"labels,omitempty"`
+	MaintenanceMessage NullableString    `json:"maintenanceMessage,omitempty"`
+	Labels             map[string]string `json:"labels,omitempty"`
+	// When true, initiates in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine and sets the associated Instance status to Repairing. When false, must be used with clearOnlineRepair true to exit online repair. Cannot be combined with instance type, maintenance, or label updates in the same request. When `requestOnlineRepair` is true, `machineHealthIssue`, `repairPolicy`, and `acknowledgments` are required in the same request body and must satisfy the `MachineHealthIssue`, `OnlineRepairPolicy`, and `OnlineRepairAcknowledgments` component schemas.
+	RequestOnlineRepair NullableBool `json:"requestOnlineRepair,omitempty"`
+	// Must be true when requestOnlineRepair is false. Clears the OnlineRepair health override and returns the Instance to Ready.
+	ClearOnlineRepair  NullableBool                 `json:"clearOnlineRepair,omitempty"`
+	MachineHealthIssue *MachineHealthIssue          `json:"machineHealthIssue,omitempty"`
+	RepairPolicy       *OnlineRepairPolicy          `json:"repairPolicy,omitempty"`
+	Acknowledgments    *OnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
 }
 
 // NewMachineUpdateRequest instantiates a new MachineUpdateRequest object
@@ -269,6 +275,188 @@ func (o *MachineUpdateRequest) SetLabels(v map[string]string) {
 	o.Labels = v
 }
 
+// GetRequestOnlineRepair returns the RequestOnlineRepair field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *MachineUpdateRequest) GetRequestOnlineRepair() bool {
+	if o == nil || IsNil(o.RequestOnlineRepair.Get()) {
+		var ret bool
+		return ret
+	}
+	return *o.RequestOnlineRepair.Get()
+}
+
+// GetRequestOnlineRepairOk returns a tuple with the RequestOnlineRepair field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MachineUpdateRequest) GetRequestOnlineRepairOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RequestOnlineRepair.Get(), o.RequestOnlineRepair.IsSet()
+}
+
+// HasRequestOnlineRepair returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasRequestOnlineRepair() bool {
+	if o != nil && o.RequestOnlineRepair.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetRequestOnlineRepair gets a reference to the given NullableBool and assigns it to the RequestOnlineRepair field.
+func (o *MachineUpdateRequest) SetRequestOnlineRepair(v bool) {
+	o.RequestOnlineRepair.Set(&v)
+}
+
+// SetRequestOnlineRepairNil sets the value for RequestOnlineRepair to be an explicit nil
+func (o *MachineUpdateRequest) SetRequestOnlineRepairNil() {
+	o.RequestOnlineRepair.Set(nil)
+}
+
+// UnsetRequestOnlineRepair ensures that no value is present for RequestOnlineRepair, not even an explicit nil
+func (o *MachineUpdateRequest) UnsetRequestOnlineRepair() {
+	o.RequestOnlineRepair.Unset()
+}
+
+// GetClearOnlineRepair returns the ClearOnlineRepair field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *MachineUpdateRequest) GetClearOnlineRepair() bool {
+	if o == nil || IsNil(o.ClearOnlineRepair.Get()) {
+		var ret bool
+		return ret
+	}
+	return *o.ClearOnlineRepair.Get()
+}
+
+// GetClearOnlineRepairOk returns a tuple with the ClearOnlineRepair field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *MachineUpdateRequest) GetClearOnlineRepairOk() (*bool, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.ClearOnlineRepair.Get(), o.ClearOnlineRepair.IsSet()
+}
+
+// HasClearOnlineRepair returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasClearOnlineRepair() bool {
+	if o != nil && o.ClearOnlineRepair.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetClearOnlineRepair gets a reference to the given NullableBool and assigns it to the ClearOnlineRepair field.
+func (o *MachineUpdateRequest) SetClearOnlineRepair(v bool) {
+	o.ClearOnlineRepair.Set(&v)
+}
+
+// SetClearOnlineRepairNil sets the value for ClearOnlineRepair to be an explicit nil
+func (o *MachineUpdateRequest) SetClearOnlineRepairNil() {
+	o.ClearOnlineRepair.Set(nil)
+}
+
+// UnsetClearOnlineRepair ensures that no value is present for ClearOnlineRepair, not even an explicit nil
+func (o *MachineUpdateRequest) UnsetClearOnlineRepair() {
+	o.ClearOnlineRepair.Unset()
+}
+
+// GetMachineHealthIssue returns the MachineHealthIssue field value if set, zero value otherwise.
+func (o *MachineUpdateRequest) GetMachineHealthIssue() MachineHealthIssue {
+	if o == nil || IsNil(o.MachineHealthIssue) {
+		var ret MachineHealthIssue
+		return ret
+	}
+	return *o.MachineHealthIssue
+}
+
+// GetMachineHealthIssueOk returns a tuple with the MachineHealthIssue field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *MachineUpdateRequest) GetMachineHealthIssueOk() (*MachineHealthIssue, bool) {
+	if o == nil || IsNil(o.MachineHealthIssue) {
+		return nil, false
+	}
+	return o.MachineHealthIssue, true
+}
+
+// HasMachineHealthIssue returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasMachineHealthIssue() bool {
+	if o != nil && !IsNil(o.MachineHealthIssue) {
+		return true
+	}
+
+	return false
+}
+
+// SetMachineHealthIssue gets a reference to the given MachineHealthIssue and assigns it to the MachineHealthIssue field.
+func (o *MachineUpdateRequest) SetMachineHealthIssue(v MachineHealthIssue) {
+	o.MachineHealthIssue = &v
+}
+
+// GetRepairPolicy returns the RepairPolicy field value if set, zero value otherwise.
+func (o *MachineUpdateRequest) GetRepairPolicy() OnlineRepairPolicy {
+	if o == nil || IsNil(o.RepairPolicy) {
+		var ret OnlineRepairPolicy
+		return ret
+	}
+	return *o.RepairPolicy
+}
+
+// GetRepairPolicyOk returns a tuple with the RepairPolicy field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *MachineUpdateRequest) GetRepairPolicyOk() (*OnlineRepairPolicy, bool) {
+	if o == nil || IsNil(o.RepairPolicy) {
+		return nil, false
+	}
+	return o.RepairPolicy, true
+}
+
+// HasRepairPolicy returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasRepairPolicy() bool {
+	if o != nil && !IsNil(o.RepairPolicy) {
+		return true
+	}
+
+	return false
+}
+
+// SetRepairPolicy gets a reference to the given OnlineRepairPolicy and assigns it to the RepairPolicy field.
+func (o *MachineUpdateRequest) SetRepairPolicy(v OnlineRepairPolicy) {
+	o.RepairPolicy = &v
+}
+
+// GetAcknowledgments returns the Acknowledgments field value if set, zero value otherwise.
+func (o *MachineUpdateRequest) GetAcknowledgments() OnlineRepairAcknowledgments {
+	if o == nil || IsNil(o.Acknowledgments) {
+		var ret OnlineRepairAcknowledgments
+		return ret
+	}
+	return *o.Acknowledgments
+}
+
+// GetAcknowledgmentsOk returns a tuple with the Acknowledgments field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *MachineUpdateRequest) GetAcknowledgmentsOk() (*OnlineRepairAcknowledgments, bool) {
+	if o == nil || IsNil(o.Acknowledgments) {
+		return nil, false
+	}
+	return o.Acknowledgments, true
+}
+
+// HasAcknowledgments returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasAcknowledgments() bool {
+	if o != nil && !IsNil(o.Acknowledgments) {
+		return true
+	}
+
+	return false
+}
+
+// SetAcknowledgments gets a reference to the given OnlineRepairAcknowledgments and assigns it to the Acknowledgments field.
+func (o *MachineUpdateRequest) SetAcknowledgments(v OnlineRepairAcknowledgments) {
+	o.Acknowledgments = &v
+}
+
 func (o MachineUpdateRequest) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -293,6 +481,21 @@ func (o MachineUpdateRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Labels) {
 		toSerialize["labels"] = o.Labels
+	}
+	if o.RequestOnlineRepair.IsSet() {
+		toSerialize["requestOnlineRepair"] = o.RequestOnlineRepair.Get()
+	}
+	if o.ClearOnlineRepair.IsSet() {
+		toSerialize["clearOnlineRepair"] = o.ClearOnlineRepair.Get()
+	}
+	if !IsNil(o.MachineHealthIssue) {
+		toSerialize["machineHealthIssue"] = o.MachineHealthIssue
+	}
+	if !IsNil(o.RepairPolicy) {
+		toSerialize["repairPolicy"] = o.RepairPolicy
+	}
+	if !IsNil(o.Acknowledgments) {
+		toSerialize["acknowledgments"] = o.Acknowledgments
 	}
 	return toSerialize, nil
 }
