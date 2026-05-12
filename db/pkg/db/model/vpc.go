@@ -25,6 +25,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
@@ -113,6 +114,59 @@ type Vpc struct {
 	Deleted                                *time.Time                              `bun:"deleted,soft_delete"`
 	CreatedBy                              uuid.UUID                               `bun:"type:uuid,notnull"`
 	Vni                                    *int                                    `bun:"vni,type:integer"`
+}
+
+// GetSiteID returns the VPC ID to use when communicating with the Site:
+// the controller-supplied ControllerVpcID when present, otherwise the
+// VPC's own ID. The Site treats both as opaque identifiers.
+func (vpc *Vpc) GetSiteID() *uuid.UUID {
+	if vpc.ControllerVpcID != nil {
+		return vpc.ControllerVpcID
+	}
+	return &vpc.ID
+}
+
+// toMetadataProto builds a workflow Metadata proto from the VPC's Name,
+// Description, and Labels. Description defaults to the empty string when
+// the receiver's pointer is nil; this matches the existing handler
+// behaviour.
+func (vpc *Vpc) toMetadataProto() *cwssaws.Metadata {
+	md := &cwssaws.Metadata{
+		Name:        vpc.Name,
+		Description: "",
+	}
+	if vpc.Description != nil {
+		md.Description = *vpc.Description
+	}
+	if vpc.Labels != nil {
+		labels := make([]*cwssaws.Label, 0, len(vpc.Labels))
+		for k, v := range vpc.Labels {
+			labels = append(labels, &cwssaws.Label{Key: k, Value: &v})
+		}
+		md.Labels = labels
+	}
+	return md
+}
+
+// ToDeletionRequestProto builds the workflow request that asks a Site to
+// delete this VPC.
+func (vpc *Vpc) ToDeletionRequestProto() *cwssaws.VpcDeletionRequest {
+	return &cwssaws.VpcDeletionRequest{
+		Id: &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
+	}
+}
+
+// ToUpdateRequestProto builds the workflow request that pushes this
+// VPC's name, description, labels, and current
+// `NetworkSecurityGroupID` association to a Site. The handler may
+// further set `DefaultNvlinkLogicalPartitionId` after calling this when
+// the API request changes that field.
+func (vpc *Vpc) ToUpdateRequestProto() *cwssaws.VpcUpdateRequest {
+	return &cwssaws.VpcUpdateRequest{
+		Id:                     &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
+		NetworkSecurityGroupId: vpc.NetworkSecurityGroupID,
+		Metadata:               vpc.toMetadataProto(),
+	}
 }
 
 // VpcCreateInput input parameters for Create method

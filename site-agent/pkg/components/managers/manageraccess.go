@@ -22,7 +22,9 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedrack"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flow"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instance"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instancetype"
@@ -33,7 +35,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nico"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nvlinklogicalpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/operatingsystem"
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/rla"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sku"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sshkeygroup"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/subnet"
@@ -148,6 +149,11 @@ func (m *Manager) ExpectedPowerShelf() *expectedpowershelf.API {
 	return expectedpowershelf.NewExpectedPowerShelfManager(m.Data.EB, m.API, m.Conf)
 }
 
+// ExpectedRack - Add ExpectedRack Manager instance here
+func (m *Manager) ExpectedRack() *expectedrack.API {
+	return expectedrack.NewExpectedRackManager(m.Data.EB, m.API, m.Conf)
+}
+
 // ExpectedSwitch - Add ExpectedSwitch Manager instance here
 func (m *Manager) ExpectedSwitch() *expectedswitch.API {
 	return expectedswitch.NewExpectedSwitchManager(m.Data.EB, m.API, m.Conf)
@@ -168,7 +174,7 @@ func (m *Manager) NVLinkLogicalPartition() *nvlinklogicalpartition.API {
 	return nvlinklogicalpartition.NewNVLinkLogicalPartitionManager(m.Data.EB, m.API, m.Conf)
 }
 
-// RLA - Add RLA Manager instance here
-func (m *Manager) RLA() *rla.API {
-	return rla.NewRLAManager(m.Data.EB, m.API, m.Conf)
+// Flow - Add Flow Manager instance here
+func (m *Manager) Flow() *flow.API {
+	return flow.NewFlowManager(m.Data.EB, m.API, m.Conf)
 }

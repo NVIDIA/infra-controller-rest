@@ -58,6 +58,8 @@ type SiteUpdateRequest struct {
 	IsSerialConsoleSSHKeysEnabled *bool         `json:"isSerialConsoleSSHKeysEnabled,omitempty"`
 	Location                      *SiteLocation `json:"location,omitempty"`
 	Contact                       *SiteContact  `json:"contact,omitempty"`
+	// Modify Site capabilities. Can only be updated by Provider. Partial update allowed, only specify capabilities that should be updated.
+	Capabilities *SiteCapabilitiesUpdateRequest `json:"capabilities,omitempty"`
 }
 
 // NewSiteUpdateRequest instantiates a new SiteUpdateRequest object
@@ -442,6 +444,38 @@ func (o *SiteUpdateRequest) SetContact(v SiteContact) {
 	o.Contact = &v
 }
 
+// GetCapabilities returns the Capabilities field value if set, zero value otherwise.
+func (o *SiteUpdateRequest) GetCapabilities() SiteCapabilitiesUpdateRequest {
+	if o == nil || IsNil(o.Capabilities) {
+		var ret SiteCapabilitiesUpdateRequest
+		return ret
+	}
+	return *o.Capabilities
+}
+
+// GetCapabilitiesOk returns a tuple with the Capabilities field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *SiteUpdateRequest) GetCapabilitiesOk() (*SiteCapabilitiesUpdateRequest, bool) {
+	if o == nil || IsNil(o.Capabilities) {
+		return nil, false
+	}
+	return o.Capabilities, true
+}
+
+// HasCapabilities returns a boolean if a field has been set.
+func (o *SiteUpdateRequest) HasCapabilities() bool {
+	if o != nil && !IsNil(o.Capabilities) {
+		return true
+	}
+
+	return false
+}
+
+// SetCapabilities gets a reference to the given SiteCapabilitiesUpdateRequest and assigns it to the Capabilities field.
+func (o *SiteUpdateRequest) SetCapabilities(v SiteCapabilitiesUpdateRequest) {
+	o.Capabilities = &v
+}
+
 func (o SiteUpdateRequest) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -481,6 +515,9 @@ func (o SiteUpdateRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Contact) {
 		toSerialize["contact"] = o.Contact
+	}
+	if !IsNil(o.Capabilities) {
+		toSerialize["capabilities"] = o.Capabilities
 	}
 	return toSerialize, nil
 }

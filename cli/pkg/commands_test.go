@@ -18,6 +18,8 @@
 package cli
 
 import (
+	"flag"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -71,6 +73,35 @@ func TestToKebab(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestClientFromContextExplicitTokenCommandOverridesCachedConfigToken(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.yaml")
+	cfg := &ConfigFile{
+		API: ConfigAPI{
+			Base: "http://localhost:8388",
+			Org:  "test-org",
+		},
+		Auth: ConfigAuth{
+			Token: "cached-token",
+		},
+	}
+	require.NoError(t, SaveConfigToPath(cfg, configPath))
+	SetConfigPath(configPath)
+	defer SetConfigPath("")
+
+	flags := flag.NewFlagSet("test", flag.ContinueOnError)
+	flags.String("token", "", "")
+	flags.String("token-command", "", "")
+	flags.String("base-url", "", "")
+	flags.String("org", "", "")
+	flags.Bool("debug", false, "")
+	require.NoError(t, flags.Set("token-command", "printf explicit-token"))
+
+	ctx := cli.NewContext(cli.NewApp(), flags, nil)
+	client, err := clientFromContext(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, "explicit-token", client.Token)
 }
 
 func TestOperationAction(t *testing.T) {
@@ -414,7 +445,7 @@ func TestBuildActionCommand_ReservedBodyPropertyPrefixed(t *testing.T) {
 }
 
 // TestNewApp_DpuExtensionServiceCreate_DoesNotPanic loads the real embedded
-// OpenAPI spec and runs `cli dpu-extension-service create --help`. Prior
+// OpenAPI spec and runs `nicocli dpu-extension-service create --help`. Prior
 // to the reserved-flag fix this invocation panics with
 // "create flag redefined: data" during urfave/cli flag-set construction.
 func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
@@ -426,8 +457,69 @@ func TestNewApp_DpuExtensionServiceCreate_DoesNotPanic(t *testing.T) {
 	})
 }
 
+// TestBuildActionCommand_UsageTextUsesBinaryName guards against regressing the
+// dynamic usage string back to the literal "cli" prefix. Per-command --help
+// output renders UsageText, so a wrong prefix shows up as
+// "USAGE: cli site list" even though the binary is nicocli.
+func TestBuildActionCommand_UsageTextUsesBinaryName(t *testing.T) {
+	spec := &Spec{
+		Paths: map[string]PathItem{
+			"/v2/org/{org}/nico/site/{siteId}": {
+				Get: &Operation{
+					OperationID: "get-site",
+					Tags:        []string{"Site"},
+					Parameters: []Parameter{
+						{Name: "siteId", In: "path"},
+					},
+				},
+			},
+		},
+	}
+
+	ro := resolvedOp{
+		tag:    "Site",
+		action: "get",
+		method: "GET",
+		path:   "/v2/org/{org}/nico/site/{siteId}",
+		op:     spec.Paths["/v2/org/{org}/nico/site/{siteId}"].Get,
+	}
+
+	cmd := buildActionCommand(spec, ro, "")
+	assert.Equal(t, "nicocli site get <siteId>", cmd.UsageText)
+	assert.False(t, strings.HasPrefix(cmd.UsageText, "cli "),
+		"UsageText must not start with the literal word 'cli '; got %q", cmd.UsageText)
+}
+
+// TestBuildCommands_AllUsageTextStartsWithBinaryName walks every dynamically
+// built command from the embedded spec and asserts that the per-command
+// UsageText begins with the actual binary name. This is the broadest form of
+// the regression -- every leaf command renders UsageText in --help.
+func TestBuildCommands_AllUsageTextStartsWithBinaryName(t *testing.T) {
+	spec, err := ParseSpec(openapi.Spec)
+	require.NoError(t, err, "ParseSpec failed")
+
+	cmds := BuildCommands(spec)
+	require.NotEmpty(t, cmds, "BuildCommands returned no commands")
+
+	var visit func(path string, children []*cli.Command)
+	visit = func(path string, children []*cli.Command) {
+		for _, c := range children {
+			full := path + " " + c.Name
+			if c.UsageText != "" {
+				assert.Truef(t, strings.HasPrefix(c.UsageText, "nicocli "),
+					"command %q UsageText %q must start with %q",
+					full, c.UsageText, "nicocli ")
+			}
+			if len(c.Subcommands) > 0 {
+				visit(full, c.Subcommands)
+			}
+		}
+	}
+	visit("nicocli", cmds)
+}
+
 func TestDetectMisorderedFlags(t *testing.T) {
-	usage := "cli machine update <machineId>"
+	usage := "nicocli machine update <machineId>"
 	tests := []struct {
 		name         string
 		args         []string
@@ -565,5 +657,159 @@ func TestIsActionModifier(t *testing.T) {
 				t.Errorf("isActionModifier(%q) = %v, want %v", tt.input, got, tt.want)
 			}
 		})
+	}
+}
+
+// TestBuildTagSubcommands_AliasCollisionExpandsAllNames documents the fix
+// for the alias-collision determinism bug. When two operations under the
+// same tag collapse to the same short action name (e.g.
+// `get-current-infrastructure-provider` and
+// `get-current-infrastructure-provider-stats` both -> `get`), the generated
+// command tree must expose BOTH operations under their full OperationID and
+// must NOT expose either under the colliding short name. Without this, the
+// short alias non-deterministically points at one of the two operations
+// depending on map iteration order, so the same binary exposes a different
+// command surface depending on whether the config file was loaded.
+func TestBuildTagSubcommands_AliasCollisionExpandsAllNames(t *testing.T) {
+	infraProviderGet := &Operation{
+		OperationID: "get-current-infrastructure-provider",
+		Tags:        []string{"Infrastructure Provider"},
+		Summary:     "Retrieve Infrastructure Provider for current Org",
+	}
+	infraProviderStats := &Operation{
+		OperationID: "get-current-infrastructure-provider-stats",
+		Tags:        []string{"Infrastructure Provider"},
+		Summary:     "Retrieve Stats for current Infrastructure Provider",
+	}
+	ops := []resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: infraProviderGet},
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p2", op: infraProviderStats},
+	}
+
+	cmds := buildTagSubcommands(&Spec{}, ops)
+
+	names := make(map[string]int)
+	for _, c := range cmds {
+		names[c.Name]++
+	}
+	assert.Equal(t, 0, names["get"],
+		"colliding short alias must be dropped entirely, not assigned to one operation non-deterministically")
+	assert.Equal(t, 1, names["get-current-infrastructure-provider"])
+	assert.Equal(t, 1, names["get-current-infrastructure-provider-stats"])
+}
+
+// TestBuildTagSubcommands_NonCollidingActionKeepsShortAlias is the negative
+// counterpart to the collision test above: when there is exactly one
+// operation per short action, the short alias is preserved.
+func TestBuildTagSubcommands_NonCollidingActionKeepsShortAlias(t *testing.T) {
+	op := &Operation{
+		OperationID: "get-current-infrastructure-provider",
+		Tags:        []string{"Infrastructure Provider"},
+	}
+	ops := []resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: op},
+	}
+
+	cmds := buildTagSubcommands(&Spec{}, ops)
+
+	require.Len(t, cmds, 1)
+	assert.Equal(t, "get", cmds[0].Name,
+		"a single-op tag must keep its short alias; collision-expansion must not over-fire")
+}
+
+// TestBuildTagSubcommands_AliasCollisionIsOrderIndependent simulates the two
+// states the bug filer observed (config-loaded vs config-not-loaded) by
+// running the resolver against both possible orderings of the colliding
+// operations. The resulting command tree must be identical, so the binary's
+// command surface no longer depends on Go map iteration order.
+func TestBuildTagSubcommands_AliasCollisionIsOrderIndependent(t *testing.T) {
+	infraProviderGet := &Operation{
+		OperationID: "get-current-infrastructure-provider",
+		Tags:        []string{"Infrastructure Provider"},
+	}
+	infraProviderStats := &Operation{
+		OperationID: "get-current-infrastructure-provider-stats",
+		Tags:        []string{"Infrastructure Provider"},
+	}
+
+	collectNames := func(ops []resolvedOp) []string {
+		cmds := buildTagSubcommands(&Spec{}, ops)
+		names := make([]string, 0, len(cmds))
+		for _, c := range cmds {
+			names = append(names, c.Name)
+		}
+		// Sort because primaryOps slice order is map-iteration-derived; we
+		// only care that the *set* of names is identical across orderings.
+		sortedNames := append([]string(nil), names...)
+		sortStrings(sortedNames)
+		return sortedNames
+	}
+
+	forward := collectNames([]resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: infraProviderGet},
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p2", op: infraProviderStats},
+	})
+	reverse := collectNames([]resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p2", op: infraProviderStats},
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: infraProviderGet},
+	})
+	assert.Equal(t, forward, reverse,
+		"command surface must not depend on the order primaryOps is built in")
+}
+
+// TestNewApp_NoConfigDependentCommandSurface walks the embedded production
+// spec and asserts that the two known alias-collision pairs (Infrastructure
+// Provider and Tenant) expose the full operationId-derived names with no
+// short `get` alias. This is the regression guard that fires if a future
+// change re-introduces a "first one wins" alias resolver.
+func TestNewApp_NoConfigDependentCommandSurface(t *testing.T) {
+	app, err := NewApp(openapi.Spec)
+	require.NoError(t, err, "NewApp failed")
+
+	collidingPairs := map[string][]string{
+		"infrastructure-provider": {
+			"get-current-infrastructure-provider",
+			"get-current-infrastructure-provider-stats",
+		},
+		"tenant": {
+			"get-current-tenant",
+			"get-current-tenant-stats",
+		},
+	}
+
+	for tag, expected := range collidingPairs {
+		t.Run(tag, func(t *testing.T) {
+			var found *cli.Command
+			for _, c := range app.Commands {
+				if c.Name == tag {
+					found = c
+					break
+				}
+			}
+			require.NotNilf(t, found, "tag %q should be present in the generated command tree", tag)
+
+			subNames := make(map[string]bool)
+			for _, sc := range found.Subcommands {
+				subNames[sc.Name] = true
+			}
+			for _, want := range expected {
+				assert.Truef(t, subNames[want],
+					"tag %q must expose %q as a deterministic, full-name command", tag, want)
+			}
+			assert.Falsef(t, subNames["get"],
+				"tag %q must NOT expose `get` as a short alias when there are %d colliding operations",
+				tag, len(expected))
+		})
+	}
+}
+
+// sortStrings is a tiny stable sort used by the order-independence test so it
+// stays self-contained and does not pull in sort.Strings (which is already
+// used elsewhere; this just keeps the test readable).
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j-1] > s[j]; j-- {
+			s[j-1], s[j] = s[j], s[j-1]
+		}
 	}
 }

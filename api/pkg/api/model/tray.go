@@ -28,11 +28,11 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 // APIToProtoComponentTypeName maps API tray type strings to protobuf ComponentType enum names.
-// These names match RLA's internal ComponentTypeFromString (case-insensitive).
+// These names match Flow's internal ComponentTypeFromString (case-insensitive).
 var APIToProtoComponentTypeName = map[string]string{
 	"Compute":    "COMPONENT_TYPE_COMPUTE",
 	"NVLSwitch":  "COMPONENT_TYPE_NVLSWITCH",
@@ -40,42 +40,42 @@ var APIToProtoComponentTypeName = map[string]string{
 }
 
 // ProtoToAPIComponentTypeName maps protobuf ComponentType to API tray type strings.
-var ProtoToAPIComponentTypeName = map[rlav1.ComponentType]string{
-	rlav1.ComponentType_COMPONENT_TYPE_UNKNOWN:    "Unknown",
-	rlav1.ComponentType_COMPONENT_TYPE_COMPUTE:    "Compute",
-	rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH:  "NVLSwitch",
-	rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF: "PowerShelf",
+var ProtoToAPIComponentTypeName = map[flowv1.ComponentType]string{
+	flowv1.ComponentType_COMPONENT_TYPE_UNKNOWN:    "Unknown",
+	flowv1.ComponentType_COMPONENT_TYPE_COMPUTE:    "Compute",
+	flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH:  "NVLSwitch",
+	flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF: "PowerShelf",
 }
 
-var validTrayTypesAny, ValidProtoComponentTypes = func() ([]interface{}, []rlav1.ComponentType) {
+var validTrayTypesAny, ValidProtoComponentTypes = func() ([]interface{}, []flowv1.ComponentType) {
 	anyTypes := make([]interface{}, 0, len(APIToProtoComponentTypeName))
-	protoTypes := make([]rlav1.ComponentType, 0, len(APIToProtoComponentTypeName))
+	protoTypes := make([]flowv1.ComponentType, 0, len(APIToProtoComponentTypeName))
 	for apiName, protoName := range APIToProtoComponentTypeName {
 		anyTypes = append(anyTypes, apiName)
-		protoTypes = append(protoTypes, rlav1.ComponentType(rlav1.ComponentType_value[protoName]))
+		protoTypes = append(protoTypes, flowv1.ComponentType(flowv1.ComponentType_value[protoName]))
 	}
 	return anyTypes, protoTypes
 }()
 
-// TrayFilterFieldMap maps API field names to RLA protobuf ComponentFilterField enum for tray validation queries
-var TrayFilterFieldMap = map[string]rlav1.ComponentFilterField{
-	"name":         rlav1.ComponentFilterField_COMPONENT_FILTER_FIELD_NAME,
-	"manufacturer": rlav1.ComponentFilterField_COMPONENT_FILTER_FIELD_MANUFACTURER,
-	"type":         rlav1.ComponentFilterField_COMPONENT_FILTER_FIELD_TYPE,
+// TrayFilterFieldMap maps API field names to Flow protobuf ComponentFilterField enum for tray validation queries
+var TrayFilterFieldMap = map[string]flowv1.ComponentFilterField{
+	"name":         flowv1.ComponentFilterField_COMPONENT_FILTER_FIELD_NAME,
+	"manufacturer": flowv1.ComponentFilterField_COMPONENT_FILTER_FIELD_MANUFACTURER,
+	"type":         flowv1.ComponentFilterField_COMPONENT_FILTER_FIELD_TYPE,
 }
 
-// GetProtoTrayFilter creates an RLA protobuf Filter for the given tray field and patterns.
+// GetProtoTrayFilter creates an Flow protobuf Filter for the given tray field and patterns.
 // Multiple patterns are OR'd together.
-func GetProtoTrayFilter(fieldName string, patterns []string) *rlav1.Filter {
+func GetProtoTrayFilter(fieldName string, patterns []string) *flowv1.Filter {
 	field, ok := TrayFilterFieldMap[fieldName]
 	if !ok || len(patterns) == 0 {
 		return nil
 	}
-	return &rlav1.Filter{
-		Field: &rlav1.Filter_ComponentField{
+	return &flowv1.Filter{
+		Field: &flowv1.Filter_ComponentField{
 			ComponentField: field,
 		},
-		QueryInfo: &rlav1.StringQueryInfo{
+		QueryInfo: &flowv1.StringQueryInfo{
 			Patterns:   patterns,
 			IsWildcard: false,
 			UseOr:      len(patterns) > 1,
@@ -83,22 +83,22 @@ func GetProtoTrayFilter(fieldName string, patterns []string) *rlav1.Filter {
 	}
 }
 
-// TrayOrderByFieldMap maps API field names to RLA protobuf ComponentOrderByField enum
-var TrayOrderByFieldMap = map[string]rlav1.ComponentOrderByField{
-	"name":         rlav1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_NAME,
-	"manufacturer": rlav1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_MANUFACTURER,
-	"model":        rlav1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_MODEL,
-	"type":         rlav1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_TYPE,
+// TrayOrderByFieldMap maps API field names to Flow protobuf ComponentOrderByField enum
+var TrayOrderByFieldMap = map[string]flowv1.ComponentOrderByField{
+	"name":         flowv1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_NAME,
+	"manufacturer": flowv1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_MANUFACTURER,
+	"model":        flowv1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_MODEL,
+	"type":         flowv1.ComponentOrderByField_COMPONENT_ORDER_BY_FIELD_TYPE,
 }
 
-// GetProtoTrayOrderByFromQueryParam creates an RLA protobuf OrderBy from API query parameters for tray (component) queries
-func GetProtoTrayOrderByFromQueryParam(fieldName, direction string) *rlav1.OrderBy {
+// GetProtoTrayOrderByFromQueryParam creates an Flow protobuf OrderBy from API query parameters for tray (component) queries
+func GetProtoTrayOrderByFromQueryParam(fieldName, direction string) *flowv1.OrderBy {
 	field, ok := TrayOrderByFieldMap[fieldName]
 	if !ok {
 		return nil
 	}
-	return &rlav1.OrderBy{
-		Field: &rlav1.OrderBy_ComponentField{
+	return &flowv1.OrderBy{
+		Field: &flowv1.OrderBy_ComponentField{
 			ComponentField: field,
 		},
 		Direction: direction,
@@ -157,14 +157,14 @@ func (f *TrayFilter) Validate() error {
 	return nil
 }
 
-// ToTargetSpec converts the filter to an RLA OperationTargetSpec.
+// ToTargetSpec converts the filter to an Flow OperationTargetSpec.
 // Handles nil receiver gracefully (targets all trays).
-func (f *TrayFilter) ToTargetSpec() *rlav1.OperationTargetSpec {
+func (f *TrayFilter) ToTargetSpec() *flowv1.OperationTargetSpec {
 	if f == nil {
-		return &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{{
+		return &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{{
 						ComponentTypes: ValidProtoComponentTypes,
 					}},
 				},
@@ -176,23 +176,23 @@ func (f *TrayFilter) ToTargetSpec() *rlav1.OperationTargetSpec {
 	hasComponentIDsWithType := len(f.ComponentIDs) > 0 && f.Type != nil
 
 	if hasIDs || hasComponentIDsWithType {
-		componentTargets := make([]*rlav1.ComponentTarget, 0, len(f.IDs)+len(f.ComponentIDs))
+		componentTargets := make([]*flowv1.ComponentTarget, 0, len(f.IDs)+len(f.ComponentIDs))
 
 		for _, id := range f.IDs {
-			componentTargets = append(componentTargets, &rlav1.ComponentTarget{
-				Identifier: &rlav1.ComponentTarget_Id{
-					Id: &rlav1.UUID{Id: id},
+			componentTargets = append(componentTargets, &flowv1.ComponentTarget{
+				Identifier: &flowv1.ComponentTarget_Id{
+					Id: &flowv1.UUID{Id: id},
 				},
 			})
 		}
 
 		if hasComponentIDsWithType {
 			if protoName, ok := APIToProtoComponentTypeName[*f.Type]; ok {
-				protoType := rlav1.ComponentType(rlav1.ComponentType_value[protoName])
+				protoType := flowv1.ComponentType(flowv1.ComponentType_value[protoName])
 				for _, cid := range f.ComponentIDs {
-					componentTargets = append(componentTargets, &rlav1.ComponentTarget{
-						Identifier: &rlav1.ComponentTarget_External{
-							External: &rlav1.ExternalRef{
+					componentTargets = append(componentTargets, &flowv1.ComponentTarget{
+						Identifier: &flowv1.ComponentTarget_External{
+							External: &flowv1.ExternalRef{
 								Type: protoType,
 								Id:   cid,
 							},
@@ -202,47 +202,47 @@ func (f *TrayFilter) ToTargetSpec() *rlav1.OperationTargetSpec {
 			}
 		}
 
-		return &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Components{
-				Components: &rlav1.ComponentTargets{
+		return &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Components{
+				Components: &flowv1.ComponentTargets{
 					Targets: componentTargets,
 				},
 			},
 		}
 	}
 
-	rackTarget := &rlav1.RackTarget{}
+	rackTarget := &flowv1.RackTarget{}
 
 	if f.RackID != nil {
-		rackTarget.Identifier = &rlav1.RackTarget_Id{
-			Id: &rlav1.UUID{Id: *f.RackID},
+		rackTarget.Identifier = &flowv1.RackTarget_Id{
+			Id: &flowv1.UUID{Id: *f.RackID},
 		}
 	} else if f.RackName != nil {
-		rackTarget.Identifier = &rlav1.RackTarget_Name{
+		rackTarget.Identifier = &flowv1.RackTarget_Name{
 			Name: *f.RackName,
 		}
 	}
 
 	if f.Type != nil {
 		if protoName, ok := APIToProtoComponentTypeName[*f.Type]; ok {
-			rackTarget.ComponentTypes = []rlav1.ComponentType{
-				rlav1.ComponentType(rlav1.ComponentType_value[protoName]),
+			rackTarget.ComponentTypes = []flowv1.ComponentType{
+				flowv1.ComponentType(flowv1.ComponentType_value[protoName]),
 			}
 		}
 	} else {
 		rackTarget.ComponentTypes = ValidProtoComponentTypes
 	}
 
-	return &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Racks{
-			Racks: &rlav1.RackTargets{
-				Targets: []*rlav1.RackTarget{rackTarget},
+	return &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Racks{
+			Racks: &flowv1.RackTargets{
+				Targets: []*flowv1.RackTarget{rackTarget},
 			},
 		},
 	}
 }
 
-// APITrayGetAllRequest captures query parameters for listing trays from RLA.
+// APITrayGetAllRequest captures query parameters for listing trays from Flow.
 type APITrayGetAllRequest struct {
 	SiteID       string   `query:"siteId"`
 	RackID       *string  `query:"rackId"`
@@ -252,7 +252,7 @@ type APITrayGetAllRequest struct {
 	IDs          []string `query:"id"`
 }
 
-// Validate checks field formats and enforces the RLA protobuf oneof constraints:
+// Validate checks field formats and enforces the Flow protobuf oneof constraints:
 //   - rackId must be a valid UUID
 //   - rackId and rackName are mutually exclusive (RackTarget.oneof identifier)
 //   - rackId/rackName cannot be combined with id/componentId (OperationTargetSpec.oneof targets)
@@ -294,31 +294,31 @@ func (r *APITrayGetAllRequest) Validate() error {
 	return nil
 }
 
-// ToProto converts a validated APITrayGetAllRequest to an RLA GetComponentsRequest.
-func (r *APITrayGetAllRequest) ToProto() *rlav1.GetComponentsRequest {
-	rlaRequest := &rlav1.GetComponentsRequest{}
+// ToProto converts a validated APITrayGetAllRequest to an Flow GetComponentsRequest.
+func (r *APITrayGetAllRequest) ToProto() *flowv1.GetComponentsRequest {
+	flowRequest := &flowv1.GetComponentsRequest{}
 
 	hasIDs := len(r.IDs) > 0
 	hasComponentIDsWithType := len(r.ComponentIDs) > 0 && r.Type != nil
 
 	if hasIDs || hasComponentIDsWithType {
-		componentTargets := make([]*rlav1.ComponentTarget, 0, len(r.IDs)+len(r.ComponentIDs))
+		componentTargets := make([]*flowv1.ComponentTarget, 0, len(r.IDs)+len(r.ComponentIDs))
 
 		for _, id := range r.IDs {
-			componentTargets = append(componentTargets, &rlav1.ComponentTarget{
-				Identifier: &rlav1.ComponentTarget_Id{
-					Id: &rlav1.UUID{Id: id},
+			componentTargets = append(componentTargets, &flowv1.ComponentTarget{
+				Identifier: &flowv1.ComponentTarget_Id{
+					Id: &flowv1.UUID{Id: id},
 				},
 			})
 		}
 
 		if hasComponentIDsWithType {
 			if protoName, ok := APIToProtoComponentTypeName[*r.Type]; ok {
-				protoType := rlav1.ComponentType(rlav1.ComponentType_value[protoName])
+				protoType := flowv1.ComponentType(flowv1.ComponentType_value[protoName])
 				for _, cid := range r.ComponentIDs {
-					componentTargets = append(componentTargets, &rlav1.ComponentTarget{
-						Identifier: &rlav1.ComponentTarget_External{
-							External: &rlav1.ExternalRef{
+					componentTargets = append(componentTargets, &flowv1.ComponentTarget{
+						Identifier: &flowv1.ComponentTarget_External{
+							External: &flowv1.ExternalRef{
 								Type: protoType,
 								Id:   cid,
 							},
@@ -328,59 +328,59 @@ func (r *APITrayGetAllRequest) ToProto() *rlav1.GetComponentsRequest {
 			}
 		}
 
-		rlaRequest.TargetSpec = &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Components{
-				Components: &rlav1.ComponentTargets{
+		flowRequest.TargetSpec = &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Components{
+				Components: &flowv1.ComponentTargets{
 					Targets: componentTargets,
 				},
 			},
 		}
-		return rlaRequest
+		return flowRequest
 	}
 
 	// When a specific rack is identified, use TargetSpec with a RackTarget.
-	// When no rack identifier is provided, omit TargetSpec entirely so RLA
+	// When no rack identifier is provided, omit TargetSpec entirely so Flow
 	// queries all components, and pass Type as a filter instead.
 	if r.RackID != nil || r.RackName != nil {
-		rackTarget := &rlav1.RackTarget{}
+		rackTarget := &flowv1.RackTarget{}
 		if r.RackID != nil {
-			rackTarget.Identifier = &rlav1.RackTarget_Id{
-				Id: &rlav1.UUID{Id: *r.RackID},
+			rackTarget.Identifier = &flowv1.RackTarget_Id{
+				Id: &flowv1.UUID{Id: *r.RackID},
 			}
 		} else {
-			rackTarget.Identifier = &rlav1.RackTarget_Name{
+			rackTarget.Identifier = &flowv1.RackTarget_Name{
 				Name: *r.RackName,
 			}
 		}
 
 		if r.Type != nil {
 			if protoName, ok := APIToProtoComponentTypeName[*r.Type]; ok {
-				rackTarget.ComponentTypes = []rlav1.ComponentType{
-					rlav1.ComponentType(rlav1.ComponentType_value[protoName]),
+				rackTarget.ComponentTypes = []flowv1.ComponentType{
+					flowv1.ComponentType(flowv1.ComponentType_value[protoName]),
 				}
 			}
 		} else {
 			rackTarget.ComponentTypes = ValidProtoComponentTypes
 		}
 
-		rlaRequest.TargetSpec = &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{rackTarget},
+		flowRequest.TargetSpec = &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{rackTarget},
 				},
 			},
 		}
-		return rlaRequest
+		return flowRequest
 	}
 
 	// No rack or component targeting — query all components via filters.
 	if r.Type != nil {
 		if f := GetProtoTrayFilter("type", []string{*r.Type}); f != nil {
-			rlaRequest.Filters = append(rlaRequest.Filters, f)
+			flowRequest.Filters = append(flowRequest.Filters, f)
 		}
 	}
 
-	return rlaRequest
+	return flowRequest
 }
 
 // QueryValues returns only the known query parameters as url.Values,
@@ -444,25 +444,25 @@ func (r *APITrayValidateAllRequest) Validate() error {
 	return nil
 }
 
-// ToTargetSpec converts the request's targeting fields to an RLA OperationTargetSpec.
-func (r *APITrayValidateAllRequest) ToTargetSpec() *rlav1.OperationTargetSpec {
+// ToTargetSpec converts the request's targeting fields to an Flow OperationTargetSpec.
+func (r *APITrayValidateAllRequest) ToTargetSpec() *flowv1.OperationTargetSpec {
 	if r.RackID != nil {
-		return &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
-						{Identifier: &rlav1.RackTarget_Id{Id: &rlav1.UUID{Id: *r.RackID}}},
+		return &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
+						{Identifier: &flowv1.RackTarget_Id{Id: &flowv1.UUID{Id: *r.RackID}}},
 					},
 				},
 			},
 		}
 	}
 	if r.RackName != nil {
-		return &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
-						{Identifier: &rlav1.RackTarget_Name{Name: *r.RackName}},
+		return &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
+						{Identifier: &flowv1.RackTarget_Name{Name: *r.RackName}},
 					},
 				},
 			},
@@ -473,21 +473,21 @@ func (r *APITrayValidateAllRequest) ToTargetSpec() *rlav1.OperationTargetSpec {
 		if !ok {
 			return nil
 		}
-		protoType := rlav1.ComponentType(rlav1.ComponentType_value[protoName])
-		targets := make([]*rlav1.ComponentTarget, 0, len(r.ComponentIDs))
+		protoType := flowv1.ComponentType(flowv1.ComponentType_value[protoName])
+		targets := make([]*flowv1.ComponentTarget, 0, len(r.ComponentIDs))
 		for _, cid := range r.ComponentIDs {
-			targets = append(targets, &rlav1.ComponentTarget{
-				Identifier: &rlav1.ComponentTarget_External{
-					External: &rlav1.ExternalRef{
+			targets = append(targets, &flowv1.ComponentTarget{
+				Identifier: &flowv1.ComponentTarget_External{
+					External: &flowv1.ExternalRef{
 						Type: protoType,
 						Id:   cid,
 					},
 				},
 			})
 		}
-		return &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Components{
-				Components: &rlav1.ComponentTargets{
+		return &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Components{
+				Components: &flowv1.ComponentTargets{
 					Targets: targets,
 				},
 			},
@@ -496,9 +496,9 @@ func (r *APITrayValidateAllRequest) ToTargetSpec() *rlav1.OperationTargetSpec {
 	return nil
 }
 
-// ToFilters converts the request's filter fields to RLA protobuf filters.
-func (r *APITrayValidateAllRequest) ToFilters() []*rlav1.Filter {
-	var filters []*rlav1.Filter
+// ToFilters converts the request's filter fields to Flow protobuf filters.
+func (r *APITrayValidateAllRequest) ToFilters() []*flowv1.Filter {
+	var filters []*flowv1.Filter
 	if f := GetProtoTrayFilter("name", r.Name); f != nil {
 		filters = append(filters, f)
 	}
@@ -546,7 +546,7 @@ type APITrayPosition struct {
 }
 
 // FromProto converts a proto RackPosition to an APITrayPosition
-func (atp *APITrayPosition) FromProto(protoPosition *rlav1.RackPosition) {
+func (atp *APITrayPosition) FromProto(protoPosition *flowv1.RackPosition) {
 	if protoPosition == nil {
 		return
 	}
@@ -555,7 +555,7 @@ func (atp *APITrayPosition) FromProto(protoPosition *rlav1.RackPosition) {
 	atp.HostID = protoPosition.GetHostId()
 }
 
-// APITray is the API representation of a Tray (Component) from RLA
+// APITray is the API representation of a Tray (Component) from Flow
 type APITray struct {
 	ID              string           `json:"id"`
 	ComponentID     string           `json:"componentId"`
@@ -572,8 +572,8 @@ type APITray struct {
 	RackID          string           `json:"rackId"`
 }
 
-// FromProto converts an RLA protobuf Component to an APITray
-func (at *APITray) FromProto(comp *rlav1.Component) {
+// FromProto converts an Flow protobuf Component to an APITray
+func (at *APITray) FromProto(comp *flowv1.Component) {
 	if comp == nil {
 		return
 	}
@@ -622,8 +622,8 @@ func (at *APITray) FromProto(comp *rlav1.Component) {
 	}
 }
 
-// NewAPITray creates an APITray from the RLA protobuf Component
-func NewAPITray(comp *rlav1.Component) *APITray {
+// NewAPITray creates an APITray from the Flow protobuf Component
+func NewAPITray(comp *flowv1.Component) *APITray {
 	if comp == nil {
 		return nil
 	}

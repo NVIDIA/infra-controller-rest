@@ -32,29 +32,29 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 var (
-	// RlaDefaultPort is the default port that the RLA server listens at
-	RlaDefaultPort = ":11080"
+	// FlowDefaultPort is the default port that the Flow server listens at
+	FlowDefaultPort = ":11080"
 )
 
-// RlaServerImpl implements interface RLAServer
-type RlaServerImpl struct {
-	rlav1.UnimplementedRLAServer
-	racks           map[string]*rlav1.Rack
-	components      map[string]*rlav1.Component
-	nvlDomains      map[string]*rlav1.NVLDomain
-	tasks           map[string]*rlav1.Task
+// FlowServerImpl implements interface RLAServer
+type FlowServerImpl struct {
+	flowv1.UnimplementedRLAServer
+	racks           map[string]*flowv1.Rack
+	components      map[string]*flowv1.Component
+	nvlDomains      map[string]*flowv1.NVLDomain
+	tasks           map[string]*flowv1.Task
 	rackToDomainMap map[string]string // Maps rack ID to domain ID
 }
 
-var rlaLogger = log.With().Str("Component", "Mock RLA gRPC Server").Logger()
+var flowLogger = log.With().Str("Component", "Mock Flow gRPC Server").Logger()
 
 // Version implements interface RLAServer
-func (r *RlaServerImpl) Version(ctx context.Context, req *rlav1.VersionRequest) (*rlav1.BuildInfo, error) {
-	return &rlav1.BuildInfo{
+func (r *FlowServerImpl) Version(ctx context.Context, req *flowv1.VersionRequest) (*flowv1.BuildInfo, error) {
+	return &flowv1.BuildInfo{
 		Version:   "1.0.0",
 		BuildTime: time.Now().Format(time.RFC3339),
 		GitCommit: "test-commit",
@@ -62,7 +62,7 @@ func (r *RlaServerImpl) Version(ctx context.Context, req *rlav1.VersionRequest) 
 }
 
 // CreateExpectedRack implements interface RLAServer
-func (r *RlaServerImpl) CreateExpectedRack(ctx context.Context, req *rlav1.CreateExpectedRackRequest) (*rlav1.CreateExpectedRackResponse, error) {
+func (r *FlowServerImpl) CreateExpectedRack(ctx context.Context, req *flowv1.CreateExpectedRackRequest) (*flowv1.CreateExpectedRackResponse, error) {
 	if req == nil || req.Rack == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -72,9 +72,9 @@ func (r *RlaServerImpl) CreateExpectedRack(ctx context.Context, req *rlav1.Creat
 		rackID = req.Rack.Info.Id.Id
 	}
 
-	rack := &rlav1.Rack{
-		Info: &rlav1.DeviceInfo{
-			Id: &rlav1.UUID{Id: rackID},
+	rack := &flowv1.Rack{
+		Info: &flowv1.DeviceInfo{
+			Id: &flowv1.UUID{Id: rackID},
 		},
 		Location:   req.Rack.Location,
 		Components: req.Rack.Components,
@@ -101,13 +101,13 @@ func (r *RlaServerImpl) CreateExpectedRack(ctx context.Context, req *rlav1.Creat
 		}
 	}
 
-	return &rlav1.CreateExpectedRackResponse{
-		Id: &rlav1.UUID{Id: rackID},
+	return &flowv1.CreateExpectedRackResponse{
+		Id: &flowv1.UUID{Id: rackID},
 	}, nil
 }
 
 // PatchRack implements interface RLAServer
-func (r *RlaServerImpl) PatchRack(ctx context.Context, req *rlav1.PatchRackRequest) (*rlav1.PatchRackResponse, error) {
+func (r *FlowServerImpl) PatchRack(ctx context.Context, req *flowv1.PatchRackRequest) (*flowv1.PatchRackResponse, error) {
 	if req == nil || req.Rack == nil || req.Rack.Info == nil || req.Rack.Info.Id == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -129,13 +129,13 @@ func (r *RlaServerImpl) PatchRack(ctx context.Context, req *rlav1.PatchRackReque
 		rack.Components = req.Rack.Components
 	}
 
-	return &rlav1.PatchRackResponse{
+	return &flowv1.PatchRackResponse{
 		Report: "Rack patched successfully",
 	}, nil
 }
 
 // GetRackInfoByID implements interface RLAServer
-func (r *RlaServerImpl) GetRackInfoByID(ctx context.Context, req *rlav1.GetRackInfoByIDRequest) (*rlav1.GetRackInfoResponse, error) {
+func (r *FlowServerImpl) GetRackInfoByID(ctx context.Context, req *flowv1.GetRackInfoByIDRequest) (*flowv1.GetRackInfoResponse, error) {
 	if req == nil || req.Id == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -145,13 +145,13 @@ func (r *RlaServerImpl) GetRackInfoByID(ctx context.Context, req *rlav1.GetRackI
 		return nil, status.Errorf(codes.NotFound, "Rack with ID not found")
 	}
 
-	response := &rlav1.GetRackInfoResponse{
+	response := &flowv1.GetRackInfoResponse{
 		Rack: rack,
 	}
 
 	if !req.WithComponents {
 		// Return rack without components
-		response.Rack = &rlav1.Rack{
+		response.Rack = &flowv1.Rack{
 			Info:     rack.Info,
 			Location: rack.Location,
 		}
@@ -161,7 +161,7 @@ func (r *RlaServerImpl) GetRackInfoByID(ctx context.Context, req *rlav1.GetRackI
 }
 
 // GetRackInfoBySerial implements interface RLAServer
-func (r *RlaServerImpl) GetRackInfoBySerial(ctx context.Context, req *rlav1.GetRackInfoBySerialRequest) (*rlav1.GetRackInfoResponse, error) {
+func (r *FlowServerImpl) GetRackInfoBySerial(ctx context.Context, req *flowv1.GetRackInfoBySerialRequest) (*flowv1.GetRackInfoResponse, error) {
 	if req == nil || req.SerialInfo == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -169,11 +169,11 @@ func (r *RlaServerImpl) GetRackInfoBySerial(ctx context.Context, req *rlav1.GetR
 	// Find rack by serial number
 	for _, rack := range r.racks {
 		if rack.Info != nil && rack.Info.SerialNumber == req.SerialInfo.SerialNumber {
-			response := &rlav1.GetRackInfoResponse{
+			response := &flowv1.GetRackInfoResponse{
 				Rack: rack,
 			}
 			if !req.WithComponents {
-				response.Rack = &rlav1.Rack{
+				response.Rack = &flowv1.Rack{
 					Info:     rack.Info,
 					Location: rack.Location,
 				}
@@ -186,7 +186,7 @@ func (r *RlaServerImpl) GetRackInfoBySerial(ctx context.Context, req *rlav1.GetR
 }
 
 // GetComponentInfoByID implements interface RLAServer
-func (r *RlaServerImpl) GetComponentInfoByID(ctx context.Context, req *rlav1.GetComponentInfoByIDRequest) (*rlav1.GetComponentInfoResponse, error) {
+func (r *FlowServerImpl) GetComponentInfoByID(ctx context.Context, req *flowv1.GetComponentInfoByIDRequest) (*flowv1.GetComponentInfoResponse, error) {
 	if req == nil || req.Id == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -194,7 +194,7 @@ func (r *RlaServerImpl) GetComponentInfoByID(ctx context.Context, req *rlav1.Get
 	// Find component by UUID
 	for _, comp := range r.components {
 		if comp.Info != nil && comp.Info.Id != nil && comp.Info.Id.Id == req.Id.Id {
-			response := &rlav1.GetComponentInfoResponse{
+			response := &flowv1.GetComponentInfoResponse{
 				Component: comp,
 			}
 			if req.WithRack {
@@ -219,7 +219,7 @@ func (r *RlaServerImpl) GetComponentInfoByID(ctx context.Context, req *rlav1.Get
 }
 
 // GetComponentInfoBySerial implements interface RLAServer
-func (r *RlaServerImpl) GetComponentInfoBySerial(ctx context.Context, req *rlav1.GetComponentInfoBySerialRequest) (*rlav1.GetComponentInfoResponse, error) {
+func (r *FlowServerImpl) GetComponentInfoBySerial(ctx context.Context, req *flowv1.GetComponentInfoBySerialRequest) (*flowv1.GetComponentInfoResponse, error) {
 	if req == nil || req.SerialInfo == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -227,7 +227,7 @@ func (r *RlaServerImpl) GetComponentInfoBySerial(ctx context.Context, req *rlav1
 	// Find component by serial number
 	for _, comp := range r.components {
 		if comp.Info != nil && comp.Info.SerialNumber == req.SerialInfo.SerialNumber {
-			response := &rlav1.GetComponentInfoResponse{
+			response := &flowv1.GetComponentInfoResponse{
 				Component: comp,
 			}
 			if req.WithRack {
@@ -252,31 +252,31 @@ func (r *RlaServerImpl) GetComponentInfoBySerial(ctx context.Context, req *rlav1
 }
 
 // GetListOfRacks implements interface RLAServer
-func (r *RlaServerImpl) GetListOfRacks(ctx context.Context, req *rlav1.GetListOfRacksRequest) (*rlav1.GetListOfRacksResponse, error) {
+func (r *FlowServerImpl) GetListOfRacks(ctx context.Context, req *flowv1.GetListOfRacksRequest) (*flowv1.GetListOfRacksResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
-	var racks []*rlav1.Rack
+	var racks []*flowv1.Rack
 	for _, rack := range r.racks {
 		if req.WithComponents {
 			racks = append(racks, rack)
 		} else {
-			racks = append(racks, &rlav1.Rack{
+			racks = append(racks, &flowv1.Rack{
 				Info:     rack.Info,
 				Location: rack.Location,
 			})
 		}
 	}
 
-	return &rlav1.GetListOfRacksResponse{
+	return &flowv1.GetListOfRacksResponse{
 		Racks: racks,
 		Total: int32(len(racks)),
 	}, nil
 }
 
 // CreateNVLDomain implements interface RLAServer
-func (r *RlaServerImpl) CreateNVLDomain(ctx context.Context, req *rlav1.CreateNVLDomainRequest) (*rlav1.CreateNVLDomainResponse, error) {
+func (r *FlowServerImpl) CreateNVLDomain(ctx context.Context, req *flowv1.CreateNVLDomainRequest) (*flowv1.CreateNVLDomainResponse, error) {
 	if req == nil || req.NvlDomain == nil || req.NvlDomain.Identifier == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -286,22 +286,22 @@ func (r *RlaServerImpl) CreateNVLDomain(ctx context.Context, req *rlav1.CreateNV
 		domainID = req.NvlDomain.Identifier.Id.Id
 	}
 
-	domain := &rlav1.NVLDomain{
-		Identifier: &rlav1.Identifier{
-			Id:   &rlav1.UUID{Id: domainID},
+	domain := &flowv1.NVLDomain{
+		Identifier: &flowv1.Identifier{
+			Id:   &flowv1.UUID{Id: domainID},
 			Name: req.NvlDomain.Identifier.Name,
 		},
 	}
 
 	r.nvlDomains[domainID] = domain
 
-	return &rlav1.CreateNVLDomainResponse{
-		Id: &rlav1.UUID{Id: domainID},
+	return &flowv1.CreateNVLDomainResponse{
+		Id: &flowv1.UUID{Id: domainID},
 	}, nil
 }
 
 // AttachRacksToNVLDomain implements interface RLAServer
-func (r *RlaServerImpl) AttachRacksToNVLDomain(ctx context.Context, req *rlav1.AttachRacksToNVLDomainRequest) (*emptypb.Empty, error) {
+func (r *FlowServerImpl) AttachRacksToNVLDomain(ctx context.Context, req *flowv1.AttachRacksToNVLDomainRequest) (*emptypb.Empty, error) {
 	if req == nil || req.NvlDomainIdentifier == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -347,7 +347,7 @@ func (r *RlaServerImpl) AttachRacksToNVLDomain(ctx context.Context, req *rlav1.A
 }
 
 // DetachRacksFromNVLDomain implements interface RLAServer
-func (r *RlaServerImpl) DetachRacksFromNVLDomain(ctx context.Context, req *rlav1.DetachRacksFromNVLDomainRequest) (*emptypb.Empty, error) {
+func (r *FlowServerImpl) DetachRacksFromNVLDomain(ctx context.Context, req *flowv1.DetachRacksFromNVLDomainRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -376,24 +376,24 @@ func (r *RlaServerImpl) DetachRacksFromNVLDomain(ctx context.Context, req *rlav1
 }
 
 // GetListOfNVLDomains implements interface RLAServer
-func (r *RlaServerImpl) GetListOfNVLDomains(ctx context.Context, req *rlav1.GetListOfNVLDomainsRequest) (*rlav1.GetListOfNVLDomainsResponse, error) {
+func (r *FlowServerImpl) GetListOfNVLDomains(ctx context.Context, req *flowv1.GetListOfNVLDomainsRequest) (*flowv1.GetListOfNVLDomainsResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
-	var domains []*rlav1.NVLDomain
+	var domains []*flowv1.NVLDomain
 	for _, domain := range r.nvlDomains {
 		domains = append(domains, domain)
 	}
 
-	return &rlav1.GetListOfNVLDomainsResponse{
+	return &flowv1.GetListOfNVLDomainsResponse{
 		NvlDomains: domains,
 		Total:      int32(len(domains)),
 	}, nil
 }
 
 // GetRacksForNVLDomain implements interface RLAServer
-func (r *RlaServerImpl) GetRacksForNVLDomain(ctx context.Context, req *rlav1.GetRacksForNVLDomainRequest) (*rlav1.GetRacksForNVLDomainResponse, error) {
+func (r *FlowServerImpl) GetRacksForNVLDomain(ctx context.Context, req *flowv1.GetRacksForNVLDomainRequest) (*flowv1.GetRacksForNVLDomainResponse, error) {
 	if req == nil || req.NvlDomainIdentifier == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -416,7 +416,7 @@ func (r *RlaServerImpl) GetRacksForNVLDomain(ctx context.Context, req *rlav1.Get
 	}
 
 	// Find all racks attached to this domain
-	var racks []*rlav1.Rack
+	var racks []*flowv1.Rack
 	for rackID, attachedDomainID := range r.rackToDomainMap {
 		if attachedDomainID == domainID {
 			if rack, ok := r.racks[rackID]; ok {
@@ -425,51 +425,51 @@ func (r *RlaServerImpl) GetRacksForNVLDomain(ctx context.Context, req *rlav1.Get
 		}
 	}
 
-	return &rlav1.GetRacksForNVLDomainResponse{
+	return &flowv1.GetRacksForNVLDomainResponse{
 		Racks: racks,
 	}, nil
 }
 
 // UpgradeFirmware implements interface RLAServer
-func (r *RlaServerImpl) UpgradeFirmware(ctx context.Context, req *rlav1.UpgradeFirmwareRequest) (*rlav1.SubmitTaskResponse, error) {
+func (r *FlowServerImpl) UpgradeFirmware(ctx context.Context, req *flowv1.UpgradeFirmwareRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	taskID := uuid.NewString()
-	task := &rlav1.Task{
-		Id:           &rlav1.UUID{Id: taskID},
+	task := &flowv1.Task{
+		Id:           &flowv1.UUID{Id: taskID},
 		Operation:    "UpgradeFirmware",
-		Status:       rlav1.TaskStatus_TASK_STATUS_PENDING,
-		ExecutorType: rlav1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
+		Status:       flowv1.TaskStatus_TASK_STATUS_PENDING,
+		ExecutorType: flowv1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
 		Message:      "Firmware upgrade task created",
 	}
 	r.tasks[taskID] = task
 
-	return &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	return &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}, nil
 }
 
 // GetComponents implements interface RLAServer
-func (r *RlaServerImpl) GetComponents(ctx context.Context, req *rlav1.GetComponentsRequest) (*rlav1.GetComponentsResponse, error) {
+func (r *FlowServerImpl) GetComponents(ctx context.Context, req *flowv1.GetComponentsRequest) (*flowv1.GetComponentsResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
-	var components []*rlav1.Component
+	var components []*flowv1.Component
 	for _, comp := range r.components {
 		components = append(components, comp)
 	}
 
-	return &rlav1.GetComponentsResponse{
+	return &flowv1.GetComponentsResponse{
 		Components: components,
 		Total:      int32(len(components)),
 	}, nil
 }
 
 // AddComponent implements interface RLAServer
-func (r *RlaServerImpl) AddComponent(ctx context.Context, req *rlav1.AddComponentRequest) (*rlav1.AddComponentResponse, error) {
+func (r *FlowServerImpl) AddComponent(ctx context.Context, req *flowv1.AddComponentRequest) (*flowv1.AddComponentResponse, error) {
 	if req == nil || req.Component == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -483,7 +483,7 @@ func (r *RlaServerImpl) AddComponent(ctx context.Context, req *rlav1.AddComponen
 		componentID = uuid.NewString()
 	}
 
-	component := &rlav1.Component{
+	component := &flowv1.Component{
 		Type:            req.Component.Type,
 		Info:            req.Component.Info,
 		FirmwareVersion: req.Component.FirmwareVersion,
@@ -496,19 +496,19 @@ func (r *RlaServerImpl) AddComponent(ctx context.Context, req *rlav1.AddComponen
 
 	r.components[componentID] = component
 
-	return &rlav1.AddComponentResponse{
+	return &flowv1.AddComponentResponse{
 		Component: component,
 	}, nil
 }
 
 // PatchComponent implements interface RLAServer
-func (r *RlaServerImpl) PatchComponent(ctx context.Context, req *rlav1.PatchComponentRequest) (*rlav1.PatchComponentResponse, error) {
+func (r *FlowServerImpl) PatchComponent(ctx context.Context, req *flowv1.PatchComponentRequest) (*flowv1.PatchComponentResponse, error) {
 	if req == nil || req.Id == nil || req.Id.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	// Find component by UUID
-	var comp *rlav1.Component
+	var comp *flowv1.Component
 	for _, c := range r.components {
 		if c.Info != nil && c.Info.Id != nil && c.Info.Id.Id == req.Id.Id {
 			comp = c
@@ -531,13 +531,13 @@ func (r *RlaServerImpl) PatchComponent(ctx context.Context, req *rlav1.PatchComp
 		comp.RackId = req.RackId
 	}
 
-	return &rlav1.PatchComponentResponse{
+	return &flowv1.PatchComponentResponse{
 		Component: comp,
 	}, nil
 }
 
 // DeleteComponent implements interface RLAServer
-func (r *RlaServerImpl) DeleteComponent(ctx context.Context, req *rlav1.DeleteComponentRequest) (*rlav1.DeleteComponentResponse, error) {
+func (r *FlowServerImpl) DeleteComponent(ctx context.Context, req *flowv1.DeleteComponentRequest) (*flowv1.DeleteComponentResponse, error) {
 	if req == nil || req.Id == nil || req.Id.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
@@ -556,17 +556,17 @@ func (r *RlaServerImpl) DeleteComponent(ctx context.Context, req *rlav1.DeleteCo
 		return nil, status.Errorf(codes.NotFound, "Component with ID not found")
 	}
 
-	return &rlav1.DeleteComponentResponse{}, nil
+	return &flowv1.DeleteComponentResponse{}, nil
 }
 
 // ValidateComponents implements interface RLAServer
-func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.ValidateComponentsRequest) (*rlav1.ValidateComponentsResponse, error) {
+func (r *FlowServerImpl) ValidateComponents(ctx context.Context, req *flowv1.ValidateComponentsRequest) (*flowv1.ValidateComponentsResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	// Get components
-	componentsResp, err := r.GetComponents(ctx, &rlav1.GetComponentsRequest{
+	componentsResp, err := r.GetComponents(ctx, &flowv1.GetComponentsRequest{
 		TargetSpec: req.TargetSpec,
 	})
 	if err != nil {
@@ -575,9 +575,9 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 
 	// For validation, we treat the components as both expected and actual
 	// In the new proto, actual is also a Component (ActualComponent was removed)
-	actualComponents := make([]*rlav1.Component, 0, len(componentsResp.Components))
+	actualComponents := make([]*flowv1.Component, 0, len(componentsResp.Components))
 	for _, comp := range componentsResp.Components {
-		actualComp := &rlav1.Component{
+		actualComp := &flowv1.Component{
 			Type:            comp.Type,
 			Info:            comp.Info,
 			FirmwareVersion: comp.FirmwareVersion,
@@ -590,21 +590,21 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 		actualComponents = append(actualComponents, actualComp)
 	}
 
-	expectedMap := make(map[string]*rlav1.Component)
+	expectedMap := make(map[string]*flowv1.Component)
 	for _, comp := range componentsResp.Components {
 		if comp.ComponentId != "" {
 			expectedMap[comp.ComponentId] = comp
 		}
 	}
 
-	actualMap := make(map[string]*rlav1.Component)
+	actualMap := make(map[string]*flowv1.Component)
 	for _, comp := range actualComponents {
 		if comp.ComponentId != "" {
 			actualMap[comp.ComponentId] = comp
 		}
 	}
 
-	var diffs []*rlav1.ComponentDiff
+	var diffs []*flowv1.ComponentDiff
 	missingCount := 0
 	unexpectedCount := 0
 	driftCount := 0
@@ -613,8 +613,8 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 	// Find components only in expected
 	for compID, expectedComp := range expectedMap {
 		if _, exists := actualMap[compID]; !exists {
-			diffs = append(diffs, &rlav1.ComponentDiff{
-				Type:        rlav1.DiffType_DIFF_TYPE_MISSING,
+			diffs = append(diffs, &flowv1.ComponentDiff{
+				Type:        flowv1.DiffType_DIFF_TYPE_MISSING,
 				ComponentId: compID,
 				Expected:    expectedComp,
 			})
@@ -625,8 +625,8 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 	// Find components only in actual
 	for compID, actualComp := range actualMap {
 		if _, exists := expectedMap[compID]; !exists {
-			diffs = append(diffs, &rlav1.ComponentDiff{
-				Type:        rlav1.DiffType_DIFF_TYPE_UNEXPECTED,
+			diffs = append(diffs, &flowv1.ComponentDiff{
+				Type:        flowv1.DiffType_DIFF_TYPE_UNEXPECTED,
 				ComponentId: compID,
 				Actual:      actualComp,
 			})
@@ -639,14 +639,14 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 		if actualComp, exists := actualMap[compID]; exists {
 			// Simple comparison: check if firmware version differs
 			if expectedComp.FirmwareVersion != actualComp.FirmwareVersion {
-				var fieldDiffs []*rlav1.FieldDiff
-				fieldDiffs = append(fieldDiffs, &rlav1.FieldDiff{
+				var fieldDiffs []*flowv1.FieldDiff
+				fieldDiffs = append(fieldDiffs, &flowv1.FieldDiff{
 					FieldName:     "firmware_version",
 					ExpectedValue: expectedComp.FirmwareVersion,
 					ActualValue:   actualComp.FirmwareVersion,
 				})
-				diffs = append(diffs, &rlav1.ComponentDiff{
-					Type:        rlav1.DiffType_DIFF_TYPE_DRIFT,
+				diffs = append(diffs, &flowv1.ComponentDiff{
+					Type:        flowv1.DiffType_DIFF_TYPE_DRIFT,
 					ComponentId: compID,
 					FieldDiffs:  fieldDiffs,
 				})
@@ -657,7 +657,7 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 		}
 	}
 
-	return &rlav1.ValidateComponentsResponse{
+	return &flowv1.ValidateComponentsResponse{
 		Diffs:           diffs,
 		TotalDiffs:      int32(len(diffs)),
 		MissingCount:    int32(missingCount),
@@ -668,98 +668,98 @@ func (r *RlaServerImpl) ValidateComponents(ctx context.Context, req *rlav1.Valid
 }
 
 // PowerOnRack implements interface RLAServer
-func (r *RlaServerImpl) PowerOnRack(ctx context.Context, req *rlav1.PowerOnRackRequest) (*rlav1.SubmitTaskResponse, error) {
+func (r *FlowServerImpl) PowerOnRack(ctx context.Context, req *flowv1.PowerOnRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	taskID := uuid.NewString()
-	task := &rlav1.Task{
-		Id:           &rlav1.UUID{Id: taskID},
+	task := &flowv1.Task{
+		Id:           &flowv1.UUID{Id: taskID},
 		Operation:    "PowerOnRack",
-		Status:       rlav1.TaskStatus_TASK_STATUS_PENDING,
-		ExecutorType: rlav1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
+		Status:       flowv1.TaskStatus_TASK_STATUS_PENDING,
+		ExecutorType: flowv1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
 		Message:      "Power on task created",
 	}
 	r.tasks[taskID] = task
 
-	return &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	return &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}, nil
 }
 
 // PowerOffRack implements interface RLAServer
-func (r *RlaServerImpl) PowerOffRack(ctx context.Context, req *rlav1.PowerOffRackRequest) (*rlav1.SubmitTaskResponse, error) {
+func (r *FlowServerImpl) PowerOffRack(ctx context.Context, req *flowv1.PowerOffRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	taskID := uuid.NewString()
-	task := &rlav1.Task{
-		Id:           &rlav1.UUID{Id: taskID},
+	task := &flowv1.Task{
+		Id:           &flowv1.UUID{Id: taskID},
 		Operation:    "PowerOffRack",
-		Status:       rlav1.TaskStatus_TASK_STATUS_PENDING,
-		ExecutorType: rlav1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
+		Status:       flowv1.TaskStatus_TASK_STATUS_PENDING,
+		ExecutorType: flowv1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
 		Message:      "Power off task created",
 	}
 	r.tasks[taskID] = task
 
-	return &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	return &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}, nil
 }
 
 // PowerResetRack implements interface RLAServer
-func (r *RlaServerImpl) PowerResetRack(ctx context.Context, req *rlav1.PowerResetRackRequest) (*rlav1.SubmitTaskResponse, error) {
+func (r *FlowServerImpl) PowerResetRack(ctx context.Context, req *flowv1.PowerResetRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	taskID := uuid.NewString()
-	task := &rlav1.Task{
-		Id:           &rlav1.UUID{Id: taskID},
+	task := &flowv1.Task{
+		Id:           &flowv1.UUID{Id: taskID},
 		Operation:    "PowerResetRack",
-		Status:       rlav1.TaskStatus_TASK_STATUS_PENDING,
-		ExecutorType: rlav1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
+		Status:       flowv1.TaskStatus_TASK_STATUS_PENDING,
+		ExecutorType: flowv1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
 		Message:      "Power reset task created",
 	}
 	r.tasks[taskID] = task
 
-	return &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	return &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}, nil
 }
 
 // BringUpRack implements interface RLAServer
-func (r *RlaServerImpl) BringUpRack(ctx context.Context, req *rlav1.BringUpRackRequest) (*rlav1.SubmitTaskResponse, error) {
+func (r *FlowServerImpl) BringUpRack(ctx context.Context, req *flowv1.BringUpRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
 	taskID := uuid.NewString()
-	task := &rlav1.Task{
-		Id:           &rlav1.UUID{Id: taskID},
+	task := &flowv1.Task{
+		Id:           &flowv1.UUID{Id: taskID},
 		Operation:    "BringUpRack",
-		Status:       rlav1.TaskStatus_TASK_STATUS_PENDING,
-		ExecutorType: rlav1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
+		Status:       flowv1.TaskStatus_TASK_STATUS_PENDING,
+		ExecutorType: flowv1.TaskExecutorType_TASK_EXECUTOR_TYPE_TEMPORAL,
 		Message:      "Bring up task created",
 	}
 	r.tasks[taskID] = task
 
-	return &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	return &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}, nil
 }
 
 // ListTasks implements interface RLAServer
-func (r *RlaServerImpl) ListTasks(ctx context.Context, req *rlav1.ListTasksRequest) (*rlav1.ListTasksResponse, error) {
+func (r *FlowServerImpl) ListTasks(ctx context.Context, req *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
-	var tasks []*rlav1.Task
+	var tasks []*flowv1.Task
 	for _, task := range r.tasks {
-		if req.ActiveOnly && (task.Status == rlav1.TaskStatus_TASK_STATUS_COMPLETED || task.Status == rlav1.TaskStatus_TASK_STATUS_FAILED) {
+		if req.ActiveOnly && (task.Status == flowv1.TaskStatus_TASK_STATUS_COMPLETED || task.Status == flowv1.TaskStatus_TASK_STATUS_FAILED) {
 			continue
 		}
 		if req.RackId != nil && task.RackId != nil && task.RackId.Id != req.RackId.Id {
@@ -768,61 +768,61 @@ func (r *RlaServerImpl) ListTasks(ctx context.Context, req *rlav1.ListTasksReque
 		tasks = append(tasks, task)
 	}
 
-	return &rlav1.ListTasksResponse{
+	return &flowv1.ListTasksResponse{
 		Tasks: tasks,
 		Total: int32(len(tasks)),
 	}, nil
 }
 
 // GetTasksByIDs implements interface RLAServer
-func (r *RlaServerImpl) GetTasksByIDs(ctx context.Context, req *rlav1.GetTasksByIDsRequest) (*rlav1.GetTasksByIDsResponse, error) {
+func (r *FlowServerImpl) GetTasksByIDs(ctx context.Context, req *flowv1.GetTasksByIDsRequest) (*flowv1.GetTasksByIDsResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
 	}
 
-	var tasks []*rlav1.Task
+	var tasks []*flowv1.Task
 	for _, taskID := range req.TaskIds {
 		if task, ok := r.tasks[taskID.Id]; ok {
 			tasks = append(tasks, task)
 		}
 	}
 
-	return &rlav1.GetTasksByIDsResponse{
+	return &flowv1.GetTasksByIDsResponse{
 		Tasks: tasks,
 	}, nil
 }
 
-// RlaTest starts the RLA test gRPC server
-func RlaTest(secs int) {
-	listener, err := net.Listen("tcp", RlaDefaultPort)
+// FlowTest starts the Flow test gRPC server
+func FlowTest(secs int) {
+	listener, err := net.Listen("tcp", FlowDefaultPort)
 	if err != nil {
 		panic(err)
 	}
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	rlav1.RegisterRLAServer(s, &RlaServerImpl{
-		racks:           make(map[string]*rlav1.Rack),
-		components:      make(map[string]*rlav1.Component),
-		nvlDomains:      make(map[string]*rlav1.NVLDomain),
-		tasks:           make(map[string]*rlav1.Task),
+	flowv1.RegisterRLAServer(s, &FlowServerImpl{
+		racks:           make(map[string]*flowv1.Rack),
+		components:      make(map[string]*flowv1.Component),
+		nvlDomains:      make(map[string]*flowv1.NVLDomain),
+		tasks:           make(map[string]*flowv1.Task),
 		rackToDomainMap: make(map[string]string),
 	})
 
 	if secs != 0 {
 		timer := time.AfterFunc(time.Second*time.Duration(secs), func() {
 			s.GracefulStop()
-			rlaLogger.Info().Msgf("Timer started for: %v seconds", secs)
+			flowLogger.Info().Msgf("Timer started for: %v seconds", secs)
 		})
 		defer timer.Stop()
 	}
 
-	rlaLogger.Info().Msg("Started RLA API server")
+	flowLogger.Info().Msg("Started Flow API server")
 
 	err = s.Serve(listener)
 	if err != nil {
-		rlaLogger.Fatal().Err(err).Msg("Failed to start RLA API server")
+		flowLogger.Fatal().Err(err).Msg("Failed to start Flow API server")
 	}
 
-	rlaLogger.Info().Msg("Stopped RLA API server")
+	flowLogger.Info().Msg("Stopped Flow API server")
 }

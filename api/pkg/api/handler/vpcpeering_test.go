@@ -139,14 +139,14 @@ func TestCreateVpcPeeringHandler_Handle(t *testing.T) {
 	assert.NotNil(t, ta4)
 
 	// VPCs must be in Ready state for create peering to succeed
-	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip, tn2, st1, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip2, tnProvider, st1, nil, nil, cdbm.VpcStatusReady, ipu2)
-	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip2, tnProvider, st1, nil, nil, cdbm.VpcStatusReady, ipu2)
-	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip2, tn1, st2, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc8 := common.TestBuildVPC(t, dbSession, "vpc-8", ip2, tn2, st2, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip, tn2, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip2, tnProvider, st1, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip2, tnProvider, st1, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip2, tn1, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc8 := common.TestBuildVPC(t, dbSession, "vpc-8", ip2, tn2, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
 
 	// Existing peering vpc1-vpc2 for duplicate test
 	existingVP := common.TestBuildVpcPeering(t, dbSession, vpc1.ID, vpc2.ID, st1.ID, nil, &tn1.ID, false, tnu1.ID)
@@ -466,14 +466,14 @@ func TestGetAllVpcPeeringHandler_Handle(t *testing.T) {
 	common.TestBuildTenantSite(t, dbSession, tnProvider, st1, ipu2)
 
 	// VPCs
-	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip, tn2, st1, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip, tn1, st2, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip, tn2, st2, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip, tnProvider, st1, nil, nil, cdbm.VpcStatusReady, ipu2)
-	vpc8 := common.TestBuildVPC(t, dbSession, "vpc-8", ip, tnProvider, st1, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip, tn2, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip, tn1, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip, tn2, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip, tnProvider, st1, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc8 := common.TestBuildVPC(t, dbSession, "vpc-8", ip, tnProvider, st1, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
 
 	// Tenant-created peerings
 	_ = common.TestBuildVpcPeering(t, dbSession, vpc1.ID, vpc2.ID, st1.ID, nil, &tn1.ID, false, tnu1.ID)
@@ -727,14 +727,14 @@ func TestGetVpcPeeringHandler_Handle(t *testing.T) {
 	common.TestBuildTenantSite(t, dbSession, tnProvider, st1, ipu2)
 
 	// VPCs
-	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip, tn2, st1, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip, tn1, st2, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip, tn2, st2, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip, tnProvider, st1, nil, nil, cdbm.VpcStatusReady, ipu2)
-	vpc8 := common.TestBuildVPC(t, dbSession, "vpc-8", ip, tnProvider, st1, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip, tn2, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip, tn1, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip, tn2, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip, tnProvider, st1, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc8 := common.TestBuildVPC(t, dbSession, "vpc-8", ip, tnProvider, st1, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
 
 	// Tenant-created peerings
 	vp12 := common.TestBuildVpcPeering(t, dbSession, vpc1.ID, vpc2.ID, st1.ID, nil, &tn1.ID, false, tnu1.ID)
@@ -947,13 +947,13 @@ func TestDeleteVpcPeeringHandler_Handle(t *testing.T) {
 	assert.NotNil(t, tProviders2)
 
 	// VPCs must be in Ready state for create peering to succeed
-	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, cdbm.VpcStatusReady, tnu1)
-	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn2, st1, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip2, tn2, st2, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip2, tn2, st2, nil, nil, cdbm.VpcStatusReady, tnu2)
-	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip2, tnProvider, st2, nil, nil, cdbm.VpcStatusReady, ipu2)
-	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip2, tnProvider, st2, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc1 := common.TestBuildVPC(t, dbSession, "vpc-1", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc2 := common.TestBuildVPC(t, dbSession, "vpc-2", ip, tn1, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu1)
+	vpc3 := common.TestBuildVPC(t, dbSession, "vpc-3", ip, tn2, st1, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc4 := common.TestBuildVPC(t, dbSession, "vpc-4", ip2, tn2, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc5 := common.TestBuildVPC(t, dbSession, "vpc-5", ip2, tn2, st2, nil, nil, nil, cdbm.VpcStatusReady, tnu2)
+	vpc6 := common.TestBuildVPC(t, dbSession, "vpc-6", ip2, tnProvider, st2, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
+	vpc7 := common.TestBuildVPC(t, dbSession, "vpc-7", ip2, tnProvider, st2, nil, nil, nil, cdbm.VpcStatusReady, ipu2)
 
 	// Create peerings between VPCs
 	vp12 := common.TestBuildVpcPeering(t, dbSession, vpc1.ID, vpc2.ID, st1.ID, nil, &tn1.ID, false, tnu1.ID)

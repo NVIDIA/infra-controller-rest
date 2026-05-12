@@ -41,7 +41,7 @@ import (
 	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
 	temporalEnums "go.temporal.io/api/enums/v1"
 	tp "go.temporal.io/sdk/temporal"
@@ -163,9 +163,9 @@ func (gth GetTrayHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request
-	rlaRequest := &rlav1.GetComponentInfoByIDRequest{
-		Id: &rlav1.UUID{Id: trayStrID},
+	// Build Flow request
+	flowRequest := &flowv1.GetComponentInfoByIDRequest{
+		Id: &flowv1.UUID{Id: trayStrID},
 	}
 
 	// Execute workflow
@@ -179,15 +179,15 @@ func (gth GetTrayHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetTray", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetTray", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute GetTray workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get Tray details", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.GetComponentInfoResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.GetComponentInfoResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -200,7 +200,7 @@ func (gth GetTrayHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	apiTray := model.NewAPITray(rlaResponse.GetComponent())
+	apiTray := model.NewAPITray(flowResponse.GetComponent())
 	if apiTray == nil {
 		return cutil.NewAPIErrorResponse(c, http.StatusNotFound, "Tray not found", nil)
 	}
@@ -349,17 +349,17 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request from validated API request
-	rlaRequest := apiRequest.ToProto()
+	// Build Flow request from validated API request
+	flowRequest := apiRequest.ToProto()
 
-	// Set order and pagination on RLA request
-	var orderBy *rlav1.OrderBy
+	// Set order and pagination on Flow request
+	var orderBy *flowv1.OrderBy
 	if pageRequest.OrderBy != nil {
 		orderBy = model.GetProtoTrayOrderByFromQueryParam(pageRequest.OrderBy.Field, strings.ToUpper(pageRequest.OrderBy.Order))
 	}
-	rlaRequest.OrderBy = orderBy
+	flowRequest.OrderBy = orderBy
 	if pageRequest.Offset != nil && pageRequest.Limit != nil {
-		rlaRequest.Pagination = &rlav1.Pagination{
+		flowRequest.Pagination = &flowv1.Pagination{
 			Offset: int32(*pageRequest.Offset),
 			Limit:  int32(*pageRequest.Limit),
 		}
@@ -384,15 +384,15 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetTrays", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetTrays", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute GetTrays workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get Trays", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.GetComponentsResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.GetComponentsResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -404,8 +404,8 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to get Trays: %s", err), nil)
 	}
 
-	apiTrays := make([]*model.APITray, 0, len(rlaResponse.GetComponents()))
-	for _, comp := range rlaResponse.GetComponents() {
+	apiTrays := make([]*model.APITray, 0, len(flowResponse.GetComponents()))
+	for _, comp := range flowResponse.GetComponents() {
 		apiTray := model.NewAPITray(comp)
 		if apiTray != nil {
 			apiTrays = append(apiTrays, apiTray)
@@ -413,7 +413,7 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 	}
 
 	// Set pagination response header
-	total := int(rlaResponse.GetTotal())
+	total := int(flowResponse.GetTotal())
 	pageResponse := pagination.NewPageResponse(*pageRequest.PageNumber, *pageRequest.PageSize, total, pageRequest.OrderByStr)
 	pageHeader, err := json.Marshal(pageResponse)
 	if err != nil {
@@ -451,7 +451,7 @@ func NewValidateTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.C
 
 // Handle godoc
 // @Summary Validate a Tray
-// @Description Validate a Tray by comparing expected vs actual state via RLA
+// @Description Validate a Tray by comparing expected vs actual state via Flow
 // @Tags tray
 // @Accept json
 // @Produce json
@@ -543,15 +543,15 @@ func (vth ValidateTrayHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request - target the specific tray by ID
-	rlaRequest := &rlav1.ValidateComponentsRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Components{
-				Components: &rlav1.ComponentTargets{
-					Targets: []*rlav1.ComponentTarget{
+	// Build Flow request - target the specific tray by ID
+	flowRequest := &flowv1.ValidateComponentsRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Components{
+				Components: &flowv1.ComponentTargets{
+					Targets: []*flowv1.ComponentTarget{
 						{
-							Identifier: &rlav1.ComponentTarget_Id{
-								Id: &rlav1.UUID{Id: trayStrID},
+							Identifier: &flowv1.ComponentTarget_Id{
+								Id: &flowv1.UUID{Id: trayStrID},
 							},
 						},
 					},
@@ -572,15 +572,15 @@ func (vth ValidateTrayHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute ValidateComponents workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to validate Tray", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.ValidateComponentsResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.ValidateComponentsResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -593,9 +593,9 @@ func (vth ValidateTrayHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	apiResult := model.NewAPIRackValidationResult(&rlaResponse)
+	apiResult := model.NewAPIRackValidationResult(&flowResponse)
 
-	logger.Info().Int32("TotalDiffs", rlaResponse.GetTotalDiffs()).Msg("finishing API handler")
+	logger.Info().Int32("TotalDiffs", flowResponse.GetTotalDiffs()).Msg("finishing API handler")
 
 	return c.JSON(http.StatusOK, apiResult)
 }
@@ -625,7 +625,7 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 
 // Handle godoc
 // @Summary Validate Trays
-// @Description Validate Tray components by comparing expected vs actual state via RLA. If no filter is specified, validates all trays in the Site. Use rackId/rackName to scope to a specific rack, and name/manufacturer/type to filter by tray attributes.
+// @Description Validate Tray components by comparing expected vs actual state via Flow. If no filter is specified, validates all trays in the Site. Use rackId/rackName to scope to a specific rack, and name/manufacturer/type to filter by tray attributes.
 // @Tags tray
 // @Accept json
 // @Produce json
@@ -721,8 +721,8 @@ func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build RLA request from validated request struct
-	rlaRequest := &rlav1.ValidateComponentsRequest{
+	// Build Flow request from validated request struct
+	flowRequest := &flowv1.ValidateComponentsRequest{
 		TargetSpec: apiRequest.ToTargetSpec(),
 		Filters:    apiRequest.ToFilters(),
 	}
@@ -740,15 +740,15 @@ func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", rlaRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "ValidateRackComponents", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to execute ValidateComponents workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to validate Trays", nil)
 	}
 
 	// Get workflow result
-	var rlaResponse rlav1.ValidateComponentsResponse
-	err = we.Get(ctx, &rlaResponse)
+	var flowResponse flowv1.ValidateComponentsResponse
+	err = we.Get(ctx, &flowResponse)
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
@@ -761,9 +761,9 @@ func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 	}
 
 	// Convert to API model
-	apiResult := model.NewAPIRackValidationResult(&rlaResponse)
+	apiResult := model.NewAPIRackValidationResult(&flowResponse)
 
-	logger.Info().Int32("TotalDiffs", rlaResponse.GetTotalDiffs()).Msg("finishing API handler")
+	logger.Info().Int32("TotalDiffs", flowResponse.GetTotalDiffs()).Msg("finishing API handler")
 
 	return c.JSON(http.StatusOK, apiResult)
 }
@@ -880,13 +880,13 @@ func (pcth UpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 	}
 
 	// Build TargetSpec for single tray by ID
-	targetSpec := &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Components{
-			Components: &rlav1.ComponentTargets{
-				Targets: []*rlav1.ComponentTarget{
+	targetSpec := &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Components{
+			Components: &flowv1.ComponentTargets{
+				Targets: []*flowv1.ComponentTarget{
 					{
-						Identifier: &rlav1.ComponentTarget_Id{
-							Id: &rlav1.UUID{Id: trayStrID},
+						Identifier: &flowv1.ComponentTarget_Id{
+							Id: &flowv1.UUID{Id: trayStrID},
 						},
 					},
 				},
@@ -894,14 +894,14 @@ func (pcth UpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 		},
 	}
 
-	rlaResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.State,
+	flowResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.State,
 		fmt.Sprintf("tray-power-state-update-%s-%s", apiRequest.State, trayStrID), "Tray")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Str("State", apiRequest.State).Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(flowResp))
 }
 
 // ~~~~~ Batch Update Tray Power State Handler ~~~~~ //
@@ -1009,14 +1009,14 @@ func (pctbh BatchUpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 	// Build TargetSpec from filter (nil filter = all trays)
 	targetSpec := request.Filter.ToTargetSpec()
 
-	rlaResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, request.State,
+	flowResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, request.State,
 		fmt.Sprintf("tray-power-state-batch-update-%s-%s", request.State, common.RequestHash(request.Filter)), "Tray")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Str("State", request.State).Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(flowResp))
 }
 
 // ~~~~~ Update Tray Firmware Handler ~~~~~ //
@@ -1129,13 +1129,13 @@ func (futh UpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	targetSpec := &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Components{
-			Components: &rlav1.ComponentTargets{
-				Targets: []*rlav1.ComponentTarget{
+	targetSpec := &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Components{
+			Components: &flowv1.ComponentTargets{
+				Targets: []*flowv1.ComponentTarget{
 					{
-						Identifier: &rlav1.ComponentTarget_Id{
-							Id: &rlav1.UUID{Id: trayStrID},
+						Identifier: &flowv1.ComponentTarget_Id{
+							Id: &flowv1.UUID{Id: trayStrID},
 						},
 					},
 				},
@@ -1143,14 +1143,14 @@ func (futh UpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 		},
 	}
 
-	rlaResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
+	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
 		fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(flowResp))
 }
 
 // ~~~~~ Batch Update Tray Firmware Handler ~~~~~ //
@@ -1258,12 +1258,12 @@ func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	// Build TargetSpec from filter (nil filter = all trays)
 	targetSpec := request.Filter.ToTargetSpec()
 
-	rlaResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
+	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
 		fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
 	if err != nil {
 		return err
 	}
 
 	logger.Info().Msg("finishing API handler")
-	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(rlaResp))
+	return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(flowResp))
 }

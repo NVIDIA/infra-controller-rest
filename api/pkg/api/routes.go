@@ -427,6 +427,16 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Handler: apiHandler.NewGetAllExpectedMachineHandler(dbSession, cfg),
 		},
 		{
+			Path:    apiPathPrefix + "/expected-machine/batch",
+			Method:  http.MethodPost,
+			Handler: apiHandler.NewCreateExpectedMachinesHandler(dbSession, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-machine/batch",
+			Method:  http.MethodPatch,
+			Handler: apiHandler.NewUpdateExpectedMachinesHandler(dbSession, scp, cfg),
+		},
+		{
 			Path:    apiPathPrefix + "/expected-machine/:id",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetExpectedMachineHandler(dbSession, cfg),
@@ -466,6 +476,43 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Path:    apiPathPrefix + "/expected-power-shelf/:id",
 			Method:  http.MethodDelete,
 			Handler: apiHandler.NewDeleteExpectedPowerShelfHandler(dbSession, scp, cfg),
+		},
+		// ExpectedRack endpoints
+		{
+			Path:    apiPathPrefix + "/expected-rack",
+			Method:  http.MethodPost,
+			Handler: apiHandler.NewCreateExpectedRackHandler(dbSession, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-rack",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetAllExpectedRackHandler(dbSession, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-rack",
+			Method:  http.MethodPut,
+			Handler: apiHandler.NewReplaceAllExpectedRacksHandler(dbSession, scp, cfg),
+		},
+		{
+			// "all" suffix disambiguates from the path-param Delete handler below.
+			Path:    apiPathPrefix + "/expected-rack/all",
+			Method:  http.MethodDelete,
+			Handler: apiHandler.NewDeleteAllExpectedRacksHandler(dbSession, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-rack/:id",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetExpectedRackHandler(dbSession, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-rack/:id",
+			Method:  http.MethodPatch,
+			Handler: apiHandler.NewUpdateExpectedRackHandler(dbSession, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/expected-rack/:id",
+			Method:  http.MethodDelete,
+			Handler: apiHandler.NewDeleteExpectedRackHandler(dbSession, scp, cfg),
 		},
 		// ExpectedSwitch endpoints
 		{
@@ -841,11 +888,16 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetSkuHandler(dbSession, tc, cfg),
 		},
-		// Rack endpoints (RLA)
+		// Rack endpoints (Flow)
 		{
 			Path:    apiPathPrefix + "/rack/task/:id",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetTaskHandler(dbSession, tc, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/rack/task/:id/cancel",
+			Method:  http.MethodPost,
+			Handler: apiHandler.NewCancelTaskHandler(dbSession, tc, scp, cfg),
 		},
 		{
 			Path:    apiPathPrefix + "/rack",
@@ -897,7 +949,7 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodPost,
 			Handler: apiHandler.NewBringUpRackHandler(dbSession, tc, scp, cfg),
 		},
-		// Tray endpoints (RLA)
+		// Tray endpoints (Flow)
 		{
 			Path:    apiPathPrefix + "/tray",
 			Method:  http.MethodGet,

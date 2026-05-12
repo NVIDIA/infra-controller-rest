@@ -399,7 +399,7 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		}
 
 		createVpcRequest := &cwssaws.VpcCreationRequest{
-			Id:                        &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+			Id:                        &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
 			Name:                      vpc.Name,
 			TenantOrganizationId:      tenant.Org,
 			NetworkVirtualizationType: &nwvt,
@@ -847,10 +847,7 @@ func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		updateVpcRequest := &cwssaws.VpcUpdateRequest{
-			Id:                     &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
-			NetworkSecurityGroupId: vpc.NetworkSecurityGroupID,
-		}
+		updateVpcRequest := vpc.ToUpdateRequestProto()
 
 		// Propagate the NVLink Logical Partition ID change to the site controller
 		if apiRequest.NVLinkLogicalPartitionID != nil {
@@ -866,20 +863,6 @@ func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 			TaskQueue:                queue.SiteTaskQueue,
 			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		}
-
-		// Vpc metadata info
-		metadata := &cwssaws.Metadata{
-			Name:        vpc.Name,
-			Description: "",
-		}
-
-		// Include description
-		if vpc.Description != nil {
-			metadata.Description = *vpc.Description
-		}
-
-		metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
-		updateVpcRequest.Metadata = metadata
 
 		logger.Info().Msg("triggering VPC update workflow")
 
@@ -1134,7 +1117,7 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		// VPC virtualization type can only be updated to FNN, the request validator guarantees that
 		siteVirtualizationType := cwssaws.VpcVirtualizationType_FNN
 		siteRequest := &cwssaws.VpcUpdateVirtualizationRequest{
-			Id:                        &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+			Id:                        &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
 			NetworkVirtualizationType: &siteVirtualizationType,
 		}
 
@@ -1799,9 +1782,7 @@ func (dvh DeleteVPCHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		deleteVpcRequest := &cwssaws.VpcDeletionRequest{
-			Id: &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
-		}
+		deleteVpcRequest := vpc.ToDeletionRequestProto()
 
 		workflowOptions := temporalClient.StartWorkflowOptions{
 			ID:                       "vpc-delete-" + vpc.ID.String(),

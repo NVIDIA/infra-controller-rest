@@ -59,11 +59,12 @@ type ManagerAPI struct {
 	NetworkSecurityGroup   NetworkSecurityGroupInterface
 	ExpectedMachine        ExpectedMachineInterface
 	ExpectedPowerShelf     ExpectedPowerShelfInterface
+	ExpectedRack           ExpectedRackInterface
 	ExpectedSwitch         ExpectedSwitchInterface
 	SKU                    SKUInterface
 	DpuExtensionService    DpuExtensionServiceInterface
 	NVLinkLogicalPartition NVLinkLogicalPartitionInterface
-	RLA                    RLAInterface
+	Flow                   FlowInterface
 }
 
 // ManagerConf - Conf struct

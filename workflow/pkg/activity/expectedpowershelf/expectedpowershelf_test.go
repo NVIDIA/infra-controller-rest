@@ -464,7 +464,7 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 					}
 
 					// Verify labels are updated correctly
-					expectedLabels := getLabelsMapFromProto(ctrlEPS)
+					expectedLabels := cdbm.LabelsFromProtoMetadata(ctrlEPS.Metadata)
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(updated.Labels) == 0 {
 						// Both are effectively empty, which is correct
@@ -487,7 +487,7 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 				assert.NoError(t, perr)
 				created := powerShelvesByID[epsID]
 				if created != nil {
-					expectedLabels := getLabelsMapFromProto(ceps)
+					expectedLabels := cdbm.LabelsFromProtoMetadata(ceps.Metadata)
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(created.Labels) == 0 {
 						// Both are effectively empty, which is correct
@@ -631,103 +631,6 @@ func TestStaleInventoryThresholdCondition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := util.IsTimeWithinStaleInventoryThreshold(tt.actionTime); got != tt.want {
 				t.Errorf("IsTimeWithinStaleInventoryThreshold() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetLabelsMapFromProto(t *testing.T) {
-	tests := []struct {
-		name string
-		eps  *cwssaws.ExpectedPowerShelf
-		want map[string]string
-	}{
-		{
-			name: "nil metadata",
-			eps:  &cwssaws.ExpectedPowerShelf{Metadata: nil},
-			want: nil,
-		},
-		{
-			name: "nil labels",
-			eps:  &cwssaws.ExpectedPowerShelf{Metadata: &cwssaws.Metadata{Labels: nil}},
-			want: nil,
-		},
-		{
-			name: "empty labels",
-			eps:  &cwssaws.ExpectedPowerShelf{Metadata: &cwssaws.Metadata{Labels: []*cwssaws.Label{}}},
-			want: map[string]string{},
-		},
-		{
-			name: "single label with value",
-			eps: &cwssaws.ExpectedPowerShelf{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "environment", Value: cdb.GetStrPtr("production")},
-					},
-				},
-			},
-			want: map[string]string{"environment": "production"},
-		},
-		{
-			name: "multiple labels",
-			eps: &cwssaws.ExpectedPowerShelf{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "environment", Value: cdb.GetStrPtr("production")},
-						{Key: "rack", Value: cdb.GetStrPtr("rack-1")},
-						{Key: "datacenter", Value: cdb.GetStrPtr("dc1")},
-					},
-				},
-			},
-			want: map[string]string{
-				"environment": "production",
-				"rack":        "rack-1",
-				"datacenter":  "dc1",
-			},
-		},
-		{
-			name: "label with nil value",
-			eps: &cwssaws.ExpectedPowerShelf{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "flag", Value: nil},
-					},
-				},
-			},
-			want: map[string]string{"flag": ""},
-		},
-		{
-			name: "label with empty key",
-			eps: &cwssaws.ExpectedPowerShelf{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "", Value: cdb.GetStrPtr("value")},
-						{Key: "valid", Value: cdb.GetStrPtr("data")},
-					},
-				},
-			},
-			want: map[string]string{"valid": "data"},
-		},
-		{
-			name: "nil label entry",
-			eps: &cwssaws.ExpectedPowerShelf{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						nil,
-						{Key: "valid", Value: cdb.GetStrPtr("data")},
-					},
-				},
-			},
-			want: map[string]string{"valid": "data"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := getLabelsMapFromProto(tt.eps)
-			if tt.want == nil {
-				assert.Nil(t, got)
-			} else {
-				assert.Equal(t, tt.want, got)
 			}
 		})
 	}

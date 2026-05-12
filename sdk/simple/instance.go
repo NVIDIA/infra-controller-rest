@@ -106,8 +106,8 @@ func toStandardInfiniBandInterface(request InfiniBandInterfaceCreateOrUpdateRequ
 	return apiReq
 }
 
-func toStandardNVLinkInterface(request NVLinkInterfaceCreateOrUpdateRequest) standard.NVLinkInterfaceCreateRequest {
-	return standard.NVLinkInterfaceCreateRequest{
+func toStandardNVLinkInterface(request NVLinkInterfaceCreateOrUpdateRequest) standard.NVLinkInterfaceCreateOrUpdateRequest {
+	return standard.NVLinkInterfaceCreateOrUpdateRequest{
 		NvLinklogicalPartitionId: &request.NVLinkLogicalPartitionID,
 		DeviceInstance:           standard.PtrInt32(int32(request.DeviceInstance)),
 	}
@@ -197,7 +197,7 @@ func toStandardInstanceUpdateRequest(request InstanceUpdateRequest) standard.Ins
 		}
 	}
 	if request.NVLinkInterfaces != nil {
-		apiReq.NvLinkInterfaces = make([]standard.NVLinkInterfaceCreateRequest, 0, len(request.NVLinkInterfaces))
+		apiReq.NvLinkInterfaces = make([]standard.NVLinkInterfaceCreateOrUpdateRequest, 0, len(request.NVLinkInterfaces))
 		for _, nv := range request.NVLinkInterfaces {
 			apiReq.NvLinkInterfaces = append(apiReq.NvLinkInterfaces, toStandardNVLinkInterface(nv))
 		}

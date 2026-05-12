@@ -96,22 +96,22 @@ type NICoConfig struct {
 	ClientKeyPath  string               `json:"nicoClientKeyPath"`
 }
 
-// RLAConfig holds configurations for connecting to RLA server
-type RLAConfig struct {
-	Enabled        bool                          `json:"rlaEnabled"`
-	Address        string                        `json:"rlaAddress"`
-	Secure         client.RlaClientSecureOptions `json:"rlaSecureOptions"`
-	SkipServerAuth bool                          `json:"rlaSkipServerAuth"`
-	ServerCAPath   string                        `json:"rlaCertPath"`
-	ClientCertPath string                        `json:"rlaClientCertPath"`
-	ClientKeyPath  string                        `json:"rlaClientKeyPath"`
+// FlowConfig holds configurations for connecting to Flow server
+type FlowConfig struct {
+	Enabled        bool                           `json:"flowEnabled"`
+	Address        string                         `json:"flowAddress"`
+	Secure         client.FlowClientSecureOptions `json:"flowSecureOptions"`
+	SkipServerAuth bool                           `json:"flowSkipServerAuth"`
+	ServerCAPath   string                         `json:"flowCertPath"`
+	ClientCertPath string                         `json:"flowClientCertPath"`
+	ClientKeyPath  string                         `json:"flowClientKeyPath"`
 }
 
 // Config for Site Agent
 type Config struct {
 	Temporal         TemporalConfig
 	NICo             NICoConfig
-	RLA              RLAConfig
+	Flow             FlowConfig
 	IsMasterPod      bool          `json:"isMasterPod"`
 	EnableDebug      bool          `json:"enableDebug"`
 	DevMode          bool          `json:"devMode"`
@@ -143,6 +143,6 @@ func NewConfType() *Config {
 	return &Config{
 		Temporal: TemporalConfig{},
 		NICo:     NICoConfig{},
-		RLA:      RLAConfig{},
+		Flow:     FlowConfig{},
 	}
 }

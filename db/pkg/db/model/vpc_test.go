@@ -1488,3 +1488,85 @@ func TestVpcSQLDAO_ClearFromParams(t *testing.T) {
 		})
 	}
 }
+
+func TestVpc_GetSiteID(t *testing.T) {
+	id := uuid.New()
+	ctrlID := uuid.New()
+
+	t.Run("falls back to ID when ControllerVpcID is nil", func(t *testing.T) {
+		v := &Vpc{ID: id}
+		got := v.GetSiteID()
+		require.NotNil(t, got)
+		assert.Equal(t, id, *got)
+	})
+
+	t.Run("uses ControllerVpcID when set", func(t *testing.T) {
+		v := &Vpc{ID: id, ControllerVpcID: &ctrlID}
+		got := v.GetSiteID()
+		require.NotNil(t, got)
+		assert.Equal(t, ctrlID, *got)
+	})
+}
+
+func TestVpc_ToDeletionRequestProto(t *testing.T) {
+	id := uuid.New()
+	v := &Vpc{ID: id}
+	req := v.ToDeletionRequestProto()
+	require.NotNil(t, req)
+	require.NotNil(t, req.Id)
+	assert.Equal(t, id.String(), req.Id.Value)
+}
+
+func TestVpc_ToUpdateRequestProto(t *testing.T) {
+	id := uuid.New()
+	desc := "primary"
+	nsg := "nsg-1"
+
+	t.Run("sets id, metadata, and NSG when present", func(t *testing.T) {
+		v := &Vpc{
+			ID:                     id,
+			Name:                   "vpc-a",
+			Description:            &desc,
+			NetworkSecurityGroupID: &nsg,
+			Labels:                 map[string]string{"env": "prod"},
+		}
+		req := v.ToUpdateRequestProto()
+		require.NotNil(t, req)
+		require.NotNil(t, req.Id)
+		assert.Equal(t, id.String(), req.Id.Value)
+		require.NotNil(t, req.NetworkSecurityGroupId)
+		assert.Equal(t, "nsg-1", *req.NetworkSecurityGroupId)
+		require.NotNil(t, req.Metadata)
+		assert.Equal(t, "vpc-a", req.Metadata.Name)
+		assert.Equal(t, "primary", req.Metadata.Description)
+		require.Len(t, req.Metadata.Labels, 1)
+		assert.Equal(t, "env", req.Metadata.Labels[0].Key)
+		require.NotNil(t, req.Metadata.Labels[0].Value)
+		assert.Equal(t, "prod", *req.Metadata.Labels[0].Value)
+	})
+
+	t.Run("nil description and labels yield zero-value metadata", func(t *testing.T) {
+		v := &Vpc{ID: id, Name: "vpc-a"}
+		req := v.ToUpdateRequestProto()
+		require.NotNil(t, req.Metadata)
+		assert.Equal(t, "", req.Metadata.Description)
+		assert.Nil(t, req.Metadata.Labels)
+		assert.Nil(t, req.NetworkSecurityGroupId)
+	})
+
+	t.Run("uses ControllerVpcID for the request Id when set", func(t *testing.T) {
+		ctrlID := uuid.New()
+		v := &Vpc{ID: id, ControllerVpcID: &ctrlID, Name: "vpc-a"}
+		req := v.ToUpdateRequestProto()
+		require.NotNil(t, req.Id)
+		assert.Equal(t, ctrlID.String(), req.Id.Value)
+	})
+
+	t.Run("explicit NSG clear preserves empty string (distinct from nil)", func(t *testing.T) {
+		empty := ""
+		v := &Vpc{ID: id, Name: "vpc-a", NetworkSecurityGroupID: &empty}
+		req := v.ToUpdateRequestProto()
+		require.NotNil(t, req.NetworkSecurityGroupId)
+		assert.Equal(t, "", *req.NetworkSecurityGroupId)
+	})
+}

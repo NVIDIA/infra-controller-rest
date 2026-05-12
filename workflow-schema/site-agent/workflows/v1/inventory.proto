@@ -78,6 +78,20 @@ message ExpectedMachineInventory {
   repeated nico.LinkedExpectedMachine linked_machines = 6;
 }
 
+// ExpectedRackInventory - inventory info of all Expected Racks on Site, collected periodically
+message ExpectedRackInventory {
+  // Status of Inventory
+  InventoryStatus inventory_status = 1;
+  // Status message
+  string status_msg = 2;
+  // Reported timestamp of Expected Rack inventory
+  google.protobuf.Timestamp timestamp = 3;
+  // List of Expected Racks
+  repeated nico.ExpectedRack expected_racks = 4;
+  // Inventory page information
+  InventoryPage inventory_page = 5;
+}
+
 // ExpectedPowerShelfInventory - inventory info of all Expected Power Shelves on Site, collected periodically
 message ExpectedPowerShelfInventory {
   // Status of Inventory

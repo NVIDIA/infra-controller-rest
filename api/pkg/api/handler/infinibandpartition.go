@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +29,7 @@ import (
 	temporalClient "go.temporal.io/sdk/client"
 	tp "go.temporal.io/sdk/temporal"
 
+	goset "github.com/deckarep/golang-set/v2"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
@@ -211,127 +211,129 @@ func (cibph CreateInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		labels = apiRequest.Labels
 	}
 
-	// start a db tx
-	tx, err := cdb.BeginTx(ctx, cibph.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create InfiniBand Partition", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// create the db record for InfiniBand Partition
-	ibp, err := ibpDAO.Create(
-		ctx,
-		tx,
-		cdbm.InfiniBandPartitionCreateInput{
-			Name:        apiRequest.Name,
-			Description: apiRequest.Description,
-			TenantOrg:   org,
-			SiteID:      site.ID,
-			TenantID:    orgTenant.ID,
-			Labels:      labels,
-			Status:      cdbm.InfiniBandPartitionStatusPending,
-			CreatedBy:   dbUser.ID,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to create InfiniBand Partition record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed creating InfiniBand Partition record", nil)
-	}
-
-	// create the status detail record
 	sdDAO := cdbm.NewStatusDetailDAO(cibph.dbSession)
-	ssd, err := sdDAO.CreateFromParams(ctx, tx, ibp.ID.String(), *cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusPending),
-		cdb.GetStrPtr("received InfiniBand Partition creation request, pending"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for InfiniBand Partition", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for InfiniBand Partition", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := cibph.scp.GetClientByID(site.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+	// timeoutResp lets the closure signal an outer-scope handler — TerminateWorkflowOnTimeOut
+	// has to run after the closure returns so that the rollback completes before we touch
+	// the workflow again. nil means no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	var ssd *cdbm.StatusDetail
+	var createdIBP *cdbm.InfiniBandPartition
 
-	createIBPRequest := &cwssaws.IBPartitionCreationRequest{
-		Id: &cwssaws.IBPartitionId{Value: ibp.ID.String()},
-		Config: &cwssaws.IBPartitionConfig{
-			Name:                 ibp.Name,
-			TenantOrganizationId: orgTenant.Org,
-		},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "infiniband-partition-create-" + ibp.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	// InfiniBand Partition metadata info
-	metadata := &cwssaws.Metadata{
-		Name:        ibp.Name,
-		Description: "",
-	}
-
-	if ibp.Description != nil {
-		metadata.Description = *ibp.Description
-	}
-
-	metadata.Labels = util.ProtobufLabelsFromAPILabels(ibp.Labels)
-
-	createIBPRequest.Metadata = metadata
-
-	logger.Info().Msg("triggering InfiniBand Partition create workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateInfiniBandPartitionV2", createIBPRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create InfiniBand Partition")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create InfiniBand Partition on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create InfiniBand Partition workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "InfiniBandPartition", "CreateInfiniBandPartitionV2")
+	err = cdb.WithTx(ctx, cibph.dbSession, func(tx *cdb.Tx) error {
+		// create the db record for InfiniBand Partition
+		ibp, derr := ibpDAO.Create(
+			ctx,
+			tx,
+			cdbm.InfiniBandPartitionCreateInput{
+				Name:        apiRequest.Name,
+				Description: apiRequest.Description,
+				TenantOrg:   org,
+				SiteID:      site.ID,
+				TenantID:    orgTenant.ID,
+				Labels:      labels,
+				Status:      cdbm.InfiniBandPartitionStatusPending,
+				CreatedBy:   dbUser.ID,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to create InfiniBand Partition record in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed creating InfiniBand Partition record", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to create InfiniBand Partition")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to create InfiniBand Partition on Site: %s", err), nil)
+		// create the status detail record
+		newSSD, derr := sdDAO.CreateFromParams(ctx, tx, ibp.ID.String(), *cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusPending),
+			cdb.GetStrPtr("received InfiniBand Partition creation request, pending"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for InfiniBand Partition", nil)
+		}
+		if newSSD == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for InfiniBand Partition", nil)
+		}
+		ssd = newSSD
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := cibph.scp.GetClientByID(site.ID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		createIBPRequest := &cwssaws.IBPartitionCreationRequest{
+			Id: &cwssaws.IBPartitionId{Value: ibp.ID.String()},
+			Config: &cwssaws.IBPartitionConfig{
+				Name:                 ibp.Name,
+				TenantOrganizationId: orgTenant.Org,
+			},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "infiniband-partition-create-" + ibp.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		// InfiniBand Partition metadata info
+		metadata := &cwssaws.Metadata{
+			Name:        ibp.Name,
+			Description: "",
+		}
+
+		if ibp.Description != nil {
+			metadata.Description = *ibp.Description
+		}
+
+		metadata.Labels = util.ProtobufLabelsFromAPILabels(ibp.Labels)
+
+		createIBPRequest.Metadata = metadata
+
+		logger.Info().Msg("triggering InfiniBand Partition create workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "CreateInfiniBandPartitionV2", createIBPRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to create InfiniBand Partition")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create InfiniBand Partition on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create InfiniBand Partition workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr := we.Get(wfCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "InfiniBandPartition", "CreateInfiniBandPartitionV2")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "InfiniBand Partition create workflow timed out", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to create InfiniBand Partition")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to create InfiniBand Partition on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create InfiniBand Partition workflow")
+		createdIBP = ibp
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create InfiniBand Partition workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing InfiniBand Partition transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create InfiniBand Partition", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create InfiniBand Partition, DB transaction error")
 	}
-
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	// create response
-	apiInfiniBandPartition := model.NewAPIInfiniBandPartition(ibp, []cdbm.StatusDetail{*ssd})
+	apiInfiniBandPartition := model.NewAPIInfiniBandPartition(createdIBP, []cdbm.StatusDetail{*ssd})
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusCreated, apiInfiniBandPartition)
 }
@@ -820,103 +822,108 @@ func (uibph UpdateInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		labels = apiRequest.Labels
 	}
 
-	// start a database transaction
-	tx, err := cdb.BeginTx(ctx, uibph.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating InfiniBand Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update InfiniBand Partition", nil)
-	}
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	sdDAO := cdbm.NewStatusDetailDAO(uibph.dbSession)
 
-	uipb, err := ibpDAO.Update(
-		ctx,
-		tx,
-		cdbm.InfiniBandPartitionUpdateInput{
-			InfiniBandPartitionID: ibpID,
-			Name:                  apiRequest.Name,
-			Description:           apiRequest.Description,
-			Labels:                labels,
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating InfiniBand Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update InfiniBand Partition", nil)
-	}
-	logger.Info().Msg("done updating InfiniBand Partition in DB")
+	// timeoutResp lets the closure signal an outer-scope handler — TerminateWorkflowOnTimeOut
+	// has to run after the closure returns so that the rollback completes before we touch
+	// the workflow again. nil means no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	var ssds []cdbm.StatusDetail
+	var updatedIBP *cdbm.InfiniBandPartition
 
-	stc, err := uibph.scp.GetClientByID(ibp.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+	err = cdb.WithTx(ctx, uibph.dbSession, func(tx *cdb.Tx) error {
+		uipb, derr := ibpDAO.Update(
+			ctx,
+			tx,
+			cdbm.InfiniBandPartitionUpdateInput{
+				InfiniBandPartitionID: ibpID,
+				Name:                  apiRequest.Name,
+				Description:           apiRequest.Description,
+				Labels:                labels,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating InfiniBand Partition in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update InfiniBand Partition", nil)
+		}
+		logger.Info().Msg("done updating InfiniBand Partition in DB")
 
-	updateIBPRequest := &cwssaws.IBPartitionUpdateRequest{
-		Id: &cwssaws.IBPartitionId{Value: ibp.ID.String()},
-		Config: &cwssaws.IBPartitionConfig{
-			Name:                 uipb.Name,
-			TenantOrganizationId: orgTenant.Org,
-		},
-	}
-	metadata := &cwssaws.Metadata{Name: uipb.Name}
-	if uipb.Description != nil {
-		metadata.Description = *uipb.Description
-	}
-	metadata.Labels = util.ProtobufLabelsFromAPILabels(uipb.Labels)
-	updateIBPRequest.Metadata = metadata
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "infiniband-partition-update-" + ibp.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering InfiniBand Partition update workflow")
-
-	wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	we, err := stc.ExecuteWorkflow(wfCtx, workflowOptions, "UpdateInfiniBandPartition", updateIBPRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update InfiniBand Partition")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update InfiniBand Partition on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update InfiniBand Partition workflow")
-
-	err = we.Get(wfCtx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "InfiniBandPartition", "UpdateInfiniBandPartition")
+		stc, derr := uibph.scp.GetClientByID(ibp.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update InfiniBand Partition")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update InfiniBand Partition on Site: %s", err), nil)
+		updateIBPRequest := &cwssaws.IBPartitionUpdateRequest{
+			Id: &cwssaws.IBPartitionId{Value: ibp.ID.String()},
+			Config: &cwssaws.IBPartitionConfig{
+				Name:                 uipb.Name,
+				TenantOrganizationId: orgTenant.Org,
+			},
+		}
+		metadata := &cwssaws.Metadata{Name: uipb.Name}
+		if uipb.Description != nil {
+			metadata.Description = *uipb.Description
+		}
+		metadata.Labels = util.ProtobufLabelsFromAPILabels(uipb.Labels)
+		updateIBPRequest.Metadata = metadata
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "infiniband-partition-update-" + ibp.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering InfiniBand Partition update workflow")
+
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		we, derr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "UpdateInfiniBandPartition", updateIBPRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to update InfiniBand Partition")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update InfiniBand Partition on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update InfiniBand Partition workflow")
+
+		wferr := we.Get(wfCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "InfiniBandPartition", "UpdateInfiniBandPartition")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "InfiniBand Partition update workflow timed out", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to update InfiniBand Partition")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update InfiniBand Partition on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update InfiniBand Partition workflow")
+
+		// get status details for the response
+		curSSDs, _, derr := sdDAO.GetAllByEntityID(ctx, tx, uipb.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Status Details for InfiniBand Partition from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Status Details for InfiniBand Partition", nil)
+		}
+		ssds = curSSDs
+		updatedIBP = uipb
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update InfiniBand Partition workflow")
-
-	// get status details for the response
-	sdDAO := cdbm.NewStatusDetailDAO(uibph.dbSession)
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, uipb.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
 	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for InfiniBand Partition from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for InfiniBand Partition", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update InfiniBand Partition, DB transaction error")
 	}
-
-	// commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating InfiniBand Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update InfiniBand Partition", nil)
-	}
-	txCommitted = true
 
 	// send response
-	apiInfiniBandPartition := model.NewAPIInfiniBandPartition(uipb, ssds)
+	apiInfiniBandPartition := model.NewAPIInfiniBandPartition(updatedIBP, ssds)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiInfiniBandPartition)
 }
@@ -1020,121 +1027,133 @@ func (dibph DeleteInfiniBandPartitionHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Tenant for InfiniBand Partition in request does not match Tenant in org", nil)
 	}
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, dibph.dbSession, &sql.TxOptions{})
+	// Block deletion while Instances referenced by InfiniBand Interfaces still exist in the DB
+	ibiDAO := cdbm.NewInfiniBandInterfaceDAO(dibph.dbSession)
+	ibInterfaces, _, err := ibiDAO.GetAll(ctx, nil, cdbm.InfiniBandInterfaceFilterInput{
+		InfiniBandPartitionIDs: []uuid.UUID{ibpID},
+	}, paginator.PageInput{Limit: cdb.GetIntPtr(paginator.TotalLimit)}, nil)
 	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC", nil)
+		logger.Error().Err(err).Msg("error retrieving InfiniBand Interfaces from DB for InfiniBand Partition")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve InfiniBand Interfaces for InfiniBand Partition", nil)
 	}
-
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update InfiniBand Partition and set status to Deleting
-	_, err = ibpDAO.Update(
-		ctx,
-		tx,
-		cdbm.InfiniBandPartitionUpdateInput{
-			InfiniBandPartitionID: ibp.ID,
-			Status:                cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusDeleting),
-		},
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating InfiniBand Partition in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete InfiniBand Partition, DB error", nil)
+	instanceIDSet := goset.NewSet[uuid.UUID]()
+	for _, ibi := range ibInterfaces {
+		instanceIDSet.Add(ibi.InstanceID)
 	}
-
-	// Create status detail
-	sdDAO := cdbm.NewStatusDetailDAO(dibph.dbSession)
-	_, err = sdDAO.CreateFromParams(ctx, tx, ibp.ID.String(), *cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusDeleting),
-		cdb.GetStrPtr("Received request for deletion, pending processing"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-	}
-
-	// Get the temporal client for the site we are working with.
-	stc, err := dibph.scp.GetClientByID(ibp.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	deleteIBPRequest := &cwssaws.IBPartitionDeletionRequest{
-		Id: &cwssaws.IBPartitionId{Value: ibp.ID.String()},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "infiniband-partition-delete-" + ibp.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering InfiniBand Partition delete workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteInfiniBandPartitionV2", deleteIBPRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to delete InfiniBand Partition")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete InfiniBand Partition on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete InfiniBand Partition workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-			// Reset error to nil
-			err = nil
+	if instanceIDSet.Cardinality() > 0 {
+		instanceDAO := cdbm.NewInstanceDAO(dibph.dbSession)
+		activeCount, err := instanceDAO.GetCount(ctx, nil, cdbm.InstanceFilterInput{
+			InstanceIDs: instanceIDSet.ToSlice(),
+		})
+		if err != nil {
+			logger.Error().Err(err).Msg("error retrieving count of Instances from DB for InfiniBand Partition interface check")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve count of Instances for InfiniBand Partition", nil)
+		}
+		if activeCount > 0 {
+			logger.Warn().Int("active_instance_count", activeCount).Msg("InfiniBand Partition has active Instances associated via interfaces")
+			msg := fmt.Sprintf("%d active Instances are associated with this InfiniBand Partition, unable to delete", activeCount)
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, msg, nil)
 		}
 	}
 
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
+	sdDAO := cdbm.NewStatusDetailDAO(dibph.dbSession)
 
-			logger.Error().Err(err).Msg("failed to delete InfiniBand Partition, timeout occurred executing workflow on Site.")
+	// timeoutResp lets the closure signal an outer-scope handler — TerminateWorkflowOnTimeOut
+	// has to run after the closure returns so that the rollback completes before we touch
+	// the workflow again. nil means no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
+	err = cdb.WithTx(ctx, dibph.dbSession, func(tx *cdb.Tx) error {
+		// Update InfiniBand Partition and set status to Deleting
+		if _, derr := ibpDAO.Update(
+			ctx,
+			tx,
+			cdbm.InfiniBandPartitionUpdateInput{
+				InfiniBandPartitionID: ibp.ID,
+				Status:                cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusDeleting),
+			},
+		); derr != nil {
+			logger.Error().Err(derr).Msg("error updating InfiniBand Partition in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete InfiniBand Partition, DB error", nil)
+		}
 
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing delete InfiniBand Partition workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for deleting InfiniBand Partition")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous InfiniBand Partition deletion workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		// Create status detail
+		if _, derr := sdDAO.CreateFromParams(ctx, tx, ibp.ID.String(), *cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusDeleting),
+			cdb.GetStrPtr("Received request for deletion, pending processing")); derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for InfiniBand Partition deletion", nil)
+		}
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := dibph.scp.GetClientByID(ibp.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		deleteIBPRequest := &cwssaws.IBPartitionDeletionRequest{
+			Id: &cwssaws.IBPartitionId{Value: ibp.ID.String()},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "infiniband-partition-delete-" + ibp.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering InfiniBand Partition delete workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "DeleteInfiniBandPartitionV2", deleteIBPRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to delete InfiniBand Partition")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete InfiniBand Partition on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete InfiniBand Partition workflow")
+
+		// Execute the workflow synchronously
+		wferr := we.Get(wfCtx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+				// Reset error to nil
+				wferr = nil
+			}
+		}
+
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to delete InfiniBand Partition, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "InfiniBandPartition", "Delete")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "InfiniBand Partition delete workflow timed out", nil)
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous delete InfiniBand Partition workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to delete InfiniBand Partition, timeout occurred executing workflow on Site: %s", err), nil)
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to delete InfiniBand Partition")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to delete InfiniBand Partition on Site: %s", uwerr), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to delete InfiniBand Partition")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to delete InfiniBand Partition on Site: %s", err), nil)
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete InfiniBand Partition workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete InfiniBand Partition workflow")
-
-	// Commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete InfiniBand Partition, DB error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete InfiniBand Partition, DB transaction error")
 	}
-	txCommitted = true
 
 	// Create response
 	logger.Info().Msg("finishing API handler")

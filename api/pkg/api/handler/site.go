@@ -456,7 +456,27 @@ func (ush UpdateSiteHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// start a transaction
+	// Check if Site capabilities can be modified
+	if apiRequest.Capabilities != nil {
+		if es.Config == nil {
+			es.Config = &cdbm.SiteConfig{}
+		}
+		if apiRequest.Capabilities.NativeNetworking != nil && *apiRequest.Capabilities.NativeNetworking != es.Config.NativeNetworking && !*apiRequest.Capabilities.NativeNetworking {
+			// Native Networking is being disabled
+			// Check if there are VPCs that have virtualization type set to FNN
+			vpcDAO := cdbm.NewVpcDAO(ush.dbSession)
+			_, vpcCount, err := vpcDAO.GetAll(ctx, nil, cdbm.VpcFilterInput{SiteIDs: []uuid.UUID{es.ID}, NetworkVirtualizationType: cdb.GetStrPtr(cdbm.VpcFNN)}, cdbp.PageInput{}, nil)
+			if err != nil {
+				logger.Error().Err(err).Msg("error retrieving VPCs for Site from DB")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve VPCs for Site, unable to determine if Native Networking can be disabled", nil)
+			}
+			if vpcCount > 0 {
+				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Cannot disable Native Networking while Site has one or more VPCs with virtualization type set to FNN", nil)
+			}
+		}
+	}
+
+	// Start a transaction
 	tx, err := cdb.BeginTx(ctx, ush.dbSession, &sql.TxOptions{})
 	if err != nil {
 		logger.Error().Err(err).Msg("unable to start transaction")
@@ -492,6 +512,16 @@ func (ush UpdateSiteHandler) Handle(c echo.Context) error {
 		if apiRequest.Contact != nil {
 			siteUpdateInput.Contact = &cdbm.SiteContact{
 				Email: apiRequest.Contact.Email,
+			}
+		}
+
+		if apiRequest.Capabilities != nil {
+			siteUpdateInput.Config = &cdbm.SiteConfigUpdateInput{
+				NativeNetworking:          apiRequest.Capabilities.NativeNetworking,
+				NetworkSecurityGroup:      apiRequest.Capabilities.NetworkSecurityGroup,
+				NVLinkPartition:           apiRequest.Capabilities.NVLinkPartition,
+				RackLevelAdministration:   apiRequest.Capabilities.RackLevelAdministration,
+				ImageBasedOperatingSystem: apiRequest.Capabilities.ImageBasedOperatingSystem,
 			}
 		}
 

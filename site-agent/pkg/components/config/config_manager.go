@@ -38,11 +38,11 @@ const (
 	DefaultNICoClientCertPath = "/etc/nico/tls.crt"
 	DefaultNICoClientKeyPath  = "/etc/nico/tls.key"
 
-	// RLA uses the same SPIFFE trust domain (nico.local) and vault-nico-issuer as NICo,
-	// so we can reuse the NICo certificates for mTLS with RLA.
-	DefaultRLAClientCAPath   = "/etc/nico/ca.crt"
-	DefaultRLAClientCertPath = "/etc/nico/tls.crt"
-	DefaultRLAClientKeyPath  = "/etc/nico/tls.key"
+	// Flow uses the same SPIFFE trust domain (nico.local) and vault-nico-issuer as NICo,
+	// so we can reuse the NICo certificates for mTLS with Flow.
+	DefaultFlowClientCAPath   = "/etc/nico/ca.crt"
+	DefaultFlowClientCertPath = "/etc/nico/tls.crt"
+	DefaultFlowClientKeyPath  = "/etc/nico/tls.key"
 )
 
 // NewElektraConfig reads configurations from env variables and returns
@@ -120,39 +120,39 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	log.Info().Msg("client Cert:" + conf.NICo.ClientCertPath)
 	log.Info().Msg("client Key:" + conf.NICo.ClientKeyPath)
 
-	// RLA config
-	flag.StringVar(&conf.RLA.Address, "rlaAddress", os.Getenv("RLA_ADDRESS"), "RLA Address")
-	if conf.RLA.Address == "" {
-		conf.RLA.Address = "rla.rla.svc.cluster.local:50051"
+	// Flow config
+	flag.StringVar(&conf.Flow.Address, "flowAddress", os.Getenv("RLA_ADDRESS"), "Flow Address")
+	if conf.Flow.Address == "" {
+		conf.Flow.Address = "rla.rla.svc.cluster.local:50051"
 	}
-	rlaSecOpt, err := strconv.Atoi(os.Getenv("RLA_SEC_OPT"))
+	flowSecOpt, err := strconv.Atoi(os.Getenv("RLA_SEC_OPT"))
 	if err != nil {
-		log.Info().Msg("Invalid RLA security option, using default")
-		rlaSecOpt = int(client.RlaServerTLS)
+		log.Info().Msg("Invalid Flow security option, using default")
+		flowSecOpt = int(client.FlowServerTLS)
 	}
-	if rlaSecOpt < int(client.RlaInsecureGrpc) || rlaSecOpt > int(client.RlaMutualTLS) {
-		rlaSecOpt = int(client.RlaServerTLS)
+	if flowSecOpt < int(client.FlowInsecureGrpc) || flowSecOpt > int(client.FlowMutualTLS) {
+		flowSecOpt = int(client.FlowServerTLS)
 	}
-	rlaOpt := 0
-	flag.IntVar(&rlaOpt, "rlaSecureOptions", rlaSecOpt, "RLA security option")
-	conf.RLA.Secure = client.RlaClientSecureOptions(rlaOpt)
-	flag.StringVar(&conf.RLA.ServerCAPath, "rlaCertPath", os.Getenv("RLA_CA_CERT_PATH"), "RLA CA Cert Path")
-	if conf.RLA.ServerCAPath == "" {
-		conf.RLA.ServerCAPath = DefaultRLAClientCAPath
+	flowOpt := 0
+	flag.IntVar(&flowOpt, "flowSecureOptions", flowSecOpt, "Flow security option")
+	conf.Flow.Secure = client.FlowClientSecureOptions(flowOpt)
+	flag.StringVar(&conf.Flow.ServerCAPath, "flowCertPath", os.Getenv("RLA_CA_CERT_PATH"), "Flow CA Cert Path")
+	if conf.Flow.ServerCAPath == "" {
+		conf.Flow.ServerCAPath = DefaultFlowClientCAPath
 	}
-	flag.StringVar(&conf.RLA.ClientCertPath, "rlaClientCertPath", os.Getenv("RLA_CLIENT_CERT_PATH"), "RLA client Cert Path")
-	if conf.RLA.ClientCertPath == "" {
-		conf.RLA.ClientCertPath = DefaultRLAClientCertPath
+	flag.StringVar(&conf.Flow.ClientCertPath, "flowClientCertPath", os.Getenv("RLA_CLIENT_CERT_PATH"), "Flow client Cert Path")
+	if conf.Flow.ClientCertPath == "" {
+		conf.Flow.ClientCertPath = DefaultFlowClientCertPath
 	}
-	flag.StringVar(&conf.RLA.ClientKeyPath, "rlaClientKeyPath", os.Getenv("RLA_CLIENT_KEY_PATH"), "RLA client Key Path")
-	if conf.RLA.ClientKeyPath == "" {
-		conf.RLA.ClientKeyPath = DefaultRLAClientKeyPath
+	flag.StringVar(&conf.Flow.ClientKeyPath, "flowClientKeyPath", os.Getenv("RLA_CLIENT_KEY_PATH"), "Flow client Key Path")
+	if conf.Flow.ClientKeyPath == "" {
+		conf.Flow.ClientKeyPath = DefaultFlowClientKeyPath
 	}
 
-	log.Info().Msg("RLA Address:" + conf.RLA.Address)
-	log.Info().Msg("RLA CA Path:" + conf.RLA.ServerCAPath)
-	log.Info().Msg("RLA client Cert:" + conf.RLA.ClientCertPath)
-	log.Info().Msg("RLA client Key:" + conf.RLA.ClientKeyPath)
+	log.Info().Msg("Flow Address:" + conf.Flow.Address)
+	log.Info().Msg("Flow CA Path:" + conf.Flow.ServerCAPath)
+	log.Info().Msg("Flow client Cert:" + conf.Flow.ClientCertPath)
+	log.Info().Msg("Flow client Key:" + conf.Flow.ClientKeyPath)
 
 	// General config
 	flag.StringVar(&conf.MetricsPort, "metricsPort", os.Getenv("METRICS_PORT"), "Metrics port number")
@@ -171,11 +171,11 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flag.StringVar(&conf.SiteVersion, "siteVersion", os.Getenv("SITE_WORKFLOW_VERSION"), "Site Workflow Proto version")
 	flag.StringVar(&skipServerAuth, "nicoSkipServerAuth", os.Getenv("SKIP_GRPC_SERVER_AUTH"), "Skip gRPC server auth in TLS")
 
-	var skipRlaServerAuth string
-	flag.StringVar(&skipRlaServerAuth, "rlaSkipServerAuth", os.Getenv("SKIP_RLA_GRPC_SERVER_AUTH"), "Skip RLA gRPC server auth in TLS")
+	var skipFlowServerAuth string
+	flag.StringVar(&skipFlowServerAuth, "flowSkipServerAuth", os.Getenv("SKIP_RLA_GRPC_SERVER_AUTH"), "Skip Flow gRPC server auth in TLS")
 
-	var rlaEnabled string
-	flag.StringVar(&rlaEnabled, "rlaEnabled", os.Getenv("RLA_ENABLED"), "Enable RLA")
+	var flowEnabled string
+	flag.StringVar(&flowEnabled, "flowEnabled", os.Getenv("RLA_ENABLED"), "Enable Flow")
 
 	if conf.MetricsPort == "" {
 		log.Fatal().Msg("error loading config, invalid metrics port")
@@ -212,8 +212,8 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	conf.EnableTLS = strings.ToLower(enableTLS) == "true"
 	conf.DisableBootstrap = strings.ToLower(disableBootstrap) == "true"
 	conf.NICo.SkipServerAuth = strings.ToLower(skipServerAuth) == "true"
-	conf.RLA.SkipServerAuth = strings.ToLower(skipRlaServerAuth) == "true"
-	conf.RLA.Enabled = strings.ToLower(rlaEnabled) == "true"
+	conf.Flow.SkipServerAuth = strings.ToLower(skipFlowServerAuth) == "true"
+	conf.Flow.Enabled = strings.ToLower(flowEnabled) == "true"
 
 	// Initialize the WatcherInterval to default if not defined
 	if watcherInterval == "" {

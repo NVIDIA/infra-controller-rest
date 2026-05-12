@@ -19,8 +19,8 @@ package managertypes
 
 import (
 	bootstraptypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/bootstrap"
+	flowtypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/flow"
 	nicotypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/nico"
-	rlatypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/rla"
 	workflowtypes "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/managertypes/workflow"
 )
 
@@ -30,7 +30,7 @@ type Managers struct {
 	// All the datastructures of Managers below
 	Workflow  *workflowtypes.Workflow
 	NICo      *nicotypes.NICo
-	RLA       *rlatypes.RLA
+	Flow      *flowtypes.Flow
 	Bootstrap *bootstraptypes.Bootstrap
 }
 
@@ -41,7 +41,7 @@ func NewManagerType() *Managers {
 		// All the managers below
 		Workflow:  workflowtypes.NewWorkflowInstance(),
 		NICo:      nicotypes.NewNICoInstance(),
-		RLA:       rlatypes.NewRLAInstance(),
+		Flow:      flowtypes.NewFlowInstance(),
 		Bootstrap: bootstraptypes.NewBootstrapInstance(),
 	}
 }

@@ -153,7 +153,7 @@ func (cemts *CreateExpectedMachineTestSuite) Test_CreateExpectedMachine_CoreSucc
 
 	// Mock CreateExpectedMachineOnRLA activity to fail (best-effort, should not fail the workflow)
 	cemts.env.RegisterActivity(expectedMachineManager.CreateExpectedMachineOnRLA)
-	cemts.env.OnActivity(expectedMachineManager.CreateExpectedMachineOnRLA, mock.Anything, mock.Anything).Return(errors.New("RLA communication error"))
+	cemts.env.OnActivity(expectedMachineManager.CreateExpectedMachineOnRLA, mock.Anything, mock.Anything).Return(errors.New("Flow communication error"))
 
 	// Execute CreateExpectedMachine workflow
 	cemts.env.ExecuteWorkflow(CreateExpectedMachine, request)

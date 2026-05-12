@@ -330,7 +330,7 @@ func (csh CreateSubnetHandler) Handle(c echo.Context) error {
 		Id:          &cwssaws.NetworkSegmentId{Value: common.GetSiteNetworkSegmentID(subnet).String()},
 		Name:        subnet.Name,
 		SubdomainId: subnetDomainID,
-		VpcId:       &cwssaws.VpcId{Value: common.GetSiteVpcID(vpc).String()},
+		VpcId:       &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
 		Mtu:         subnetMTU,
 		Prefixes:    prefixes,
 	}

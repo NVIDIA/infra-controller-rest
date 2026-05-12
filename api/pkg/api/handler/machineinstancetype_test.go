@@ -597,7 +597,7 @@ func TestDeleteMachineInstanceTypeHandler_Handle(t *testing.T) {
 	apial2 := testCreateAllocation(t, dbSession, ipamStorage, ipu, org, string(okBodyIT4))
 	assert.NotNil(t, apial2)
 
-	vpc := common.TestBuildVPC(t, dbSession, "test-vpc", ip, tenant, st, cdb.GetUUIDPtr(uuid.New()), nil, cdbm.VpcStatusReady, tnu)
+	vpc := common.TestBuildVPC(t, dbSession, "test-vpc", ip, tenant, st, cdb.GetUUIDPtr(uuid.New()), nil, nil, cdbm.VpcStatusReady, tnu)
 	os := common.TestBuildOperatingSystem(t, dbSession, "test-os", tenant, cdbm.OperatingSystemStatusReady, tnu)
 
 	alDAO := cdbm.NewAllocationDAO(dbSession)
