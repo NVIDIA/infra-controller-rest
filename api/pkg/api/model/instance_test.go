@@ -2357,6 +2357,17 @@ func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "test invalid Instance delete request - required machine health issue details",
+			fields: fields{
+				MachineHealthIssue: &APIMachineHealthIssueReport{
+					Category: "Hardware",
+					Summary:  cdb.GetStrPtr("Test summary"),
+				},
+				IsRepairTenant: cdb.GetBoolPtr(true),
+			},
+			wantErr: true,
+		},
+		{
 			name: "test invalid Instance delete request - invalid category",
 			fields: fields{
 				MachineHealthIssue: &APIMachineHealthIssueReport{

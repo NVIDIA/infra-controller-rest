@@ -1512,10 +1512,10 @@ func (idr APIInstanceDeleteRequest) Validate() error {
 			),
 			validation.Field(&idr.MachineHealthIssue.Summary,
 				validation.Required,
-				validation.Length(0, 1024).Error(validationErrorStringLength)),
-			// TODO: what are the constrains on Summary and Details? For now limiting to 1024..
+				validation.Length(1, 512).Error(validationErrorStringLength)),
 			validation.Field(&idr.MachineHealthIssue.Details,
-				validation.Length(0, 1024).Error(validationErrorStringLength)),
+				validation.Required,
+				validation.Length(1, 8192).Error(validationErrorStringLength)),
 		)
 
 		if err != nil {
