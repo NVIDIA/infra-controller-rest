@@ -31,8 +31,8 @@ import (
 
 func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 	// Generate files for MD5 hash testing
-	clientCertPath := "/tmp/rla_tls.crt"
-	serverCAPath := "/tmp/rla_ca.crt"
+	clientCertPath := "/tmp/flow_tls.crt"
+	serverCAPath := "/tmp/flow_ca.crt"
 
 	// Write the files to disk
 	err := os.WriteFile(clientCertPath, []byte("new test cert file"), 0644)
@@ -92,29 +92,29 @@ func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 }
 
-func TestFlowAtomicClient_GetRLAClient_ReturnsErrWhenUninitialized(t *testing.T) {
+func TestFlowAtomicClient_GetFlowClient_ReturnsErrWhenUninitialized(t *testing.T) {
 	rac := &FlowAtomicClient{
 		value: &atomic.Value{},
 	}
-	// GetRLAClient should return ErrClientNotConnected when no client has been stored,
+	// GetFlowClient should return ErrClientNotConnected when no client has been stored,
 	// rather than panicking on a nil-pointer deref.
-	flow, err := rac.GetRLAClient()
+	flow, err := rac.GetFlowClient()
 	assert.Nil(t, flow)
 	assert.ErrorIs(t, err, ErrClientNotConnected)
 }
 
-func TestFlowAtomicClient_GetRLAClient_ReturnsRLAAfterSwap(t *testing.T) {
+func TestFlowAtomicClient_GetFlowClient_ReturnsFlowAfterSwap(t *testing.T) {
 	rac := &FlowAtomicClient{
 		value: &atomic.Value{},
 	}
-	// Once a FlowClient with a populated flow field is stored, GetRLAClient
+	// Once a FlowClient with a populated flow field is stored, GetFlowClient
 	// should return that exact inner client. We construct a stub via
-	// flowv1.NewRLAClient(nil); it isn't usable for real RPCs but is a non-nil
-	// flowv1.RLAClient interface value, which is all we need to exercise the
+	// flowv1.NewFlowClient(nil); it isn't usable for real RPCs but is a non-nil
+	// flowv1.FlowClient interface value, which is all we need to exercise the
 	// success path.
-	expected := flowv1.NewRLAClient((*grpc.ClientConn)(nil))
+	expected := flowv1.NewFlowClient((*grpc.ClientConn)(nil))
 	rac.value.Store(&FlowClient{flow: expected})
-	got, err := rac.GetRLAClient()
+	got, err := rac.GetFlowClient()
 	assert.NoError(t, err)
 	assert.NotNil(t, got)
 	assert.Equal(t, expected, got)
@@ -122,8 +122,8 @@ func TestFlowAtomicClient_GetRLAClient_ReturnsRLAAfterSwap(t *testing.T) {
 
 func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
 	// Generate files for MD5 hash testing
-	clientCertPath := "/tmp/rla_tls.crt"
-	serverCAPath := "/tmp/rla_ca.crt"
+	clientCertPath := "/tmp/flow_tls.crt"
+	serverCAPath := "/tmp/flow_ca.crt"
 
 	// Write the files to disk
 	err := os.WriteFile(clientCertPath, []byte("new test cert file"), 0644)

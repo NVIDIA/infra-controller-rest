@@ -203,7 +203,7 @@ func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 	log.Info().Msg("FlowClient: gRPC client initialized")
 
 	// Create Flow client
-	client.flow = flowv1.NewRLAClient(client.conn)
+	client.flow = flowv1.NewFlowClient(client.conn)
 	log.Info().Msg("FlowClient: client created")
 
 	// Check the version of the server
@@ -227,7 +227,7 @@ type FlowClient struct {
 	// gRPC dial options
 	dialOpts []grpc.DialOption
 	// flow client interface
-	flow flowv1.RLAClient
+	flow flowv1.FlowClient
 }
 
 // Close gracefully shuts down the client's gRPC connection.
@@ -240,7 +240,7 @@ func (cc *FlowClient) Close() error {
 }
 
 // Flow client getter
-func (client *FlowClient) Flow() flowv1.RLAClient {
+func (client *FlowClient) Flow() flowv1.FlowClient {
 	return client.flow
 }
 
@@ -289,10 +289,10 @@ func (rac *FlowAtomicClient) GetClient() *FlowClient {
 	return client
 }
 
-// GetRLAClient returns the underlying Flow gRPC client. Returns ErrClientNotConnected
+// GetFlowClient returns the underlying Flow gRPC client. Returns ErrClientNotConnected
 // if the client has not been initialized or is not currently connected.
 // Prefer this over GetClient() + manual nil-check + .Flow() at call sites.
-func (rac *FlowAtomicClient) GetRLAClient() (flowv1.RLAClient, error) {
+func (rac *FlowAtomicClient) GetFlowClient() (flowv1.FlowClient, error) {
 	client := rac.GetClient()
 	if client == nil {
 		return nil, ErrClientNotConnected
@@ -416,11 +416,11 @@ func NewFlowAtomicClient(config *FlowClientConfig) *FlowAtomicClient {
 
 func getFlowCertificateCheckInterval() time.Duration {
 	var err error
-	if value, ok := os.LookupEnv("RLA_CERT_CHECK_INTERVAL"); ok {
+	if value, ok := os.LookupEnv("FLOW_CERT_CHECK_INTERVAL"); ok {
 		if interval, err := strconv.Atoi(value); err == nil {
 			return time.Duration(interval) * time.Second
 		}
-		log.Error().Err(err).Msg("Invalid RLA_CERT_CHECK_INTERVAL value; using default.")
+		log.Error().Err(err).Msg("Invalid FLOW_CERT_CHECK_INTERVAL value; using default.")
 	}
 	return defaultCheckFlowCertificateIntervalSeconds * time.Second
 }

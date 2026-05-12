@@ -53,15 +53,15 @@ RUN VERSION=$(grep -v '^#' /workspace/VERSION | tr -d '[:space:]' 2>/dev/null ||
     -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.Version=${VERSION}' \
     -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.BuildTime=${BUILD_TIME}' \
     -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.GitCommit=${GIT_COMMIT}'" \
-    -o /app/rla \
+    -o /app/flow \
     .
 
 FROM nvcr.io/nvidia/distroless/go:v3.2.1 AS final
 
-COPY --from=builder --chown=nvs:nvs /app/rla /app/rla
+COPY --from=builder --chown=nvs:nvs /app/flow /app/flow
 
 USER nvs
 
 EXPOSE 50051
 
-ENTRYPOINT ["/app/rla", "serve"]
+ENTRYPOINT ["/app/flow", "serve"]

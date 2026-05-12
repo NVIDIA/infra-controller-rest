@@ -338,9 +338,9 @@ func (meps *ManageExpectedPowerShelf) UpdateExpectedPowerShelfOnSite(ctx context
 	return nil
 }
 
-// CreateExpectedPowerShelfOnRLA creates an Expected Power Shelf as a component in Flow via AddComponent
-func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnRLA(ctx context.Context, request *cwssaws.ExpectedPowerShelf) error {
-	logger := log.With().Str("Activity", "CreateExpectedPowerShelfOnRLA").Logger()
+// CreateExpectedPowerShelfOnFlow creates an Expected Power Shelf as a component in Flow via AddComponent
+func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnFlow(ctx context.Context, request *cwssaws.ExpectedPowerShelf) error {
+	logger := log.With().Str("Activity", "CreateExpectedPowerShelfOnFlow").Logger()
 
 	logger.Info().Msg("Starting activity")
 
@@ -361,7 +361,7 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnRLA(ctx context.
 		return nil
 	}
 
-	component := expectedPowerShelfToRLAComponent(request)
+	component := expectedPowerShelfToFlowComponent(request)
 	_, err := flowClient.Flow().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Power Shelf component on Flow")
@@ -372,8 +372,8 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnRLA(ctx context.
 	return nil
 }
 
-// expectedPowerShelfToRLAComponent converts a NICo ExpectedPowerShelf proto to an Flow Component proto
-func expectedPowerShelfToRLAComponent(eps *cwssaws.ExpectedPowerShelf) *flowv1.Component {
+// expectedPowerShelfToFlowComponent converts a NICo ExpectedPowerShelf proto to an Flow Component proto
+func expectedPowerShelfToFlowComponent(eps *cwssaws.ExpectedPowerShelf) *flowv1.Component {
 	component := &flowv1.Component{
 		Type: flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF,
 		Info: &flowv1.DeviceInfo{

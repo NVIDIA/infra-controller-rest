@@ -156,9 +156,9 @@ func (grh GetRackHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get the temporal client for the site
@@ -328,9 +328,9 @@ func (garh GetAllRackHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Validate pagination request
@@ -537,9 +537,9 @@ func (vrh ValidateRackHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get the temporal client for the site
@@ -713,9 +713,9 @@ func (vrsh ValidateRacksHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get the temporal client for the site

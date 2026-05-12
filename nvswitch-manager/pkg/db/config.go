@@ -69,7 +69,7 @@ func (c *Config) BuildDSN() string {
 	}
 
 	if len(c.CACertificatePath) > 0 {
-		// Use sslmode=prefer (like RLA) instead of verify-full to avoid issues with expired server certs
+		// Use sslmode=prefer (like Flow) instead of verify-full to avoid issues with expired server certs
 		u.RawQuery = fmt.Sprintf("sslmode=prefer&sslrootcert=%s", c.CACertificatePath)
 	} else {
 		u.RawQuery = "sslmode=disable"

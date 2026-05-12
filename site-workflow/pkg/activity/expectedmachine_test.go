@@ -686,10 +686,10 @@ func TestManageExpectedMachine_UpdateExpectedMachinesOnSite(t *testing.T) {
 	}
 }
 
-func TestManageExpectedMachine_CreateExpectedMachineOnRLA(t *testing.T) {
+func TestManageExpectedMachine_CreateExpectedMachineOnFlow(t *testing.T) {
 	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedMachine{FlowAtomicClient: nil}
-		err := mm.CreateExpectedMachineOnRLA(context.Background(), &cwssaws.ExpectedMachine{
+		err := mm.CreateExpectedMachineOnFlow(context.Background(), &cwssaws.ExpectedMachine{
 			Id: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ChassisSerialNumber: "SN001",
 		})
 		assert.NoError(t, err)
@@ -697,17 +697,17 @@ func TestManageExpectedMachine_CreateExpectedMachineOnRLA(t *testing.T) {
 
 	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedMachine{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
-		err := mm.CreateExpectedMachineOnRLA(context.Background(), &cwssaws.ExpectedMachine{
+		err := mm.CreateExpectedMachineOnFlow(context.Background(), &cwssaws.ExpectedMachine{
 			Id: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ChassisSerialNumber: "SN001",
 		})
 		assert.NoError(t, err)
 	})
 }
 
-func TestManageExpectedMachine_CreateExpectedMachinesOnRLA(t *testing.T) {
+func TestManageExpectedMachine_CreateExpectedMachinesOnFlow(t *testing.T) {
 	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedMachine{FlowAtomicClient: nil}
-		err := mm.CreateExpectedMachinesOnRLA(context.Background(), &cwssaws.BatchExpectedMachineOperationRequest{
+		err := mm.CreateExpectedMachinesOnFlow(context.Background(), &cwssaws.BatchExpectedMachineOperationRequest{
 			ExpectedMachines: &cwssaws.ExpectedMachineList{
 				ExpectedMachines: []*cwssaws.ExpectedMachine{
 					{Id: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ChassisSerialNumber: "SN001"},
@@ -719,7 +719,7 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnRLA(t *testing.T) {
 
 	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedMachine{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
-		err := mm.CreateExpectedMachinesOnRLA(context.Background(), &cwssaws.BatchExpectedMachineOperationRequest{
+		err := mm.CreateExpectedMachinesOnFlow(context.Background(), &cwssaws.BatchExpectedMachineOperationRequest{
 			ExpectedMachines: &cwssaws.ExpectedMachineList{
 				ExpectedMachines: []*cwssaws.ExpectedMachine{
 					{Id: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ChassisSerialNumber: "SN001"},
@@ -730,7 +730,7 @@ func TestManageExpectedMachine_CreateExpectedMachinesOnRLA(t *testing.T) {
 	})
 }
 
-func Test_expectedMachineToRLAComponent(t *testing.T) {
+func Test_expectedMachineToFlowComponent(t *testing.T) {
 	strPtr := func(s string) *string { return &s }
 	int32Ptr := func(i int32) *int32 { return &i }
 
@@ -749,7 +749,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 			TrayIdx:             int32Ptr(2),
 			HostId:              int32Ptr(3),
 		}
-		component := expectedMachineToRLAComponent(em)
+		component := expectedMachineToFlowComponent(em)
 		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_COMPUTE, component.Type)
 		assert.Equal(t, "em-001", component.Info.Id.Id)
 		assert.Equal(t, "CHASSIS-001", component.Info.SerialNumber)
@@ -775,7 +775,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 		em := &cwssaws.ExpectedMachine{
 			Id: &cwssaws.UUID{Value: "em-002"}, BmcMacAddress: "11:22:33:44:55:66", ChassisSerialNumber: "CHASSIS-002",
 		}
-		component := expectedMachineToRLAComponent(em)
+		component := expectedMachineToFlowComponent(em)
 		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_COMPUTE, component.Type)
 		assert.Equal(t, "em-002", component.ComponentId)
 		assert.Empty(t, component.Info.Name)
@@ -792,7 +792,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 			Id: &cwssaws.UUID{Value: "em-003"}, BmcMacAddress: "22:33:44:55:66:77",
 			ChassisSerialNumber: "CHASSIS-003", RackId: &cwssaws.RackId{Id: ""},
 		}
-		component := expectedMachineToRLAComponent(em)
+		component := expectedMachineToFlowComponent(em)
 		assert.Nil(t, component.RackId)
 	})
 
@@ -801,7 +801,7 @@ func Test_expectedMachineToRLAComponent(t *testing.T) {
 			Id: &cwssaws.UUID{Value: "em-004"}, BmcMacAddress: "33:44:55:66:77:88",
 			ChassisSerialNumber: "CHASSIS-004", SlotId: int32Ptr(5),
 		}
-		component := expectedMachineToRLAComponent(em)
+		component := expectedMachineToFlowComponent(em)
 		assert.NotNil(t, component.Position)
 		assert.Equal(t, int32(5), component.Position.SlotId)
 		assert.Equal(t, int32(0), component.Position.TrayIdx)

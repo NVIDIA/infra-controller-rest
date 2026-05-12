@@ -195,16 +195,16 @@ jobs:
       release_tag: ${{ inputs.release_tag }}
     secrets: inherit
 
-  # Build and push nico-rla
-  build-nico-rla:
-    name: Build nico-rla
+  # Build and push nico-flow
+  build-nico-flow:
+    name: Build nico-flow
     uses: ./.github/workflows/build-push-service.yml
     with:
       runner: ${{ inputs.runner }}
-      service_name: nico-rla
-      binary_name: rla
-      binary_path: /app/rla
-      dockerfile: ./docker/production/Dockerfile.nico-rla
+      service_name: nico-flow
+      binary_name: flow
+      binary_path: /app/flow
+      dockerfile: ./docker/production/Dockerfile.nico-flow
       semantic_version: ${{ inputs.semantic_version }}
       short_sha: ${{ inputs.short_sha }}
       branch_sha_tag: ${{ inputs.branch_sha_tag }}
@@ -263,7 +263,7 @@ jobs:
       - build-nico-rest-workflow
       - build-nico-rest-site-agent
       - build-nico-rest-cert-manager
-      - build-nico-rla
+      - build-nico-flow
       - build-nico-psm
       - build-nico-nsm
     if: always()
@@ -311,7 +311,7 @@ jobs:
           echo "4. \`nico-rest-workflow:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
           echo "5. \`nico-rest-site-agent:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
           echo "6. \`nico-rest-cert-manager:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
-          echo "7. \`nico-rla:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "7. \`nico-flow:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
           echo "8. \`nico-psm:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
           echo "9. \`nico-nsm:${{ inputs.branch_sha_tag }}\` (amd64 + arm64)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -327,7 +327,7 @@ jobs:
           echo "- nico-rest-workflow: \`${{ needs.build-nico-rest-workflow.result }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- nico-rest-site-agent: \`${{ needs.build-nico-rest-site-agent.result }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- nico-rest-cert-manager: \`${{ needs.build-nico-rest-cert-manager.result }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- nico-rla: \`${{ needs.build-nico-rla.result }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- nico-flow: \`${{ needs.build-nico-flow.result }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- nico-psm: \`${{ needs.build-nico-psm.result }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- nico-nsm: \`${{ needs.build-nico-nsm.result }}\`" >> $GITHUB_STEP_SUMMARY
 
@@ -375,10 +375,10 @@ jobs:
               "image_resource": "${{ needs.build-nico-rest-cert-manager.outputs.ngc_image_resource }}"
             },
             {
-              "service": "nico-rla",
-              "image_ref": "${{ needs.build-nico-rla.outputs.image_ref }}",
-              "binary_resource": "${{ needs.build-nico-rla.outputs.ngc_binary_resource }}",
-              "image_resource": "${{ needs.build-nico-rla.outputs.ngc_image_resource }}"
+              "service": "nico-flow",
+              "image_ref": "${{ needs.build-nico-flow.outputs.image_ref }}",
+              "binary_resource": "${{ needs.build-nico-flow.outputs.ngc_binary_resource }}",
+              "image_resource": "${{ needs.build-nico-flow.outputs.ngc_image_resource }}"
             },
             {
               "service": "nico-psm",
@@ -413,7 +413,7 @@ jobs:
       - build-nico-rest-workflow
       - build-nico-rest-site-agent
       - build-nico-rest-cert-manager
-      - build-nico-rla
+      - build-nico-flow
       - build-nico-psm
       - build-nico-nsm
     if: always()

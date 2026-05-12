@@ -19,7 +19,7 @@
 - [ ] **Site Manager** - Site Manager updated
 - [ ] **Cert Manager** - Cert Manager updated
 - [ ] **Site Agent** - Site Agent updated
-- [ ] **RLA** - RLA service updated
+- [ ] **Flow** - Flow service updated
 - [ ] **Powershelf Manager** - Powershelf Manager updated
 - [ ] **NVSwitch Manager** - NVSwitch Manager updated
 

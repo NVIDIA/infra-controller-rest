@@ -40,9 +40,9 @@ var (
 	FlowDefaultPort = ":11080"
 )
 
-// FlowServerImpl implements interface RLAServer
+// FlowServerImpl implements interface FlowServer
 type FlowServerImpl struct {
-	flowv1.UnimplementedRLAServer
+	flowv1.UnimplementedFlowServer
 	racks           map[string]*flowv1.Rack
 	components      map[string]*flowv1.Component
 	nvlDomains      map[string]*flowv1.NVLDomain
@@ -52,7 +52,7 @@ type FlowServerImpl struct {
 
 var flowLogger = log.With().Str("Component", "Mock Flow gRPC Server").Logger()
 
-// Version implements interface RLAServer
+// Version implements interface FlowServer
 func (r *FlowServerImpl) Version(ctx context.Context, req *flowv1.VersionRequest) (*flowv1.BuildInfo, error) {
 	return &flowv1.BuildInfo{
 		Version:   "1.0.0",
@@ -61,7 +61,7 @@ func (r *FlowServerImpl) Version(ctx context.Context, req *flowv1.VersionRequest
 	}, nil
 }
 
-// CreateExpectedRack implements interface RLAServer
+// CreateExpectedRack implements interface FlowServer
 func (r *FlowServerImpl) CreateExpectedRack(ctx context.Context, req *flowv1.CreateExpectedRackRequest) (*flowv1.CreateExpectedRackResponse, error) {
 	if req == nil || req.Rack == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -106,7 +106,7 @@ func (r *FlowServerImpl) CreateExpectedRack(ctx context.Context, req *flowv1.Cre
 	}, nil
 }
 
-// PatchRack implements interface RLAServer
+// PatchRack implements interface FlowServer
 func (r *FlowServerImpl) PatchRack(ctx context.Context, req *flowv1.PatchRackRequest) (*flowv1.PatchRackResponse, error) {
 	if req == nil || req.Rack == nil || req.Rack.Info == nil || req.Rack.Info.Id == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -134,7 +134,7 @@ func (r *FlowServerImpl) PatchRack(ctx context.Context, req *flowv1.PatchRackReq
 	}, nil
 }
 
-// GetRackInfoByID implements interface RLAServer
+// GetRackInfoByID implements interface FlowServer
 func (r *FlowServerImpl) GetRackInfoByID(ctx context.Context, req *flowv1.GetRackInfoByIDRequest) (*flowv1.GetRackInfoResponse, error) {
 	if req == nil || req.Id == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -160,7 +160,7 @@ func (r *FlowServerImpl) GetRackInfoByID(ctx context.Context, req *flowv1.GetRac
 	return response, nil
 }
 
-// GetRackInfoBySerial implements interface RLAServer
+// GetRackInfoBySerial implements interface FlowServer
 func (r *FlowServerImpl) GetRackInfoBySerial(ctx context.Context, req *flowv1.GetRackInfoBySerialRequest) (*flowv1.GetRackInfoResponse, error) {
 	if req == nil || req.SerialInfo == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -185,7 +185,7 @@ func (r *FlowServerImpl) GetRackInfoBySerial(ctx context.Context, req *flowv1.Ge
 	return nil, status.Errorf(codes.NotFound, "Rack with serial number not found")
 }
 
-// GetComponentInfoByID implements interface RLAServer
+// GetComponentInfoByID implements interface FlowServer
 func (r *FlowServerImpl) GetComponentInfoByID(ctx context.Context, req *flowv1.GetComponentInfoByIDRequest) (*flowv1.GetComponentInfoResponse, error) {
 	if req == nil || req.Id == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -218,7 +218,7 @@ func (r *FlowServerImpl) GetComponentInfoByID(ctx context.Context, req *flowv1.G
 	return nil, status.Errorf(codes.NotFound, "Component with ID not found")
 }
 
-// GetComponentInfoBySerial implements interface RLAServer
+// GetComponentInfoBySerial implements interface FlowServer
 func (r *FlowServerImpl) GetComponentInfoBySerial(ctx context.Context, req *flowv1.GetComponentInfoBySerialRequest) (*flowv1.GetComponentInfoResponse, error) {
 	if req == nil || req.SerialInfo == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -251,7 +251,7 @@ func (r *FlowServerImpl) GetComponentInfoBySerial(ctx context.Context, req *flow
 	return nil, status.Errorf(codes.NotFound, "Component with serial number not found")
 }
 
-// GetListOfRacks implements interface RLAServer
+// GetListOfRacks implements interface FlowServer
 func (r *FlowServerImpl) GetListOfRacks(ctx context.Context, req *flowv1.GetListOfRacksRequest) (*flowv1.GetListOfRacksResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -275,7 +275,7 @@ func (r *FlowServerImpl) GetListOfRacks(ctx context.Context, req *flowv1.GetList
 	}, nil
 }
 
-// CreateNVLDomain implements interface RLAServer
+// CreateNVLDomain implements interface FlowServer
 func (r *FlowServerImpl) CreateNVLDomain(ctx context.Context, req *flowv1.CreateNVLDomainRequest) (*flowv1.CreateNVLDomainResponse, error) {
 	if req == nil || req.NvlDomain == nil || req.NvlDomain.Identifier == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -300,7 +300,7 @@ func (r *FlowServerImpl) CreateNVLDomain(ctx context.Context, req *flowv1.Create
 	}, nil
 }
 
-// AttachRacksToNVLDomain implements interface RLAServer
+// AttachRacksToNVLDomain implements interface FlowServer
 func (r *FlowServerImpl) AttachRacksToNVLDomain(ctx context.Context, req *flowv1.AttachRacksToNVLDomainRequest) (*emptypb.Empty, error) {
 	if req == nil || req.NvlDomainIdentifier == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -346,7 +346,7 @@ func (r *FlowServerImpl) AttachRacksToNVLDomain(ctx context.Context, req *flowv1
 	return &emptypb.Empty{}, nil
 }
 
-// DetachRacksFromNVLDomain implements interface RLAServer
+// DetachRacksFromNVLDomain implements interface FlowServer
 func (r *FlowServerImpl) DetachRacksFromNVLDomain(ctx context.Context, req *flowv1.DetachRacksFromNVLDomainRequest) (*emptypb.Empty, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -375,7 +375,7 @@ func (r *FlowServerImpl) DetachRacksFromNVLDomain(ctx context.Context, req *flow
 	return &emptypb.Empty{}, nil
 }
 
-// GetListOfNVLDomains implements interface RLAServer
+// GetListOfNVLDomains implements interface FlowServer
 func (r *FlowServerImpl) GetListOfNVLDomains(ctx context.Context, req *flowv1.GetListOfNVLDomainsRequest) (*flowv1.GetListOfNVLDomainsResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -392,7 +392,7 @@ func (r *FlowServerImpl) GetListOfNVLDomains(ctx context.Context, req *flowv1.Ge
 	}, nil
 }
 
-// GetRacksForNVLDomain implements interface RLAServer
+// GetRacksForNVLDomain implements interface FlowServer
 func (r *FlowServerImpl) GetRacksForNVLDomain(ctx context.Context, req *flowv1.GetRacksForNVLDomainRequest) (*flowv1.GetRacksForNVLDomainResponse, error) {
 	if req == nil || req.NvlDomainIdentifier == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -430,7 +430,7 @@ func (r *FlowServerImpl) GetRacksForNVLDomain(ctx context.Context, req *flowv1.G
 	}, nil
 }
 
-// UpgradeFirmware implements interface RLAServer
+// UpgradeFirmware implements interface FlowServer
 func (r *FlowServerImpl) UpgradeFirmware(ctx context.Context, req *flowv1.UpgradeFirmwareRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -451,7 +451,7 @@ func (r *FlowServerImpl) UpgradeFirmware(ctx context.Context, req *flowv1.Upgrad
 	}, nil
 }
 
-// GetComponents implements interface RLAServer
+// GetComponents implements interface FlowServer
 func (r *FlowServerImpl) GetComponents(ctx context.Context, req *flowv1.GetComponentsRequest) (*flowv1.GetComponentsResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -468,7 +468,7 @@ func (r *FlowServerImpl) GetComponents(ctx context.Context, req *flowv1.GetCompo
 	}, nil
 }
 
-// AddComponent implements interface RLAServer
+// AddComponent implements interface FlowServer
 func (r *FlowServerImpl) AddComponent(ctx context.Context, req *flowv1.AddComponentRequest) (*flowv1.AddComponentResponse, error) {
 	if req == nil || req.Component == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -501,7 +501,7 @@ func (r *FlowServerImpl) AddComponent(ctx context.Context, req *flowv1.AddCompon
 	}, nil
 }
 
-// PatchComponent implements interface RLAServer
+// PatchComponent implements interface FlowServer
 func (r *FlowServerImpl) PatchComponent(ctx context.Context, req *flowv1.PatchComponentRequest) (*flowv1.PatchComponentResponse, error) {
 	if req == nil || req.Id == nil || req.Id.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -536,7 +536,7 @@ func (r *FlowServerImpl) PatchComponent(ctx context.Context, req *flowv1.PatchCo
 	}, nil
 }
 
-// DeleteComponent implements interface RLAServer
+// DeleteComponent implements interface FlowServer
 func (r *FlowServerImpl) DeleteComponent(ctx context.Context, req *flowv1.DeleteComponentRequest) (*flowv1.DeleteComponentResponse, error) {
 	if req == nil || req.Id == nil || req.Id.Id == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -559,7 +559,7 @@ func (r *FlowServerImpl) DeleteComponent(ctx context.Context, req *flowv1.Delete
 	return &flowv1.DeleteComponentResponse{}, nil
 }
 
-// ValidateComponents implements interface RLAServer
+// ValidateComponents implements interface FlowServer
 func (r *FlowServerImpl) ValidateComponents(ctx context.Context, req *flowv1.ValidateComponentsRequest) (*flowv1.ValidateComponentsResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -667,7 +667,7 @@ func (r *FlowServerImpl) ValidateComponents(ctx context.Context, req *flowv1.Val
 	}, nil
 }
 
-// PowerOnRack implements interface RLAServer
+// PowerOnRack implements interface FlowServer
 func (r *FlowServerImpl) PowerOnRack(ctx context.Context, req *flowv1.PowerOnRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -688,7 +688,7 @@ func (r *FlowServerImpl) PowerOnRack(ctx context.Context, req *flowv1.PowerOnRac
 	}, nil
 }
 
-// PowerOffRack implements interface RLAServer
+// PowerOffRack implements interface FlowServer
 func (r *FlowServerImpl) PowerOffRack(ctx context.Context, req *flowv1.PowerOffRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -709,7 +709,7 @@ func (r *FlowServerImpl) PowerOffRack(ctx context.Context, req *flowv1.PowerOffR
 	}, nil
 }
 
-// PowerResetRack implements interface RLAServer
+// PowerResetRack implements interface FlowServer
 func (r *FlowServerImpl) PowerResetRack(ctx context.Context, req *flowv1.PowerResetRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -730,7 +730,7 @@ func (r *FlowServerImpl) PowerResetRack(ctx context.Context, req *flowv1.PowerRe
 	}, nil
 }
 
-// BringUpRack implements interface RLAServer
+// BringUpRack implements interface FlowServer
 func (r *FlowServerImpl) BringUpRack(ctx context.Context, req *flowv1.BringUpRackRequest) (*flowv1.SubmitTaskResponse, error) {
 	if req == nil || req.TargetSpec == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -751,7 +751,7 @@ func (r *FlowServerImpl) BringUpRack(ctx context.Context, req *flowv1.BringUpRac
 	}, nil
 }
 
-// ListTasks implements interface RLAServer
+// ListTasks implements interface FlowServer
 func (r *FlowServerImpl) ListTasks(ctx context.Context, req *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -774,7 +774,7 @@ func (r *FlowServerImpl) ListTasks(ctx context.Context, req *flowv1.ListTasksReq
 	}, nil
 }
 
-// GetTasksByIDs implements interface RLAServer
+// GetTasksByIDs implements interface FlowServer
 func (r *FlowServerImpl) GetTasksByIDs(ctx context.Context, req *flowv1.GetTasksByIDsRequest) (*flowv1.GetTasksByIDsResponse, error) {
 	if req == nil {
 		return nil, status.Errorf(codes.InvalidArgument, "Invalid request argument")
@@ -801,7 +801,7 @@ func FlowTest(secs int) {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	flowv1.RegisterRLAServer(s, &FlowServerImpl{
+	flowv1.RegisterFlowServer(s, &FlowServerImpl{
 		racks:           make(map[string]*flowv1.Rack),
 		components:      make(map[string]*flowv1.Component),
 		nvlDomains:      make(map[string]*flowv1.NVLDomain),

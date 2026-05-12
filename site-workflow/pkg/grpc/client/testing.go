@@ -1522,13 +1522,13 @@ func NewMockNICoClient() *NICoCoreClient {
 	}
 }
 
-// MockRLAClient is a mock implementation of Flow gRPC protobuf Client
-type MockRLAClient struct {
-	flowv1.RLAClient
+// MockFlowClient is a mock implementation of Flow gRPC protobuf Client
+type MockFlowClient struct {
+	flowv1.FlowClient
 }
 
 /* Version mock methods */
-func (c *MockRLAClient) Version(ctx context.Context, in *flowv1.VersionRequest, opts ...grpc.CallOption) (*flowv1.BuildInfo, error) {
+func (c *MockFlowClient) Version(ctx context.Context, in *flowv1.VersionRequest, opts ...grpc.CallOption) (*flowv1.BuildInfo, error) {
 	out := &flowv1.BuildInfo{
 		Version:   "1.0.0",
 		BuildTime: time.Now().Format(time.RFC3339),
@@ -1538,19 +1538,19 @@ func (c *MockRLAClient) Version(ctx context.Context, in *flowv1.VersionRequest, 
 }
 
 /* Rack mock methods */
-func (c *MockRLAClient) CreateExpectedRack(ctx context.Context, in *flowv1.CreateExpectedRackRequest, opts ...grpc.CallOption) (*flowv1.CreateExpectedRackResponse, error) {
+func (c *MockFlowClient) CreateExpectedRack(ctx context.Context, in *flowv1.CreateExpectedRackRequest, opts ...grpc.CallOption) (*flowv1.CreateExpectedRackResponse, error) {
 	out := &flowv1.CreateExpectedRackResponse{
 		Id: &flowv1.UUID{Id: uuid.NewString()},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) PatchRack(ctx context.Context, in *flowv1.PatchRackRequest, opts ...grpc.CallOption) (*flowv1.PatchRackResponse, error) {
+func (c *MockFlowClient) PatchRack(ctx context.Context, in *flowv1.PatchRackRequest, opts ...grpc.CallOption) (*flowv1.PatchRackResponse, error) {
 	out := new(flowv1.PatchRackResponse)
 	return out, nil
 }
 
-func (c *MockRLAClient) GetRackInfoByID(ctx context.Context, in *flowv1.GetRackInfoByIDRequest, opts ...grpc.CallOption) (*flowv1.GetRackInfoResponse, error) {
+func (c *MockFlowClient) GetRackInfoByID(ctx context.Context, in *flowv1.GetRackInfoByIDRequest, opts ...grpc.CallOption) (*flowv1.GetRackInfoResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1571,7 +1571,7 @@ func (c *MockRLAClient) GetRackInfoByID(ctx context.Context, in *flowv1.GetRackI
 	return out, nil
 }
 
-func (c *MockRLAClient) GetRackInfoBySerial(ctx context.Context, in *flowv1.GetRackInfoBySerialRequest, opts ...grpc.CallOption) (*flowv1.GetRackInfoResponse, error) {
+func (c *MockFlowClient) GetRackInfoBySerial(ctx context.Context, in *flowv1.GetRackInfoBySerialRequest, opts ...grpc.CallOption) (*flowv1.GetRackInfoResponse, error) {
 	out := &flowv1.GetRackInfoResponse{
 		Rack: &flowv1.Rack{
 			Info: &flowv1.DeviceInfo{
@@ -1582,7 +1582,7 @@ func (c *MockRLAClient) GetRackInfoBySerial(ctx context.Context, in *flowv1.GetR
 	return out, nil
 }
 
-func (c *MockRLAClient) GetListOfRacks(ctx context.Context, in *flowv1.GetListOfRacksRequest, opts ...grpc.CallOption) (*flowv1.GetListOfRacksResponse, error) {
+func (c *MockFlowClient) GetListOfRacks(ctx context.Context, in *flowv1.GetListOfRacksRequest, opts ...grpc.CallOption) (*flowv1.GetListOfRacksResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1600,7 +1600,7 @@ func (c *MockRLAClient) GetListOfRacks(ctx context.Context, in *flowv1.GetListOf
 }
 
 /* Component mock methods */
-func (c *MockRLAClient) GetComponentInfoByID(ctx context.Context, in *flowv1.GetComponentInfoByIDRequest, opts ...grpc.CallOption) (*flowv1.GetComponentInfoResponse, error) {
+func (c *MockFlowClient) GetComponentInfoByID(ctx context.Context, in *flowv1.GetComponentInfoByIDRequest, opts ...grpc.CallOption) (*flowv1.GetComponentInfoResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1619,7 +1619,7 @@ func (c *MockRLAClient) GetComponentInfoByID(ctx context.Context, in *flowv1.Get
 	return out, nil
 }
 
-func (c *MockRLAClient) GetComponentInfoBySerial(ctx context.Context, in *flowv1.GetComponentInfoBySerialRequest, opts ...grpc.CallOption) (*flowv1.GetComponentInfoResponse, error) {
+func (c *MockFlowClient) GetComponentInfoBySerial(ctx context.Context, in *flowv1.GetComponentInfoBySerialRequest, opts ...grpc.CallOption) (*flowv1.GetComponentInfoResponse, error) {
 	out := &flowv1.GetComponentInfoResponse{
 		Component: &flowv1.Component{
 			Info: &flowv1.DeviceInfo{
@@ -1630,7 +1630,7 @@ func (c *MockRLAClient) GetComponentInfoBySerial(ctx context.Context, in *flowv1
 	return out, nil
 }
 
-func (c *MockRLAClient) GetComponents(ctx context.Context, in *flowv1.GetComponentsRequest, opts ...grpc.CallOption) (*flowv1.GetComponentsResponse, error) {
+func (c *MockFlowClient) GetComponents(ctx context.Context, in *flowv1.GetComponentsRequest, opts ...grpc.CallOption) (*flowv1.GetComponentsResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1648,7 +1648,7 @@ func (c *MockRLAClient) GetComponents(ctx context.Context, in *flowv1.GetCompone
 	return out, nil
 }
 
-func (c *MockRLAClient) ValidateComponents(ctx context.Context, in *flowv1.ValidateComponentsRequest, opts ...grpc.CallOption) (*flowv1.ValidateComponentsResponse, error) {
+func (c *MockFlowClient) ValidateComponents(ctx context.Context, in *flowv1.ValidateComponentsRequest, opts ...grpc.CallOption) (*flowv1.ValidateComponentsResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1671,7 +1671,7 @@ func (c *MockRLAClient) ValidateComponents(ctx context.Context, in *flowv1.Valid
 }
 
 /* Component mutation mock methods */
-func (c *MockRLAClient) AddComponent(ctx context.Context, in *flowv1.AddComponentRequest, opts ...grpc.CallOption) (*flowv1.AddComponentResponse, error) {
+func (c *MockFlowClient) AddComponent(ctx context.Context, in *flowv1.AddComponentRequest, opts ...grpc.CallOption) (*flowv1.AddComponentResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1688,7 +1688,7 @@ func (c *MockRLAClient) AddComponent(ctx context.Context, in *flowv1.AddComponen
 	return out, nil
 }
 
-func (c *MockRLAClient) PatchComponent(ctx context.Context, in *flowv1.PatchComponentRequest, opts ...grpc.CallOption) (*flowv1.PatchComponentResponse, error) {
+func (c *MockFlowClient) PatchComponent(ctx context.Context, in *flowv1.PatchComponentRequest, opts ...grpc.CallOption) (*flowv1.PatchComponentResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1705,7 +1705,7 @@ func (c *MockRLAClient) PatchComponent(ctx context.Context, in *flowv1.PatchComp
 	return out, nil
 }
 
-func (c *MockRLAClient) DeleteComponent(ctx context.Context, in *flowv1.DeleteComponentRequest, opts ...grpc.CallOption) (*flowv1.DeleteComponentResponse, error) {
+func (c *MockFlowClient) DeleteComponent(ctx context.Context, in *flowv1.DeleteComponentRequest, opts ...grpc.CallOption) (*flowv1.DeleteComponentResponse, error) {
 	// Check for error injection via context
 	if err, ok := ctx.Value("wantError").(error); ok {
 		return nil, err
@@ -1716,24 +1716,24 @@ func (c *MockRLAClient) DeleteComponent(ctx context.Context, in *flowv1.DeleteCo
 }
 
 /* NVL Domain mock methods */
-func (c *MockRLAClient) CreateNVLDomain(ctx context.Context, in *flowv1.CreateNVLDomainRequest, opts ...grpc.CallOption) (*flowv1.CreateNVLDomainResponse, error) {
+func (c *MockFlowClient) CreateNVLDomain(ctx context.Context, in *flowv1.CreateNVLDomainRequest, opts ...grpc.CallOption) (*flowv1.CreateNVLDomainResponse, error) {
 	out := &flowv1.CreateNVLDomainResponse{
 		Id: &flowv1.UUID{Id: uuid.NewString()},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) AttachRacksToNVLDomain(ctx context.Context, in *flowv1.AttachRacksToNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) AttachRacksToNVLDomain(ctx context.Context, in *flowv1.AttachRacksToNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
-func (c *MockRLAClient) DetachRacksFromNVLDomain(ctx context.Context, in *flowv1.DetachRacksFromNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) DetachRacksFromNVLDomain(ctx context.Context, in *flowv1.DetachRacksFromNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
-func (c *MockRLAClient) GetListOfNVLDomains(ctx context.Context, in *flowv1.GetListOfNVLDomainsRequest, opts ...grpc.CallOption) (*flowv1.GetListOfNVLDomainsResponse, error) {
+func (c *MockFlowClient) GetListOfNVLDomains(ctx context.Context, in *flowv1.GetListOfNVLDomainsRequest, opts ...grpc.CallOption) (*flowv1.GetListOfNVLDomainsResponse, error) {
 	out := &flowv1.GetListOfNVLDomainsResponse{
 		NvlDomains: []*flowv1.NVLDomain{},
 		Total:      0,
@@ -1741,7 +1741,7 @@ func (c *MockRLAClient) GetListOfNVLDomains(ctx context.Context, in *flowv1.GetL
 	return out, nil
 }
 
-func (c *MockRLAClient) GetRacksForNVLDomain(ctx context.Context, in *flowv1.GetRacksForNVLDomainRequest, opts ...grpc.CallOption) (*flowv1.GetRacksForNVLDomainResponse, error) {
+func (c *MockFlowClient) GetRacksForNVLDomain(ctx context.Context, in *flowv1.GetRacksForNVLDomainRequest, opts ...grpc.CallOption) (*flowv1.GetRacksForNVLDomainResponse, error) {
 	out := &flowv1.GetRacksForNVLDomainResponse{
 		Racks: []*flowv1.Rack{},
 	}
@@ -1749,56 +1749,56 @@ func (c *MockRLAClient) GetRacksForNVLDomain(ctx context.Context, in *flowv1.Get
 }
 
 /* Task mock methods */
-func (c *MockRLAClient) UpgradeFirmware(ctx context.Context, in *flowv1.UpgradeFirmwareRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
+func (c *MockFlowClient) UpgradeFirmware(ctx context.Context, in *flowv1.UpgradeFirmwareRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
 	out := &flowv1.SubmitTaskResponse{
 		TaskIds: []*flowv1.UUID{{Id: uuid.NewString()}},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) PowerOnRack(ctx context.Context, in *flowv1.PowerOnRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
+func (c *MockFlowClient) PowerOnRack(ctx context.Context, in *flowv1.PowerOnRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
 	out := &flowv1.SubmitTaskResponse{
 		TaskIds: []*flowv1.UUID{{Id: uuid.NewString()}},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) PowerOffRack(ctx context.Context, in *flowv1.PowerOffRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
+func (c *MockFlowClient) PowerOffRack(ctx context.Context, in *flowv1.PowerOffRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
 	out := &flowv1.SubmitTaskResponse{
 		TaskIds: []*flowv1.UUID{{Id: uuid.NewString()}},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) PowerResetRack(ctx context.Context, in *flowv1.PowerResetRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
+func (c *MockFlowClient) PowerResetRack(ctx context.Context, in *flowv1.PowerResetRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
 	out := &flowv1.SubmitTaskResponse{
 		TaskIds: []*flowv1.UUID{{Id: uuid.NewString()}},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) BringUpRack(ctx context.Context, in *flowv1.BringUpRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
+func (c *MockFlowClient) BringUpRack(ctx context.Context, in *flowv1.BringUpRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
 	out := &flowv1.SubmitTaskResponse{
 		TaskIds: []*flowv1.UUID{{Id: uuid.NewString()}},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) IngestRack(ctx context.Context, in *flowv1.IngestRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
+func (c *MockFlowClient) IngestRack(ctx context.Context, in *flowv1.IngestRackRequest, opts ...grpc.CallOption) (*flowv1.SubmitTaskResponse, error) {
 	out := &flowv1.SubmitTaskResponse{
 		TaskIds: []*flowv1.UUID{{Id: uuid.NewString()}},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) ListTasks(ctx context.Context, in *flowv1.ListTasksRequest, opts ...grpc.CallOption) (*flowv1.ListTasksResponse, error) {
+func (c *MockFlowClient) ListTasks(ctx context.Context, in *flowv1.ListTasksRequest, opts ...grpc.CallOption) (*flowv1.ListTasksResponse, error) {
 	out := &flowv1.ListTasksResponse{
 		Tasks: []*flowv1.Task{},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) GetTasksByIDs(ctx context.Context, in *flowv1.GetTasksByIDsRequest, opts ...grpc.CallOption) (*flowv1.GetTasksByIDsResponse, error) {
+func (c *MockFlowClient) GetTasksByIDs(ctx context.Context, in *flowv1.GetTasksByIDsRequest, opts ...grpc.CallOption) (*flowv1.GetTasksByIDsResponse, error) {
 	out := &flowv1.GetTasksByIDsResponse{
 		Tasks: []*flowv1.Task{},
 	}
@@ -1812,7 +1812,7 @@ func (c *MockRLAClient) GetTasksByIDs(ctx context.Context, in *flowv1.GetTasksBy
 	return out, nil
 }
 
-func (c *MockRLAClient) CancelTask(ctx context.Context, in *flowv1.CancelTaskRequest, opts ...grpc.CallOption) (*flowv1.CancelTaskResponse, error) {
+func (c *MockFlowClient) CancelTask(ctx context.Context, in *flowv1.CancelTaskRequest, opts ...grpc.CallOption) (*flowv1.CancelTaskResponse, error) {
 	out := &flowv1.CancelTaskResponse{}
 	if in != nil && in.GetTaskId() != nil {
 		out.Task = &flowv1.Task{
@@ -1824,29 +1824,29 @@ func (c *MockRLAClient) CancelTask(ctx context.Context, in *flowv1.CancelTaskReq
 }
 
 /* Operation rule mock methods */
-func (c *MockRLAClient) CreateOperationRule(ctx context.Context, in *flowv1.CreateOperationRuleRequest, opts ...grpc.CallOption) (*flowv1.CreateOperationRuleResponse, error) {
+func (c *MockFlowClient) CreateOperationRule(ctx context.Context, in *flowv1.CreateOperationRuleRequest, opts ...grpc.CallOption) (*flowv1.CreateOperationRuleResponse, error) {
 	out := &flowv1.CreateOperationRuleResponse{
 		Id: &flowv1.UUID{Id: uuid.NewString()},
 	}
 	return out, nil
 }
 
-func (c *MockRLAClient) UpdateOperationRule(ctx context.Context, in *flowv1.UpdateOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) UpdateOperationRule(ctx context.Context, in *flowv1.UpdateOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
-func (c *MockRLAClient) DeleteOperationRule(ctx context.Context, in *flowv1.DeleteOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) DeleteOperationRule(ctx context.Context, in *flowv1.DeleteOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
-func (c *MockRLAClient) GetOperationRule(ctx context.Context, in *flowv1.GetOperationRuleRequest, opts ...grpc.CallOption) (*flowv1.OperationRule, error) {
+func (c *MockFlowClient) GetOperationRule(ctx context.Context, in *flowv1.GetOperationRuleRequest, opts ...grpc.CallOption) (*flowv1.OperationRule, error) {
 	out := &flowv1.OperationRule{}
 	return out, nil
 }
 
-func (c *MockRLAClient) ListOperationRules(ctx context.Context, in *flowv1.ListOperationRulesRequest, opts ...grpc.CallOption) (*flowv1.ListOperationRulesResponse, error) {
+func (c *MockFlowClient) ListOperationRules(ctx context.Context, in *flowv1.ListOperationRulesRequest, opts ...grpc.CallOption) (*flowv1.ListOperationRulesResponse, error) {
 	out := &flowv1.ListOperationRulesResponse{
 		Rules:      []*flowv1.OperationRule{},
 		TotalCount: 0,
@@ -1854,28 +1854,28 @@ func (c *MockRLAClient) ListOperationRules(ctx context.Context, in *flowv1.ListO
 	return out, nil
 }
 
-func (c *MockRLAClient) SetRuleAsDefault(ctx context.Context, in *flowv1.SetRuleAsDefaultRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) SetRuleAsDefault(ctx context.Context, in *flowv1.SetRuleAsDefaultRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
 /* Rack-rule association mock methods */
-func (c *MockRLAClient) AssociateRuleWithRack(ctx context.Context, in *flowv1.AssociateRuleWithRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) AssociateRuleWithRack(ctx context.Context, in *flowv1.AssociateRuleWithRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
-func (c *MockRLAClient) DisassociateRuleFromRack(ctx context.Context, in *flowv1.DisassociateRuleFromRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *MockFlowClient) DisassociateRuleFromRack(ctx context.Context, in *flowv1.DisassociateRuleFromRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
 	return out, nil
 }
 
-func (c *MockRLAClient) GetRackRuleAssociation(ctx context.Context, in *flowv1.GetRackRuleAssociationRequest, opts ...grpc.CallOption) (*flowv1.GetRackRuleAssociationResponse, error) {
+func (c *MockFlowClient) GetRackRuleAssociation(ctx context.Context, in *flowv1.GetRackRuleAssociationRequest, opts ...grpc.CallOption) (*flowv1.GetRackRuleAssociationResponse, error) {
 	out := &flowv1.GetRackRuleAssociationResponse{}
 	return out, nil
 }
 
-func (c *MockRLAClient) ListRackRuleAssociations(ctx context.Context, in *flowv1.ListRackRuleAssociationsRequest, opts ...grpc.CallOption) (*flowv1.ListRackRuleAssociationsResponse, error) {
+func (c *MockFlowClient) ListRackRuleAssociations(ctx context.Context, in *flowv1.ListRackRuleAssociationsRequest, opts ...grpc.CallOption) (*flowv1.ListRackRuleAssociationsResponse, error) {
 	out := &flowv1.ListRackRuleAssociationsResponse{
 		Associations: []*flowv1.RackRuleAssociation{},
 	}
@@ -1885,6 +1885,6 @@ func (c *MockRLAClient) ListRackRuleAssociations(ctx context.Context, in *flowv1
 // NewMockFlowClient creates a new mock FlowClient that can be used with FlowAtomicClient.SwapClient
 func NewMockFlowClient() *FlowClient {
 	return &FlowClient{
-		flow: &MockRLAClient{},
+		flow: &MockFlowClient{},
 	}
 }

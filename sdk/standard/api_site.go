@@ -287,22 +287,22 @@ func (a *SiteAPIService) DeleteSiteExecute(r ApiDeleteSiteRequest) (*http.Respon
 }
 
 type ApiGetAllSiteRequest struct {
-	ctx                              context.Context
-	ApiService                       *SiteAPIService
-	org                              string
-	infrastructureProviderId         *string
-	tenantId                         *string
-	status                           *string
-	isNativeNetworkingEnabled        *bool
-	isNetworkSecurityGroupEnabled    *bool
-	isNVLinkPartitionEnabled         *bool
-	isRackLevelAdministrationEnabled *bool
-	includeMachineStats              *bool
-	query                            *string
-	includeRelation                  *string
-	pageNumber                       *int32
-	pageSize                         *int32
-	orderBy                          *string
+	ctx                           context.Context
+	ApiService                    *SiteAPIService
+	org                           string
+	infrastructureProviderId      *string
+	tenantId                      *string
+	status                        *string
+	isNativeNetworkingEnabled     *bool
+	isNetworkSecurityGroupEnabled *bool
+	isNVLinkPartitionEnabled      *bool
+	isFlowEnabled                 *bool
+	includeMachineStats           *bool
+	query                         *string
+	includeRelation               *string
+	pageNumber                    *int32
+	pageSize                      *int32
+	orderBy                       *string
 }
 
 // Filter Sites by Infrastructure Provider ID
@@ -341,9 +341,9 @@ func (r ApiGetAllSiteRequest) IsNVLinkPartitionEnabled(isNVLinkPartitionEnabled 
 	return r
 }
 
-// Filter Sites by Rack Level Administration enabled flag. Requires Provider Admin role.
-func (r ApiGetAllSiteRequest) IsRackLevelAdministrationEnabled(isRackLevelAdministrationEnabled bool) ApiGetAllSiteRequest {
-	r.isRackLevelAdministrationEnabled = &isRackLevelAdministrationEnabled
+// Filter Sites by NICo Flow enabled flag. Requires Provider Admin role.
+func (r ApiGetAllSiteRequest) IsFlowEnabled(isFlowEnabled bool) ApiGetAllSiteRequest {
+	r.isFlowEnabled = &isFlowEnabled
 	return r
 }
 
@@ -447,8 +447,8 @@ func (a *SiteAPIService) GetAllSiteExecute(r ApiGetAllSiteRequest) ([]Site, *htt
 	if r.isNVLinkPartitionEnabled != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "isNVLinkPartitionEnabled", r.isNVLinkPartitionEnabled, "form", "")
 	}
-	if r.isRackLevelAdministrationEnabled != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "isRackLevelAdministrationEnabled", r.isRackLevelAdministrationEnabled, "form", "")
+	if r.isFlowEnabled != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "isFlowEnabled", r.isFlowEnabled, "form", "")
 	}
 	if r.includeMachineStats != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "includeMachineStats", r.includeMachineStats, "form", "")

@@ -39,7 +39,7 @@ type SiteCapabilities struct {
 	NativeNetworking          *bool `json:"nativeNetworking,omitempty"`
 	NetworkSecurityGroup      *bool `json:"networkSecurityGroup,omitempty"`
 	NvLinkPartition           *bool `json:"nvLinkPartition,omitempty"`
-	RackLevelAdministration   *bool `json:"rackLevelAdministration,omitempty"`
+	Flow                      *bool `json:"flow,omitempty"`
 	ImageBasedOperatingSystem *bool `json:"imageBasedOperatingSystem,omitempty"`
 }
 
@@ -156,36 +156,36 @@ func (o *SiteCapabilities) SetNvLinkPartition(v bool) {
 	o.NvLinkPartition = &v
 }
 
-// GetRackLevelAdministration returns the RackLevelAdministration field value if set, zero value otherwise.
-func (o *SiteCapabilities) GetRackLevelAdministration() bool {
-	if o == nil || IsNil(o.RackLevelAdministration) {
+// GetFlow returns the Flow field value if set, zero value otherwise.
+func (o *SiteCapabilities) GetFlow() bool {
+	if o == nil || IsNil(o.Flow) {
 		var ret bool
 		return ret
 	}
-	return *o.RackLevelAdministration
+	return *o.Flow
 }
 
-// GetRackLevelAdministrationOk returns a tuple with the RackLevelAdministration field value if set, nil otherwise
+// GetFlowOk returns a tuple with the Flow field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *SiteCapabilities) GetRackLevelAdministrationOk() (*bool, bool) {
-	if o == nil || IsNil(o.RackLevelAdministration) {
+func (o *SiteCapabilities) GetFlowOk() (*bool, bool) {
+	if o == nil || IsNil(o.Flow) {
 		return nil, false
 	}
-	return o.RackLevelAdministration, true
+	return o.Flow, true
 }
 
-// HasRackLevelAdministration returns a boolean if a field has been set.
-func (o *SiteCapabilities) HasRackLevelAdministration() bool {
-	if o != nil && !IsNil(o.RackLevelAdministration) {
+// HasFlow returns a boolean if a field has been set.
+func (o *SiteCapabilities) HasFlow() bool {
+	if o != nil && !IsNil(o.Flow) {
 		return true
 	}
 
 	return false
 }
 
-// SetRackLevelAdministration gets a reference to the given bool and assigns it to the RackLevelAdministration field.
-func (o *SiteCapabilities) SetRackLevelAdministration(v bool) {
-	o.RackLevelAdministration = &v
+// SetFlow gets a reference to the given bool and assigns it to the Flow field.
+func (o *SiteCapabilities) SetFlow(v bool) {
+	o.Flow = &v
 }
 
 // GetImageBasedOperatingSystem returns the ImageBasedOperatingSystem field value if set, zero value otherwise.
@@ -239,8 +239,8 @@ func (o SiteCapabilities) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.NvLinkPartition) {
 		toSerialize["nvLinkPartition"] = o.NvLinkPartition
 	}
-	if !IsNil(o.RackLevelAdministration) {
-		toSerialize["rackLevelAdministration"] = o.RackLevelAdministration
+	if !IsNil(o.Flow) {
+		toSerialize["flow"] = o.Flow
 	}
 	if !IsNil(o.ImageBasedOperatingSystem) {
 		toSerialize["imageBasedOperatingSystem"] = o.ImageBasedOperatingSystem

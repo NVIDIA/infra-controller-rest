@@ -92,7 +92,7 @@ func testRackSetupTestData(t *testing.T, dbSession *cdb.Session, org string) (*c
 		Org:                      org,
 		InfrastructureProviderID: ip.ID,
 		Status:                   cdbm.SiteStatusRegistered,
-		Config:                   &cdbm.SiteConfig{RackLevelAdministration: true},
+		Config:                   &cdbm.SiteConfig{Flow: true},
 	}
 	_, err = dbSession.DB.NewInsert().Model(site).Exec(ctx)
 	assert.Nil(t, err)
