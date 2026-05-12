@@ -1431,14 +1431,16 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently missing on Site, cannot update online repair state", nil)
 		}
 
-		stc, err := umh.scp.GetClientByID(machine.SiteID)
+		orTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
 		if err != nil {
-			logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-			return err
+			logger.Error().Err(err).Msg("unable to start transaction")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating machine", nil)
 		}
+		orTxCommitted := false
+		defer common.RollbackTx(ctx, orTx, &orTxCommitted)
 
 		iDAO := cdbm.NewInstanceDAO(umh.dbSession)
-		instances, ic, ierr := iDAO.GetAll(ctx, nil, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(2)}, nil)
+		instances, ic, ierr := iDAO.GetAll(ctx, orTx, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(2)}, nil)
 		if ierr != nil {
 			logger.Error().Err(ierr).Msg("error retrieving Instance for Machine")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance for Machine", nil)
@@ -1447,14 +1449,6 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have exactly one Instance for online repair", nil)
 		}
 		inst := instances[0]
-
-		orTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
-		if err != nil {
-			logger.Error().Err(err).Msg("unable to start transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating machine", nil)
-		}
-		orTxCommitted := false
-		defer common.RollbackTx(ctx, orTx, &orTxCommitted)
 
 		if *apiRequest.RequestOnlineRepair {
 			if inst.Status != cdbm.InstanceStatusReady {
@@ -1506,8 +1500,8 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			err = we.Get(wfCtx, nil)
 			if err != nil {
 				var timeoutErr *tp.TimeoutError
-				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-					return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed online repair workflow on Site: %s", err), nil)
+				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ApplyMachineOnlineRepairHealthOverride")
 				}
 				code, werr := common.UnwrapWorkflowError(err)
 				logger.Error().Err(werr).Msg("online repair health override workflow failed")
@@ -1559,8 +1553,8 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			err = we.Get(wfCtx, nil)
 			if err != nil {
 				var timeoutErr *tp.TimeoutError
-				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-					return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed clear online repair workflow on Site: %s", err), nil)
+				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ClearMachineOnlineRepairHealthOverride")
 				}
 				code, werr := common.UnwrapWorkflowError(err)
 				logger.Error().Err(werr).Msg("clear online repair health override workflow failed")
