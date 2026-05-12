@@ -61,7 +61,7 @@ type ManageSite struct {
 // Activity functions
 
 // DeleteSiteComponentsFromDB is a Temporal activity that initiates delete for instance type, machine,
-// machine interface, machine capability, operating system, instance, subnet, vpc, vpc peering, vpc prefix,
+// machine interface, machine capability, operating system site association, instance, subnet, vpc, vpc peering, vpc prefix,
 // infiniband partition, nvlink logical partition, dpu extension service deployment, interface,
 // nvlink interface, infiniband interface, ssh key group associations to site and instance, sku, expected machine,
 // expected switch and expected power shelf.
@@ -100,7 +100,6 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 	skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(mst.dbSession)
 	skgiaDAO := cdbm.NewSSHKeyGroupInstanceAssociationDAO(mst.dbSession)
 	nsgDAO := cdbm.NewNetworkSecurityGroupDAO(mst.dbSession)
-	osDAO := cdbm.NewOperatingSystemDAO(mst.dbSession)
 	ossaDAO := cdbm.NewOperatingSystemSiteAssociationDAO(mst.dbSession)
 	desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(mst.dbSession)
 	skuDAO := cdbm.NewSkuDAO(mst.dbSession)
@@ -419,48 +418,18 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		}
 	}
 
-	// Delete operating system site associations. After the associations for this site are removed, walk the set of
-	// operating systems they referenced and delete any OS whose only remaining site association was the one we just
-	// removed.
+	// Delete operating system site associations.
 	ossas, _, err := ossaDAO.GetAll(ctx, nil, cdbm.OperatingSystemSiteAssociationFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to retrieve Operating System Site Associations from DB by Site ID")
 		return err
 	}
 
-	candidateOsIDSet := make(map[uuid.UUID]struct{}, len(ossas))
-	candidateOsIDs := make([]uuid.UUID, 0, len(ossas))
 	for _, ossa := range ossas {
-		candidateOsIDSet[ossa.OperatingSystemID] = struct{}{}
-		candidateOsIDs = append(candidateOsIDs, ossa.OperatingSystemID)
 		serr := ossaDAO.Delete(ctx, nil, ossa.ID)
 		if serr != nil && serr != cdb.ErrDoesNotExist {
 			logger.Error().Err(serr).Str("Operating System Site Association ID", ossa.ID.String()).Msg("error deleting Operating System Site Association record in DB")
 			return serr
-		}
-	}
-	if len(candidateOsIDs) > 0 {
-		// Soft-deleted associations are excluded from GetAll by default, so any rows returned here are associations on
-		// OTHER sites that are still keeping the OS alive.
-		remainingOssas, _, err := ossaDAO.GetAll(ctx, nil, cdbm.OperatingSystemSiteAssociationFilterInput{OperatingSystemIDs: candidateOsIDs}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
-		if err != nil {
-			logger.Error().Err(err).Msg("failed to retrieve remaining Operating System Site Associations by Operating System IDs")
-			return err
-		}
-
-		// remove operating systems that are not orphaned
-		for _, r := range remainingOssas {
-			delete(candidateOsIDSet, r.OperatingSystemID)
-		}
-
-		if len(candidateOsIDSet) > 0 {
-			for osID := range candidateOsIDSet {
-				serr := osDAO.Delete(ctx, nil, osID)
-				if serr != nil && serr != cdb.ErrDoesNotExist {
-					logger.Error().Err(serr).Str("Operating System ID", osID.String()).Msg("error deleting orphaned Operating System record in DB")
-					return serr
-				}
-			}
 		}
 	}
 

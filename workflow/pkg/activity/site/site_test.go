@@ -1054,7 +1054,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		expectedMachineID  uuid.UUID
 		expectedSwitchID   uuid.UUID
 		expectedShelfID    uuid.UUID
-		imageOSID          uuid.UUID
 		imageOSSAID        uuid.UUID
 	}
 
@@ -1135,13 +1134,7 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 		es := util.TestBuildExpectedSwitch(t, dbSession, site, "00:11:22:33:55:0"+tag, "switch-"+tag, ipu)
 		eps := util.TestBuildExpectedPowerShelf(t, dbSession, site, "00:11:22:33:66:0"+tag, "shelf-"+tag, ipu)
 
-		// OperatingSystem with a single ossa on this site. Because the
-		// site association is the only one, the OS itself should be
-		// cleaned up alongside the association when this site is
-		// deleted (the focused _OrphanedOS test exercises the shared
-		// vs. orphan distinction in isolation; here we just verify
-		// the orphan-cleanup path is wired into the broader
-		// regression set).
+		// OperatingSystem with a single ossa on this site.
 		imageOS := util.TestBuildImageOperatingSystem(t, dbSession, &ip.ID, nil, "img-"+tag, ipOrg, cdb.GetStrPtr("v1"), cdbm.OperatingSystemStatusReady)
 		imageOSSA := util.TestBuildImageOperatingSystemSiteAssociation(t, dbSession, imageOS.ID, site.ID, cdbm.OperatingSystemSiteAssociationStatusSynced, "v1", false)
 
@@ -1165,7 +1158,6 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 			expectedMachineID:  em.ID,
 			expectedSwitchID:   es.ID,
 			expectedShelfID:    eps.ID,
-			imageOSID:          imageOS.ID,
 			imageOSSAID:        imageOSSA.ID,
 		}
 	}
@@ -1226,10 +1218,7 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 	assertGone("expected_machine", &cdbm.ExpectedMachine{}, "em.id", site1Resources.expectedMachineID)
 	assertGone("expected_switch", &cdbm.ExpectedSwitch{}, "es.id", site1Resources.expectedSwitchID)
 	assertGone("expected_power_shelf", &cdbm.ExpectedPowerShelf{}, "eps.id", site1Resources.expectedShelfID)
-	// Site 1's image OS had only one ossa (on site 1 itself), so both the
-	// association AND the OS itself should have been cleaned up.
 	assertGone("operating_system_site_association (site 1 image OS)", &cdbm.OperatingSystemSiteAssociation{}, "ossa.id", site1Resources.imageOSSAID)
-	assertGone("operating_system (site 1 image OS, orphaned)", &cdbm.OperatingSystem{}, "os.id", site1Resources.imageOSID)
 
 	// --- Site 2: nothing should have been touched. ---
 
@@ -1254,108 +1243,9 @@ func TestManageSite_DeleteSiteComponentsFromDB_NewResources(t *testing.T) {
 	assertPresent("expected_switch", &cdbm.ExpectedSwitch{}, "es.id", site2Resources.expectedSwitchID)
 	assertPresent("expected_power_shelf", &cdbm.ExpectedPowerShelf{}, "eps.id", site2Resources.expectedShelfID)
 	// Site 2's image OS and its association are independent of site 1
-	// and must be left untouched by the cleanup.
 	assertPresent("operating_system_site_association (site 2 image OS)", &cdbm.OperatingSystemSiteAssociation{}, "ossa.id", site2Resources.imageOSSAID)
-	assertPresent("operating_system (site 2 image OS)", &cdbm.OperatingSystem{}, "os.id", site2Resources.imageOSID)
 
 	// SSHKeyAssociation for site 1 should still be present since the
 	// workflow's call effectively no-ops against site IDs (see test docstring).
 	assertPresent("ssh_key_association (intentionally not cleaned)", &cdbm.SSHKeyAssociation{}, "ska.id", site1Resources.sshKeyAssocID)
-}
-
-// TestManageSite_DeleteSiteComponentsFromDB_OrphanedOS exercises the OS
-// cleanup logic in DeleteSiteComponentsFromDB. The contract is type-
-// agnostic: any OS whose only site association was the one we are tearing
-// down is deleted along with its association, regardless of OS type;
-// any OS that is still associated with at least one other site is
-// preserved.
-//
-// Three cases cover the production-reachable space against a single
-// deleted site:
-//
-//   - osImageOnlyHere    (image,     orphan after cleanup) → deleted
-//   - osNonImageOnlyHere (non-image, orphan after cleanup) → deleted
-//   - osNonImageShared   (non-image, still on sibling)     → preserved
-//
-// The (image, shared) combination is intentionally not exercised: the
-// create handler in api/pkg/api/handler/operatingsystem.go enforces that
-// an image OS must specify exactly one site, so the API can never
-// produce an image OS with site associations on more than one site.
-// The two non-image cases together prove that the relevant axis is
-// orphan-vs-shared and not OS type (without the shared case the test
-// could not distinguish "non-image OS deleted because orphaned" from
-// "non-image OS deleted unconditionally").
-//
-// In all three cases the ossa on the deleted site is removed; the ossa
-// on the sibling site is preserved for the shared case.
-func TestManageSite_DeleteSiteComponentsFromDB_OrphanedOS(t *testing.T) {
-	ctx := context.Background()
-
-	dbSession := testSiteInitDB(t)
-	defer dbSession.Close()
-
-	util.TestSetupSchema(t, dbSession)
-
-	ipOrg := "os-orphan-org"
-	ipRoles := []string{"FORGE_PROVIDER_ADMIN"}
-	ipu := util.TestBuildUser(t, dbSession, uuid.New().String(), []string{ipOrg}, ipRoles)
-	ip := util.TestBuildInfrastructureProvider(t, dbSession, "os-orphan-ip", ipOrg, ipu)
-
-	siteToDelete := util.TestBuildSite(t, dbSession, ip, "site-to-delete", cdbm.SiteStatusPending, nil, ipu)
-	siblingSite := util.TestBuildSite(t, dbSession, ip, "sibling-site", cdbm.SiteStatusPending, nil, ipu)
-
-	// Image OS associated only with the site being deleted (orphaned
-	// after cleanup → both OS and ossa should be removed). This is the
-	// only image-OS shape the API can produce, since the create
-	// handler forbids multi-site image OSes.
-	osImageOnlyHere := util.TestBuildImageOperatingSystem(t, dbSession, &ip.ID, nil, "img-orphan", ipOrg, cdb.GetStrPtr("v1"), cdbm.OperatingSystemStatusReady)
-	ossaImageOnlyHere := util.TestBuildImageOperatingSystemSiteAssociation(t, dbSession, osImageOnlyHere.ID, siteToDelete.ID, cdbm.OperatingSystemSiteAssociationStatusSynced, "v1", false)
-
-	// Non-image (zero-Type) OS associated only with the site being
-	// deleted (orphaned after cleanup → both OS and ossa should be
-	// removed; cleanup is OS-type-agnostic).
-	osNonImageOnlyHere := util.TestBuildOperatingSystem(t, dbSession, "non-image-orphan")
-	ossaNonImageOnlyHere := util.TestBuildImageOperatingSystemSiteAssociation(t, dbSession, osNonImageOnlyHere.ID, siteToDelete.ID, cdbm.OperatingSystemSiteAssociationStatusSynced, "v1", false)
-
-	// Non-image OS shared with a sibling site (still alive after
-	// cleanup → only the deleted-site ossa should be removed; this
-	// case proves the orphan check is applied to non-image OSes too,
-	// rather than non-image OSes being unconditionally deleted).
-	osNonImageShared := util.TestBuildOperatingSystem(t, dbSession, "non-image-shared")
-	ossaNonImageSharedDeletedSite := util.TestBuildImageOperatingSystemSiteAssociation(t, dbSession, osNonImageShared.ID, siteToDelete.ID, cdbm.OperatingSystemSiteAssociationStatusSynced, "v1", false)
-	ossaNonImageSharedSiblingSite := util.TestBuildImageOperatingSystemSiteAssociation(t, dbSession, osNonImageShared.ID, siblingSite.ID, cdbm.OperatingSystemSiteAssociationStatusSynced, "v1", false)
-
-	mv := ManageSite{
-		dbSession:      dbSession,
-		siteClientPool: testTemporalSiteClientPool(t),
-	}
-
-	err := mv.DeleteSiteComponentsFromDB(ctx, siteToDelete.ID, ip.ID, false)
-	require.NoError(t, err)
-
-	assertGone := func(label string, model interface{}, idColumn string, id interface{}) {
-		t.Helper()
-		err := dbSession.DB.NewSelect().Model(model).Where(idColumn+" = ?", id).Scan(ctx)
-		assert.Equal(t, sql.ErrNoRows, err, "%s with id %v should be deleted", label, id)
-	}
-	assertPresent := func(label string, model interface{}, idColumn string, id interface{}) {
-		t.Helper()
-		err := dbSession.DB.NewSelect().Model(model).Where(idColumn+" = ?", id).Scan(ctx)
-		assert.NoError(t, err, "%s with id %v should still be present", label, id)
-	}
-
-	// Every ossa on the deleted site is gone (regardless of OS type or
-	// whether the OS itself is being orphaned). The sibling-site ossa
-	// for the shared non-image OS is preserved.
-	assertGone("ossa: image orphan on deleted site", &cdbm.OperatingSystemSiteAssociation{}, "ossa.id", ossaImageOnlyHere.ID)
-	assertGone("ossa: non-image orphan on deleted site", &cdbm.OperatingSystemSiteAssociation{}, "ossa.id", ossaNonImageOnlyHere.ID)
-	assertGone("ossa: non-image shared on deleted site", &cdbm.OperatingSystemSiteAssociation{}, "ossa.id", ossaNonImageSharedDeletedSite.ID)
-	assertPresent("ossa: non-image shared on sibling site", &cdbm.OperatingSystemSiteAssociation{}, "ossa.id", ossaNonImageSharedSiblingSite.ID)
-
-	// OSes orphaned by the cleanup (image and non-image alike) are gone.
-	// The non-image OS still referenced by the sibling site is preserved,
-	// confirming the orphan check rather than blanket deletion.
-	assertGone("orphaned image OS", &cdbm.OperatingSystem{}, "os.id", osImageOnlyHere.ID)
-	assertGone("orphaned non-image OS", &cdbm.OperatingSystem{}, "os.id", osNonImageOnlyHere.ID)
-	assertPresent("shared non-image OS", &cdbm.OperatingSystem{}, "os.id", osNonImageShared.ID)
 }
