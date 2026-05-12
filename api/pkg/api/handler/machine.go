@@ -845,27 +845,9 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		if !tenant.Config.TargetedInstanceCreation && !apiRequest.IsMachineOnlineRepairOperation() {
 			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant requires TargetedInstanceCreation capability for this Machine update", nil)
 		}
-		if apiRequest.IsMachineOnlineRepairOperation() {
-			if !machine.IsAssigned {
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
-			}
-			iDAO := cdbm.NewInstanceDAO(umh.dbSession)
-			instances, ic, ierr := iDAO.GetAll(ctx, nil, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(5)}, nil)
-			if ierr != nil {
-				logger.Error().Err(ierr).Msg("error retrieving Instance for Machine")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance for Machine", nil)
-			}
-			if ic != 1 {
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have exactly one Instance for online repair", nil)
-			}
-			if instances[0].TenantID != tenant.ID {
-				return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance on this Machine does not belong to the Tenant", nil)
-			}
-		}
 	}
 
-	// Validate in case of Provider, if Machine is allowed to enter/exit online repair mode
-	if infrastructureProvider != nil && apiRequest.IsMachineOnlineRepairOperation() {
+	if apiRequest.IsMachineOnlineRepairOperation() {
 		if !machine.IsAssigned {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
 		}
@@ -878,8 +860,14 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		if ic != 1 {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have exactly one Instance for online repair", nil)
 		}
-		if instances[0].InfrastructureProviderID != infrastructureProvider.ID {
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance on this Machine does not belong to the org's Infrastructure Provider", nil)
+		if tenant != nil {
+			if instances[0].TenantID != tenant.ID {
+				return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance on this Machine does not belong to the Tenant", nil)
+			}
+		} else if infrastructureProvider != nil {
+			if instances[0].InfrastructureProviderID != infrastructureProvider.ID {
+				return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance on this Machine does not belong to the org's Infrastructure Provider", nil)
+			}
 		}
 	}
 
@@ -1517,6 +1505,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			if patchLabels == nil {
 				patchLabels = map[string]string{}
 			}
+
 			delete(patchLabels, model.InstanceLabelOnlineRepairAllowAutoDeletion)
 
 			_, err = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
