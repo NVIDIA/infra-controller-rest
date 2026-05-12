@@ -18,6 +18,7 @@
 package componentmanager
 
 import (
+	"context"
 	"errors"
 	"testing"
 
@@ -25,8 +26,163 @@ import (
 
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
+
+type testManager struct {
+	componentType devicetypes.ComponentType
+}
+
+func (m testManager) Type() devicetypes.ComponentType {
+	return m.componentType
+}
+
+func (m testManager) InjectExpectation(
+	context.Context,
+	common.Target,
+	operations.InjectExpectationTaskInfo,
+) error {
+	return nil
+}
+
+func (m testManager) PowerControl(
+	context.Context,
+	common.Target,
+	operations.PowerControlTaskInfo,
+) error {
+	return nil
+}
+
+func (m testManager) GetPowerStatus(
+	context.Context,
+	common.Target,
+) (map[string]operations.PowerStatus, error) {
+	return nil, nil
+}
+
+func (m testManager) FirmwareControl(
+	context.Context,
+	common.Target,
+	operations.FirmwareControlTaskInfo,
+) error {
+	return nil
+}
+
+func (m testManager) GetFirmwareStatus(
+	context.Context,
+	common.Target,
+) (map[string]operations.FirmwareUpdateStatus, error) {
+	return nil, nil
+}
+
+func managerFactory(
+	componentType devicetypes.ComponentType,
+) ManagerFactory {
+	return func(*providerapi.ProviderRegistry) (ComponentManager, error) {
+		return testManager{componentType: componentType}, nil
+	}
+}
+
+func TestNewCatalog(t *testing.T) {
+	catalog, err := NewCatalog([]Descriptor{
+		{
+			Type:              devicetypes.ComponentTypeCompute,
+			Implementation:    " custom ",
+			RequiredProviders: []string{" beta ", "alpha", "beta"},
+			Factory:           managerFactory(devicetypes.ComponentTypeCompute),
+		},
+	})
+
+	require.NoError(t, err)
+
+	descriptor, ok := catalog.Get(devicetypes.ComponentTypeCompute, "custom")
+	require.True(t, ok)
+	require.Equal(t, devicetypes.ComponentTypeCompute, descriptor.Type)
+	require.Equal(t, "custom", descriptor.Implementation)
+	require.Equal(t, []string{"alpha", "beta"}, descriptor.RequiredProviders)
+	require.NotNil(t, descriptor.Factory)
+
+	require.Equal(
+		t,
+		[]string{"custom"},
+		catalog.Implementations(devicetypes.ComponentTypeCompute),
+	)
+}
+
+func TestNewCatalogRejectsDuplicate(t *testing.T) {
+	descriptor := Descriptor{
+		Type:           devicetypes.ComponentTypeCompute,
+		Implementation: "custom",
+		Factory:        managerFactory(devicetypes.ComponentTypeCompute),
+	}
+
+	_, err := NewCatalog([]Descriptor{descriptor, descriptor})
+
+	require.Error(t, err)
+	require.True(t, errors.Is(err, ErrDuplicateDescriptor))
+
+	var duplicateErr DuplicateDescriptorError
+	require.True(t, errors.As(err, &duplicateErr))
+	require.Equal(t, devicetypes.ComponentTypeCompute, duplicateErr.ComponentType)
+	require.Equal(t, "custom", duplicateErr.Implementation)
+}
+
+func TestNewCatalogValidation(t *testing.T) {
+	factory := managerFactory(devicetypes.ComponentTypeCompute)
+
+	tests := []struct {
+		name       string
+		descriptor Descriptor
+		wantErr    error
+	}{
+		{
+			name: "unknown component type",
+			descriptor: Descriptor{
+				Type:           devicetypes.ComponentTypeUnknown,
+				Implementation: "custom",
+				Factory:        factory,
+			},
+			wantErr: ErrUnknownComponentType,
+		},
+		{
+			name: "empty implementation",
+			descriptor: Descriptor{
+				Type:    devicetypes.ComponentTypeCompute,
+				Factory: factory,
+			},
+			wantErr: ErrComponentManagerImplementationNameEmpty,
+		},
+		{
+			name: "nil factory",
+			descriptor: Descriptor{
+				Type:           devicetypes.ComponentTypeCompute,
+				Implementation: "custom",
+			},
+			wantErr: ErrComponentManagerFactoryNotConfigured,
+		},
+		{
+			name: "empty required provider",
+			descriptor: Descriptor{
+				Type:              devicetypes.ComponentTypeCompute,
+				Implementation:    "custom",
+				RequiredProviders: []string{" "},
+				Factory:           factory,
+			},
+			wantErr: ErrProviderNameEmpty,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := NewCatalog([]Descriptor{tt.descriptor})
+
+			require.Error(t, err)
+			require.True(t, errors.Is(err, tt.wantErr))
+		})
+	}
+}
 
 func TestRegistryGetManager(t *testing.T) {
 	t.Run("nil registry", func(t *testing.T) {
@@ -40,7 +196,12 @@ func TestRegistryGetManager(t *testing.T) {
 	})
 
 	t.Run("missing active manager", func(t *testing.T) {
-		registry := NewRegistry()
+		registry, err := NewRegistry(
+			Catalog{},
+			cmconfig.Config{},
+			providerapi.NewProviderRegistry(),
+		)
+		require.NoError(t, err)
 
 		manager, err := registry.GetManager(devicetypes.ComponentTypeCompute)
 
@@ -54,15 +215,45 @@ func TestRegistryGetManager(t *testing.T) {
 	})
 }
 
-func TestRegistryInitializeErrors(t *testing.T) {
-	t.Run("factory not registered", func(t *testing.T) {
-		registry := NewRegistry()
+func TestRegistryGetDescriptor(t *testing.T) {
+	catalog, err := NewCatalog([]Descriptor{
+		{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "custom",
+			Factory:        managerFactory(devicetypes.ComponentTypeCompute),
+		},
+	})
+	require.NoError(t, err)
 
-		err := registry.Initialize(cmconfig.Config{
+	registry, err := NewRegistry(
+		catalog,
+		cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
-				devicetypes.ComponentTypeCompute: "mock",
+				devicetypes.ComponentTypeCompute: "custom",
 			},
-		}, providerapi.NewProviderRegistry())
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	descriptor, err := registry.GetDescriptor(devicetypes.ComponentTypeCompute)
+
+	require.NoError(t, err)
+	require.Equal(t, devicetypes.ComponentTypeCompute, descriptor.Type)
+	require.Equal(t, "custom", descriptor.Implementation)
+}
+
+func TestNewRegistryErrors(t *testing.T) {
+	t.Run("factory not registered", func(t *testing.T) {
+		_, err := NewRegistry(
+			Catalog{},
+			cmconfig.Config{
+				ComponentManagers: map[devicetypes.ComponentType]string{
+					devicetypes.ComponentTypeCompute: "mock",
+				},
+			},
+			providerapi.NewProviderRegistry(),
+		)
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrComponentManagerFactoryNotRegistered))
@@ -73,20 +264,24 @@ func TestRegistryInitializeErrors(t *testing.T) {
 	})
 
 	t.Run("unknown implementation", func(t *testing.T) {
-		registry := NewRegistry()
-		registry.RegisterFactory(
-			devicetypes.ComponentTypeCompute,
-			"known",
-			func(*providerapi.ProviderRegistry) (ComponentManager, error) {
-				return nil, nil
+		catalog, err := NewCatalog([]Descriptor{
+			{
+				Type:           devicetypes.ComponentTypeCompute,
+				Implementation: "known",
+				Factory:        managerFactory(devicetypes.ComponentTypeCompute),
 			},
-		)
+		})
+		require.NoError(t, err)
 
-		err := registry.Initialize(cmconfig.Config{
-			ComponentManagers: map[devicetypes.ComponentType]string{
-				devicetypes.ComponentTypeCompute: "missing",
+		_, err = NewRegistry(
+			catalog,
+			cmconfig.Config{
+				ComponentManagers: map[devicetypes.ComponentType]string{
+					devicetypes.ComponentTypeCompute: "missing",
+				},
 			},
-		}, providerapi.NewProviderRegistry())
+			providerapi.NewProviderRegistry(),
+		)
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrUnknownComponentManagerImplementation))
@@ -98,22 +293,66 @@ func TestRegistryInitializeErrors(t *testing.T) {
 		require.ElementsMatch(t, []string{"known"}, implErr.Available)
 	})
 
-	t.Run("manager creation failed", func(t *testing.T) {
-		rootErr := errors.New("boom")
-		registry := NewRegistry()
-		registry.RegisterFactory(
-			devicetypes.ComponentTypeCompute,
-			"broken",
-			func(*providerapi.ProviderRegistry) (ComponentManager, error) {
-				return nil, rootErr
+	t.Run("implementation registered for another type", func(t *testing.T) {
+		catalog, err := NewCatalog([]Descriptor{
+			{
+				Type:           devicetypes.ComponentTypeCompute,
+				Implementation: "nico",
+				Factory:        managerFactory(devicetypes.ComponentTypeCompute),
 			},
+			{
+				Type:           devicetypes.ComponentTypeNVLSwitch,
+				Implementation: "nvswitchmanager",
+				Factory:        managerFactory(devicetypes.ComponentTypeNVLSwitch),
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = NewRegistry(
+			catalog,
+			cmconfig.Config{
+				ComponentManagers: map[devicetypes.ComponentType]string{
+					devicetypes.ComponentTypeCompute: "nvswitchmanager",
+				},
+			},
+			providerapi.NewProviderRegistry(),
 		)
 
-		err := registry.Initialize(cmconfig.Config{
-			ComponentManagers: map[devicetypes.ComponentType]string{
-				devicetypes.ComponentTypeCompute: "broken",
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrUnknownComponentManagerImplementation))
+
+		var implErr UnknownComponentManagerImplementationError
+		require.True(t, errors.As(err, &implErr))
+		require.Equal(t, devicetypes.ComponentTypeCompute, implErr.ComponentType)
+		require.Equal(t, "nvswitchmanager", implErr.Implementation)
+		require.Equal(t, []string{"nico"}, implErr.Available)
+		require.Equal(t, []devicetypes.ComponentType{
+			devicetypes.ComponentTypeNVLSwitch,
+		}, implErr.RegisteredFor)
+	})
+
+	t.Run("manager creation failed", func(t *testing.T) {
+		rootErr := errors.New("boom")
+		catalog, err := NewCatalog([]Descriptor{
+			{
+				Type:           devicetypes.ComponentTypeCompute,
+				Implementation: "broken",
+				Factory: func(*providerapi.ProviderRegistry) (ComponentManager, error) {
+					return nil, rootErr
+				},
 			},
-		}, providerapi.NewProviderRegistry())
+		})
+		require.NoError(t, err)
+
+		_, err = NewRegistry(
+			catalog,
+			cmconfig.Config{
+				ComponentManagers: map[devicetypes.ComponentType]string{
+					devicetypes.ComponentTypeCompute: "broken",
+				},
+			},
+			providerapi.NewProviderRegistry(),
+		)
 
 		require.Error(t, err)
 		require.True(t, errors.Is(err, ErrManagerCreationFailed))
@@ -136,7 +375,12 @@ func TestRegistryFindManager(t *testing.T) {
 	})
 
 	t.Run("missing active manager", func(t *testing.T) {
-		registry := NewRegistry()
+		registry, err := NewRegistry(
+			Catalog{},
+			cmconfig.Config{},
+			providerapi.NewProviderRegistry(),
+		)
+		require.NoError(t, err)
 
 		manager := registry.FindManager(devicetypes.ComponentTypeCompute)
 

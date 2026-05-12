@@ -27,10 +27,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/mock"
+	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nico"
+	nvlswitchnsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nvswitchmanager"
+	powershelfnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/nico"
+	powershelfpsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/psm"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
+	nsmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nvswitchmanager"
+	psmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/psm"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
@@ -68,6 +75,152 @@ func TestNewComponentManagerRegistryInitializesBuiltInMockManagers(t *testing.T)
 		require.NoError(t, err)
 		assert.Equal(t, componentType, manager.Type())
 	}
+}
+
+func TestNewComponentManagerRegistryRejectsImplementationForWrongType(t *testing.T) {
+	config := cmconfig.Config{
+		ComponentManagers: map[devicetypes.ComponentType]string{
+			devicetypes.ComponentTypeCompute: nvlswitchnsm.ImplementationName,
+		},
+	}
+
+	registry, err := NewComponentManagerRegistry(
+		config,
+		providerapi.NewProviderRegistry(),
+	)
+
+	require.Nil(t, registry)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, componentmanager.ErrUnknownComponentManagerImplementation))
+
+	var implErr componentmanager.UnknownComponentManagerImplementationError
+	require.True(t, errors.As(err, &implErr))
+	assert.Equal(t, devicetypes.ComponentTypeCompute, implErr.ComponentType)
+	assert.Equal(t, nvlswitchnsm.ImplementationName, implErr.Implementation)
+	assert.ElementsMatch(
+		t,
+		[]string{computenico.ImplementationName, mock.ImplementationName},
+		implErr.Available,
+	)
+	assert.Equal(
+		t,
+		[]devicetypes.ComponentType{devicetypes.ComponentTypeNVLSwitch},
+		implErr.RegisteredFor,
+	)
+}
+
+func TestServiceCatalog(t *testing.T) {
+	catalog, err := serviceCatalog(cmconfig.Config{})
+
+	require.NoError(t, err)
+
+	implementations := catalog.ListImplementations()
+	assert.Equal(
+		t,
+		[]string{mock.ImplementationName, computenico.ImplementationName},
+		implementations[devicetypes.ComponentTypeCompute],
+	)
+	assert.Equal(
+		t,
+		[]string{
+			mock.ImplementationName,
+			nvlswitchnico.ImplementationName,
+			nvlswitchnsm.ImplementationName,
+		},
+		implementations[devicetypes.ComponentTypeNVLSwitch],
+	)
+	assert.Equal(
+		t,
+		[]string{
+			mock.ImplementationName,
+			powershelfnico.ImplementationName,
+			powershelfpsm.ImplementationName,
+		},
+		implementations[devicetypes.ComponentTypePowerShelf],
+	)
+
+	assert.Equal(
+		t,
+		[]string{nicoprovider.ProviderName},
+		requireDescriptor(
+			t,
+			catalog,
+			devicetypes.ComponentTypeCompute,
+			computenico.ImplementationName,
+		).RequiredProviders,
+	)
+	assert.Equal(
+		t,
+		[]string{nicoprovider.ProviderName},
+		requireDescriptor(
+			t,
+			catalog,
+			devicetypes.ComponentTypeNVLSwitch,
+			nvlswitchnico.ImplementationName,
+		).RequiredProviders,
+	)
+	assert.Equal(
+		t,
+		[]string{nsmprovider.ProviderName},
+		requireDescriptor(
+			t,
+			catalog,
+			devicetypes.ComponentTypeNVLSwitch,
+			nvlswitchnsm.ImplementationName,
+		).RequiredProviders,
+	)
+	assert.Equal(
+		t,
+		[]string{nicoprovider.ProviderName},
+		requireDescriptor(
+			t,
+			catalog,
+			devicetypes.ComponentTypePowerShelf,
+			powershelfnico.ImplementationName,
+		).RequiredProviders,
+	)
+	assert.Equal(
+		t,
+		[]string{psmprovider.ProviderName},
+		requireDescriptor(
+			t,
+			catalog,
+			devicetypes.ComponentTypePowerShelf,
+			powershelfpsm.ImplementationName,
+		).RequiredProviders,
+	)
+	assert.Empty(t, requireDescriptor(
+		t,
+		catalog,
+		devicetypes.ComponentTypeCompute,
+		mock.ImplementationName,
+	).RequiredProviders)
+	assert.Empty(t, requireDescriptor(
+		t,
+		catalog,
+		devicetypes.ComponentTypeNVLSwitch,
+		mock.ImplementationName,
+	).RequiredProviders)
+	assert.Empty(t, requireDescriptor(
+		t,
+		catalog,
+		devicetypes.ComponentTypePowerShelf,
+		mock.ImplementationName,
+	).RequiredProviders)
+}
+
+func requireDescriptor(
+	t *testing.T,
+	catalog componentmanager.Catalog,
+	componentType devicetypes.ComponentType,
+	implementation string,
+) componentmanager.Descriptor {
+	t.Helper()
+
+	descriptor, ok := catalog.Get(componentType, implementation)
+	require.True(t, ok)
+	require.NotNil(t, descriptor.Factory)
+	return descriptor
 }
 
 func TestNicoComputePowerDelayUsesProviderConfig(t *testing.T) {
