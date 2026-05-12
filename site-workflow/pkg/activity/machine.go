@@ -125,13 +125,13 @@ func (mm *ManageMachine) InsertHealthReportOverrideOnSite(ctx context.Context, r
 		return temporal.NewNonRetryableApplicationError("invalid InsertHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or override report"))
 	}
 
-	carbideClient := mm.carbideAtomicClient.GetClient()
-	if carbideClient == nil {
+	nicoClient := mm.nicoCoreAtomicClient.GetClient()
+	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
-	forgeClient := carbideClient.Carbide()
+	rpcClient := nicoClient.NICo()
 
-	_, err := forgeClient.InsertHealthReportOverride(ctx, request)
+	_, err := rpcClient.InsertHealthReportOverride(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to insert health report override using Site Controller API")
 		return swe.WrapErr(err)
@@ -150,13 +150,13 @@ func (mm *ManageMachine) RemoveHealthReportOverrideOnSite(ctx context.Context, r
 		return temporal.NewNonRetryableApplicationError("invalid RemoveHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or source"))
 	}
 
-	carbideClient := mm.carbideAtomicClient.GetClient()
-	if carbideClient == nil {
+	nicoClient := mm.nicoCoreAtomicClient.GetClient()
+	if nicoClient == nil {
 		return cClient.ErrClientNotConnected
 	}
-	forgeClient := carbideClient.Carbide()
+	rpcClient := nicoClient.NICo()
 
-	_, err := forgeClient.RemoveHealthReportOverride(ctx, request)
+	_, err := rpcClient.RemoveHealthReportOverride(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to remove health report override using Site Controller API")
 		return swe.WrapErr(err)

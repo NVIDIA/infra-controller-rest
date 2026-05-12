@@ -7057,8 +7057,9 @@ paths:
               Example 1:
                 value:
                   machineHealthIssue:
-                    category: Network
+                    category: NETWORK
                     summary: Machine has DPU connectivity error
+                    details: Tenant observed repeated link flaps on the DPU uplink.
                   isRepairTenant: false
         description: Optional request data to report health issues with the underlying Machine
     patch:
@@ -16154,8 +16155,9 @@ components:
       type: object
       examples:
         - machineHealthIssue:
-            category: Network
+            category: NETWORK
             summary: Machine has DPU connectivity error
+            details: Tenant observed repeated link flaps on the DPU uplink.
           isRepairTenant: false
       description: Request data to delete Instance
       properties:
@@ -16167,32 +16169,6 @@ components:
             - boolean
             - 'null'
           description: Should be set to true for Tenants who are performing investigation/repairing the Machine. Otherwise omit or set to false
-    MachineHealthIssue:
-      title: MachineHealthIssue
-      type: object
-      examples:
-        - category: Network
-          summary: Machine has DPU connectivity error
-      description: Data describing health issue with a Machine
-      properties:
-        category:
-          type: string
-          enum:
-            - Hardware
-            - Network
-            - Performance
-            - Other
-          description: Category of the issue
-        summary:
-          type:
-            - string
-            - 'null'
-          description: Short summary describing the issue
-        details:
-          type:
-            - string
-            - 'null'
-          description: Details about the issue helpful for diagnosis
     Interface:
       title: Interface
       type: object
@@ -17597,14 +17573,16 @@ components:
             - boolean
             - 'null'
           description: >-
-            When true, enters in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine
+            When true, initiates in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine
             and sets the associated Instance status to Repairing. When false, must be used with clearOnlineRepair true to exit online repair.
             Cannot be combined with instance type, maintenance, or label updates in the same request.
+            When `requestOnlineRepair` is true, `machineHealthIssue`, `repairPolicy`, and `acknowledgments` are required in the same request body and must
+            satisfy the `MachineHealthIssue`, `OnlineRepairPolicy`, and `OnlineRepairAcknowledgments` component schemas.
         clearOnlineRepair:
           type:
             - boolean
             - 'null'
-          description: Must be true when requestOnlineRepair is false to clear the OnlineRepair health override and return the Instance to Ready.
+          description: Must be true when requestOnlineRepair is false. Clears the OnlineRepair health override and returns the Instance to Ready.
         machineHealthIssue:
           $ref: '#/components/schemas/MachineHealthIssue'
         repairPolicy:

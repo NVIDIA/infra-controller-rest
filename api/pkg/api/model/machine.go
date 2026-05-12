@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+	"unicode/utf8"
 
 	validationis "github.com/go-ozzo/ozzo-validation/v4/is"
 
@@ -88,9 +89,9 @@ type APIOnlineRepairPolicy struct {
 
 // APIOnlineRepairAcknowledgments are required confirmations to enter online repair.
 type APIOnlineRepairAcknowledgments struct {
-	AcceptDataCorruptionRisk     *bool `json:"acceptDataCorruptionRisk"`
-	AcceptRepairTeamAccess       *bool `json:"acceptRepairTeamAccess"`
-	AcceptInstanceDeletionRisk   *bool `json:"acceptInstanceDeletionRisk"`
+	AcceptDataCorruptionRisk   *bool `json:"acceptDataCorruptionRisk"`
+	AcceptRepairTeamAccess     *bool `json:"acceptRepairTeamAccess"`
+	AcceptInstanceDeletionRisk *bool `json:"acceptInstanceDeletionRisk"`
 }
 
 // APIMachineUpdateRequest is the data structure to capture request to update a Machine
@@ -208,12 +209,12 @@ func (mur APIMachineUpdateRequest) Validate() error {
 			}
 			if mhi.Summary == "" {
 				verr["machineHealthIssue.summary"] = errors.New("summary is required")
-			} else if len(mhi.Summary) > 512 {
+			} else if utf8.RuneCountInString(mhi.Summary) > 512 {
 				verr["machineHealthIssue.summary"] = errors.New("summary must be at most 512 characters")
 			}
 			if mhi.Details == "" {
 				verr["machineHealthIssue.details"] = errors.New("details is required")
-			} else if len(mhi.Details) > 8192 {
+			} else if utf8.RuneCountInString(mhi.Details) > 8192 {
 				verr["machineHealthIssue.details"] = errors.New("details must be at most 8192 characters")
 			}
 		}
@@ -253,9 +254,9 @@ func (mur APIMachineUpdateRequest) Validate() error {
 // BuildOnlineRepairHealthOverrideMessageJSON builds the JSON payload stored in the health alert message field.
 func BuildOnlineRepairHealthOverrideMessageJSON(details, category, summary string) (string, error) {
 	type payload struct {
-		Details        string `json:"details"`
-		IssueCategory  string `json:"issue_category"`
-		Summary        string `json:"summary"`
+		Details       string `json:"details"`
+		IssueCategory string `json:"issue_category"`
+		Summary       string `json:"summary"`
 	}
 	b, err := json.Marshal(payload{
 		Details:       details,

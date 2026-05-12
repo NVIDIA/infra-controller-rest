@@ -75,6 +75,18 @@ var (
 		MachineIssueCategoryNetwork:     int32(cwssaws.IssueCategory_NETWORK),
 		MachineIssueCategoryPerformance: int32(cwssaws.IssueCategory_PERFORMANCE),
 		MachineIssueCategoryOther:       int32(cwssaws.IssueCategory_OTHER),
+		"HARDWARE":                      int32(cwssaws.IssueCategory_HARDWARE),
+		"NETWORK":                       int32(cwssaws.IssueCategory_NETWORK),
+		"PERFORMANCE":                   int32(cwssaws.IssueCategory_PERFORMANCE),
+		"OTHER":                         int32(cwssaws.IssueCategory_OTHER),
+		// Proto IssueCategory has no distinct values for storage/software; treat as OTHER.
+		"STORAGE":  int32(cwssaws.IssueCategory_OTHER),
+		"SOFTWARE": int32(cwssaws.IssueCategory_OTHER),
+	}
+
+	instanceDeleteMachineHealthIssueCategories = []any{
+		MachineIssueCategoryHardware, MachineIssueCategoryNetwork, MachineIssueCategoryPerformance, MachineIssueCategoryOther,
+		"HARDWARE", "NETWORK", "PERFORMANCE", "STORAGE", "SOFTWARE", "OTHER",
 	}
 )
 
@@ -1496,7 +1508,7 @@ func (idr APIInstanceDeleteRequest) Validate() error {
 		err := validation.ValidateStruct(idr.MachineHealthIssue,
 			validation.Field(&idr.MachineHealthIssue.Category,
 				validation.Required,
-				validation.In(MachineIssueCategoryHardware, MachineIssueCategoryNetwork, MachineIssueCategoryPerformance, MachineIssueCategoryOther),
+				validation.In(instanceDeleteMachineHealthIssueCategories...),
 			),
 			validation.Field(&idr.MachineHealthIssue.Summary,
 				validation.Required,

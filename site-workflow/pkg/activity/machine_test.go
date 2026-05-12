@@ -140,11 +140,12 @@ func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
 }
 
 func TestManageMachine_InsertHealthReportOverrideOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	mockNICo := cClient.NewMockNICoClient()
 
-	mm := NewManageMachine(carbideAtomicClient)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
+
+	mm := NewManageMachine(nicoCoreAtomicClient)
 	req := &cwssaws.InsertHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
 		Override: &cwssaws.HealthReportOverride{
@@ -164,11 +165,12 @@ func TestManageMachine_InsertHealthReportOverrideOnSite(t *testing.T) {
 }
 
 func TestManageMachine_RemoveHealthReportOverrideOnSite(t *testing.T) {
-	mockCarbide := cClient.NewMockCarbideClient()
-	carbideAtomicClient := cClient.NewCarbideAtomicClient(&cClient.CarbideClientConfig{})
-	carbideAtomicClient.SwapClient(mockCarbide)
+	mockNICo := cClient.NewMockNICoClient()
 
-	mm := NewManageMachine(carbideAtomicClient)
+	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
+	nicoCoreAtomicClient.SwapClient(mockNICo)
+
+	mm := NewManageMachine(nicoCoreAtomicClient)
 	req := &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
 		Source:    "tenant-reported-issue",
