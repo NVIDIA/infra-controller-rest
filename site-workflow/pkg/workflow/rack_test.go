@@ -28,7 +28,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	rActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 // GetRackTestSuite tests the GetRack workflow
@@ -51,14 +51,14 @@ func (s *GetRackTestSuite) Test_GetRack_Success() {
 	var rackManager rActivity.ManageRack
 
 	rackID := "test-rack-id"
-	request := &rlav1.GetRackInfoByIDRequest{
-		Id: &rlav1.UUID{Id: rackID},
+	request := &flowv1.GetRackInfoByIDRequest{
+		Id: &flowv1.UUID{Id: rackID},
 	}
 
-	expectedResponse := &rlav1.GetRackInfoResponse{
-		Rack: &rlav1.Rack{
-			Info: &rlav1.DeviceInfo{
-				Id:   &rlav1.UUID{Id: rackID},
+	expectedResponse := &flowv1.GetRackInfoResponse{
+		Rack: &flowv1.Rack{
+			Info: &flowv1.DeviceInfo{
+				Id:   &flowv1.UUID{Id: rackID},
 				Name: "test-rack",
 			},
 		},
@@ -74,7 +74,7 @@ func (s *GetRackTestSuite) Test_GetRack_Success() {
 	s.NoError(s.env.GetWorkflowError())
 
 	// Verify result
-	var response rlav1.GetRackInfoResponse
+	var response flowv1.GetRackInfoResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.NotNil(response.Rack)
 	s.NotNil(response.Rack.Info)
@@ -85,11 +85,11 @@ func (s *GetRackTestSuite) Test_GetRack_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
 	rackID := "test-rack-id"
-	request := &rlav1.GetRackInfoByIDRequest{
-		Id: &rlav1.UUID{Id: rackID},
+	request := &flowv1.GetRackInfoByIDRequest{
+		Id: &flowv1.UUID{Id: rackID},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	// Mock GetRack activity failure
 	s.env.RegisterActivity(rackManager.GetRack)
@@ -129,19 +129,19 @@ func (s *GetRacksTestSuite) AfterTest(suiteName, testName string) {
 func (s *GetRacksTestSuite) Test_GetRacks_Success() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.GetListOfRacksRequest{}
+	request := &flowv1.GetListOfRacksRequest{}
 
-	expectedResponse := &rlav1.GetListOfRacksResponse{
-		Racks: []*rlav1.Rack{
+	expectedResponse := &flowv1.GetListOfRacksResponse{
+		Racks: []*flowv1.Rack{
 			{
-				Info: &rlav1.DeviceInfo{
-					Id:   &rlav1.UUID{Id: "rack-1"},
+				Info: &flowv1.DeviceInfo{
+					Id:   &flowv1.UUID{Id: "rack-1"},
 					Name: "Rack 1",
 				},
 			},
 			{
-				Info: &rlav1.DeviceInfo{
-					Id:   &rlav1.UUID{Id: "rack-2"},
+				Info: &flowv1.DeviceInfo{
+					Id:   &flowv1.UUID{Id: "rack-2"},
 					Name: "Rack 2",
 				},
 			},
@@ -159,7 +159,7 @@ func (s *GetRacksTestSuite) Test_GetRacks_Success() {
 	s.NoError(s.env.GetWorkflowError())
 
 	// Verify result
-	var response rlav1.GetListOfRacksResponse
+	var response flowv1.GetListOfRacksResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.NotNil(response.Racks)
 	s.Equal(int32(2), response.Total)
@@ -169,9 +169,9 @@ func (s *GetRacksTestSuite) Test_GetRacks_Success() {
 func (s *GetRacksTestSuite) Test_GetRacks_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.GetListOfRacksRequest{}
+	request := &flowv1.GetListOfRacksRequest{}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	// Mock GetRacks activity failure
 	s.env.RegisterActivity(rackManager.GetRacks)
@@ -211,14 +211,14 @@ func (s *ValidateRackComponentsTestSuite) AfterTest(suiteName, testName string) 
 func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_NoDiffs() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.ValidateComponentsRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.ValidateComponentsRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -227,8 +227,8 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_No
 		},
 	}
 
-	expectedResponse := &rlav1.ValidateComponentsResponse{
-		Diffs:           []*rlav1.ComponentDiff{},
+	expectedResponse := &flowv1.ValidateComponentsResponse{
+		Diffs:           []*flowv1.ComponentDiff{},
 		TotalDiffs:      0,
 		MissingCount:    0,
 		UnexpectedCount: 0,
@@ -246,7 +246,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_No
 	s.NoError(s.env.GetWorkflowError())
 
 	// Verify result
-	var response rlav1.ValidateComponentsResponse
+	var response flowv1.ValidateComponentsResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(int32(0), response.TotalDiffs)
 	s.Equal(int32(5), response.MatchCount)
@@ -256,14 +256,14 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_No
 func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_WithDiffs() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.ValidateComponentsRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.ValidateComponentsRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -272,16 +272,16 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_Wi
 		},
 	}
 
-	expectedResponse := &rlav1.ValidateComponentsResponse{
-		Diffs: []*rlav1.ComponentDiff{
+	expectedResponse := &flowv1.ValidateComponentsResponse{
+		Diffs: []*flowv1.ComponentDiff{
 			{
-				Type:        rlav1.DiffType_DIFF_TYPE_MISSING,
+				Type:        flowv1.DiffType_DIFF_TYPE_MISSING,
 				ComponentId: "comp-1",
 			},
 			{
-				Type:        rlav1.DiffType_DIFF_TYPE_DRIFT,
+				Type:        flowv1.DiffType_DIFF_TYPE_DRIFT,
 				ComponentId: "comp-2",
-				FieldDiffs: []*rlav1.FieldDiff{
+				FieldDiffs: []*flowv1.FieldDiff{
 					{
 						FieldName:     "firmware_version",
 						ExpectedValue: "1.0.0",
@@ -307,7 +307,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_Wi
 	s.NoError(s.env.GetWorkflowError())
 
 	// Verify result
-	var response rlav1.ValidateComponentsResponse
+	var response flowv1.ValidateComponentsResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(int32(2), response.TotalDiffs)
 	s.Equal(int32(1), response.MissingCount)
@@ -319,14 +319,14 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_Wi
 func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.ValidateComponentsRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.ValidateComponentsRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -335,7 +335,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_ActivityFa
 		},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	// Mock ValidateRackComponents activity failure
 	s.env.RegisterActivity(rackManager.ValidateRackComponents)
@@ -375,14 +375,14 @@ func (s *PowerOnRackTestSuite) AfterTest(suiteName, testName string) {
 func (s *PowerOnRackTestSuite) Test_PowerOnRack_Success() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerOnRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerOnRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -392,8 +392,8 @@ func (s *PowerOnRackTestSuite) Test_PowerOnRack_Success() {
 		Description: "API power on Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.PowerOnRack)
@@ -403,7 +403,7 @@ func (s *PowerOnRackTestSuite) Test_PowerOnRack_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -411,14 +411,14 @@ func (s *PowerOnRackTestSuite) Test_PowerOnRack_Success() {
 func (s *PowerOnRackTestSuite) Test_PowerOnRack_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerOnRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerOnRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -427,7 +427,7 @@ func (s *PowerOnRackTestSuite) Test_PowerOnRack_ActivityFails() {
 		},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	s.env.RegisterActivity(rackManager.PowerOnRack)
 	s.env.OnActivity(rackManager.PowerOnRack, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
@@ -465,14 +465,14 @@ func (s *PowerOffRackTestSuite) AfterTest(suiteName, testName string) {
 func (s *PowerOffRackTestSuite) Test_PowerOffRack_Success() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerOffRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerOffRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -482,8 +482,8 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_Success() {
 		Description: "API power off Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.PowerOffRack)
@@ -493,7 +493,7 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -501,14 +501,14 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_Success() {
 func (s *PowerOffRackTestSuite) Test_PowerOffRack_Forced() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerOffRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerOffRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -519,8 +519,8 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_Forced() {
 		Description: "API force power off Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.PowerOffRack)
@@ -530,7 +530,7 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_Forced() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -538,14 +538,14 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_Forced() {
 func (s *PowerOffRackTestSuite) Test_PowerOffRack_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerOffRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerOffRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -554,7 +554,7 @@ func (s *PowerOffRackTestSuite) Test_PowerOffRack_ActivityFails() {
 		},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	s.env.RegisterActivity(rackManager.PowerOffRack)
 	s.env.OnActivity(rackManager.PowerOffRack, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
@@ -592,14 +592,14 @@ func (s *PowerResetRackTestSuite) AfterTest(suiteName, testName string) {
 func (s *PowerResetRackTestSuite) Test_PowerResetRack_Success() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerResetRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerResetRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -609,8 +609,8 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_Success() {
 		Description: "API power cycle Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.PowerResetRack)
@@ -620,7 +620,7 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -628,14 +628,14 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_Success() {
 func (s *PowerResetRackTestSuite) Test_PowerResetRack_Forced() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerResetRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerResetRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -646,8 +646,8 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_Forced() {
 		Description: "API force power cycle Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}, {Id: "task-2"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}, {Id: "task-2"}},
 	}
 
 	s.env.RegisterActivity(rackManager.PowerResetRack)
@@ -657,7 +657,7 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_Forced() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(2, len(response.GetTaskIds()))
 }
@@ -665,14 +665,14 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_Forced() {
 func (s *PowerResetRackTestSuite) Test_PowerResetRack_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.PowerResetRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.PowerResetRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -681,7 +681,7 @@ func (s *PowerResetRackTestSuite) Test_PowerResetRack_ActivityFails() {
 		},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	s.env.RegisterActivity(rackManager.PowerResetRack)
 	s.env.OnActivity(rackManager.PowerResetRack, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
@@ -719,14 +719,14 @@ func (s *BringUpRackTestSuite) AfterTest(suiteName, testName string) {
 func (s *BringUpRackTestSuite) Test_BringUpRack_Success() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.BringUpRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.BringUpRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -736,8 +736,8 @@ func (s *BringUpRackTestSuite) Test_BringUpRack_Success() {
 		Description: "API bring up Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.BringUpRack)
@@ -747,7 +747,7 @@ func (s *BringUpRackTestSuite) Test_BringUpRack_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -755,14 +755,14 @@ func (s *BringUpRackTestSuite) Test_BringUpRack_Success() {
 func (s *BringUpRackTestSuite) Test_BringUpRack_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.BringUpRackRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.BringUpRackRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -771,7 +771,7 @@ func (s *BringUpRackTestSuite) Test_BringUpRack_ActivityFails() {
 		},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	s.env.RegisterActivity(rackManager.BringUpRack)
 	s.env.OnActivity(rackManager.BringUpRack, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
@@ -810,17 +810,17 @@ func (s *GetRackTaskTestSuite) Test_GetRackTask_Success() {
 	var rackManager rActivity.ManageRack
 
 	taskID := "test-task-id"
-	request := &rlav1.GetTasksByIDsRequest{
-		TaskIds: []*rlav1.UUID{{Id: taskID}},
+	request := &flowv1.GetTasksByIDsRequest{
+		TaskIds: []*flowv1.UUID{{Id: taskID}},
 	}
 
-	expectedResponse := &rlav1.GetTasksByIDsResponse{
-		Tasks: []*rlav1.Task{
+	expectedResponse := &flowv1.GetTasksByIDsResponse{
+		Tasks: []*flowv1.Task{
 			{
-				Id:          &rlav1.UUID{Id: taskID},
+				Id:          &flowv1.UUID{Id: taskID},
 				Operation:   "power_on",
 				Description: "Power on rack",
-				Status:      rlav1.TaskStatus_TASK_STATUS_RUNNING,
+				Status:      flowv1.TaskStatus_TASK_STATUS_RUNNING,
 				Message:     "Processing",
 			},
 		},
@@ -833,7 +833,7 @@ func (s *GetRackTaskTestSuite) Test_GetRackTask_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.GetTasksByIDsResponse
+	var response flowv1.GetTasksByIDsResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTasks()))
 	s.Equal(taskID, response.GetTasks()[0].GetId().GetId())
@@ -842,12 +842,12 @@ func (s *GetRackTaskTestSuite) Test_GetRackTask_Success() {
 func (s *GetRackTaskTestSuite) Test_GetRackTask_EmptyResult() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.GetTasksByIDsRequest{
-		TaskIds: []*rlav1.UUID{{Id: "nonexistent-task"}},
+	request := &flowv1.GetTasksByIDsRequest{
+		TaskIds: []*flowv1.UUID{{Id: "nonexistent-task"}},
 	}
 
-	expectedResponse := &rlav1.GetTasksByIDsResponse{
-		Tasks: []*rlav1.Task{},
+	expectedResponse := &flowv1.GetTasksByIDsResponse{
+		Tasks: []*flowv1.Task{},
 	}
 
 	s.env.RegisterActivity(rackManager.GetTaskByID)
@@ -857,7 +857,7 @@ func (s *GetRackTaskTestSuite) Test_GetRackTask_EmptyResult() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.GetTasksByIDsResponse
+	var response flowv1.GetTasksByIDsResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(0, len(response.GetTasks()))
 }
@@ -865,11 +865,11 @@ func (s *GetRackTaskTestSuite) Test_GetRackTask_EmptyResult() {
 func (s *GetRackTaskTestSuite) Test_GetRackTask_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.GetTasksByIDsRequest{
-		TaskIds: []*rlav1.UUID{{Id: "test-task-id"}},
+	request := &flowv1.GetTasksByIDsRequest{
+		TaskIds: []*flowv1.UUID{{Id: "test-task-id"}},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	s.env.RegisterActivity(rackManager.GetTaskByID)
 	s.env.OnActivity(rackManager.GetTaskByID, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
@@ -908,14 +908,14 @@ func (s *CancelRackTaskTestSuite) Test_CancelRackTask_Success() {
 	var rackManager rActivity.ManageRack
 
 	taskID := "test-task-id"
-	request := &rlav1.CancelTaskRequest{
-		TaskId: &rlav1.UUID{Id: taskID},
+	request := &flowv1.CancelTaskRequest{
+		TaskId: &flowv1.UUID{Id: taskID},
 	}
 
-	expectedResponse := &rlav1.CancelTaskResponse{
-		Task: &rlav1.Task{
-			Id:      &rlav1.UUID{Id: taskID},
-			Status:  rlav1.TaskStatus_TASK_STATUS_TERMINATED,
+	expectedResponse := &flowv1.CancelTaskResponse{
+		Task: &flowv1.Task{
+			Id:      &flowv1.UUID{Id: taskID},
+			Status:  flowv1.TaskStatus_TASK_STATUS_TERMINATED,
 			Message: "Cancelled by user",
 		},
 	}
@@ -927,20 +927,20 @@ func (s *CancelRackTaskTestSuite) Test_CancelRackTask_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.CancelTaskResponse
+	var response flowv1.CancelTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(taskID, response.GetTask().GetId().GetId())
-	s.Equal(rlav1.TaskStatus_TASK_STATUS_TERMINATED, response.GetTask().GetStatus())
+	s.Equal(flowv1.TaskStatus_TASK_STATUS_TERMINATED, response.GetTask().GetStatus())
 }
 
 func (s *CancelRackTaskTestSuite) Test_CancelRackTask_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.CancelTaskRequest{
-		TaskId: &rlav1.UUID{Id: "test-task-id"},
+	request := &flowv1.CancelTaskRequest{
+		TaskId: &flowv1.UUID{Id: "test-task-id"},
 	}
 
-	errMsg := "RLA cancel rejected: task already finished"
+	errMsg := "Flow cancel rejected: task already finished"
 
 	s.env.RegisterActivity(rackManager.CancelTask)
 	s.env.OnActivity(rackManager.CancelTask, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))
@@ -978,14 +978,14 @@ func (s *UpgradeFirmwareTestSuite) AfterTest(suiteName, testName string) {
 func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_Success() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.UpgradeFirmwareRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.UpgradeFirmwareRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -995,8 +995,8 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_Success() {
 		Description: "API firmware upgrade Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.UpgradeFirmware)
@@ -1006,7 +1006,7 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -1015,14 +1015,14 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_WithVersion() {
 	var rackManager rActivity.ManageRack
 
 	version := "24.11.0"
-	request := &rlav1.UpgradeFirmwareRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.UpgradeFirmwareRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -1033,8 +1033,8 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_WithVersion() {
 		Description:   "API firmware upgrade Rack",
 	}
 
-	expectedResponse := &rlav1.SubmitTaskResponse{
-		TaskIds: []*rlav1.UUID{{Id: "task-1"}},
+	expectedResponse := &flowv1.SubmitTaskResponse{
+		TaskIds: []*flowv1.UUID{{Id: "task-1"}},
 	}
 
 	s.env.RegisterActivity(rackManager.UpgradeFirmware)
@@ -1044,7 +1044,7 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_WithVersion() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var response rlav1.SubmitTaskResponse
+	var response flowv1.SubmitTaskResponse
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(1, len(response.GetTaskIds()))
 }
@@ -1052,14 +1052,14 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_WithVersion() {
 func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_ActivityFails() {
 	var rackManager rActivity.ManageRack
 
-	request := &rlav1.UpgradeFirmwareRequest{
-		TargetSpec: &rlav1.OperationTargetSpec{
-			Targets: &rlav1.OperationTargetSpec_Racks{
-				Racks: &rlav1.RackTargets{
-					Targets: []*rlav1.RackTarget{
+	request := &flowv1.UpgradeFirmwareRequest{
+		TargetSpec: &flowv1.OperationTargetSpec{
+			Targets: &flowv1.OperationTargetSpec_Racks{
+				Racks: &flowv1.RackTargets{
+					Targets: []*flowv1.RackTarget{
 						{
-							Identifier: &rlav1.RackTarget_Id{
-								Id: &rlav1.UUID{Id: "test-rack-id"},
+							Identifier: &flowv1.RackTarget_Id{
+								Id: &flowv1.UUID{Id: "test-rack-id"},
 							},
 						},
 					},
@@ -1068,7 +1068,7 @@ func (s *UpgradeFirmwareTestSuite) Test_UpgradeFirmware_ActivityFails() {
 		},
 	}
 
-	errMsg := "RLA connection failed"
+	errMsg := "Flow connection failed"
 
 	s.env.RegisterActivity(rackManager.UpgradeFirmware)
 	s.env.OnActivity(rackManager.UpgradeFirmware, mock.Anything, mock.Anything).Return(nil, errors.New(errMsg))

@@ -161,6 +161,44 @@ func (em *ExpectedMachine) ToProto(creds ExpectedMachineCredentials) *cwssaws.Ex
 	return proto
 }
 
+// FromProto populates this ExpectedMachine from a workflow proto reported
+// by a Site. linkedMachineID, when non-nil, is the ID of the Machine
+// matched by BmcMacAddress (resolved by the caller from a separate lookup
+// table). A nil proto is a no-op. An invalid or missing proto.Id leaves
+// em.ID unchanged so the caller can validate the proto's UUID before
+// calling.
+func (em *ExpectedMachine) FromProto(proto *cwssaws.ExpectedMachine, linkedMachineID *string) {
+	if proto == nil {
+		return
+	}
+	if proto.Id != nil {
+		if id, err := uuid.Parse(proto.Id.Value); err == nil {
+			em.ID = id
+		}
+	}
+	em.BmcMacAddress = proto.BmcMacAddress
+	em.ChassisSerialNumber = proto.ChassisSerialNumber
+	em.SkuID = proto.SkuId
+	em.MachineID = linkedMachineID
+	em.FallbackDpuSerialNumbers = proto.FallbackDpuSerialNumbers
+	em.BmcIpAddress = proto.BmcIpAddress
+	if proto.RackId != nil {
+		rackID := proto.RackId.Id
+		em.RackID = &rackID
+	} else {
+		em.RackID = nil
+	}
+	em.Name = proto.Name
+	em.Manufacturer = proto.Manufacturer
+	em.Model = proto.Model
+	em.Description = proto.Description
+	em.FirmwareVersion = proto.FirmwareVersion
+	em.SlotID = proto.SlotId
+	em.TrayIdx = proto.TrayIdx
+	em.HostID = proto.HostId
+	em.Labels = LabelsFromProtoMetadata(proto.Metadata)
+}
+
 // ExpectedMachineCreateInput input parameters for Create method
 type ExpectedMachineCreateInput struct {
 	ExpectedMachineID        uuid.UUID

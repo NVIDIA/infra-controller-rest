@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -202,146 +201,131 @@ func (csh CreateVpcPrefixHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, csh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating VPC prefix", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	sdDAO := cdbm.NewStatusDetailDAO(csh.dbSession)
 
-	// acquire an advisory lock on the parent IP block ID on which there could be contention
-	// this lock is released when the transaction commits or rollsback
-	err = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(fmt.Sprintf("%s-%s", tenant.ID.String(), ipBlock.ID.String())), nil)
-	if err != nil {
-		// TODO add a retry here
-		logger.Error().Err(err).Msg("Failed to acquire advisory lock on ipblock")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating VPC prefix, detected multiple parallel request on IP Block by Tenant", nil)
-	}
-
-	// create an IPAM allocation for the VPC prefix
-	// allocate a child prefix in ipam
-	ipamStorage := ipam.NewIpamStorage(csh.dbSession.DB, tx.GetBunTx())
-	childPrefix, err := ipam.CreateChildIpamEntryForIPBlock(ctx, tx, csh.dbSession, ipamStorage, ipBlock, apiRequest.PrefixLength)
-
-	if err != nil {
-		// printing parent prefix usage to debug the child prefix failure
-		parentPrefix, serr := ipamStorage.ReadPrefix(ctx, ipBlock.Prefix, ipam.GetIpamNamespaceForIPBlock(ctx, ipBlock.RoutingType, ipBlock.InfrastructureProviderID.String(), ipBlock.SiteID.String()))
-		if serr == nil {
-			logger.Info().Str("IP Block ID", ipBlock.ID.String()).Str("IP Block Prefix", ipBlock.Prefix).Msgf("%+v\n", parentPrefix.Usage())
+	var ssd *cdbm.StatusDetail
+	var createdVpcPrefix *cdbm.VpcPrefix
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	err = cdb.WithTx(ctx, csh.dbSession, func(tx *cdb.Tx) error {
+		// acquire an advisory lock on the parent IP block ID on which there could be contention
+		// this lock is released when the transaction commits or rollsback
+		derr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(fmt.Sprintf("%s-%s", tenant.ID.String(), ipBlock.ID.String())), nil)
+		if derr != nil {
+			// TODO add a retry here
+			logger.Error().Err(derr).Msg("Failed to acquire advisory lock on ipblock")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Error creating VPC prefix, detected multiple parallel request on IP Block by Tenant", nil)
 		}
 
-		logger.Warn().Err(err).Msg("failed to create IPAM entry for VPC prefix")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for VPC prefix. Details: %s", err.Error()), nil)
-	}
-	logger.Info().Str("childCidr", childPrefix.Cidr).Msg("created child cidr for VPC prefix")
-
-	// Create VPC prefix in DB
-	vpcPrefix, err := vpcPrefixDAO.Create(ctx, tx, cdbm.VpcPrefixCreateInput{Name: apiRequest.Name, TenantOrg: org, SiteID: site.ID, VpcID: vpc.ID, TenantID: tenant.ID, IpBlockID: &ipBlock.ID, Prefix: childPrefix.Cidr, PrefixLength: apiRequest.PrefixLength, Status: cdbm.VpcPrefixStatusReady, CreatedBy: dbUser.ID})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to create VPC prefix record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed creating VPC prefix record", nil)
-	}
-
-	// create the status detail record
-	sdDAO := cdbm.NewStatusDetailDAO(csh.dbSession)
-	ssd, serr := sdDAO.CreateFromParams(ctx, tx, vpcPrefix.ID.String(), *cdb.GetStrPtr(cdbm.VpcPrefixStatusReady),
-		cdb.GetStrPtr("Received VPC prefix creation request, ready"))
-	if serr != nil {
-		logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for VPC prefix", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for VPC prefix", nil)
-	}
-
-	// Get the temporal client for the site we are working with.
-	stc, err := csh.scp.GetClientByID(vpcPrefix.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	createVpcPrefixRequest := &cwssaws.VpcPrefixCreationRequest{
-		Id:    &cwssaws.VpcPrefixId{Value: vpcPrefix.ID.String()},
-		VpcId: &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
-		Config: &cwssaws.VpcPrefixConfig{
-			Prefix: vpcPrefix.Prefix,
-		},
-		Metadata: &cwssaws.Metadata{
-			Name: vpcPrefix.Name,
-		},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "vpc-prefix-create-" + vpcPrefix.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	logger.Info().Msg("triggering VPC prefix create workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateVpcPrefix", createVpcPrefixRequest)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create VPC prefix")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create VPC prefix on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create VPC prefix workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-
-			logger.Error().Err(err).Msg("failed to create VPC prefix, timeout occurred executing workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing create VPC prefix workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for creating VPC prefix")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous VPC prefix creation workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		// create an IPAM allocation for the VPC prefix
+		// allocate a child prefix in ipam
+		ipamStorage := ipam.NewIpamStorage(csh.dbSession.DB, tx.GetBunTx())
+		childPrefix, derr := ipam.CreateChildIpamEntryForIPBlock(ctx, tx, csh.dbSession, ipamStorage, ipBlock, apiRequest.PrefixLength)
+		if derr != nil {
+			// printing parent prefix usage to debug the child prefix failure
+			parentPrefix, serr := ipamStorage.ReadPrefix(ctx, ipBlock.Prefix, ipam.GetIpamNamespaceForIPBlock(ctx, ipBlock.RoutingType, ipBlock.InfrastructureProviderID.String(), ipBlock.SiteID.String()))
+			if serr == nil {
+				logger.Info().Str("IP Block ID", ipBlock.ID.String()).Str("IP Block Prefix", ipBlock.Prefix).Msgf("%+v\n", parentPrefix.Usage())
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous create VPC prefix workflow successfully")
+			logger.Warn().Err(derr).Msg("failed to create IPAM entry for VPC prefix")
+			return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for VPC prefix. Details: %s", derr.Error()), nil)
+		}
+		logger.Info().Str("childCidr", childPrefix.Cidr).Msg("created child cidr for VPC prefix")
 
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to create VPC Prefix, timeout occurred executing workflow on Site: %s", err), nil)
+		// Create VPC prefix in DB
+		vpcPrefix, derr := vpcPrefixDAO.Create(ctx, tx, cdbm.VpcPrefixCreateInput{Name: apiRequest.Name, TenantOrg: org, SiteID: site.ID, VpcID: vpc.ID, TenantID: tenant.ID, IpBlockID: &ipBlock.ID, Prefix: childPrefix.Cidr, PrefixLength: apiRequest.PrefixLength, Status: cdbm.VpcPrefixStatusReady, CreatedBy: dbUser.ID})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to create VPC prefix record in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed creating VPC prefix record", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to create VPC prefix")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to create VPC prefix on Site: %s", err), nil)
+		// create the status detail record
+		createdSSD, derr := sdDAO.CreateFromParams(ctx, tx, vpcPrefix.ID.String(), *cdb.GetStrPtr(cdbm.VpcPrefixStatusReady),
+			cdb.GetStrPtr("Received VPC prefix creation request, ready"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for VPC prefix", nil)
+		}
+		if createdSSD == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for VPC prefix", nil)
+		}
+		ssd = createdSSD
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := csh.scp.GetClientByID(vpcPrefix.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		createVpcPrefixRequest := &cwssaws.VpcPrefixCreationRequest{
+			Id:    &cwssaws.VpcPrefixId{Value: vpcPrefix.ID.String()},
+			VpcId: &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
+			Config: &cwssaws.VpcPrefixConfig{
+				Prefix: vpcPrefix.Prefix,
+			},
+			Metadata: &cwssaws.Metadata{
+				Name: vpcPrefix.Name,
+			},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "vpc-prefix-create-" + vpcPrefix.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		logger.Info().Msg("triggering VPC prefix create workflow")
+
+		// Add context deadlines
+		workflowCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(workflowCtx, workflowOptions, "CreateVpcPrefix", createVpcPrefixRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to create VPC prefix")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create VPC prefix on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create VPC prefix workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr := we.Get(workflowCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || workflowCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to create VPC prefix, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPCPrefix", "Create")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC Prefix create workflow timed out", nil)
+			}
+
+			code, uerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uerr).Msg("failed to synchronously execute Temporal workflow to create VPC prefix")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to create VPC prefix on Site: %s", uerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create VPC prefix workflow")
+		createdVpcPrefix = vpcPrefix
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create VPC prefix workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create VPC Prefix, DB transaction error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to create VPC Prefix, DB transaction error")
 	}
-
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	// create response
-	apiVpcPrefix := model.NewAPIVpcPrefix(vpcPrefix, []cdbm.StatusDetail{*ssd})
+	apiVpcPrefix := model.NewAPIVpcPrefix(createdVpcPrefix, []cdbm.StatusDetail{*ssd})
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusCreated, apiVpcPrefix)
 }
@@ -793,107 +777,96 @@ func (ush UpdateVpcPrefixHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// start a database transaction
-	tx, err := cdb.BeginTx(ctx, ush.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating VPC prefix in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC prefix", nil)
-	}
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	vpcPrefix, err = vpDAO.Update(ctx, tx, cdbm.VpcPrefixUpdateInput{VpcPrefixID: vpcPrefix.ID, Name: apiRequest.Name})
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating VPC prefix in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC prefix", nil)
-	}
-
-	// get status details for the response
 	sdDAO := cdbm.NewStatusDetailDAO(ush.dbSession)
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, vpcPrefix.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for VPC prefix from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for VPC prefix", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := ush.scp.GetClientByID(vpcPrefix.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	updateVpcPrefixRequest := &cwssaws.VpcPrefixUpdateRequest{
-		Id: &cwssaws.VpcPrefixId{Value: vpcPrefix.ID.String()},
-		Metadata: &cwssaws.Metadata{
-			Name: vpcPrefix.Name,
-		},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "vpc-prefix-update-" + vpcPrefix.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	logger.Info().Msg("triggering VPC prefix update workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpdateVpcPrefix", updateVpcPrefixRequest)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update VPC prefix")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update VPC prefix on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update VPC prefix workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-
-			logger.Error().Err(err).Msg("failed to update VPC Prefix, timeout occurred executing workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing update VPC prefix workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for creating VPC prefix")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous VPC prefix updation workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
-			}
-
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous update VPC prefix workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to update VPC Prefix, timeout occurred executing workflow on Site: %s", err), nil)
+	var ssds []cdbm.StatusDetail
+	var updatedVpcPrefix *cdbm.VpcPrefix
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	err = cdb.WithTx(ctx, ush.dbSession, func(tx *cdb.Tx) error {
+		updated, derr := vpDAO.Update(ctx, tx, cdbm.VpcPrefixUpdateInput{VpcPrefixID: vpcPrefix.ID, Name: apiRequest.Name})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating VPC prefix in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update VPC prefix", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update VPC prefix")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update VPC prefix on Site: %s", err), nil)
+		// get status details for the response
+		fetchedSSDs, _, derr := sdDAO.GetAllByEntityID(ctx, tx, updated.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Status Details for VPC prefix from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Status Details for VPC prefix", nil)
+		}
+		ssds = fetchedSSDs
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := ush.scp.GetClientByID(updated.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		updateVpcPrefixRequest := &cwssaws.VpcPrefixUpdateRequest{
+			Id: &cwssaws.VpcPrefixId{Value: updated.ID.String()},
+			Metadata: &cwssaws.Metadata{
+				Name: updated.Name,
+			},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "vpc-prefix-update-" + updated.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		logger.Info().Msg("triggering VPC prefix update workflow")
+
+		// Add context deadlines
+		workflowCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(workflowCtx, workflowOptions, "UpdateVpcPrefix", updateVpcPrefixRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to update VPC prefix")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update VPC prefix on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update VPC prefix workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr := we.Get(workflowCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || workflowCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to update VPC Prefix, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPCPrefix", "Update")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC Prefix update workflow timed out", nil)
+			}
+
+			code, uerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uerr).Msg("failed to synchronously execute Temporal workflow to update VPC prefix")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update VPC prefix on Site: %s", uerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC prefix workflow")
+		updatedVpcPrefix = updated
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC prefix workflow")
-
-	// commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error updating VPC prefix in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC prefix", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update VPC prefix, DB transaction error")
 	}
-	txCommitted = true
 
 	// Send response
-	apiVpcPrefix := model.NewAPIVpcPrefix(vpcPrefix, ssds)
+	apiVpcPrefix := model.NewAPIVpcPrefix(updatedVpcPrefix, ssds)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiVpcPrefix)
 }
@@ -1018,122 +991,105 @@ func (dsh DeleteVpcPrefixHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "VPC Prefix is being used by one or more Instances and cannot be deleted", nil)
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, dsh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC Prefix, DB transaction error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// acquire an advisory lock on the parent IP block ID on which there could be contention
-	// this lock is released when the transaction commits or rollsback
-	err = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(vpcPrefix.IPBlockID.String()), nil)
-	if err != nil {
-		// TODO: Add a retry here
-		logger.Error().Err(err).Msg("Failed to acquire advisory lock on ipblock")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC Prefix, DB lock error", nil)
-	}
-
-	// Set VPC prefix status to Deleting
-	status := cdbm.VpcPrefixStatusDeleting
-	statusMsg := "VPC prefix deletion successfully initiated on Site"
-	_, err = vpDAO.Update(ctx, tx, cdbm.VpcPrefixUpdateInput{VpcPrefixID: vpcPrefix.ID, Status: &status})
-	if err != nil {
-		logger.Error().Err(err).Msg("error setting VPC prefix status to deleting")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update VPC prefix status, DB error", nil)
-	}
-
 	sdDAO := cdbm.NewStatusDetailDAO(dsh.dbSession)
-	_, err = sdDAO.CreateFromParams(ctx, tx, vpcPrefix.ID.String(), status, &statusMsg)
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail for VPC prefix")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create VPC prefix status detail, DB error", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dsh.scp.GetClientByID(vpcPrefix.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	// Prepare the delete/release request workflow object
-	deleteVpcPrefixRequest := &cwssaws.VpcPrefixDeletionRequest{
-		Id: &cwssaws.VpcPrefixId{Value: vpcPrefix.ID.String()},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:        "vpc-prefix-delete-" + vpcPrefix.ID.String(),
-		TaskQueue: queue.SiteTaskQueue,
-	}
-
-	logger.Info().Msg("triggering VPC prefix delete workflow")
-
-	// Trigger Site workflow to delete VPC prefix VPC prefix
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteVpcPrefix", deleteVpcPrefixRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to delete VPC prefix")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start sync workflow to delete VPC prefix on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete VPC prefix workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-			// Reset error to nil
-			err = nil
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	err = cdb.WithTx(ctx, dsh.dbSession, func(tx *cdb.Tx) error {
+		// acquire an advisory lock on the parent IP block ID on which there could be contention
+		// this lock is released when the transaction commits or rollsback
+		derr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(vpcPrefix.IPBlockID.String()), nil)
+		if derr != nil {
+			// TODO: Add a retry here
+			logger.Error().Err(derr).Msg("Failed to acquire advisory lock on ipblock")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete VPC Prefix, DB lock error", nil)
 		}
-	}
 
-	// Check if err is still nil now that we've handled any skippable errors.
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || ctx.Err() != nil {
+		// Set VPC prefix status to Deleting
+		status := cdbm.VpcPrefixStatusDeleting
+		statusMsg := "VPC prefix deletion successfully initiated on Site"
+		_, derr = vpDAO.Update(ctx, tx, cdbm.VpcPrefixUpdateInput{VpcPrefixID: vpcPrefix.ID, Status: &status})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error setting VPC prefix status to deleting")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update VPC prefix status, DB error", nil)
+		}
 
-			logger.Error().Err(err).Msg("failed to delete VPC Prefix, timeout occurred executing workflow on Site.")
+		_, derr = sdDAO.CreateFromParams(ctx, tx, vpcPrefix.ID.String(), status, &statusMsg)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail for VPC prefix")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create VPC prefix status detail, DB error", nil)
+		}
 
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
+		// Get the temporal client for the site we are working with.
+		stc, derr := dsh.scp.GetClientByID(vpcPrefix.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
 
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing delete VPC prefix workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to terminate Temporal workflow for deleting VPC prefix")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous VPC prefix deletion workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		// Prepare the delete/release request workflow object
+		deleteVpcPrefixRequest := &cwssaws.VpcPrefixDeletionRequest{
+			Id: &cwssaws.VpcPrefixId{Value: vpcPrefix.ID.String()},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:        "vpc-prefix-delete-" + vpcPrefix.ID.String(),
+			TaskQueue: queue.SiteTaskQueue,
+		}
+
+		logger.Info().Msg("triggering VPC prefix delete workflow")
+
+		// Trigger Site workflow to delete VPC prefix VPC prefix
+		we, derr := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteVpcPrefix", deleteVpcPrefixRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to delete VPC prefix")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to start sync workflow to delete VPC prefix on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete VPC prefix workflow")
+
+		// Execute the workflow synchronously
+		wferr := we.Get(ctx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+				// Reset error to nil
+				wferr = nil
+			}
+		}
+
+		// Check if wferr is still nil now that we've handled any skippable errors.
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || ctx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to delete VPC Prefix, timeout occurred executing workflow on Site.")
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "VPCPrefix", "Delete")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "VPC Prefix delete workflow timed out", nil)
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous delete VPC prefix workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to delete VPC Prefix, timeout occurred executing workflow on Site: %s", err), nil)
+			code, uerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uerr).Msg("failed to delete VPC Prefix, timeout occurred executing workflow on Site.")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to delete VPC prefix on Site: %s", uerr), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to delete VPC Prefix, timeout occurred executing workflow on Site.")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to delete VPC prefix on Site: %s", err), nil)
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete VPC prefix workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete VPC prefix workflow")
-
-	// Commit the DB transaction after the synchronous workflow has completed without error
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing VPC prefix transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete VPC Prefix, DB transaction error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete VPC Prefix, DB transaction error")
 	}
-
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
 
 	// Create response
 	logger.Info().Msg("finishing API handler")

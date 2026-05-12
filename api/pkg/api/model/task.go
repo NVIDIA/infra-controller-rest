@@ -21,17 +21,17 @@ import (
 	"fmt"
 	"time"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
-var ProtoToAPIRackTaskStatusName = map[rlav1.TaskStatus]string{
-	rlav1.TaskStatus_TASK_STATUS_UNKNOWN:    "Unknown",
-	rlav1.TaskStatus_TASK_STATUS_PENDING:    "Pending",
-	rlav1.TaskStatus_TASK_STATUS_RUNNING:    "Running",
-	rlav1.TaskStatus_TASK_STATUS_COMPLETED:  "Succeeded",
-	rlav1.TaskStatus_TASK_STATUS_FAILED:     "Failed",
-	rlav1.TaskStatus_TASK_STATUS_TERMINATED: "Terminated",
-	rlav1.TaskStatus_TASK_STATUS_WAITING:    "Waiting",
+var ProtoToAPIRackTaskStatusName = map[flowv1.TaskStatus]string{
+	flowv1.TaskStatus_TASK_STATUS_UNKNOWN:    "Unknown",
+	flowv1.TaskStatus_TASK_STATUS_PENDING:    "Pending",
+	flowv1.TaskStatus_TASK_STATUS_RUNNING:    "Running",
+	flowv1.TaskStatus_TASK_STATUS_COMPLETED:  "Succeeded",
+	flowv1.TaskStatus_TASK_STATUS_FAILED:     "Failed",
+	flowv1.TaskStatus_TASK_STATUS_TERMINATED: "Terminated",
+	flowv1.TaskStatus_TASK_STATUS_WAITING:    "Waiting",
 }
 
 // APIRackTask is the API response model for a rack task (OpenAPI schema RackTask).
@@ -46,7 +46,7 @@ type APIRackTask struct {
 	Updated     time.Time  `json:"updated"`
 }
 
-func (t *APIRackTask) FromProto(task *rlav1.Task) {
+func (t *APIRackTask) FromProto(task *flowv1.Task) {
 	if task == nil {
 		return
 	}
@@ -68,7 +68,7 @@ func (t *APIRackTask) FromProto(task *rlav1.Task) {
 	t.Updated = task.GetUpdatedAt().AsTime().UTC()
 }
 
-func NewAPIRackTask(task *rlav1.Task) *APIRackTask {
+func NewAPIRackTask(task *flowv1.Task) *APIRackTask {
 	t := &APIRackTask{}
 	t.FromProto(task)
 	return t

@@ -28,8 +28,103 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 )
+
+func TestExpectedPowerShelf_FromProto(t *testing.T) {
+	id := uuid.New()
+	rackID := "rack-1"
+	name := "ps-1"
+	manufacturer := "ACME"
+	model := "PS1"
+	description := "primary"
+	firmware := "1.2.3"
+	var slot, trayIdx, host int32 = 1, 2, 3
+
+	t.Run("nil proto leaves receiver unchanged", func(t *testing.T) {
+		eps := &ExpectedPowerShelf{ID: id, BmcMacAddress: "aa:bb"}
+		eps.FromProto(nil)
+
+		assert.Equal(t, id, eps.ID)
+		assert.Equal(t, "aa:bb", eps.BmcMacAddress)
+	})
+
+	t.Run("invalid id leaves eps.ID unchanged", func(t *testing.T) {
+		eps := &ExpectedPowerShelf{ID: id}
+		eps.FromProto(&cwssaws.ExpectedPowerShelf{
+			ExpectedPowerShelfId: &cwssaws.UUID{Value: "not-a-uuid"},
+			BmcMacAddress:        "aa:bb",
+		})
+
+		assert.Equal(t, id, eps.ID)
+		assert.Equal(t, "aa:bb", eps.BmcMacAddress)
+	})
+
+	t.Run("populates all proto fields", func(t *testing.T) {
+		eps := &ExpectedPowerShelf{}
+		eps.FromProto(&cwssaws.ExpectedPowerShelf{
+			ExpectedPowerShelfId: &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress:        "aa:bb:cc:dd:ee:ff",
+			ShelfSerialNumber:    "SSN-1",
+			BmcIpAddress:         "10.0.0.1",
+			RackId:               &cwssaws.RackId{Id: rackID},
+			Name:                 &name,
+			Manufacturer:         &manufacturer,
+			Model:                &model,
+			Description:          &description,
+			FirmwareVersion:      &firmware,
+			SlotId:               &slot,
+			TrayIdx:              &trayIdx,
+			HostId:               &host,
+			Metadata: &cwssaws.Metadata{
+				Labels: []*cwssaws.Label{
+					{Key: "env", Value: db.GetStrPtr("prod")},
+				},
+			},
+		})
+
+		assert.Equal(t, id, eps.ID)
+		assert.Equal(t, "aa:bb:cc:dd:ee:ff", eps.BmcMacAddress)
+		assert.Equal(t, "SSN-1", eps.ShelfSerialNumber)
+		if assert.NotNil(t, eps.BmcIpAddress) {
+			assert.Equal(t, "10.0.0.1", *eps.BmcIpAddress)
+		}
+		if assert.NotNil(t, eps.RackID) {
+			assert.Equal(t, rackID, *eps.RackID)
+		}
+		assert.Equal(t, &name, eps.Name)
+		assert.Equal(t, &manufacturer, eps.Manufacturer)
+		assert.Equal(t, &model, eps.Model)
+		assert.Equal(t, &description, eps.Description)
+		assert.Equal(t, &firmware, eps.FirmwareVersion)
+		assert.Equal(t, &slot, eps.SlotID)
+		assert.Equal(t, &trayIdx, eps.TrayIdx)
+		assert.Equal(t, &host, eps.HostID)
+		assert.Equal(t, map[string]string{"env": "prod"}, eps.Labels)
+	})
+
+	t.Run("empty BmcIpAddress yields nil pointer", func(t *testing.T) {
+		eps := &ExpectedPowerShelf{BmcIpAddress: db.GetStrPtr("stale")}
+		eps.FromProto(&cwssaws.ExpectedPowerShelf{
+			ExpectedPowerShelfId: &cwssaws.UUID{Value: id.String()},
+			BmcIpAddress:         "",
+		})
+
+		assert.Nil(t, eps.BmcIpAddress)
+	})
+
+	t.Run("nil RackId clears eps.RackID", func(t *testing.T) {
+		stale := "stale-rack"
+		eps := &ExpectedPowerShelf{RackID: &stale}
+		eps.FromProto(&cwssaws.ExpectedPowerShelf{
+			ExpectedPowerShelfId: &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress:        "aa:bb",
+		})
+
+		assert.Nil(t, eps.RackID)
+	})
+}
 
 // reset the tables needed for ExpectedPowerShelf tests
 func testExpectedPowerShelfSetupSchema(t *testing.T, dbSession *db.Session) {

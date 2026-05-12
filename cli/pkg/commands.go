@@ -171,12 +171,23 @@ func buildTagSubcommands(spec *Spec, ops []resolvedOp) []*cli.Command {
 		}
 	}
 
-	seen := make(map[string]bool)
+	// Resolve action-name collisions symmetrically: when two or more
+	// operations under the same tag collapse to the same short action (e.g.
+	// `get-current-infrastructure-provider` and
+	// `get-current-infrastructure-provider-stats` both -> `get`), expand ALL
+	// of them to their full OperationID. The previous "first one wins" pass
+	// produced a different command surface depending on the order of map
+	// iteration in collectOperations, which depended on whether the user's
+	// config file had been loaded -- the same binary exposed different
+	// commands in the two states.
+	actionCounts := make(map[string]int)
+	for _, op := range primaryOps {
+		actionCounts[op.action]++
+	}
 	for i := range primaryOps {
-		if seen[primaryOps[i].action] {
+		if actionCounts[primaryOps[i].action] > 1 {
 			primaryOps[i].action = primaryOps[i].op.OperationID
 		}
-		seen[primaryOps[i].action] = true
 	}
 
 	var cmds []*cli.Command

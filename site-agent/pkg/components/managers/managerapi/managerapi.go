@@ -64,7 +64,7 @@ type ManagerAPI struct {
 	SKU                    SKUInterface
 	DpuExtensionService    DpuExtensionServiceInterface
 	NVLinkLogicalPartition NVLinkLogicalPartitionInterface
-	RLA                    RLAInterface
+	Flow                   FlowInterface
 }
 
 // ManagerConf - Conf struct

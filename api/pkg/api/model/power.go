@@ -22,7 +22,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 const (
@@ -76,8 +76,8 @@ type APIUpdatePowerStateResponse struct {
 	TaskIDs []string `json:"taskIds"`
 }
 
-// FromProto converts an RLA SubmitTaskResponse to an APIUpdatePowerStateResponse
-func (r *APIUpdatePowerStateResponse) FromProto(resp *rlav1.SubmitTaskResponse) {
+// FromProto converts an Flow SubmitTaskResponse to an APIUpdatePowerStateResponse
+func (r *APIUpdatePowerStateResponse) FromProto(resp *flowv1.SubmitTaskResponse) {
 	if resp == nil {
 		r.TaskIDs = []string{}
 		return
@@ -88,8 +88,8 @@ func (r *APIUpdatePowerStateResponse) FromProto(resp *rlav1.SubmitTaskResponse) 
 	}
 }
 
-// NewAPIUpdatePowerStateResponse creates an APIUpdatePowerStateResponse from an RLA SubmitTaskResponse
-func NewAPIUpdatePowerStateResponse(resp *rlav1.SubmitTaskResponse) *APIUpdatePowerStateResponse {
+// NewAPIUpdatePowerStateResponse creates an APIUpdatePowerStateResponse from an Flow SubmitTaskResponse
+func NewAPIUpdatePowerStateResponse(resp *flowv1.SubmitTaskResponse) *APIUpdatePowerStateResponse {
 	r := &APIUpdatePowerStateResponse{}
 	r.FromProto(resp)
 	return r

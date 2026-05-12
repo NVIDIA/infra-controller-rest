@@ -35,7 +35,11 @@ env:
 
 jobs:
   build-binaries:
-    name: Build Binaries
+    # Display name preserves the old "./rla" path label so existing
+    # branch-protection required-check names ("Build Binaries (rla, ./rla)")
+    # keep matching after the rla -> flow directory rename. Drop this hack
+    # once branch protection is updated.
+    name: Build Binaries (${{ matrix.name }}, ${{ matrix.name == 'rla' && './rla' || matrix.path }})
     runs-on: ${{ inputs.runner }}
     strategy:
       fail-fast: false
@@ -58,7 +62,7 @@ jobs:
           - name: credsmgr
             path: ./cert-manager/cmd/credsmgr
           - name: rla
-            path: ./rla
+            path: ./flow
           - name: psm
             path: ./powershelf-manager
           - name: nsm

@@ -28,8 +28,111 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 )
+
+func TestExpectedMachine_FromProto(t *testing.T) {
+	id := uuid.New()
+	siteID := uuid.New()
+	linkedMachineID := uuid.New().String()
+	skuID := "sku-1"
+	rackID := "rack-1"
+	name := "machine-1"
+	manufacturer := "ACME"
+	model := "M1"
+	description := "primary"
+	firmware := "1.2.3"
+	bmcIP := "10.0.0.1"
+	var slot, trayIdx, host int32 = 1, 2, 3
+
+	t.Run("nil proto leaves receiver unchanged", func(t *testing.T) {
+		em := &ExpectedMachine{ID: id, SiteID: siteID, BmcMacAddress: "aa:bb"}
+		em.FromProto(nil, nil)
+
+		assert.Equal(t, id, em.ID)
+		assert.Equal(t, siteID, em.SiteID)
+		assert.Equal(t, "aa:bb", em.BmcMacAddress)
+	})
+
+	t.Run("invalid id leaves em.ID unchanged", func(t *testing.T) {
+		em := &ExpectedMachine{ID: id}
+		em.FromProto(&cwssaws.ExpectedMachine{
+			Id:            &cwssaws.UUID{Value: "not-a-uuid"},
+			BmcMacAddress: "aa:bb",
+		}, nil)
+
+		assert.Equal(t, id, em.ID)
+		assert.Equal(t, "aa:bb", em.BmcMacAddress)
+	})
+
+	t.Run("populates all proto fields", func(t *testing.T) {
+		em := &ExpectedMachine{}
+		em.FromProto(&cwssaws.ExpectedMachine{
+			Id:                       &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress:            "aa:bb:cc:dd:ee:ff",
+			ChassisSerialNumber:      "CSN-1",
+			SkuId:                    &skuID,
+			FallbackDpuSerialNumbers: []string{"dpu-1", "dpu-2"},
+			BmcIpAddress:             &bmcIP,
+			RackId:                   &cwssaws.RackId{Id: rackID},
+			Name:                     &name,
+			Manufacturer:             &manufacturer,
+			Model:                    &model,
+			Description:              &description,
+			FirmwareVersion:          &firmware,
+			SlotId:                   &slot,
+			TrayIdx:                  &trayIdx,
+			HostId:                   &host,
+			Metadata: &cwssaws.Metadata{
+				Labels: []*cwssaws.Label{
+					{Key: "env", Value: db.GetStrPtr("prod")},
+				},
+			},
+		}, &linkedMachineID)
+
+		assert.Equal(t, id, em.ID)
+		assert.Equal(t, "aa:bb:cc:dd:ee:ff", em.BmcMacAddress)
+		assert.Equal(t, "CSN-1", em.ChassisSerialNumber)
+		assert.Equal(t, &skuID, em.SkuID)
+		assert.Equal(t, &linkedMachineID, em.MachineID)
+		assert.Equal(t, []string{"dpu-1", "dpu-2"}, em.FallbackDpuSerialNumbers)
+		assert.Equal(t, &bmcIP, em.BmcIpAddress)
+		if assert.NotNil(t, em.RackID) {
+			assert.Equal(t, rackID, *em.RackID)
+		}
+		assert.Equal(t, &name, em.Name)
+		assert.Equal(t, &manufacturer, em.Manufacturer)
+		assert.Equal(t, &model, em.Model)
+		assert.Equal(t, &description, em.Description)
+		assert.Equal(t, &firmware, em.FirmwareVersion)
+		assert.Equal(t, &slot, em.SlotID)
+		assert.Equal(t, &trayIdx, em.TrayIdx)
+		assert.Equal(t, &host, em.HostID)
+		assert.Equal(t, map[string]string{"env": "prod"}, em.Labels)
+	})
+
+	t.Run("nil linkedMachineID leaves MachineID nil", func(t *testing.T) {
+		em := &ExpectedMachine{}
+		em.FromProto(&cwssaws.ExpectedMachine{
+			Id:            &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress: "aa:bb",
+		}, nil)
+
+		assert.Nil(t, em.MachineID)
+	})
+
+	t.Run("nil RackId clears em.RackID", func(t *testing.T) {
+		stale := "stale-rack"
+		em := &ExpectedMachine{RackID: &stale}
+		em.FromProto(&cwssaws.ExpectedMachine{
+			Id:            &cwssaws.UUID{Value: id.String()},
+			BmcMacAddress: "aa:bb",
+		}, nil)
+
+		assert.Nil(t, em.RackID)
+	})
+}
 
 // reset the tables needed for ExpectedMachine tests
 func testExpectedMachineSetupSchema(t *testing.T, dbSession *db.Session) {

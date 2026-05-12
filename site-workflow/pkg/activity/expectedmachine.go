@@ -33,7 +33,7 @@ import (
 
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	cclient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
@@ -257,14 +257,14 @@ func NewManageExpectedMachineInventory(siteID uuid.UUID, nicoCoreAtomicClient *c
 // ManageExpectedMachine is an activity wrapper for Expected Machine management
 type ManageExpectedMachine struct {
 	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	RlaAtomicClient      *cclient.RlaAtomicClient
+	FlowAtomicClient     *cclient.FlowAtomicClient
 }
 
 // NewManageExpectedMachine returns a new ManageExpectedMachine client
-func NewManageExpectedMachine(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedMachine {
+func NewManageExpectedMachine(nicoClient *cclient.NICoCoreAtomicClient, flowClient *cclient.FlowAtomicClient) ManageExpectedMachine {
 	return ManageExpectedMachine{
 		NICoCoreAtomicClient: nicoClient,
-		RlaAtomicClient:      rlaClient,
+		FlowAtomicClient:     flowClient,
 	}
 }
 
@@ -437,7 +437,7 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnSite(ctx context.Conte
 	return response, nil
 }
 
-// CreateExpectedMachineOnRLA creates an Expected Machine as a component in RLA via AddComponent
+// CreateExpectedMachineOnRLA creates an Expected Machine as a component in Flow via AddComponent
 func (mem *ManageExpectedMachine) CreateExpectedMachineOnRLA(ctx context.Context, request *cwssaws.ExpectedMachine) error {
 	logger := log.With().Str("Activity", "CreateExpectedMachineOnRLA").Logger()
 
@@ -445,25 +445,25 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnRLA(ctx context.Context
 
 	// Validate request
 	if request == nil {
-		return temporal.NewNonRetryableApplicationError("received empty create Expected Machine request for RLA", swe.ErrTypeInvalidRequest, errors.New("nil request"))
+		return temporal.NewNonRetryableApplicationError("received empty create Expected Machine request for Flow", swe.ErrTypeInvalidRequest, errors.New("nil request"))
 	}
 
-	// If RLA client is not configured, skip gracefully
-	if mem.RlaAtomicClient == nil {
-		logger.Warn().Msg("RLA client not configured, skipping RLA component creation")
+	// If Flow client is not configured, skip gracefully
+	if mem.FlowAtomicClient == nil {
+		logger.Warn().Msg("Flow client not configured, skipping Flow component creation")
 		return nil
 	}
 
-	rlaClient := mem.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		logger.Warn().Msg("RLA client not connected, skipping RLA component creation")
+	flowClient := mem.FlowAtomicClient.GetClient()
+	if flowClient == nil {
+		logger.Warn().Msg("Flow client not connected, skipping Flow component creation")
 		return nil
 	}
 
 	component := expectedMachineToRLAComponent(request)
-	_, err := rlaClient.Rla().AddComponent(ctx, &rlav1.AddComponentRequest{Component: component})
+	_, err := flowClient.Flow().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create Expected Machine component on RLA")
+		logger.Warn().Err(err).Msg("Failed to create Expected Machine component on Flow")
 		return swe.WrapErr(err)
 	}
 
@@ -471,35 +471,35 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnRLA(ctx context.Context
 	return nil
 }
 
-// CreateExpectedMachinesOnRLA creates multiple Expected Machines as components in RLA via AddComponent
+// CreateExpectedMachinesOnRLA creates multiple Expected Machines as components in Flow via AddComponent
 func (mem *ManageExpectedMachine) CreateExpectedMachinesOnRLA(ctx context.Context, request *cwssaws.BatchExpectedMachineOperationRequest) error {
 	logger := log.With().Str("Activity", "CreateExpectedMachinesOnRLA").Logger()
 
 	logger.Info().Msg("Starting activity")
 
-	// If RLA client is not configured, skip gracefully
-	if mem.RlaAtomicClient == nil {
-		logger.Warn().Msg("RLA client not configured, skipping RLA component creation")
+	// If Flow client is not configured, skip gracefully
+	if mem.FlowAtomicClient == nil {
+		logger.Warn().Msg("Flow client not configured, skipping Flow component creation")
 		return nil
 	}
 
-	rlaClient := mem.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		logger.Warn().Msg("RLA client not connected, skipping RLA component creation")
+	flowClient := mem.FlowAtomicClient.GetClient()
+	if flowClient == nil {
+		logger.Warn().Msg("Flow client not connected, skipping Flow component creation")
 		return nil
 	}
 
-	rla := rlaClient.Rla()
+	flow := flowClient.Flow()
 	machines := request.GetExpectedMachines().GetExpectedMachines()
 	successes := 0
 	failures := 0
 
-	// TODO(chet): Work with RLA team to add batch support so we don't have to loop here.
+	// TODO(chet): Work with Flow team to add batch support so we don't have to loop here.
 	for _, machine := range machines {
 		component := expectedMachineToRLAComponent(machine)
-		_, err := rla.AddComponent(ctx, &rlav1.AddComponentRequest{Component: component})
+		_, err := flow.AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 		if err != nil {
-			logger.Warn().Err(err).Str("ID", machine.GetId().GetValue()).Msg("Failed to create Expected Machine component on RLA")
+			logger.Warn().Err(err).Str("ID", machine.GetId().GetValue()).Msg("Failed to create Expected Machine component on Flow")
 			failures++
 		} else {
 			successes++
@@ -515,17 +515,17 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnRLA(ctx context.Contex
 	return nil
 }
 
-// expectedMachineToRLAComponent converts a NICo ExpectedMachine proto to an RLA Component proto
-func expectedMachineToRLAComponent(em *cwssaws.ExpectedMachine) *rlav1.Component {
-	component := &rlav1.Component{
-		Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-		Info: &rlav1.DeviceInfo{
-			Id:           &rlav1.UUID{Id: em.GetId().GetValue()},
+// expectedMachineToRLAComponent converts a NICo ExpectedMachine proto to an Flow Component proto
+func expectedMachineToRLAComponent(em *cwssaws.ExpectedMachine) *flowv1.Component {
+	component := &flowv1.Component{
+		Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+		Info: &flowv1.DeviceInfo{
+			Id:           &flowv1.UUID{Id: em.GetId().GetValue()},
 			SerialNumber: em.GetChassisSerialNumber(),
 		},
-		Bmcs: []*rlav1.BMCInfo{
+		Bmcs: []*flowv1.BMCInfo{
 			{
-				Type:       rlav1.BMCType_BMC_TYPE_HOST,
+				Type:       flowv1.BMCType_BMC_TYPE_HOST,
 				MacAddress: em.GetBmcMacAddress(),
 			},
 		},
@@ -553,7 +553,7 @@ func expectedMachineToRLAComponent(em *cwssaws.ExpectedMachine) *rlav1.Component
 
 	// Rack position
 	if em.SlotId != nil || em.TrayIdx != nil || em.HostId != nil {
-		pos := &rlav1.RackPosition{}
+		pos := &flowv1.RackPosition{}
 		if em.SlotId != nil {
 			pos.SlotId = *em.SlotId
 		}
@@ -567,7 +567,7 @@ func expectedMachineToRLAComponent(em *cwssaws.ExpectedMachine) *rlav1.Component
 	}
 
 	if rackID := em.GetRackId().GetId(); rackID != "" {
-		component.RackId = &rlav1.UUID{Id: rackID}
+		component.RackId = &flowv1.UUID{Id: rackID}
 	}
 
 	return component

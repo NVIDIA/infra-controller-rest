@@ -39,41 +39,41 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 // Errors
 var (
-	ErrRlaClientInvalidAddress    = errors.New("RlaClient: invalid address")
-	ErrRlaClientInvalidDialOpts   = errors.New("RlaClient: invalid dial options")
-	ErrRlaClientInvalidSecureOpts = errors.New("RlaClient: invalid secure options")
-	ErrRlaClientInvalidServerCA   = errors.New("RlaClient: invalid server CA")
-	ErrRlaClientInvalidClientCA   = errors.New("RlaClient: invalid client CA")
-	ErrRlaClientInvalidClientKey  = errors.New("RlaClient: invalid client key")
-	ErrRlaClientInvalidClientCert = errors.New("RlaClient: invalid client cert")
+	ErrFlowClientInvalidAddress    = errors.New("FlowClient: invalid address")
+	ErrFlowClientInvalidDialOpts   = errors.New("FlowClient: invalid dial options")
+	ErrFlowClientInvalidSecureOpts = errors.New("FlowClient: invalid secure options")
+	ErrFlowClientInvalidServerCA   = errors.New("FlowClient: invalid server CA")
+	ErrFlowClientInvalidClientCA   = errors.New("FlowClient: invalid client CA")
+	ErrFlowClientInvalidClientKey  = errors.New("FlowClient: invalid client key")
+	ErrFlowClientInvalidClientCert = errors.New("FlowClient: invalid client cert")
 )
 
 // SecureOptions is the enum for the secure options
-type RlaClientSecureOptions int
+type FlowClientSecureOptions int
 
 const (
-	// RlaInsecureGrpc is the insecure dial option
-	RlaInsecureGrpc RlaClientSecureOptions = iota
-	// RlaServerTLS is the secure dial option for server tls
-	RlaServerTLS
-	// RlaMutualTLS for mutual tls
-	RlaMutualTLS
+	// FlowInsecureGrpc is the insecure dial option
+	FlowInsecureGrpc FlowClientSecureOptions = iota
+	// FlowServerTLS is the secure dial option for server tls
+	FlowServerTLS
+	// FlowMutualTLS for mutual tls
+	FlowMutualTLS
 
 	// defaultCheckCertificateIntervalSeconds is the default interval to check for certificate changes
-	defaultCheckRlaCertificateIntervalSeconds = 15 * 60 // 15 minutes in seconds
+	defaultCheckFlowCertificateIntervalSeconds = 15 * 60 // 15 minutes in seconds
 )
 
-// RlaClientConfig is the data structure for the client configuration
-type RlaClientConfig struct {
+// FlowClientConfig is the data structure for the client configuration
+type FlowClientConfig struct {
 	// The address of the server <host>:<port>
 	Address string
 	// Secure flag
-	Secure RlaClientSecureOptions
+	Secure FlowClientSecureOptions
 	// Skip Server Auth
 	SkipServerAuth bool
 	// The TLS certificate for the server
@@ -86,40 +86,40 @@ type RlaClientConfig struct {
 	ClientMetrics Metrics
 }
 
-// NewRlaClient creates a new RlaClient
-func NewRlaClient(config *RlaClientConfig) (client *RlaClient, err error) {
+// NewFlowClient creates a new FlowClient
+func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 	// Validate the config
 	if config.Address == "" {
-		log.Error().Err(ErrRlaClientInvalidAddress).Msg("RlaClient: no address provided")
-		return nil, ErrRlaClientInvalidAddress
+		log.Error().Err(ErrFlowClientInvalidAddress).Msg("FlowClient: no address provided")
+		return nil, ErrFlowClientInvalidAddress
 	}
-	client = &RlaClient{}
+	client = &FlowClient{}
 
 	switch config.Secure {
-	case RlaInsecureGrpc:
+	case FlowInsecureGrpc:
 		// No secure options
 		// Default option
 		// connect with plain TCP
-		log.Debug().Msg("RlaClient: insecure gRPC")
+		log.Debug().Msg("FlowClient: insecure gRPC")
 		client.dialOpts = append(client.dialOpts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	case RlaServerTLS:
-		log.Debug().Msg("RlaClient: server TLS")
+	case FlowServerTLS:
+		log.Debug().Msg("FlowClient: server TLS")
 		// Validate the config contains server ca path
 		if config.ServerCAPath == "" {
-			log.Error().Err(ErrRlaClientInvalidServerCA).Msg("RlaClient: no server ca path provided")
-			return nil, ErrRlaClientInvalidServerCA
+			log.Error().Err(ErrFlowClientInvalidServerCA).Msg("FlowClient: no server ca path provided")
+			return nil, ErrFlowClientInvalidServerCA
 		}
 		if config.SkipServerAuth {
 			// Server TLS
 			// connect with TLS but not mutual TLS
-			log.Info().Msg("RlaClient: skipping server auth in TLS ( Warn: This shouldn't be used in Prod)")
+			log.Info().Msg("FlowClient: skipping server auth in TLS ( Warn: This shouldn't be used in Prod)")
 			tlsConfig := &tls.Config{
 				InsecureSkipVerify: true,
 			}
 			// Load the server ca
 			_, err := credentials.NewClientTLSFromFile(config.ServerCAPath, "")
 			if err != nil {
-				log.Error().Err(err).Msg("RlaClient: failed to load server ca")
+				log.Error().Err(err).Msg("FlowClient: failed to load server ca")
 				return nil, err
 			}
 
@@ -133,32 +133,32 @@ func NewRlaClient(config *RlaClientConfig) (client *RlaClient, err error) {
 			// Load the server ca
 			creds, err := credentials.NewClientTLSFromFile(config.ServerCAPath, "")
 			if err != nil {
-				log.Error().Err(err).Msg("RlaClient: failed to load server ca")
+				log.Error().Err(err).Msg("FlowClient: failed to load server ca")
 				return nil, err
 			}
 			// Append the dial option
 			client.dialOpts = append(client.dialOpts, grpc.WithTransportCredentials(creds))
 		}
-	case RlaMutualTLS:
+	case FlowMutualTLS:
 		// Mutual TLS
 		// connect with mutual TLS
-		log.Debug().Msg("RlaClient: mutual TLS")
+		log.Debug().Msg("FlowClient: mutual TLS")
 		// 1. Load the client certificates
 		clientCert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
 		if err != nil {
-			log.Error().Err(err).Msg("RlaClient: failed to load client certificates")
+			log.Error().Err(err).Msg("FlowClient: failed to load client certificates")
 			return nil, err
 		}
 		// 2. Load the Trust chain, root ca
 		cabytes, err := os.ReadFile(config.ServerCAPath)
 		if err != nil {
-			log.Error().Err(err).Msg("RlaClient: failed to load Root CA certificates")
+			log.Error().Err(err).Msg("FlowClient: failed to load Root CA certificates")
 
 			return nil, err
 		}
 		capool := x509.NewCertPool()
 		if !capool.AppendCertsFromPEM(cabytes) {
-			return nil, fmt.Errorf("RlaClient: failed to append ca certificates to ca pool")
+			return nil, fmt.Errorf("FlowClient: failed to append ca certificates to ca pool")
 		}
 		mutualTLSConfig := &tls.Config{
 			Certificates: []tls.Certificate{clientCert},
@@ -170,8 +170,8 @@ func NewRlaClient(config *RlaClientConfig) (client *RlaClient, err error) {
 		client.dialOpts = append(client.dialOpts, grpc.WithTransportCredentials(creds))
 
 	default:
-		log.Error().Err(ErrRlaClientInvalidSecureOpts).Msg("RlaClient: invalid dial options")
-		return nil, ErrRlaClientInvalidSecureOpts
+		log.Error().Err(ErrFlowClientInvalidSecureOpts).Msg("FlowClient: invalid dial options")
+		return nil, ErrFlowClientInvalidSecureOpts
 	}
 
 	// configure interceptors
@@ -197,41 +197,41 @@ func NewRlaClient(config *RlaClientConfig) (client *RlaClient, err error) {
 	// Create the client connection
 	client.conn, err = grpc.NewClient(config.Address, client.dialOpts...)
 	if err != nil {
-		log.Error().Err(err).Msg("RlaClient: failed to initialize gRPC client")
+		log.Error().Err(err).Msg("FlowClient: failed to initialize gRPC client")
 		return nil, err
 	}
-	log.Info().Msg("RlaClient: gRPC client initialized")
+	log.Info().Msg("FlowClient: gRPC client initialized")
 
-	// Create RLA client
-	client.rla = rlav1.NewRLAClient(client.conn)
-	log.Info().Msg("RlaClient: client created")
+	// Create Flow client
+	client.flow = flowv1.NewRLAClient(client.conn)
+	log.Info().Msg("FlowClient: client created")
 
 	// Check the version of the server
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(5000)*time.Millisecond))
 	defer cancel()
-	_, err = client.rla.Version(ctx, &rlav1.VersionRequest{})
+	_, err = client.flow.Version(ctx, &flowv1.VersionRequest{})
 	if err != nil {
-		log.Error().Err(err).Msg("RlaClient: failed to get version from server")
-		return nil, fmt.Errorf("RlaClient: failed to get version from server: %w", err)
+		log.Error().Err(err).Msg("FlowClient: failed to get version from server")
+		return nil, fmt.Errorf("FlowClient: failed to get version from server: %w", err)
 	}
 
-	log.Info().Msg("RlaClient: successfully connected to server")
+	log.Info().Msg("FlowClient: successfully connected to server")
 
 	return client, nil
 }
 
-// RlaClient is the data structure for the client
-type RlaClient struct {
+// FlowClient is the data structure for the client
+type FlowClient struct {
 	// The client connection
 	conn *grpc.ClientConn
 	// gRPC dial options
 	dialOpts []grpc.DialOption
-	// rla client interface
-	rla rlav1.RLAClient
+	// flow client interface
+	flow flowv1.RLAClient
 }
 
 // Close gracefully shuts down the client's gRPC connection.
-func (cc *RlaClient) Close() error {
+func (cc *FlowClient) Close() error {
 	if cc.conn != nil {
 		// Close the grpc.ClientConn.
 		return cc.conn.Close()
@@ -239,33 +239,33 @@ func (cc *RlaClient) Close() error {
 	return nil
 }
 
-// Rla client getter
-func (client *RlaClient) Rla() rlav1.RLAClient {
-	return client.rla
+// Flow client getter
+func (client *FlowClient) Flow() flowv1.RLAClient {
+	return client.flow
 }
 
-// RlaAtomicClient is an atomic wrapper around the RlaClient
-type RlaAtomicClient struct {
-	Config  *RlaClientConfig
+// FlowAtomicClient is an atomic wrapper around the FlowClient
+type FlowAtomicClient struct {
+	Config  *FlowClientConfig
 	value   *atomic.Value
 	version atomic.Int64
 }
 
-// Version returns the current version of the RlaClient
-func (rac *RlaAtomicClient) Version() int64 {
+// Version returns the current version of the FlowClient
+func (rac *FlowAtomicClient) Version() int64 {
 	return rac.version.Load()
 }
 
-// SwapClient atomically replaces the current RlaClient with a new one,
+// SwapClient atomically replaces the current FlowClient with a new one,
 // returning the old client for the caller to manage.
-func (rac *RlaAtomicClient) SwapClient(newClient *RlaClient) *RlaClient {
+func (rac *FlowAtomicClient) SwapClient(newClient *FlowClient) *FlowClient {
 
 	// Atomically replace the current client with the new one and return the old client.
 	oldClientInterface := rac.value.Swap(newClient)
 
-	// Type assert the returned value to *RlaClient.
+	// Type assert the returned value to *FlowClient.
 	// This should always succeed if the correct type was stored initially.
-	oldClient, ok := oldClientInterface.(*RlaClient)
+	oldClient, ok := oldClientInterface.(*FlowClient)
 	if !ok {
 		log.Error().Msg("SwapClient: Type assertion failed for the old client")
 		return nil
@@ -277,44 +277,44 @@ func (rac *RlaAtomicClient) SwapClient(newClient *RlaClient) *RlaClient {
 	return oldClient
 }
 
-// GetClient returns the current version of Rla client from the atomic value.
+// GetClient returns the current version of Flow client from the atomic value.
 // Returns nil if the client has not been initialized yet.
-func (rac *RlaAtomicClient) GetClient() *RlaClient {
+func (rac *FlowAtomicClient) GetClient() *FlowClient {
 	v := rac.value.Load()
 	if v == nil {
 		return nil
 	}
-	client, _ := v.(*RlaClient)
+	client, _ := v.(*FlowClient)
 
 	return client
 }
 
-// GetRLAClient returns the underlying RLA gRPC client. Returns ErrClientNotConnected
+// GetRLAClient returns the underlying Flow gRPC client. Returns ErrClientNotConnected
 // if the client has not been initialized or is not currently connected.
-// Prefer this over GetClient() + manual nil-check + .Rla() at call sites.
-func (rac *RlaAtomicClient) GetRLAClient() (rlav1.RLAClient, error) {
+// Prefer this over GetClient() + manual nil-check + .Flow() at call sites.
+func (rac *FlowAtomicClient) GetRLAClient() (flowv1.RLAClient, error) {
 	client := rac.GetClient()
 	if client == nil {
 		return nil, ErrClientNotConnected
 	}
-	// It's true that NewRlaClient always populates the inner rla field, BUT,
-	// guard against zero-value RlaClient instances slipping in via direct
+	// It's true that NewFlowClient always populates the inner flow field, BUT,
+	// guard against zero-value FlowClient instances slipping in via direct
 	// construction. Without this, a misconstructed wrapper would yield (nil,
 	// nil) and break things.
-	rla := client.Rla()
-	if rla == nil {
+	flow := client.Flow()
+	if flow == nil {
 		return nil, ErrClientNotConnected
 	}
-	return rla, nil
+	return flow, nil
 }
 
 // CheckAndReloadCerts continuously monitors the TLS certificates for changes.
-// If a change is detected, it reinitializes the RlaClient with the new certificates to ensure secure communication.
-func (rac *RlaAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {
+// If a change is detected, it reinitializes the FlowClient with the new certificates to ensure secure communication.
+func (rac *FlowAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {
 	// Initialize contextual logger
-	logger := log.With().Str("Component", "Rla").Str("Operation", "CheckAndReloadCerts").Logger()
+	logger := log.With().Str("Component", "Flow").Str("Operation", "CheckAndReloadCerts").Logger()
 
-	ticker := time.NewTicker(getRlaCertificateCheckInterval())
+	ticker := time.NewTicker(getFlowCertificateCheckInterval())
 	defer ticker.Stop()
 
 	lastClientCertMD5, lastServerCAMD5 := initialClientCertMD5, initialServerCAMD5
@@ -327,7 +327,7 @@ func (rac *RlaAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSer
 		}
 
 		if changed {
-			newClient, err := NewRlaClient(rac.Config)
+			newClient, err := NewFlowClient(rac.Config)
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to reinitialize gRPC client with new certificates")
 				continue
@@ -337,14 +337,14 @@ func (rac *RlaAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSer
 			oldClient := rac.SwapClient(newClient)
 
 			// Delayed closure of the old client.
-			go func(clientToClose *RlaClient) {
+			go func(clientToClose *FlowClient) {
 				// Delay the closure to allow ongoing client requests to complete.
 				time.Sleep(10 * time.Second) // Adjust the delay as needed.
 
 				// Ensure the client exists and has a connection to close.
 				if clientToClose != nil {
 					if err := clientToClose.Close(); err != nil {
-						log.Error().Err(err).Msg("Error closing old RlaClient connection")
+						log.Error().Err(err).Msg("Error closing old FlowClient connection")
 					}
 				}
 			}(oldClient)
@@ -358,7 +358,7 @@ func (rac *RlaAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSer
 }
 
 // GetInitialCertMD5 retrieves the MD5 hash of the initial set of certificate that the client is Using
-func (rac *RlaAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []byte, err error) {
+func (rac *FlowAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []byte, err error) {
 	// Load and hash the client certificate
 	clientCertBytes, err := os.ReadFile(rac.Config.ClientCertPath)
 	if err != nil {
@@ -379,7 +379,7 @@ func (rac *RlaAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []by
 }
 
 // CheckCertificates checks if the client and server CA certificates have changed
-func (rac *RlaAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5 []byte) (bool, []byte, []byte, error) {
+func (rac *FlowAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5 []byte) (bool, []byte, []byte, error) {
 	// Load and hash the client certificate using os.ReadFile
 	clientCertBytes, err := os.ReadFile(rac.Config.ClientCertPath)
 	if err != nil {
@@ -402,10 +402,10 @@ func (rac *RlaAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5
 	return false, lastClientCertMD5, lastServerCAMD5, nil
 }
 
-// NewRlaAtomicClient creates a new RlaAtomicClient
-func NewRlaAtomicClient(config *RlaClientConfig) *RlaAtomicClient {
+// NewFlowAtomicClient creates a new FlowAtomicClient
+func NewFlowAtomicClient(config *FlowClientConfig) *FlowAtomicClient {
 	// Create the atomic value
-	atomicClient := &RlaAtomicClient{
+	atomicClient := &FlowAtomicClient{
 		Config:  config,
 		value:   &atomic.Value{},
 		version: atomic.Int64{},
@@ -414,7 +414,7 @@ func NewRlaAtomicClient(config *RlaClientConfig) *RlaAtomicClient {
 	return atomicClient
 }
 
-func getRlaCertificateCheckInterval() time.Duration {
+func getFlowCertificateCheckInterval() time.Duration {
 	var err error
 	if value, ok := os.LookupEnv("RLA_CERT_CHECK_INTERVAL"); ok {
 		if interval, err := strconv.Atoi(value); err == nil {
@@ -422,5 +422,5 @@ func getRlaCertificateCheckInterval() time.Duration {
 		}
 		log.Error().Err(err).Msg("Invalid RLA_CERT_CHECK_INTERVAL value; using default.")
 	}
-	return defaultCheckRlaCertificateIntervalSeconds * time.Second
+	return defaultCheckFlowCertificateIntervalSeconds * time.Second
 }

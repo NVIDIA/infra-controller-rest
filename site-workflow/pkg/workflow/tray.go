@@ -23,13 +23,13 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
-// GetTray is a workflow to get a tray by its UUID from RLA
-func GetTray(ctx workflow.Context, request *rlav1.GetComponentInfoByIDRequest) (*rlav1.GetComponentInfoResponse, error) {
+// GetTray is a workflow to get a tray by its UUID from Flow
+func GetTray(ctx workflow.Context, request *flowv1.GetComponentInfoByIDRequest) (*flowv1.GetComponentInfoResponse, error) {
 	logger := log.With().Str("Workflow", "Tray").Str("Action", "Get").Logger()
 	if request != nil && request.Id != nil {
 		logger = log.With().Str("Workflow", "Tray").Str("Action", "Get").Str("TrayID", request.Id.Id).Logger()
@@ -54,7 +54,7 @@ func GetTray(ctx workflow.Context, request *rlav1.GetComponentInfoByIDRequest) (
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var trayManager activity.ManageTray
-	var response rlav1.GetComponentInfoResponse
+	var response flowv1.GetComponentInfoResponse
 
 	err := workflow.ExecuteActivity(ctx, trayManager.GetTray, request).Get(ctx, &response)
 	if err != nil {
@@ -67,8 +67,8 @@ func GetTray(ctx workflow.Context, request *rlav1.GetComponentInfoByIDRequest) (
 	return &response, nil
 }
 
-// GetTrays is a workflow to get a list of trays from RLA with optional filters.
-func GetTrays(ctx workflow.Context, request *rlav1.GetComponentsRequest) (*rlav1.GetComponentsResponse, error) {
+// GetTrays is a workflow to get a list of trays from Flow with optional filters.
+func GetTrays(ctx workflow.Context, request *flowv1.GetComponentsRequest) (*flowv1.GetComponentsResponse, error) {
 	logger := log.With().Str("Workflow", "Tray").Str("Action", "GetAll").Logger()
 
 	logger.Info().Msg("starting workflow")
@@ -90,7 +90,7 @@ func GetTrays(ctx workflow.Context, request *rlav1.GetComponentsRequest) (*rlav1
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var trayManager activity.ManageTray
-	var response rlav1.GetComponentsResponse
+	var response flowv1.GetComponentsResponse
 
 	err := workflow.ExecuteActivity(ctx, trayManager.GetTrays, request).Get(ctx, &response)
 	if err != nil {

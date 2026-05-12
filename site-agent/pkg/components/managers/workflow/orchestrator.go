@@ -292,12 +292,12 @@ func workflowOrchestrator() error {
 	ManagerAccess.API.NVLinkLogicalPartition.RegisterSubscriber()
 	ManagerAccess.API.NVLinkLogicalPartition.RegisterPublisher()
 
-	// RLA Rack workflows (only registered if RLA is enabled)
-	if ManagerAccess.Conf.EB.RLA.Enabled {
-		if ManagerAccess.API.RLA != nil {
-			ManagerAccess.API.RLA.RegisterSubscriber()
+	// Flow Rack workflows (only registered if Flow is enabled)
+	if ManagerAccess.Conf.EB.Flow.Enabled {
+		if ManagerAccess.API.Flow != nil {
+			ManagerAccess.API.Flow.RegisterSubscriber()
 		} else {
-			log.Error().Msg("RLA: RLA is enabled in config but RLA manager is not initialized")
+			log.Error().Msg("Flow: Flow is enabled in config but Flow manager is not initialized")
 		}
 	}
 

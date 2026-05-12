@@ -33,7 +33,7 @@ import (
 
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
 	cclient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
@@ -254,14 +254,14 @@ func NewManageExpectedPowerShelfInventory(siteID uuid.UUID, nicoCoreAtomicClient
 // ManageExpectedPowerShelf is an activity wrapper for Expected Power Shelf management
 type ManageExpectedPowerShelf struct {
 	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	RlaAtomicClient      *cclient.RlaAtomicClient
+	FlowAtomicClient     *cclient.FlowAtomicClient
 }
 
 // NewManageExpectedPowerShelf returns a new ManageExpectedPowerShelf client
-func NewManageExpectedPowerShelf(nicoClient *cclient.NICoCoreAtomicClient, rlaClient *cclient.RlaAtomicClient) ManageExpectedPowerShelf {
+func NewManageExpectedPowerShelf(nicoClient *cclient.NICoCoreAtomicClient, flowClient *cclient.FlowAtomicClient) ManageExpectedPowerShelf {
 	return ManageExpectedPowerShelf{
 		NICoCoreAtomicClient: nicoClient,
-		RlaAtomicClient:      rlaClient,
+		FlowAtomicClient:     flowClient,
 	}
 }
 
@@ -338,7 +338,7 @@ func (meps *ManageExpectedPowerShelf) UpdateExpectedPowerShelfOnSite(ctx context
 	return nil
 }
 
-// CreateExpectedPowerShelfOnRLA creates an Expected Power Shelf as a component in RLA via AddComponent
+// CreateExpectedPowerShelfOnRLA creates an Expected Power Shelf as a component in Flow via AddComponent
 func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnRLA(ctx context.Context, request *cwssaws.ExpectedPowerShelf) error {
 	logger := log.With().Str("Activity", "CreateExpectedPowerShelfOnRLA").Logger()
 
@@ -346,25 +346,25 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnRLA(ctx context.
 
 	// Validate request
 	if request == nil {
-		return temporal.NewNonRetryableApplicationError("received empty create Expected Power Shelf request for RLA", swe.ErrTypeInvalidRequest, errors.New("nil request"))
+		return temporal.NewNonRetryableApplicationError("received empty create Expected Power Shelf request for Flow", swe.ErrTypeInvalidRequest, errors.New("nil request"))
 	}
 
-	// If RLA client is not configured, skip gracefully
-	if meps.RlaAtomicClient == nil {
-		logger.Warn().Msg("RLA client not configured, skipping RLA component creation")
+	// If Flow client is not configured, skip gracefully
+	if meps.FlowAtomicClient == nil {
+		logger.Warn().Msg("Flow client not configured, skipping Flow component creation")
 		return nil
 	}
 
-	rlaClient := meps.RlaAtomicClient.GetClient()
-	if rlaClient == nil {
-		logger.Warn().Msg("RLA client not connected, skipping RLA component creation")
+	flowClient := meps.FlowAtomicClient.GetClient()
+	if flowClient == nil {
+		logger.Warn().Msg("Flow client not connected, skipping Flow component creation")
 		return nil
 	}
 
 	component := expectedPowerShelfToRLAComponent(request)
-	_, err := rlaClient.Rla().AddComponent(ctx, &rlav1.AddComponentRequest{Component: component})
+	_, err := flowClient.Flow().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create Expected Power Shelf component on RLA")
+		logger.Warn().Err(err).Msg("Failed to create Expected Power Shelf component on Flow")
 		return swe.WrapErr(err)
 	}
 
@@ -372,17 +372,17 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnRLA(ctx context.
 	return nil
 }
 
-// expectedPowerShelfToRLAComponent converts a NICo ExpectedPowerShelf proto to an RLA Component proto
-func expectedPowerShelfToRLAComponent(eps *cwssaws.ExpectedPowerShelf) *rlav1.Component {
-	component := &rlav1.Component{
-		Type: rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF,
-		Info: &rlav1.DeviceInfo{
-			Id:           &rlav1.UUID{Id: eps.GetExpectedPowerShelfId().GetValue()},
+// expectedPowerShelfToRLAComponent converts a NICo ExpectedPowerShelf proto to an Flow Component proto
+func expectedPowerShelfToRLAComponent(eps *cwssaws.ExpectedPowerShelf) *flowv1.Component {
+	component := &flowv1.Component{
+		Type: flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF,
+		Info: &flowv1.DeviceInfo{
+			Id:           &flowv1.UUID{Id: eps.GetExpectedPowerShelfId().GetValue()},
 			SerialNumber: eps.GetShelfSerialNumber(),
 		},
-		Bmcs: []*rlav1.BMCInfo{
+		Bmcs: []*flowv1.BMCInfo{
 			{
-				Type:       rlav1.BMCType_BMC_TYPE_HOST,
+				Type:       flowv1.BMCType_BMC_TYPE_HOST,
 				MacAddress: eps.GetBmcMacAddress(),
 			},
 		},
@@ -410,7 +410,7 @@ func expectedPowerShelfToRLAComponent(eps *cwssaws.ExpectedPowerShelf) *rlav1.Co
 
 	// Rack position
 	if eps.SlotId != nil || eps.TrayIdx != nil || eps.HostId != nil {
-		pos := &rlav1.RackPosition{}
+		pos := &flowv1.RackPosition{}
 		if eps.SlotId != nil {
 			pos.SlotId = *eps.SlotId
 		}
@@ -429,7 +429,7 @@ func expectedPowerShelfToRLAComponent(eps *cwssaws.ExpectedPowerShelf) *rlav1.Co
 	}
 
 	if rackID := eps.GetRackId().GetId(); rackID != "" {
-		component.RackId = &rlav1.UUID{Id: rackID}
+		component.RackId = &flowv1.UUID{Id: rackID}
 	}
 
 	return component

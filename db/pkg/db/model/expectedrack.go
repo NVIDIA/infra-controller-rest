@@ -131,6 +131,31 @@ func (er *ExpectedRack) ToProto() *cwssaws.ExpectedRack {
 	return proto
 }
 
+// FromProto populates this ExpectedRack from a workflow proto reported
+// by a Site. ExpectedRacks are identified across systems by the
+// operator-supplied RackID string carried in proto.RackId; the DB-side
+// uuid.UUID `er.ID` is not on the proto and is set by the caller. A nil
+// proto is a no-op. A nil or empty proto.RackId leaves er.RackID
+// unchanged so the caller can validate the proto identifier before
+// calling.
+func (er *ExpectedRack) FromProto(proto *cwssaws.ExpectedRack) {
+	if proto == nil {
+		return
+	}
+	if proto.RackId != nil && proto.RackId.Id != "" {
+		er.RackID = proto.RackId.Id
+	}
+	er.RackProfileID = proto.RackType
+	if proto.Metadata != nil {
+		er.Name = proto.Metadata.Name
+		er.Description = proto.Metadata.Description
+	} else {
+		er.Name = ""
+		er.Description = ""
+	}
+	er.Labels = LabelsFromProtoMetadata(proto.Metadata)
+}
+
 var _ bun.BeforeAppendModelHook = (*ExpectedRack)(nil)
 
 // BeforeAppendModel is a hook that is called before the model is appended to the query
@@ -552,8 +577,10 @@ func (erd ExpectedRackSQLDAO) Delete(ctx context.Context, tx *db.Tx, expectedRac
 	return nil
 }
 
-// DeleteAll deletes all ExpectedRacks matching the given filter (typically scoped by site)
-// Error is returned only if there is a db error
+// DeleteAll deletes all ExpectedRacks matching the given filter (typically
+// scoped by site). Callers must supply at least one filter; an empty filter
+// is rejected with db.ErrInvalidParams to prevent wiping the entire table.
+// Error is returned only if there is a db error or no filter was supplied.
 func (erd ExpectedRackSQLDAO) DeleteAll(ctx context.Context, tx *db.Tx, filter ExpectedRackFilterInput) error {
 	// Create a child span and set the attributes for current request
 	ctx, expectedRackDAOSpan := erd.tracerSpan.CreateChildInCurrentContext(ctx, "ExpectedRackDAO.DeleteAll")
@@ -593,9 +620,10 @@ func (erd ExpectedRackSQLDAO) DeleteAll(ctx context.Context, tx *db.Tx, filter E
 		}
 	}
 
-	// bun requires an explicit WHERE clause for bulk DELETE; gate unscoped deletes behind WHERE TRUE.
+	// Make sure at least one filter was provided; don't allow someone
+	// to delete all expected racks across all sites.
 	if !hasFilter {
-		query = query.Where("TRUE")
+		return db.ErrInvalidParams
 	}
 
 	_, err := query.Exec(ctx)

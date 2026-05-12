@@ -21,33 +21,33 @@ import (
 	"fmt"
 	"net/url"
 
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 // ProtoToAPIBMCTypeName maps protobuf BMCType to API-friendly names.
-var ProtoToAPIBMCTypeName = map[rlav1.BMCType]string{
-	rlav1.BMCType_BMC_TYPE_UNKNOWN: "BmcTypeUnknown",
-	rlav1.BMCType_BMC_TYPE_HOST:    "BmcTypeHost",
-	rlav1.BMCType_BMC_TYPE_DPU:     "BmcTypeDpu",
+var ProtoToAPIBMCTypeName = map[flowv1.BMCType]string{
+	flowv1.BMCType_BMC_TYPE_UNKNOWN: "BmcTypeUnknown",
+	flowv1.BMCType_BMC_TYPE_HOST:    "BmcTypeHost",
+	flowv1.BMCType_BMC_TYPE_DPU:     "BmcTypeDpu",
 }
 
 // ProtoToAPIRackComponentTypeName maps protobuf ComponentType to API-friendly names for rack components.
-var ProtoToAPIRackComponentTypeName = map[rlav1.ComponentType]string{
-	rlav1.ComponentType_COMPONENT_TYPE_UNKNOWN:    "Unknown",
-	rlav1.ComponentType_COMPONENT_TYPE_COMPUTE:    "Compute",
-	rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH:  "NVLSwitch",
-	rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF: "PowerShelf",
-	rlav1.ComponentType_COMPONENT_TYPE_TORSWITCH:  "TORSwitch",
-	rlav1.ComponentType_COMPONENT_TYPE_UMS:        "UMS",
-	rlav1.ComponentType_COMPONENT_TYPE_CDU:        "CDU",
+var ProtoToAPIRackComponentTypeName = map[flowv1.ComponentType]string{
+	flowv1.ComponentType_COMPONENT_TYPE_UNKNOWN:    "Unknown",
+	flowv1.ComponentType_COMPONENT_TYPE_COMPUTE:    "Compute",
+	flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH:  "NVLSwitch",
+	flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF: "PowerShelf",
+	flowv1.ComponentType_COMPONENT_TYPE_TORSWITCH:  "TORSwitch",
+	flowv1.ComponentType_COMPONENT_TYPE_UMS:        "UMS",
+	flowv1.ComponentType_COMPONENT_TYPE_CDU:        "CDU",
 }
 
 // ProtoToAPIDiffTypeName maps protobuf DiffType to API-friendly names.
-var ProtoToAPIDiffTypeName = map[rlav1.DiffType]string{
-	rlav1.DiffType_DIFF_TYPE_UNKNOWN:    "Unknown",
-	rlav1.DiffType_DIFF_TYPE_MISSING:    "Missing",
-	rlav1.DiffType_DIFF_TYPE_UNEXPECTED: "Unexpected",
-	rlav1.DiffType_DIFF_TYPE_DRIFT:      "Drift",
+var ProtoToAPIDiffTypeName = map[flowv1.DiffType]string{
+	flowv1.DiffType_DIFF_TYPE_UNKNOWN:    "Unknown",
+	flowv1.DiffType_DIFF_TYPE_MISSING:    "Missing",
+	flowv1.DiffType_DIFF_TYPE_UNEXPECTED: "Unexpected",
+	flowv1.DiffType_DIFF_TYPE_DRIFT:      "Drift",
 }
 
 // enumOr returns mapped value or fallback when key is missing from mapping.
@@ -60,32 +60,32 @@ func enumOr[K comparable](m map[K]string, key K, fallback string) string {
 
 // ========== Rack Query Fields ==========
 
-// RackFilterFieldMap maps API field names to RLA protobuf filter enum
-var RackFilterFieldMap = map[string]rlav1.RackFilterField{
-	"name":         rlav1.RackFilterField_RACK_FILTER_FIELD_NAME,
-	"manufacturer": rlav1.RackFilterField_RACK_FILTER_FIELD_MANUFACTURER,
-	"model":        rlav1.RackFilterField_RACK_FILTER_FIELD_MODEL,
+// RackFilterFieldMap maps API field names to Flow protobuf filter enum
+var RackFilterFieldMap = map[string]flowv1.RackFilterField{
+	"name":         flowv1.RackFilterField_RACK_FILTER_FIELD_NAME,
+	"manufacturer": flowv1.RackFilterField_RACK_FILTER_FIELD_MANUFACTURER,
+	"model":        flowv1.RackFilterField_RACK_FILTER_FIELD_MODEL,
 }
 
-// RackOrderByFieldMap maps API field names to RLA protobuf order by enum
-var RackOrderByFieldMap = map[string]rlav1.RackOrderByField{
-	"name":         rlav1.RackOrderByField_RACK_ORDER_BY_FIELD_NAME,
-	"manufacturer": rlav1.RackOrderByField_RACK_ORDER_BY_FIELD_MANUFACTURER,
-	"model":        rlav1.RackOrderByField_RACK_ORDER_BY_FIELD_MODEL,
+// RackOrderByFieldMap maps API field names to Flow protobuf order by enum
+var RackOrderByFieldMap = map[string]flowv1.RackOrderByField{
+	"name":         flowv1.RackOrderByField_RACK_ORDER_BY_FIELD_NAME,
+	"manufacturer": flowv1.RackOrderByField_RACK_ORDER_BY_FIELD_MANUFACTURER,
+	"model":        flowv1.RackOrderByField_RACK_ORDER_BY_FIELD_MODEL,
 }
 
-// GetProtoRackFilter creates an RLA protobuf filter for the given rack field and patterns.
+// GetProtoRackFilter creates an Flow protobuf filter for the given rack field and patterns.
 // Multiple patterns are OR'd together.
-func GetProtoRackFilter(fieldName string, patterns []string) *rlav1.Filter {
+func GetProtoRackFilter(fieldName string, patterns []string) *flowv1.Filter {
 	field, ok := RackFilterFieldMap[fieldName]
 	if !ok || len(patterns) == 0 {
 		return nil
 	}
-	return &rlav1.Filter{
-		Field: &rlav1.Filter_RackField{
+	return &flowv1.Filter{
+		Field: &flowv1.Filter_RackField{
 			RackField: field,
 		},
-		QueryInfo: &rlav1.StringQueryInfo{
+		QueryInfo: &flowv1.StringQueryInfo{
 			Patterns:   patterns,
 			IsWildcard: false,
 			UseOr:      len(patterns) > 1,
@@ -93,14 +93,14 @@ func GetProtoRackFilter(fieldName string, patterns []string) *rlav1.Filter {
 	}
 }
 
-// GetProtoRackOrderByFromQueryParam creates an RLA protobuf OrderBy from API query parameters
-func GetProtoRackOrderByFromQueryParam(fieldName, direction string) *rlav1.OrderBy {
+// GetProtoRackOrderByFromQueryParam creates an Flow protobuf OrderBy from API query parameters
+func GetProtoRackOrderByFromQueryParam(fieldName, direction string) *flowv1.OrderBy {
 	field, ok := RackOrderByFieldMap[fieldName]
 	if !ok {
 		return nil
 	}
-	return &rlav1.OrderBy{
-		Field: &rlav1.OrderBy_RackField{
+	return &flowv1.OrderBy{
+		Field: &flowv1.OrderBy_RackField{
 			RackField: field,
 		},
 		Direction: direction,
@@ -130,15 +130,15 @@ type RackFilter struct {
 	Names []string `json:"names,omitempty"`
 }
 
-// ToTargetSpec converts the filter to an RLA OperationTargetSpec.
+// ToTargetSpec converts the filter to an Flow OperationTargetSpec.
 // Handles nil receiver gracefully (targets all racks).
-func (f *RackFilter) ToTargetSpec() *rlav1.OperationTargetSpec {
-	var rackTargets []*rlav1.RackTarget
+func (f *RackFilter) ToTargetSpec() *flowv1.OperationTargetSpec {
+	var rackTargets []*flowv1.RackTarget
 
 	if f != nil {
 		for _, name := range f.Names {
-			rackTargets = append(rackTargets, &rlav1.RackTarget{
-				Identifier: &rlav1.RackTarget_Name{
+			rackTargets = append(rackTargets, &flowv1.RackTarget{
+				Identifier: &flowv1.RackTarget_Name{
 					Name: name,
 				},
 			})
@@ -146,12 +146,12 @@ func (f *RackFilter) ToTargetSpec() *rlav1.OperationTargetSpec {
 	}
 
 	if len(rackTargets) == 0 {
-		rackTargets = append(rackTargets, &rlav1.RackTarget{})
+		rackTargets = append(rackTargets, &flowv1.RackTarget{})
 	}
 
-	return &rlav1.OperationTargetSpec{
-		Targets: &rlav1.OperationTargetSpec_Racks{
-			Racks: &rlav1.RackTargets{
+	return &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Racks{
+			Racks: &flowv1.RackTargets{
 				Targets: rackTargets,
 			},
 		},
@@ -176,9 +176,9 @@ func (r *APIRackGetAllRequest) Validate() error {
 	return nil
 }
 
-// ToFilters converts the request's filter fields to RLA protobuf filters.
-func (r *APIRackGetAllRequest) ToFilters() []*rlav1.Filter {
-	var filters []*rlav1.Filter
+// ToFilters converts the request's filter fields to Flow protobuf filters.
+func (r *APIRackGetAllRequest) ToFilters() []*flowv1.Filter {
+	var filters []*flowv1.Filter
 	if f := GetProtoRackFilter("name", r.Name); f != nil {
 		filters = append(filters, f)
 	}
@@ -228,9 +228,9 @@ func (r *APIRackValidateAllRequest) Validate() error {
 	return nil
 }
 
-// ToFilters converts the request's filter fields to RLA protobuf filters.
-func (r *APIRackValidateAllRequest) ToFilters() []*rlav1.Filter {
-	var filters []*rlav1.Filter
+// ToFilters converts the request's filter fields to Flow protobuf filters.
+func (r *APIRackValidateAllRequest) ToFilters() []*flowv1.Filter {
+	var filters []*flowv1.Filter
 	if f := GetProtoRackFilter("name", r.Name); f != nil {
 		filters = append(filters, f)
 	}
@@ -255,7 +255,7 @@ func (r *APIRackValidateAllRequest) QueryValues() url.Values {
 
 // ========== Rack API Models ==========
 
-// APIRack is the API representation of a Rack from RLA
+// APIRack is the API representation of a Rack from Flow
 type APIRack struct {
 	ID           string              `json:"id"`
 	Name         string              `json:"name"`
@@ -267,8 +267,8 @@ type APIRack struct {
 	Components   []*APIRackComponent `json:"components,omitempty"`
 }
 
-// FromProto converts an RLA protobuf Rack to an APIRack
-func (ar *APIRack) FromProto(protoRack *rlav1.Rack, includeComponents bool) {
+// FromProto converts an Flow protobuf Rack to an APIRack
+func (ar *APIRack) FromProto(protoRack *flowv1.Rack, includeComponents bool) {
 	if protoRack == nil {
 		return
 	}
@@ -307,8 +307,8 @@ func (ar *APIRack) FromProto(protoRack *rlav1.Rack, includeComponents bool) {
 	}
 }
 
-// NewAPIRack creates an APIRack from the RLA protobuf Rack
-func NewAPIRack(protoRack *rlav1.Rack, includeComponents bool) *APIRack {
+// NewAPIRack creates an APIRack from the Flow protobuf Rack
+func NewAPIRack(protoRack *flowv1.Rack, includeComponents bool) *APIRack {
 	if protoRack == nil {
 		return nil
 	}
@@ -326,7 +326,7 @@ type APIRackLocation struct {
 }
 
 // FromProto converts a proto Location to an APIRackLocation
-func (arl *APIRackLocation) FromProto(protoLocation *rlav1.Location) {
+func (arl *APIRackLocation) FromProto(protoLocation *flowv1.Location) {
 	if protoLocation == nil {
 		return
 	}
@@ -344,7 +344,7 @@ type APIBMC struct {
 }
 
 // FromProto converts a proto BMC to an APIBMC
-func (ab *APIBMC) FromProto(protoBMC *rlav1.BMCInfo) {
+func (ab *APIBMC) FromProto(protoBMC *flowv1.BMCInfo) {
 	if protoBMC == nil {
 		return
 	}
@@ -373,7 +373,7 @@ type APIRackComponent struct {
 }
 
 // FromProto converts a proto Component to an APIRackComponent
-func (arc *APIRackComponent) FromProto(protoComponent *rlav1.Component) {
+func (arc *APIRackComponent) FromProto(protoComponent *flowv1.Component) {
 	if protoComponent == nil {
 		return
 	}
@@ -427,8 +427,8 @@ type APIFieldDiff struct {
 	ActualValue   string `json:"actualValue"`
 }
 
-// FromProto converts an RLA protobuf FieldDiff to an APIFieldDiff
-func (f *APIFieldDiff) FromProto(protoFieldDiff *rlav1.FieldDiff) {
+// FromProto converts an Flow protobuf FieldDiff to an APIFieldDiff
+func (f *APIFieldDiff) FromProto(protoFieldDiff *flowv1.FieldDiff) {
 	if protoFieldDiff == nil {
 		return
 	}
@@ -440,15 +440,15 @@ func (f *APIFieldDiff) FromProto(protoFieldDiff *rlav1.FieldDiff) {
 // APIComponentDiff represents a single component difference found during validation
 type APIComponentDiff struct {
 	Type        string            `json:"type"`
-	ID          string            `json:"id,omitempty"`          // RLA internal component UUID
+	ID          string            `json:"id,omitempty"`          // Flow internal component UUID
 	ComponentID string            `json:"componentId,omitempty"` // Component ID from the component manager service
 	Expected    *APIRackComponent `json:"expected,omitempty"`
 	Actual      *APIRackComponent `json:"actual,omitempty"`
 	FieldDiffs  []*APIFieldDiff   `json:"fieldDiffs,omitempty"`
 }
 
-// FromProto converts an RLA protobuf ComponentDiff to an APIComponentDiff
-func (d *APIComponentDiff) FromProto(protoDiff *rlav1.ComponentDiff) {
+// FromProto converts an Flow protobuf ComponentDiff to an APIComponentDiff
+func (d *APIComponentDiff) FromProto(protoDiff *flowv1.ComponentDiff) {
 	if protoDiff == nil {
 		return
 	}
@@ -489,8 +489,8 @@ type APIRackValidationResult struct {
 	MatchCount      int32               `json:"matchCount"`
 }
 
-// FromProto converts an RLA protobuf ValidateComponentsResponse to an APIRackValidationResult
-func (r *APIRackValidationResult) FromProto(protoResp *rlav1.ValidateComponentsResponse) {
+// FromProto converts an Flow protobuf ValidateComponentsResponse to an APIRackValidationResult
+func (r *APIRackValidationResult) FromProto(protoResp *flowv1.ValidateComponentsResponse) {
 	if protoResp == nil {
 		return
 	}
@@ -509,8 +509,8 @@ func (r *APIRackValidationResult) FromProto(protoResp *rlav1.ValidateComponentsR
 	}
 }
 
-// NewAPIRackValidationResult creates an APIRackValidationResult from the RLA protobuf response
-func NewAPIRackValidationResult(protoResp *rlav1.ValidateComponentsResponse) *APIRackValidationResult {
+// NewAPIRackValidationResult creates an APIRackValidationResult from the Flow protobuf response
+func NewAPIRackValidationResult(protoResp *flowv1.ValidateComponentsResponse) *APIRackValidationResult {
 	if protoResp == nil {
 		return nil
 	}
@@ -542,8 +542,8 @@ type APIBringUpRackResponse struct {
 	TaskIDs []string `json:"taskIds"`
 }
 
-// FromProto converts an RLA SubmitTaskResponse to an APIBringUpRackResponse
-func (r *APIBringUpRackResponse) FromProto(resp *rlav1.SubmitTaskResponse) {
+// FromProto converts an Flow SubmitTaskResponse to an APIBringUpRackResponse
+func (r *APIBringUpRackResponse) FromProto(resp *flowv1.SubmitTaskResponse) {
 	if resp == nil {
 		r.TaskIDs = []string{}
 		return
@@ -554,8 +554,8 @@ func (r *APIBringUpRackResponse) FromProto(resp *rlav1.SubmitTaskResponse) {
 	}
 }
 
-// NewAPIBringUpRackResponse creates an APIBringUpRackResponse from an RLA SubmitTaskResponse
-func NewAPIBringUpRackResponse(resp *rlav1.SubmitTaskResponse) *APIBringUpRackResponse {
+// NewAPIBringUpRackResponse creates an APIBringUpRackResponse from an Flow SubmitTaskResponse
+func NewAPIBringUpRackResponse(resp *flowv1.SubmitTaskResponse) *APIBringUpRackResponse {
 	r := &APIBringUpRackResponse{}
 	r.FromProto(resp)
 	return r

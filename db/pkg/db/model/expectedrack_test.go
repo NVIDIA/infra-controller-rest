@@ -28,8 +28,98 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 )
+
+func TestExpectedRack_FromProto(t *testing.T) {
+	preservedID := uuid.New()
+	preservedSiteID := uuid.New()
+
+	t.Run("nil proto leaves receiver unchanged", func(t *testing.T) {
+		er := &ExpectedRack{ID: preservedID, SiteID: preservedSiteID, RackID: "preserved-rack", Name: "preserved-name"}
+		er.FromProto(nil)
+
+		assert.Equal(t, preservedID, er.ID)
+		assert.Equal(t, preservedSiteID, er.SiteID)
+		assert.Equal(t, "preserved-rack", er.RackID)
+		assert.Equal(t, "preserved-name", er.Name)
+	})
+
+	t.Run("nil RackId leaves er.RackID unchanged", func(t *testing.T) {
+		er := &ExpectedRack{RackID: "preserved"}
+		er.FromProto(&cwssaws.ExpectedRack{
+			RackId:   nil,
+			RackType: "type-A",
+		})
+
+		assert.Equal(t, "preserved", er.RackID)
+		assert.Equal(t, "type-A", er.RackProfileID)
+	})
+
+	t.Run("empty RackId leaves er.RackID unchanged", func(t *testing.T) {
+		er := &ExpectedRack{RackID: "preserved"}
+		er.FromProto(&cwssaws.ExpectedRack{
+			RackId:   &cwssaws.RackId{Id: ""},
+			RackType: "type-A",
+		})
+
+		assert.Equal(t, "preserved", er.RackID)
+		assert.Equal(t, "type-A", er.RackProfileID)
+	})
+
+	t.Run("populates all proto fields", func(t *testing.T) {
+		er := &ExpectedRack{}
+		er.FromProto(&cwssaws.ExpectedRack{
+			RackId:   &cwssaws.RackId{Id: "rack-1"},
+			RackType: "type-A",
+			Metadata: &cwssaws.Metadata{
+				Name:        "rack-name",
+				Description: "primary rack",
+				Labels: []*cwssaws.Label{
+					{Key: "env", Value: db.GetStrPtr("prod")},
+				},
+			},
+		})
+
+		assert.Equal(t, "rack-1", er.RackID)
+		assert.Equal(t, "type-A", er.RackProfileID)
+		assert.Equal(t, "rack-name", er.Name)
+		assert.Equal(t, "primary rack", er.Description)
+		assert.Equal(t, map[string]string{"env": "prod"}, er.Labels)
+	})
+
+	t.Run("nil Metadata clears Name/Description and Labels", func(t *testing.T) {
+		er := &ExpectedRack{Name: "stale-name", Description: "stale-desc", Labels: map[string]string{"old": "val"}}
+		er.FromProto(&cwssaws.ExpectedRack{
+			RackId:   &cwssaws.RackId{Id: "rack-1"},
+			RackType: "type-A",
+			Metadata: nil,
+		})
+
+		assert.Equal(t, "rack-1", er.RackID)
+		assert.Equal(t, "", er.Name)
+		assert.Equal(t, "", er.Description)
+		assert.Nil(t, er.Labels)
+	})
+
+	t.Run("does not touch SiteID, ID, or CreatedBy", func(t *testing.T) {
+		creator := uuid.New()
+		er := &ExpectedRack{
+			ID:        preservedID,
+			SiteID:    preservedSiteID,
+			CreatedBy: creator,
+		}
+		er.FromProto(&cwssaws.ExpectedRack{
+			RackId:   &cwssaws.RackId{Id: "rack-1"},
+			RackType: "type-A",
+		})
+
+		assert.Equal(t, preservedID, er.ID)
+		assert.Equal(t, preservedSiteID, er.SiteID)
+		assert.Equal(t, creator, er.CreatedBy)
+	})
+}
 
 // reset the tables needed for ExpectedRack tests
 func testExpectedRackSetupSchema(t *testing.T, dbSession *db.Session) {
@@ -770,16 +860,17 @@ func TestExpectedRackDAO_DeleteAll(t *testing.T) {
 	// Reset for the unscoped case
 	testExpectedRackSetupSchema(t, dbSession)
 
-	t.Run("DeleteAll without filter wipes everything", func(t *testing.T) {
-		_, _, _, _ = testExpectedRackDAOCreateExpectedRacks(ctx, t, dbSession)
+	t.Run("DeleteAll without filter is rejected", func(t *testing.T) {
+		expectedRacks, _, _, _ := testExpectedRackDAOCreateExpectedRacks(ctx, t, dbSession)
 
 		err := erd.DeleteAll(ctx, nil, ExpectedRackFilterInput{})
-		assert.NoError(t, err)
+		assert.ErrorIs(t, err, db.ErrInvalidParams)
 
+		// Records must be untouched after the rejection.
 		got, total, err := erd.GetAll(ctx, nil, ExpectedRackFilterInput{}, paginator.PageInput{}, nil)
 		assert.NoError(t, err)
-		assert.Equal(t, 0, len(got))
-		assert.Equal(t, 0, total)
+		assert.Equal(t, len(expectedRacks), len(got))
+		assert.Equal(t, len(expectedRacks), total)
 	})
 }
 

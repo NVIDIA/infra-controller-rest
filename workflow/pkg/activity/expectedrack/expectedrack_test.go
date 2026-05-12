@@ -466,7 +466,7 @@ func TestManageExpectedRack_UpdateExpectedRacksInDB(t *testing.T) {
 					assert.Equal(t, reportedDescription, updated.Description,
 						fmt.Sprintf("ExpectedRack %v Description should match", er.RackID))
 
-					expectedLabels := getLabelsMapFromProto(ctrlER)
+					expectedLabels := cdbm.LabelsFromProtoMetadata(ctrlER.Metadata)
 					if len(expectedLabels) == 0 && len(updated.Labels) == 0 {
 						// Both effectively empty, which is correct
 					} else {
@@ -501,7 +501,7 @@ func TestManageExpectedRack_UpdateExpectedRacksInDB(t *testing.T) {
 					assert.Equal(t, reportedDescription, created.Description,
 						fmt.Sprintf("ExpectedRack %v Description should match on creation", cer.RackId.Id))
 
-					expectedLabels := getLabelsMapFromProto(cer)
+					expectedLabels := cdbm.LabelsFromProtoMetadata(cer.Metadata)
 					if len(expectedLabels) == 0 && len(created.Labels) == 0 {
 						// Both effectively empty, which is correct
 					} else {
@@ -716,103 +716,6 @@ func TestExpectedRackStaleInventoryThresholdCondition(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := util.IsTimeWithinStaleInventoryThreshold(tt.actionTime); got != tt.want {
 				t.Errorf("IsTimeWithinStaleInventoryThreshold() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestGetLabelsMapFromProto(t *testing.T) {
-	tests := []struct {
-		name string
-		er   *cwssaws.ExpectedRack
-		want map[string]string
-	}{
-		{
-			name: "nil metadata",
-			er:   &cwssaws.ExpectedRack{Metadata: nil},
-			want: nil,
-		},
-		{
-			name: "nil labels",
-			er:   &cwssaws.ExpectedRack{Metadata: &cwssaws.Metadata{Labels: nil}},
-			want: nil,
-		},
-		{
-			name: "empty labels",
-			er:   &cwssaws.ExpectedRack{Metadata: &cwssaws.Metadata{Labels: []*cwssaws.Label{}}},
-			want: map[string]string{},
-		},
-		{
-			name: "single label with value",
-			er: &cwssaws.ExpectedRack{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "environment", Value: cdb.GetStrPtr("production")},
-					},
-				},
-			},
-			want: map[string]string{"environment": "production"},
-		},
-		{
-			name: "multiple labels",
-			er: &cwssaws.ExpectedRack{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "environment", Value: cdb.GetStrPtr("production")},
-						{Key: "region", Value: cdb.GetStrPtr("region-1")},
-						{Key: "datacenter", Value: cdb.GetStrPtr("dc1")},
-					},
-				},
-			},
-			want: map[string]string{
-				"environment": "production",
-				"region":      "region-1",
-				"datacenter":  "dc1",
-			},
-		},
-		{
-			name: "label with nil value",
-			er: &cwssaws.ExpectedRack{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "flag", Value: nil},
-					},
-				},
-			},
-			want: map[string]string{"flag": ""},
-		},
-		{
-			name: "label with empty key",
-			er: &cwssaws.ExpectedRack{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						{Key: "", Value: cdb.GetStrPtr("value")},
-						{Key: "valid", Value: cdb.GetStrPtr("data")},
-					},
-				},
-			},
-			want: map[string]string{"valid": "data"},
-		},
-		{
-			name: "nil label entry",
-			er: &cwssaws.ExpectedRack{
-				Metadata: &cwssaws.Metadata{
-					Labels: []*cwssaws.Label{
-						nil,
-						{Key: "valid", Value: cdb.GetStrPtr("data")},
-					},
-				},
-			},
-			want: map[string]string{"valid": "data"},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := getLabelsMapFromProto(tt.er)
-			if tt.want == nil {
-				assert.Nil(t, got)
-			} else {
-				assert.Equal(t, tt.want, got)
 			}
 		})
 	}

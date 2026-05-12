@@ -23,15 +23,15 @@ import (
 	"testing"
 
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestManageTray_GetTray(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.GetComponentInfoByIDRequest
-		mockResp    *rlav1.GetComponentInfoResponse
+		request     *flowv1.GetComponentInfoByIDRequest
+		mockResp    *flowv1.GetComponentInfoResponse
 		mockErr     error
 		wantErr     bool
 		errContains string
@@ -46,7 +46,7 @@ func TestManageTray_GetTray(t *testing.T) {
 		},
 		{
 			name: "request with nil ID returns error",
-			request: &rlav1.GetComponentInfoByIDRequest{
+			request: &flowv1.GetComponentInfoByIDRequest{
 				Id: nil,
 			},
 			mockResp:    nil,
@@ -56,8 +56,8 @@ func TestManageTray_GetTray(t *testing.T) {
 		},
 		{
 			name: "request with empty ID returns error",
-			request: &rlav1.GetComponentInfoByIDRequest{
-				Id: &rlav1.UUID{Id: ""},
+			request: &flowv1.GetComponentInfoByIDRequest{
+				Id: &flowv1.UUID{Id: ""},
 			},
 			mockResp:    nil,
 			mockErr:     nil,
@@ -66,21 +66,21 @@ func TestManageTray_GetTray(t *testing.T) {
 		},
 		{
 			name: "successful request - compute tray",
-			request: &rlav1.GetComponentInfoByIDRequest{
-				Id: &rlav1.UUID{Id: "test-tray-id"},
+			request: &flowv1.GetComponentInfoByIDRequest{
+				Id: &flowv1.UUID{Id: "test-tray-id"},
 			},
-			mockResp: &rlav1.GetComponentInfoResponse{
-				Component: &rlav1.Component{
-					Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-					Info: &rlav1.DeviceInfo{
-						Id:           &rlav1.UUID{Id: "test-tray-id"},
+			mockResp: &flowv1.GetComponentInfoResponse{
+				Component: &flowv1.Component{
+					Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+					Info: &flowv1.DeviceInfo{
+						Id:           &flowv1.UUID{Id: "test-tray-id"},
 						Name:         "Test Compute Tray",
 						Manufacturer: "NVIDIA",
 						SerialNumber: "TSN001",
 					},
 					FirmwareVersion: "2.0.0",
 					ComponentId:     "nico-machine-123",
-					Position: &rlav1.RackPosition{
+					Position: &flowv1.RackPosition{
 						SlotId:  1,
 						TrayIdx: 0,
 						HostId:  1,
@@ -92,14 +92,14 @@ func TestManageTray_GetTray(t *testing.T) {
 		},
 		{
 			name: "successful request - switch tray",
-			request: &rlav1.GetComponentInfoByIDRequest{
-				Id: &rlav1.UUID{Id: "switch-tray-id"},
+			request: &flowv1.GetComponentInfoByIDRequest{
+				Id: &flowv1.UUID{Id: "switch-tray-id"},
 			},
-			mockResp: &rlav1.GetComponentInfoResponse{
-				Component: &rlav1.Component{
-					Type: rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
-					Info: &rlav1.DeviceInfo{
-						Id:   &rlav1.UUID{Id: "switch-tray-id"},
+			mockResp: &flowv1.GetComponentInfoResponse{
+				Component: &flowv1.Component{
+					Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+					Info: &flowv1.DeviceInfo{
+						Id:   &flowv1.UUID{Id: "switch-tray-id"},
 						Name: "NVSwitch Tray",
 					},
 				},
@@ -108,9 +108,9 @@ func TestManageTray_GetTray(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "RLA client error",
-			request: &rlav1.GetComponentInfoByIDRequest{
-				Id: &rlav1.UUID{Id: "test-tray-id"},
+			name: "Flow client error",
+			request: &flowv1.GetComponentInfoByIDRequest{
+				Id: &flowv1.UUID{Id: "test-tray-id"},
 			},
 			mockResp:    nil,
 			mockErr:     errors.New("connection refused"),
@@ -121,15 +121,15 @@ func TestManageTray_GetTray(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock RLA client
-			mockRlaClient := cClient.NewMockRlaClient()
+			// Create mock Flow client
+			mockFlowClient := cClient.NewMockFlowClient()
 
 			// Create atomic client and swap with mock
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
 
 			// Create ManageTray instance
-			manageTray := NewManageTray(rlaAtomicClient)
+			manageTray := NewManageTray(flowAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -159,8 +159,8 @@ func TestManageTray_GetTray(t *testing.T) {
 func TestManageTray_GetTrays(t *testing.T) {
 	tests := []struct {
 		name        string
-		request     *rlav1.GetComponentsRequest
-		mockResp    *rlav1.GetComponentsResponse
+		request     *flowv1.GetComponentsRequest
+		mockResp    *flowv1.GetComponentsResponse
 		mockErr     error
 		wantErr     bool
 		errContains string
@@ -168,8 +168,8 @@ func TestManageTray_GetTrays(t *testing.T) {
 		{
 			name:    "successful request - nil request (gets all trays)",
 			request: nil,
-			mockResp: &rlav1.GetComponentsResponse{
-				Components: []*rlav1.Component{},
+			mockResp: &flowv1.GetComponentsResponse{
+				Components: []*flowv1.Component{},
 				Total:      0,
 			},
 			mockErr: nil,
@@ -177,9 +177,9 @@ func TestManageTray_GetTrays(t *testing.T) {
 		},
 		{
 			name:    "successful request - empty request",
-			request: &rlav1.GetComponentsRequest{},
-			mockResp: &rlav1.GetComponentsResponse{
-				Components: []*rlav1.Component{},
+			request: &flowv1.GetComponentsRequest{},
+			mockResp: &flowv1.GetComponentsResponse{
+				Components: []*flowv1.Component{},
 				Total:      0,
 			},
 			mockErr: nil,
@@ -187,37 +187,37 @@ func TestManageTray_GetTrays(t *testing.T) {
 		},
 		{
 			name:    "successful request - multiple trays",
-			request: &rlav1.GetComponentsRequest{},
-			mockResp: &rlav1.GetComponentsResponse{
-				Components: []*rlav1.Component{
+			request: &flowv1.GetComponentsRequest{},
+			mockResp: &flowv1.GetComponentsResponse{
+				Components: []*flowv1.Component{
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "tray-1"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "tray-1"},
 							Name: "Compute Tray 1",
 						},
 						FirmwareVersion: "1.0.0",
-						Position: &rlav1.RackPosition{
+						Position: &flowv1.RackPosition{
 							SlotId: 1,
 						},
 					},
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "tray-2"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "tray-2"},
 							Name: "Switch Tray 1",
 						},
-						Position: &rlav1.RackPosition{
+						Position: &flowv1.RackPosition{
 							SlotId: 24,
 						},
 					},
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_POWERSHELF,
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "tray-3"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF,
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "tray-3"},
 							Name: "Power Shelf 1",
 						},
-						Position: &rlav1.RackPosition{
+						Position: &flowv1.RackPosition{
 							SlotId: 48,
 						},
 					},
@@ -229,17 +229,17 @@ func TestManageTray_GetTrays(t *testing.T) {
 		},
 		{
 			name: "successful request - with target spec filter",
-			request: &rlav1.GetComponentsRequest{
-				TargetSpec: &rlav1.OperationTargetSpec{
-					Targets: &rlav1.OperationTargetSpec_Racks{
-						Racks: &rlav1.RackTargets{
-							Targets: []*rlav1.RackTarget{
+			request: &flowv1.GetComponentsRequest{
+				TargetSpec: &flowv1.OperationTargetSpec{
+					Targets: &flowv1.OperationTargetSpec_Racks{
+						Racks: &flowv1.RackTargets{
+							Targets: []*flowv1.RackTarget{
 								{
-									Identifier: &rlav1.RackTarget_Id{
-										Id: &rlav1.UUID{Id: "rack-123"},
+									Identifier: &flowv1.RackTarget_Id{
+										Id: &flowv1.UUID{Id: "rack-123"},
 									},
-									ComponentTypes: []rlav1.ComponentType{
-										rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
+									ComponentTypes: []flowv1.ComponentType{
+										flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
 									},
 								},
 							},
@@ -247,15 +247,15 @@ func TestManageTray_GetTrays(t *testing.T) {
 					},
 				},
 			},
-			mockResp: &rlav1.GetComponentsResponse{
-				Components: []*rlav1.Component{
+			mockResp: &flowv1.GetComponentsResponse{
+				Components: []*flowv1.Component{
 					{
-						Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
-						Info: &rlav1.DeviceInfo{
-							Id:   &rlav1.UUID{Id: "compute-tray-1"},
+						Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
+						Info: &flowv1.DeviceInfo{
+							Id:   &flowv1.UUID{Id: "compute-tray-1"},
 							Name: "Compute Tray",
 						},
-						RackId: &rlav1.UUID{Id: "rack-123"},
+						RackId: &flowv1.UUID{Id: "rack-123"},
 					},
 				},
 				Total: 1,
@@ -264,8 +264,8 @@ func TestManageTray_GetTrays(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:        "RLA client error",
-			request:     &rlav1.GetComponentsRequest{},
+			name:        "Flow client error",
+			request:     &flowv1.GetComponentsRequest{},
 			mockResp:    nil,
 			mockErr:     errors.New("internal server error"),
 			wantErr:     true,
@@ -275,15 +275,15 @@ func TestManageTray_GetTrays(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock RLA client
-			mockRlaClient := cClient.NewMockRlaClient()
+			// Create mock Flow client
+			mockFlowClient := cClient.NewMockFlowClient()
 
 			// Create atomic client and swap with mock
-			rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
-			rlaAtomicClient.SwapClient(mockRlaClient)
+			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+			flowAtomicClient.SwapClient(mockFlowClient)
 
 			// Create ManageTray instance
-			manageTray := NewManageTray(rlaAtomicClient)
+			manageTray := NewManageTray(flowAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -312,12 +312,12 @@ func TestManageTray_GetTrays(t *testing.T) {
 }
 
 func TestNewManageTray(t *testing.T) {
-	// Create a mock RLA client
-	rlaAtomicClient := cClient.NewRlaAtomicClient(&cClient.RlaClientConfig{})
+	// Create a mock Flow client
+	flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
 
 	// Test constructor
-	manageTray := NewManageTray(rlaAtomicClient)
+	manageTray := NewManageTray(flowAtomicClient)
 
-	assert.NotNil(t, manageTray.RlaAtomicClient)
-	assert.Equal(t, rlaAtomicClient, manageTray.RlaAtomicClient)
+	assert.NotNil(t, manageTray.FlowAtomicClient)
+	assert.Equal(t, flowAtomicClient, manageTray.FlowAtomicClient)
 }

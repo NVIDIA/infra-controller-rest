@@ -29,7 +29,7 @@ import (
 	"go.temporal.io/sdk/testsuite"
 
 	tActivity "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/activity"
-	rlav1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/rla/protobuf/v1"
+	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
 // ~~~~~ GetTray Workflow Tests ~~~~~ //
@@ -53,17 +53,17 @@ func (s *GetTrayWorkflowTestSuite) Test_GetTray_Success() {
 	var trayManager tActivity.ManageTray
 
 	trayID := uuid.New().String()
-	request := &rlav1.GetComponentInfoByIDRequest{
-		Id: &rlav1.UUID{Id: trayID},
+	request := &flowv1.GetComponentInfoByIDRequest{
+		Id: &flowv1.UUID{Id: trayID},
 	}
 
-	expectedResponse := &rlav1.GetComponentInfoResponse{
-		Component: &rlav1.Component{
-			Info: &rlav1.DeviceInfo{
-				Id:   &rlav1.UUID{Id: trayID},
+	expectedResponse := &flowv1.GetComponentInfoResponse{
+		Component: &flowv1.Component{
+			Info: &flowv1.DeviceInfo{
+				Id:   &flowv1.UUID{Id: trayID},
 				Name: "tray-0",
 			},
-			Type: rlav1.ComponentType_COMPONENT_TYPE_COMPUTE,
+			Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
 		},
 	}
 
@@ -76,7 +76,7 @@ func (s *GetTrayWorkflowTestSuite) Test_GetTray_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var result rlav1.GetComponentInfoResponse
+	var result flowv1.GetComponentInfoResponse
 	s.env.GetWorkflowResult(&result)
 	s.Equal(trayID, result.GetComponent().GetInfo().GetId().GetId())
 	s.Equal("tray-0", result.GetComponent().GetInfo().GetName())
@@ -86,11 +86,11 @@ func (s *GetTrayWorkflowTestSuite) Test_GetTray_ActivityFails() {
 	var trayManager tActivity.ManageTray
 
 	trayID := uuid.New().String()
-	request := &rlav1.GetComponentInfoByIDRequest{
-		Id: &rlav1.UUID{Id: trayID},
+	request := &flowv1.GetComponentInfoByIDRequest{
+		Id: &flowv1.UUID{Id: trayID},
 	}
 
-	errMsg := "RLA communication error"
+	errMsg := "Flow communication error"
 
 	// Mock GetTray activity failure
 	s.env.RegisterActivity(trayManager.GetTray)
@@ -110,14 +110,14 @@ func (s *GetTrayWorkflowTestSuite) Test_GetTray_ActivityFails() {
 func (s *GetTrayWorkflowTestSuite) Test_GetTray_NilRequest() {
 	var trayManager tActivity.ManageTray
 
-	expectedResponse := &rlav1.GetComponentInfoResponse{}
+	expectedResponse := &flowv1.GetComponentInfoResponse{}
 
 	// Mock GetTray activity with nil request
 	s.env.RegisterActivity(trayManager.GetTray)
 	s.env.OnActivity(trayManager.GetTray, mock.Anything, mock.Anything).Return(expectedResponse, nil)
 
 	// Execute GetTray workflow with nil request
-	s.env.ExecuteWorkflow(GetTray, (*rlav1.GetComponentInfoByIDRequest)(nil))
+	s.env.ExecuteWorkflow(GetTray, (*flowv1.GetComponentInfoByIDRequest)(nil))
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 }
@@ -146,12 +146,12 @@ func (s *GetTraysWorkflowTestSuite) AfterTest(suiteName, testName string) {
 func (s *GetTraysWorkflowTestSuite) Test_GetTrays_Success() {
 	var trayManager tActivity.ManageTray
 
-	request := &rlav1.GetComponentsRequest{}
+	request := &flowv1.GetComponentsRequest{}
 
-	expectedResponse := &rlav1.GetComponentsResponse{
-		Components: []*rlav1.Component{
-			{Info: &rlav1.DeviceInfo{Id: &rlav1.UUID{Id: uuid.New().String()}, Name: "tray-0"}},
-			{Info: &rlav1.DeviceInfo{Id: &rlav1.UUID{Id: uuid.New().String()}, Name: "tray-1"}},
+	expectedResponse := &flowv1.GetComponentsResponse{
+		Components: []*flowv1.Component{
+			{Info: &flowv1.DeviceInfo{Id: &flowv1.UUID{Id: uuid.New().String()}, Name: "tray-0"}},
+			{Info: &flowv1.DeviceInfo{Id: &flowv1.UUID{Id: uuid.New().String()}, Name: "tray-1"}},
 		},
 		Total: 2,
 	}
@@ -165,7 +165,7 @@ func (s *GetTraysWorkflowTestSuite) Test_GetTrays_Success() {
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 
-	var result rlav1.GetComponentsResponse
+	var result flowv1.GetComponentsResponse
 	s.env.GetWorkflowResult(&result)
 	s.Equal(int32(2), result.GetTotal())
 	s.Equal(2, len(result.GetComponents()))
@@ -174,9 +174,9 @@ func (s *GetTraysWorkflowTestSuite) Test_GetTrays_Success() {
 func (s *GetTraysWorkflowTestSuite) Test_GetTrays_ActivityFails() {
 	var trayManager tActivity.ManageTray
 
-	request := &rlav1.GetComponentsRequest{}
+	request := &flowv1.GetComponentsRequest{}
 
-	errMsg := "RLA communication error"
+	errMsg := "Flow communication error"
 
 	// Mock GetTrays activity failure
 	s.env.RegisterActivity(trayManager.GetTrays)
