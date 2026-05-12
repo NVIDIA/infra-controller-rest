@@ -60,19 +60,19 @@ Power operations:
 
 Examples:
   # Power on compute nodes by rack names
-  rla power control --rack-names "rack-name-1,rack-name-2" --type compute --op on
+  flow power control --rack-names "rack-name-1,rack-name-2" --type compute --op on
 
   # Graceful shutdown
-  rla power control --rack-names "rack-name-1" --type compute --op off
+  flow power control --rack-names "rack-name-1" --type compute --op off
 
   # Force power off
-  rla power control --rack-names "rack-name-1" --type compute --op force-off
+  flow power control --rack-names "rack-name-1" --type compute --op force-off
 
   # Cold reset (hardware level)
-  rla power control --rack-names "rack-name-1" --type compute --op cold-reset
+  flow power control --rack-names "rack-name-1" --type compute --op cold-reset
 
   # Power control by component IDs (no --type needed)
-  rla power control --component-ids "machine1,machine2" --op restart
+  flow power control --component-ids "machine1,machine2" --op restart
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doPowerControl()
@@ -169,12 +169,12 @@ func doPowerControl() {
 
 	ctx := context.Background()
 
-	// Create RLA client
-	rlaClient, err := client.New(newGlobalClientConfig())
+	// Create Flow client
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
-		log.Fatal().Msgf("Failed to create RLA client: %v", err)
+		log.Fatal().Msgf("Failed to create Flow client: %v", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
 	// Execute based on the specified option
 	var result *client.PowerControlResult
@@ -190,7 +190,7 @@ func doPowerControl() {
 			Str("component_type", powerControlComponentType).
 			Str("operation", powerControlOp).
 			Msg("Executing power control by rack IDs")
-		result, err = rlaClient.PowerControlByRackIDs(ctx, rackIDs, componentType, op)
+		result, err = flowClient.PowerControlByRackIDs(ctx, rackIDs, componentType, op)
 
 	case hasRackNames:
 		rackNames := parseCommaSeparatedList(powerControlRackNames)
@@ -202,7 +202,7 @@ func doPowerControl() {
 			Str("component_type", powerControlComponentType).
 			Str("operation", powerControlOp).
 			Msg("Executing power control by rack names")
-		result, err = rlaClient.PowerControlByRackNames(ctx, rackNames, componentType, op)
+		result, err = flowClient.PowerControlByRackNames(ctx, rackNames, componentType, op)
 
 	case hasComponentIDs:
 		componentIDs := parseCommaSeparatedList(powerControlComponentIDs)
@@ -213,7 +213,7 @@ func doPowerControl() {
 			Strs("component_ids", componentIDs).
 			Str("operation", powerControlOp).
 			Msg("Executing power control by component IDs")
-		result, err = rlaClient.PowerControlByMachineIDs(ctx, componentIDs, op)
+		result, err = flowClient.PowerControlByMachineIDs(ctx, componentIDs, op)
 	}
 
 	if err != nil {

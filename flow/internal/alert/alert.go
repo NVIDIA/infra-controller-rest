@@ -16,7 +16,7 @@
  */
 
 // Package alert provides an abstraction for sending alerts/notifications
-// from RLA workflows and activities. The concrete implementation can be
+// from Flow workflows and activities. The concrete implementation can be
 // replaced later (Slack, PagerDuty, etc.).
 package alert
 

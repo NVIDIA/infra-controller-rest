@@ -1,6 +1,6 @@
 # Operation Rules Guide
 
-Operation rules define how RLA executes power control, firmware, ingestion, and
+Operation rules define how Flow executes power control, firmware, ingestion, and
 bring-up operations. Each rule specifies a sequence of steps that determine
 component ordering, parallelism, verification, and retry behavior.
 
@@ -21,7 +21,7 @@ component ordering, parallelism, verification, and retry behavior.
 ### Rules and Operations
 
 Each rule is bound to a single **operation** (e.g., `power_on`, `power_off`).
-When an operation is triggered, RLA resolves the applicable rule for the target
+When an operation is triggered, Flow resolves the applicable rule for the target
 rack and executes it.
 
 ### Steps and Stages
@@ -868,7 +868,7 @@ UpdateTaskStatus (completed / failed)
 ### Create a single rule
 
 ```bash
-rla rule create \
+flow rule create \
   --name "Graceful Power On" \
   --description "Power-on with verification" \
   --operation-type power_control \
@@ -881,26 +881,26 @@ rla rule create \
 
 ```bash
 # Create (skip rules that already exist by name)
-rla rule create --from-yaml examples/operation-rules-example.yaml
+flow rule create --from-yaml examples/operation-rules-example.yaml
 
 # Create or overwrite existing rules
-rla rule create --from-yaml examples/operation-rules-example.yaml --overwrite
+flow rule create --from-yaml examples/operation-rules-example.yaml --overwrite
 
 # Validate without writing to the database
-rla rule create --from-yaml examples/operation-rules-example.yaml --dry-run
+flow rule create --from-yaml examples/operation-rules-example.yaml --dry-run
 ```
 
 ### Manage rules
 
 ```bash
 # List all rules
-rla rule list
+flow rule list
 
 # Set a rule as the default for its operation
-rla rule set-default --id <rule-id>
+flow rule set-default --id <rule-id>
 
 # Associate a rule with a specific rack
-rla rule associate --rack-id R1 --rule-id <rule-id>
+flow rule associate --rack-id R1 --rule-id <rule-id>
 ```
 
 ### YAML batch file format
@@ -936,7 +936,7 @@ The file `examples/operation-rules-example.yaml` is the canonical loadable refer
 covering all built-in rule patterns. Load it with:
 
 ```bash
-rla rule create --from-yaml examples/operation-rules-example.yaml
+flow rule create --from-yaml examples/operation-rules-example.yaml
 ```
 
 ```yaml

@@ -466,7 +466,7 @@ func (c *grpcClient) InsertHealthReportOverride(ctx context.Context, machineID s
 				Source: source,
 				Alerts: []*pb.HealthProbeAlert{{
 					Id:              healthProbeIDMaintenance,
-					Message:         "Machine under RLA-managed maintenance",
+					Message:         "Machine under Flow-managed maintenance",
 					Classifications: []string{classificationSuppressExternalAlerting},
 				}},
 			},

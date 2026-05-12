@@ -37,7 +37,7 @@ var ruleCreateCmd = &cobra.Command{
 	Long: `Create one or more operation rules.
 
 Single rule mode (create one rule):
-  rla rule create \
+  flow rule create \
     --name "My Rule" \
     --description "..." \
     --operation-type power_control \
@@ -46,13 +46,13 @@ Single rule mode (create one rule):
     --is-default
 
 Batch mode (create multiple rules from YAML):
-  rla rule create --from-yaml examples/operation-rules-example.yaml
+  flow rule create --from-yaml examples/operation-rules-example.yaml
 
 Batch mode with dry-run (validate without creating):
-  rla rule create --from-yaml examples/operation-rules-example.yaml --dry-run
+  flow rule create --from-yaml examples/operation-rules-example.yaml --dry-run
 
 Batch mode with overwrite (replace existing rules):
-  rla rule create --from-yaml examples/operation-rules-example.yaml --overwrite
+  flow rule create --from-yaml examples/operation-rules-example.yaml --overwrite
 
 The --dry-run flag validates rules without creating them (preview mode).
 The --overwrite flag will replace existing rules with the same operation_type and operation.`,
@@ -144,13 +144,13 @@ func createSingleRule() error {
 		return fmt.Errorf("invalid operation type: %s (must be power_control or firmware_control)", createOpType)
 	}
 
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
-	ruleID, err := rlaClient.CreateOperationRule(
+	ruleID, err := flowClient.CreateOperationRule(
 		context.Background(),
 		createName,
 		createDescription,
@@ -202,11 +202,11 @@ func createRulesFromYAML() error {
 	}
 
 	// Create client
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
 	ctx := context.Background()
 	created := 0
@@ -217,7 +217,10 @@ func createRulesFromYAML() error {
 	for opType, opRules := range rules {
 		for operation, rule := range opRules {
 			// Check if rule already exists by listing and filtering
-			existing := findExistingRule(ctx, rlaClient, opType, operation)
+			existing, err := findExistingRule(ctx, flowClient, opType, operation)
+			if err != nil {
+				return fmt.Errorf("failed to check existing rule %s (%s/%s): %w", rule.Name, opType, operation, err)
+			}
 
 			if existing != nil {
 				if !createOverwrite {
@@ -228,7 +231,7 @@ func createRulesFromYAML() error {
 				}
 
 				// Delete existing rule before creating new one
-				err := rlaClient.DeleteOperationRule(ctx, existing.ID)
+				err := flowClient.DeleteOperationRule(ctx, existing.ID)
 				if err != nil {
 					return fmt.Errorf("failed to delete existing rule %s: %w", rule.Name, err)
 				}
@@ -243,7 +246,7 @@ func createRulesFromYAML() error {
 				return fmt.Errorf("failed to marshal rule definition for %s: %w", rule.Name, err)
 			}
 
-			_, err = rlaClient.CreateOperationRule(
+			_, err = flowClient.CreateOperationRule(
 				ctx,
 				rule.Name,
 				rule.Description,
@@ -308,32 +311,32 @@ func showDryRunOutput(rules map[taskcommon.TaskType]map[string]*operationrules.O
 	fmt.Printf("Would create: %d rules\n", totalRules)
 	fmt.Println()
 	fmt.Println("To actually create these rules, run without --dry-run:")
-	fmt.Printf("  rla rule create --from-yaml %s\n", createFromYAML)
+	fmt.Printf("  flow rule create --from-yaml %s\n", createFromYAML)
 
 	return nil
 }
 
 // findExistingRule searches the server's rule list for a rule matching the
-// given operation type and operation code. Returns nil if none is found.
-func findExistingRule(ctx context.Context, rlaClient *client.Client, opType taskcommon.TaskType, operation string) *types.OperationRule {
-	// List all rules and find matching one
-	rules, _, err := rlaClient.ListOperationRules(ctx, nil, nil, nil, nil)
+// given operation type and operation code. Returns (nil, nil) if no matching
+// rule is found, or (nil, err) if the underlying list call fails.
+func findExistingRule(ctx context.Context, flowClient *client.Client, opType taskcommon.TaskType, operation string) (*types.OperationRule, error) {
+	rules, _, err := flowClient.ListOperationRules(ctx, nil, nil, nil, nil)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	typesOpType := taskTypeToOperationType(opType)
 	for _, rule := range rules {
 		if rule.OperationType == typesOpType && rule.OperationCode == operation {
-			return rule
+			return rule, nil
 		}
 	}
 
-	return nil
+	return nil, nil
 }
 
 // taskTypeToOperationType converts a taskcommon.TaskType to the corresponding
-// types.OperationType used in the RLA API.
+// types.OperationType used in the Flow API.
 func taskTypeToOperationType(taskType taskcommon.TaskType) types.OperationType {
 	switch taskType {
 	case taskcommon.TaskTypePowerControl:

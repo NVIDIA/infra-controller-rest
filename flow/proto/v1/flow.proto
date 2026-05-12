@@ -24,7 +24,7 @@ import "google/protobuf/empty.proto";
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
-service RLA {
+service Flow {
     // Version
     rpc Version(VersionRequest) returns (BuildInfo);
 
@@ -471,16 +471,16 @@ message ValidateComponentsResponse {
     int32 total_diffs = 2;
     
     // Summary counts
-    int32 missing_count = 3;     // Expected by RLA but not found in the component manager service
-    int32 unexpected_count = 4;  // Found in the component manager service but not expected by RLA
+    int32 missing_count = 3;     // Expected by Flow but not found in the component manager service
+    int32 unexpected_count = 4;  // Found in the component manager service but not expected by Flow
     int32 drift_count = 5;
     int32 match_count = 6;
 }
 
 enum DiffType {
     DIFF_TYPE_UNKNOWN = 0;
-    DIFF_TYPE_MISSING = 1;       // Expected by RLA but not found in the component manager service
-    DIFF_TYPE_UNEXPECTED = 2;    // Found in the component manager service but not expected by RLA
+    DIFF_TYPE_MISSING = 1;       // Expected by Flow but not found in the component manager service
+    DIFF_TYPE_UNEXPECTED = 2;    // Found in the component manager service but not expected by Flow
     DIFF_TYPE_DRIFT = 3;         // In both but with field differences
 }
 
@@ -490,7 +490,7 @@ message ComponentDiff {
     Component expected = 3;     // Populated when type is MISSING
     Component actual = 4;
     repeated FieldDiff field_diffs = 5; // Populated when type is DRIFT
-    UUID id = 6;                // RLA internal component UUID
+    UUID id = 6;                // Flow internal component UUID
 }
 
 message FieldDiff {

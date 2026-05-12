@@ -58,12 +58,12 @@ var (
 	// serveCmd represents the serve command
 	serveCmd = &cobra.Command{
 		Use:   "serve",
-		Short: "Start the RLA gPRC server",
+		Short: "Start the Flow gRPC server",
 		Long:  `Start the gRPC server to allow other services to manage the racks`,
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			for _, name := range clientOnlyFlags {
 				if cmd.Root().PersistentFlags().Changed(name) {
-					return fmt.Errorf("--%s is not applicable to 'rla serve'", name)
+					return fmt.Errorf("--%s is not applicable to 'flow serve'", name)
 				}
 			}
 			return nil
@@ -149,10 +149,10 @@ func initProviderRegistry(
 // loadComponentManagerConfig loads the component manager configuration with the following priority:
 //
 //  1. CLI flag: --component-config / -c <path>
-//     Example: ./rla serve -c /etc/rla/custom.yaml
+//     Example: ./flow serve -c /etc/flow/custom.yaml
 //
 //  2. Environment variable: COMPONENT_MANAGER_CONFIG=<path>
-//     Example: COMPONENT_MANAGER_CONFIG=/etc/rla/componentmanager.yaml
+//     Example: COMPONENT_MANAGER_CONFIG=/etc/flow/componentmanager.yaml
 //
 //  3. Embedded default: builtin service config
 //     Used when no config file is provided. The primary production path.
@@ -196,14 +196,14 @@ func doServe() {
 		os.Setenv(svc.EnvVarName, "development") //nolint:errcheck
 	}
 
-	rlaEnv, err := svc.GetDeploymentEnv()
+	flowEnv, err := svc.GetDeploymentEnv()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Invalid deployment environment")
 	}
 
-	log.Info().Str(svc.EnvVarName, rlaEnv).Msg("Deployment environment")
+	log.Info().Str(svc.EnvVarName, flowEnv).Msg("Deployment environment")
 
-	rlaConfig := config.ReadConfig()
+	flowConfig := config.ReadConfig()
 
 	dbConf, err := cdb.ConfigFromEnv()
 	if err != nil {
@@ -282,7 +282,7 @@ func doServe() {
 			Port:             port,
 			DBConf:           dbConf,
 			ExecutorConf:     &temporalManagerConf,
-			RLAConfig:        rlaConfig,
+			FlowConfig:       flowConfig,
 			CMConfig:         cmConfig,
 			ProviderRegistry: providerRegistry,
 			DevMode:          devMode,
@@ -298,7 +298,7 @@ func doServe() {
 		log.Fatal().Msgf("failed to create the new gRPC server: %v", err)
 	}
 
-	log.Info().Msg("New RLA service is created\n")
+	log.Info().Msg("New Flow service is created\n")
 	log.Info().Msgf("DB config: %+v", dbConf)
 	log.Info().Msgf("Temporal config: %+v", temporalManagerConf)
 

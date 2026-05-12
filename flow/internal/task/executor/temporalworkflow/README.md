@@ -1,6 +1,6 @@
 # Temporal Workflow Guide
 
-This guide explains how to add a new operation to the Temporal workflow executor in the RLA system.
+This guide explains how to add a new operation to the Temporal workflow executor in the Flow system.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -16,7 +16,7 @@ This guide explains how to add a new operation to the Temporal workflow executor
 
 ## Overview
 
-The RLA Temporal workflow system provides durable, retryable execution of long-running operations across distributed rack components. It has three layers:
+The Flow Temporal workflow system provides durable, retryable execution of long-running operations across distributed rack components. It has three layers:
 
 1. **Manager**: Receives generic `ExecutionRequest`s, looks up the right workflow from the registry, and submits it to Temporal
 2. **Workflows**: Orchestrate activities in sequence or parallel; each workflow self-registers with its `TaskType`

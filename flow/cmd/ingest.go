@@ -43,10 +43,10 @@ Specify racks by ID or name:
 
 Examples:
   # Ingest all components in racks by name
-  rla ingest --rack-names "rack-1,rack-2"
+  flow ingest --rack-names "rack-1,rack-2"
 
   # Ingest by rack IDs
-  rla ingest --rack-ids "uuid1,uuid2"
+  flow ingest --rack-ids "uuid1,uuid2"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doIngest()
@@ -81,11 +81,11 @@ func doIngest() {
 
 	ctx := context.Background()
 
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
-		log.Fatal().Msgf("Failed to create RLA client: %v", err)
+		log.Fatal().Msgf("Failed to create Flow client: %v", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
 	var result *client.IngestRackResult
 
@@ -98,7 +98,7 @@ func doIngest() {
 		log.Info().
 			Int("rack_count", len(rackIDs)).
 			Msg("Submitting ingestion task by rack IDs")
-		result, err = rlaClient.IngestRackByRackIDs(ctx, rackIDs, ingestDescription)
+		result, err = flowClient.IngestRackByRackIDs(ctx, rackIDs, ingestDescription)
 
 	case hasRackNames:
 		rackNames := parseCommaSeparatedList(ingestRackNames)
@@ -108,7 +108,7 @@ func doIngest() {
 		log.Info().
 			Strs("rack_names", rackNames).
 			Msg("Submitting ingestion task by rack names")
-		result, err = rlaClient.IngestRackByRackNames(ctx, rackNames, ingestDescription)
+		result, err = flowClient.IngestRackByRackNames(ctx, rackNames, ingestDescription)
 	}
 
 	if err != nil {

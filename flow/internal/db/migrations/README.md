@@ -9,4 +9,4 @@ All sites where it was deployed will require manual schema editing to be consist
 While developing, if you want to replace a version of a migration that was only present in a prior version of your workspace, manually undo the changes made to
 the schema, then either run the SQL "delete from migrations where id = 'TIMESTAMP'" or start using a new timestamp.
 
-When a new version of rla is run, all .up.sql migrations that were not present before are run in a single transaction in the order of their timestamps.
+When a new version of flow is run, all .up.sql migrations that were not present before are run in a single transaction in the order of their timestamps.

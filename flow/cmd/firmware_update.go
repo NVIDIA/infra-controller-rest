@@ -33,10 +33,10 @@ This command is not yet implemented.
 
 Examples:
   # Update firmware by rack names
-  rla firmware update --rack-names "rack-1,rack-2" --type compute --version "2.1.0"
+  flow firmware update --rack-names "rack-1,rack-2" --type compute --version "2.1.0"
 
   # Update firmware by component IDs
-  rla firmware update --component-ids "machine-1,machine-2" --version "2.1.0"
+  flow firmware update --component-ids "machine-1,machine-2" --version "2.1.0"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Println("Error: 'firmware update' command is not yet implemented")

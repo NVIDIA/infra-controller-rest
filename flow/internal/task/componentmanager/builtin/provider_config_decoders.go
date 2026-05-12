@@ -16,7 +16,7 @@
  */
 
 // Package builtin registers the component manager extensions compiled into the
-// RLA binary.
+// Flow binary.
 package builtin
 
 import (
@@ -29,7 +29,7 @@ import (
 )
 
 // newServiceProviderConfigDecoderRegistry creates the provider config decoder
-// registry used by the RLA service.
+// registry used by the Flow service.
 func newServiceProviderConfigDecoderRegistry() (*providerapi.ProviderConfigDecoderRegistry, error) {
 	registry := providerapi.NewProviderConfigDecoderRegistry()
 
@@ -47,7 +47,7 @@ func newServiceProviderConfigDecoderRegistry() (*providerapi.ProviderConfigDecod
 }
 
 // serviceProviderConfigDecoders returns all provider config decoders supported
-// by the RLA service. Add a new provider's decoder here when adding a provider
+// by the Flow service. Add a new provider's decoder here when adding a provider
 // compiled into the service.
 func serviceProviderConfigDecoders() []providerapi.ProviderConfigDecoder {
 	return []providerapi.ProviderConfigDecoder{

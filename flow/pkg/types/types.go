@@ -116,7 +116,7 @@ type Task struct {
 // ComponentDiff represents a difference found during validation.
 type ComponentDiff struct {
 	Type        DiffType
-	ID          uuid.UUID // RLA internal component UUID
+	ID          uuid.UUID // Flow internal component UUID
 	ComponentID string    // Component ID assigned by the component manager service
 	Expected    *Component
 	Actual      *Component

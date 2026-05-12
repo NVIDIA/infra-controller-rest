@@ -55,16 +55,16 @@ Output formats:
 
 Examples:
   # Get all compute components from racks by name
-  rla component expected --rack-names "rack-1,rack-2" --type compute
+  flow component expected --rack-names "rack-1,rack-2" --type compute
 
   # Get NVL switches from rack by ID
-  rla component expected --rack-ids "uuid-1,uuid-2" --type nvlswitch
+  flow component expected --rack-ids "uuid-1,uuid-2" --type nvlswitch
 
   # Get components by component IDs
-  rla component expected --component-ids "machine-1,machine-2"
+  flow component expected --component-ids "machine-1,machine-2"
 
   # Output as table
-  rla component expected --rack-names "rack-1" --type compute --output table
+  flow component expected --rack-names "rack-1" --type compute --output table
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doGetExpectedComponents()

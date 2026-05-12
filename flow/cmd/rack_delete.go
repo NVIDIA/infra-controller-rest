@@ -40,7 +40,7 @@ Required:
   --id : Rack UUID to delete
 
 Examples:
-  rla rack delete --id "rack-uuid"
+  flow rack delete --id "rack-uuid"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doDeleteRack()

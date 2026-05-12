@@ -28,7 +28,7 @@ import (
 )
 
 // defaultServiceComponentManagers returns the component manager implementation
-// map used when the RLA service is started without a component manager config
+// map used when the Flow service is started without a component manager config
 // file. A configured file is authoritative and does not merge with this map.
 func defaultServiceComponentManagers() map[devicetypes.ComponentType]string {
 	return map[devicetypes.ComponentType]string{
@@ -38,7 +38,7 @@ func defaultServiceComponentManagers() map[devicetypes.ComponentType]string {
 	}
 }
 
-// LoadConfig loads the component manager config for the RLA service.
+// LoadConfig loads the component manager config for the Flow service.
 // If path is empty, the embedded service defaults are used. If path is set, the
 // YAML file is authoritative and must satisfy service config validation.
 func LoadConfig(path string) (cmconfig.Config, error) {

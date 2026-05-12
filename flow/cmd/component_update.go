@@ -65,19 +65,19 @@ Patchable fields (at least one required):
 
 Examples:
   # Update firmware version
-  rla component update --id "uuid" --firmware-version "2.0.0"
+  flow component update --id "uuid" --firmware-version "2.0.0"
 
   # Update position fields
-  rla component update --id "uuid" --slot-id 3 --tray-index 1 --host-id 5
+  flow component update --id "uuid" --slot-id 3 --tray-index 1 --host-id 5
 
   # Re-assign to a different rack
-  rla component update --id "uuid" --rack-id "new-rack-uuid"
+  flow component update --id "uuid" --rack-id "new-rack-uuid"
 
   # Update BMC information
-  rla component update --id "uuid" --bmcs '[{"type":"HOST","mac":"aa:bb:cc:dd:ee:ff","ip":"10.0.0.1"}]'
+  flow component update --id "uuid" --bmcs '[{"type":"HOST","mac":"aa:bb:cc:dd:ee:ff","ip":"10.0.0.1"}]'
 
   # Update multiple fields at once
-  rla component update --id "uuid" --firmware-version "2.0.0" --slot-id 3
+  flow component update --id "uuid" --firmware-version "2.0.0" --slot-id 3
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doUpdateComponent(cmd)

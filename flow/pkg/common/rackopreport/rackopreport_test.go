@@ -19,6 +19,7 @@ package rackopreport
 
 import (
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/google/uuid"
@@ -249,4 +250,42 @@ func TestRackOpReport_Finalize_ErrorHandling(t *testing.T) {
 	result := report.Finalize()
 	assert.True(t, json.Valid([]byte(result)), "Should produce valid JSON")
 	assert.NotContains(t, result, `"error"`, "Should not contain error field in normal case")
+}
+
+func TestFallbackErrorJSON_SafeQuoting(t *testing.T) {
+	// The fallback must produce valid JSON regardless of the contents of err,
+	// including cases where the error message contains characters that would
+	// otherwise break out of a hand-constructed quoted string literal.
+	testCases := map[string]error{
+		"plain":           errors.New("something failed"),
+		"double quote":    errors.New(`bad "value" here`),
+		"backslash":       errors.New(`back\slash`),
+		"json injection":  errors.New(`","injected":"yes`),
+		"control chars":   errors.New("nul\x00tab\there"),
+		"newline":         errors.New("multi\nline"),
+		"unicode":         errors.New("café 你好 \U0001F600"),
+		"trailing quote":  errors.New(`ends with quote"`),
+		"empty":           errors.New(""),
+		"only quotes":     errors.New(`"""`),
+		"only backslash":  errors.New(`\`),
+		"escaped already": errors.New(`\"`),
+	}
+
+	for name, inErr := range testCases {
+		t.Run(name, func(t *testing.T) {
+			got := fallbackErrorJSON(inErr)
+
+			require.True(t, json.Valid([]byte(got)),
+				"output must be valid JSON, got: %q", got)
+
+			var parsed map[string]string
+			require.NoError(t, json.Unmarshal([]byte(got), &parsed),
+				"output must unmarshal as map[string]string, got: %q", got)
+
+			assert.Equal(t,
+				"Failed to marshal report to JSON: "+inErr.Error(),
+				parsed["error"],
+				"error message should round-trip through JSON unchanged")
+		})
+	}
 }

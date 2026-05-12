@@ -1,6 +1,6 @@
-# RLA Service Architecture
+# NICo Flow Service Architecture
 
-This document describes the architecture of the RLA (Rack Level Administration) service, a gRPC-based system for managing rack-level assets in NVIDIA datacenters.
+This document describes the architecture of NICo Flow, a gRPC-based system for managing rack-level assets in NVIDIA datacenters.
 
 ## Table of Contents
 
@@ -18,9 +18,9 @@ This document describes the architecture of the RLA (Rack Level Administration) 
 
 ## Introduction
 
-### What is RLA?
+### What is NICo Flow?
 
-RLA (Rack Level Administration) is a service that provides a unified interface for managing rack-level assets in NVIDIA datacenters. It abstracts the complexity of interacting with various hardware components and external systems, providing a consistent API for inventory management and operations.
+NICo Flow is a service that provides a unified interface for managing rack-level assets in NVIDIA datacenters. It abstracts the complexity of interacting with various hardware components and external systems, providing a consistent API for inventory management and operations.
 
 ### Key Capabilities
 
@@ -50,7 +50,7 @@ flowchart TB
 
     subgraph service [Service Layer]
         grpcServer[gRPC Server]
-        serverImpl[RLAServerImpl]
+        serverImpl[FlowServerImpl]
     end
 
     subgraph business [Business Logic Layer]
@@ -159,7 +159,7 @@ The service layer handles gRPC communication and coordinates between clients and
 **Key Components**:
 
 - `service.go` - Service lifecycle management (start/stop), database connection, migrations
-- `server_impl.go` - gRPC method implementations (`RLAServerImpl`)
+- `server_impl.go` - gRPC method implementations (`FlowServerImpl`)
 
 **Responsibilities**:
 
@@ -378,7 +378,7 @@ Inventory is populated via the gRPC API using `CreateExpectedRack` and `AddCompo
 ```mermaid
 sequenceDiagram
     participant Client as gRPC Client
-    participant Server as RLAServerImpl
+    participant Server as FlowServerImpl
     participant TM as Task Manager
     participant Store as Task Store
     participant Exec as Temporal Executor
@@ -419,7 +419,7 @@ flowchart LR
         req[ValidateComponents Request]
     end
 
-    subgraph rla [RLA Service]
+    subgraph flow [Flow Service]
         server[gRPC Server]
         invStore[Inventory Store]
     end
@@ -477,7 +477,7 @@ type Client interface {
 
 **Location**: `internal/psmapi/`
 
-PSM runs as a sidecar container in the RLA pod, managing power shelf units.
+PSM runs as a sidecar container in the Flow pod, managing power shelf units.
 
 **Used for**:
 
@@ -498,7 +498,7 @@ Temporal provides durable workflow execution for long-running operations.
 
 - `TEMPORAL_HOST` - Temporal server hostname
 - `TEMPORAL_PORT` - Temporal server port (default: 7233)
-- `TEMPORAL_NAMESPACE` - Workflow namespace (default: `rla`)
+- `TEMPORAL_NAMESPACE` - Workflow namespace (default: `flow`)
 
 ---
 
@@ -569,7 +569,7 @@ message RackTarget {
 
 message ComponentTarget {
     oneof identifier {
-        string uuid = 1;           // RLA internal UUID
+        string uuid = 1;           // Flow internal UUID
         ExternalRef external = 2;  // External system reference
     }
 }
@@ -679,7 +679,7 @@ Stores task execution records.
 |----------|-------------|---------|
 | `TEMPORAL_HOST` | Temporal server host | - |
 | `TEMPORAL_PORT` | Temporal server port | 7233 |
-| `TEMPORAL_NAMESPACE` | Workflow namespace | rla |
+| `TEMPORAL_NAMESPACE` | Workflow namespace | flow |
 
 #### PSM
 
@@ -709,7 +709,7 @@ See [Component Manager Configuration](component-manager-config.md) for details.
 ### CLI Flags
 
 ```bash
-rla serve [flags]
+flow serve [flags]
 
 Flags:
   -p, --port int              Port for the gRPC server (default 50051)
@@ -721,7 +721,7 @@ Flags:
 ## Directory Structure
 
 ```
-rla/
+flow/
 ├── cmd/                          # CLI commands
 │   ├── root.go                   # Root command
 │   ├── serve.go                  # Server startup

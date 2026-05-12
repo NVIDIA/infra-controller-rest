@@ -61,7 +61,7 @@ func mockGetPowerStatus(ctx context.Context, target common.Target) (map[string]o
 }
 
 // Helper function for creating test components
-// - id: internal UUID (RLA database primary key)
+// - id: internal UUID (Flow database primary key)
 // - name: human-readable name for DeviceInfo.Name
 // - externalID: external component ID for activity calls
 // - compType: component type

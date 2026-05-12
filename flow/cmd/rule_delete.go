@@ -49,13 +49,13 @@ func runRuleDelete(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid rule ID: %w", err)
 	}
 
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
-	err = rlaClient.DeleteOperationRule(context.Background(), ruleID)
+	err = flowClient.DeleteOperationRule(context.Background(), ruleID)
 	if err != nil {
 		return fmt.Errorf("failed to delete rule: %w", err)
 	}

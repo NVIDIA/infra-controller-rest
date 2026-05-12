@@ -36,7 +36,7 @@ The operation type and operation are automatically determined from the rule.
 This will override any existing rule association for that operation on the rack.
 
 Example:
-  rla rule associate --rack-id R1 --rule-id abc123-def4-5678-90ab-cdef12345678`,
+  flow rule associate --rack-id R1 --rule-id abc123-def4-5678-90ab-cdef12345678`,
 	RunE: runRuleAssociate,
 }
 
@@ -58,11 +58,11 @@ func init() {
 // runRuleAssociate is the RunE handler for ruleAssociateCmd. It parses the
 // rack and rule IDs from flags and calls AssociateRuleWithRack via the client.
 func runRuleAssociate(cmd *cobra.Command, args []string) error {
-	rlaClient, err := client.New(newGlobalClientConfig())
+	flowClient, err := client.New(newGlobalClientConfig())
 	if err != nil {
 		return fmt.Errorf("failed to create client: %w", err)
 	}
-	defer rlaClient.Close()
+	defer flowClient.Close()
 
 	rackID, err := uuid.Parse(assocRackID)
 	if err != nil {
@@ -74,7 +74,7 @@ func runRuleAssociate(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid rule ID: %w", err)
 	}
 
-	err = rlaClient.AssociateRuleWithRack(context.Background(), rackID, ruleID)
+	err = flowClient.AssociateRuleWithRack(context.Background(), rackID, ruleID)
 	if err != nil {
 		return fmt.Errorf("failed to associate rule with rack: %w", err)
 	}

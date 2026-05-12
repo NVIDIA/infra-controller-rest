@@ -76,11 +76,11 @@ Optional:
 
 Examples:
   # Add a compute node
-  rla component add --rack-id "uuid" --name "node-01" --type compute \
+  flow component add --rack-id "uuid" --name "node-01" --type compute \
     --manufacturer "NVIDIA" --serial-number "SN123" --slot-id 1 --tray-index 0 --host-id 1
 
   # Add a powershelf with BMC
-  rla component add --rack-id "uuid" --name "ps-01" --type powershelf \
+  flow component add --rack-id "uuid" --name "ps-01" --type powershelf \
     --manufacturer "NVIDIA" --serial-number "PS123" --bmc-mac "aa:bb:cc:dd:ee:ff" --bmc-ip "10.0.0.1"
 `,
 		Run: func(cmd *cobra.Command, args []string) {

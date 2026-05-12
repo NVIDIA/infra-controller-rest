@@ -659,3 +659,157 @@ func TestIsActionModifier(t *testing.T) {
 		})
 	}
 }
+
+// TestBuildTagSubcommands_AliasCollisionExpandsAllNames documents the fix
+// for the alias-collision determinism bug. When two operations under the
+// same tag collapse to the same short action name (e.g.
+// `get-current-infrastructure-provider` and
+// `get-current-infrastructure-provider-stats` both -> `get`), the generated
+// command tree must expose BOTH operations under their full OperationID and
+// must NOT expose either under the colliding short name. Without this, the
+// short alias non-deterministically points at one of the two operations
+// depending on map iteration order, so the same binary exposes a different
+// command surface depending on whether the config file was loaded.
+func TestBuildTagSubcommands_AliasCollisionExpandsAllNames(t *testing.T) {
+	infraProviderGet := &Operation{
+		OperationID: "get-current-infrastructure-provider",
+		Tags:        []string{"Infrastructure Provider"},
+		Summary:     "Retrieve Infrastructure Provider for current Org",
+	}
+	infraProviderStats := &Operation{
+		OperationID: "get-current-infrastructure-provider-stats",
+		Tags:        []string{"Infrastructure Provider"},
+		Summary:     "Retrieve Stats for current Infrastructure Provider",
+	}
+	ops := []resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: infraProviderGet},
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p2", op: infraProviderStats},
+	}
+
+	cmds := buildTagSubcommands(&Spec{}, ops)
+
+	names := make(map[string]int)
+	for _, c := range cmds {
+		names[c.Name]++
+	}
+	assert.Equal(t, 0, names["get"],
+		"colliding short alias must be dropped entirely, not assigned to one operation non-deterministically")
+	assert.Equal(t, 1, names["get-current-infrastructure-provider"])
+	assert.Equal(t, 1, names["get-current-infrastructure-provider-stats"])
+}
+
+// TestBuildTagSubcommands_NonCollidingActionKeepsShortAlias is the negative
+// counterpart to the collision test above: when there is exactly one
+// operation per short action, the short alias is preserved.
+func TestBuildTagSubcommands_NonCollidingActionKeepsShortAlias(t *testing.T) {
+	op := &Operation{
+		OperationID: "get-current-infrastructure-provider",
+		Tags:        []string{"Infrastructure Provider"},
+	}
+	ops := []resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: op},
+	}
+
+	cmds := buildTagSubcommands(&Spec{}, ops)
+
+	require.Len(t, cmds, 1)
+	assert.Equal(t, "get", cmds[0].Name,
+		"a single-op tag must keep its short alias; collision-expansion must not over-fire")
+}
+
+// TestBuildTagSubcommands_AliasCollisionIsOrderIndependent simulates the two
+// states the bug filer observed (config-loaded vs config-not-loaded) by
+// running the resolver against both possible orderings of the colliding
+// operations. The resulting command tree must be identical, so the binary's
+// command surface no longer depends on Go map iteration order.
+func TestBuildTagSubcommands_AliasCollisionIsOrderIndependent(t *testing.T) {
+	infraProviderGet := &Operation{
+		OperationID: "get-current-infrastructure-provider",
+		Tags:        []string{"Infrastructure Provider"},
+	}
+	infraProviderStats := &Operation{
+		OperationID: "get-current-infrastructure-provider-stats",
+		Tags:        []string{"Infrastructure Provider"},
+	}
+
+	collectNames := func(ops []resolvedOp) []string {
+		cmds := buildTagSubcommands(&Spec{}, ops)
+		names := make([]string, 0, len(cmds))
+		for _, c := range cmds {
+			names = append(names, c.Name)
+		}
+		// Sort because primaryOps slice order is map-iteration-derived; we
+		// only care that the *set* of names is identical across orderings.
+		sortedNames := append([]string(nil), names...)
+		sortStrings(sortedNames)
+		return sortedNames
+	}
+
+	forward := collectNames([]resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: infraProviderGet},
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p2", op: infraProviderStats},
+	})
+	reverse := collectNames([]resolvedOp{
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p2", op: infraProviderStats},
+		{tag: "Infrastructure Provider", action: "get", method: "GET", path: "/p1", op: infraProviderGet},
+	})
+	assert.Equal(t, forward, reverse,
+		"command surface must not depend on the order primaryOps is built in")
+}
+
+// TestNewApp_NoConfigDependentCommandSurface walks the embedded production
+// spec and asserts that the two known alias-collision pairs (Infrastructure
+// Provider and Tenant) expose the full operationId-derived names with no
+// short `get` alias. This is the regression guard that fires if a future
+// change re-introduces a "first one wins" alias resolver.
+func TestNewApp_NoConfigDependentCommandSurface(t *testing.T) {
+	app, err := NewApp(openapi.Spec)
+	require.NoError(t, err, "NewApp failed")
+
+	collidingPairs := map[string][]string{
+		"infrastructure-provider": {
+			"get-current-infrastructure-provider",
+			"get-current-infrastructure-provider-stats",
+		},
+		"tenant": {
+			"get-current-tenant",
+			"get-current-tenant-stats",
+		},
+	}
+
+	for tag, expected := range collidingPairs {
+		t.Run(tag, func(t *testing.T) {
+			var found *cli.Command
+			for _, c := range app.Commands {
+				if c.Name == tag {
+					found = c
+					break
+				}
+			}
+			require.NotNilf(t, found, "tag %q should be present in the generated command tree", tag)
+
+			subNames := make(map[string]bool)
+			for _, sc := range found.Subcommands {
+				subNames[sc.Name] = true
+			}
+			for _, want := range expected {
+				assert.Truef(t, subNames[want],
+					"tag %q must expose %q as a deterministic, full-name command", tag, want)
+			}
+			assert.Falsef(t, subNames["get"],
+				"tag %q must NOT expose `get` as a short alias when there are %d colliding operations",
+				tag, len(expected))
+		})
+	}
+}
+
+// sortStrings is a tiny stable sort used by the order-independence test so it
+// stays self-contained and does not pull in sort.Strings (which is already
+// used elsewhere; this just keeps the test readable).
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j-1] > s[j]; j-- {
+			s[j-1], s[j] = s[j], s[j-1]
+		}
+	}
+}
