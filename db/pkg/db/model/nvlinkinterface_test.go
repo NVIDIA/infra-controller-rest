@@ -1285,3 +1285,105 @@ func TestNVLinkInterfaceSQLDAO_CreateMultiple_ExceedsMaxBatchItems(t *testing.T)
 	assert.Contains(t, err.Error(), "batch size")
 	assert.Contains(t, err.Error(), "exceeds maximum allowed")
 }
+
+func TestNVLinkInterfaceSQLDAO_DeleteAllBySiteID(t *testing.T) {
+	ctx := context.Background()
+	dbSession := testInitDB(t)
+	defer dbSession.Close()
+	TestSetupSchema(t, dbSession)
+
+	// Shared infrastructure
+	ipu := testBuildUser(t, dbSession, nil, testGenerateStarfleetID(), db.GetStrPtr("johnd@test.com"), db.GetStrPtr("John"), db.GetStrPtr("Doe"))
+	ip := testBuildInfrastructureProvider(t, dbSession, nil, "test-ip", "Test Provider", ipu.ID)
+
+	tnu := testBuildUser(t, dbSession, nil, testGenerateStarfleetID(), db.GetStrPtr("jdoetenant@test.com"), db.GetStrPtr("Tenant"), db.GetStrPtr("Doe"))
+	tn := testBuildTenant(t, dbSession, nil, "test-tenant", "test-tenant-org", tnu.ID)
+
+	// Two target sites plus a third site that has no NVLink interfaces, used to
+	// confirm DeleteAllBySiteID is a no-op when nothing matches.
+	st1 := testBuildSite(t, dbSession, nil, ip.ID, "test-site-1", "Test Site 1", ip.Org, ipu.ID)
+	st2 := testBuildSite(t, dbSession, nil, ip.ID, "test-site-2", "Test Site 2", ip.Org, ipu.ID)
+	st3 := testBuildSite(t, dbSession, nil, ip.ID, "test-site-3", "Test Site 3", ip.Org, ipu.ID)
+
+	instanceType := testInstanceBuildInstanceType(t, dbSession, ip, "testInstanceType")
+	operatingSystem := testInstanceBuildOperatingSystem(t, dbSession, "testOS")
+
+	buildInstanceForSite := func(site *Site, hostname, machineTag string) *Instance {
+		vpc := testInstanceBuildVpc(t, dbSession, ip, site, tn, "vpc-"+site.Name)
+		machine := testMachineBuildMachine(t, dbSession, ip.ID, site.ID, &instanceType.ID, db.GetStrPtr(machineTag))
+		alloc := testInstanceBuildAllocation(t, dbSession, ip, tn, site, "alloc-"+site.Name)
+		_ = testBuildAllocationConstraint(t, dbSession, alloc, AllocationResourceTypeInstanceType, instanceType.ID, AllocationConstraintTypeReserved, 10, uuid.New())
+
+		isd := NewInstanceDAO(dbSession)
+		instance, err := isd.Create(
+			ctx, nil,
+			InstanceCreateInput{
+				Name:                     "instance-" + site.Name,
+				TenantID:                 tn.ID,
+				InfrastructureProviderID: ip.ID,
+				SiteID:                   site.ID,
+				InstanceTypeID:           &instanceType.ID,
+				VpcID:                    vpc.ID,
+				MachineID:                &machine.ID,
+				Hostname:                 db.GetStrPtr(hostname),
+				OperatingSystemID:        db.GetUUIDPtr(operatingSystem.ID),
+				IpxeScript:               db.GetStrPtr("ipxe"),
+				UserData:                 db.GetStrPtr("userdata"),
+				InfinityRCRStatus:        db.GetStrPtr("RESOURCE_GRANTED"),
+				Status:                   InstanceStatusPending,
+				CreatedBy:                tnu.ID,
+			},
+		)
+		require.NoError(t, err)
+		return instance
+	}
+
+	inst1 := buildInstanceForSite(st1, "host1.com", "mcType1")
+	inst2 := buildInstanceForSite(st2, "host2.com", "mcType2")
+
+	nvllp1 := testBuildNVLinkLogicalPartition(t, dbSession, nil, "nvllp-site-1", nil, tn.Org, tn.ID, st1.ID, db.GetStrPtr(NVLinkLogicalPartitionStatusReady), tnu.ID)
+	nvllp2 := testBuildNVLinkLogicalPartition(t, dbSession, nil, "nvllp-site-2", nil, tn.Org, tn.ID, st2.ID, db.GetStrPtr(NVLinkLogicalPartitionStatusReady), tnu.ID)
+
+	// Two interfaces in the target site, one in another site that should remain.
+	nvli1a := testBuildNVLinkInterface(t, dbSession, nil, st1.ID, inst1.ID, nvllp1.ID, nil, db.GetStrPtr("Nvidia GB200"), 0, db.GetStrPtr("guid-1a"), db.GetStrPtr(NVLinkInterfaceStatusReady), tnu.ID)
+	nvli1b := testBuildNVLinkInterface(t, dbSession, nil, st1.ID, inst1.ID, nvllp1.ID, nil, db.GetStrPtr("Nvidia GB200"), 1, db.GetStrPtr("guid-1b"), db.GetStrPtr(NVLinkInterfaceStatusReady), tnu.ID)
+	nvli2 := testBuildNVLinkInterface(t, dbSession, nil, st2.ID, inst2.ID, nvllp2.ID, nil, db.GetStrPtr("Nvidia GB200"), 0, db.GetStrPtr("guid-2"), db.GetStrPtr(NVLinkInterfaceStatusReady), tnu.ID)
+
+	// OTEL Spanner configuration
+	_, _, ctx = testCommonTraceProviderSetup(t, ctx)
+
+	nvlisd := NewNVLinkInterfaceDAO(dbSession)
+
+	// Delete all NVLink interfaces under st1.
+	err := nvlisd.DeleteAllBySiteID(ctx, nil, st1.ID)
+	require.NoError(t, err)
+
+	// Both st1 interfaces should be soft-deleted.
+	for _, id := range []uuid.UUID{nvli1a.ID, nvli1b.ID} {
+		deleted := &NVLinkInterface{}
+		err = dbSession.DB.NewSelect().Model(deleted).WhereDeleted().Where("id = ?", id).Scan(context.Background())
+		require.NoError(t, err, "expected soft-deleted row for id %s", id)
+		assert.NotNil(t, deleted.Deleted)
+
+		// Default selects (which exclude soft-deleted rows) should not return them.
+		notFound := &NVLinkInterface{}
+		err = dbSession.DB.NewSelect().Model(notFound).Where("id = ?", id).Scan(context.Background())
+		require.Error(t, err, "soft-deleted row for id %s should not appear in default selects", id)
+	}
+
+	// The interface scoped to the other site must be left untouched.
+	other := &NVLinkInterface{}
+	err = dbSession.DB.NewSelect().Model(other).Where("id = ?", nvli2.ID).Scan(context.Background())
+	require.NoError(t, err)
+	assert.Nil(t, other.Deleted)
+
+	// Calling DeleteAllBySiteID for a site with no interfaces should be a no-op.
+	err = nvlisd.DeleteAllBySiteID(ctx, nil, st3.ID)
+	require.NoError(t, err)
+
+	// Verify the active span is propagated through the call.
+	span := otrace.SpanFromContext(ctx)
+	assert.True(t, span.SpanContext().IsValid())
+	_, ok := ctx.Value(stracer.TracerKey).(otrace.Tracer)
+	assert.True(t, ok)
+}
