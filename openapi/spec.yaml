@@ -7056,7 +7056,7 @@ paths:
             examples:
               Example 1:
                 value:
-                  HealthIssue:
+                  healthIssue:
                     category: NETWORK
                     summary: Machine has DPU connectivity error
                     details: Tenant observed repeated link flaps on the DPU uplink.
@@ -17552,12 +17552,10 @@ components:
               acceptDataCorruptionRisk: true
               acceptRepairTeamAccess: true
               acceptInstanceDeletionRisk: true
-          HealthIssue:
+        - healthIssue:
             category: STORAGE
             summary: Disk errors on OSD
             details: 'Ticket FORGE-12345; smartctl logs attached'
-        - onlineRepairRequest:
-            enabled: false
       description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates, labels updates, and in-pool online repair (enter or exit) must be specified in separate requests. They cannot be processed at the same time.'
       properties:
         instanceTypeId:
@@ -17590,7 +17588,7 @@ components:
           $ref: '#/components/schemas/Labels'
         onlineRepairRequest:
           $ref: '#/components/schemas/MachineOnlineRepairRequest'
-        HealthIssue:
+        healthIssue:
           description: Required when `onlineRepairRequest.enabled` is true. Must not be set when exiting online repair (`onlineRepairRequest.enabled` false).
           $ref: '#/components/schemas/HealthIssue'
     MachineInterface:

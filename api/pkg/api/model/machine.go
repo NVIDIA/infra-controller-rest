@@ -116,7 +116,7 @@ type APIMachineUpdateRequest struct {
 	// OnlineRepairRequest is the request to enter/exit online repair
 	OnlineRepairRequest *APIMachineOnlineRepairRequest `json:"onlineRepairRequest"`
 	// HealthIssue is required when onlineRepairRequest.enabled is true.
-	HealthIssue *APIHealthIssue `json:"HealthIssue"`
+	HealthIssue *APIHealthIssue `json:"healthIssue"`
 }
 
 // IsOnlineRepair reports whether this request is for in-pool online repair (enter or exit).

@@ -84,7 +84,7 @@ var (
 		"SOFTWARE": int32(cwssaws.IssueCategory_OTHER),
 	}
 
-	instanceDeleteHealthIssueCategories = []any{
+	instanceDeleteHealthIssueCategories = []string{
 		MachineIssueCategoryHardware, MachineIssueCategoryNetwork, MachineIssueCategoryPerformance, MachineIssueCategoryOther,
 		"HARDWARE", "NETWORK", "PERFORMANCE", "STORAGE", "SOFTWARE", "OTHER",
 	}
@@ -1508,7 +1508,16 @@ func (idr APIInstanceDeleteRequest) Validate() error {
 		err := validation.ValidateStruct(idr.HealthIssue,
 			validation.Field(&idr.HealthIssue.Category,
 				validation.Required,
-				validation.In(instanceDeleteHealthIssueCategories...),
+				validation.By(func(value any) error {
+					s, ok := value.(string)
+					if !ok {
+						return fmt.Errorf("category must be a string")
+					}
+					if !slices.Contains(instanceDeleteHealthIssueCategories, s) {
+						return fmt.Errorf("category must be one of %v", instanceDeleteHealthIssueCategories)
+					}
+					return nil
+				}),
 			),
 			validation.Field(&idr.HealthIssue.Summary,
 				validation.Required,
