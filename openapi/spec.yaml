@@ -133,6 +133,11 @@ tags:
   - name: Site
     description: |-
       Site is a datacenter that contains physical hardware and networking resources. All resources created by Provider or Tenant are directly or indirectly anchored to the Site object.
+
+      Deprecation history:
+
+      - `rackLevelAdministration` capability attribute was deprecated in favor of `flow` and was removed on May 13th, 2026 0:00 UTC. Please use `flow` instead.
+      - `isRackLevelAdministrationEnabled` query parameter was deprecated in favor of `isFlowEnabled` and was removed on May 13th, 2026 0:00 UTC. Please use `isFlowEnabled` instead.
   - name: Allocation
     description: |-
       Allocations are the mechanism by which Provider can delegate Network and Compute resources to Tenant.
@@ -278,6 +283,10 @@ tags:
 
       Subnet:
       - `ipBlockSize` was deprecated in favor of `prefixLength` and was removed on April 15th, 2023 0:00 UTC. Please use `prefixLength` instead.
+
+      Site:
+      - `rackLevelAdministration` capability attribute was deprecated in favor of `flow` and was removed on May 13th, 2026 0:00 UTC. Please use `flow` instead.
+      - `isRackLevelAdministrationEnabled` query parameter was deprecated in favor of `isFlowEnabled` and was removed on May 13th, 2026 0:00 UTC. Please use `isFlowEnabled` instead.
 paths:
   '/v2/org/{org}/nico/service-account/current':
     parameters:

@@ -415,12 +415,18 @@ func NewFlowAtomicClient(config *FlowClientConfig) *FlowAtomicClient {
 }
 
 func getFlowCertificateCheckInterval() time.Duration {
-	var err error
-	if value, ok := os.LookupEnv("FLOW_CERT_CHECK_INTERVAL"); ok {
-		if interval, err := strconv.Atoi(value); err == nil {
-			return time.Duration(interval) * time.Second
-		}
-		log.Error().Err(err).Msg("Invalid FLOW_CERT_CHECK_INTERVAL value; using default.")
+	value, ok := os.LookupEnv("FLOW_CERT_CHECK_INTERVAL")
+	if !ok {
+		return defaultCheckFlowCertificateIntervalSeconds * time.Second
 	}
-	return defaultCheckFlowCertificateIntervalSeconds * time.Second
+	interval, err := strconv.Atoi(value)
+	if err != nil {
+		log.Error().Err(err).Str("FLOW_CERT_CHECK_INTERVAL", value).Msg("Invalid FLOW_CERT_CHECK_INTERVAL value; using default.")
+		return defaultCheckFlowCertificateIntervalSeconds * time.Second
+	}
+	if interval <= 0 {
+		log.Error().Int("FLOW_CERT_CHECK_INTERVAL", interval).Msg("FLOW_CERT_CHECK_INTERVAL must be > 0; using default.")
+		return defaultCheckFlowCertificateIntervalSeconds * time.Second
+	}
+	return time.Duration(interval) * time.Second
 }
