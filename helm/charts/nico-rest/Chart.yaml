@@ -33,7 +33,7 @@ dependencies:
     version: "0.1.0"
     condition: nico-rest-cert-manager.enabled
   - name: nico-rest-api
-    version: "0.1.0"
+    version: "0.1.1"
     condition: nico-rest-api.enabled
   - name: nico-rest-workflow
     version: "0.1.0"
