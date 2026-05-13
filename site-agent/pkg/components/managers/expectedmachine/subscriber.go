@@ -55,9 +55,9 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachineOnSite)
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered CreateExpectedMachineOnSite activity")
 
-	// Register CreateExpectedMachineOnRLA activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachineOnRLA)
-	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered CreateExpectedMachineOnRLA activity")
+	// Register CreateExpectedMachineOnFlow activity
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachineOnFlow)
+	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered CreateExpectedMachineOnFlow activity")
 
 	// Register UpdateExpectedMachineOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.UpdateExpectedMachineOnSite)
@@ -71,9 +71,9 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachinesOnSite)
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered CreateExpectedMachinesOnSite activity")
 
-	// Register CreateExpectedMachinesOnRLA activity (Batch)
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachinesOnRLA)
-	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered CreateExpectedMachinesOnRLA activity")
+	// Register CreateExpectedMachinesOnFlow activity (Batch)
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.CreateExpectedMachinesOnFlow)
+	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedMachine: Successfully registered CreateExpectedMachinesOnFlow activity")
 
 	// Register UpdateExpectedMachinesOnSite activity (Batch)
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedMachineManager.UpdateExpectedMachinesOnSite)

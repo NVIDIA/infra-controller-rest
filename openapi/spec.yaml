@@ -133,6 +133,11 @@ tags:
   - name: Site
     description: |-
       Site is a datacenter that contains physical hardware and networking resources. All resources created by Provider or Tenant are directly or indirectly anchored to the Site object.
+
+      Deprecation history:
+
+      - `rackLevelAdministration` capability attribute was deprecated in favor of `flow` and was removed on May 13th, 2026 0:00 UTC. Please use `flow` instead.
+      - `isRackLevelAdministrationEnabled` query parameter was deprecated in favor of `isFlowEnabled` and was removed on May 13th, 2026 0:00 UTC. Please use `isFlowEnabled` instead.
   - name: Allocation
     description: |-
       Allocations are the mechanism by which Provider can delegate Network and Compute resources to Tenant.
@@ -278,6 +283,10 @@ tags:
 
       Subnet:
       - `ipBlockSize` was deprecated in favor of `prefixLength` and was removed on April 15th, 2023 0:00 UTC. Please use `prefixLength` instead.
+
+      Site:
+      - `rackLevelAdministration` capability attribute was deprecated in favor of `flow` and was removed on May 13th, 2026 0:00 UTC. Please use `flow` instead.
+      - `isRackLevelAdministrationEnabled` query parameter was deprecated in favor of `isFlowEnabled` and was removed on May 13th, 2026 0:00 UTC. Please use `isFlowEnabled` instead.
 paths:
   '/v2/org/{org}/nico/service-account/current':
     parameters:
@@ -845,8 +854,8 @@ paths:
         - schema:
             type: boolean
           in: query
-          name: isRackLevelAdministrationEnabled
-          description: Filter Sites by Rack Level Administration enabled flag. Requires Provider Admin role.
+          name: isFlowEnabled
+          description: Filter Sites by NICo Flow enabled flag. Requires Provider Admin role.
         - schema:
             type: boolean
           in: query
@@ -7904,7 +7913,7 @@ paths:
                               nativeNetworking: false
                               networkSecurityGroup: true
                               nvLinkPartition: false
-                              rackLevelAdministration: false
+                              flow: false
                               imageBasedOperatingSystem: false
                             status: Registered
                           status: Syncing
@@ -7921,7 +7930,7 @@ paths:
                               nativeNetworking: false
                               networkSecurityGroup: false
                               nvLinkPartition: false
-                              rackLevelAdministration: false
+                              flow: false
                               imageBasedOperatingSystem: false
                             status: Registered
                           status: Syncing
@@ -8239,7 +8248,7 @@ paths:
                             nativeNetworking: false
                             networkSecurityGroup: true
                             nvLinkPartition: false
-                            rackLevelAdministration: false
+                            flow: false
                             imageBasedOperatingSystem: false
                           status: Registered
                         status: Syncing
@@ -8256,7 +8265,7 @@ paths:
                             nativeNetworking: false
                             networkSecurityGroup: false
                             nvLinkPartition: false
-                            rackLevelAdministration: false
+                            flow: false
                             imageBasedOperatingSystem: false
                           status: Registered
                         status: Syncing
@@ -10330,7 +10339,7 @@ paths:
         '202':
           description: |-
             Accepted. The cancellation request was accepted and the task as
-            last reported by RLA is returned. Clients should `GET` the task
+            last reported by Flow is returned. Clients should `GET` the task
             to observe the final state, since cancellation is best-effort
             and the underlying workflow may still be terminating.
           content:
@@ -11463,7 +11472,7 @@ paths:
                               nativeNetworking: false
                               networkSecurityGroup: true
                               nvLinkPartition: false
-                              rackLevelAdministration: false
+                              flow: false
                               imageBasedOperatingSystem: false
                             status: Registered
                           status: Syncing
@@ -11675,7 +11684,7 @@ paths:
                             nativeNetworking: true
                             networkSecurityGroup: true
                             nvLinkPartition: false
-                            rackLevelAdministration: false
+                            flow: false
                             imageBasedOperatingSystem: false
                           status: Registered
                         status: Syncing
@@ -12718,7 +12727,7 @@ components:
             nativeNetworking: true
             networkSecurityGroup: true
             nvLinkPartition: false
-            rackLevelAdministration: false
+            flow: false
             imageBasedOperatingSystem: false
           isOnline: false
           status: Pending
@@ -12836,7 +12845,7 @@ components:
             nativeNetworking: false
             networkSecurityGroup: true
             nvLinkPartition: false
-            rackLevelAdministration: false
+            flow: false
             imageBasedOperatingSystem: false
           status: Pending
       properties:
@@ -12882,7 +12891,7 @@ components:
           type: boolean
         nvLinkPartition:
           type: boolean
-        rackLevelAdministration:
+        flow:
           type: boolean
         imageBasedOperatingSystem:
           type: boolean
@@ -13020,11 +13029,11 @@ components:
             - boolean
             - 'null'
           description: Enable or disable NVLink partition support for the Site
-        rackLevelAdministration:
+        flow:
           type:
             - boolean
             - 'null'
-          description: Enable or disable rack-level administration for the Site
+          description: Enable or disable NICo Flow for the Site
         imageBasedOperatingSystem:
           type:
             - boolean
@@ -14448,7 +14457,7 @@ components:
                   nativeNetworking: false
                   networkSecurityGroup: true
                   nvLinkPartition: false
-                  rackLevelAdministration: false
+                  flow: false
                   imageBasedOperatingSystem: false
                 status: Registered
               status: Syncing
@@ -14465,7 +14474,7 @@ components:
                   nativeNetworking: false
                   networkSecurityGroup: false
                   nvLinkPartition: false
-                  rackLevelAdministration: false
+                  flow: false
                   imageBasedOperatingSystem: false
                 status: Registered
               status: Syncing
@@ -14673,7 +14682,7 @@ components:
               nativeNetworking: false
               networkSecurityGroup: false
               nvLinkPartition: false
-              rackLevelAdministration: false
+              flow: false
               imageBasedOperatingSystem: false
             status: Pending
           status: Syncing
@@ -16742,7 +16751,7 @@ components:
         id:
           type: string
           format: uuid
-          description: RLA internal component UUID
+          description: Flow internal component UUID
         componentId:
           type: string
           description: Component ID assigned by the component manager service
@@ -20032,7 +20041,7 @@ components:
                   nativeNetworking: false
                   networkSecurityGroup: true
                   nvLinkPartition: false
-                  rackLevelAdministration: false
+                  flow: false
                   imageBasedOperatingSystem: false
                 status: Registered
               status: Syncing
@@ -20134,7 +20143,7 @@ components:
               nativeNetworking: false
               networkSecurityGroup: true
               nvLinkPartition: false
-              rackLevelAdministration: false
+              flow: false
               imageBasedOperatingSystem: false
             status: Pending
           status: Syncing

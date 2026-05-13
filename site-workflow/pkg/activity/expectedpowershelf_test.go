@@ -458,10 +458,10 @@ func TestManageExpectedPowerShelf_DeleteExpectedPowerShelfOnSite(t *testing.T) {
 	}
 }
 
-func TestManageExpectedPowerShelf_CreateExpectedPowerShelfOnRLA(t *testing.T) {
+func TestManageExpectedPowerShelf_CreateExpectedPowerShelfOnFlow(t *testing.T) {
 	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedPowerShelf{FlowAtomicClient: nil}
-		err := mm.CreateExpectedPowerShelfOnRLA(context.Background(), &cwssaws.ExpectedPowerShelf{
+		err := mm.CreateExpectedPowerShelfOnFlow(context.Background(), &cwssaws.ExpectedPowerShelf{
 			ExpectedPowerShelfId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ShelfSerialNumber: "SHELF001",
 		})
 		assert.NoError(t, err)
@@ -469,14 +469,14 @@ func TestManageExpectedPowerShelf_CreateExpectedPowerShelfOnRLA(t *testing.T) {
 
 	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedPowerShelf{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
-		err := mm.CreateExpectedPowerShelfOnRLA(context.Background(), &cwssaws.ExpectedPowerShelf{
+		err := mm.CreateExpectedPowerShelfOnFlow(context.Background(), &cwssaws.ExpectedPowerShelf{
 			ExpectedPowerShelfId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", ShelfSerialNumber: "SHELF001",
 		})
 		assert.NoError(t, err)
 	})
 }
 
-func Test_expectedPowerShelfToRLAComponent(t *testing.T) {
+func Test_expectedPowerShelfToFlowComponent(t *testing.T) {
 	strPtr := func(s string) *string { return &s }
 	int32Ptr := func(i int32) *int32 { return &i }
 
@@ -496,7 +496,7 @@ func Test_expectedPowerShelfToRLAComponent(t *testing.T) {
 			TrayIdx:              int32Ptr(0),
 			HostId:               int32Ptr(0),
 		}
-		component := expectedPowerShelfToRLAComponent(eps)
+		component := expectedPowerShelfToFlowComponent(eps)
 		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF, component.Type)
 		assert.Equal(t, "eps-001", component.Info.Id.Id)
 		assert.Equal(t, "SHELF-001", component.Info.SerialNumber)
@@ -522,7 +522,7 @@ func Test_expectedPowerShelfToRLAComponent(t *testing.T) {
 			ExpectedPowerShelfId: &cwssaws.UUID{Value: "eps-002"}, BmcMacAddress: "11:22:33:44:55:66",
 			ShelfSerialNumber: "SHELF-002",
 		}
-		component := expectedPowerShelfToRLAComponent(eps)
+		component := expectedPowerShelfToFlowComponent(eps)
 		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF, component.Type)
 		assert.Empty(t, component.Info.Name)
 		assert.Empty(t, component.Info.Manufacturer)

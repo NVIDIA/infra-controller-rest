@@ -38,7 +38,7 @@ var _ MappedNullable = &ComponentDiff{}
 type ComponentDiff struct {
 	// Type of difference: Unknown, Missing, Unexpected, or Drift
 	Type *string `json:"type,omitempty"`
-	// RLA internal component UUID
+	// Flow internal component UUID
 	Id *string `json:"id,omitempty"`
 	// Component ID assigned by the component manager service
 	ComponentId *string        `json:"componentId,omitempty"`

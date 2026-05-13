@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -217,136 +216,143 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		rules[i] = newRule
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, cnsgh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Network Security Group", nil)
-	}
-
-	// If false, a rollback will be trigger on any early return.
-	// If all goes well, we'll set it to true later on.
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
 	networkSecurityGroupID := uuid.NewString()
 
-	// create the NetworkSecurityGroup record in the db
-	networkSecurityGroup, err := nsgDAO.Create(ctx, tx,
-		cdbm.NetworkSecurityGroupCreateInput{
-			Name:                   apiRequest.Name,
-			Description:            apiRequest.Description,
-			TenantID:               tenant.ID,
-			TenantOrg:              tenant.Org,
-			SiteID:                 site.ID,
-			NetworkSecurityGroupID: cdb.GetStrPtr(networkSecurityGroupID),
-			StatefulEgress:         apiRequest.StatefulEgress,
-			Rules:                  rules,
-			Labels:                 apiRequest.Labels,
-			Status:                 cdbm.NetworkSecurityGroupStatusPending,
-			CreatedByID:            dbUser.ID,
-		},
-	)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to create NetworkSecurityGroup record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed creating Network Security Group record, DB error", nil)
-	}
-
-	// create the status detail record
 	sdDAO := cdbm.NewStatusDetailDAO(cnsgh.dbSession)
-	ssd, serr := sdDAO.CreateFromParams(ctx, tx, networkSecurityGroup.ID, *cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusReady),
-		cdb.GetStrPtr("processed network security group creation request"))
-	if serr != nil {
-		logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for Network Security Group, DB error", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for Network Security Group", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := cnsgh.scp.GetClientByID(networkSecurityGroup.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+	// timeoutResp lets the closure signal an outer-scope handler — TerminateWorkflowOnTimeOut
+	// has to run after the closure returns so that the rollback completes before we touch
+	// the workflow again. nil means no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	var ssd *cdbm.StatusDetail
+	var networkSecurityGroup *cdbm.NetworkSecurityGroup
 
-	createLabels := util.ProtobufLabelsFromAPILabels(networkSecurityGroup.Labels)
-
-	description := ""
-	if networkSecurityGroup.Description != nil {
-		description = *networkSecurityGroup.Description
-	}
-
-	// Convert the DB rule wrappers into rules
-	// we can send to NICo.
-	nicoRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(rules))
-
-	for i, rule := range rules {
-		nicoRules[i] = rule.NetworkSecurityGroupRuleAttributes
-	}
-
-	// Prepare the create request workflow object
-	createNetworkSecurityGroupRequest := &cwssaws.CreateNetworkSecurityGroupRequest{
-		Id:                   &networkSecurityGroupID,
-		TenantOrganizationId: tenant.Org,
-		Metadata: &cwssaws.Metadata{
-			Name:        apiRequest.Name,
-			Description: description,
-			Labels:      createLabels,
-		},
-		NetworkSecurityGroupAttributes: &cwssaws.NetworkSecurityGroupAttributes{
-			StatefulEgress: apiRequest.StatefulEgress,
-			Rules:          nicoRules,
-		},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "network-security-group-create-" + networkSecurityGroup.ID,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	logger.Info().Msg("triggering network security group update workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow to update networkSecurityGroup
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateNetworkSecurityGroup", createNetworkSecurityGroupRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create NetworkSecurityGroup")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start sync workflow to create Network Security Group on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create NetworkSecurityGroup workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-
-	if err != nil {
-
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
-			logger.Error().Msg("feature not yet implemented on target Site")
-			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
+	err = cdb.WithTx(ctx, cnsgh.dbSession, func(tx *cdb.Tx) error {
+		// create the NetworkSecurityGroup record in the db
+		nsg, derr := nsgDAO.Create(ctx, tx,
+			cdbm.NetworkSecurityGroupCreateInput{
+				Name:                   apiRequest.Name,
+				Description:            apiRequest.Description,
+				TenantID:               tenant.ID,
+				TenantOrg:              tenant.Org,
+				SiteID:                 site.ID,
+				NetworkSecurityGroupID: cdb.GetStrPtr(networkSecurityGroupID),
+				StatefulEgress:         apiRequest.StatefulEgress,
+				Rules:                  rules,
+				Labels:                 apiRequest.Labels,
+				Status:                 cdbm.NetworkSecurityGroupStatusPending,
+				CreatedByID:            dbUser.ID,
+			},
+		)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to create NetworkSecurityGroup record in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed creating Network Security Group record, DB error", nil)
 		}
 
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "NetworkSecurityGroup", "CreateNetworkSecurityGroup")
+		// create the status detail record
+		statusDetail, derr := sdDAO.CreateFromParams(ctx, tx, nsg.ID, *cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusReady),
+			cdb.GetStrPtr("processed network security group creation request"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for Network Security Group, DB error", nil)
+		}
+		if statusDetail == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for Network Security Group", nil)
+		}
+		ssd = statusDetail
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := cnsgh.scp.GetClientByID(nsg.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update CreateNetworkSecurityGroup")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to create Network Security Group on Site: %s", err), nil)
-	}
+		createLabels := util.ProtobufLabelsFromAPILabels(nsg.Labels)
 
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create NetworkSecurityGroup workflow")
+		description := ""
+		if nsg.Description != nil {
+			description = *nsg.Description
+		}
+
+		// Convert the DB rule wrappers into rules
+		// we can send to NICo.
+		nicoRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(rules))
+
+		for i, rule := range rules {
+			nicoRules[i] = rule.NetworkSecurityGroupRuleAttributes
+		}
+
+		// Prepare the create request workflow object
+		createNetworkSecurityGroupRequest := &cwssaws.CreateNetworkSecurityGroupRequest{
+			Id:                   &networkSecurityGroupID,
+			TenantOrganizationId: tenant.Org,
+			Metadata: &cwssaws.Metadata{
+				Name:        apiRequest.Name,
+				Description: description,
+				Labels:      createLabels,
+			},
+			NetworkSecurityGroupAttributes: &cwssaws.NetworkSecurityGroupAttributes{
+				StatefulEgress: apiRequest.StatefulEgress,
+				Rules:          nicoRules,
+			},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "network-security-group-create-" + nsg.ID,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		logger.Info().Msg("triggering network security group create workflow")
+
+		// Add context deadlines
+		workflowCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow to update networkSecurityGroup
+		we, derr := stc.ExecuteWorkflow(workflowCtx, workflowOptions, "CreateNetworkSecurityGroup", createNetworkSecurityGroupRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to create NetworkSecurityGroup")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to start sync workflow to create Network Security Group on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create NetworkSecurityGroup workflow")
+
+		// Execute the workflow synchronously
+		wferr := we.Get(workflowCtx, nil)
+		if wferr != nil {
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
+				logger.Error().Msg("feature not yet implemented on target Site")
+				return cutil.NewAPIError(http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", wferr), nil)
+			}
+
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || workflowCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "NetworkSecurityGroup", "CreateNetworkSecurityGroup")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "Network Security Group create workflow timed out", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to update CreateNetworkSecurityGroup")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to create Network Security Group on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create NetworkSecurityGroup workflow")
+		networkSecurityGroup = nsg
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
+	if err != nil {
+		return common.HandleTxError(c, logger, err, "Failed to create Network Security Group, DB transaction error")
+	}
 
 	// Create response
 	apiNetworkSecurityGroup, err := model.NewAPINetworkSecurityGroup(networkSecurityGroup, []cdbm.StatusDetail{*ssd})
@@ -354,16 +360,6 @@ func (cnsgh CreateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		logger.Error().Err(err).Msg("failed to convert NetworkSecurityGroup database record to API response")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to convert Network Security Group database record to API response", nil)
 	}
-
-	// Commit the DB transaction after the synchronous workflow has completed without error
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing NetworkSecurityGroup transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Network Security Group, DB transaction error", nil)
-	}
-
-	// Set committed so deferred cleanup functions will do nothing
-	txCommitted = true
 
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusCreated, apiNetworkSecurityGroup)
@@ -912,121 +908,121 @@ func (dnsgh DeleteNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Cannot delete NetworkSecurityGroup, one or more VPCs have attached this Network Security Group", nil)
 	}
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, dnsgh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
-	}
-
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update NetworkSecurityGroup to set status to Deleting
-	unsgInput := cdbm.NetworkSecurityGroupUpdateInput{
-		NetworkSecurityGroupID: nsg.ID,
-		Status:                 cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusDeleting),
-	}
-	_, err = nsgDAO.Update(ctx, tx, unsgInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating NetworkSecurityGroup in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
-	}
-
-	// Delete NetworkSecurityGroup
-	dnsgInput := cdbm.NetworkSecurityGroupDeleteInput{
-		NetworkSecurityGroupID: nsg.ID,
-		UpdatedByID:            dbUser.ID,
-	}
-
-	err = nsgDAO.Delete(ctx, tx, dnsgInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error deleting NetworkSecurityGroup in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
-	}
-
-	// Create status detail
 	sdDAO := cdbm.NewStatusDetailDAO(dnsgh.dbSession)
-	_, err = sdDAO.CreateFromParams(ctx, tx, nsg.ID, *cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusDeleting),
-		cdb.GetStrPtr("received request for deletion, pending processing"))
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail DB entry")
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dnsgh.scp.GetClientByID(nsg.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+	// timeoutResp lets the closure signal an outer-scope handler — TerminateWorkflowOnTimeOut
+	// has to run after the closure returns so that the rollback completes before we touch
+	// the workflow again. nil means no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-	deleteNetworkSecurityGroupRequest := &cwssaws.DeleteNetworkSecurityGroupRequest{
-		Id:                   nsg.ID,
-		TenantOrganizationId: nsg.TenantOrg,
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "network-security-group-delete-" + nsg.ID,
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering NetworkSecurityGroup delete workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteNetworkSecurityGroup", deleteNetworkSecurityGroupRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to delete NetworkSecurityGroup")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete Network Security Group on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete NetworkSecurityGroup workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-			// Reset error to nil
-			err = nil
+	err = cdb.WithTx(ctx, dnsgh.dbSession, func(tx *cdb.Tx) error {
+		// Update NetworkSecurityGroup to set status to Deleting
+		unsgInput := cdbm.NetworkSecurityGroupUpdateInput{
+			NetworkSecurityGroupID: nsg.ID,
+			Status:                 cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusDeleting),
 		}
-	}
-
-	if err != nil {
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
-			logger.Error().Msg("feature not yet implemented on target Site")
-			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
+		_, derr := nsgDAO.Update(ctx, tx, unsgInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating NetworkSecurityGroup in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
 		}
 
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "NetworkSecurityGroup", "DeleteNetworkSecurityGroup")
+		// Delete NetworkSecurityGroup
+		dnsgInput := cdbm.NetworkSecurityGroupDeleteInput{
+			NetworkSecurityGroupID: nsg.ID,
+			UpdatedByID:            dbUser.ID,
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to delete NetworkSecurityGroup")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to delete Network Security Group on Site: %s", err), nil)
+		derr = nsgDAO.Delete(ctx, tx, dnsgInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error deleting NetworkSecurityGroup in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
+		}
+
+		// Create status detail
+		_, derr = sdDAO.CreateFromParams(ctx, tx, nsg.ID, *cdb.GetStrPtr(cdbm.NetworkSecurityGroupStatusDeleting),
+			cdb.GetStrPtr("received request for deletion, pending processing"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for Network Security Group", nil)
+		}
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := dnsgh.scp.GetClientByID(nsg.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		deleteNetworkSecurityGroupRequest := &cwssaws.DeleteNetworkSecurityGroupRequest{
+			Id:                   nsg.ID,
+			TenantOrganizationId: nsg.TenantOrg,
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "network-security-group-delete-" + nsg.ID,
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering NetworkSecurityGroup delete workflow")
+
+		// Add context deadlines
+		workflowCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(workflowCtx, workflowOptions, "DeleteNetworkSecurityGroup", deleteNetworkSecurityGroupRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to delete NetworkSecurityGroup")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete Network Security Group on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete NetworkSecurityGroup workflow")
+
+		// Execute the workflow synchronously
+		wferr := we.Get(workflowCtx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+				// Reset error to nil
+				wferr = nil
+			}
+		}
+
+		if wferr != nil {
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
+				logger.Error().Msg("feature not yet implemented on target Site")
+				return cutil.NewAPIError(http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", wferr), nil)
+			}
+
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || workflowCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "NetworkSecurityGroup", "DeleteNetworkSecurityGroup")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "Network Security Group delete workflow timed out", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to delete NetworkSecurityGroup")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to delete Network Security Group on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete NetworkSecurityGroup workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete NetworkSecurityGroup workflow")
-
-	// Commit transaction
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete Network Security Group, DB transaction error")
 	}
-	txCommitted = true
 
 	// Return response
 	logger.Info().Msg("finishing API handler")
@@ -1202,140 +1198,138 @@ func (dnsgh UpdateNetworkSecurityGroupHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, dnsgh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Network Security Group", nil)
-	}
-
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Update NetworkSecurityGroup
-	unsgInput := cdbm.NetworkSecurityGroupUpdateInput{
-		NetworkSecurityGroupID: nsg.ID,
-		Name:                   apiRequest.Name,
-		Description:            apiRequest.Description,
-		Labels:                 apiRequest.Labels,
-		StatefulEgress:         apiRequest.StatefulEgress,
-		Rules:                  rules,
-		UpdatedByID:            dbUser.ID,
-	}
-	nsg, err = nsgDAO.Update(ctx, tx, unsgInput)
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating NetworkSecurityGroup in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Network Security Group", nil)
-	}
-
-	// Get status details
 	sdDAO := cdbm.NewStatusDetailDAO(dnsgh.dbSession)
 
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, nsg.ID, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for NetworkSecurityGroup from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for Network Security Group", nil)
-	}
+	// timeoutResp lets the closure signal an outer-scope handler — TerminateWorkflowOnTimeOut
+	// has to run after the closure returns so that the rollback completes before we touch
+	// the workflow again. nil means no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+	var ssds []cdbm.StatusDetail
+	var updatedNSG *cdbm.NetworkSecurityGroup
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dnsgh.scp.GetClientByID(nsg.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	labels := util.ProtobufLabelsFromAPILabels(nsg.Labels)
-
-	description := ""
-	if nsg.Description != nil {
-		description = *nsg.Description
-	}
-
-	// Convert the DB rule wrappers into rules
-	// we can send to NICo.
-	nicoRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(nsg.Rules))
-
-	for i, rule := range nsg.Rules {
-		nicoRules[i] = rule.NetworkSecurityGroupRuleAttributes
-	}
-
-	// Prepare the create request workflow object
-	updateNetworkSecurityGroupRequest := &cwssaws.UpdateNetworkSecurityGroupRequest{
-		Id:                   nsg.ID,
-		TenantOrganizationId: nsg.TenantOrg,
-		Metadata: &cwssaws.Metadata{
-			Name:        nsg.Name,
-			Description: description,
-			Labels:      labels,
-		},
-		NetworkSecurityGroupAttributes: &cwssaws.NetworkSecurityGroupAttributes{
-			StatefulEgress: nsg.StatefulEgress,
-			Rules:          nicoRules,
-		},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "network-security-group-update-" + nsg.ID,
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	logger.Info().Msg("triggering NetworkSecurityGroup update workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpdateNetworkSecurityGroup", updateNetworkSecurityGroupRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update NetworkSecurityGroup")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update Network Security Group on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update NetworkSecurityGroup workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-
-	if err != nil {
-
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
-			logger.Error().Msg("feature not yet implemented on target Site")
-			return cutil.NewAPIErrorResponse(c, http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", err), nil)
+	err = cdb.WithTx(ctx, dnsgh.dbSession, func(tx *cdb.Tx) error {
+		// Update NetworkSecurityGroup
+		unsgInput := cdbm.NetworkSecurityGroupUpdateInput{
+			NetworkSecurityGroupID: nsg.ID,
+			Name:                   apiRequest.Name,
+			Description:            apiRequest.Description,
+			Labels:                 apiRequest.Labels,
+			StatefulEgress:         apiRequest.StatefulEgress,
+			Rules:                  rules,
+			UpdatedByID:            dbUser.ID,
+		}
+		updated, derr := nsgDAO.Update(ctx, tx, unsgInput)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating NetworkSecurityGroup in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Network Security Group", nil)
 		}
 
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "NetworkSecurityGroup", "UpdateNetworkSecurityGroup")
+		// Get status details
+		statusDetails, _, derr := sdDAO.GetAllByEntityID(ctx, tx, updated.ID, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Status Details for NetworkSecurityGroup from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Status Details for Network Security Group", nil)
+		}
+		ssds = statusDetails
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := dnsgh.scp.GetClientByID(updated.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update NetworkSecurityGroup")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update Network Security Group on Site: %s", err), nil)
-	}
+		labels := util.ProtobufLabelsFromAPILabels(updated.Labels)
 
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update NetworkSecurityGroup workflow")
+		description := ""
+		if updated.Description != nil {
+			description = *updated.Description
+		}
+
+		// Convert the DB rule wrappers into rules
+		// we can send to NICo.
+		nicoRules := make([]*cwssaws.NetworkSecurityGroupRuleAttributes, len(updated.Rules))
+
+		for i, rule := range updated.Rules {
+			nicoRules[i] = rule.NetworkSecurityGroupRuleAttributes
+		}
+
+		// Prepare the create request workflow object
+		updateNetworkSecurityGroupRequest := &cwssaws.UpdateNetworkSecurityGroupRequest{
+			Id:                   updated.ID,
+			TenantOrganizationId: updated.TenantOrg,
+			Metadata: &cwssaws.Metadata{
+				Name:        updated.Name,
+				Description: description,
+				Labels:      labels,
+			},
+			NetworkSecurityGroupAttributes: &cwssaws.NetworkSecurityGroupAttributes{
+				StatefulEgress: updated.StatefulEgress,
+				Rules:          nicoRules,
+			},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "network-security-group-update-" + updated.ID,
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering NetworkSecurityGroup update workflow")
+
+		// Add context deadlines
+		workflowCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, derr := stc.ExecuteWorkflow(workflowCtx, workflowOptions, "UpdateNetworkSecurityGroup", updateNetworkSecurityGroupRequest)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to synchronously start Temporal workflow to update NetworkSecurityGroup")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update Network Security Group on Site: %s", derr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update NetworkSecurityGroup workflow")
+
+		// Execute the workflow synchronously
+		wferr := we.Get(workflowCtx, nil)
+		if wferr != nil {
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
+				logger.Error().Msg("feature not yet implemented on target Site")
+				return cutil.NewAPIError(http.StatusNotImplemented, fmt.Sprintf("Feature not yet implemented on target Site: %s", wferr), nil)
+			}
+
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || workflowCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "NetworkSecurityGroup", "UpdateNetworkSecurityGroup")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "Network Security Group update workflow timed out", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to update NetworkSecurityGroup")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update Network Security Group on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update NetworkSecurityGroup workflow")
+		updatedNSG = updated
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
+	if err != nil {
+		return common.HandleTxError(c, logger, err, "Failed to update Network Security Group, DB transaction error")
+	}
 
 	// Create response
-	apiNetworkSecurityGroup, err := model.NewAPINetworkSecurityGroup(nsg, ssds)
+	apiNetworkSecurityGroup, err := model.NewAPINetworkSecurityGroup(updatedNSG, ssds)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to convert NetworkSecurityGroup database record to API response")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to convert Network Security Group database record to API response", nil)
 	}
-
-	// Commit the DB transaction after the synchronous workflow has completed without error
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing NetworkSecurityGroup transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Network Security Group, DB transaction error", nil)
-	}
-
-	// Set committed so deferred cleanup functions will do nothing
-	txCommitted = true
 
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiNetworkSecurityGroup)

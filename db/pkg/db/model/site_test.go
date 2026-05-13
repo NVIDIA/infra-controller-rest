@@ -288,7 +288,7 @@ func TestSiteSQLDAO_GetAll(t *testing.T) {
 		if i == 25 || i == 24 {
 			site.Config.NativeNetworking = true
 			site.Config.NVLinkPartition = true
-			site.Config.RackLevelAdministration = true
+			site.Config.Flow = true
 		}
 
 		if i == 23 {
@@ -445,7 +445,7 @@ func TestSiteSQLDAO_GetAll(t *testing.T) {
 				filter: SiteFilterInput{
 					Org:                       nil,
 					InfrastructureProviderIDs: nil,
-					Config:                    &SiteConfigFilterInput{RackLevelAdministration: db.GetBoolPtr(true)},
+					Config:                    &SiteConfigFilterInput{Flow: db.GetBoolPtr(true)},
 				},
 				includeRelations: false,
 			},

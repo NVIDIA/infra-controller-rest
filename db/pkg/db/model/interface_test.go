@@ -1699,3 +1699,127 @@ func TestInterfaceSQLDAO_CreateMultiple_ExceedsMaxBatchItems(t *testing.T) {
 	assert.Contains(t, err.Error(), "batch size")
 	assert.Contains(t, err.Error(), "exceeds maximum allowed")
 }
+
+func TestInterfaceSQLDAO_DeleteAllByInstanceIDs(t *testing.T) {
+	ctx := context.Background()
+	dbSession := testInstanceInitDB(t)
+	defer dbSession.Close()
+	testInterfaceSetupSchema(t, dbSession)
+
+	ip := testInstanceBuildInfrastructureProvider(t, dbSession, "testIP")
+	site := testInstanceBuildSite(t, dbSession, ip, "testSite")
+	tenant := testInstanceBuildTenant(t, dbSession, "testTenant")
+	vpc := testInstanceBuildVpc(t, dbSession, ip, site, tenant, "testVpc")
+	instanceType := testInstanceBuildInstanceType(t, dbSession, ip, "testInstanceType")
+	allocation := testInstanceBuildAllocation(t, dbSession, ip, tenant, site, "testAllocation")
+	_ = testBuildAllocationConstraint(t, dbSession, allocation, AllocationResourceTypeInstanceType, instanceType.ID, AllocationConstraintTypeReserved, 10, uuid.New())
+	operatingSystem := testInstanceBuildOperatingSystem(t, dbSession, "testOS")
+	user := testInstanceBuildUser(t, dbSession, "testUser")
+
+	isd := NewInstanceDAO(dbSession)
+
+	buildInstance := func(name, hostname, machineTag string) *Instance {
+		machine := testMachineBuildMachine(t, dbSession, ip.ID, site.ID, db.GetUUIDPtr(instanceType.ID), db.GetStrPtr(machineTag))
+		instance, err := isd.Create(
+			ctx, nil,
+			InstanceCreateInput{
+				Name:                     name,
+				TenantID:                 tenant.ID,
+				InfrastructureProviderID: ip.ID,
+				SiteID:                   site.ID,
+				InstanceTypeID:           &instanceType.ID,
+				VpcID:                    vpc.ID,
+				MachineID:                &machine.ID,
+				Hostname:                 db.GetStrPtr(hostname),
+				OperatingSystemID:        db.GetUUIDPtr(operatingSystem.ID),
+				IpxeScript:               db.GetStrPtr("ipxe"),
+				UserData:                 db.GetStrPtr("userdata"),
+				Labels:                   map[string]string{},
+				Status:                   InstanceStatusPending,
+				CreatedBy:                user.ID,
+			},
+		)
+		require.NoError(t, err)
+		return instance
+	}
+
+	// Three instances: instance1 and instance2 are deletion targets, instance3 is the
+	// "untouched" control to confirm the IN-clause is properly scoped.
+	instance1 := buildInstance("test-instance-1", "test1.com", "mcType1")
+	instance2 := buildInstance("test-instance-2", "test2.com", "mcType2")
+	instance3 := buildInstance("test-instance-3", "test3.com", "mcType3")
+
+	ifcd := NewInterfaceDAO(dbSession)
+
+	makeIfaceInput := func(instanceID uuid.UUID) InterfaceCreateInput {
+		return InterfaceCreateInput{
+			InstanceID: instanceID,
+			IsPhysical: true,
+			Status:     InterfaceStatusPending,
+			CreatedBy:  user.ID,
+		}
+	}
+
+	ifc1a, err := ifcd.Create(ctx, nil, makeIfaceInput(instance1.ID))
+	require.NoError(t, err)
+	require.NotNil(t, ifc1a)
+	ifc1b, err := ifcd.Create(ctx, nil, makeIfaceInput(instance1.ID))
+	require.NoError(t, err)
+	require.NotNil(t, ifc1b)
+	ifc2, err := ifcd.Create(ctx, nil, makeIfaceInput(instance2.ID))
+	require.NoError(t, err)
+	require.NotNil(t, ifc2)
+	ifc3, err := ifcd.Create(ctx, nil, makeIfaceInput(instance3.ID))
+	require.NoError(t, err)
+	require.NotNil(t, ifc3)
+
+	// OTEL Spanner configuration
+	_, _, ctx = testCommonTraceProviderSetup(t, ctx)
+
+	// Empty input should be a no-op (and must not produce invalid SQL).
+	err = ifcd.DeleteAllByInstanceIDs(ctx, nil, nil)
+	require.NoError(t, err)
+	err = ifcd.DeleteAllByInstanceIDs(ctx, nil, []uuid.UUID{})
+	require.NoError(t, err)
+
+	// All four interfaces should still be present.
+	for _, id := range []uuid.UUID{ifc1a.ID, ifc1b.ID, ifc2.ID, ifc3.ID} {
+		row := &Interface{}
+		serr := dbSession.DB.NewSelect().Model(row).Where("id = ?", id).Scan(context.Background())
+		require.NoError(t, serr, "expected interface %s to still be present after no-op delete", id)
+		assert.Nil(t, row.Deleted)
+	}
+
+	// Bulk-delete interfaces for instance1 and instance2.
+	err = ifcd.DeleteAllByInstanceIDs(ctx, nil, []uuid.UUID{instance1.ID, instance2.ID})
+	require.NoError(t, err)
+
+	// Targeted interfaces should be soft-deleted.
+	for _, id := range []uuid.UUID{ifc1a.ID, ifc1b.ID, ifc2.ID} {
+		deleted := &Interface{}
+		serr := dbSession.DB.NewSelect().Model(deleted).WhereDeleted().Where("id = ?", id).Scan(context.Background())
+		require.NoError(t, serr, "expected soft-deleted row for id %s", id)
+		assert.NotNil(t, deleted.Deleted)
+
+		// Default selects (which exclude soft-deleted rows) should not return them.
+		notFound := &Interface{}
+		serr = dbSession.DB.NewSelect().Model(notFound).Where("id = ?", id).Scan(context.Background())
+		assert.Error(t, serr, "soft-deleted row for id %s should not appear in default selects", id)
+	}
+
+	// instance3's interface must remain untouched.
+	other := &Interface{}
+	err = dbSession.DB.NewSelect().Model(other).Where("id = ?", ifc3.ID).Scan(context.Background())
+	require.NoError(t, err)
+	assert.Nil(t, other.Deleted)
+
+	// Deleting against a wholly-unrelated instance ID set should also succeed without error.
+	err = ifcd.DeleteAllByInstanceIDs(ctx, nil, []uuid.UUID{uuid.New()})
+	require.NoError(t, err)
+
+	// Verify the active span is propagated through the call.
+	span := otrace.SpanFromContext(ctx)
+	assert.True(t, span.SpanContext().IsValid())
+	_, ok := ctx.Value(stracer.TracerKey).(otrace.Tracer)
+	assert.True(t, ok)
+}

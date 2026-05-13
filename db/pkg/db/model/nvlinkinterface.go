@@ -182,6 +182,8 @@ type NVLinkInterfaceDAO interface {
 	Clear(ctx context.Context, tx *db.Tx, input NVLinkInterfaceClearInput) (*NVLinkInterface, error)
 	//
 	Delete(ctx context.Context, tx *db.Tx, id uuid.UUID) error
+	//
+	DeleteAllBySiteID(ctx context.Context, tx *db.Tx, siteID uuid.UUID) error
 }
 
 // NVLinkInterfaceSQLDAO is an implementation of the NVLinkInterfaceDAO interface
@@ -506,6 +508,25 @@ func (nvlisd NVLinkInterfaceSQLDAO) Delete(ctx context.Context, tx *db.Tx, id uu
 	}
 
 	return nil
+}
+
+// DeleteAllBySiteID deletes all NVLinkInterface records for a given Site
+// error is returned only if there is a db error
+func (nvlisd NVLinkInterfaceSQLDAO) DeleteAllBySiteID(ctx context.Context, tx *db.Tx, siteID uuid.UUID) error {
+	ctx, NVLinkInterfaceDAOSpan := nvlisd.tracerSpan.CreateChildInCurrentContext(ctx, "NVLinkInterfaceDAO.DeleteAllBySiteID")
+	if NVLinkInterfaceDAOSpan != nil {
+		defer NVLinkInterfaceDAOSpan.End()
+
+		nvlisd.tracerSpan.SetAttribute(NVLinkInterfaceDAOSpan, "site_id", siteID.String())
+	}
+
+	nvli := &NVLinkInterface{
+		SiteID: siteID,
+	}
+
+	_, err := db.GetIDB(tx, nvlisd.dbSession).NewDelete().Model(nvli).Where("site_id = ?", siteID).Exec(ctx)
+
+	return err
 }
 
 // CreateMultiple creates multiple NVLinkInterfaces from the given parameters

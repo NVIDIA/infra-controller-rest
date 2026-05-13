@@ -17,7 +17,7 @@ apiVersion: v2
 name: nico-rest
 description: Umbrella chart for the NICo REST API platform
 type: application
-version: 0.1.7
+version: 0.1.8
 appVersion: "1.4.0"
 keywords:
   - nico
@@ -33,7 +33,7 @@ dependencies:
     version: "0.1.0"
     condition: nico-rest-cert-manager.enabled
   - name: nico-rest-api
-    version: "0.1.0"
+    version: "0.1.1"
     condition: nico-rest-api.enabled
   - name: nico-rest-workflow
     version: "0.1.0"

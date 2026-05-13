@@ -15,7 +15,7 @@
 
 .PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers
 .PHONY: build docker-build docker-build-local
-.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate nico-mock-server-build nico-mock-server-start nico-mock-server-stop rla-mock-server-build rla-mock-server-start rla-mock-server-stop
+.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate nico-mock-server-build nico-mock-server-start nico-mock-server-stop flow-mock-server-build flow-mock-server-start flow-mock-server-stop
 .PHONY: validate-openapi preview-openapi generate-client
 .PHONY: pre-commit-install pre-commit-run pre-commit-update
 
@@ -71,7 +71,7 @@ clean:
 	@echo "Cleaning up test resources..."
 	-$(MAKE) postgres-down
 	-$(MAKE) nico-mock-server-stop
-	-$(MAKE) rla-mock-server-stop
+	-$(MAKE) flow-mock-server-stop
 	@echo "Stopping kind cluster..."
 	-$(MAKE) kind-down
 	@echo "Stopping colima..."
@@ -154,32 +154,32 @@ nico-mock-server-stop:
 	-kill $$(cat build/mock-core.pid) 2>/dev/null
 	-rm -f build/mock-core.pid
 
-rla-mock-server-build:
+flow-mock-server-build:
 	mkdir -p build
-	cd site-agent/cmd/mock-rla && go build -o ../../../build/mock-rla .
+	cd site-agent/cmd/mock-flow && go build -o ../../../build/mock-flow .
 
-rla-mock-server-start: rla-mock-server-build
+flow-mock-server-start: flow-mock-server-build
 	-lsof -ti:11080 | xargs kill -9 2>/dev/null
-	./build/mock-rla -tout 0 > build/mock-rla.log 2>&1 & echo $$! > build/mock-rla.pid
-	@echo "Waiting for RLA gRPC server to start..."
+	./build/mock-flow -tout 0 > build/mock-flow.log 2>&1 & echo $$! > build/mock-flow.pid
+	@echo "Waiting for Flow gRPC server to start..."
 	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		if grep -q "Started Flow API server" build/mock-rla.log 2>/dev/null; then \
+		if grep -q "Started Flow API server" build/mock-flow.log 2>/dev/null; then \
 			sleep 0.1; \
-			echo "RLA gRPC server is ready"; \
+			echo "Flow gRPC server is ready"; \
 			exit 0; \
 		fi; \
 		sleep 0.2; \
 	done; \
-	echo "Timeout waiting for Mock RLA gRPC server to start"; \
+	echo "Timeout waiting for Mock Flow gRPC server to start"; \
 	exit 1
 
-rla-mock-server-stop:
-	-kill $$(cat build/mock-rla.pid) 2>/dev/null
-	-rm -f build/mock-rla.pid
+flow-mock-server-stop:
+	-kill $$(cat build/mock-flow.pid) 2>/dev/null
+	-rm -f build/mock-flow.pid
 
-test-site-agent: nico-mock-server-start rla-mock-server-start
+test-site-agent: nico-mock-server-start flow-mock-server-start
 	cd site-agent/pkg/components && CGO_ENABLED=1 go test -race -p 1 ./... -count=1 ; \
-	ret=$$? ; cd ../../.. && $(MAKE) nico-mock-server-stop rla-mock-server-stop ; exit $$ret
+	ret=$$? ; cd ../../.. && $(MAKE) nico-mock-server-stop flow-mock-server-stop ; exit $$ret
 
 test-api:
 	$(MAKE) ensure-postgres
@@ -224,7 +224,7 @@ docker-build:
 	docker build -t $(IMAGE_REGISTRY)/nico-rest-site-agent:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-site-agent .
 	docker build -t $(IMAGE_REGISTRY)/nico-rest-db:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-db .
 	docker build -t $(IMAGE_REGISTRY)/nico-rest-cert-manager:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rest-cert-manager .
-	docker build -t $(IMAGE_REGISTRY)/nico-rla:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-rla .
+	docker build -t $(IMAGE_REGISTRY)/nico-flow:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-flow .
 	docker build -t $(IMAGE_REGISTRY)/nico-psm:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-psm .
 	docker build -t $(IMAGE_REGISTRY)/nico-nsm:$(IMAGE_TAG) -f $(DOCKERFILE_DIR)/Dockerfile.nico-nsm .
 

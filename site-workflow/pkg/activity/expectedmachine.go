@@ -437,9 +437,9 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnSite(ctx context.Conte
 	return response, nil
 }
 
-// CreateExpectedMachineOnRLA creates an Expected Machine as a component in Flow via AddComponent
-func (mem *ManageExpectedMachine) CreateExpectedMachineOnRLA(ctx context.Context, request *cwssaws.ExpectedMachine) error {
-	logger := log.With().Str("Activity", "CreateExpectedMachineOnRLA").Logger()
+// CreateExpectedMachineOnFlow creates an Expected Machine as a component in Flow via AddComponent
+func (mem *ManageExpectedMachine) CreateExpectedMachineOnFlow(ctx context.Context, request *cwssaws.ExpectedMachine) error {
+	logger := log.With().Str("Activity", "CreateExpectedMachineOnFlow").Logger()
 
 	logger.Info().Msg("Starting activity")
 
@@ -460,7 +460,7 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnRLA(ctx context.Context
 		return nil
 	}
 
-	component := expectedMachineToRLAComponent(request)
+	component := expectedMachineToFlowComponent(request)
 	_, err := flowClient.Flow().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Machine component on Flow")
@@ -471,9 +471,9 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnRLA(ctx context.Context
 	return nil
 }
 
-// CreateExpectedMachinesOnRLA creates multiple Expected Machines as components in Flow via AddComponent
-func (mem *ManageExpectedMachine) CreateExpectedMachinesOnRLA(ctx context.Context, request *cwssaws.BatchExpectedMachineOperationRequest) error {
-	logger := log.With().Str("Activity", "CreateExpectedMachinesOnRLA").Logger()
+// CreateExpectedMachinesOnFlow creates multiple Expected Machines as components in Flow via AddComponent
+func (mem *ManageExpectedMachine) CreateExpectedMachinesOnFlow(ctx context.Context, request *cwssaws.BatchExpectedMachineOperationRequest) error {
+	logger := log.With().Str("Activity", "CreateExpectedMachinesOnFlow").Logger()
 
 	logger.Info().Msg("Starting activity")
 
@@ -496,7 +496,7 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnRLA(ctx context.Contex
 
 	// TODO(chet): Work with Flow team to add batch support so we don't have to loop here.
 	for _, machine := range machines {
-		component := expectedMachineToRLAComponent(machine)
+		component := expectedMachineToFlowComponent(machine)
 		_, err := flow.AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 		if err != nil {
 			logger.Warn().Err(err).Str("ID", machine.GetId().GetValue()).Msg("Failed to create Expected Machine component on Flow")
@@ -515,8 +515,8 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnRLA(ctx context.Contex
 	return nil
 }
 
-// expectedMachineToRLAComponent converts a NICo ExpectedMachine proto to an Flow Component proto
-func expectedMachineToRLAComponent(em *cwssaws.ExpectedMachine) *flowv1.Component {
+// expectedMachineToFlowComponent converts a NICo ExpectedMachine proto to an Flow Component proto
+func expectedMachineToFlowComponent(em *cwssaws.ExpectedMachine) *flowv1.Component {
 	component := &flowv1.Component{
 		Type: flowv1.ComponentType_COMPONENT_TYPE_COMPUTE,
 		Info: &flowv1.DeviceInfo{

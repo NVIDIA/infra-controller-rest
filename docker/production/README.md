@@ -33,7 +33,7 @@ This directory contains multi-stage Dockerfiles optimized for production deploym
 4. **Dockerfile.nico-rest-site-manager** - Site Manager service
 5. **Dockerfile.nico-rest-cert-manager** - Certificate Manager
 6. **Dockerfile.nico-rest-site-agent** - Site Agent
-7. **Dockerfile.nico-rla** - Rack Level Abstraction
+7. **Dockerfile.nico-flow** - NICo Flow
 
 ## Building Images
 

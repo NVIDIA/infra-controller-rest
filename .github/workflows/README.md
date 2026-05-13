@@ -42,7 +42,7 @@ Reusable workflow that builds and pushes all Docker images.
 4. `nico-rest-workflow`
 5. `nico-rest-site-agent`
 6. `nico-rest-cert-manager`
-7. `nico-rla`
+7. `nico-flow`
 8. `nico-psm`
 9. `nico-nsm`
 

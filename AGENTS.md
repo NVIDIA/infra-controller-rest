@@ -182,7 +182,7 @@ make kind-down              # tear down cluster
 ### Proto conversion methods
 
 DB and API model types that round-trip with a workflow-schema (`cwssaws`)
-or RLA (`rlav1`) protobuf type carry conversion as receiver methods, not
+or Flow (`flowv1`) protobuf types carry conversion as receiver methods, not
 free functions. The naming and shape are uniform so call sites are
 predictable:
 
