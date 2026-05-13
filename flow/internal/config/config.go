@@ -28,7 +28,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultLocation = "/etc/flow/rlaconfig.yaml"
+const defaultLocation = "/etc/flow/flowconfig.yaml"
 
 // Config is a set of configuration operations that will be read from an environment specific config file
 type Config struct {
