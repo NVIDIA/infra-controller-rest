@@ -5,6 +5,42 @@ Each release lists pull requests grouped by category, with the most recent versi
 
 ---
 
+## [v1.4.3](https://github.com/NVIDIA/ncx-infra-controller-rest/releases/tag/v1.4.3) — 2026-05-12
+
+### Bug Fixes
+
+- **Verify if Interfaces exist before deletion of NVLink and InfiniBand Partition** ([#503](https://github.com/NVIDIA/ncx-infra-controller-rest/pull/503))
+  NVLink Logical Partition and InfiniBand Partition deletion now checks for active Instance Interfaces before proceeding. If any instances are still connected through interfaces, the deletion is rejected with an error, preventing orphaned interface references.
+
+- **VPC Peering create: check authorization before duplicate** ([#506](https://github.com/NVIDIA/ncx-infra-controller-rest/pull/506))
+  Moves the authorization check before the duplicate peering check in the VPC Peering creation handler. Previously, unauthorized tenants would receive a 409 Conflict (revealing the existence of a peering) instead of a 403 Forbidden, leaking information to potentially unrelated tenants.
+
+- **Verify if Site has FNN enabled when updating VPC to FNN** ([#466](https://github.com/NVIDIA/ncx-infra-controller-rest/pull/466))
+  The VPC Virtualization patch endpoint now validates that the target Site has FNN (Fabric Native Networking) enabled before allowing a VPC to be updated to FNN mode, preventing misconfiguration on sites that don't support it.
+
+- **Check VPC Prefix existence before allowing Allocation Constraint update** ([#454](https://github.com/NVIDIA/ncx-infra-controller-rest/pull/454))
+  Blocks modification of Allocation Constraints when VPC Prefixes derived from the allocation already exist, preventing constraint changes that would invalidate active network resources.
+
+---
+
+## [v1.4.2](https://github.com/NVIDIA/ncx-infra-controller-rest/releases/tag/v1.4.2) — 2026-04-29
+
+### Bug Fixes
+
+- **Remove additional VPC Prefix validation logic in Site Workflow** ([#439](https://github.com/NVIDIA/ncx-infra-controller-rest/pull/439))
+  Removes redundant VPC Prefix validation from the Site Workflow layer. Validation is now consolidated in the REST API handler and gRPC API handler, eliminating confusion when request formats change and ensuring a single source of truth for input validation.
+
+---
+
+## [v1.4.1](https://github.com/NVIDIA/ncx-infra-controller-rest/releases/tag/v1.4.1) — 2026-04-28
+
+### Chores
+
+- **Configure Bun to discard unknown columns for DB queries** ([#437](https://github.com/NVIDIA/ncx-infra-controller-rest/pull/437))
+  Enables Bun ORM's `DiscardUnknownColumns` setting so that retired database columns still present in the schema (but removed from Go model structs) are silently ignored during SQL scans. This fixes `Instance.GetAll` scanning errors that surfaced after column deprecation and eases the transition window between struct removal and column migration.
+
+---
+
 ## [v1.4.0](https://github.com/NVIDIA/ncx-infra-controller-rest/releases/tag/v1.4.0)
 
 ### Features
