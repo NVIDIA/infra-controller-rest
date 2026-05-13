@@ -64,8 +64,13 @@ spec:
             - name: site-registration
               mountPath: /etc/sitereg
               readOnly: true
+            # mTLS certs mounted at both /etc/nico (renamed binary) and /etc/carbide
+            # (current carbide binary) so chart works with either image variant.
             - name: nico-certs
               mountPath: /etc/nico
+              readOnly: true
+            - name: nico-certs
+              mountPath: /etc/carbide
               readOnly: true
             - name: temporal-certs
               mountPath: /etc/temporal-certs
