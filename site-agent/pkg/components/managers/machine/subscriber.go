@@ -36,10 +36,10 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpdateMachineMetadata)
 	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered UpdateMachineMetadata workflow")
 
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.ApplyMachineOnlineRepairHealthOverride)
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.ApplyMachineHealthReportOverride)
 	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Apply Machine Online Repair Health Override workflow")
 
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.ClearMachineOnlineRepairHealthOverride)
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.ClearMachineHealthReportOverride)
 	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Clear Machine Online Repair Health Override workflow")
 
 	// Register activities

@@ -776,11 +776,11 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 	}
 
 	// Validate role, only Provider Admins or Tenant Admins with TargetedInstanceCreation capability are allowed to update Machine
-	userOrgDetails, _ := dbUser.OrgData.GetOrgByName(org)
-	infrastructureProvider, tenant, apiError := isProviderOrTenant(ctx, logger, umh.dbSession, org, userOrgDetails)
+	infrastructureProvider, tenant, apiError := common.IsProviderOrTenant(ctx, logger, umh.dbSession, org, dbUser, false, true)
 	if apiError != nil {
 		return cutil.NewAPIErrorResponse(c, apiError.Code, apiError.Message, apiError.Data)
 	}
+
 	// Get machine ID from URL param
 	mID := c.Param("id")
 
@@ -801,11 +801,43 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Site detail for Machine", nil)
 	}
 
+	isOwnerProvider := false
+	isPrivilegedTenant := false
+
+	// Validate if Infrastructure Provider is associated with the Machine
 	if infrastructureProvider != nil {
-		if machine.InfrastructureProviderID != infrastructureProvider.ID {
-			logger.Error().Msg("machine's infrastructure provider doesn't match org")
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Machine doesn't belong to org's Infrastructure provider", nil)
+		if machine.InfrastructureProviderID == infrastructureProvider.ID {
+			isOwnerProvider = true
+		} else {
+			logger.Error().Msg("Machine is not owned by org's Infrastructure provider")
 		}
+	}
+
+	// Validate if Tenant is allowed to update Machine
+	if tenant != nil {
+		// Check if Tenant is privileged
+		if tenant.Config.TargetedInstanceCreation {
+			// Check if privileged Tenant has an account with Infrastructure Provider
+			taDAO := cdbm.NewTenantAccountDAO(umh.dbSession)
+			_, taCount, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
+				InfrastructureProviderID: &machine.InfrastructureProviderID,
+				TenantIDs:                []uuid.UUID{tenant.ID},
+			}, cdbp.PageInput{}, []string{})
+			if serr != nil {
+				logger.Error().Err(serr).Msg("error retrieving Tenant Accounts for org's Tenant")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error retrieving Tenant Accounts for org's Tenant, DB error", nil)
+			}
+			if taCount == 0 {
+				logger.Error().Msg("privileged Tenant doesn't have an account with Infrastructure Provider")
+			} else {
+				isPrivilegedTenant = true
+			}
+		}
+	}
+
+	// Validate if user has permission to update Machine
+	if !isOwnerProvider && !isPrivilegedTenant {
+		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have permission to update Machine", nil)
 	}
 
 	// Validate request
@@ -824,57 +856,10 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Machine update request data", verr)
 	}
 
-	// Validate if Tenant is allowed to update Machine or enter/exit online repair mode
-	if tenant != nil {
-		needsTenantAccount := tenant.Config.TargetedInstanceCreation || apiRequest.IsMachineOnlineRepairOperation()
-		if needsTenantAccount {
-			taDAO := cdbm.NewTenantAccountDAO(umh.dbSession)
-			_, taCount, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
-				InfrastructureProviderID: &machine.InfrastructureProviderID,
-				TenantIDs:                []uuid.UUID{tenant.ID},
-			}, cdbp.PageInput{}, []string{})
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error retrieving Tenant Account for Site")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error retrieving Tenant Account for Site", nil)
-			}
-			if taCount == 0 {
-				logger.Error().Msg("tenant doesn't have an account with Infrastructure Provider")
-				return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant must have an account with Machine's Provider in order to modify it", nil)
-			}
-		}
-		if !tenant.Config.TargetedInstanceCreation && !apiRequest.IsMachineOnlineRepairOperation() {
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant requires TargetedInstanceCreation capability for this Machine update", nil)
-		}
-	}
-
-	if apiRequest.IsMachineOnlineRepairOperation() {
-		if !machine.IsAssigned {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
-		}
-		iDAO := cdbm.NewInstanceDAO(umh.dbSession)
-		instances, ic, ierr := iDAO.GetAll(ctx, nil, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(5)}, nil)
-		if ierr != nil {
-			logger.Error().Err(ierr).Msg("error retrieving Instance for Machine")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance for Machine", nil)
-		}
-		if ic != 1 {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have exactly one Instance for online repair", nil)
-		}
-		if tenant != nil {
-			if instances[0].TenantID != tenant.ID {
-				return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance on this Machine does not belong to the Tenant", nil)
-			}
-		} else if infrastructureProvider != nil {
-			if instances[0].InfrastructureProviderID != infrastructureProvider.ID {
-				return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance on this Machine does not belong to the org's Infrastructure Provider", nil)
-			}
-		}
-	}
-
 	// Prevent assigning or clearing Instance Type on assigned machines
 	if apiRequest.InstanceTypeID != nil || apiRequest.ClearInstanceType != nil {
-		if infrastructureProvider == nil {
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Only Provider Admins can update or clear Machine's Instance Type", nil)
+		if !isOwnerProvider {
+			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have permission to update or clear Machine's Instance Type", nil)
 		}
 
 		if machine.IsAssigned {
@@ -1319,6 +1304,11 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 	// Save labels in DB and execute metadata update workflow on Site if required
 	if apiRequest.Labels != nil && !maps.Equal(apiRequest.Labels, machine.Labels) {
+		// Validate if user has permission to update labels for this Machine
+		if !isOwnerProvider && !isPrivilegedTenant {
+			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have permission to update Machine labels", nil)
+		}
+
 		// Check if Machine is missing from Site
 		if machine.IsMissingOnSite {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently missing on Site, cannot update labels", nil)
@@ -1414,9 +1404,18 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 	}
 
 	// Enter or exit in-pool online repair (Site health override + Instance status / labels in Cloud DB)
-	if apiRequest.IsMachineOnlineRepairOperation() {
+	if apiRequest.IsOnlineRepair() {
+		// Validate if user has permission to enter/exit online repair mode for this Machine
+		if !isOwnerProvider && !isPrivilegedTenant {
+			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have permission to enter/exit online repair mode for this Machine", nil)
+		}
+
 		if machine.IsMissingOnSite {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently missing on Site, cannot update online repair state", nil)
+		}
+
+		if !machine.IsAssigned {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
 		}
 
 		orTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
@@ -1428,17 +1427,17 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 		defer common.RollbackTx(ctx, orTx, &orTxCommitted)
 
 		iDAO := cdbm.NewInstanceDAO(umh.dbSession)
-		instances, ic, ierr := iDAO.GetAll(ctx, orTx, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(2)}, nil)
+		instances, _, ierr := iDAO.GetAll(ctx, orTx, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(1)}, nil)
 		if ierr != nil {
 			logger.Error().Err(ierr).Msg("error retrieving Instance for Machine")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance for Machine", nil)
 		}
-		if ic != 1 {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have exactly one Instance for online repair", nil)
+		if len(instances) == 0 {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
 		}
 		inst := instances[0]
 
-		if *apiRequest.RequestOnlineRepair {
+		if apiRequest.OnlineRepairEntering() {
 			if inst.Status != cdbm.InstanceStatusReady {
 				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Instance must be in Ready state to enter online repair (current state: %s)", inst.Status), nil)
 			}
@@ -1453,7 +1452,8 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			if patchLabels == nil {
 				patchLabels = map[string]string{}
 			}
-			if *apiRequest.RepairPolicy.AllowAutoInstanceDeletionOnFailure {
+
+			if *apiRequest.OnlineRepairRequest.Policy.AllowAutoInstanceDeletionOnFailure {
 				patchLabels[model.InstanceLabelOnlineRepairAllowAutoDeletion] = "true"
 			} else {
 				patchLabels[model.InstanceLabelOnlineRepairAllowAutoDeletion] = "false"
@@ -1478,24 +1478,24 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			wfCtx, wfCancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 			defer wfCancel()
 
-			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "ApplyMachineOnlineRepairHealthOverride", insReq)
+			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "ApplyMachineHealthReportOverride", insReq)
 			if err != nil {
 				logger.Error().Err(err).Msg("failed to start Temporal workflow for online repair health override")
 				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start online repair workflow on Site: %s", err), nil)
 			}
 			wid := we.GetID()
-			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous ApplyMachineOnlineRepairHealthOverride workflow")
+			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous ApplyMachineHealthReportOverride workflow")
 			err = we.Get(wfCtx, nil)
 			if err != nil {
 				var timeoutErr *tp.TimeoutError
 				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
-					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ApplyMachineOnlineRepairHealthOverride")
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ApplyMachineHealthReportOverride")
 				}
 				code, werr := common.UnwrapWorkflowError(err)
 				logger.Error().Err(werr).Msg("online repair health override workflow failed")
 				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute online repair workflow on Site: %s", werr), nil)
 			}
-			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous ApplyMachineOnlineRepairHealthOverride workflow")
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous ApplyMachineHealthReportOverride workflow")
 		} else {
 			if inst.Status != cdbm.InstanceStatusRepairing {
 				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Instance must be in Repairing state to exit online repair (current state: %s)", inst.Status), nil)
@@ -1532,24 +1532,24 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			wfCtx, wfCancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 			defer wfCancel()
 
-			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "ClearMachineOnlineRepairHealthOverride", rmReq)
+			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "ClearMachineHealthReportOverride", rmReq)
 			if err != nil {
 				logger.Error().Err(err).Msg("failed to start Temporal workflow to clear online repair health override")
 				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start clear online repair workflow on Site: %s", err), nil)
 			}
 			wid := we.GetID()
-			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous ClearMachineOnlineRepairHealthOverride workflow")
+			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous ClearMachineHealthReportOverride workflow")
 			err = we.Get(wfCtx, nil)
 			if err != nil {
 				var timeoutErr *tp.TimeoutError
 				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
-					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ClearMachineOnlineRepairHealthOverride")
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ClearMachineHealthReportOverride")
 				}
 				code, werr := common.UnwrapWorkflowError(err)
 				logger.Error().Err(werr).Msg("clear online repair health override workflow failed")
 				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute clear online repair workflow on Site: %s", werr), nil)
 			}
-			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous ClearMachineOnlineRepairHealthOverride workflow")
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous ClearMachineHealthReportOverride workflow")
 		}
 
 		err = orTx.Commit()
@@ -1577,7 +1577,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 }
 
 func buildOnlineRepairHealthInsertRequest(machineID string, req *model.APIMachineUpdateRequest) (*cwssaws.InsertHealthReportOverrideRequest, error) {
-	mhi := req.MachineHealthIssue
+	mhi := req.HealthIssue
 	msg, err := model.BuildOnlineRepairHealthOverrideMessageJSON(mhi.Details, mhi.Category, mhi.Summary)
 	if err != nil {
 		return nil, err

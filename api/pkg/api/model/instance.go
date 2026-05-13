@@ -84,7 +84,7 @@ var (
 		"SOFTWARE": int32(cwssaws.IssueCategory_OTHER),
 	}
 
-	instanceDeleteMachineHealthIssueCategories = []any{
+	instanceDeleteHealthIssueCategories = []any{
 		MachineIssueCategoryHardware, MachineIssueCategoryNetwork, MachineIssueCategoryPerformance, MachineIssueCategoryOther,
 		"HARDWARE", "NETWORK", "PERFORMANCE", "STORAGE", "SOFTWARE", "OTHER",
 	}
@@ -1487,13 +1487,13 @@ func (iur APIInstanceUpdateRequest) Validate() error {
 
 // APIInstanceDeleteRequest is the data structure to capture request to delete an Instance
 type APIInstanceDeleteRequest struct {
-	// MachineHealthIssue is the report of a machine health issue
-	MachineHealthIssue *APIMachineHealthIssueReport `json:"machineHealthIssue"`
-	IsRepairTenant     *bool                        `json:"isRepairTenant"`
+	// HealthIssue is the report of a machine health issue
+	HealthIssue    *APIHealthIssueReport `json:"HealthIssue"`
+	IsRepairTenant *bool                 `json:"isRepairTenant"`
 }
 
-// APIMachineHealthIssueReport is the data structure to capture a machine health issue report
-type APIMachineHealthIssueReport struct {
+// APIHealthIssueReport is the data structure to capture a machine health issue report
+type APIHealthIssueReport struct {
 	// Category is the type of the issue
 	Category string `json:"category"`
 	// Summary is the summary of the issue
@@ -1504,16 +1504,16 @@ type APIMachineHealthIssueReport struct {
 
 // Validate ensures the values passed in request are acceptable
 func (idr APIInstanceDeleteRequest) Validate() error {
-	if idr.MachineHealthIssue != nil {
-		err := validation.ValidateStruct(idr.MachineHealthIssue,
-			validation.Field(&idr.MachineHealthIssue.Category,
+	if idr.HealthIssue != nil {
+		err := validation.ValidateStruct(idr.HealthIssue,
+			validation.Field(&idr.HealthIssue.Category,
 				validation.Required,
-				validation.In(instanceDeleteMachineHealthIssueCategories...),
+				validation.In(instanceDeleteHealthIssueCategories...),
 			),
-			validation.Field(&idr.MachineHealthIssue.Summary,
+			validation.Field(&idr.HealthIssue.Summary,
 				validation.Required,
 				validation.Length(1, 512).Error(validationErrorStringLength)),
-			validation.Field(&idr.MachineHealthIssue.Details,
+			validation.Field(&idr.HealthIssue.Details,
 				validation.Required,
 				validation.Length(1, 8192).Error(validationErrorStringLength)),
 		)

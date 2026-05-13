@@ -581,11 +581,8 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		SetMaintenanceMode  *bool
 		MaintenanceMessage  *string
 		Labels              map[string]string
-		RequestOnlineRepair *bool
-		ClearOnlineRepair   *bool
-		MachineHealthIssue  *APIMachineHealthIssue
-		RepairPolicy        *APIOnlineRepairPolicy
-		Acknowledgments     *APIOnlineRepairAcknowledgments
+		OnlineRepairRequest *APIMachineOnlineRepairRequest
+		HealthIssue         *APIHealthIssue
 	}
 	tests := []struct {
 		name    string
@@ -729,19 +726,21 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		{
 			name: "test valid enter online repair request",
 			fields: fields{
-				RequestOnlineRepair: cdb.GetBoolPtr(true),
-				MachineHealthIssue: &APIMachineHealthIssue{
+				OnlineRepairRequest: &APIMachineOnlineRepairRequest{
+					Enabled: cdb.GetBoolPtr(true),
+					Policy: &APIOnlineRepairPolicy{
+						AllowAutoInstanceDeletionOnFailure: cdb.GetBoolPtr(false),
+					},
+					Acknowledgments: &APIOnlineRepairAcknowledgments{
+						AcceptDataCorruptionRisk:   cdb.GetBoolPtr(true),
+						AcceptRepairTeamAccess:     cdb.GetBoolPtr(true),
+						AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
+					},
+				},
+				HealthIssue: &APIHealthIssue{
 					Category: "STORAGE",
 					Summary:  "Disk issue",
 					Details:  "logs and ticket refs",
-				},
-				RepairPolicy: &APIOnlineRepairPolicy{
-					AllowAutoInstanceDeletionOnFailure: cdb.GetBoolPtr(false),
-				},
-				Acknowledgments: &APIOnlineRepairAcknowledgments{
-					AcceptDataCorruptionRisk:   cdb.GetBoolPtr(true),
-					AcceptRepairTeamAccess:     cdb.GetBoolPtr(true),
-					AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
 				},
 			},
 			wantErr: false,
@@ -749,21 +748,23 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		{
 			name: "test invalid enter online repair with maintenance also set",
 			fields: fields{
-				RequestOnlineRepair: cdb.GetBoolPtr(true),
-				SetMaintenanceMode:  cdb.GetBoolPtr(true),
-				MaintenanceMessage:  cdb.GetStrPtr("needs work"),
-				MachineHealthIssue: &APIMachineHealthIssue{
+				OnlineRepairRequest: &APIMachineOnlineRepairRequest{
+					Enabled: cdb.GetBoolPtr(true),
+					Policy: &APIOnlineRepairPolicy{
+						AllowAutoInstanceDeletionOnFailure: cdb.GetBoolPtr(true),
+					},
+					Acknowledgments: &APIOnlineRepairAcknowledgments{
+						AcceptDataCorruptionRisk:   cdb.GetBoolPtr(true),
+						AcceptRepairTeamAccess:     cdb.GetBoolPtr(true),
+						AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
+					},
+				},
+				SetMaintenanceMode: cdb.GetBoolPtr(true),
+				MaintenanceMessage: cdb.GetStrPtr("needs work"),
+				HealthIssue: &APIHealthIssue{
 					Category: "OTHER",
 					Summary:  "s",
 					Details:  "d",
-				},
-				RepairPolicy: &APIOnlineRepairPolicy{
-					AllowAutoInstanceDeletionOnFailure: cdb.GetBoolPtr(true),
-				},
-				Acknowledgments: &APIOnlineRepairAcknowledgments{
-					AcceptDataCorruptionRisk:   cdb.GetBoolPtr(true),
-					AcceptRepairTeamAccess:     cdb.GetBoolPtr(true),
-					AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
 				},
 			},
 			wantErr: true,
@@ -771,10 +772,22 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		{
 			name: "test valid exit online repair request",
 			fields: fields{
-				RequestOnlineRepair: cdb.GetBoolPtr(false),
-				ClearOnlineRepair:   cdb.GetBoolPtr(true),
+				OnlineRepairRequest: &APIMachineOnlineRepairRequest{
+					Enabled: cdb.GetBoolPtr(false),
+				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "test invalid HealthIssue without onlineRepairRequest",
+			fields: fields{
+				HealthIssue: &APIHealthIssue{
+					Category: "STORAGE",
+					Summary:  "x",
+					Details:  "y",
+				},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
@@ -785,11 +798,8 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 				SetMaintenanceMode:  tt.fields.SetMaintenanceMode,
 				MaintenanceMessage:  tt.fields.MaintenanceMessage,
 				Labels:              tt.fields.Labels,
-				RequestOnlineRepair: tt.fields.RequestOnlineRepair,
-				ClearOnlineRepair:   tt.fields.ClearOnlineRepair,
-				MachineHealthIssue:  tt.fields.MachineHealthIssue,
-				RepairPolicy:        tt.fields.RepairPolicy,
-				Acknowledgments:     tt.fields.Acknowledgments,
+				OnlineRepairRequest: tt.fields.OnlineRepairRequest,
+				HealthIssue:         tt.fields.HealthIssue,
 			}
 			err := mur.Validate()
 			require.Equal(t, tt.wantErr, err != nil, "error: %v", err)
