@@ -7,7 +7,7 @@ dependencies:
   version: 0.1.0
 - name: nico-rest-api
   repository: ""
-  version: 0.1.0
+  version: 0.1.1
 - name: nico-rest-workflow
   repository: ""
   version: 0.1.0
@@ -17,5 +17,5 @@ dependencies:
 - name: nico-rest-db
   repository: ""
   version: 0.1.0
-digest: sha256:07a8f06cb894085e3a01b050c1496bb976a0a2f3088c2180e9134342eb33a649
-generated: "2026-05-02T01:26:03.810025-07:00"
+digest: sha256:7cec75245925550764a6da00ce3cb01a9d065b7edffc76c07736d4c05aca860e
+generated: "2026-05-13T10:07:24.468333-07:00"
