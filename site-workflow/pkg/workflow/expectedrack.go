@@ -82,7 +82,7 @@ func DiscoverExpectedRackInventory(ctx workflow.Context) error {
 
 // CreateExpectedRack is a workflow to create a new Expected Rack using the
 // CreateExpectedRackOnSite activity, then also creates the rack in Flow via
-// CreateExpectedRackOnRLA (best-effort).
+// CreateExpectedRackOnFlow (best-effort).
 func CreateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) error {
 	logger := log.With().Str("Workflow", "ExpectedRack").Str("Action", "Create").Str("ID", request.GetRackId().GetId()).Str("RackProfileID", request.GetRackType()).Logger()
 
@@ -100,9 +100,9 @@ func CreateExpectedRack(ctx workflow.Context, request *cwssaws.ExpectedRack) err
 	}
 
 	// Then write to Flow (best-effort: log warning but don't fail the workflow)
-	err = workflow.ExecuteActivity(ctx, expectedRackManager.CreateExpectedRackOnRLA, request).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, expectedRackManager.CreateExpectedRackOnFlow, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedRackOnRLA").Msg("Failed to create rack on Flow, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedRackOnFlow").Msg("Failed to create rack on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")

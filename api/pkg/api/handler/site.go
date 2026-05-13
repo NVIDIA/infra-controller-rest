@@ -520,7 +520,7 @@ func (ush UpdateSiteHandler) Handle(c echo.Context) error {
 				NativeNetworking:          apiRequest.Capabilities.NativeNetworking,
 				NetworkSecurityGroup:      apiRequest.Capabilities.NetworkSecurityGroup,
 				NVLinkPartition:           apiRequest.Capabilities.NVLinkPartition,
-				RackLevelAdministration:   apiRequest.Capabilities.RackLevelAdministration,
+				Flow:                      apiRequest.Capabilities.Flow,
 				ImageBasedOperatingSystem: apiRequest.Capabilities.ImageBasedOperatingSystem,
 			}
 		}
@@ -733,7 +733,7 @@ func NewGetAllSiteHandler(dbSession *cdb.Session, tc tClient.Client, cfg *config
 // @Param isNativeNetworkingEnabled query boolean false "Filter by native networking enabled flag"
 // @Param isNetworkSecurityGroupEnabled query boolean false "Filter by network security group enabled flag"
 // @Param isNVLinkPartitionEnabled query boolean false "Filter by NVLink partition enabled flag"
-// @Param isRackLevelAdministrationEnabled query boolean false "Filter by Rack Level Administration enabled flag"
+// @Param isFlowEnabled query boolean false "Filter by NICo Flow enabled flag"
 // @Param query query string false "Query input for full text search"
 // @Param status query string false "Query input for status"
 // @Param includeRelation query string false "Related entities to include in response e.g. 'InfrastructureProvider'"
@@ -846,14 +846,14 @@ func (gash GetAllSiteHandler) Handle(c echo.Context) error {
 		hasConfigFilter = true
 	}
 
-	// Check `isRackLevelAdministrationEnabled` in query
-	qirlae := c.QueryParam("isRackLevelAdministrationEnabled")
+	// Check `isFlowEnabled` in query
+	qirlae := c.QueryParam("isFlowEnabled")
 	if qirlae != "" {
 		isEnabled, err := strconv.ParseBool(qirlae)
 		if err != nil {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `isRackLevelAdministrationEnabled` query param", nil)
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid value specified for `isFlowEnabled` query param", nil)
 		}
-		configFilter.RackLevelAdministration = &isEnabled
+		configFilter.Flow = &isEnabled
 		hasConfigFilter = true
 	}
 

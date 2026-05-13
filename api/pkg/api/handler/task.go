@@ -146,9 +146,9 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	stc, err := gth.scp.GetClientByID(site.ID)
@@ -315,14 +315,14 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Site specified in request doesn't belong to current org's Provider", nil)
 	}
 
-	// Verify the Site has Rack Level Administration enabled (Tasks only exist on Flow sites)
+	// Verify the Site has NICo Flow enabled (Tasks only exist on Flow sites)
 	siteConfig := &cdbm.SiteConfig{}
 	if site.Config != nil {
 		siteConfig = site.Config
 	}
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get the temporal client for the site

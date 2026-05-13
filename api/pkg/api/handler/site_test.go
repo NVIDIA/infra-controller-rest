@@ -1522,8 +1522,8 @@ func TestGetAllSiteHandler_Handle(t *testing.T) {
 	stDAO.Update(ctx, nil, cdbm.SiteUpdateInput{Config: &cdbm.SiteConfigUpdateInput{NetworkSecurityGroup: cdb.GetBoolPtr(true)}, SiteID: sts[2].ID})
 	stDAO.Update(ctx, nil, cdbm.SiteUpdateInput{Config: &cdbm.SiteConfigUpdateInput{NetworkSecurityGroup: cdb.GetBoolPtr(true)}, SiteID: sts[3].ID})
 
-	stDAO.Update(ctx, nil, cdbm.SiteUpdateInput{Config: &cdbm.SiteConfigUpdateInput{NativeNetworking: cdb.GetBoolPtr(true), NetworkSecurityGroup: cdb.GetBoolPtr(true), NVLinkPartition: cdb.GetBoolPtr(true), RackLevelAdministration: cdb.GetBoolPtr(true)}, SiteID: sts[4].ID})
-	stDAO.Update(ctx, nil, cdbm.SiteUpdateInput{Config: &cdbm.SiteConfigUpdateInput{NativeNetworking: cdb.GetBoolPtr(true), NetworkSecurityGroup: cdb.GetBoolPtr(true), NVLinkPartition: cdb.GetBoolPtr(true), RackLevelAdministration: cdb.GetBoolPtr(true)}, SiteID: sts[5].ID})
+	stDAO.Update(ctx, nil, cdbm.SiteUpdateInput{Config: &cdbm.SiteConfigUpdateInput{NativeNetworking: cdb.GetBoolPtr(true), NetworkSecurityGroup: cdb.GetBoolPtr(true), NVLinkPartition: cdb.GetBoolPtr(true), Flow: cdb.GetBoolPtr(true)}, SiteID: sts[4].ID})
+	stDAO.Update(ctx, nil, cdbm.SiteUpdateInput{Config: &cdbm.SiteConfigUpdateInput{NativeNetworking: cdb.GetBoolPtr(true), NetworkSecurityGroup: cdb.GetBoolPtr(true), NVLinkPartition: cdb.GetBoolPtr(true), Flow: cdb.GetBoolPtr(true)}, SiteID: sts[5].ID})
 
 	// Setup echo server/context
 	e := echo.New()
@@ -1647,7 +1647,7 @@ func TestGetAllSiteHandler_Handle(t *testing.T) {
 			args: args{
 				org: ipOrg,
 				query: url.Values{
-					"isRackLevelAdministrationEnabled": []string{"True"},
+					"isFlowEnabled": []string{"True"},
 				},
 				user: ipu1,
 			},

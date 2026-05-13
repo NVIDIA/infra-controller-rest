@@ -196,6 +196,8 @@ type InfiniBandInterfaceDAO interface {
 	Clear(ctx context.Context, tx *db.Tx, input InfiniBandInterfaceClearInput) (*InfiniBandInterface, error)
 	//
 	Delete(ctx context.Context, tx *db.Tx, id uuid.UUID) error
+	//
+	DeleteAllBySiteID(ctx context.Context, tx *db.Tx, siteID uuid.UUID) error
 }
 
 // InfiniBandInterfaceSQLDAO is an implementation of the InfiniBandInterfaceDAO interface
@@ -493,6 +495,25 @@ func (ibisd InfiniBandInterfaceSQLDAO) Delete(ctx context.Context, tx *db.Tx, id
 	}
 
 	return nil
+}
+
+// DeleteAllBySiteID deletes all InfiniBandInterface records for a given Site
+// error is returned only if there is a db error
+func (ibisd InfiniBandInterfaceSQLDAO) DeleteAllBySiteID(ctx context.Context, tx *db.Tx, siteID uuid.UUID) error {
+	ctx, InfiniBandInterfaceDAOSpan := ibisd.tracerSpan.CreateChildInCurrentContext(ctx, "InfiniBandInterfaceDAO.DeleteAllBySiteID")
+	if InfiniBandInterfaceDAOSpan != nil {
+		defer InfiniBandInterfaceDAOSpan.End()
+
+		ibisd.tracerSpan.SetAttribute(InfiniBandInterfaceDAOSpan, "site_id", siteID.String())
+	}
+
+	ibi := &InfiniBandInterface{
+		SiteID: siteID,
+	}
+
+	_, err := db.GetIDB(tx, ibisd.dbSession).NewDelete().Model(ibi).Where("site_id = ?", siteID).Exec(ctx)
+
+	return err
 }
 
 // CreateMultiple creates multiple InfiniBandInterfaces from the given parameters

@@ -359,10 +359,10 @@ func TestManageExpectedRack_DeleteAllExpectedRacksOnSite(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestManageExpectedRack_CreateExpectedRackOnRLA(t *testing.T) {
+func TestManageExpectedRack_CreateExpectedRackOnFlow(t *testing.T) {
 	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
 		mer := ManageExpectedRack{FlowAtomicClient: nil}
-		err := mer.CreateExpectedRackOnRLA(context.Background(), &cwssaws.ExpectedRack{
+		err := mer.CreateExpectedRackOnFlow(context.Background(), &cwssaws.ExpectedRack{
 			RackId:   &cwssaws.RackId{Id: uuid.NewString()},
 			RackType: uuid.NewString(),
 		})
@@ -371,7 +371,7 @@ func TestManageExpectedRack_CreateExpectedRackOnRLA(t *testing.T) {
 
 	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
 		mer := ManageExpectedRack{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
-		err := mer.CreateExpectedRackOnRLA(context.Background(), &cwssaws.ExpectedRack{
+		err := mer.CreateExpectedRackOnFlow(context.Background(), &cwssaws.ExpectedRack{
 			RackId:   &cwssaws.RackId{Id: uuid.NewString()},
 			RackType: uuid.NewString(),
 		})
@@ -379,7 +379,7 @@ func TestManageExpectedRack_CreateExpectedRackOnRLA(t *testing.T) {
 	})
 }
 
-func Test_expectedRackToRLARack(t *testing.T) {
+func Test_expectedRackToFlowRack(t *testing.T) {
 	strPtr := func(s string) *string { return &s }
 
 	t.Run("maps all fields with full labels", func(t *testing.T) {
@@ -400,7 +400,7 @@ func Test_expectedRackToRLARack(t *testing.T) {
 				},
 			},
 		}
-		var flowRack *flowv1.Rack = expectedRackToRLARack(rack)
+		var flowRack *flowv1.Rack = expectedRackToFlowRack(rack)
 
 		if assert.NotNil(t, flowRack.Info) {
 			assert.NotNil(t, flowRack.Info.Id)
@@ -429,7 +429,7 @@ func Test_expectedRackToRLARack(t *testing.T) {
 			RackId:   &cwssaws.RackId{Id: "rack-002"},
 			RackType: "rack-profile-002",
 		}
-		flowRack := expectedRackToRLARack(rack)
+		flowRack := expectedRackToFlowRack(rack)
 
 		if assert.NotNil(t, flowRack.Info) {
 			if assert.NotNil(t, flowRack.Info.Id) {
@@ -462,7 +462,7 @@ func Test_expectedRackToRLARack(t *testing.T) {
 				},
 			},
 		}
-		flowRack := expectedRackToRLARack(rack)
+		flowRack := expectedRackToFlowRack(rack)
 
 		if assert.NotNil(t, flowRack.Info) {
 			assert.Equal(t, "rack-bravo", flowRack.Info.Name)

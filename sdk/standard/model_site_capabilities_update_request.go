@@ -42,8 +42,8 @@ type SiteCapabilitiesUpdateRequest struct {
 	NetworkSecurityGroup NullableBool `json:"networkSecurityGroup,omitempty"`
 	// Enable or disable NVLink partition support for the Site
 	NvLinkPartition NullableBool `json:"nvLinkPartition,omitempty"`
-	// Enable or disable rack-level administration for the Site
-	RackLevelAdministration NullableBool `json:"rackLevelAdministration,omitempty"`
+	// Enable or disable NICo Flow for the Site
+	Flow NullableBool `json:"flow,omitempty"`
 	// Enable or disable image-based operating system support for the Site
 	ImageBasedOperatingSystem NullableBool `json:"imageBasedOperatingSystem,omitempty"`
 }
@@ -194,47 +194,47 @@ func (o *SiteCapabilitiesUpdateRequest) UnsetNvLinkPartition() {
 	o.NvLinkPartition.Unset()
 }
 
-// GetRackLevelAdministration returns the RackLevelAdministration field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *SiteCapabilitiesUpdateRequest) GetRackLevelAdministration() bool {
-	if o == nil || IsNil(o.RackLevelAdministration.Get()) {
+// GetFlow returns the Flow field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *SiteCapabilitiesUpdateRequest) GetFlow() bool {
+	if o == nil || IsNil(o.Flow.Get()) {
 		var ret bool
 		return ret
 	}
-	return *o.RackLevelAdministration.Get()
+	return *o.Flow.Get()
 }
 
-// GetRackLevelAdministrationOk returns a tuple with the RackLevelAdministration field value if set, nil otherwise
+// GetFlowOk returns a tuple with the Flow field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *SiteCapabilitiesUpdateRequest) GetRackLevelAdministrationOk() (*bool, bool) {
+func (o *SiteCapabilitiesUpdateRequest) GetFlowOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.RackLevelAdministration.Get(), o.RackLevelAdministration.IsSet()
+	return o.Flow.Get(), o.Flow.IsSet()
 }
 
-// HasRackLevelAdministration returns a boolean if a field has been set.
-func (o *SiteCapabilitiesUpdateRequest) HasRackLevelAdministration() bool {
-	if o != nil && o.RackLevelAdministration.IsSet() {
+// HasFlow returns a boolean if a field has been set.
+func (o *SiteCapabilitiesUpdateRequest) HasFlow() bool {
+	if o != nil && o.Flow.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetRackLevelAdministration gets a reference to the given NullableBool and assigns it to the RackLevelAdministration field.
-func (o *SiteCapabilitiesUpdateRequest) SetRackLevelAdministration(v bool) {
-	o.RackLevelAdministration.Set(&v)
+// SetFlow gets a reference to the given NullableBool and assigns it to the Flow field.
+func (o *SiteCapabilitiesUpdateRequest) SetFlow(v bool) {
+	o.Flow.Set(&v)
 }
 
-// SetRackLevelAdministrationNil sets the value for RackLevelAdministration to be an explicit nil
-func (o *SiteCapabilitiesUpdateRequest) SetRackLevelAdministrationNil() {
-	o.RackLevelAdministration.Set(nil)
+// SetFlowNil sets the value for Flow to be an explicit nil
+func (o *SiteCapabilitiesUpdateRequest) SetFlowNil() {
+	o.Flow.Set(nil)
 }
 
-// UnsetRackLevelAdministration ensures that no value is present for RackLevelAdministration, not even an explicit nil
-func (o *SiteCapabilitiesUpdateRequest) UnsetRackLevelAdministration() {
-	o.RackLevelAdministration.Unset()
+// UnsetFlow ensures that no value is present for Flow, not even an explicit nil
+func (o *SiteCapabilitiesUpdateRequest) UnsetFlow() {
+	o.Flow.Unset()
 }
 
 // GetImageBasedOperatingSystem returns the ImageBasedOperatingSystem field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -299,8 +299,8 @@ func (o SiteCapabilitiesUpdateRequest) ToMap() (map[string]interface{}, error) {
 	if o.NvLinkPartition.IsSet() {
 		toSerialize["nvLinkPartition"] = o.NvLinkPartition.Get()
 	}
-	if o.RackLevelAdministration.IsSet() {
-		toSerialize["rackLevelAdministration"] = o.RackLevelAdministration.Get()
+	if o.Flow.IsSet() {
+		toSerialize["flow"] = o.Flow.Get()
 	}
 	if o.ImageBasedOperatingSystem.IsSet() {
 		toSerialize["imageBasedOperatingSystem"] = o.ImageBasedOperatingSystem.Get()

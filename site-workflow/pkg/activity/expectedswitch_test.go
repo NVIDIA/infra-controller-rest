@@ -458,10 +458,10 @@ func TestManageExpectedSwitch_DeleteExpectedSwitchOnSite(t *testing.T) {
 	}
 }
 
-func TestManageExpectedSwitch_CreateExpectedSwitchOnRLA(t *testing.T) {
+func TestManageExpectedSwitch_CreateExpectedSwitchOnFlow(t *testing.T) {
 	t.Run("nil Flow client skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedSwitch{FlowAtomicClient: nil}
-		err := mm.CreateExpectedSwitchOnRLA(context.Background(), &cwssaws.ExpectedSwitch{
+		err := mm.CreateExpectedSwitchOnFlow(context.Background(), &cwssaws.ExpectedSwitch{
 			ExpectedSwitchId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", SwitchSerialNumber: "SW001",
 		})
 		assert.NoError(t, err)
@@ -469,14 +469,14 @@ func TestManageExpectedSwitch_CreateExpectedSwitchOnRLA(t *testing.T) {
 
 	t.Run("nil Flow client connection skips gracefully", func(t *testing.T) {
 		mm := ManageExpectedSwitch{FlowAtomicClient: cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})}
-		err := mm.CreateExpectedSwitchOnRLA(context.Background(), &cwssaws.ExpectedSwitch{
+		err := mm.CreateExpectedSwitchOnFlow(context.Background(), &cwssaws.ExpectedSwitch{
 			ExpectedSwitchId: &cwssaws.UUID{Value: uuid.NewString()}, BmcMacAddress: "00:11:22:33:44:55", SwitchSerialNumber: "SW001",
 		})
 		assert.NoError(t, err)
 	})
 }
 
-func Test_expectedSwitchToRLAComponent(t *testing.T) {
+func Test_expectedSwitchToFlowComponent(t *testing.T) {
 	strPtr := func(s string) *string { return &s }
 	int32Ptr := func(i int32) *int32 { return &i }
 
@@ -495,7 +495,7 @@ func Test_expectedSwitchToRLAComponent(t *testing.T) {
 			TrayIdx:            int32Ptr(1),
 			HostId:             int32Ptr(0),
 		}
-		component := expectedSwitchToRLAComponent(es)
+		component := expectedSwitchToFlowComponent(es)
 		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
 		assert.Equal(t, "es-001", component.Info.Id.Id)
 		assert.Equal(t, "SW-001", component.Info.SerialNumber)
@@ -520,7 +520,7 @@ func Test_expectedSwitchToRLAComponent(t *testing.T) {
 			ExpectedSwitchId: &cwssaws.UUID{Value: "es-002"}, BmcMacAddress: "11:22:33:44:55:66",
 			SwitchSerialNumber: "SW-002",
 		}
-		component := expectedSwitchToRLAComponent(es)
+		component := expectedSwitchToFlowComponent(es)
 		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
 		assert.Empty(t, component.Info.Name)
 		assert.Empty(t, component.Info.Manufacturer)

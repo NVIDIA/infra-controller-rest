@@ -53,7 +53,7 @@ func (mt *ManageTray) GetTray(ctx context.Context, request *flowv1.GetComponentI
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mt.FlowAtomicClient.GetRLAClient()
+	flow, err := mt.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (mt *ManageTray) GetTrays(ctx context.Context, request *flowv1.GetComponent
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mt.FlowAtomicClient.GetRLAClient()
+	flow, err := mt.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
