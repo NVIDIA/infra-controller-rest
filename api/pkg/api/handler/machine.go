@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -938,215 +937,227 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently missing on Site, cannot change Instance Type", nil)
 		}
 
-		// Start a DB transaction for instance type updates
-		itTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
-		if err != nil {
-			logger.Error().Err(err).Msg("unable to start transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating machine", nil)
-		}
-		// This variable is used in cleanup actions to indicate if this transaction committed
-		itTxCommitted := false
-		defer common.RollbackTx(ctx, itTx, &itTxCommitted)
-
-		// Check if Machine/InstanceType association already exists filter by machine
-		mitDAO := cdbm.NewMachineInstanceTypeDAO(umh.dbSession)
-		emits, totalEmits, err := mitDAO.GetAll(ctx, itTx, &machine.ID, nil, nil, nil, nil, nil)
-		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving Machine/InstanceType association from DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to check for existing InstanceType association for Machine", nil)
-		}
-
-		// Request validation guarantees that either we have a new Instance Type or existing Instance Type needs to be cleared
-		// In either case, we remove existing Instance Type association
-		if totalEmits > 0 {
-			if totalEmits != 1 {
-				logger.Error().Err(err).Msg("more than 1 Machine/InstanceType association found for Machine")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Machine is associated with more than 1 Instance Type, data consistency detected", nil)
+		var itTimeoutResp func() error
+		err = cdb.WithTx(ctx, umh.dbSession, func(itTx *cdb.Tx) error {
+			// Lock the machine itself so the read/delete/create sequence on its
+			// instance-type association is serialized per machine. Without this,
+			// two concurrent PATCHes against a machine with no current
+			// association can both observe totalEmits == 0 and race into
+			// CreateFromParams/Update.
+			derr := itTx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(machine.ID), nil)
+			if derr != nil {
+				logger.Error().Err(derr).Str("Machine ID", machine.ID).Msg("failed to acquire advisory lock on Machine")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Machine/InstanceType association", nil)
 			}
 
-			emit := emits[0]
-
-			// Get the lock for old instancetype
-			lockID := emit.InstanceTypeID.String()
-			aerr := itTx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(lockID), nil)
-			if aerr != nil {
-				logger.Error().Err(aerr).Str("Lock ID", lockID).Msg("failed to acquire Advisory Lock")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine/InstanceType association", nil)
+			// Check if Machine/InstanceType association already exists filter by machine
+			mitDAO := cdbm.NewMachineInstanceTypeDAO(umh.dbSession)
+			emits, totalEmits, derr := mitDAO.GetAll(ctx, itTx, &machine.ID, nil, nil, nil, nil, nil)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error retrieving Machine/InstanceType association from DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to check for existing InstanceType association for Machine", nil)
 			}
 
-			// Remove Machine/InstanceType association
-			serr := mitDAO.DeleteByID(ctx, itTx, emit.ID, false)
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error deleting Machine/InstanceType association in DB")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to remove existing Machine/InstanceType association", nil)
+			// Request validation guarantees that either we have a new Instance Type or existing Instance Type needs to be cleared
+			// In either case, we remove existing Instance Type association
+			if totalEmits > 0 {
+				if totalEmits != 1 {
+					logger.Error().Msg("more than 1 Machine/InstanceType association found for Machine")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Machine is associated with more than 1 Instance Type, data consistency detected", nil)
+				}
+
+				emit := emits[0]
+
+				// Get the lock for old instancetype
+				lockID := emit.InstanceTypeID.String()
+				aerr := itTx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(lockID), nil)
+				if aerr != nil {
+					logger.Error().Err(aerr).Str("Lock ID", lockID).Msg("failed to acquire Advisory Lock")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Machine/InstanceType association", nil)
+				}
+
+				// Remove Machine/InstanceType association
+				serr := mitDAO.DeleteByID(ctx, itTx, emit.ID, false)
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error deleting Machine/InstanceType association in DB")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to remove existing Machine/InstanceType association", nil)
+				}
+
+				// Check if the above deletion of Machine/InstanceType association will violate Allocation Constraints
+				ok, serr := common.CheckMachinesForInstanceTypeAllocation(ctx, itTx, umh.dbSession, logger, emit.InstanceTypeID, 0)
+				if serr != nil {
+					logger.Error().Err(serr).Str("Instance Type ID", emit.InstanceTypeID.String()).Msg("error checking Machine allocations for current Instance Type")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to check Machine allocations for existing Instance Type", nil)
+				}
+
+				if !ok {
+					logger.Warn().Str("resourceId", emit.InstanceTypeID.String()).Msg("Machine cannot be dissociated from existing Instance Type as it will violate Allocation Constraints")
+					return cutil.NewAPIError(http.StatusBadRequest, "Machine cannot be dissociated from existing Instance Type as it will violate Allocation Constraints", nil)
+				}
+
+				// Clear Instance Type for Machine
+				clearInput := cdbm.MachineClearInput{
+					MachineID:      machine.ID,
+					InstanceTypeID: true,
+				}
+				um, serr = mDAO.Clear(ctx, itTx, clearInput)
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error clearing Instance Type for Machine in DB")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update InstanceType for Machine", nil)
+				}
 			}
 
-			// Check if the above deletion of Machine/InstanceType association will violate Allocation Constraints
-			ok, serr := common.CheckMachinesForInstanceTypeAllocation(ctx, itTx, umh.dbSession, logger, emit.InstanceTypeID, 0)
-			if serr != nil {
-				logger.Error().Err(serr).Str("Instance Type ID", emit.InstanceTypeID.String()).Msg("error checking Machine allocations for current Instance Type")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to check Machine allocations for existing Instance Type", nil)
+			if newit != nil {
+				// Create new Machine/InstanceType association
+				_, serr := mitDAO.CreateFromParams(ctx, itTx, machine.ID, newit.ID)
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error creating Machine/InstanceType association")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Machine/InstanceType association", nil)
+				}
+
+				// Update Machine and set new Instance Type
+				updateInput := cdbm.MachineUpdateInput{
+					MachineID:      machine.ID,
+					InstanceTypeID: cdb.GetUUIDPtr(newit.ID),
+				}
+				um, serr = mDAO.Update(ctx, itTx, updateInput)
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error updating Machine's Instance Type in DB")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Machine with new Instance Type", nil)
+				}
 			}
 
-			if !ok {
-				logger.Warn().Str("resourceId", emit.InstanceTypeID.String()).Msg("Machine cannot be dissociated from existing Instance Type as it will violate Allocation Constraints")
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine cannot be dissociated from existing Instance Type as it will violate Allocation Constraints", nil)
+			// raise error if data inconsistency exists
+			if um == nil {
+				logger.Error().Msg("error updating Machine's Instance Type in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Data inconsistencies detected in Instance Type association for this Machine", nil)
 			}
 
-			// Clear Instance Type for Machine
-			clearInput := cdbm.MachineClearInput{
-				MachineID:      machine.ID,
-				InstanceTypeID: true,
-			}
-			um, serr = mDAO.Clear(ctx, itTx, clearInput)
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error clearing Instance Type for Machine in DB")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update InstanceType for Machine", nil)
-			}
-		}
+			// Make the synchronous call to the site
+			// Clear instance type on site if the request cleared it in cloud.
+			// Earlier checks block a request to clear if there is no instance type assigned.
+			if apiRequest.ClearInstanceType != nil && *apiRequest.ClearInstanceType {
+				// Prepare the create request workflow object
+				removeInstanceTypeRequest := &cwssaws.RemoveMachineInstanceTypeAssociationRequest{
+					MachineId: machine.ID,
+				}
 
-		if newit != nil {
-			// Create new Machine/InstanceType association
-			_, serr := mitDAO.CreateFromParams(ctx, itTx, machine.ID, newit.ID)
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error creating Machine/InstanceType association")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Machine/InstanceType association", nil)
-			}
+				workflowOptions := temporalClient.StartWorkflowOptions{
+					ID:                       "remove-machine-instance-type-association" + machine.InstanceTypeID.String(),
+					TaskQueue:                queue.SiteTaskQueue,
+					WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+				}
 
-			// Update Machine and set new Instance Type
-			updateInput := cdbm.MachineUpdateInput{
-				MachineID:      machine.ID,
-				InstanceTypeID: cdb.GetUUIDPtr(newit.ID),
-			}
-			um, serr = mDAO.Update(ctx, itTx, updateInput)
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error updating Machine's Instance Type in DB")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine with new Instance Type", nil)
-			}
-		}
+				logger.Info().Msg("triggering RemoveMachineInstanceTypeAssociation workflow")
 
-		// raise error if data inconsistency exists
-		if um == nil {
-			logger.Error().Msg("error updating Machine's Instance Type in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Data inconsistencies detected in Instance Type association for this Machine", nil)
-		}
+				// Add context deadlines
+				wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+				defer cancel()
 
-		// Make the synchronous call to the site
-		// Clear instance type on site if the request cleared it in cloud.
-		// Earlier checks block a request to clear if there is no instance type assigned.
-		if apiRequest.ClearInstanceType != nil && *apiRequest.ClearInstanceType {
-			// Prepare the create request workflow object
-			removeInstanceTypeRequest := &cwssaws.RemoveMachineInstanceTypeAssociationRequest{
-				MachineId: machine.ID,
-			}
+				// Trigger Site workflow
+				we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "RemoveMachineInstanceTypeAssociation", removeInstanceTypeRequest)
+				if wferr != nil {
+					logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to remove Machine association with InstanceType")
+					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to remove Machine association with Instance Type on Site: %s", wferr), nil)
+				}
 
-			workflowOptions := temporalClient.StartWorkflowOptions{
-				ID:                       "remove-machine-instance-type-association" + machine.InstanceTypeID.String(),
-				TaskQueue:                queue.SiteTaskQueue,
-				WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-			}
+				wid := we.GetID()
+				logger.Info().Str("Workflow ID", wid).Msg("executed synchronous RemoveMachineInstanceTypeAssociation workflow")
 
-			logger.Info().Msg("triggering RemoveMachineInstanceTypeAssociation workflow")
+				// Block until the workflow has completed and returned success/error.
+				wferr = we.Get(wfCtx, nil)
 
-			// Add context deadlines
-			ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-			defer cancel()
-
-			// Trigger Site workflow
-			we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "RemoveMachineInstanceTypeAssociation", removeInstanceTypeRequest)
-			if err != nil {
-				logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to remove Machine association with InstanceType")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to remove Machine association with Instance Type on Site: %s", err), nil)
-			}
-
-			wid := we.GetID()
-			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous RemoveMachineInstanceTypeAssociation workflow")
-
-			// Block until the workflow has completed and returned success/error.
-			err = we.Get(ctx, nil)
-
-			if err != nil {
-				// If this was a 404 back from NICo, the machine was not found, and we can
-				// treat the object as already having been deleted and allow things to proceed.
-				var applicationErr *tp.ApplicationError
-				if errors.As(err, &applicationErr) {
-					if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-						logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-						// Reset error to nil
-						err = nil
+				if wferr != nil {
+					// If this was a 404 back from NICo, the machine was not found, and we can
+					// treat the object as already having been deleted and allow things to proceed.
+					var applicationErr *tp.ApplicationError
+					if errors.As(wferr, &applicationErr) {
+						if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+							logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+							// Reset error to nil
+							wferr = nil
+						}
 					}
 				}
-			}
 
-			if err != nil {
-				var timeoutErr *tp.TimeoutError
-				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "MachineInstanceType", "RemoveMachineInstanceTypeAssociation")
+				if wferr != nil {
+					var timeoutErr *tp.TimeoutError
+					if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+						capturedErr := wferr
+						itTimeoutResp = func() error {
+							return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, capturedErr, "MachineInstanceType", "RemoveMachineInstanceTypeAssociation")
+						}
+						return cutil.NewAPIError(http.StatusInternalServerError, "workflow timeout", nil)
+					}
+
+					code, unwrapped := common.UnwrapWorkflowError(wferr)
+					logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to remove Machine association with InstanceType")
+					return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to remove Machine association with Instance Type on Site: %s", unwrapped), nil)
 				}
 
-				code, err := common.UnwrapWorkflowError(err)
-				logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to remove Machine association with InstanceType")
-				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to remove Machine association with Instance Type on Site: %s", err), nil)
-			}
+				logger.Info().Str("Workflow ID", wid).Msg("completed synchronous RemoveMachineInstanceTypeAssociation workflow")
+			} else if newit != nil {
+				// NOTE: If the machine was missing on site from the POV of cloud, the request would have
+				// been rejected before getting here.
 
-			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous RemoveMachineInstanceTypeAssociation workflow")
-		} else if newit != nil {
-			// NOTE: If the machine was missing on site from the POV of cloud, the request would have
-			// been rejected before getting here.
-
-			// If the request updated to a different instancetype, send that to the site.
-			associateMachinesRequest := &cwssaws.AssociateMachinesWithInstanceTypeRequest{
-				InstanceTypeId: newit.ID.String(),
-				MachineIds:     []string{machine.ID},
-			}
-
-			workflowOptions := temporalClient.StartWorkflowOptions{
-				ID:                       "associate-machines-with-instance-type-" + newit.ID.String(),
-				TaskQueue:                queue.SiteTaskQueue,
-				WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-			}
-
-			logger.Info().Msg("triggering AssociateMachinesWithInstanceType workflow")
-
-			// Add context deadlines
-			ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-			defer cancel()
-
-			// Trigger Site workflow
-			we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "AssociateMachinesWithInstanceType", associateMachinesRequest)
-			if err != nil {
-				logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to associate Machines with InstanceType")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to associate Machines with Instance Type on Site: %s", err), nil)
-			}
-
-			wid := we.GetID()
-			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous AssociateMachinesWithInstanceType workflow")
-
-			// Block until the workflow has completed and returned success/error.
-			err = we.Get(ctx, nil)
-
-			if err != nil {
-				var timeoutErr *tp.TimeoutError
-				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "MachineInstanceType", "AssociateMachinesWithInstanceType")
+				// If the request updated to a different instancetype, send that to the site.
+				associateMachinesRequest := &cwssaws.AssociateMachinesWithInstanceTypeRequest{
+					InstanceTypeId: newit.ID.String(),
+					MachineIds:     []string{machine.ID},
 				}
 
-				code, err := common.UnwrapWorkflowError(err)
-				logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to associate Machines with InstanceType")
-				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to  associate Machines with Instance Type on Site: %s", err), nil)
+				workflowOptions := temporalClient.StartWorkflowOptions{
+					ID:                       "associate-machines-with-instance-type-" + newit.ID.String(),
+					TaskQueue:                queue.SiteTaskQueue,
+					WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+				}
+
+				logger.Info().Msg("triggering AssociateMachinesWithInstanceType workflow")
+
+				// Add context deadlines
+				wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+				defer cancel()
+
+				// Trigger Site workflow
+				we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "AssociateMachinesWithInstanceType", associateMachinesRequest)
+				if wferr != nil {
+					logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to associate Machines with InstanceType")
+					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to associate Machines with Instance Type on Site: %s", wferr), nil)
+				}
+
+				wid := we.GetID()
+				logger.Info().Str("Workflow ID", wid).Msg("executed synchronous AssociateMachinesWithInstanceType workflow")
+
+				// Block until the workflow has completed and returned success/error.
+				wferr = we.Get(wfCtx, nil)
+
+				if wferr != nil {
+					var timeoutErr *tp.TimeoutError
+					if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+						capturedErr := wferr
+						itTimeoutResp = func() error {
+							return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, capturedErr, "MachineInstanceType", "AssociateMachinesWithInstanceType")
+						}
+						return cutil.NewAPIError(http.StatusInternalServerError, "workflow timeout", nil)
+					}
+
+					code, unwrapped := common.UnwrapWorkflowError(wferr)
+					logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to associate Machines with InstanceType")
+					return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to  associate Machines with Instance Type on Site: %s", unwrapped), nil)
+				}
+
+				logger.Info().Str("Workflow ID", wid).Msg("completed synchronous AssociateMachinesWithInstanceType workflow")
+
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous AssociateMachinesWithInstanceType workflow")
-
+			return nil
+		})
+		if itTimeoutResp != nil {
+			return itTimeoutResp()
 		}
-
-		// Commit transaction
-		err = itTx.Commit()
 		if err != nil {
-			logger.Error().Err(err).Msg("error committing transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine, DB transaction error", nil)
+			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
-		itTxCommitted = true
 	}
 
 	// Save/clear maintenance mode in DB and execute workflow on Site if required
@@ -1156,134 +1167,121 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently missing on Site, cannot update maintenance mode", nil)
 		}
 
-		// Start a DB transaction
-		mnTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
-		if err != nil {
-			logger.Error().Err(err).Msg("unable to start transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating machine", nil)
-		}
-		// This variable is used in cleanup actions to indicate if this transaction committed
-		mnTxCommitted := false
-		defer common.RollbackTx(ctx, mnTx, &mnTxCommitted)
+		// timeoutResp lets the closure signal a post-rollback handler — the
+		// TerminateWorkflow call has to run after the closure returns so that
+		// the DB tx unwinds before we make the second remote call. nil means
+		// no timeout occurred and the normal flow continues.
+		var timeoutResp func() error
 
-		// Update records in DB
-		status := cdbm.MachineStatusMaintenance
-		statusMessage := "Machine is in maintenance mode"
-		if apiRequest.MaintenanceMessage != nil {
-			statusMessage = fmt.Sprintf("%s: %s", statusMessage, *apiRequest.MaintenanceMessage)
-		}
+		err = cdb.WithTx(ctx, umh.dbSession, func(mnTx *cdb.Tx) error {
+			// Update records in DB
+			status := cdbm.MachineStatusMaintenance
+			statusMessage := "Machine is in maintenance mode"
+			if apiRequest.MaintenanceMessage != nil {
+				statusMessage = fmt.Sprintf("%s: %s", statusMessage, *apiRequest.MaintenanceMessage)
+			}
 
-		if !*apiRequest.SetMaintenanceMode {
-			// TODO: Inspect Machine metadata object to determine the appropriate status
-			status = cdbm.MachineStatusInitializing
-			statusMessage = "Machine is in initialization state"
-		}
+			if !*apiRequest.SetMaintenanceMode {
+				// TODO: Inspect Machine metadata object to determine the appropriate status
+				status = cdbm.MachineStatusInitializing
+				statusMessage = "Machine is in initialization state"
+			}
 
-		updateInput := cdbm.MachineUpdateInput{
-			MachineID:          machine.ID,
-			IsInMaintenance:    apiRequest.SetMaintenanceMode,
-			MaintenanceMessage: apiRequest.MaintenanceMessage,
-			Status:             &status,
-		}
-		um, err = mDAO.Update(ctx, mnTx, updateInput)
-		if err != nil {
-			logger.Error().Err(err).Msg("error updating Machine's maintenance mode in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine maintenance mode, DB error", nil)
-		}
-
-		// Clear maintenance message if maintenance mode is being disabled
-		if !*apiRequest.SetMaintenanceMode {
-			// Clear Maintenance Message
-			clearInput := cdbm.MachineClearInput{
+			updateInput := cdbm.MachineUpdateInput{
 				MachineID:          machine.ID,
-				MaintenanceMessage: true,
+				IsInMaintenance:    apiRequest.SetMaintenanceMode,
+				MaintenanceMessage: apiRequest.MaintenanceMessage,
+				Status:             &status,
 			}
-			um, err = mDAO.Clear(ctx, mnTx, clearInput)
-			if err != nil {
-				logger.Error().Err(err).Msg("error clearing maintenance message for Machine in DB")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to clear Machine maintenance message, DB error", nil)
+			var derr error
+			um, derr = mDAO.Update(ctx, mnTx, updateInput)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error updating Machine's maintenance mode in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Machine maintenance mode, DB error", nil)
 			}
-		}
 
-		// Add status detail
-		sdDAO := cdbm.NewStatusDetailDAO(umh.dbSession)
-		_, err = sdDAO.CreateFromParams(ctx, mnTx, machine.ID, status, &statusMessage)
-		if err != nil {
-			logger.Error().Err(err).Msg("error creating Status Detail for Machine in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create status detail for Machine, DB error", nil)
-		}
+			// Clear maintenance message if maintenance mode is being disabled
+			if !*apiRequest.SetMaintenanceMode {
+				// Clear Maintenance Message
+				clearInput := cdbm.MachineClearInput{
+					MachineID:          machine.ID,
+					MaintenanceMessage: true,
+				}
+				um, derr = mDAO.Clear(ctx, mnTx, clearInput)
+				if derr != nil {
+					logger.Error().Err(derr).Msg("error clearing maintenance message for Machine in DB")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to clear Machine maintenance message, DB error", nil)
+				}
+			}
 
-		// Trigger Site workflow to set/remove maintenance mode
-		wfOpts := temporalClient.StartWorkflowOptions{
-			ID:                       "site-set-maintenance-" + machine.ID,
-			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-			TaskQueue:                queue.SiteTaskQueue,
-		}
+			// Add status detail
+			sdDAO := cdbm.NewStatusDetailDAO(umh.dbSession)
+			_, derr = sdDAO.CreateFromParams(ctx, mnTx, machine.ID, status, &statusMessage)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error creating Status Detail for Machine in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create status detail for Machine, DB error", nil)
+			}
 
-		// If maintenance mode is being removed and Machine is currently not in maintenance mode then raise error
-		if !*apiRequest.SetMaintenanceMode && machine.Status != cdbm.MachineStatusMaintenance {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently not in maintenance mode, cannot remove maintenance mode", nil)
-		}
+			// Trigger Site workflow to set/remove maintenance mode
+			wfOpts := temporalClient.StartWorkflowOptions{
+				ID:                       "site-set-maintenance-" + machine.ID,
+				WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+				TaskQueue:                queue.SiteTaskQueue,
+			}
 
-		wfReq := &cwssaws.MaintenanceRequest{HostId: &cwssaws.MachineId{Id: machine.ID}}
-		if *apiRequest.SetMaintenanceMode {
-			wfReq.Operation = cwssaws.MaintenanceOperation_Enable
-			wfReq.Reference = apiRequest.MaintenanceMessage
-		} else {
-			wfReq.Operation = cwssaws.MaintenanceOperation_Disable
-		}
+			// If maintenance mode is being removed and Machine is currently not in maintenance mode then raise error
+			if !*apiRequest.SetMaintenanceMode && machine.Status != cdbm.MachineStatusMaintenance {
+				return cutil.NewAPIError(http.StatusBadRequest, "Machine is currently not in maintenance mode, cannot remove maintenance mode", nil)
+			}
 
-		// Add context deadlines
-		ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-		defer cancel()
+			wfReq := &cwssaws.MaintenanceRequest{HostId: &cwssaws.MachineId{Id: machine.ID}}
+			if *apiRequest.SetMaintenanceMode {
+				wfReq.Operation = cwssaws.MaintenanceOperation_Enable
+				wfReq.Reference = apiRequest.MaintenanceMessage
+			} else {
+				wfReq.Operation = cwssaws.MaintenanceOperation_Disable
+			}
 
-		we, err := stc.ExecuteWorkflow(ctx, wfOpts, "SetMachineMaintenance", wfReq)
-		if err != nil {
-			logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to set/remove maintenance mode")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to set/remove maintenance mode on Site: %s", err), nil)
-		}
+			// Add context deadlines
+			wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+			defer cancel()
 
-		wid := we.GetID()
-		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous set/remove maintenance mode workflow")
+			we, wferr := stc.ExecuteWorkflow(wfCtx, wfOpts, "SetMachineMaintenance", wfReq)
+			if wferr != nil {
+				logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to set/remove maintenance mode")
+				return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to set/remove maintenance mode on Site: %s", wferr), nil)
+			}
 
-		// Execute the workflow synchronously
-		err = we.Get(ctx, nil)
-		if err != nil {
-			var timeoutErr *tp.TimeoutError
-			if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
+			wid := we.GetID()
+			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous set/remove maintenance mode workflow")
 
-				logger.Error().Err(err).Msg("failed to set/remove Machine maintenance mode, timeout occurred executing workflow on Site.")
-
-				// Create a new context deadlines
-				newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-				defer newcancel()
-
-				// Initiate termination workflow
-				serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing set/remove maintenance mode Machine workflow")
-				if serr != nil {
-					logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for set/remove Machine maintenance mode")
-					return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous set/remove Machine maintenance mode workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+			// Execute the workflow synchronously
+			wferr = we.Get(wfCtx, nil)
+			if wferr != nil {
+				var timeoutErr *tp.TimeoutError
+				if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+					logger.Error().Err(wferr).Msg("failed to set/remove Machine maintenance mode, timeout occurred executing workflow on Site.")
+					timeoutResp = func() error {
+						return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "Machine", "SetMachineMaintenance")
+					}
+					return cutil.NewAPIError(http.StatusInternalServerError, "Machine maintenance mode workflow timed out", nil)
 				}
 
-				logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous to set/remove Machine maintenance mode successfully")
-
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to set/remove Machine maintenance mode, timeout occurred executing workflow on Site: %s", err), nil)
+				code, unwrapped := common.UnwrapWorkflowError(wferr)
+				logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to set/remove maintenance mode")
+				return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to set/remove maintenance mode on Site: %s", unwrapped), nil)
 			}
 
-			code, err := common.UnwrapWorkflowError(err)
-			log.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to set/remove maintenance mode")
-			return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to set/remove maintenance mode on Site: %s", err), nil)
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous set/remove maintenance mode workflow")
+
+			return nil
+		})
+		if timeoutResp != nil {
+			return timeoutResp()
 		}
-
-		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous set/remove maintenance mode workflow")
-
-		// Commit transaction
-		err = mnTx.Commit()
 		if err != nil {
-			logger.Error().Err(err).Msg("error committing transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine, DB transaction error", nil)
+			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
-		mnTxCommitted = true
 	}
 
 	// Save labels in DB and execute metadata update workflow on Site if required
@@ -1293,106 +1291,93 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine is currently missing on Site, cannot update labels", nil)
 		}
 
-		// Start a DB transaction
-		lTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
-		if err != nil {
-			logger.Error().Err(err).Msg("unable to start transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating machine", nil)
-		}
-		// This variable is used in cleanup actions to indicate if this transaction committed
-		lTxCommitted := false
-		defer common.RollbackTx(ctx, lTx, &lTxCommitted)
+		// timeoutResp lets the closure signal a post-rollback handler — the
+		// TerminateWorkflow call has to run after the closure returns so that
+		// the DB tx unwinds before we make the second remote call. nil means
+		// no timeout occurred and the normal flow continues.
+		var timeoutResp func() error
 
-		// Update labels
-		updateInput := cdbm.MachineUpdateInput{
-			MachineID: machine.ID,
-			Labels:    apiRequest.Labels,
-		}
-
-		um, err = mDAO.Update(ctx, lTx, updateInput)
-		if err != nil {
-			logger.Error().Err(err).Msg("error updating Machine labels in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine labels, DB error", nil)
-		}
-
-		// Trigger Site workflow to update labels with Machine metadata
-		wfOpts := temporalClient.StartWorkflowOptions{
-			ID:                       "site-update-machine-metadata-" + machine.ID,
-			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-			TaskQueue:                queue.SiteTaskQueue,
-		}
-
-		labels := util.ProtobufLabelsFromAPILabels(apiRequest.Labels)
-
-		machineName := machine.ID
-		if machine.Metadata != nil && machine.Metadata.Metadata != nil {
-			machineName = machine.Metadata.Metadata.Name
-		}
-
-		wfReq := &cwssaws.MachineMetadataUpdateRequest{
-			MachineId: &cwssaws.MachineId{
-				Id: machine.ID,
-			},
-			Metadata: &cwssaws.Metadata{
-				Name:   machineName, // Site Controller sets Machine ID as name and it must be specified to update labels
-				Labels: labels,
-			},
-		}
-
-		// Add context deadlines
-		ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-		defer cancel()
-
-		we, err := stc.ExecuteWorkflow(ctx, wfOpts, "UpdateMachineMetadata", wfReq)
-		if err != nil {
-			logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update Machine metadata")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update Machine labels on Site: %s", err), nil)
-		}
-
-		wid := we.GetID()
-
-		// Execute the workflow synchronously
-		logger.Info().Str("Workflow ID", wid).Msg("executing synchronous Machine metadata update workflow")
-
-		err = we.Get(ctx, nil)
-		if err != nil {
-			var timeoutErr *tp.TimeoutError
-			if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-
-				logger.Error().Err(err).Msg("failed to update Machine metadata, timeout occurred executing workflow on Site.")
-
-				// Create a new context deadlines
-				newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-				defer newcancel()
-
-				// Initiate termination workflow
-				serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing Machine metadata update workflow")
-				if serr != nil {
-					logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for Machine metadata update workflow")
-					return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate sync Machine labels update workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
-				}
-
-				logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous Machine metadata update workflow")
-
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to update Machine labels, timeout occurred executing workflow on Site: %s", err), nil)
+		err = cdb.WithTx(ctx, umh.dbSession, func(lTx *cdb.Tx) error {
+			// Update labels
+			updateInput := cdbm.MachineUpdateInput{
+				MachineID: machine.ID,
+				Labels:    apiRequest.Labels,
 			}
 
-			code, err := common.UnwrapWorkflowError(err)
+			var derr error
+			um, derr = mDAO.Update(ctx, lTx, updateInput)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error updating Machine labels in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Machine labels, DB error", nil)
+			}
 
-			logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update Machine metadata")
+			// Trigger Site workflow to update labels with Machine metadata
+			wfOpts := temporalClient.StartWorkflowOptions{
+				ID:                       "site-update-machine-metadata-" + machine.ID,
+				WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+				TaskQueue:                queue.SiteTaskQueue,
+			}
 
-			return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update Machine labels on Site: %s", err), nil)
+			labels := util.ProtobufLabelsFromAPILabels(apiRequest.Labels)
+
+			machineName := machine.ID
+			if machine.Metadata != nil && machine.Metadata.Metadata != nil {
+				machineName = machine.Metadata.Metadata.Name
+			}
+
+			wfReq := &cwssaws.MachineMetadataUpdateRequest{
+				MachineId: &cwssaws.MachineId{
+					Id: machine.ID,
+				},
+				Metadata: &cwssaws.Metadata{
+					Name:   machineName, // Site Controller sets Machine ID as name and it must be specified to update labels
+					Labels: labels,
+				},
+			}
+
+			// Add context deadlines
+			wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+			defer cancel()
+
+			we, wferr := stc.ExecuteWorkflow(wfCtx, wfOpts, "UpdateMachineMetadata", wfReq)
+			if wferr != nil {
+				logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to update Machine metadata")
+				return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update Machine labels on Site: %s", wferr), nil)
+			}
+
+			wid := we.GetID()
+
+			// Execute the workflow synchronously
+			logger.Info().Str("Workflow ID", wid).Msg("executing synchronous Machine metadata update workflow")
+
+			wferr = we.Get(wfCtx, nil)
+			if wferr != nil {
+				var timeoutErr *tp.TimeoutError
+				if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+					logger.Error().Err(wferr).Msg("failed to update Machine metadata, timeout occurred executing workflow on Site.")
+					timeoutResp = func() error {
+						return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "Machine", "UpdateMachineMetadata")
+					}
+					return cutil.NewAPIError(http.StatusInternalServerError, "Machine metadata update workflow timed out", nil)
+				}
+
+				code, unwrapped := common.UnwrapWorkflowError(wferr)
+
+				logger.Error().Err(unwrapped).Msg("failed to synchronously execute Temporal workflow to update Machine metadata")
+
+				return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update Machine labels on Site: %s", unwrapped), nil)
+			}
+
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous Machine metadata update workflow")
+
+			return nil
+		})
+		if timeoutResp != nil {
+			return timeoutResp()
 		}
-
-		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous Machine metadata update workflow")
-
-		// Commit transaction
-		err = lTx.Commit()
 		if err != nil {
-			logger.Error().Err(err).Msg("error committing transaction")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine, DB transaction error", nil)
+			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
-		lTxCommitted = true
 	}
 
 	// Create response
@@ -1598,209 +1583,195 @@ func (umh DeleteMachineHandler) Handle(c echo.Context) error {
 
 	umh.tracerSpan.SetAttribute(handlerSpan, attribute.String("machine_id", mID), logger)
 
-	// Start a DB transaction
-	tx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error deleting machine", nil)
-	}
-	// This variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	mDAO := cdbm.NewMachineDAO(umh.dbSession)
-	// Check that Machine exists
-	// We do this twice:
-	// The first time is to grab a row-level lock with FOR UPDATE and without relations because they'd prevent FOR UPDATE
-	// We then query again to get the rest of the details we need.
-	// We use the ForUpdate option to grab a row-level lock on the machine.
-	_, err = mDAO.GetByID(ctx, tx, mID, nil, true)
-	if err != nil {
-		if err == cdb.ErrDoesNotExist {
-			return cutil.NewAPIErrorResponse(c, http.StatusNotFound, "Could not find Machine specified in URL", nil)
+	err = cdb.WithTx(ctx, umh.dbSession, func(tx *cdb.Tx) error {
+		mDAO := cdbm.NewMachineDAO(umh.dbSession)
+		// Check that Machine exists
+		// We do this twice:
+		// The first time is to grab a row-level lock with FOR UPDATE and without relations because they'd prevent FOR UPDATE
+		// We then query again to get the rest of the details we need.
+		// We use the ForUpdate option to grab a row-level lock on the machine.
+		_, derr := mDAO.GetByID(ctx, tx, mID, nil, true)
+		if derr != nil {
+			if derr == cdb.ErrDoesNotExist {
+				return cutil.NewAPIError(http.StatusNotFound, "Could not find Machine specified in URL", nil)
+			}
+			logger.Error().Err(derr).Msg("error retrieving Machine DB entity")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machine specified in URL", nil)
 		}
-		logger.Error().Err(err).Msg("error retrieving Machine DB entity")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machine specified in URL", nil)
-	}
 
-	machine, err := mDAO.GetByID(ctx, tx, mID, []string{cdbm.SiteRelationName, cdbm.InstanceTypeRelationName}, false)
-	if err != nil {
-		if err == cdb.ErrDoesNotExist {
-			return cutil.NewAPIErrorResponse(c, http.StatusNotFound, "Could not find Machine specified in URL", nil)
+		machine, derr := mDAO.GetByID(ctx, tx, mID, []string{cdbm.SiteRelationName, cdbm.InstanceTypeRelationName}, false)
+		if derr != nil {
+			if derr == cdb.ErrDoesNotExist {
+				return cutil.NewAPIError(http.StatusNotFound, "Could not find Machine specified in URL", nil)
+			}
+			logger.Error().Err(derr).Msg("error retrieving Machine DB entity")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machine specified in URL", nil)
 		}
-		logger.Error().Err(err).Msg("error retrieving Machine DB entity")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machine specified in URL", nil)
-	}
 
-	// Check org has infra provider
-	orgInfrastructureProvider, err := common.GetInfrastructureProviderForOrg(ctx, nil, umh.dbSession, org)
-	if err != nil {
-		if err == common.ErrOrgInstrastructureProviderNotFound {
-			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Org doesn't have an Infrastructure Provider associated", nil)
+		// Check org has infra provider
+		orgInfrastructureProvider, derr := common.GetInfrastructureProviderForOrg(ctx, tx, umh.dbSession, org)
+		if derr != nil {
+			if derr == common.ErrOrgInstrastructureProviderNotFound {
+				return cutil.NewAPIError(http.StatusBadRequest, "Org doesn't have an Infrastructure Provider associated", nil)
+			}
+			logger.Error().Err(derr).Msg("error getting Infrastructure Provider for org")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve infrastructure provider for org, DB error", nil)
 		}
-		logger.Error().Err(err).Msg("error getting Infrastructure Provider for org")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve infrastructure provider for org, DB error", nil)
-	}
 
-	// Check if Machine belongs to org's Provider
-	if machine.InfrastructureProviderID != orgInfrastructureProvider.ID {
-		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Machine specified in URL is not owned by org's Infrastructure Provider", nil)
-	}
-
-	if machine.Site == nil {
-		logger.Error().Msg("no Site relation found for Machine")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Site detail for Machine", nil)
-	}
-
-	// Prevent deleting if seen on site
-	if !machine.IsMissingOnSite {
-		logger.Error().Msg("Machine exists on Site and cannot be deleted")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine exists on Site and cannot be deleted", nil)
-	}
-
-	// Even if IsMissingOnSite is true, we want to make sure it's been missing for a little while
-	statusDAO := cdbm.NewStatusDetailDAO(umh.dbSession)
-	statuses, _, err := statusDAO.GetAllByEntityID(ctx, tx, machine.ID, nil, cdb.GetIntPtr(1), nil)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("error while retrieving StatusDetail for Machine")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Machine", err)
-	}
-
-	if len(statuses) == 0 {
-		logger.Error().Msg("IsMissingOnSite is true but no status seen from Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine does not have a status detail indicating when it went missing, unable to proceed with deletion", nil)
-	}
-
-	lastStatus := statuses[0]
-
-	if lastStatus.Message == nil || *lastStatus.Message != "Machine is missing on Site" {
-		lastStatusMessage := ""
-		if lastStatus.Message != nil {
-			lastStatusMessage = *lastStatus.Message
+		// Check if Machine belongs to org's Provider
+		if machine.InfrastructureProviderID != orgInfrastructureProvider.ID {
+			return cutil.NewAPIError(http.StatusForbidden, "Machine specified in URL is not owned by org's Infrastructure Provider", nil)
 		}
-		logger.Error().Msgf("IsMissingOnSite is true but most recent status `%s` does not match", lastStatusMessage)
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Latest status detail for Machine is not regarding it's missing state, unable to proceed with deletion", nil)
-	}
 
-	// If the most recent status shows missing on site but it has not been in that state for very long,
-	// reject because maybe this was just a force-delete on site and the machine will come back.
-	curTime := time.Now()
-	deletionThreshold := lastStatus.Created.Add(MachineMissingDelayThreshold)
+		if machine.Site == nil {
+			logger.Error().Msg("no Site relation found for Machine")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Site detail for Machine", nil)
+		}
 
-	if curTime.Before(deletionThreshold) {
-		timeSince := curTime.Sub(lastStatus.Created)
-		timeRemaining := deletionThreshold.Sub(curTime)
+		// Prevent deleting if seen on site
+		if !machine.IsMissingOnSite {
+			logger.Error().Msg("Machine exists on Site and cannot be deleted")
+			return cutil.NewAPIError(http.StatusBadRequest, "Machine exists on Site and cannot be deleted", nil)
+		}
 
-		logger.Warn().Msgf("Machine cannot be deleted as it has been missing on Site for %d hour(s) and %d minute(s) only", int(timeSince.Hours()), int(timeSince.Minutes())%60)
+		// Even if IsMissingOnSite is true, we want to make sure it's been missing for a little while
+		statusDAO := cdbm.NewStatusDetailDAO(umh.dbSession)
+		statuses, _, derr := statusDAO.GetAllByEntityID(ctx, tx, machine.ID, nil, cdb.GetIntPtr(1), nil)
 
-		return cutil.NewAPIErrorResponse(
-			c,
-			http.StatusBadRequest,
-			fmt.Sprintf(
-				"Machine missing on site less than %d hour(s), reattempt after %d hour(s) and %v minute(s)",
-				int(MachineMissingDelayThreshold.Hours()),
-				int(timeRemaining.Hours()),
-				int(timeRemaining.Minutes())%60,
-			),
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error while retrieving StatusDetail for Machine")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Machine", nil)
+		}
+
+		if len(statuses) == 0 {
+			logger.Error().Msg("IsMissingOnSite is true but no status seen from Site")
+			return cutil.NewAPIError(http.StatusBadRequest, "Machine does not have a status detail indicating when it went missing, unable to proceed with deletion", nil)
+		}
+
+		lastStatus := statuses[0]
+
+		if lastStatus.Message == nil || *lastStatus.Message != "Machine is missing on Site" {
+			lastStatusMessage := ""
+			if lastStatus.Message != nil {
+				lastStatusMessage = *lastStatus.Message
+			}
+			logger.Error().Msgf("IsMissingOnSite is true but most recent status `%s` does not match", lastStatusMessage)
+			return cutil.NewAPIError(http.StatusBadRequest, "Latest status detail for Machine is not regarding it's missing state, unable to proceed with deletion", nil)
+		}
+
+		// If the most recent status shows missing on site but it has not been in that state for very long,
+		// reject because maybe this was just a force-delete on site and the machine will come back.
+		curTime := time.Now()
+		deletionThreshold := lastStatus.Created.Add(MachineMissingDelayThreshold)
+
+		if curTime.Before(deletionThreshold) {
+			timeSince := curTime.Sub(lastStatus.Created)
+			timeRemaining := deletionThreshold.Sub(curTime)
+
+			logger.Warn().Msgf("Machine cannot be deleted as it has been missing on Site for %d hour(s) and %d minute(s) only", int(timeSince.Hours()), int(timeSince.Minutes())%60)
+
+			return cutil.NewAPIError(
+				http.StatusBadRequest,
+				fmt.Sprintf(
+					"Machine missing on site less than %d hour(s), reattempt after %d hour(s) and %v minute(s)",
+					int(MachineMissingDelayThreshold.Hours()),
+					int(timeRemaining.Hours()),
+					int(timeRemaining.Minutes())%60,
+				),
+				nil,
+			)
+		}
+
+		// Prevent deleting if an instance exists.
+		// This technically shouldn't be necessary since we check for association
+		// with an instance type before allowing deletion, and you can't get an
+		// instance without an instance type, but this check here lets us be helpful
+		// to the user by giving them some details about what they need to clean up.
+		iDAO := cdbm.NewInstanceDAO(umh.dbSession)
+		instances, _, derr := iDAO.GetAll(
+			ctx, tx,
+			cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}},
+			cdbp.PageInput{
+				Limit: cdb.GetIntPtr(1),
+			},
+			[]string{cdbm.TenantRelationName},
+		)
+
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error pulling instance details for Machine in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to query Instance assocations for Machine", nil)
+		}
+
+		if len(instances) > 0 {
+			instance := instances[0]
+
+			return cutil.NewAPIError(
+				http.StatusBadRequest,
+				fmt.Sprintf("Machine is attached to Instance: `%s` owned by Tenant: `%s`. Please ask the Tenant to delete the Instance first", instance.Name, instance.Tenant.Name),
+				nil,
+			)
+		}
+
+		if machine.InstanceType != nil {
+			return cutil.NewAPIError(
+				http.StatusBadRequest,
+				fmt.Sprintf("Machine has Instance Type: Name: `%s` ID: `%s` assigned to it. Please unassign before deleting Machine", machine.InstanceType.Name, machine.InstanceType.ID),
+				nil,
+			)
+		}
+
+		// Clean up capabilities
+		mcDAO := cdbm.NewMachineCapabilityDAO(umh.dbSession)
+		caps, _, derr := mcDAO.GetAll(ctx, tx, []string{machine.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error pulling machine capabilities for Machine in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Capabilities for Machine, DB error", nil)
+		}
+
+		for _, cap := range caps {
+			derr := mcDAO.DeleteByID(ctx, tx, cap.ID, false)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error deleting machine capabilities for Machine in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Capability for Machine, DB error", nil)
+			}
+		}
+
+		// Clean up interfaces
+		mifcDAO := cdbm.NewMachineInterfaceDAO(umh.dbSession)
+		ifcs, _, derr := mifcDAO.GetAll(
+			ctx,
+			tx,
+			cdbm.MachineInterfaceFilterInput{
+				MachineIDs: []string{machine.ID},
+			},
+			cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
 			nil,
 		)
-	}
-
-	// Prevent deleting if an instance exists.
-	// This technically shouldn't be necessary since we check for association
-	// with an instance type before allowing deletion, and you can't get an
-	// instance without an instance type, but this check here lets us be helpful
-	// to the user by giving them some details about what they need to clean up.
-	iDAO := cdbm.NewInstanceDAO(umh.dbSession)
-	instances, _, err := iDAO.GetAll(
-		ctx, tx,
-		cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}},
-		cdbp.PageInput{
-			Limit: cdb.GetIntPtr(1),
-		},
-		[]string{cdbm.TenantRelationName},
-	)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("error pulling instance details for Machine in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to query Instance assocations for Machine", nil)
-	}
-
-	if len(instances) > 0 {
-		instance := instances[0]
-
-		return cutil.NewAPIErrorResponse(
-			c,
-			http.StatusBadRequest,
-			fmt.Sprintf("Machine is attached to Instance: `%s` owned by Tenant: `%s`. Please ask the Tenant to delete the Instance first", instance.Name, instance.Tenant.Name),
-			nil,
-		)
-	}
-
-	if machine.InstanceType != nil {
-		return cutil.NewAPIErrorResponse(
-			c,
-			http.StatusBadRequest,
-			fmt.Sprintf("Machine has Instance Type: Name: `%s` ID: `%s` assigned to it. Please unassign before deleting Machine", machine.InstanceType.Name, machine.InstanceType.ID),
-			nil,
-		)
-	}
-
-	// Clean up capabilities
-	mcDAO := cdbm.NewMachineCapabilityDAO(umh.dbSession)
-	caps, _, err := mcDAO.GetAll(ctx, tx, []string{machine.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error pulling machine capabilities for Machine in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Capabilities for Machine, DB error", nil)
-	}
-
-	for _, cap := range caps {
-		err := mcDAO.DeleteByID(ctx, tx, cap.ID, false)
-		if err != nil {
-			logger.Error().Err(err).Msg("error deleting machine capabilities for Machine in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Capability for Machine, DB error", nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error pulling machine interfaces for Machine in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Interfaces for Machine, DB error", nil)
 		}
-	}
 
-	// Clean up interfaces
-	mifcDAO := cdbm.NewMachineInterfaceDAO(umh.dbSession)
-	ifcs, _, err := mifcDAO.GetAll(
-		ctx,
-		tx,
-		cdbm.MachineInterfaceFilterInput{
-			MachineIDs: []string{machine.ID},
-		},
-		cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
-		nil,
-	)
-	if err != nil {
-		logger.Error().Err(err).Msg("error pulling machine interfaces for Machine in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Interfaces for Machine, DB error", nil)
-	}
-
-	for _, ifc := range ifcs {
-		err := mifcDAO.Delete(ctx, tx, ifc.ID, false)
-		if err != nil {
-			logger.Error().Err(err).Msg("error deleting machine interfaces for Machine in DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Interface for Machine, DB error", nil)
+		for _, ifc := range ifcs {
+			derr := mifcDAO.Delete(ctx, tx, ifc.ID, false)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error deleting machine interfaces for Machine in DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Interface for Machine, DB error", nil)
+			}
 		}
-	}
 
-	// Delete the machine
-	err = mDAO.Delete(ctx, tx, machine.ID, false)
-	if err != nil {
-		logger.Error().Err(err).Msg("error deleting Machine in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Machine, DB error", nil)
-	}
+		// Delete the machine
+		derr = mDAO.Delete(ctx, tx, machine.ID, false)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error deleting Machine in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Machine, DB error", nil)
+		}
 
-	// Commit transaction
-	err = tx.Commit()
+		return nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Machine, DB transaction error", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete Machine, DB transaction error")
 	}
-	txCommitted = true
 
 	logger.Info().Msg("finishing API handler")
 
