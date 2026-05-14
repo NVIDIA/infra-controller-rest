@@ -157,7 +157,7 @@ type APISubnet struct {
 	MTU *int `json:"mtu"`
 	// StatusHistory is the history of statuses for the Subnet
 	StatusHistory []APIStatusDetail `json:"statusHistory"`
-	// UsageStats reports IPv4 usage (derived from interface count, distinct instance count, and CIDR size) when requested via includeUsageStats
+	// UsageStats reports IPv4 usage derived from Ethernet interface count and IPv4 CIDR (see GetInterfaceBasedUsageForSubnet) when requested via includeUsageStats
 	UsageStats *APIIPBlockUsageStats `json:"usageStats,omitempty"`
 	// CreatedAt indicates the ISO datetime string for when the entity was created
 	Created time.Time `json:"created"`

@@ -54,3 +54,40 @@ func TestIPv4UsableHostAddrsFromCidr(t *testing.T) {
 		})
 	}
 }
+
+func TestSubnetUsageFromInterfaceCounts(t *testing.T) {
+	t.Parallel()
+	u, err := subnetUsageFromInterfaceCounts(254, 0, "192.168.0.0/24")
+	require.NoError(t, err)
+	assert.Equal(t, uint64(252), u.AvailableIPs)
+	assert.Equal(t, uint64(2), u.AcquiredIPs)
+	assert.Equal(t, uint64(0), u.AvailableSmallestPrefixes)
+	assert.Equal(t, uint64(0), u.AcquiredPrefixes)
+	require.Len(t, u.AvailablePrefixes, 10)
+	assert.Equal(t, "192.168.0.3/32", u.AvailablePrefixes[0])
+
+	u3, err := subnetUsageFromInterfaceCounts(254, 3, "192.168.0.0/24")
+	require.NoError(t, err)
+	assert.Equal(t, uint64(249), u3.AvailableIPs)
+	assert.Equal(t, uint64(5), u3.AcquiredIPs)
+	assert.Equal(t, uint64(3), u3.AcquiredPrefixes)
+}
+
+func TestVpcPrefixUsageFromInterfaceCounts(t *testing.T) {
+	t.Parallel()
+	u, err := vpcPrefixUsageFromInterfaceCounts(254, 1, "192.168.0.0/24")
+	require.NoError(t, err)
+	assert.Equal(t, uint64(252), u.AvailableIPs)
+	assert.Equal(t, uint64(2), u.AcquiredIPs)
+	assert.Equal(t, uint64(126), u.AvailableSmallestPrefixes)
+	assert.Equal(t, uint64(1), u.AcquiredPrefixes)
+	require.NotEmpty(t, u.AvailablePrefixes)
+	assert.Equal(t, "192.168.0.2/31", u.AvailablePrefixes[0])
+
+	u0, err := vpcPrefixUsageFromInterfaceCounts(254, 0, "192.168.0.0/24")
+	require.NoError(t, err)
+	assert.Equal(t, uint64(254), u0.AvailableIPs)
+	assert.Equal(t, uint64(0), u0.AcquiredIPs)
+	assert.Equal(t, uint64(127), u0.AvailableSmallestPrefixes)
+	assert.Equal(t, "192.168.0.0/31", u0.AvailablePrefixes[0])
+}

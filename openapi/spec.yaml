@@ -20007,13 +20007,18 @@ components:
         availablePrefixes:
           type: array
           format: uuid
-          description: Example prefixes available to acquire
+          description: |
+            Example prefixes available to acquire. For IPBlocks this comes from IPAM.
+            For Subnets and VPC Prefixes with interface-derived usage, at most 10 sample prefixes are returned
+            (/32 host prefixes for Subnets; /31 prefixes for VPC Prefixes).
           items:
             type: string
             readOnly: true
         availableSmallestPrefixes:
           type: integer
-          description: Number of smallest prefixes available to acquire
+          description: |
+            Number of smallest prefixes available to acquire. For VPC Prefix interface-derived usage this is the count of remaining /31 interface slots (half of remaining IPs).
+            Subnet interface-derived usage leaves this as zero; IPBlocks use IPAM semantics.
           format: int64
           readOnly: true
         acquiredPrefixes:

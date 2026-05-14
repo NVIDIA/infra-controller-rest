@@ -27,6 +27,7 @@ import (
 	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
+	"go4.org/netipx"
 
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
@@ -40,6 +41,9 @@ const (
 	SitePhoneHomePostAll = "all"
 	SitePhoneHomeUrl     = "url"
 	SiteCloudConfig      = "#cloud-config"
+
+	// maxInterfaceUsagePreviewPrefixes caps AvailablePrefixes samples for interface-derived Subnet/VPC Prefix usage.
+	maxInterfaceUsagePreviewPrefixes = 10
 )
 
 // Walks through the yaml nodes looking for a cloud-init phone-home block
@@ -239,47 +243,177 @@ func subnetIPv4Cidr(sn *cdbm.Subnet) (string, error) {
 	return fmt.Sprintf("%s/%d", p, sn.PrefixLength), nil
 }
 
-func countInterfacesAndDistinctInstances(ctx context.Context, db bun.IDB, subnetID *uuid.UUID, vpcPrefixID *uuid.UUID) (ifaceCount, instCount uint64, err error) {
+func subSatUint64(a, b uint64) uint64 {
+	if a > b {
+		return a - b
+	}
+	return 0
+}
+
+// countInterfacesForSubnetOrVpc counts Instance Ethernet interface rows (logical `interface` table; InfiniBand/NVLink use other tables).
+func countInterfacesForSubnetOrVpc(ctx context.Context, db bun.IDB, subnetID *uuid.UUID, vpcPrefixID *uuid.UUID) (uint64, error) {
 	var row struct {
 		Iface int64 `bun:"iface_count"`
-		Inst  int64 `bun:"inst_count"`
 	}
 	switch {
 	case subnetID != nil:
-		err = db.NewRaw(
-			`SELECT count(*) AS iface_count, count(distinct instance_id) AS inst_count FROM "interface" AS ifc WHERE ifc.subnet_id = ? AND ifc.deleted IS NULL`,
+		err := db.NewRaw(
+			`SELECT count(*) AS iface_count FROM "interface" AS ifc WHERE ifc.subnet_id = ? AND ifc.deleted IS NULL`,
 			*subnetID,
 		).Scan(ctx, &row)
+		if err != nil {
+			return 0, err
+		}
 	case vpcPrefixID != nil:
-		err = db.NewRaw(
-			`SELECT count(*) AS iface_count, count(distinct instance_id) AS inst_count FROM "interface" AS ifc WHERE ifc.vpc_prefix_id = ? AND ifc.deleted IS NULL`,
+		err := db.NewRaw(
+			`SELECT count(*) AS iface_count FROM "interface" AS ifc WHERE ifc.vpc_prefix_id = ? AND ifc.deleted IS NULL`,
 			*vpcPrefixID,
 		).Scan(ctx, &row)
+		if err != nil {
+			return 0, err
+		}
 	default:
-		return 0, 0, fmt.Errorf("usage stats: need subnet or vpc prefix id")
+		return 0, fmt.Errorf("usage stats: need subnet or vpc prefix id")
 	}
-	if err != nil {
-		return 0, 0, err
-	}
-	return uint64(row.Iface), uint64(row.Inst), nil
+	return uint64(row.Iface), nil
 }
 
-func ipamUsageFromInterfaceTelemetry(usableHosts, ifaceCount, instCount uint64) *cipam.Usage {
-	var available uint64
-	if usableHosts > ifaceCount {
-		available = usableHosts - ifaceCount
+func forEachIPv4UsableHost(p netip.Prefix, fn func(addr netip.Addr) bool) {
+	ipp := p.Masked()
+	bits := int(ipp.Bits())
+	if bits < 0 || bits > 32 || !ipp.Addr().Is4() {
+		return
+	}
+	hostBits := 32 - bits
+	switch {
+	case hostBits == 0:
+		fn(ipp.Addr())
+	case bits == 31:
+		r := netipx.RangeOfPrefix(ipp)
+		if !fn(r.From()) {
+			return
+		}
+		fn(r.To())
+	default:
+		r := netipx.RangeOfPrefix(ipp)
+		first := r.From().Next()
+		last := r.To().Prev()
+		for a := first; a.Compare(last) <= 0; a = a.Next() {
+			if !fn(a) {
+				return
+			}
+		}
+	}
+}
+
+// firstIPv432HostPreview returns up to limit IPv4 /32 strings from usable hosts, skipping the first skipHosts usable addresses in enumeration order.
+func firstIPv432HostPreview(cidr string, skipHosts uint64, limit int) ([]string, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	p, err := netip.ParsePrefix(cidr)
+	if err != nil {
+		return nil, err
+	}
+	if !p.Addr().Is4() {
+		return nil, nil
+	}
+	var out []string
+	var idx uint64
+	forEachIPv4UsableHost(p, func(addr netip.Addr) bool {
+		if idx >= skipHosts {
+			px, err := addr.Prefix(32)
+			if err == nil {
+				out = append(out, px.String())
+			}
+			if len(out) >= limit {
+				return false
+			}
+		}
+		idx++
+		return true
+	})
+	return out, nil
+}
+
+// firstIPv431PrefixPreview returns up to limit IPv4 /31 prefixes inside parentCidr, skipping the first skipBlocks aligned /31 blocks.
+func firstIPv431PrefixPreview(parentCidr string, skipBlocks uint64, limit int) ([]string, error) {
+	if limit <= 0 {
+		return nil, nil
+	}
+	p, err := netip.ParsePrefix(parentCidr)
+	if err != nil {
+		return nil, err
+	}
+	if !p.Addr().Is4() {
+		return nil, nil
+	}
+	var out []string
+	var blockIdx uint64
+	first := netipx.RangeOfPrefix(p).From()
+	for p.Contains(first) {
+		second := first.Next()
+		if !p.Contains(second) {
+			break
+		}
+		if blockIdx >= skipBlocks {
+			p31, err := first.Prefix(31)
+			if err == nil {
+				out = append(out, p31.String())
+			}
+			if len(out) >= limit {
+				break
+			}
+		}
+		blockIdx++
+		first = second.Next()
+	}
+	return out, nil
+}
+
+func subnetUsageFromInterfaceCounts(totalUsableIPv4Hosts, ifaceCount uint64, cidr string) (*cipam.Usage, error) {
+	acquiredIPs := ifaceCount + 2
+	availableIPs := subSatUint64(totalUsableIPv4Hosts, ifaceCount+2)
+	var prefixes []string
+	if availableIPs > 0 {
+		var err error
+		prefixes, err = firstIPv432HostPreview(cidr, ifaceCount+2, maxInterfaceUsagePreviewPrefixes)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return &cipam.Usage{
-		AvailableIPs:              available,
-		AcquiredIPs:               ifaceCount,
+		AvailableIPs:              availableIPs,
+		AcquiredIPs:               acquiredIPs,
 		AvailableSmallestPrefixes: 0,
-		AvailablePrefixes:         nil,
-		AcquiredPrefixes:          instCount,
+		AvailablePrefixes:         prefixes,
+		AcquiredPrefixes:          ifaceCount,
+	}, nil
+}
+
+func vpcPrefixUsageFromInterfaceCounts(totalUsableIPv4Hosts, ifaceCount uint64, cidr string) (*cipam.Usage, error) {
+	acquiredIPs := ifaceCount * 2
+	availableIPs := subSatUint64(totalUsableIPv4Hosts, ifaceCount*2)
+	availableSmallest := availableIPs / 2
+	var prefixes []string
+	if availableIPs > 0 {
+		var err error
+		prefixes, err = firstIPv431PrefixPreview(cidr, ifaceCount, maxInterfaceUsagePreviewPrefixes)
+		if err != nil {
+			return nil, err
+		}
 	}
+	return &cipam.Usage{
+		AvailableIPs:              availableIPs,
+		AcquiredIPs:               acquiredIPs,
+		AvailableSmallestPrefixes: availableSmallest,
+		AvailablePrefixes:         prefixes,
+		AcquiredPrefixes:          ifaceCount,
+	}, nil
 }
 
 // GetInterfaceBasedUsageForVpcPrefix returns ipam.Usage-shaped stats from VPC prefix IPv4 size and
-// interface/instance rows for this vpc_prefix_id (Core allocates instance IPs; not the IPAM subtree).
+// Ethernet interface rows for this vpc_prefix_id (Core allocates instance IPs; not the IPAM subtree).
 func GetInterfaceBasedUsageForVpcPrefix(ctx context.Context, db bun.IDB, vp *cdbm.VpcPrefix) (*cipam.Usage, error) {
 	if vp == nil {
 		return nil, fmt.Errorf("vpc prefix is nil")
@@ -292,14 +426,14 @@ func GetInterfaceBasedUsageForVpcPrefix(ctx context.Context, db bun.IDB, vp *cdb
 	if err != nil {
 		return nil, err
 	}
-	ifaceCount, instCount, err := countInterfacesAndDistinctInstances(ctx, db, nil, &vp.ID)
+	ifaceCount, err := countInterfacesForSubnetOrVpc(ctx, db, nil, &vp.ID)
 	if err != nil {
 		return nil, err
 	}
-	return ipamUsageFromInterfaceTelemetry(usable, ifaceCount, instCount), nil
+	return vpcPrefixUsageFromInterfaceCounts(usable, ifaceCount, cidr)
 }
 
-// GetInterfaceBasedUsageForSubnet returns ipam.Usage-shaped stats from subnet IPv4 CIDR and interface/instance rows for subnet_id.
+// GetInterfaceBasedUsageForSubnet returns ipam.Usage-shaped stats from subnet IPv4 CIDR and Ethernet `interface` rows for subnet_id.
 func GetInterfaceBasedUsageForSubnet(ctx context.Context, db bun.IDB, sn *cdbm.Subnet) (*cipam.Usage, error) {
 	if sn == nil {
 		return nil, fmt.Errorf("subnet is nil")
@@ -312,9 +446,9 @@ func GetInterfaceBasedUsageForSubnet(ctx context.Context, db bun.IDB, sn *cdbm.S
 	if err != nil {
 		return nil, err
 	}
-	ifaceCount, instCount, err := countInterfacesAndDistinctInstances(ctx, db, &sn.ID, nil)
+	ifaceCount, err := countInterfacesForSubnetOrVpc(ctx, db, &sn.ID, nil)
 	if err != nil {
 		return nil, err
 	}
-	return ipamUsageFromInterfaceTelemetry(usable, ifaceCount, instCount), nil
+	return subnetUsageFromInterfaceCounts(usable, ifaceCount, cidr)
 }
