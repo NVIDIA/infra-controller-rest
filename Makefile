@@ -248,6 +248,7 @@ core-proto-fetch:
 		cp "$$file" "workflow-schema/site-agent/workflows/v1/$$(basename "$$file" .proto)_nico.proto"; \
 		echo "Copied: $$file"; \
 	done
+	mv workflow-schema/site-agent/workflows/v1/forge_nico.proto workflow-schema/site-agent/workflows/v1/nico_nico.proto
 	echo "Successfully copied Core protobuf files"
 	rm -rf nico-core
 
