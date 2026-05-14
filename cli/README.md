@@ -38,6 +38,40 @@ go install ./cli/cmd/cli
 go build -o /usr/local/bin/nicocli ./cli/cmd/cli
 ```
 
+### Via a coding agent
+
+If you use a coding agent that has shell access, point it at [`cli/INSTALL.md`](INSTALL.md) -- that file is a self-contained prompt the agent can follow end-to-end to clone the repo, run `make nico-cli`, troubleshoot common environment issues, and verify the install.
+
+```text
+Install nicocli following the instructions at
+https://github.com/NVIDIA/infra-controller-rest/blob/main/cli/INSTALL.md
+```
+
+### Inside the nico-rest-api container
+
+The `nico-rest-api` container image ships `nicocli` at `/app/nicocli` as a convenience for ad-hoc debugging on a running deployment, so you can drive the API from inside the same pod without installing anything on the host:
+
+```bash
+# docker (local kind / docker-compose)
+docker exec -it <container> /app/nicocli site list
+
+# kubernetes
+kubectl exec -it -n <namespace> <api-pod> -- /app/nicocli site list
+```
+
+When `nicocli` runs inside the API container, the server is reachable at `http://localhost:8388`. The image is distroless, so there is no shell or `/usr/bin/env` -- pass `nicocli` and its args directly to `exec`, and supply connection settings with CLI flags:
+
+```bash
+kubectl exec -it -n <namespace> <api-pod> -- \
+    /app/nicocli \
+    --base-url http://localhost:8388 \
+    --org <org> \
+    --token "$TOKEN" \
+    site list
+```
+
+For day-to-day use, prefer installing `nicocli` locally with one of the methods above; the in-container copy is meant for one-off debugging.
+
 ### Verify
 
 ```bash
