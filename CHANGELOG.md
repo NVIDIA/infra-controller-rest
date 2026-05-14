@@ -5,6 +5,18 @@ Each release lists pull requests grouped by category, with the most recent versi
 
 ---
 
+## [v1.5.1](https://github.com/NVIDIA/infra-controller-rest/releases/tag/v1.5.1) — 2026-05-14
+
+### Chores
+
+- **Maintain Forge gRPC service name until Core proto is updated** ([#528](https://github.com/NVIDIA/infra-controller-rest/pull/528))
+  Reverts the gRPC service name change from the NICo rebrand (#432) so that the Site Agent can continue communicating with Core until the corresponding rename is completed on the Core side. Also fixes the Core proto snapshotting script.
+
+- **Rename default Flow config path rlaconfig.yaml to flowconfig.yaml** ([#527](https://github.com/NVIDIA/infra-controller-rest/pull/527))
+  Updates the default Flow service configuration file path from `/etc/flow/rlaconfig.yaml` to `/etc/flow/flowconfig.yaml`, completing a missed rename from the RLA-to-Flow rebrand in #520.
+
+---
+
 ## [v1.5.0](https://github.com/NVIDIA/infra-controller-rest/releases/tag/v1.5.0)
 
 > [!NOTE]
