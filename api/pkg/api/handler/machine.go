@@ -1480,11 +1480,11 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "ApplyMachineHealthReportOverride", insReq)
 			if err != nil {
-				logger.Error().Err(err).Msg("failed to start Temporal workflow for online repair health override")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start online repair workflow on Site: %s", err), nil)
+				logger.Error().Err(err).Msg("failed to start Temporal workflow for applying online repair health override")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start applying online repair health override workflow on Site: %s", err), nil)
 			}
 			wid := we.GetID()
-			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous ApplyMachineHealthReportOverride workflow")
+			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous applying online repair health override workflow")
 			err = we.Get(wfCtx, nil)
 			if err != nil {
 				var timeoutErr *tp.TimeoutError
@@ -1492,10 +1492,10 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "ApplyMachineHealthReportOverride")
 				}
 				code, werr := common.UnwrapWorkflowError(err)
-				logger.Error().Err(werr).Msg("online repair health override workflow failed")
-				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute online repair workflow on Site: %s", werr), nil)
+				logger.Error().Err(werr).Msg("applying online repair health override workflow failed")
+				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute applying online repair health override workflow on Site: %s", werr), nil)
 			}
-			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous ApplyMachineHealthReportOverride workflow")
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous applying online repair health override workflow")
 		} else {
 			if inst.Status != cdbm.InstanceStatusRepairing {
 				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Instance must be in Repairing state to exit online repair (current state: %s)", inst.Status), nil)
@@ -1590,7 +1590,7 @@ func buildOnlineRepairHealthInsertRequest(machineID string, req *model.APIMachin
 		TenantMessage: cdb.GetStrPtr(fmt.Sprintf("TenantReportedIssue: %s", mhi.Summary)),
 		Classifications: []string{
 			"PreventAllocations",
-			"PreventDeletion",
+			"PreventInstanceDeletion",
 			"SuppressExternalAlerting",
 		},
 	}

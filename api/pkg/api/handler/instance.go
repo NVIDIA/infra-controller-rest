@@ -4586,15 +4586,15 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// This is for enhanced break-fix flow:
-		if apiRequest.HealthIssue != nil {
+		if apiRequest.MachineHealthIssue != nil {
 			releaseInstanceRequest.Issue = &cwssaws.Issue{
-				Category: cwssaws.IssueCategory(model.MachineIssueCategoriesFromAPIToProtobuf[apiRequest.HealthIssue.Category]),
+				Category: cwssaws.IssueCategory(model.MachineIssueCategoriesFromAPIToProtobuf[apiRequest.MachineHealthIssue.Category]),
 			}
-			if apiRequest.HealthIssue.Summary != nil {
-				releaseInstanceRequest.Issue.Summary = *apiRequest.HealthIssue.Summary
+			if apiRequest.MachineHealthIssue.Summary != nil {
+				releaseInstanceRequest.Issue.Summary = *apiRequest.MachineHealthIssue.Summary
 			}
-			if apiRequest.HealthIssue.Details != nil {
-				releaseInstanceRequest.Issue.Details = *apiRequest.HealthIssue.Details
+			if apiRequest.MachineHealthIssue.Details != nil {
+				releaseInstanceRequest.Issue.Details = *apiRequest.MachineHealthIssue.Details
 			}
 		}
 		// if caller attempt to set IsRepairTenant then it must be a tenant with targetedInstanceCreation capability

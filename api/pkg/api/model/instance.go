@@ -75,18 +75,6 @@ var (
 		MachineIssueCategoryNetwork:     int32(cwssaws.IssueCategory_NETWORK),
 		MachineIssueCategoryPerformance: int32(cwssaws.IssueCategory_PERFORMANCE),
 		MachineIssueCategoryOther:       int32(cwssaws.IssueCategory_OTHER),
-		"HARDWARE":                      int32(cwssaws.IssueCategory_HARDWARE),
-		"NETWORK":                       int32(cwssaws.IssueCategory_NETWORK),
-		"PERFORMANCE":                   int32(cwssaws.IssueCategory_PERFORMANCE),
-		"OTHER":                         int32(cwssaws.IssueCategory_OTHER),
-		// Proto IssueCategory has no distinct values for storage/software; treat as OTHER.
-		"STORAGE":  int32(cwssaws.IssueCategory_OTHER),
-		"SOFTWARE": int32(cwssaws.IssueCategory_OTHER),
-	}
-
-	instanceDeleteHealthIssueCategories = []string{
-		MachineIssueCategoryHardware, MachineIssueCategoryNetwork, MachineIssueCategoryPerformance, MachineIssueCategoryOther,
-		"HARDWARE", "NETWORK", "PERFORMANCE", "STORAGE", "SOFTWARE", "OTHER",
 	}
 )
 
@@ -1508,23 +1496,14 @@ func (idr APIInstanceDeleteRequest) Validate() error {
 		err := validation.ValidateStruct(idr.MachineHealthIssue,
 			validation.Field(&idr.MachineHealthIssue.Category,
 				validation.Required,
-				validation.By(func(value any) error {
-					s, ok := value.(string)
-					if !ok {
-						return fmt.Errorf("category must be a string")
-					}
-					if !slices.Contains(instanceDeleteHealthIssueCategories, s) {
-						return fmt.Errorf("category must be one of %v", instanceDeleteHealthIssueCategories)
-					}
-					return nil
-				}),
+				validation.In(MachineIssueCategoryHardware, MachineIssueCategoryNetwork, MachineIssueCategoryPerformance, MachineIssueCategoryOther),
 			),
 			validation.Field(&idr.MachineHealthIssue.Summary,
 				validation.Required,
-				validation.Length(1, 512).Error(validationErrorStringLength)),
+				validation.Length(0, 1024).Error(validationErrorStringLength)),
+			// TODO: what are the constrains on Summary and Details? For now limiting to 1024..
 			validation.Field(&idr.MachineHealthIssue.Details,
-				validation.Required,
-				validation.Length(1, 8192).Error(validationErrorStringLength)),
+				validation.Length(0, 1024).Error(validationErrorStringLength)),
 		)
 
 		if err != nil {

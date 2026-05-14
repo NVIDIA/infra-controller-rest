@@ -8836,7 +8836,7 @@ func TestDeleteInstanceHandler_Handle(t *testing.T) {
 		verifyChildSpanner bool
 	}{
 		{
-			name: "test Instance delete API endpoint with HealthIssue passes issue to workflow with success",
+			name: "test Instance delete API endpoint with MachineHealthIssue passes issue to workflow with success",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -8844,7 +8844,7 @@ func TestDeleteInstanceHandler_Handle(t *testing.T) {
 				cfg:       cfg,
 			},
 			args: args{
-				reqData: &model.APIInstanceDeleteRequest{HealthIssue: &model.APIHealthIssueReport{
+				reqData: &model.APIInstanceDeleteRequest{MachineHealthIssue: &model.APIMachineHealthIssueReport{
 					Category: "Hardware", Summary: cdb.GetStrPtr("Some summary"), Details: cdb.GetStrPtr("Some details"),
 				}},
 				reqInstance: inst1.ID.String(),
@@ -8856,7 +8856,7 @@ func TestDeleteInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name: "test Instance delete API endpoint failure due to HealthIssue with unspecified category",
+			name: "test Instance delete API endpoint failure due to MachineHealthIssue with unspecified category",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -8864,7 +8864,7 @@ func TestDeleteInstanceHandler_Handle(t *testing.T) {
 				cfg:       cfg,
 			},
 			args: args{
-				reqData: &model.APIInstanceDeleteRequest{HealthIssue: &model.APIHealthIssueReport{
+				reqData: &model.APIInstanceDeleteRequest{MachineHealthIssue: &model.APIMachineHealthIssueReport{
 					Category: "UNSPECIFIED", Summary: cdb.GetStrPtr("Some summary"), Details: cdb.GetStrPtr("Some details"),
 				}},
 				reqInstance: inst1.ID.String(),
