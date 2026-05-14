@@ -15,7 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# local-dev.sh - Build and run RLA + NSM locally with SSH tunnel to YTL.
+# local-dev.sh - Build and run Flow + NSM locally with SSH tunnel to YTL.
 #
 # Usage:
 #   ./local-dev.sh          # Build binaries + start all services
@@ -23,14 +23,14 @@
 #   ./local-dev.sh up       # Only start Docker services (assumes binaries exist)
 #   ./local-dev.sh down     # Stop all services and remove volumes
 #   ./local-dev.sh tunnel   # Start SSH tunnel (run in separate terminal)
-#   ./local-dev.sh migrate  # Run DB migrations for RLA and NSM
+#   ./local-dev.sh migrate  # Run DB migrations for Flow and NSM
 #   ./local-dev.sh logs     # Tail service logs
 #
 # Architecture:
 #   ┌──────────────────────────────────────────────────────────────┐
 #   │  Your MacBook (Docker Desktop)                              │
 #   │                                                             │
-#   │  RLA (:50051) ──> NSM (:50052) ──SOCKS──> Switches         │
+#   │  Flow (:50051) ──> NSM (:50052) ──SOCKS──> Switches         │
 #   │   │                                          │              │
 #   │   └──TLS──> NICo via :50053               │              │
 #   │              │                               │              │
@@ -46,7 +46,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-RLA_DIR="$SCRIPT_DIR/../rla"
+FLOW_DIR="$SCRIPT_DIR/../flow"
 NSM_DIR="$SCRIPT_DIR"
 COMPOSE_FILE="$SCRIPT_DIR/docker-compose.local.yml"
 
@@ -64,11 +64,11 @@ log_step()  { echo -e "${CYAN}[STEP]${NC} $1"; }
 build_binaries() {
     log_info "Building Linux binaries for Docker..."
 
-    log_step "Building RLA (linux/amd64)..."
-    (cd "$RLA_DIR" && GOOS=linux GOARCH=amd64 go build -o rla-linux .)
-    mkdir -p "$RLA_DIR/build"
-    cp "$RLA_DIR/rla-linux" "$RLA_DIR/build/rla"
-    log_info "RLA binary ready"
+    log_step "Building Flow (linux/amd64)..."
+    (cd "$FLOW_DIR" && GOOS=linux GOARCH=amd64 go build -o flow-linux .)
+    mkdir -p "$FLOW_DIR/build"
+    cp "$FLOW_DIR/flow-linux" "$FLOW_DIR/build/flow"
+    log_info "Flow binary ready"
 
     log_step "Building NSM (linux/amd64)..."
     (cd "$NSM_DIR" && GOOS=linux GOARCH=amd64 go build -o nvswitch-manager-linux .)
@@ -81,8 +81,8 @@ build_binaries() {
 
 start_services() {
     # Verify binaries exist
-    if [ ! -f "$RLA_DIR/build/rla" ]; then
-        log_error "RLA binary not found. Run: ./local-dev.sh build"
+    if [ ! -f "$FLOW_DIR/build/flow" ]; then
+        log_error "Flow binary not found. Run: ./local-dev.sh build"
         exit 1
     fi
     if [ ! -f "$NSM_DIR/build/nvswitch-manager" ]; then
@@ -112,9 +112,9 @@ stop_services() {
 run_migrations() {
     log_info "Running DB migrations..."
 
-    log_step "Running RLA migrations..."
-    docker compose -f "$COMPOSE_FILE" exec rla /opt/rla/rla db migrate
-    log_info "RLA migrations complete"
+    log_step "Running Flow migrations..."
+    docker compose -f "$COMPOSE_FILE" exec flow /opt/flow/flow db migrate
+    log_info "Flow migrations complete"
 
     log_step "Running NSM migrations..."
     docker compose -f "$COMPOSE_FILE" exec nsm ./nvswitch-manager migrate
@@ -124,14 +124,14 @@ run_migrations() {
 start_tunnel() {
     log_info "Starting SSH tunnel to ytl01-admin01..."
     log_info "  SOCKS proxy on localhost:1080  (NSM -> NV-Switch trays)"
-    log_info "  Port forward localhost:50053   (RLA -> NICo at 7.243.80.81:1079)"
+    log_info "  Port forward localhost:50053   (Flow -> NICo at 7.243.80.81:1079)"
     log_info "Press Ctrl+C to stop the tunnel."
     echo ""
     ssh -D 1080 -L 50053:7.243.80.81:1079 -N ytl01-admin01
 }
 
 tail_logs() {
-    docker compose -f "$COMPOSE_FILE" logs -f rla nsm "$@"
+    docker compose -f "$COMPOSE_FILE" logs -f flow nsm "$@"
 }
 
 show_usage() {
@@ -143,8 +143,8 @@ show_usage() {
     echo "  up        Start Docker services only (pass extra args, e.g. -d)"
     echo "  down      Stop all services and remove volumes"
     echo "  tunnel    Start SSH tunnel to ytl01-admin01"
-    echo "  migrate   Run DB migrations for RLA and NSM"
-    echo "  logs      Tail RLA + NSM logs"
+    echo "  migrate   Run DB migrations for Flow and NSM"
+    echo "  logs      Tail Flow + NSM logs"
     echo ""
     echo "Quick start:"
     echo "  Terminal 1:  ./local-dev.sh tunnel"
@@ -152,7 +152,7 @@ show_usage() {
     echo "  Terminal 3:  ./local-dev.sh migrate  (once services are up)"
     echo ""
     echo "Services:"
-    echo "  RLA:       localhost:50051  (gRPC)"
+    echo "  Flow:      localhost:50051  (gRPC)"
     echo "  NSM:       localhost:50052  (gRPC)"
     echo "  Postgres:  localhost:5432"
     echo "  Temporal:  localhost:7233"

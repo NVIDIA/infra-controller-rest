@@ -65,7 +65,7 @@ func DiscoverExpectedSwitchInventory(ctx workflow.Context) error {
 }
 
 // CreateExpectedSwitch is a workflow to create a new Expected Switch using the CreateExpectedSwitchOnSite activity,
-// then also creates the component in Flow via CreateExpectedSwitchOnRLA.
+// then also creates the component in Flow via CreateExpectedSwitchOnFlow.
 func CreateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch) error {
 	logger := log.With().Str("Workflow", "ExpectedSwitch").Str("Action", "Create").Str("ID", request.GetExpectedSwitchId().GetValue()).Str("Expected MAC address", request.BmcMacAddress).Str("Serial", request.SwitchSerialNumber).Logger()
 
@@ -97,9 +97,9 @@ func CreateExpectedSwitch(ctx workflow.Context, request *cwssaws.ExpectedSwitch)
 	}
 
 	// Then write to Flow (best-effort: log warning but don't fail the workflow)
-	err = workflow.ExecuteActivity(ctx, expectedSwitchManager.CreateExpectedSwitchOnRLA, request).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, expectedSwitchManager.CreateExpectedSwitchOnFlow, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedSwitchOnRLA").Msg("Failed to create component on Flow, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedSwitchOnFlow").Msg("Failed to create component on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")

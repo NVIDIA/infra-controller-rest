@@ -65,7 +65,7 @@ func DiscoverExpectedPowerShelfInventory(ctx workflow.Context) error {
 }
 
 // CreateExpectedPowerShelf is a workflow to create a new Expected Power Shelf using the CreateExpectedPowerShelfOnSite activity,
-// then also creates the component in Flow via CreateExpectedPowerShelfOnRLA.
+// then also creates the component in Flow via CreateExpectedPowerShelfOnFlow.
 func CreateExpectedPowerShelf(ctx workflow.Context, request *cwssaws.ExpectedPowerShelf) error {
 	logger := log.With().Str("Workflow", "ExpectedPowerShelf").Str("Action", "Create").Str("ID", request.GetExpectedPowerShelfId().GetValue()).Str("Expected MAC address", request.BmcMacAddress).Str("Serial", request.ShelfSerialNumber).Logger()
 
@@ -97,9 +97,9 @@ func CreateExpectedPowerShelf(ctx workflow.Context, request *cwssaws.ExpectedPow
 	}
 
 	// Then write to Flow (best-effort: log warning but don't fail the workflow)
-	err = workflow.ExecuteActivity(ctx, expectedPowerShelfManager.CreateExpectedPowerShelfOnRLA, request).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, expectedPowerShelfManager.CreateExpectedPowerShelfOnFlow, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedPowerShelfOnRLA").Msg("Failed to create component on Flow, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedPowerShelfOnFlow").Msg("Failed to create component on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")

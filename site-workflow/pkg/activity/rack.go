@@ -61,7 +61,7 @@ func (mr *ManageRack) GetRack(ctx context.Context, request *flowv1.GetRackInfoBy
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (mr *ManageRack) GetRacks(ctx context.Context, request *flowv1.GetListOfRac
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (mr *ManageRack) ValidateRackComponents(ctx context.Context, request *flowv
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +157,7 @@ func (mr *ManageRack) PowerOnRack(ctx context.Context, request *flowv1.PowerOnRa
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -191,7 +191,7 @@ func (mr *ManageRack) PowerOffRack(ctx context.Context, request *flowv1.PowerOff
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +225,7 @@ func (mr *ManageRack) PowerResetRack(ctx context.Context, request *flowv1.PowerR
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -257,7 +257,7 @@ func (mr *ManageRack) BringUpRack(ctx context.Context, request *flowv1.BringUpRa
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *flowv1.GetTasksB
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -329,7 +329,7 @@ func (mr *ManageRack) CancelTask(ctx context.Context, request *flowv1.CancelTask
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (mr *ManageRack) UpgradeFirmware(ctx context.Context, request *flowv1.Upgra
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	flow, err := mr.FlowAtomicClient.GetRLAClient()
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
 	if err != nil {
 		return nil, err
 	}

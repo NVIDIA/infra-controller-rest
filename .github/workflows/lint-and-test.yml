@@ -216,10 +216,7 @@ jobs:
   # Test Job - Unit tests per module with PostgreSQL service
   # ============================================================================
   test:
-    # Display name preserves the old "rla" label so existing branch-protection
-    # required-check names ("Test (rla)") keep matching after the rla -> flow
-    # directory rename. Drop this hack once branch protection is updated.
-    name: Test (${{ matrix.module == 'flow' && 'rla' || matrix.module }})
+    name: Test (${{ matrix.module }})
     runs-on: ubuntu-latest
     continue-on-error: false
     strategy:
@@ -308,14 +305,14 @@ jobs:
 
           if [ "${{ matrix.module }}" = "site-agent" ]; then
             make nico-mock-server-start
-            make rla-mock-server-start
+            make flow-mock-server-start
           fi
 
           go test -v -race -p 1 ./${{ matrix.module }}/... -coverprofile=coverage-${{ matrix.module }}.txt -covermode=atomic 2>&1 | tee test-output-${{ matrix.module }}.txt
 
           if [ "${{ matrix.module }}" = "site-agent" ]; then
             make nico-mock-server-stop
-            make rla-mock-server-stop
+            make flow-mock-server-stop
           fi
 
       - name: Generate JUnit report

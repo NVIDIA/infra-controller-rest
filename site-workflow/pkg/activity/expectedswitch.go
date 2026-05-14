@@ -338,9 +338,9 @@ func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context,
 	return nil
 }
 
-// CreateExpectedSwitchOnRLA creates an Expected Switch as a component in Flow via AddComponent
-func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnRLA(ctx context.Context, request *cwssaws.ExpectedSwitch) error {
-	logger := log.With().Str("Activity", "CreateExpectedSwitchOnRLA").Logger()
+// CreateExpectedSwitchOnFlow creates an Expected Switch as a component in Flow via AddComponent
+func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnFlow(ctx context.Context, request *cwssaws.ExpectedSwitch) error {
+	logger := log.With().Str("Activity", "CreateExpectedSwitchOnFlow").Logger()
 
 	logger.Info().Msg("Starting activity")
 
@@ -361,7 +361,7 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnRLA(ctx context.Context, 
 		return nil
 	}
 
-	component := expectedSwitchToRLAComponent(request)
+	component := expectedSwitchToFlowComponent(request)
 	_, err := flowClient.Flow().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Switch component on Flow")
@@ -372,8 +372,8 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnRLA(ctx context.Context, 
 	return nil
 }
 
-// expectedSwitchToRLAComponent converts a NICo ExpectedSwitch proto to an Flow Component proto
-func expectedSwitchToRLAComponent(es *cwssaws.ExpectedSwitch) *flowv1.Component {
+// expectedSwitchToFlowComponent converts a NICo ExpectedSwitch proto to an Flow Component proto
+func expectedSwitchToFlowComponent(es *cwssaws.ExpectedSwitch) *flowv1.Component {
 	component := &flowv1.Component{
 		Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
 		Info: &flowv1.DeviceInfo{

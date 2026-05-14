@@ -290,9 +290,10 @@ func isListAction(action string) bool {
 func buildActionCommand(spec *Spec, ro resolvedOp, subResource string) *cli.Command {
 	flags := []cli.Flag{
 		&cli.StringFlag{
-			Name:  "output",
-			Usage: "Output format: json, yaml, table",
-			Value: "json",
+			Name:   "output",
+			Usage:  "Output format: json, yaml, table",
+			Value:  "json",
+			Action: validateOutputFlag,
 		},
 	}
 

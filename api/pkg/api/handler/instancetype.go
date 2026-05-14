@@ -47,7 +47,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
-	ch "github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
 	mutil "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
@@ -174,286 +173,292 @@ func (cith CreateInstanceTypeHandler) Handle(c echo.Context) error {
 		labels = apiRequest.Labels
 	}
 
-	// Begin transaction
-	tx, err := cdb.BeginTx(ctx, cith.dbSession, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error beginning transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Instance Type", nil)
-	}
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// Create Instance Type
-	it, err := itDAO.Create(ctx, tx, cdbm.InstanceTypeCreateInput{
-		Name:                     apiRequest.Name,
-		Description:              apiRequest.Description,
-		ControllerMachineType:    apiRequest.ControllerMachineType,
-		InfrastructureProviderID: ip.ID,
-		SiteID:                   &site.ID,
-		Labels:                   labels,
-		Status:                   cdbm.InstanceTypeStatusReady,
-		CreatedBy:                dbUser.ID,
-	})
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Instance Type")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Instance Type", nil)
-	}
-
-	// Create Machine Capabilities if it is provided
 	mcDAO := cdbm.NewMachineCapabilityDAO(cith.dbSession)
-	if apiRequest.MachineCapabilities != nil {
-		for i, apimc := range apiRequest.MachineCapabilities {
-			mcinfo := map[string]interface{}{}
-			if apimc.Cores != nil {
-				mcinfo[cwma.MachineCPUCoreCount] = *apimc.Cores
-			}
-			if apimc.Threads != nil {
-				mcinfo[cwma.MachineCPUThreadCount] = *apimc.Threads
-			}
-			_, serr := mcDAO.Create(ctx, tx, cdbm.MachineCapabilityCreateInput{
-				Index:            i,
-				InstanceTypeID:   &it.ID,
-				Type:             apimc.Type,
-				Name:             apimc.Name,
-				Frequency:        apimc.Frequency,
-				Capacity:         apimc.Capacity,
-				Vendor:           apimc.Vendor,
-				HardwareRevision: apimc.HardwareRevision,
-				Count:            apimc.Count,
-				DeviceType:       apimc.DeviceType,
-				InactiveDevices:  apimc.InactiveDevices,
-				Info:             mcinfo,
-			})
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error creating Machine Capability")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Machine Capability for Instance Type", nil)
-			}
-		}
-	}
-
-	// Create a status detail record for Instance Type
 	sdDAO := cdbm.NewStatusDetailDAO(cith.dbSession)
-	ssd, serr := sdDAO.CreateFromParams(ctx, tx, it.ID.String(), *cdb.GetStrPtr(cdbm.InstanceTypeStatusReady),
-		cdb.GetStrPtr("Instance type is ready for use"))
-	if serr != nil {
-		logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for Instance Type", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for Instance Type", nil)
-	}
 
-	// Get Machine capabilities for the Instance Type
-	mcs, _, err := mcDAO.GetAll(ctx, tx, nil, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Machine capabilities for Instance Type")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machine capabilities for Instance Type", nil)
-	}
+	var (
+		it          *cdbm.InstanceType
+		ssd         *cdbm.StatusDetail
+		mcs         []cdbm.MachineCapability
+		timeoutResp func() error
+	)
 
-	// Get the temporal client for the site we are working with.
-	stc, err := cith.scp.GetClientByID(site.ID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	id := it.ID.String()
-	createInstanceTypeRequest := &cwssaws.CreateInstanceTypeRequest{
-		Id: &id,
-	}
-
-	capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
-
-	// Sort the capabilities list.  NICo will deny later updates
-	// if an InstanceType is associated with machines and a change
-	// in capabilities is attempted, so we'll sort here and
-	// in the update handler so that users can update metadata
-	// as long as capabilities are the same, and order matters.
-	slices.SortFunc(mcs, func(a, b cdbm.MachineCapability) int {
-		if a.Index < b.Index {
-			return -1
+	err = cdb.WithTx(ctx, cith.dbSession, func(tx *cdb.Tx) error {
+		// Create Instance Type
+		var derr error
+		it, derr = itDAO.Create(ctx, tx, cdbm.InstanceTypeCreateInput{
+			Name:                     apiRequest.Name,
+			Description:              apiRequest.Description,
+			ControllerMachineType:    apiRequest.ControllerMachineType,
+			InfrastructureProviderID: ip.ID,
+			SiteID:                   &site.ID,
+			Labels:                   labels,
+			Status:                   cdbm.InstanceTypeStatusReady,
+			CreatedBy:                dbUser.ID,
+		})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Instance Type")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Instance Type", nil)
 		}
 
-		if a.Index > b.Index {
-			return 1
+		// Create Machine Capabilities if it is provided
+		if apiRequest.MachineCapabilities != nil {
+			for i, apimc := range apiRequest.MachineCapabilities {
+				mcinfo := map[string]interface{}{}
+				if apimc.Cores != nil {
+					mcinfo[cwma.MachineCPUCoreCount] = *apimc.Cores
+				}
+				if apimc.Threads != nil {
+					mcinfo[cwma.MachineCPUThreadCount] = *apimc.Threads
+				}
+				_, serr := mcDAO.Create(ctx, tx, cdbm.MachineCapabilityCreateInput{
+					Index:            i,
+					InstanceTypeID:   &it.ID,
+					Type:             apimc.Type,
+					Name:             apimc.Name,
+					Frequency:        apimc.Frequency,
+					Capacity:         apimc.Capacity,
+					Vendor:           apimc.Vendor,
+					HardwareRevision: apimc.HardwareRevision,
+					Count:            apimc.Count,
+					DeviceType:       apimc.DeviceType,
+					InactiveDevices:  apimc.InactiveDevices,
+					Info:             mcinfo,
+				})
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error creating Machine Capability")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Machine Capability for Instance Type", nil)
+				}
+			}
 		}
 
-		return 0
-	})
-
-	for i, machineCap := range mcs {
-		count, err := util.GetIntPtrToUint32Ptr(machineCap.Count)
-		if err != nil {
-			logger.Error().Err(err).Msg("invalid Count value for MachineCapability")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Invalid Count value for MachineCapability", nil)
+		// Create a status detail record for Instance Type
+		var serr error
+		ssd, serr = sdDAO.CreateFromParams(ctx, tx, it.ID.String(), *cdb.GetStrPtr(cdbm.InstanceTypeStatusReady),
+			cdb.GetStrPtr("Instance type is ready for use"))
+		if serr != nil {
+			logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for Instance Type", nil)
+		}
+		if ssd == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for Instance Type", nil)
 		}
 
-		cores, err := util.GetIntPtrToUint32Ptr(machineCap.Cores)
-		if err != nil {
-			logger.Error().Err(err).Msg("invalid Cores value for MachineCapability")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Invalid Cores value for MachineCapability", nil)
+		// Get Machine capabilities for the Instance Type
+		mcs, _, derr = mcDAO.GetAll(ctx, tx, nil, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Machine capabilities for Instance Type")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machine capabilities for Instance Type", nil)
 		}
 
-		threads, err := util.GetIntPtrToUint32Ptr(machineCap.Threads)
-		if err != nil {
-			logger.Error().Err(err).Msg("invalid Threads value for MachineCapability")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Invalid Threads value for MachineCapability", nil)
+		// Get the temporal client for the site we are working with.
+		stc, derr := cith.scp.GetClientByID(site.ID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		var capType cwssaws.MachineCapabilityType
-
-		switch machineCap.Type {
-		case cdbm.MachineCapabilityTypeCPU:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_CPU
-		case cdbm.MachineCapabilityTypeMemory:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_MEMORY
-		case cdbm.MachineCapabilityTypeGPU:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_GPU
-		case cdbm.MachineCapabilityTypeStorage:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_STORAGE
-		case cdbm.MachineCapabilityTypeNetwork:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_NETWORK
-		case cdbm.MachineCapabilityTypeInfiniBand:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_INFINIBAND
-		case cdbm.MachineCapabilityTypeDPU:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_DPU
-		default:
-			logger.Error().Msg("unsupported MachineCapabilityType requested")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Unsupported MachineCapabilityType requested", nil)
+		id := it.ID.String()
+		createInstanceTypeRequest := &cwssaws.CreateInstanceTypeRequest{
+			Id: &id,
 		}
 
-		// Validate device type for network capabilities
-		var deviceType *cwssaws.MachineCapabilityDeviceType
-		if machineCap.DeviceType != nil {
+		capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
+
+		// Sort the capabilities list.  NICo will deny later updates
+		// if an InstanceType is associated with machines and a change
+		// in capabilities is attempted, so we'll sort here and
+		// in the update handler so that users can update metadata
+		// as long as capabilities are the same, and order matters.
+		slices.SortFunc(mcs, func(a, b cdbm.MachineCapability) int {
+			if a.Index < b.Index {
+				return -1
+			}
+
+			if a.Index > b.Index {
+				return 1
+			}
+
+			return 0
+		})
+
+		for i, machineCap := range mcs {
+			count, derr := util.GetIntPtrToUint32Ptr(machineCap.Count)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("invalid Count value for MachineCapability")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Invalid Count value for MachineCapability", nil)
+			}
+
+			cores, derr := util.GetIntPtrToUint32Ptr(machineCap.Cores)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("invalid Cores value for MachineCapability")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Invalid Cores value for MachineCapability", nil)
+			}
+
+			threads, derr := util.GetIntPtrToUint32Ptr(machineCap.Threads)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("invalid Threads value for MachineCapability")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Invalid Threads value for MachineCapability", nil)
+			}
+
+			var capType cwssaws.MachineCapabilityType
+
 			switch machineCap.Type {
-			case cdbm.MachineCapabilityTypeNetwork:
-				// For Network Capability, we only support DPU
-				if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeDPU {
-					logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Network Capability")
-					return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Unsupported Device Type specified for Network Capability "+*machineCap.DeviceType, nil)
-				}
-				deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_DPU.Enum()
+			case cdbm.MachineCapabilityTypeCPU:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_CPU
+			case cdbm.MachineCapabilityTypeMemory:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_MEMORY
 			case cdbm.MachineCapabilityTypeGPU:
-				// For GPU Capability, we only support NVLink
-				if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeNVLink {
-					logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for GPU Capability")
-					return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Unsupported Device Type specified for GPU Capability "+*machineCap.DeviceType, nil)
-				}
-				deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_NVLINK.Enum()
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_GPU
+			case cdbm.MachineCapabilityTypeStorage:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_STORAGE
+			case cdbm.MachineCapabilityTypeNetwork:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_NETWORK
+			case cdbm.MachineCapabilityTypeInfiniBand:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_INFINIBAND
+			case cdbm.MachineCapabilityTypeDPU:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_DPU
 			default:
-				logger.Error().Str("Capability Type", machineCap.Type).Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Capability Type")
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Unsupported Device Type: %s specified for Capability type %s", *machineCap.DeviceType, machineCap.Type), nil)
+				logger.Error().Msg("unsupported MachineCapabilityType requested")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Unsupported MachineCapabilityType requested", nil)
+			}
+
+			// Validate device type for network capabilities
+			var deviceType *cwssaws.MachineCapabilityDeviceType
+			if machineCap.DeviceType != nil {
+				switch machineCap.Type {
+				case cdbm.MachineCapabilityTypeNetwork:
+					// For Network Capability, we only support DPU
+					if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeDPU {
+						logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Network Capability")
+						return cutil.NewAPIError(http.StatusBadRequest, "Unsupported Device Type specified for Network Capability "+*machineCap.DeviceType, nil)
+					}
+					deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_DPU.Enum()
+				case cdbm.MachineCapabilityTypeGPU:
+					// For GPU Capability, we only support NVLink
+					if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeNVLink {
+						logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for GPU Capability")
+						return cutil.NewAPIError(http.StatusBadRequest, "Unsupported Device Type specified for GPU Capability "+*machineCap.DeviceType, nil)
+					}
+					deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_NVLINK.Enum()
+				default:
+					logger.Error().Str("Capability Type", machineCap.Type).Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Capability Type")
+					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Unsupported Device Type: %s specified for Capability type %s", *machineCap.DeviceType, machineCap.Type), nil)
+				}
+			}
+
+			var inactiveDevices *cwssaws.Uint32List
+
+			if machineCap.InactiveDevices != nil {
+				if machineCap.Type != cdbm.MachineCapabilityTypeInfiniBand {
+					logger.Error().Str("Capability Type", machineCap.Type).Msg("InactiveDevices specified for non-InfiniBand Capability Type")
+					return cutil.NewAPIError(http.StatusBadRequest, "InactiveDevices specified for non-InfiniBand Capability Type", nil)
+				}
+
+				inactiveDevices = &cwssaws.Uint32List{}
+				for _, inactiveDevice := range machineCap.InactiveDevices {
+					inactiveDevices.Items = append(inactiveDevices.Items, uint32(inactiveDevice))
+				}
+			}
+
+			capabilities[i] = &cwssaws.InstanceTypeMachineCapabilityFilterAttributes{
+				CapabilityType:   capType,
+				Name:             &machineCap.Name,
+				Frequency:        machineCap.Frequency,
+				Capacity:         machineCap.Capacity,
+				Vendor:           machineCap.Vendor,
+				Count:            count,
+				HardwareRevision: machineCap.HardwareRevision,
+				Cores:            cores,
+				Threads:          threads,
+				InactiveDevices:  inactiveDevices,
+				DeviceType:       deviceType,
 			}
 		}
 
-		var inactiveDevices *cwssaws.Uint32List
+		createInstanceTypeRequest.InstanceTypeAttributes = &cwssaws.InstanceTypeAttributes{
+			DesiredCapabilities: capabilities,
+		}
 
-		if machineCap.InactiveDevices != nil {
-			if machineCap.Type != cdbm.MachineCapabilityTypeInfiniBand {
-				logger.Error().Str("Capability Type", machineCap.Type).Msg("InactiveDevices specified for non-InfiniBand Capability Type")
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "InactiveDevices specified for non-InfiniBand Capability Type", nil)
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "instance-type-create-" + it.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		// InstanceType metadata info
+		metadata := &cwssaws.Metadata{
+			Name: it.Name,
+		}
+
+		// Include description if present
+		if it.Description != nil {
+			metadata.Description = *it.Description
+		}
+
+		metadata.Labels = mutil.ProtobufLabelsFromAPILabels(it.Labels)
+
+		createInstanceTypeRequest.Metadata = metadata
+
+		logger.Info().Msg("triggering InstanceType create workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "CreateInstanceType", createInstanceTypeRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to create InstanceType")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create InstanceType on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create InstanceType workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, nil)
+
+		// Handle skippable errors
+		if wferr != nil {
+			var applicationErr *tp.ApplicationError
+			// NICo _could_ respond with an unimplemented if it's an
+			// older NICo that doesn't have the endpoint yet, but it's more
+			// likely to respond with a PermissionDenied because the permission
+			// for the path isn't there either, but we can watch for both just to
+			// be safe.
+			if errors.As(wferr, &applicationErr) && (slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type())) {
+				logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
+				// Reset error to nil because we'll want to ignore while
+				// NICo is being rolled out.
+				wferr = nil
+			}
+		}
+
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "InstanceType", "CreateInstanceType")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "workflow timeout", nil)
 			}
 
-			inactiveDevices = &cwssaws.Uint32List{}
-			for _, inactiveDevice := range machineCap.InactiveDevices {
-				inactiveDevices.Items = append(inactiveDevices.Items, uint32(inactiveDevice))
-			}
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to create InstanceType")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to create InstanceType on Site: %s", uwerr), nil)
 		}
 
-		capabilities[i] = &cwssaws.InstanceTypeMachineCapabilityFilterAttributes{
-			CapabilityType:   capType,
-			Name:             &machineCap.Name,
-			Frequency:        machineCap.Frequency,
-			Capacity:         machineCap.Capacity,
-			Vendor:           machineCap.Vendor,
-			Count:            count,
-			HardwareRevision: machineCap.HardwareRevision,
-			Cores:            cores,
-			Threads:          threads,
-			InactiveDevices:  inactiveDevices,
-			DeviceType:       deviceType,
-		}
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create InstanceType workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	createInstanceTypeRequest.InstanceTypeAttributes = &cwssaws.InstanceTypeAttributes{
-		DesiredCapabilities: capabilities,
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "instance-type-create-" + it.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
-
-	// InstanceType metadata info
-	metadata := &cwssaws.Metadata{
-		Name: it.Name,
-	}
-
-	// Include description if present
-	if it.Description != nil {
-		metadata.Description = *it.Description
-	}
-
-	metadata.Labels = mutil.ProtobufLabelsFromAPILabels(it.Labels)
-
-	createInstanceTypeRequest.Metadata = metadata
-
-	logger.Info().Msg("triggering InstanceType create workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateInstanceType", createInstanceTypeRequest)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create InstanceType")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create InstanceType on Site: %s", err), nil)
+		return common.HandleTxError(c, logger, err, "Failed to create Instance Type, DB transaction error")
 	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create InstanceType workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-
-	// Handle skippable errors
-	if err != nil {
-		var applicationErr *tp.ApplicationError
-		// NICo _could_ respond with an unimplemented if it's an
-		// older NICo that doesn't have the endpoint yet, but it's more
-		// likely to respond with a PermissionDenied because the permission
-		// for the path isn't there either, but we can watch for both just to
-		// be safe.
-		if errors.As(err, &applicationErr) && slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
-			// Reset error to nil because we'll want to ignore while
-			// NICo is being rolled out.
-			err = nil
-		}
-	}
-
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "InstanceType", "CreateInstanceType")
-		}
-
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to create InstanceType")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to create InstanceType on Site: %s", err), nil)
-	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create InstanceType workflow")
-
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Instance Type", nil)
-	}
-	txCommitted = true
 
 	// Create API response
 	ait := model.NewAPIInstanceType(it, []cdbm.StatusDetail{*ssd}, mcs, nil, nil)
@@ -1125,89 +1130,78 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// Begin transaction
-	tx, err := cdb.BeginTx(ctx, uith.dbSession, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error beginning transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance Type", nil)
-	}
-	txCommitted := false
-	defer ch.RollbackTx(ctx, tx, &txCommitted)
-
 	mcDAO := cdbm.NewMachineCapabilityDAO(uith.dbSession)
+	sdDAO := cdbm.NewStatusDetailDAO(uith.dbSession)
 
-	if apiRequest.MachineCapabilities != nil {
+	var (
+		mcs         []cdbm.MachineCapability
+		ssds        []cdbm.StatusDetail
+		timeoutResp func() error
+	)
 
-		// If a capabilities update was requested, we'll need to make sure
-		// we don't have associated machines.
-
-		// Get the machines for instance type
-		mDAO := cdbm.NewMachineDAO(uith.dbSession)
-
-		// We don't get any useful locks here, so it's technically possible for someone to
-		// slip in a request to associate machines to an instance type after this query returns,
-		// but it's an unlikely case, and NICo already has all the proper locking to protect
-		// against it because it could technically be done directly on a site.
-		_, total, err := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(0)}, nil)
-		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving Machines for Instance Type from DB")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machines for Instance Type", nil)
+	err = cdb.WithTx(ctx, uith.dbSession, func(tx *cdb.Tx) error {
+		// Acquire an advisory lock on this Instance Type so the machine-association
+		// check + capability recreation below is serialized per Instance Type.
+		// Other handlers that mutate this Instance Type (Delete, future capability
+		// updates) take the same lock; the Machine attach path in machine.go also
+		// needs a complementary lock on the new Instance Type to fully prevent
+		// concurrent attaches racing with capability updates.
+		derr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(it.ID.String()), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to acquire advisory lock on Instance Type")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Instance Type", nil)
 		}
 
-		if total > 0 {
-			logger.Error().Msg("MachineCapabilities cannot be updated when there are associated Machines")
-			return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "MachineCapabilities cannot be updated when there are associated Machines", nil)
-		}
+		if apiRequest.MachineCapabilities != nil {
 
-		// If we got here, then we're allowed to update the capabilities.
+			// If a capabilities update was requested, we'll need to make sure
+			// we don't have associated machines.
 
-		// Get Machine capabilities for the Instance Type because we'll need to compare.
-		mcs, _, err := mcDAO.GetAll(ctx, tx, nil, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-		if err != nil {
-			logger.Error().Err(err).Msg("error retrieving Machine capabilities for Instance Type")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machine capabilities for Instance Type", nil)
-		}
+			// Get the machines for instance type
+			mDAO := cdbm.NewMachineDAO(uith.dbSession)
 
-		addCapabilities := []*cdbm.MachineCapabilityCreateInput{}
+			// We hold an advisory lock on this Instance Type (acquired above), so a
+			// concurrent capability-update or delete on the same Instance Type can't
+			// race with us. The Machine attach path in machine.go does not currently
+			// take a lock on the new Instance Type it's attaching to, so an attach
+			// can still slip in between this check and our updates — see the lock
+			// comment above for the complementary fix.
+			_, total, derr := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(0)}, nil)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error retrieving Machines for Instance Type from DB")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machines for Instance Type", nil)
+			}
 
-		// Create a map to track capabilities that already exist
-		// in the DB so we can compare against the incoming request.
-		existingMacCapMap := map[string]*cdbm.MachineCapability{}
-		for _, mc := range mcs {
-			existingMacCapMap[mc.Type+"-"+mc.Name] = &mc
-		}
+			if total > 0 {
+				logger.Error().Msg("MachineCapabilities cannot be updated when there are associated Machines")
+				return cutil.NewAPIError(http.StatusPreconditionFailed, "MachineCapabilities cannot be updated when there are associated Machines", nil)
+			}
 
-		for pos, reqMacCap := range apiRequest.MachineCapabilities {
-			capKey := reqMacCap.Type + "-" + reqMacCap.Name
+			// If we got here, then we're allowed to update the capabilities.
 
-			existingCap := existingMacCapMap[capKey]
-			// The incoming requested capability doesn't exist at all currently,
-			// so it's brand new.
-			if existingCap != nil && cwu.MachineCapabilitiesEqual(existingCap, &cdbm.MachineCapability{
-				Type:             reqMacCap.Type,
-				Name:             reqMacCap.Name,
-				Frequency:        reqMacCap.Frequency,
-				Capacity:         reqMacCap.Capacity,
-				HardwareRevision: reqMacCap.HardwareRevision,
-				Cores:            reqMacCap.Cores,
-				Threads:          reqMacCap.Threads,
-				Vendor:           reqMacCap.Vendor,
-				Count:            reqMacCap.Count,
-				DeviceType:       reqMacCap.DeviceType,
-				InactiveDevices:  reqMacCap.InactiveDevices,
-				Index:            pos,
-			}) {
-				// If the capability existed and the requested settings
-				// and existing settings matched, it shouldn't be touched,
-				// so delete from the map so we're left with only entries
-				// that need to be deleted.
-				delete(existingMacCapMap, capKey)
+			// Get Machine capabilities for the Instance Type because we'll need to compare.
+			existingMcs, _, derr := mcDAO.GetAll(ctx, tx, nil, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error retrieving Machine capabilities for Instance Type")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machine capabilities for Instance Type", nil)
+			}
 
-			} else {
-				// If there's no existing capability for the one in the request or the
-				// capabilities were not equal, then we'll recreate with the new values.
-				addCapabilities = append(addCapabilities, &cdbm.MachineCapabilityCreateInput{
-					InstanceTypeID:   &it.ID,
+			addCapabilities := []*cdbm.MachineCapabilityCreateInput{}
+
+			// Create a map to track capabilities that already exist
+			// in the DB so we can compare against the incoming request.
+			existingMacCapMap := map[string]*cdbm.MachineCapability{}
+			for _, mc := range existingMcs {
+				existingMacCapMap[mc.Type+"-"+mc.Name] = &mc
+			}
+
+			for pos, reqMacCap := range apiRequest.MachineCapabilities {
+				capKey := reqMacCap.Type + "-" + reqMacCap.Name
+
+				existingCap := existingMacCapMap[capKey]
+				// The incoming requested capability doesn't exist at all currently,
+				// so it's brand new.
+				if existingCap != nil && cwu.MachineCapabilitiesEqual(existingCap, &cdbm.MachineCapability{
 					Type:             reqMacCap.Type,
 					Name:             reqMacCap.Name,
 					Frequency:        reqMacCap.Frequency,
@@ -1220,258 +1214,311 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 					DeviceType:       reqMacCap.DeviceType,
 					InactiveDevices:  reqMacCap.InactiveDevices,
 					Index:            pos,
-				})
+				}) {
+					// If the capability existed and the requested settings
+					// and existing settings matched, it shouldn't be touched,
+					// so delete from the map so we're left with only entries
+					// that need to be deleted.
+					delete(existingMacCapMap, capKey)
+
+				} else {
+					// If there's no existing capability for the one in the request or the
+					// capabilities were not equal, then we'll recreate with the new values.
+					// Build Info map (consistent with Create handler) so downstream
+					// workflow activities see the same shape regardless of whether
+					// the capability was created via Create or recreated via Update.
+					mcinfo := map[string]interface{}{}
+					if reqMacCap.Cores != nil {
+						mcinfo[cwma.MachineCPUCoreCount] = *reqMacCap.Cores
+					}
+					if reqMacCap.Threads != nil {
+						mcinfo[cwma.MachineCPUThreadCount] = *reqMacCap.Threads
+					}
+					addCapabilities = append(addCapabilities, &cdbm.MachineCapabilityCreateInput{
+						InstanceTypeID:   &it.ID,
+						Type:             reqMacCap.Type,
+						Name:             reqMacCap.Name,
+						Frequency:        reqMacCap.Frequency,
+						Capacity:         reqMacCap.Capacity,
+						HardwareRevision: reqMacCap.HardwareRevision,
+						Cores:            reqMacCap.Cores,
+						Threads:          reqMacCap.Threads,
+						Vendor:           reqMacCap.Vendor,
+						Count:            reqMacCap.Count,
+						DeviceType:       reqMacCap.DeviceType,
+						InactiveDevices:  reqMacCap.InactiveDevices,
+						Info:             mcinfo,
+						Index:            pos,
+					})
+				}
+			}
+
+			// Now we can remove the capabilities that changed or were deleted
+			for _, macCap := range existingMacCapMap {
+				serr := mcDAO.DeleteByID(ctx, tx, macCap.ID, false)
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error deleting Machine Capability")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Machine Capability for Instance Type", nil)
+				}
+			}
+
+			// Now we can add the capabilities that are new or updated
+			for _, mc := range addCapabilities {
+				_, serr := mcDAO.Create(ctx, tx, *mc)
+				if serr != nil {
+					logger.Error().Err(serr).Msg("error creating Machine Capability")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Machine Capability for Instance Type", nil)
+				}
 			}
 		}
 
-		// Now we can remove the capabilities that changed or were deleted
-		for _, macCap := range existingMacCapMap {
-			serr := mcDAO.DeleteByID(ctx, tx, macCap.ID, false)
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error deleting Machine Capability")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Machine Capability for Instance Type", nil)
+		// Update Instance Type
+		it, derr = itDAO.Update(ctx, tx, cdbm.InstanceTypeUpdateInput{ID: itID, Name: apiRequest.Name, Description: apiRequest.Description, Labels: apiRequest.Labels})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating Instance Type in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Instance Type", nil)
+		}
+
+		// Get the most up-to-date capabilities for the instance type
+		mcs, _, derr = mcDAO.GetAll(ctx, tx, nil, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Machine capabilities for Instance Type")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machine capabilities for Instance Type", nil)
+		}
+
+		// Return API response
+
+		// Get Instance Type status details
+		var serr error
+		ssds, _, serr = sdDAO.GetAllByEntityID(ctx, tx, it.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+		if serr != nil {
+			logger.Error().Err(serr).Msg("error retrieving Status Details for Instance Type from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve status history for Instance Type", nil)
+		}
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := uith.scp.GetClientByID(*it.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		updateInstanceTypeRequest := &cwssaws.UpdateInstanceTypeRequest{
+			Id: it.ID.String(),
+		}
+
+		capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
+
+		// Sort the capabilities list.  NICo will deny updates
+		// if an InstanceType is associated with machines and a change
+		// in capabilities is attempted, and order matters.
+
+		slices.SortFunc(mcs, func(a, b cdbm.MachineCapability) int {
+			if a.Index < b.Index {
+				return -1
 			}
-		}
 
-		// Now we can add the capabilities that are new or updated
-		for _, mc := range addCapabilities {
-			_, serr := mcDAO.Create(ctx, tx, *mc)
-			if serr != nil {
-				logger.Error().Err(serr).Msg("error creating Machine Capability")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Machine Capability for Instance Type", nil)
+			if a.Index > b.Index {
+				return 1
 			}
-		}
-	}
 
-	// Update Instance Type
-	it, err = itDAO.Update(ctx, tx, cdbm.InstanceTypeUpdateInput{ID: itID, Name: apiRequest.Name, Description: apiRequest.Description, Labels: apiRequest.Labels})
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating Instance Type in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance Type", nil)
-	}
+			return 0
+		})
 
-	// Get the most up-to-date capabilities for the instance type
-	mcs, _, err := mcDAO.GetAll(ctx, tx, nil, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Machine capabilities for Instance Type")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machine capabilities for Instance Type", nil)
-	}
+		for i, machineCap := range mcs {
 
-	// Return API response
+			count, derr := util.GetIntPtrToUint32Ptr(machineCap.Count)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("invalid Count value for MachineCapability")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Invalid Count value for MachineCapability", nil)
+			}
 
-	// Get Instance Type status details
-	sdDAO := cdbm.NewStatusDetailDAO(uith.dbSession)
+			cores, derr := util.GetIntPtrToUint32Ptr(machineCap.Cores)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("invalid Cores value for MachineCapability")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Invalid Cores value for MachineCapability", nil)
+			}
 
-	ssds, _, serr := sdDAO.GetAllByEntityID(ctx, tx, it.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
-	if serr != nil {
-		logger.Error().Err(serr).Msg("error retrieving Status Details for Instance Type from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve status history for Instance Type", nil)
-	}
+			threads, derr := util.GetIntPtrToUint32Ptr(machineCap.Threads)
+			if derr != nil {
+				logger.Error().Err(derr).Msg("invalid Threads value for MachineCapability")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Invalid Threads value for MachineCapability", nil)
+			}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := uith.scp.GetClientByID(*it.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+			var capType cwssaws.MachineCapabilityType
 
-	updateInstanceTypeRequest := &cwssaws.UpdateInstanceTypeRequest{
-		Id: it.ID.String(),
-	}
-
-	capabilities := make([]*cwssaws.InstanceTypeMachineCapabilityFilterAttributes, len(mcs))
-
-	// Sort the capabilities list.  NICo will deny updates
-	// if an InstanceType is associated with machines and a change
-	// in capabilities is attempted, and order matters.
-
-	slices.SortFunc(mcs, func(a, b cdbm.MachineCapability) int {
-		if a.Index < b.Index {
-			return -1
-		}
-
-		if a.Index > b.Index {
-			return 1
-		}
-
-		return 0
-	})
-
-	for i, machineCap := range mcs {
-
-		count, err := util.GetIntPtrToUint32Ptr(machineCap.Count)
-		if err != nil {
-			logger.Error().Err(err).Msg("invalid Count value for MachineCapability")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Invalid Count value for MachineCapability", nil)
-		}
-
-		cores, err := util.GetIntPtrToUint32Ptr(machineCap.Cores)
-		if err != nil {
-			logger.Error().Err(err).Msg("invalid Cores value for MachineCapability")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Invalid Cores value for MachineCapability", nil)
-		}
-
-		threads, err := util.GetIntPtrToUint32Ptr(machineCap.Threads)
-		if err != nil {
-			logger.Error().Err(err).Msg("invalid Threads value for MachineCapability")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Invalid Threads value for MachineCapability", nil)
-		}
-
-		var capType cwssaws.MachineCapabilityType
-
-		switch machineCap.Type {
-		case cdbm.MachineCapabilityTypeCPU:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_CPU
-		case cdbm.MachineCapabilityTypeMemory:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_MEMORY
-		case cdbm.MachineCapabilityTypeGPU:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_GPU
-		case cdbm.MachineCapabilityTypeStorage:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_STORAGE
-		case cdbm.MachineCapabilityTypeNetwork:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_NETWORK
-		case cdbm.MachineCapabilityTypeInfiniBand:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_INFINIBAND
-		case cdbm.MachineCapabilityTypeDPU:
-			capType = cwssaws.MachineCapabilityType_CAP_TYPE_DPU
-		default:
-			logger.Error().Msg("unsupported MachineCapabilityType requested")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Unsupported MachineCapabilityType requested", nil)
-		}
-
-		// Update device type for network capabilities if provided
-		// Since we are validating the device type in the API model,
-		// we can safely set the device type to DPU for network capabilities
-		// as currently we only support DPU device type for network capabilities.
-		// Similarly, for GPU capabilities, we only support NVLink device type.
-		var deviceType *cwssaws.MachineCapabilityDeviceType
-		if machineCap.DeviceType != nil {
 			switch machineCap.Type {
-			case cdbm.MachineCapabilityTypeNetwork:
-				// For Network Capability, we only support DPU
-				if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeDPU {
-					logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Network Capability")
-					return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Unsupported Device Type specified for Network Capability "+*machineCap.DeviceType, nil)
-				}
-				deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_DPU.Enum()
+			case cdbm.MachineCapabilityTypeCPU:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_CPU
+			case cdbm.MachineCapabilityTypeMemory:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_MEMORY
 			case cdbm.MachineCapabilityTypeGPU:
-				// For GPU Capability, we only support NVLink
-				if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeNVLink {
-					logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for GPU Capability")
-					return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Unsupported Device Type specified for GPU Capability "+*machineCap.DeviceType, nil)
-				}
-				deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_NVLINK.Enum()
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_GPU
+			case cdbm.MachineCapabilityTypeStorage:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_STORAGE
+			case cdbm.MachineCapabilityTypeNetwork:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_NETWORK
+			case cdbm.MachineCapabilityTypeInfiniBand:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_INFINIBAND
+			case cdbm.MachineCapabilityTypeDPU:
+				capType = cwssaws.MachineCapabilityType_CAP_TYPE_DPU
 			default:
-				logger.Error().Str("Capability Type", machineCap.Type).Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Capability Type")
-				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Unsupported Device Type: %s specified for Capability type %s", *machineCap.DeviceType, machineCap.Type), nil)
+				logger.Error().Msg("unsupported MachineCapabilityType requested")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Unsupported MachineCapabilityType requested", nil)
+			}
+
+			// Update device type for network capabilities if provided
+			// Since we are validating the device type in the API model,
+			// we can safely set the device type to DPU for network capabilities
+			// as currently we only support DPU device type for network capabilities.
+			// Similarly, for GPU capabilities, we only support NVLink device type.
+			var deviceType *cwssaws.MachineCapabilityDeviceType
+			if machineCap.DeviceType != nil {
+				switch machineCap.Type {
+				case cdbm.MachineCapabilityTypeNetwork:
+					// For Network Capability, we only support DPU
+					if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeDPU {
+						logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Network Capability")
+						return cutil.NewAPIError(http.StatusBadRequest, "Unsupported Device Type specified for Network Capability "+*machineCap.DeviceType, nil)
+					}
+					deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_DPU.Enum()
+				case cdbm.MachineCapabilityTypeGPU:
+					// For GPU Capability, we only support NVLink
+					if *machineCap.DeviceType != cdbm.MachineCapabilityDeviceTypeNVLink {
+						logger.Error().Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for GPU Capability")
+						return cutil.NewAPIError(http.StatusBadRequest, "Unsupported Device Type specified for GPU Capability "+*machineCap.DeviceType, nil)
+					}
+					deviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_NVLINK.Enum()
+				default:
+					logger.Error().Str("Capability Type", machineCap.Type).Str("Device Type", *machineCap.DeviceType).Msg("unsupported Device Type specified for Capability Type")
+					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Unsupported Device Type: %s specified for Capability type %s", *machineCap.DeviceType, machineCap.Type), nil)
+				}
+			}
+
+			var inactiveDevices *cwssaws.Uint32List
+
+			if machineCap.InactiveDevices != nil {
+				if machineCap.Type != cdbm.MachineCapabilityTypeInfiniBand {
+					logger.Error().Str("Capability Type", machineCap.Type).Msg("InactiveDevices specified for non-InfiniBand Capability Type")
+					return cutil.NewAPIError(http.StatusBadRequest, "InactiveDevices specified for non-InfiniBand Capability Type", nil)
+				}
+
+				inactiveDevices = &cwssaws.Uint32List{}
+				for _, inactiveDevice := range machineCap.InactiveDevices {
+					inactiveDevices.Items = append(inactiveDevices.Items, uint32(inactiveDevice))
+				}
+			}
+
+			capabilities[i] = &cwssaws.InstanceTypeMachineCapabilityFilterAttributes{
+				CapabilityType:   capType,
+				Name:             &machineCap.Name,
+				Frequency:        machineCap.Frequency,
+				Capacity:         machineCap.Capacity,
+				Vendor:           machineCap.Vendor,
+				Count:            count,
+				HardwareRevision: machineCap.HardwareRevision,
+				Cores:            cores,
+				Threads:          threads,
+				InactiveDevices:  inactiveDevices,
+				DeviceType:       deviceType,
 			}
 		}
 
-		capabilities[i] = &cwssaws.InstanceTypeMachineCapabilityFilterAttributes{
-			CapabilityType:   capType,
-			Name:             &machineCap.Name,
-			Frequency:        machineCap.Frequency,
-			Capacity:         machineCap.Capacity,
-			Vendor:           machineCap.Vendor,
-			Count:            count,
-			HardwareRevision: machineCap.HardwareRevision,
-			Cores:            cores,
-			Threads:          threads,
-			DeviceType:       deviceType,
+		updateInstanceTypeRequest.InstanceTypeAttributes = &cwssaws.InstanceTypeAttributes{
+			DesiredCapabilities: capabilities,
 		}
-	}
 
-	updateInstanceTypeRequest.InstanceTypeAttributes = &cwssaws.InstanceTypeAttributes{
-		DesiredCapabilities: capabilities,
-	}
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "instance-type-update-" + it.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
 
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "instance-type-update-" + it.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
+		// InstanceType metadata info
+		metadata := &cwssaws.Metadata{
+			Name: it.Name,
+		}
 
-	// InstanceType metadata info
-	metadata := &cwssaws.Metadata{
-		Name: it.Name,
-	}
+		// Include description if present
+		if it.Description != nil {
+			metadata.Description = *it.Description
+		}
 
-	// Include description if present
-	if it.Description != nil {
-		metadata.Description = *it.Description
-	}
+		metadata.Labels = mutil.ProtobufLabelsFromAPILabels(it.Labels)
 
-	metadata.Labels = mutil.ProtobufLabelsFromAPILabels(it.Labels)
+		updateInstanceTypeRequest.Metadata = metadata
 
-	updateInstanceTypeRequest.Metadata = metadata
+		logger.Info().Msg("triggering InstanceType update workflow")
 
-	logger.Info().Msg("triggering InstanceType update workflow")
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
 
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "UpdateInstanceType", updateInstanceTypeRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to update InstanceType")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update InstanceType on Site: %s", wferr), nil)
+		}
 
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "UpdateInstanceType", updateInstanceTypeRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to update InstanceType")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to update InstanceType on Site: %s", err), nil)
-	}
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update InstanceType workflow")
 
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous update InstanceType workflow")
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, nil)
 
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// TODO:
+			// If this was a 404 back from NICo, we'll need to ignore until the
+			// process for syncing cloud to site is done and the SOT has fully moved
+			// to NICo.  At that point, all of these guard rails should be removed
+			// and it should no longer be possible for the cloud to know about an
+			// instance type that the site does not know about.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) {
+				if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+					logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+					// Reset error to nil
+					wferr = nil
+				} else if slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
+					// NICo _could_ respond with an unimplemented if it's an
+					// older NICo that doesn't have the endpoint yet, but it's more
+					// likely to respond with a PermissionDenied because the permission
+					// for the path isn't there either, but we can watch for both just to
+					// be safe.
 
-	// Handle skippable errors
-	if err != nil {
-		// TODO:
-		// If this was a 404 back from NICo, we'll need to ignore until the
-		// process for syncing cloud to site is done and the SOT has fully moved
-		// to NICo.  At that point, all of these guard rails should be removed
-		// and it should no longer be possible for the cloud to know about an
-		// instance type that the site does not know about.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) {
-			if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-				// Reset error to nil
-				err = nil
-			} else if slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
-				// NICo _could_ respond with an unimplemented if it's an
-				// older NICo that doesn't have the endpoint yet, but it's more
-				// likely to respond with a PermissionDenied because the permission
-				// for the path isn't there either, but we can watch for both just to
-				// be safe.
-
-				logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
-				// Reset error to nil because we'll want to ignore while
-				// NICo is being rolled out.
-				err = nil
+					logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
+					// Reset error to nil because we'll want to ignore while
+					// NICo is being rolled out.
+					wferr = nil
+				}
 			}
 		}
-	}
 
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "InstanceType", "UpdateInstanceType")
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "InstanceType", "UpdateInstanceType")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "workflow timeout", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to update InstanceType")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to update InstanceType on Site: %s", uwerr), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to update InstanceType")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to update InstanceType on Site: %s", err), nil)
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update InstanceType workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update InstanceType workflow")
-
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance Type", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update Instance Type, DB transaction error")
 	}
-	txCommitted = true
 
 	ait := model.NewAPIInstanceType(it, ssds, mcs, nil, nil)
 
@@ -1583,154 +1630,162 @@ func (dith DeleteInstanceTypeHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Instance Type is not associated with org's Infrastructure Provider", nil)
 	}
 
-	// Check if this Instance Type is being used
 	iDAO := cdbm.NewInstanceDAO(dith.dbSession)
-
-	instances, _, err := iDAO.GetAll(ctx, nil, cdbm.InstanceFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Instances for Instance Type from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instances for Instance Type", nil)
-	}
-
-	if len(instances) > 0 {
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Instance Type is being used by one or more Instances and cannot be deleted", nil)
-	}
-
-	// Check if this Instance Type is part of an Allocation
 	acDAO := cdbm.NewAllocationConstraintDAO(dith.dbSession)
-
 	resourceType := cdbm.AllocationResourceTypeInstanceType
-	acs, _, err := acDAO.GetAll(ctx, nil, nil, &resourceType, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Allocation Constraints for Instance Type from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Allocation Constraints for Instance Type", nil)
-	}
-	if len(acs) > 0 {
-		logger.Warn().Msg("error deleting instance type as allocation constraints are present")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Instance Type is being used by one or more Allocations and cannot be deleted", nil)
-	}
 
-	// Begin transaction
-	tx, err := cdb.BeginTx(ctx, dith.dbSession, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error beginning transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Instance Type", nil)
-	}
-	txCommitted := false
-	defer ch.RollbackTx(ctx, tx, &txCommitted)
+	var timeoutResp func() error
 
-	// Delete Machine/Instance Type associations
-	mitDAO := cdbm.NewMachineInstanceTypeDAO(dith.dbSession)
-	err = mitDAO.DeleteAllByInstanceTypeID(ctx, tx, itID, false)
-	if err != nil {
-		logger.Error().Err(err).Msg("error deleting Machine/Instance Type associations for Instance Type")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Instance Type", nil)
-	}
-
-	//
-	// Get the machines for instance type
-	mDAO := cdbm.NewMachineDAO(dith.dbSession)
-	mcs, _, err := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Machines for Instance Type from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Machines for Instance Type", nil)
-	}
-
-	// Clear InstanceType from respective machines
-	for _, mc := range mcs {
-		_, err = mDAO.Clear(ctx, tx, cdbm.MachineClearInput{MachineID: mc.ID, InstanceTypeID: true})
-		if err != nil {
-			logger.Error().Err(err).Msg("error clearing Machine associations for Instance Type")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to dissociate one or more Machines from Instance Type", nil)
+	err = cdb.WithTx(ctx, dith.dbSession, func(tx *cdb.Tx) error {
+		// Acquire an advisory lock on this Instance Type so the read/check/delete
+		// sequence below is serialized per Instance Type. Without this, another
+		// request can attach this Instance Type between the usage checks and
+		// DeleteByID — a TOCTOU window that would either turn into a generic
+		// 500 from a DB constraint or, worse, delete a now-in-use record.
+		derr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(it.ID.String()), nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to acquire advisory lock on Instance Type")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Instance Type", nil)
 		}
-	}
 
-	// Delete Instance Type
-	err = itDAO.DeleteByID(ctx, tx, itID)
-	if err != nil {
-		logger.Error().Err(err).Msg("error deleting Instance Type from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Instance Type", nil)
-	}
+		// Check if this Instance Type is being used. Done inside the locked tx
+		// so a concurrent attach can't slip in between the check and the
+		// delete.
+		instances, _, derr := iDAO.GetAll(ctx, tx, cdbm.InstanceFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{}, nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Instances for Instance Type from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Instances for Instance Type", nil)
+		}
+		if len(instances) > 0 {
+			return cutil.NewAPIError(http.StatusBadRequest, "Instance Type is being used by one or more Instances and cannot be deleted", nil)
+		}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dith.scp.GetClientByID(*it.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+		acs, _, derr := acDAO.GetAll(ctx, tx, nil, &resourceType, []uuid.UUID{it.ID}, nil, nil, nil, nil, nil, nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Allocation Constraints for Instance Type from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Allocation Constraints for Instance Type", nil)
+		}
+		if len(acs) > 0 {
+			logger.Warn().Msg("error deleting instance type as allocation constraints are present")
+			return cutil.NewAPIError(http.StatusBadRequest, "Instance Type is being used by one or more Allocations and cannot be deleted", nil)
+		}
 
-	deleteInstanceTypeRequest := &cwssaws.DeleteInstanceTypeRequest{
-		Id: it.ID.String(),
-	}
+		// Delete Machine/Instance Type associations
+		mitDAO := cdbm.NewMachineInstanceTypeDAO(dith.dbSession)
+		derr = mitDAO.DeleteAllByInstanceTypeID(ctx, tx, itID, false)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error deleting Machine/Instance Type associations for Instance Type")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Instance Type", nil)
+		}
 
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "instance-type-delete-" + it.ID.String(),
-		TaskQueue:                queue.SiteTaskQueue,
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-	}
+		//
+		// Get the machines for instance type
+		mDAO := cdbm.NewMachineDAO(dith.dbSession)
+		mcs, _, derr := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InstanceTypeIDs: []uuid.UUID{it.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error retrieving Machines for Instance Type from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Machines for Instance Type", nil)
+		}
 
-	logger.Info().Msg("triggering InstanceType delete workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteInstanceType", deleteInstanceTypeRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to delete InstanceType")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete InstanceType on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete InstanceType workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) {
-			if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-				// Reset error to nil
-				err = nil
-			} else if slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
-				// NICo _could_ respond with an unimplemented if it's an
-				// older NICo that doesn't have the endpoint yet, but it's more
-				// likely to respond with a PermissionDenied because the permission
-				// for the path isn't there either, but we can watch for both just to
-				// be safe.
-
-				logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
-				// Reset error to nil because we'll want to ignore while
-				// NICo is being rolled out.
-				err = nil
+		// Clear InstanceType from respective machines
+		for _, mc := range mcs {
+			_, derr := mDAO.Clear(ctx, tx, cdbm.MachineClearInput{MachineID: mc.ID, InstanceTypeID: true})
+			if derr != nil {
+				logger.Error().Err(derr).Msg("error clearing Machine associations for Instance Type")
+				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to dissociate one or more Machines from Instance Type", nil)
 			}
 		}
-	}
 
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "InstanceType", "DeleteInstanceType")
+		// Delete Instance Type
+		derr = itDAO.DeleteByID(ctx, tx, itID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error deleting Instance Type from DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Instance Type", nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to delete InstanceType")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to delete InstanceType on Site: %s", err), nil)
+		// Get the temporal client for the site we are working with.
+		stc, derr := dith.scp.GetClientByID(*it.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		deleteInstanceTypeRequest := &cwssaws.DeleteInstanceTypeRequest{
+			Id: it.ID.String(),
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "instance-type-delete-" + it.ID.String(),
+			TaskQueue:                queue.SiteTaskQueue,
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		}
+
+		logger.Info().Msg("triggering InstanceType delete workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "DeleteInstanceType", deleteInstanceTypeRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to delete InstanceType")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to delete InstanceType on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete InstanceType workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, nil)
+
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) {
+				if slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+					logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+					// Reset error to nil
+					wferr = nil
+				} else if slices.Contains(swe.UnimplementedOrDeniedErrTypes(), applicationErr.Type()) {
+					// NICo _could_ respond with an unimplemented if it's an
+					// older NICo that doesn't have the endpoint yet, but it's more
+					// likely to respond with a PermissionDenied because the permission
+					// for the path isn't there either, but we can watch for both just to
+					// be safe.
+
+					logger.Warn().Msg("NICo endpoint unimplemented or restricted response received from Site")
+					// Reset error to nil because we'll want to ignore while
+					// NICo is being rolled out.
+					wferr = nil
+				}
+			}
+		}
+
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, wferr, "InstanceType", "DeleteInstanceType")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "workflow timeout", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to delete InstanceType")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to delete InstanceType on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete InstanceType workflow")
+		return nil
+	})
+	if timeoutResp != nil {
+		return timeoutResp()
 	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete InstanceType workflow")
-
-	err = tx.Commit()
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Instance Type", nil)
+		return common.HandleTxError(c, logger, err, "Failed to delete Instance Type, DB transaction error")
 	}
-	txCommitted = true
 
 	// Create response
 	logger.Info().Msg("finishing API handler")

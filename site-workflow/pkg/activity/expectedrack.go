@@ -400,12 +400,12 @@ func (mer *ManageExpectedRack) DeleteAllExpectedRacksOnSite(ctx context.Context)
 	return nil
 }
 
-// CreateExpectedRackOnRLA creates an Expected Rack in Flow via CreateExpectedRack.
+// CreateExpectedRackOnFlow creates an Expected Rack in Flow via CreateExpectedRack.
 // Best-effort: if the Flow client is not configured, the activity logs and returns nil
 // so the workflow can continue. RPC failures are surfaced as errors so the workflow
 // can decide how to handle them (typically log and ignore).
-func (mer *ManageExpectedRack) CreateExpectedRackOnRLA(ctx context.Context, request *cwssaws.ExpectedRack) error {
-	logger := log.With().Str("Activity", "CreateExpectedRackOnRLA").Logger()
+func (mer *ManageExpectedRack) CreateExpectedRackOnFlow(ctx context.Context, request *cwssaws.ExpectedRack) error {
+	logger := log.With().Str("Activity", "CreateExpectedRackOnFlow").Logger()
 
 	logger.Info().Msg("Starting activity")
 
@@ -426,7 +426,7 @@ func (mer *ManageExpectedRack) CreateExpectedRackOnRLA(ctx context.Context, requ
 		return nil
 	}
 
-	rack := expectedRackToRLARack(request)
+	rack := expectedRackToFlowRack(request)
 	_, err := flowClient.Flow().CreateExpectedRack(ctx, &flowv1.CreateExpectedRackRequest{Rack: rack})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Rack on Flow")
@@ -452,12 +452,12 @@ func labelValue(labels []*cwssaws.Label, key string) string {
 	return ""
 }
 
-// expectedRackToRLARack converts a NICo ExpectedRack proto to an Flow Rack proto.
+// expectedRackToFlowRack converts a NICo ExpectedRack proto to an Flow Rack proto.
 // Chassis identity (manufacturer/serial/model) and physical location (region/datacenter/
 // room/position) are read from well-known label keys defined in
 // common/pkg/util/labels. Missing labels are tolerated and rendered as empty
 // strings on the Flow side.
-func expectedRackToRLARack(rack *cwssaws.ExpectedRack) *flowv1.Rack {
+func expectedRackToFlowRack(rack *cwssaws.ExpectedRack) *flowv1.Rack {
 	rackLabels := rack.GetMetadata().GetLabels()
 
 	manufacturer := labelValue(rackLabels, labels.RackLabelChassisManufacturer)

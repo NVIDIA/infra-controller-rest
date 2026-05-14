@@ -71,7 +71,7 @@ type APISiteCapabilitiesUpdateRequest struct {
 	NativeNetworking          *bool `json:"nativeNetworking"`
 	NetworkSecurityGroup      *bool `json:"networkSecurityGroup"`
 	NVLinkPartition           *bool `json:"nvLinkPartition"`
-	RackLevelAdministration   *bool `json:"rackLevelAdministration"`
+	Flow                      *bool `json:"flow"`
 	ImageBasedOperatingSystem *bool `json:"imageBasedOperatingSystem"`
 }
 
@@ -93,8 +93,8 @@ func (ascur APISiteCapabilitiesUpdateRequest) ToSiteConfig(existing *cdbm.SiteCo
 		cfg.NVLinkPartition = *ascur.NVLinkPartition
 	}
 
-	if ascur.RackLevelAdministration != nil {
-		cfg.RackLevelAdministration = *ascur.RackLevelAdministration
+	if ascur.Flow != nil {
+		cfg.Flow = *ascur.Flow
 	}
 
 	if ascur.ImageBasedOperatingSystem != nil {
@@ -328,7 +328,7 @@ type APISiteCapabilities struct {
 	NativeNetworking          bool `json:"nativeNetworking"`
 	NetworkSecurityGroup      bool `json:"networkSecurityGroup"`
 	NVLinkPartition           bool `json:"nvLinkPartition"`
-	RackLevelAdministration   bool `json:"rackLevelAdministration"`
+	Flow                      bool `json:"flow"`
 	ImageBasedOperatingSystem bool `json:"imageBasedOperatingSystem"`
 }
 
@@ -339,7 +339,7 @@ func siteConfigToAPISiteCapabilities(cfg *cdbm.SiteConfig) *APISiteCapabilities 
 		apiCaps.NativeNetworking = cfg.NativeNetworking
 		apiCaps.NetworkSecurityGroup = cfg.NetworkSecurityGroup
 		apiCaps.NVLinkPartition = cfg.NVLinkPartition
-		apiCaps.RackLevelAdministration = cfg.RackLevelAdministration
+		apiCaps.Flow = cfg.Flow
 		apiCaps.ImageBasedOperatingSystem = cfg.ImageBasedOperatingSystem
 	}
 

@@ -121,11 +121,11 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	log.Info().Msg("client Key:" + conf.NICo.ClientKeyPath)
 
 	// Flow config
-	flag.StringVar(&conf.Flow.Address, "flowAddress", os.Getenv("RLA_ADDRESS"), "Flow Address")
+	flag.StringVar(&conf.Flow.Address, "flowAddress", os.Getenv("FLOW_ADDRESS"), "Flow Address")
 	if conf.Flow.Address == "" {
 		conf.Flow.Address = "rla.rla.svc.cluster.local:50051"
 	}
-	flowSecOpt, err := strconv.Atoi(os.Getenv("RLA_SEC_OPT"))
+	flowSecOpt, err := strconv.Atoi(os.Getenv("FLOW_SEC_OPT"))
 	if err != nil {
 		log.Info().Msg("Invalid Flow security option, using default")
 		flowSecOpt = int(client.FlowServerTLS)
@@ -136,15 +136,15 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flowOpt := 0
 	flag.IntVar(&flowOpt, "flowSecureOptions", flowSecOpt, "Flow security option")
 	conf.Flow.Secure = client.FlowClientSecureOptions(flowOpt)
-	flag.StringVar(&conf.Flow.ServerCAPath, "flowCertPath", os.Getenv("RLA_CA_CERT_PATH"), "Flow CA Cert Path")
+	flag.StringVar(&conf.Flow.ServerCAPath, "flowCertPath", os.Getenv("FLOW_CA_CERT_PATH"), "Flow CA Cert Path")
 	if conf.Flow.ServerCAPath == "" {
 		conf.Flow.ServerCAPath = DefaultFlowClientCAPath
 	}
-	flag.StringVar(&conf.Flow.ClientCertPath, "flowClientCertPath", os.Getenv("RLA_CLIENT_CERT_PATH"), "Flow client Cert Path")
+	flag.StringVar(&conf.Flow.ClientCertPath, "flowClientCertPath", os.Getenv("FLOW_CLIENT_CERT_PATH"), "Flow client Cert Path")
 	if conf.Flow.ClientCertPath == "" {
 		conf.Flow.ClientCertPath = DefaultFlowClientCertPath
 	}
-	flag.StringVar(&conf.Flow.ClientKeyPath, "flowClientKeyPath", os.Getenv("RLA_CLIENT_KEY_PATH"), "Flow client Key Path")
+	flag.StringVar(&conf.Flow.ClientKeyPath, "flowClientKeyPath", os.Getenv("FLOW_CLIENT_KEY_PATH"), "Flow client Key Path")
 	if conf.Flow.ClientKeyPath == "" {
 		conf.Flow.ClientKeyPath = DefaultFlowClientKeyPath
 	}
@@ -172,10 +172,10 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flag.StringVar(&skipServerAuth, "nicoSkipServerAuth", os.Getenv("SKIP_GRPC_SERVER_AUTH"), "Skip gRPC server auth in TLS")
 
 	var skipFlowServerAuth string
-	flag.StringVar(&skipFlowServerAuth, "flowSkipServerAuth", os.Getenv("SKIP_RLA_GRPC_SERVER_AUTH"), "Skip Flow gRPC server auth in TLS")
+	flag.StringVar(&skipFlowServerAuth, "flowSkipServerAuth", os.Getenv("SKIP_FLOW_GRPC_SERVER_AUTH"), "Skip Flow gRPC server auth in TLS")
 
 	var flowEnabled string
-	flag.StringVar(&flowEnabled, "flowEnabled", os.Getenv("RLA_ENABLED"), "Enable Flow")
+	flag.StringVar(&flowEnabled, "flowEnabled", os.Getenv("FLOW_ENABLED"), "Enable Flow")
 
 	if conf.MetricsPort == "" {
 		log.Fatal().Msg("error loading config, invalid metrics port")
