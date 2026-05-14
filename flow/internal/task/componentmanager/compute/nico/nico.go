@@ -31,6 +31,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -64,10 +65,10 @@ func New(nicoClient nicoapi.Client, powerDelay time.Duration) *Manager {
 	}
 }
 
-// Descriptor returns the NICo compute manager descriptor. powerDelay is the
+// Factory returns a factory for the NICo compute manager. powerDelay is the
 // inter-component stagger for power control calls.
-func Descriptor(powerDelay time.Duration) componentmanager.Descriptor {
-	factory := func(
+func Factory(powerDelay time.Duration) componentmanager.ManagerFactory {
+	return func(
 		providerRegistry *providerapi.ProviderRegistry,
 	) (componentmanager.ComponentManager, error) {
 		provider, err := providerapi.GetTyped[*nicoprovider.Provider](
@@ -81,17 +82,28 @@ func Descriptor(powerDelay time.Duration) componentmanager.Descriptor {
 		}
 		return New(provider.Client(), powerDelay), nil
 	}
-	return componentmanager.Descriptor{
+}
+
+// Descriptor returns the NICo compute manager descriptor.
+func Descriptor() cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
 		Type:              devicetypes.ComponentTypeCompute,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nicoprovider.ProviderName},
-		Factory:           factory,
 	}
 }
 
-// Type returns the component type this manager handles.
-func (m *Manager) Type() devicetypes.ComponentType {
-	return devicetypes.ComponentTypeCompute
+// FactorySpec returns the NICo compute manager runtime factory spec.
+func FactorySpec(powerDelay time.Duration) componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: Descriptor(),
+		Factory:    Factory(powerDelay),
+	}
+}
+
+// Descriptor returns the NICo compute manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return Descriptor()
 }
 
 // InjectExpectation registers an expected machine with NICo via AddExpectedMachine.

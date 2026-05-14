@@ -26,6 +26,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/psmapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	psmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/psm"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -67,18 +68,25 @@ func Factory(
 }
 
 // Descriptor returns the PSM PowerShelf manager descriptor.
-func Descriptor() componentmanager.Descriptor {
-	return componentmanager.Descriptor{
+func Descriptor() cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
 		Type:              devicetypes.ComponentTypePowerShelf,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{psmprovider.ProviderName},
-		Factory:           Factory,
 	}
 }
 
-// Type returns the component type this manager handles.
-func (m *Manager) Type() devicetypes.ComponentType {
-	return devicetypes.ComponentTypePowerShelf
+// FactorySpec returns the PSM PowerShelf manager runtime factory spec.
+func FactorySpec() componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: Descriptor(),
+		Factory:    Factory,
+	}
+}
+
+// Descriptor returns the PSM PowerShelf manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return Descriptor()
 }
 
 // InjectExpectation injects expected information for a power shelf.
