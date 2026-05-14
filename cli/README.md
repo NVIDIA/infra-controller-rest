@@ -59,12 +59,15 @@ docker exec -it <container> /app/nicocli site list
 kubectl exec -it -n <namespace> <api-pod> -- /app/nicocli site list
 ```
 
-When `nicocli` runs inside the API container, the server is reachable at `http://localhost:8388`, which is what `nicocli init` writes by default. The image is distroless, so there is no shell -- pass `nicocli` and its args directly to `exec`, and supply credentials via env vars or a mounted config file rather than relying on `nicocli init` / persisted-token flows:
+When `nicocli` runs inside the API container, the server is reachable at `http://localhost:8388`. The image is distroless, so there is no shell or `/usr/bin/env` -- pass `nicocli` and its args directly to `exec`, and supply connection settings with CLI flags:
 
 ```bash
 kubectl exec -it -n <namespace> <api-pod> -- \
-    env NICO_BASE_URL=http://localhost:8388 NICO_ORG=<org> NICO_TOKEN="$TOKEN" \
-    /app/nicocli site list
+    /app/nicocli \
+    --base-url http://localhost:8388 \
+    --org <org> \
+    --token "$TOKEN" \
+    site list
 ```
 
 For day-to-day use, prefer installing `nicocli` locally with one of the methods above; the in-container copy is meant for one-off debugging.
