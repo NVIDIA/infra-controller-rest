@@ -27,7 +27,7 @@ package workflows.v1.machine;
 // DpuMachine - wrapper proto object for including DPU network configuration for Machine
 message DpuMachine {
   // Machine object
-  nico.Machine machine = 1;
+  forge.Machine machine = 1;
   // DPU network configuration
-  nico.ManagedHostNetworkConfigResponse dpu_network_config = 2;
+  forge.ManagedHostNetworkConfigResponse dpu_network_config = 2;
 }

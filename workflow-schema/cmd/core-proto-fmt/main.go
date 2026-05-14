@@ -78,6 +78,7 @@ func normalizeProtoFile(protoFile string) {
 	content = addOrReplaceLicenseHeader(content)
 	content = addGoPackageOption(content)
 	content = updateImports(content)
+	content = renameCarbideReference(content)
 
 	baseName := filepath.Base(protoFile)
 	switch baseName {
@@ -85,7 +86,7 @@ func normalizeProtoFile(protoFile string) {
 		content = normalizeSiteExplorer(content)
 	case "dns_nico.proto":
 		content = normalizeDns(content)
-	case "core.proto":
+	case "nico_nico.proto":
 		content = normalizeNICo(content)
 	}
 
@@ -166,6 +167,71 @@ func replaceOutsideComments(content string, re *regexp.Regexp, repl string) stri
 	return strings.Join(lines, "\n")
 }
 
+// replaceInComments applies re.ReplaceAllString only to comment segments:
+// - line comments introduced by //
+// - block comments wrapped in /* ... */
+// This includes inline comments on non-comment lines.
+func replaceInComments(content string, re *regexp.Regexp, repl string) string {
+	lines := strings.Split(content, "\n")
+	inBlockComment := false
+	for i, line := range lines {
+		lines[i], inBlockComment = replaceInCommentSegments(line, inBlockComment, re, repl)
+	}
+	return strings.Join(lines, "\n")
+}
+
+func replaceInCommentSegments(line string, inBlockComment bool, re *regexp.Regexp, repl string) (string, bool) {
+	var out strings.Builder
+	cursor := 0
+
+	for cursor < len(line) {
+		if inBlockComment {
+			blockEndRel := strings.Index(line[cursor:], "*/")
+			if blockEndRel == -1 {
+				out.WriteString(re.ReplaceAllString(line[cursor:], repl))
+				return out.String(), true
+			}
+
+			blockEnd := cursor + blockEndRel + len("*/")
+			out.WriteString(re.ReplaceAllString(line[cursor:blockEnd], repl))
+			cursor = blockEnd
+			inBlockComment = false
+			continue
+		}
+
+		lineCommentRel := strings.Index(line[cursor:], "//")
+		blockStartRel := strings.Index(line[cursor:], "/*")
+
+		switch {
+		case lineCommentRel == -1 && blockStartRel == -1:
+			out.WriteString(line[cursor:])
+			cursor = len(line)
+
+		case lineCommentRel != -1 && (blockStartRel == -1 || lineCommentRel < blockStartRel):
+			lineCommentStart := cursor + lineCommentRel
+			out.WriteString(line[cursor:lineCommentStart])
+			out.WriteString(re.ReplaceAllString(line[lineCommentStart:], repl))
+			cursor = len(line)
+
+		default:
+			blockStart := cursor + blockStartRel
+			out.WriteString(line[cursor:blockStart])
+
+			blockEndRel := strings.Index(line[blockStart+len("/*"):], "*/")
+			if blockEndRel == -1 {
+				out.WriteString(re.ReplaceAllString(line[blockStart:], repl))
+				return out.String(), true
+			}
+
+			blockEnd := blockStart + len("/*") + blockEndRel + len("*/")
+			out.WriteString(re.ReplaceAllString(line[blockStart:blockEnd], repl))
+			cursor = blockEnd
+		}
+	}
+
+	return out.String(), inBlockComment
+}
+
 // hasWarningBefore reports whether a "// WARNING:" comment already exists on
 // the line immediately preceding the first occurrence of target. This is more
 // robust than checking for a specific warning string because rename regexes
@@ -186,7 +252,7 @@ func normalizeSiteExplorer(content string) string {
 	re := regexp.MustCompile(`\bPowerState\b`)
 	content = replaceOutsideComments(content, re, "ComputerSystemPowerState")
 
-	warning := "// WARNING: This enum conflicts with PowerState in core.proto and must be renamed to ComputerSystemPowerState\n"
+	warning := "// WARNING: This enum conflicts with PowerState in nico_nico.proto and must be renamed to ComputerSystemPowerState\n"
 	target := "enum ComputerSystemPowerState {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -199,7 +265,7 @@ func normalizeDns(content string) string {
 	re := regexp.MustCompile(`\bMetadata\b`)
 	content = replaceOutsideComments(content, re, "DomainMetadata")
 
-	warning := "// WARNING: This type conflicts with Metadata in core.proto and must be renamed to DomainMetadata\n"
+	warning := "// WARNING: This type conflicts with Metadata in nico_nico.proto and must be renamed to DomainMetadata\n"
 	target := "message DomainMetadata {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -224,7 +290,7 @@ func nicoRenameMachineInventory(content string) string {
 	re := regexp.MustCompile(`\bMachineInventory\b`)
 	content = replaceOutsideComments(content, re, "MachineComponentInventory")
 
-	warning := "// WARNING: This type conflicts with MachineInventory in core.proto and must be renamed to MachineComponentInventory\n"
+	warning := "// WARNING: This type conflicts with MachineInventory in inventory.proto and must be renamed to MachineComponentInventory\n"
 	target := "message MachineComponentInventory {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -234,7 +300,7 @@ func nicoRenameMachineInventory(content string) string {
 }
 
 func nicoUpdateInterfaceFunctionType(content string) string {
-	warning := "// WARNING: This enum was changed in a non-backwards compatible way in core.proto to drop _FUNCTION suffix\n"
+	warning := "// WARNING: This enum was changed in a non-backwards compatible way in nico_nico.proto to drop _FUNCTION suffix\n"
 	target := "enum InterfaceFunctionType {"
 	if !hasWarningBefore(content, target) {
 		content = strings.Replace(content, target, warning+target, 1)
@@ -248,7 +314,7 @@ func nicoUpdateInterfaceFunctionType(content string) string {
 // MachineValidationStatus and places them at the top level immediately
 // before the message so proto3 can compile them.
 func nicoMoveValidationEnums(content string) string {
-	warning := "// WARNING: Site proto declares these enums inside `MachineValidationStatus`. This is not compilable to protobuf so we move the enums to the top level"
+	warning := "// WARNING: Core proto declares these enums inside `MachineValidationStatus`. This is not compilable to protobuf so we move the enums to the top level"
 
 	enumNames := []string{"MachineValidationStarted", "MachineValidationInProgress", "MachineValidationCompleted"}
 	var extractedEnums strings.Builder
@@ -319,6 +385,32 @@ func nicoExpandExpectedObject(content string, objectType string, additionalAttri
 	block = strings.TrimSuffix(block, "}") + "\n" + indentBlock(additionalAttributes) + "}"
 
 	return content[:loc[0]] + block + content[loc[1]:]
+}
+
+// renameCarbideReference renames forge/carbide comments:
+func renameCarbideReference(content string) string {
+	re := regexp.MustCompile(`\bCarbide\b`)
+	content = replaceInComments(content, re, "NICo")
+
+	re = regexp.MustCompile(`\bForge\b`)
+	content = replaceInComments(content, re, "NICo")
+
+	re = regexp.MustCompile(`\bcarbide-api\b`)
+	content = replaceInComments(content, re, "nico-core-api")
+
+	re = regexp.MustCompile(`\bforge-\b`)
+	content = replaceInComments(content, re, "nico-")
+
+	re = regexp.MustCompile(`\bcarbide-\b`)
+	content = replaceInComments(content, re, "nico-")
+
+	re = regexp.MustCompile(`\bcarbide\b`)
+	content = replaceInComments(content, re, "nico")
+
+	re = regexp.MustCompile(`\bforge\b`)
+	content = replaceInComments(content, re, "nico")
+
+	return content
 }
 
 // indentBlock trims s, prefixes each line with 2 spaces, and returns the

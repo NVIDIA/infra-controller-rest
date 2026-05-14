@@ -203,7 +203,7 @@ func NewNICoCoreClient(config *NICoCoreClientConfig) (client *NICoCoreClient, er
 	log.Info().Msg("NICoCoreClient: gRPC client initialized")
 
 	// Create nico client
-	client.nico = wflows.NewNICoClient(client.conn)
+	client.nico = wflows.NewForgeClient(client.conn)
 	log.Info().Msg("NICoCoreClient: client created")
 
 	// Check the version of the server
@@ -227,7 +227,7 @@ type NICoCoreClient struct {
 	// gRPC dial options
 	dialOpts []grpc.DialOption
 	// nico client interface
-	nico wflows.NICoClient
+	nico wflows.ForgeClient
 }
 
 // Close gracefully shuts down the client's gRPC connection.
@@ -240,7 +240,7 @@ func (cc *NICoCoreClient) Close() error {
 }
 
 // NICo client getter
-func (client *NICoCoreClient) NICo() wflows.NICoClient {
+func (client *NICoCoreClient) NICo() wflows.ForgeClient {
 	return client.nico
 }
 

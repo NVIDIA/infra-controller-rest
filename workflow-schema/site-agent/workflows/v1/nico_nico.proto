@@ -17,7 +17,7 @@
 
 syntax = "proto3";
 
-package nico;
+package forge;
 
 // Don't forget to update build.rs to add the Serialize annotation for any new
 // message types!
@@ -37,7 +37,7 @@ import "site_explorer_nico.proto";
 
 option go_package = "github.com/NVIDIA/infra-controller-rest/workflow-schema/proto";
 
-service NICo {
+service Forge {
   // What version of NICo is this service running? Matches `--version` command line.
   rpc Version(VersionRequest) returns (BuildInfo);
 

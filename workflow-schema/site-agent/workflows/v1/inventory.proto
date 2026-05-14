@@ -57,7 +57,7 @@ message DpuExtensionServiceInventory {
   // Reported timestamp of DpuExtensionService inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of DpuExtensionServices
-  repeated nico.DpuExtensionService dpu_extension_services = 4;
+  repeated forge.DpuExtensionService dpu_extension_services = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
 }
@@ -71,11 +71,11 @@ message ExpectedMachineInventory {
   // Reported timestamp of Expected Machine inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of Expected Machine Partition
-  repeated nico.ExpectedMachine expected_machines = 4;
+  repeated forge.ExpectedMachine expected_machines = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
   // Linked Expected Machines (contains Machine ID)
-  repeated nico.LinkedExpectedMachine linked_machines = 6;
+  repeated forge.LinkedExpectedMachine linked_machines = 6;
 }
 
 // ExpectedRackInventory - inventory info of all Expected Racks on Site, collected periodically
@@ -87,7 +87,7 @@ message ExpectedRackInventory {
   // Reported timestamp of Expected Rack inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of Expected Racks
-  repeated nico.ExpectedRack expected_racks = 4;
+  repeated forge.ExpectedRack expected_racks = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
 }
@@ -101,11 +101,11 @@ message ExpectedPowerShelfInventory {
   // Reported timestamp of Expected Power Shelf inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of Expected Power Shelves
-  repeated nico.ExpectedPowerShelf expected_power_shelves = 4;
+  repeated forge.ExpectedPowerShelf expected_power_shelves = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
   // Linked Expected Power Shelves (contains PowerShelf ID)
-  repeated nico.LinkedExpectedPowerShelf linked_power_shelves = 6;
+  repeated forge.LinkedExpectedPowerShelf linked_power_shelves = 6;
 }
 
 // ExpectedSwitchInventory - inventory info of all Expected Switches on Site, collected periodically
@@ -117,11 +117,11 @@ message ExpectedSwitchInventory {
   // Reported timestamp of Expected Switch inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of Expected Switches
-  repeated nico.ExpectedSwitch expected_switches = 4;
+  repeated forge.ExpectedSwitch expected_switches = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
   // Linked Expected Switches (contains Switch ID)
-  repeated nico.LinkedExpectedSwitch linked_switches = 6;
+  repeated forge.LinkedExpectedSwitch linked_switches = 6;
 }
 
 // InfiniBandPartitionInventory - inventory info of all InfiniBand Partitions on Site, collected periodically
@@ -133,7 +133,7 @@ message InfiniBandPartitionInventory {
   // Reported timestamp of InfiniBand Partition inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of InfiniBand Partition
-  repeated nico.IBPartition ib_partitions = 4;
+  repeated forge.IBPartition ib_partitions = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
 }
@@ -141,9 +141,9 @@ message InfiniBandPartitionInventory {
 // InstanceInventory - inventory info of all Instances on Site, collected periodically
 message InstanceInventory {
   // List of Instances
-  repeated nico.Instance instances = 1;
+  repeated forge.Instance instances = 1;
   // List of Instance propagation details
-  repeated nico.NetworkSecurityGroupPropagationObjectStatus network_security_group_propagations = 6;
+  repeated forge.NetworkSecurityGroupPropagationObjectStatus network_security_group_propagations = 6;
   // Reported timestamp of Instance inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -157,7 +157,7 @@ message InstanceInventory {
 // InstanceTypeInventory - inventory info for all InstanceTypes on Site, collected periodically
 message InstanceTypeInventory {
   // List of InstanceTypes
-  repeated nico.InstanceType instance_types = 1;
+  repeated forge.InstanceType instance_types = 1;
   // Reported timestamp of inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -170,7 +170,7 @@ message InstanceTypeInventory {
 
 // MachineInfo - wrapper proto object for including discovery info in MachineInventory
 message MachineInfo {
-  nico.Machine machine = 1;
+  forge.Machine machine = 1;
   machine_discovery.DiscoveryInfo discovery_info = 2;
 }
 
@@ -191,7 +191,7 @@ message MachineInventory {
 // NetworkSecurityGroupInventory - inventory info for all Network Security Groups on Site, collected periodically
 message NetworkSecurityGroupInventory {
   // List of NetworkSecurityGroups
-  repeated nico.NetworkSecurityGroup network_security_groups = 1;
+  repeated forge.NetworkSecurityGroup network_security_groups = 1;
   // Reported timestamp of inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -211,7 +211,7 @@ message NVLinkLogicalPartitionInventory {
     // Reported timestamp of NVLinkLogicalPartition inventory
     google.protobuf.Timestamp timestamp = 3;
     // List of NVL Partition
-    repeated nico.NVLinkLogicalPartition partitions = 4;
+    repeated forge.NVLinkLogicalPartition partitions = 4;
     // Inventory page information
     InventoryPage inventory_page = 5;
 }
@@ -219,7 +219,7 @@ message NVLinkLogicalPartitionInventory {
 // OsImageInventory - inventory info for all OS Images on Site, collected periodically
 message OsImageInventory {
   // List of OS Images
-  repeated nico.OsImage os_images = 1;
+  repeated forge.OsImage os_images = 1;
   // Reported timestamp of inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -239,7 +239,7 @@ message SkuInventory {
   // Reported timestamp of SKU inventory
   google.protobuf.Timestamp timestamp = 3;
   // List of SKU
-  repeated nico.Sku skus = 4;
+  repeated forge.Sku skus = 4;
   // Inventory page information
   InventoryPage inventory_page = 5;
 }
@@ -247,7 +247,7 @@ message SkuInventory {
 // SSHKeyGroupInventory - inventory info of all SSH Key Groups (Tenant Keysets) on Site, collected periodically
 message SSHKeyGroupInventory {
   // List of SSH keysets
-  repeated nico.TenantKeyset tenant_keysets = 1;
+  repeated forge.TenantKeyset tenant_keysets = 1;
   // Reported timestamp of SSH keyset inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -262,7 +262,7 @@ message SSHKeyGroupInventory {
 // SubnetInventory - inventory info of all Subnets (Network Segments) on Site, collected periodically
 message SubnetInventory {
   // List of Network Segments
-  repeated nico.NetworkSegment segments = 1;
+  repeated forge.NetworkSegment segments = 1;
   // Reported timestamp of Segment inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -276,7 +276,7 @@ message SubnetInventory {
 // TenantInventory - inventory info for all Tenants on Site, collected periodically
 message TenantInventory {
   // List of Tenants
-  repeated nico.Tenant tenants = 1;
+  repeated forge.Tenant tenants = 1;
   // Reported timestamp of inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -290,9 +290,9 @@ message TenantInventory {
 // VpcInventory - inventory info of all VPCs on Site, collected periodically
 message VPCInventory {
   // List of VPCs
-  repeated nico.Vpc vpcs = 1;
+  repeated forge.Vpc vpcs = 1;
   // List of VPC propagation details
-  repeated nico.NetworkSecurityGroupPropagationObjectStatus network_security_group_propagations = 6;
+  repeated forge.NetworkSecurityGroupPropagationObjectStatus network_security_group_propagations = 6;
   // Reported timestamp of VPC inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -306,7 +306,7 @@ message VPCInventory {
 // VPCPeeringInventory - inventory info of all VPC Peerings on Site, collected periodically
 message VPCPeeringInventory {
   // List of VPC Peerings
-  repeated nico.VpcPeering vpc_peerings = 1;
+  repeated forge.VpcPeering vpc_peerings = 1;
   // Reported timestamp of VPC Peering inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
@@ -320,7 +320,7 @@ message VPCPeeringInventory {
 // VpcPrefixInventory - inventory info for all VPC Prefixes on Site, collected periodically
 message VpcPrefixInventory {
   // List of VPC Prefixes
-  repeated nico.VpcPrefix vpc_prefixes = 1;
+  repeated forge.VpcPrefix vpc_prefixes = 1;
   // Reported timestamp of VPC Prefix inventory
   google.protobuf.Timestamp timestamp = 2;
   // Status of Inventory
