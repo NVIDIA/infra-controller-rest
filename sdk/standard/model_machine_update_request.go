@@ -47,7 +47,7 @@ type MachineUpdateRequest struct {
 	Labels              map[string]string           `json:"labels,omitempty"`
 	OnlineRepairRequest *MachineOnlineRepairRequest `json:"onlineRepairRequest,omitempty"`
 	// Required when `onlineRepairRequest.enabled` is true. Must not be set when exiting online repair (`onlineRepairRequest.enabled` false).
-	HealthIssue *HealthIssue `json:"HealthIssue,omitempty"`
+	HealthIssue *HealthIssue `json:"healthIssue,omitempty"`
 }
 
 // NewMachineUpdateRequest instantiates a new MachineUpdateRequest object
@@ -364,7 +364,7 @@ func (o MachineUpdateRequest) ToMap() (map[string]interface{}, error) {
 		toSerialize["onlineRepairRequest"] = o.OnlineRepairRequest
 	}
 	if !IsNil(o.HealthIssue) {
-		toSerialize["HealthIssue"] = o.HealthIssue
+		toSerialize["healthIssue"] = o.HealthIssue
 	}
 	return toSerialize, nil
 }

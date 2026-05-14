@@ -187,7 +187,7 @@ func (mur APIMachineUpdateRequest) Validate() error {
 
 	if err == nil && mur.HealthIssue != nil && mur.OnlineRepairRequest == nil {
 		err = validation.Errors{
-			"HealthIssue": errors.New("HealthIssue must only be set together with onlineRepairRequest"),
+			"healthIssue": errors.New("healthIssue must only be set together with onlineRepairRequest"),
 		}
 	}
 

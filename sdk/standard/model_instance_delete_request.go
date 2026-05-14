@@ -37,7 +37,7 @@ var _ MappedNullable = &InstanceDeleteRequest{}
 // InstanceDeleteRequest Request data to delete Instance
 type InstanceDeleteRequest struct {
 	// Information regarding issue with the underlying Machine experienced by Tenant
-	HealthIssue *HealthIssue `json:"HealthIssue,omitempty"`
+	MachineHealthIssue *MachineHealthIssue `json:"machineHealthIssue,omitempty"`
 	// Should be set to true for Tenants who are performing investigation/repairing the Machine. Otherwise omit or set to false
 	IsRepairTenant NullableBool `json:"isRepairTenant,omitempty"`
 }
@@ -59,36 +59,36 @@ func NewInstanceDeleteRequestWithDefaults() *InstanceDeleteRequest {
 	return &this
 }
 
-// GetHealthIssue returns the HealthIssue field value if set, zero value otherwise.
-func (o *InstanceDeleteRequest) GetHealthIssue() HealthIssue {
-	if o == nil || IsNil(o.HealthIssue) {
-		var ret HealthIssue
+// GetMachineHealthIssue returns the MachineHealthIssue field value if set, zero value otherwise.
+func (o *InstanceDeleteRequest) GetMachineHealthIssue() MachineHealthIssue {
+	if o == nil || IsNil(o.MachineHealthIssue) {
+		var ret MachineHealthIssue
 		return ret
 	}
-	return *o.HealthIssue
+	return *o.MachineHealthIssue
 }
 
-// GetHealthIssueOk returns a tuple with the HealthIssue field value if set, nil otherwise
+// GetMachineHealthIssueOk returns a tuple with the MachineHealthIssue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *InstanceDeleteRequest) GetHealthIssueOk() (*HealthIssue, bool) {
-	if o == nil || IsNil(o.HealthIssue) {
+func (o *InstanceDeleteRequest) GetMachineHealthIssueOk() (*MachineHealthIssue, bool) {
+	if o == nil || IsNil(o.MachineHealthIssue) {
 		return nil, false
 	}
-	return o.HealthIssue, true
+	return o.MachineHealthIssue, true
 }
 
-// HasHealthIssue returns a boolean if a field has been set.
-func (o *InstanceDeleteRequest) HasHealthIssue() bool {
-	if o != nil && !IsNil(o.HealthIssue) {
+// HasMachineHealthIssue returns a boolean if a field has been set.
+func (o *InstanceDeleteRequest) HasMachineHealthIssue() bool {
+	if o != nil && !IsNil(o.MachineHealthIssue) {
 		return true
 	}
 
 	return false
 }
 
-// SetHealthIssue gets a reference to the given HealthIssue and assigns it to the HealthIssue field.
-func (o *InstanceDeleteRequest) SetHealthIssue(v HealthIssue) {
-	o.HealthIssue = &v
+// SetMachineHealthIssue gets a reference to the given MachineHealthIssue and assigns it to the MachineHealthIssue field.
+func (o *InstanceDeleteRequest) SetMachineHealthIssue(v MachineHealthIssue) {
+	o.MachineHealthIssue = &v
 }
 
 // GetIsRepairTenant returns the IsRepairTenant field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -144,8 +144,8 @@ func (o InstanceDeleteRequest) MarshalJSON() ([]byte, error) {
 
 func (o InstanceDeleteRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
-	if !IsNil(o.HealthIssue) {
-		toSerialize["HealthIssue"] = o.HealthIssue
+	if !IsNil(o.MachineHealthIssue) {
+		toSerialize["machineHealthIssue"] = o.MachineHealthIssue
 	}
 	if o.IsRepairTenant.IsSet() {
 		toSerialize["isRepairTenant"] = o.IsRepairTenant.Get()

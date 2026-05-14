@@ -7056,8 +7056,8 @@ paths:
             examples:
               Example 1:
                 value:
-                  healthIssue:
-                    category: NETWORK
+                  machineHealthIssue:
+                    category: Network
                     summary: Machine has DPU connectivity error
                     details: Tenant observed repeated link flaps on the DPU uplink.
                   isRepairTenant: false
@@ -16154,21 +16154,47 @@ components:
       title: InstanceDeleteRequest
       type: object
       examples:
-        - HealthIssue:
-            category: NETWORK
+        - machineHealthIssue:
+            category: Network
             summary: Machine has DPU connectivity error
             details: Tenant observed repeated link flaps on the DPU uplink.
           isRepairTenant: false
       description: Request data to delete Instance
       properties:
-        HealthIssue:
-          $ref: '#/components/schemas/HealthIssue'
+        machineHealthIssue:
+          $ref: '#/components/schemas/MachineHealthIssue'
           description: Information regarding issue with the underlying Machine experienced by Tenant
         isRepairTenant:
           type:
             - boolean
             - 'null'
           description: Should be set to true for Tenants who are performing investigation/repairing the Machine. Otherwise omit or set to false
+    MachineHealthIssue:
+      title: MachineHealthIssue
+      type: object
+      examples:
+        - category: Network
+          summary: Machine has DPU connectivity error
+      description: Data describing health issue with a Machine
+      properties:
+        category:
+          type: string
+          enum:
+            - Hardware
+            - Network
+            - Performance
+            - Other
+          description: Category of the issue
+        summary:
+          type:
+            - string
+            - 'null'
+          description: Short summary describing the issue
+        details:
+          type:
+            - string
+            - 'null'
+          description: Details about the issue helpful for diagnosis
     Interface:
       title: Interface
       type: object
@@ -17505,12 +17531,15 @@ components:
       properties:
         acceptDataCorruptionRisk:
           type: boolean
+          enum: [true]
           description: Tenant confirms data may be corrupted during repair.
         acceptRepairTeamAccess:
           type: boolean
+          enum: [true]
           description: Tenant confirms the dedicated repair team will have access to the instance.
         acceptInstanceDeletionRisk:
           type: boolean
+          enum: [true]
           description: Tenant confirms risk of instance deletion if escalation to offline breakfix occurs.
     MachineOnlineRepairRequest:
       title: MachineOnlineRepairRequest
@@ -17519,7 +17548,7 @@ components:
         - enabled
       description: >-
         Enter or exit in-pool online repair. When `enabled` is true, `policy` and `acknowledgments` are required inside this object,
-        and `HealthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
+        and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
       properties:
         enabled:
           type: boolean

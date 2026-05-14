@@ -1487,13 +1487,13 @@ func (iur APIInstanceUpdateRequest) Validate() error {
 
 // APIInstanceDeleteRequest is the data structure to capture request to delete an Instance
 type APIInstanceDeleteRequest struct {
-	// HealthIssue is the report of a machine health issue
-	HealthIssue    *APIHealthIssueReport `json:"HealthIssue"`
-	IsRepairTenant *bool                 `json:"isRepairTenant"`
+	// MachineHealthIssue is the report of a machine health issue
+	MachineHealthIssue *APIMachineHealthIssueReport `json:"machineHealthIssue"`
+	IsRepairTenant     *bool                        `json:"isRepairTenant"`
 }
 
-// APIHealthIssueReport is the data structure to capture a machine health issue report
-type APIHealthIssueReport struct {
+// APIMachineHealthIssueReport is the data structure to capture a machine health issue report
+type APIMachineHealthIssueReport struct {
 	// Category is the type of the issue
 	Category string `json:"category"`
 	// Summary is the summary of the issue
@@ -1504,9 +1504,9 @@ type APIHealthIssueReport struct {
 
 // Validate ensures the values passed in request are acceptable
 func (idr APIInstanceDeleteRequest) Validate() error {
-	if idr.HealthIssue != nil {
-		err := validation.ValidateStruct(idr.HealthIssue,
-			validation.Field(&idr.HealthIssue.Category,
+	if idr.MachineHealthIssue != nil {
+		err := validation.ValidateStruct(idr.MachineHealthIssue,
+			validation.Field(&idr.MachineHealthIssue.Category,
 				validation.Required,
 				validation.By(func(value any) error {
 					s, ok := value.(string)
@@ -1519,10 +1519,10 @@ func (idr APIInstanceDeleteRequest) Validate() error {
 					return nil
 				}),
 			),
-			validation.Field(&idr.HealthIssue.Summary,
+			validation.Field(&idr.MachineHealthIssue.Summary,
 				validation.Required,
 				validation.Length(1, 512).Error(validationErrorStringLength)),
-			validation.Field(&idr.HealthIssue.Details,
+			validation.Field(&idr.MachineHealthIssue.Details,
 				validation.Required,
 				validation.Length(1, 8192).Error(validationErrorStringLength)),
 		)
