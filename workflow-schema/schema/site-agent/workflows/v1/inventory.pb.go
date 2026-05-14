@@ -1838,69 +1838,69 @@ const file_inventory_proto_rawDesc = "" +
 	"\tpage_size\x18\x03 \x01(\x05R\bpageSize\x12\x1f\n" +
 	"\vtotal_items\x18\x04 \x01(\x05R\n" +
 	"totalItems\x12\x19\n" +
-	"\bitem_ids\x18\x05 \x03(\tR\aitemIds\"\xd6\x02\n" +
+	"\bitem_ids\x18\x05 \x03(\tR\aitemIds\"\xd7\x02\n" +
 	"\x1cDpuExtensionServiceInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12O\n" +
-	"\x16dpu_extension_services\x18\x04 \x03(\v2\x19.nico.DpuExtensionServiceR\x14dpuExtensionServices\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x8b\x03\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12P\n" +
+	"\x16dpu_extension_services\x18\x04 \x03(\v2\x1a.forge.DpuExtensionServiceR\x14dpuExtensionServices\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x8d\x03\n" +
 	"\x18ExpectedMachineInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12B\n" +
-	"\x11expected_machines\x18\x04 \x03(\v2\x15.nico.ExpectedMachineR\x10expectedMachines\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\x12D\n" +
-	"\x0flinked_machines\x18\x06 \x03(\v2\x1b.nico.LinkedExpectedMachineR\x0elinkedMachines\"\xb9\x02\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12C\n" +
+	"\x11expected_machines\x18\x04 \x03(\v2\x16.forge.ExpectedMachineR\x10expectedMachines\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\x12E\n" +
+	"\x0flinked_machines\x18\x06 \x03(\v2\x1c.forge.LinkedExpectedMachineR\x0elinkedMachines\"\xba\x02\n" +
 	"\x15ExpectedRackInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x129\n" +
-	"\x0eexpected_racks\x18\x04 \x03(\v2\x12.nico.ExpectedRackR\rexpectedRacks\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xa6\x03\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12:\n" +
+	"\x0eexpected_racks\x18\x04 \x03(\v2\x13.forge.ExpectedRackR\rexpectedRacks\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xa8\x03\n" +
 	"\x1bExpectedPowerShelfInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12N\n" +
-	"\x16expected_power_shelves\x18\x04 \x03(\v2\x18.nico.ExpectedPowerShelfR\x14expectedPowerShelves\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\x12P\n" +
-	"\x14linked_power_shelves\x18\x06 \x03(\v2\x1e.nico.LinkedExpectedPowerShelfR\x12linkedPowerShelves\"\x88\x03\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12O\n" +
+	"\x16expected_power_shelves\x18\x04 \x03(\v2\x19.forge.ExpectedPowerShelfR\x14expectedPowerShelves\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\x12Q\n" +
+	"\x14linked_power_shelves\x18\x06 \x03(\v2\x1f.forge.LinkedExpectedPowerShelfR\x12linkedPowerShelves\"\x8a\x03\n" +
 	"\x17ExpectedSwitchInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12A\n" +
-	"\x11expected_switches\x18\x04 \x03(\v2\x14.nico.ExpectedSwitchR\x10expectedSwitches\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\x12C\n" +
-	"\x0flinked_switches\x18\x06 \x03(\v2\x1a.nico.LinkedExpectedSwitchR\x0elinkedSwitches\"\xbd\x02\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12B\n" +
+	"\x11expected_switches\x18\x04 \x03(\v2\x15.forge.ExpectedSwitchR\x10expectedSwitches\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\x12D\n" +
+	"\x0flinked_switches\x18\x06 \x03(\v2\x1b.forge.LinkedExpectedSwitchR\x0elinkedSwitches\"\xbe\x02\n" +
 	"\x1cInfiniBandPartitionInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x126\n" +
-	"\rib_partitions\x18\x04 \x03(\v2\x11.nico.IBPartitionR\fibPartitions\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xab\x03\n" +
-	"\x11InstanceInventory\x12,\n" +
-	"\tinstances\x18\x01 \x03(\v2\x0e.nico.InstanceR\tinstances\x12\x80\x01\n" +
-	"#network_security_group_propagations\x18\x06 \x03(\v21.nico.NetworkSecurityGroupPropagationObjectStatusR networkSecurityGroupPropagations\x128\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x127\n" +
+	"\rib_partitions\x18\x04 \x03(\v2\x12.forge.IBPartitionR\fibPartitions\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xad\x03\n" +
+	"\x11InstanceInventory\x12-\n" +
+	"\tinstances\x18\x01 \x03(\v2\x0f.forge.InstanceR\tinstances\x12\x81\x01\n" +
+	"#network_security_group_propagations\x18\x06 \x03(\v22.forge.NetworkSecurityGroupPropagationObjectStatusR networkSecurityGroupPropagations\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xb9\x02\n" +
-	"\x15InstanceTypeInventory\x129\n" +
-	"\x0einstance_types\x18\x01 \x03(\v2\x12.nico.InstanceTypeR\rinstanceTypes\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xba\x02\n" +
+	"\x15InstanceTypeInventory\x12:\n" +
+	"\x0einstance_types\x18\x01 \x03(\v2\x13.forge.InstanceTypeR\rinstanceTypes\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x7f\n" +
-	"\vMachineInfo\x12'\n" +
-	"\amachine\x18\x01 \x01(\v2\r.nico.MachineR\amachine\x12G\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x80\x01\n" +
+	"\vMachineInfo\x12(\n" +
+	"\amachine\x18\x01 \x01(\v2\x0e.forge.MachineR\amachine\x12G\n" +
 	"\x0ediscovery_info\x18\x02 \x01(\v2 .machine_discovery.DiscoveryInfoR\rdiscoveryInfo\"\xb0\x02\n" +
 	"\x10MachineInventory\x125\n" +
 	"\bmachines\x18\x01 \x03(\v2\x19.workflows.v1.MachineInfoR\bmachines\x128\n" +
@@ -1908,75 +1908,77 @@ const file_inventory_proto_rawDesc = "" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xda\x02\n" +
-	"\x1dNetworkSecurityGroupInventory\x12R\n" +
-	"\x17network_security_groups\x18\x01 \x03(\v2\x1a.nico.NetworkSecurityGroupR\x15networkSecurityGroups\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xdb\x02\n" +
+	"\x1dNetworkSecurityGroupInventory\x12S\n" +
+	"\x17network_security_groups\x18\x01 \x03(\v2\x1b.forge.NetworkSecurityGroupR\x15networkSecurityGroups\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xc6\x02\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xc7\x02\n" +
 	"\x1fNVLinkLogicalPartitionInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12<\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12=\n" +
 	"\n" +
-	"partitions\x18\x04 \x03(\v2\x1c.nico.NVLinkLogicalPartitionR\n" +
+	"partitions\x18\x04 \x03(\v2\x1d.forge.NVLinkLogicalPartitionR\n" +
 	"partitions\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xa5\x02\n" +
-	"\x10OsImageInventory\x12*\n" +
-	"\tos_images\x18\x01 \x03(\v2\r.nico.OsImageR\bosImages\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xa6\x02\n" +
+	"\x10OsImageInventory\x12+\n" +
+	"\tos_images\x18\x01 \x03(\v2\x0e.forge.OsImageR\bosImages\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x94\x02\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x95\x02\n" +
 	"\fSkuInventory\x12H\n" +
 	"\x10inventory_status\x18\x01 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x02 \x01(\tR\tstatusMsg\x128\n" +
-	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1d\n" +
-	"\x04skus\x18\x04 \x03(\v2\t.nico.SkuR\x04skus\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xb8\x02\n" +
-	"\x14SSHKeyGroupInventory\x129\n" +
-	"\x0etenant_keysets\x18\x01 \x03(\v2\x12.nico.TenantKeysetR\rtenantKeysets\x128\n" +
+	"\ttimestamp\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12\x1e\n" +
+	"\x04skus\x18\x04 \x03(\v2\n" +
+	".forge.SkuR\x04skus\x12B\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xb9\x02\n" +
+	"\x14SSHKeyGroupInventory\x12:\n" +
+	"\x0etenant_keysets\x18\x01 \x03(\v2\x13.forge.TenantKeysetR\rtenantKeysets\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xaa\x02\n" +
-	"\x0fSubnetInventory\x120\n" +
-	"\bsegments\x18\x01 \x03(\v2\x14.nico.NetworkSegmentR\bsegments\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xab\x02\n" +
+	"\x0fSubnetInventory\x121\n" +
+	"\bsegments\x18\x01 \x03(\v2\x15.forge.NetworkSegmentR\bsegments\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xa0\x02\n" +
-	"\x0fTenantInventory\x12&\n" +
-	"\atenants\x18\x01 \x03(\v2\f.nico.TenantR\atenants\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xa1\x02\n" +
+	"\x0fTenantInventory\x12'\n" +
+	"\atenants\x18\x01 \x03(\v2\r.forge.TenantR\atenants\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x97\x03\n" +
-	"\fVPCInventory\x12\x1d\n" +
-	"\x04vpcs\x18\x01 \x03(\v2\t.nico.VpcR\x04vpcs\x12\x80\x01\n" +
-	"#network_security_group_propagations\x18\x06 \x03(\v21.nico.NetworkSecurityGroupPropagationObjectStatusR networkSecurityGroupPropagations\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\x99\x03\n" +
+	"\fVPCInventory\x12\x1e\n" +
+	"\x04vpcs\x18\x01 \x03(\v2\n" +
+	".forge.VpcR\x04vpcs\x12\x81\x01\n" +
+	"#network_security_group_propagations\x18\x06 \x03(\v22.forge.NetworkSecurityGroupPropagationObjectStatusR networkSecurityGroupPropagations\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xb1\x02\n" +
-	"\x13VPCPeeringInventory\x123\n" +
-	"\fvpc_peerings\x18\x01 \x03(\v2\x10.nico.VpcPeeringR\vvpcPeerings\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xb2\x02\n" +
+	"\x13VPCPeeringInventory\x124\n" +
+	"\fvpc_peerings\x18\x01 \x03(\v2\x11.forge.VpcPeeringR\vvpcPeerings\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
 	"status_msg\x18\x04 \x01(\tR\tstatusMsg\x12B\n" +
-	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xaf\x02\n" +
-	"\x12VpcPrefixInventory\x122\n" +
-	"\fvpc_prefixes\x18\x01 \x03(\v2\x0f.nico.VpcPrefixR\vvpcPrefixes\x128\n" +
+	"\x0einventory_page\x18\x05 \x01(\v2\x1b.workflows.v1.InventoryPageR\rinventoryPage\"\xb0\x02\n" +
+	"\x12VpcPrefixInventory\x123\n" +
+	"\fvpc_prefixes\x18\x01 \x03(\v2\x10.forge.VpcPrefixR\vvpcPrefixes\x128\n" +
 	"\ttimestamp\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\ttimestamp\x12H\n" +
 	"\x10inventory_status\x18\x03 \x01(\x0e2\x1d.workflows.v1.InventoryStatusR\x0finventoryStatus\x12\x1d\n" +
 	"\n" +
@@ -2025,112 +2027,112 @@ var file_inventory_proto_goTypes = []any{
 	(*VPCPeeringInventory)(nil),                         // 20: workflows.v1.VPCPeeringInventory
 	(*VpcPrefixInventory)(nil),                          // 21: workflows.v1.VpcPrefixInventory
 	(*timestamppb.Timestamp)(nil),                       // 22: google.protobuf.Timestamp
-	(*DpuExtensionService)(nil),                         // 23: nico.DpuExtensionService
-	(*ExpectedMachine)(nil),                             // 24: nico.ExpectedMachine
-	(*LinkedExpectedMachine)(nil),                       // 25: nico.LinkedExpectedMachine
-	(*ExpectedRack)(nil),                                // 26: nico.ExpectedRack
-	(*ExpectedPowerShelf)(nil),                          // 27: nico.ExpectedPowerShelf
-	(*LinkedExpectedPowerShelf)(nil),                    // 28: nico.LinkedExpectedPowerShelf
-	(*ExpectedSwitch)(nil),                              // 29: nico.ExpectedSwitch
-	(*LinkedExpectedSwitch)(nil),                        // 30: nico.LinkedExpectedSwitch
-	(*IBPartition)(nil),                                 // 31: nico.IBPartition
-	(*Instance)(nil),                                    // 32: nico.Instance
-	(*NetworkSecurityGroupPropagationObjectStatus)(nil), // 33: nico.NetworkSecurityGroupPropagationObjectStatus
-	(*InstanceType)(nil),                                // 34: nico.InstanceType
-	(*Machine)(nil),                                     // 35: nico.Machine
+	(*DpuExtensionService)(nil),                         // 23: forge.DpuExtensionService
+	(*ExpectedMachine)(nil),                             // 24: forge.ExpectedMachine
+	(*LinkedExpectedMachine)(nil),                       // 25: forge.LinkedExpectedMachine
+	(*ExpectedRack)(nil),                                // 26: forge.ExpectedRack
+	(*ExpectedPowerShelf)(nil),                          // 27: forge.ExpectedPowerShelf
+	(*LinkedExpectedPowerShelf)(nil),                    // 28: forge.LinkedExpectedPowerShelf
+	(*ExpectedSwitch)(nil),                              // 29: forge.ExpectedSwitch
+	(*LinkedExpectedSwitch)(nil),                        // 30: forge.LinkedExpectedSwitch
+	(*IBPartition)(nil),                                 // 31: forge.IBPartition
+	(*Instance)(nil),                                    // 32: forge.Instance
+	(*NetworkSecurityGroupPropagationObjectStatus)(nil), // 33: forge.NetworkSecurityGroupPropagationObjectStatus
+	(*InstanceType)(nil),                                // 34: forge.InstanceType
+	(*Machine)(nil),                                     // 35: forge.Machine
 	(*DiscoveryInfo)(nil),                               // 36: machine_discovery.DiscoveryInfo
-	(*NetworkSecurityGroup)(nil),                        // 37: nico.NetworkSecurityGroup
-	(*NVLinkLogicalPartition)(nil),                      // 38: nico.NVLinkLogicalPartition
-	(*OsImage)(nil),                                     // 39: nico.OsImage
-	(*Sku)(nil),                                         // 40: nico.Sku
-	(*TenantKeyset)(nil),                                // 41: nico.TenantKeyset
-	(*NetworkSegment)(nil),                              // 42: nico.NetworkSegment
-	(*Tenant)(nil),                                      // 43: nico.Tenant
-	(*Vpc)(nil),                                         // 44: nico.Vpc
-	(*VpcPeering)(nil),                                  // 45: nico.VpcPeering
-	(*VpcPrefix)(nil),                                   // 46: nico.VpcPrefix
+	(*NetworkSecurityGroup)(nil),                        // 37: forge.NetworkSecurityGroup
+	(*NVLinkLogicalPartition)(nil),                      // 38: forge.NVLinkLogicalPartition
+	(*OsImage)(nil),                                     // 39: forge.OsImage
+	(*Sku)(nil),                                         // 40: forge.Sku
+	(*TenantKeyset)(nil),                                // 41: forge.TenantKeyset
+	(*NetworkSegment)(nil),                              // 42: forge.NetworkSegment
+	(*Tenant)(nil),                                      // 43: forge.Tenant
+	(*Vpc)(nil),                                         // 44: forge.Vpc
+	(*VpcPeering)(nil),                                  // 45: forge.VpcPeering
+	(*VpcPrefix)(nil),                                   // 46: forge.VpcPrefix
 }
 var file_inventory_proto_depIdxs = []int32{
 	0,  // 0: workflows.v1.DpuExtensionServiceInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 1: workflows.v1.DpuExtensionServiceInventory.timestamp:type_name -> google.protobuf.Timestamp
-	23, // 2: workflows.v1.DpuExtensionServiceInventory.dpu_extension_services:type_name -> nico.DpuExtensionService
+	23, // 2: workflows.v1.DpuExtensionServiceInventory.dpu_extension_services:type_name -> forge.DpuExtensionService
 	1,  // 3: workflows.v1.DpuExtensionServiceInventory.inventory_page:type_name -> workflows.v1.InventoryPage
 	0,  // 4: workflows.v1.ExpectedMachineInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 5: workflows.v1.ExpectedMachineInventory.timestamp:type_name -> google.protobuf.Timestamp
-	24, // 6: workflows.v1.ExpectedMachineInventory.expected_machines:type_name -> nico.ExpectedMachine
+	24, // 6: workflows.v1.ExpectedMachineInventory.expected_machines:type_name -> forge.ExpectedMachine
 	1,  // 7: workflows.v1.ExpectedMachineInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	25, // 8: workflows.v1.ExpectedMachineInventory.linked_machines:type_name -> nico.LinkedExpectedMachine
+	25, // 8: workflows.v1.ExpectedMachineInventory.linked_machines:type_name -> forge.LinkedExpectedMachine
 	0,  // 9: workflows.v1.ExpectedRackInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 10: workflows.v1.ExpectedRackInventory.timestamp:type_name -> google.protobuf.Timestamp
-	26, // 11: workflows.v1.ExpectedRackInventory.expected_racks:type_name -> nico.ExpectedRack
+	26, // 11: workflows.v1.ExpectedRackInventory.expected_racks:type_name -> forge.ExpectedRack
 	1,  // 12: workflows.v1.ExpectedRackInventory.inventory_page:type_name -> workflows.v1.InventoryPage
 	0,  // 13: workflows.v1.ExpectedPowerShelfInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 14: workflows.v1.ExpectedPowerShelfInventory.timestamp:type_name -> google.protobuf.Timestamp
-	27, // 15: workflows.v1.ExpectedPowerShelfInventory.expected_power_shelves:type_name -> nico.ExpectedPowerShelf
+	27, // 15: workflows.v1.ExpectedPowerShelfInventory.expected_power_shelves:type_name -> forge.ExpectedPowerShelf
 	1,  // 16: workflows.v1.ExpectedPowerShelfInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	28, // 17: workflows.v1.ExpectedPowerShelfInventory.linked_power_shelves:type_name -> nico.LinkedExpectedPowerShelf
+	28, // 17: workflows.v1.ExpectedPowerShelfInventory.linked_power_shelves:type_name -> forge.LinkedExpectedPowerShelf
 	0,  // 18: workflows.v1.ExpectedSwitchInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 19: workflows.v1.ExpectedSwitchInventory.timestamp:type_name -> google.protobuf.Timestamp
-	29, // 20: workflows.v1.ExpectedSwitchInventory.expected_switches:type_name -> nico.ExpectedSwitch
+	29, // 20: workflows.v1.ExpectedSwitchInventory.expected_switches:type_name -> forge.ExpectedSwitch
 	1,  // 21: workflows.v1.ExpectedSwitchInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	30, // 22: workflows.v1.ExpectedSwitchInventory.linked_switches:type_name -> nico.LinkedExpectedSwitch
+	30, // 22: workflows.v1.ExpectedSwitchInventory.linked_switches:type_name -> forge.LinkedExpectedSwitch
 	0,  // 23: workflows.v1.InfiniBandPartitionInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 24: workflows.v1.InfiniBandPartitionInventory.timestamp:type_name -> google.protobuf.Timestamp
-	31, // 25: workflows.v1.InfiniBandPartitionInventory.ib_partitions:type_name -> nico.IBPartition
+	31, // 25: workflows.v1.InfiniBandPartitionInventory.ib_partitions:type_name -> forge.IBPartition
 	1,  // 26: workflows.v1.InfiniBandPartitionInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	32, // 27: workflows.v1.InstanceInventory.instances:type_name -> nico.Instance
-	33, // 28: workflows.v1.InstanceInventory.network_security_group_propagations:type_name -> nico.NetworkSecurityGroupPropagationObjectStatus
+	32, // 27: workflows.v1.InstanceInventory.instances:type_name -> forge.Instance
+	33, // 28: workflows.v1.InstanceInventory.network_security_group_propagations:type_name -> forge.NetworkSecurityGroupPropagationObjectStatus
 	22, // 29: workflows.v1.InstanceInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 30: workflows.v1.InstanceInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 31: workflows.v1.InstanceInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	34, // 32: workflows.v1.InstanceTypeInventory.instance_types:type_name -> nico.InstanceType
+	34, // 32: workflows.v1.InstanceTypeInventory.instance_types:type_name -> forge.InstanceType
 	22, // 33: workflows.v1.InstanceTypeInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 34: workflows.v1.InstanceTypeInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 35: workflows.v1.InstanceTypeInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	35, // 36: workflows.v1.MachineInfo.machine:type_name -> nico.Machine
+	35, // 36: workflows.v1.MachineInfo.machine:type_name -> forge.Machine
 	36, // 37: workflows.v1.MachineInfo.discovery_info:type_name -> machine_discovery.DiscoveryInfo
 	10, // 38: workflows.v1.MachineInventory.machines:type_name -> workflows.v1.MachineInfo
 	22, // 39: workflows.v1.MachineInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 40: workflows.v1.MachineInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 41: workflows.v1.MachineInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	37, // 42: workflows.v1.NetworkSecurityGroupInventory.network_security_groups:type_name -> nico.NetworkSecurityGroup
+	37, // 42: workflows.v1.NetworkSecurityGroupInventory.network_security_groups:type_name -> forge.NetworkSecurityGroup
 	22, // 43: workflows.v1.NetworkSecurityGroupInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 44: workflows.v1.NetworkSecurityGroupInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 45: workflows.v1.NetworkSecurityGroupInventory.inventory_page:type_name -> workflows.v1.InventoryPage
 	0,  // 46: workflows.v1.NVLinkLogicalPartitionInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 47: workflows.v1.NVLinkLogicalPartitionInventory.timestamp:type_name -> google.protobuf.Timestamp
-	38, // 48: workflows.v1.NVLinkLogicalPartitionInventory.partitions:type_name -> nico.NVLinkLogicalPartition
+	38, // 48: workflows.v1.NVLinkLogicalPartitionInventory.partitions:type_name -> forge.NVLinkLogicalPartition
 	1,  // 49: workflows.v1.NVLinkLogicalPartitionInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	39, // 50: workflows.v1.OsImageInventory.os_images:type_name -> nico.OsImage
+	39, // 50: workflows.v1.OsImageInventory.os_images:type_name -> forge.OsImage
 	22, // 51: workflows.v1.OsImageInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 52: workflows.v1.OsImageInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 53: workflows.v1.OsImageInventory.inventory_page:type_name -> workflows.v1.InventoryPage
 	0,  // 54: workflows.v1.SkuInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	22, // 55: workflows.v1.SkuInventory.timestamp:type_name -> google.protobuf.Timestamp
-	40, // 56: workflows.v1.SkuInventory.skus:type_name -> nico.Sku
+	40, // 56: workflows.v1.SkuInventory.skus:type_name -> forge.Sku
 	1,  // 57: workflows.v1.SkuInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	41, // 58: workflows.v1.SSHKeyGroupInventory.tenant_keysets:type_name -> nico.TenantKeyset
+	41, // 58: workflows.v1.SSHKeyGroupInventory.tenant_keysets:type_name -> forge.TenantKeyset
 	22, // 59: workflows.v1.SSHKeyGroupInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 60: workflows.v1.SSHKeyGroupInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 61: workflows.v1.SSHKeyGroupInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	42, // 62: workflows.v1.SubnetInventory.segments:type_name -> nico.NetworkSegment
+	42, // 62: workflows.v1.SubnetInventory.segments:type_name -> forge.NetworkSegment
 	22, // 63: workflows.v1.SubnetInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 64: workflows.v1.SubnetInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 65: workflows.v1.SubnetInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	43, // 66: workflows.v1.TenantInventory.tenants:type_name -> nico.Tenant
+	43, // 66: workflows.v1.TenantInventory.tenants:type_name -> forge.Tenant
 	22, // 67: workflows.v1.TenantInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 68: workflows.v1.TenantInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 69: workflows.v1.TenantInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	44, // 70: workflows.v1.VPCInventory.vpcs:type_name -> nico.Vpc
-	33, // 71: workflows.v1.VPCInventory.network_security_group_propagations:type_name -> nico.NetworkSecurityGroupPropagationObjectStatus
+	44, // 70: workflows.v1.VPCInventory.vpcs:type_name -> forge.Vpc
+	33, // 71: workflows.v1.VPCInventory.network_security_group_propagations:type_name -> forge.NetworkSecurityGroupPropagationObjectStatus
 	22, // 72: workflows.v1.VPCInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 73: workflows.v1.VPCInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 74: workflows.v1.VPCInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	45, // 75: workflows.v1.VPCPeeringInventory.vpc_peerings:type_name -> nico.VpcPeering
+	45, // 75: workflows.v1.VPCPeeringInventory.vpc_peerings:type_name -> forge.VpcPeering
 	22, // 76: workflows.v1.VPCPeeringInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 77: workflows.v1.VPCPeeringInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 78: workflows.v1.VPCPeeringInventory.inventory_page:type_name -> workflows.v1.InventoryPage
-	46, // 79: workflows.v1.VpcPrefixInventory.vpc_prefixes:type_name -> nico.VpcPrefix
+	46, // 79: workflows.v1.VpcPrefixInventory.vpc_prefixes:type_name -> forge.VpcPrefix
 	22, // 80: workflows.v1.VpcPrefixInventory.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 81: workflows.v1.VpcPrefixInventory.inventory_status:type_name -> workflows.v1.InventoryStatus
 	1,  // 82: workflows.v1.VpcPrefixInventory.inventory_page:type_name -> workflows.v1.InventoryPage

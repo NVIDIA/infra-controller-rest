@@ -51,7 +51,7 @@ var (
 
 // NICoServerImpl implements interface NICoServer
 type NICoServerImpl struct {
-	cwssaws.UnimplementedNICoServer
+	cwssaws.UnimplementedForgeServer
 	v   map[string]*cwssaws.Vpc
 	ns  map[string]*cwssaws.NetworkSegment
 	ins map[string]*cwssaws.Instance
@@ -1312,7 +1312,7 @@ func NICoTest(secs int) {
 	}
 	nicoServer.LoadTestMachines()
 
-	cwssaws.RegisterNICoServer(s, nicoServer)
+	cwssaws.RegisterForgeServer(s, nicoServer)
 
 	if secs != 0 {
 		timer := time.AfterFunc(time.Second*time.Duration(secs), func() {

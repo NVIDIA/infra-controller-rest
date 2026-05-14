@@ -258,6 +258,7 @@ core-proto-fmt:
 core-protogen:
 	echo "Generating protobuf for Core"
 	cd workflow-schema && buf generate
+	go fmt ./...
 
 flow-proto:
 	FLOW_DIR=flow \
@@ -271,6 +272,7 @@ flow-proto:
 flow-protogen:
 	echo "Generating protobuf for Flow"
 	cd workflow-schema/flow && buf generate
+	go fmt ./...
 
 # =============================================================================
 # Kind Local Deployment Targets
