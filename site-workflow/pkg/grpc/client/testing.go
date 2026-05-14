@@ -73,7 +73,7 @@ func incrementMAC(mac net.HardwareAddr) {
 
 // MockNICoClient is a mock implementation of NICo gRPC protobuf Client
 type MockNICoClient struct {
-	wflows.NICoClient
+	wflows.ForgeClient
 }
 
 /* Version mock methods */

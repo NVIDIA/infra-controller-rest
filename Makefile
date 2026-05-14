@@ -248,6 +248,7 @@ core-proto-fetch:
 		cp "$$file" "workflow-schema/site-agent/workflows/v1/$$(basename "$$file" .proto)_nico.proto"; \
 		echo "Copied: $$file"; \
 	done
+	mv workflow-schema/site-agent/workflows/v1/forge_nico.proto workflow-schema/site-agent/workflows/v1/nico_nico.proto
 	echo "Successfully copied Core protobuf files"
 	rm -rf nico-core
 
@@ -258,6 +259,7 @@ core-proto-fmt:
 core-protogen:
 	echo "Generating protobuf for Core"
 	cd workflow-schema && buf generate
+	go fmt ./...
 
 flow-proto:
 	FLOW_DIR=flow \
@@ -271,6 +273,7 @@ flow-proto:
 flow-protogen:
 	echo "Generating protobuf for Flow"
 	cd workflow-schema/flow && buf generate
+	go fmt ./...
 
 # =============================================================================
 # Kind Local Deployment Targets
