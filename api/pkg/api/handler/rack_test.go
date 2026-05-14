@@ -163,7 +163,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -171,7 +171,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	// Create provider user
@@ -223,7 +223,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 			user:   providerUser,
 			rackID: rackID,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			expectedStatus: http.StatusPreconditionFailed,
 			wantErr:        true,
@@ -345,7 +345,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -353,7 +353,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	// Create provider user
@@ -512,7 +512,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 			reqOrg: org,
 			user:   providerUser,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			mockResponse:   nil,
 			expectedStatus: http.StatusPreconditionFailed,
@@ -644,7 +644,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -652,7 +652,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	// Create provider user
@@ -727,7 +727,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 			user:   providerUser,
 			rackID: rackID,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			mockResponse:   nil,
 			expectedStatus: http.StatusPreconditionFailed,
@@ -849,7 +849,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -857,7 +857,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	providerUser := testRackBuildUser(t, dbSession, "provider-user-validate-racks", org, []string{authz.ProviderAdminRole})
@@ -962,7 +962,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 			reqOrg: org,
 			user:   providerUser,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			expectedStatus: http.StatusPreconditionFailed,
 		},

@@ -123,7 +123,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	// Flow config
 	flag.StringVar(&conf.Flow.Address, "flowAddress", os.Getenv("FLOW_ADDRESS"), "Flow Address")
 	if conf.Flow.Address == "" {
-		conf.Flow.Address = "rla.rla.svc.cluster.local:50051"
+		conf.Flow.Address = "flow.flow.svc.cluster.local:50051"
 	}
 	flowSecOpt, err := strconv.Atoi(os.Getenv("FLOW_SEC_OPT"))
 	if err != nil {
