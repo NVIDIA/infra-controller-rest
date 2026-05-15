@@ -53,8 +53,6 @@ import (
 
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/NVIDIA/infra-controller-rest/workflow/pkg/queue"
-
-	cip "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
