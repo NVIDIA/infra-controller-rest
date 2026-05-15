@@ -112,6 +112,18 @@ func AllCommands() []Command {
 
 		{Name: "rack list", Description: "List racks", Run: cmdRackList},
 		{Name: "rack get", Description: "Get rack details", Run: cmdRackGet},
+		{Name: "rack bringup", Description: "Bring up a rack", Run: cmdRackBringup},
+		{Name: "rack power", Description: "Power control a rack", Run: cmdRackPower},
+		{Name: "rack firmware", Description: "Firmware update a rack", Run: cmdRackFirmware},
+		{Name: "rack validate", Description: "Validate a rack against expected inventory", Run: cmdRackValidate},
+		{Name: "rack task get", Description: "Get rack/tray task status", Run: cmdRackTaskGet},
+		{Name: "rack task cancel", Description: "Cancel a rack/tray task", Run: cmdRackTaskCancel},
+
+		{Name: "tray list", Description: "List trays", Run: cmdTrayList},
+		{Name: "tray get", Description: "Get tray details", Run: cmdTrayGet},
+		{Name: "tray power", Description: "Power control a tray", Run: cmdTrayPower},
+		{Name: "tray firmware", Description: "Firmware update a tray", Run: cmdTrayFirmware},
+		{Name: "tray validate", Description: "Validate a tray against expected inventory", Run: cmdTrayValidate},
 
 		{Name: "vpc-prefix list", Description: "List VPC prefixes", Run: cmdVPCPrefixList},
 		{Name: "vpc-prefix get", Description: "Get VPC prefix details", Run: cmdVPCPrefixGet},
@@ -176,7 +188,7 @@ func appendScopeFlags(s *Session, parts []string) []string {
 	scopeVpcID := strings.TrimSpace(s.Scope.VpcID)
 	switch resource {
 	case "vpc", "allocation", "ip-block", "operating-system", "ssh-key-group",
-		"network-security-group", "sku", "rack", "expected-machine", "instance-type",
+		"network-security-group", "sku", "rack", "tray", "expected-machine", "instance-type",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition":
 		if scopeSiteID != "" {
 			out = append(out, "--site-id", scopeSiteID)
@@ -235,6 +247,24 @@ func setSiteScopeFromID(s *Session, siteID string) {
 	s.Scope.VpcID = ""
 	s.Scope.VpcName = ""
 	s.Cache.InvalidateFiltered()
+}
+
+// requireSiteScope returns the current site scope ID. If unset, prompts the
+// user to pick a site and persists that as the active scope, mirroring how
+// fetchMachinesWithSiteFallback handles missing site context. Used by the
+// rack and tray lifecycle commands, where every endpoint requires a siteId
+// query/body parameter.
+func requireSiteScope(s *Session, missingSitePrompt string) (string, error) {
+	if id := strings.TrimSpace(s.Scope.SiteID); id != "" {
+		return id, nil
+	}
+	fmt.Printf("%s %s\n", Dim("Note:"), missingSitePrompt)
+	site, err := s.Resolver.Resolve(context.Background(), "site", "Site")
+	if err != nil {
+		return "", err
+	}
+	setSiteScopeFromID(s, site.ID)
+	return site.ID, nil
 }
 
 func readyMachineItemsForSite(machines []NamedItem, siteID string) []SelectItem {
@@ -2011,6 +2041,29 @@ func cmdRackList(s *Session, _ []string) error {
 	return tw.Flush()
 }
 
+func cmdTrayList(s *Session, _ []string) error {
+	siteID, err := requireSiteScope(s, "Tray listing requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	_ = siteID
+	LogCmd(s, "tray", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "tray")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tTYPE\tPOWER\tFW\tMANUFACTURER\tMODEL\tRACK\tID")
+	for _, item := range items {
+		rackName := s.Resolver.ResolveID("rack", item.Extra["rackId"])
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["type"], item.Status, item.Extra["firmwareVersion"],
+			item.Extra["manufacturer"], item.Extra["model"], rackName, item.ID)
+	}
+	return tw.Flush()
+}
+
 func cmdVPCPrefixList(s *Session, _ []string) error {
 	LogCmd(s, "vpc-prefix", "list")
 	items, err := s.Resolver.Fetch(context.Background(), "vpc-prefix")
@@ -2807,6 +2860,313 @@ func cmdRackGet(s *Session, args []string) error {
 	}
 	LogCmd(s, "rack", "get", item.ID)
 	return getAndPrint(s, apiPath(s, "rack/{id}"), item.ID)
+}
+
+func cmdTrayGet(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray get requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tray", "get", item.ID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "tray/{id}"),
+		map[string]string{"id": item.ID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return err
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+// powerStateChoices is the canonical list accepted by every power-control
+// endpoint (see UpdatePowerStateRequest in OpenAPI). Kept in one place so
+// rack and tray commands cannot drift from each other.
+var powerStateChoices = []string{"on", "off", "cycle", "forceoff", "forcecycle"}
+
+// printTaskIDs renders the standard taskIds-bearing response from a
+// lifecycle action. Action endpoints return one task ID per affected
+// component, which operators feed into rack task get to track progress.
+// The full JSON response is also printed so operators can see any extra
+// fields the server may add.
+func printTaskIDs(body []byte, action string) error {
+	var resp struct {
+		TaskIDs []string `json:"taskIds"`
+	}
+	if err := json.Unmarshal(body, &resp); err == nil && len(resp.TaskIDs) > 0 {
+		fmt.Printf("%s %s started; %d task(s):\n", Green("OK"), action, len(resp.TaskIDs))
+		for _, id := range resp.TaskIDs {
+			fmt.Printf("  %s\n", id)
+		}
+		fmt.Println()
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdRackBringup(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack bringup requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to bring up", args)
+	if err != nil {
+		return err
+	}
+	desc, err := PromptText("Description (optional)", false)
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Bring up rack %s (%s)?", item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	body := map[string]interface{}{"siteId": siteID}
+	if d := strings.TrimSpace(desc); d != "" {
+		body["description"] = d
+	}
+	LogCmd(s, "rack", "bringup", item.ID, "--site-id", siteID)
+	bodyJSON, _ := json.Marshal(body)
+	resp, _, err := s.Client.Do("POST", apiPath(s, "rack/{id}/bringup"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("bringing up rack: %w", err)
+	}
+	return printTaskIDs(resp, "Rack bringup")
+}
+
+func cmdRackPower(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack power control requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to power-control", args)
+	if err != nil {
+		return err
+	}
+	state, err := PromptChoice("Power state", powerStateChoices, "")
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Apply power state %q to rack %s (%s)?", state, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	bodyJSON, _ := json.Marshal(map[string]interface{}{"siteId": siteID, "state": state})
+	LogCmd(s, "rack", "power", item.ID, "--state", state, "--site-id", siteID)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "rack/{id}/power"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("powering rack: %w", err)
+	}
+	return printTaskIDs(resp, "Rack power")
+}
+
+func cmdRackFirmware(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack firmware update requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to update firmware on", args)
+	if err != nil {
+		return err
+	}
+	version, err := PromptText("Target firmware version (blank for default/latest)", false)
+	if err != nil {
+		return err
+	}
+	versionDisplay := strings.TrimSpace(version)
+	if versionDisplay == "" {
+		versionDisplay = "<default>"
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Update firmware to %s on rack %s (%s)?", versionDisplay, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	body := map[string]interface{}{"siteId": siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		body["version"] = v
+	}
+	bodyJSON, _ := json.Marshal(body)
+	logArgs := []string{"rack", "firmware", item.ID, "--site-id", siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		logArgs = append(logArgs, "--version", v)
+	}
+	LogCmd(s, logArgs...)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "rack/{id}/firmware"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("updating rack firmware: %w", err)
+	}
+	return printTaskIDs(resp, "Rack firmware update")
+}
+
+func cmdRackValidate(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack validation requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to validate", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "rack", "validate", item.ID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "rack/{id}/validation"),
+		map[string]string{"id": item.ID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return fmt.Errorf("validating rack: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdTrayPower(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray power control requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray to power-control", args)
+	if err != nil {
+		return err
+	}
+	state, err := PromptChoice("Power state", powerStateChoices, "")
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Apply power state %q to tray %s (%s)?", state, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	bodyJSON, _ := json.Marshal(map[string]interface{}{"siteId": siteID, "state": state})
+	LogCmd(s, "tray", "power", item.ID, "--state", state, "--site-id", siteID)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "tray/{id}/power"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("powering tray: %w", err)
+	}
+	return printTaskIDs(resp, "Tray power")
+}
+
+func cmdTrayFirmware(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray firmware update requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray to update firmware on", args)
+	if err != nil {
+		return err
+	}
+	version, err := PromptText("Target firmware version (blank for default/latest)", false)
+	if err != nil {
+		return err
+	}
+	versionDisplay := strings.TrimSpace(version)
+	if versionDisplay == "" {
+		versionDisplay = "<default>"
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Update firmware to %s on tray %s (%s)?", versionDisplay, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	body := map[string]interface{}{"siteId": siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		body["version"] = v
+	}
+	bodyJSON, _ := json.Marshal(body)
+	logArgs := []string{"tray", "firmware", item.ID, "--site-id", siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		logArgs = append(logArgs, "--version", v)
+	}
+	LogCmd(s, logArgs...)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "tray/{id}/firmware"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("updating tray firmware: %w", err)
+	}
+	return printTaskIDs(resp, "Tray firmware update")
+}
+
+func cmdTrayValidate(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray validation requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray to validate", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tray", "validate", item.ID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "tray/{id}/validation"),
+		map[string]string{"id": item.ID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return fmt.Errorf("validating tray: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdRackTaskGet(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Task get requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	taskID, err := taskIDFromArgsOrPrompt(args, "Task ID")
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "rack", "task", "get", taskID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "rack/task/{id}"),
+		map[string]string{"id": taskID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return fmt.Errorf("getting task: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdRackTaskCancel(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Task cancel requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	taskID, err := taskIDFromArgsOrPrompt(args, "Task ID to cancel")
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Cancel task %s?", taskID))
+	if err != nil || !ok {
+		return err
+	}
+	bodyJSON, _ := json.Marshal(map[string]interface{}{"siteId": siteID})
+	LogCmd(s, "rack", "task", "cancel", taskID, "--site-id", siteID)
+	resp, _, err := s.Client.Do("POST", apiPath(s, "rack/task/{id}/cancel"),
+		map[string]string{"id": taskID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("cancelling task: %w", err)
+	}
+	fmt.Printf("%s Cancellation requested for task %s\n", Green("OK"), taskID)
+	return printDetailJSON(os.Stdout, resp)
+}
+
+// taskIDFromArgsOrPrompt accepts a task ID from a positional argument when
+// supplied (e.g. `rack task get <task-id>`) or interactively prompts the
+// operator when not. Tasks are not pre-listed by the TUI -- IDs come from the
+// taskIds output of preceding lifecycle actions, so resolver-style picking
+// does not apply.
+func taskIDFromArgsOrPrompt(args []string, label string) (string, error) {
+	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
+		return strings.TrimSpace(args[0]), nil
+	}
+	id, err := PromptText(label, true)
+	if err != nil {
+		return "", err
+	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return "", fmt.Errorf("task ID is required")
+	}
+	return id, nil
 }
 
 func cmdVPCPrefixGet(s *Session, args []string) error {

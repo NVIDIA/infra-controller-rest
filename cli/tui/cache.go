@@ -71,7 +71,7 @@ func (c *Cache) InvalidateFiltered() {
 	for _, rt := range []string{"vpc", "subnet", "instance", "instance-type",
 		"allocation", "machine", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"vpc-prefix", "rack", "expected-machine", "sku",
+		"vpc-prefix", "rack", "tray", "expected-machine", "sku",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition"} {
 		delete(c.items, rt)
 		delete(c.fetched, rt)

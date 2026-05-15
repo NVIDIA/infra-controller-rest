@@ -146,7 +146,7 @@ func TestLogCmd_NoScope(t *testing.T) {
 func TestAppendScopeFlags_SiteOnly(t *testing.T) {
 	siteOnlyResources := []string{
 		"vpc", "allocation", "ip-block", "operating-system", "ssh-key-group",
-		"network-security-group", "sku", "rack", "expected-machine",
+		"network-security-group", "sku", "rack", "tray", "expected-machine",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -227,7 +227,7 @@ func TestAppendScopeFlags_CoversAllRegisteredFetchers(t *testing.T) {
 		"vpc", "subnet", "instance", "machine",
 		"allocation", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"sku", "rack", "expected-machine", "vpc-prefix",
+		"sku", "rack", "tray", "expected-machine", "vpc-prefix",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -246,7 +246,7 @@ func TestInvalidateFiltered_MatchesScopeFilteredFetchers(t *testing.T) {
 		"vpc", "subnet", "instance",
 		"allocation", "machine", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"vpc-prefix", "rack", "expected-machine", "sku",
+		"vpc-prefix", "rack", "tray", "expected-machine", "sku",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -283,7 +283,7 @@ func TestAppendScopeFlags_ScopeFlagCategories_Consistent(t *testing.T) {
 		"vpc", "subnet", "instance", "machine",
 		"allocation", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"sku", "rack", "expected-machine", "vpc-prefix",
+		"sku", "rack", "tray", "expected-machine", "vpc-prefix",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -316,7 +316,7 @@ func TestInvalidateFiltered_ListMatchesAppendScopeFlags(t *testing.T) {
 		"vpc", "subnet", "instance",
 		"allocation", "machine", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"vpc-prefix", "rack", "expected-machine", "sku",
+		"vpc-prefix", "rack", "tray", "expected-machine", "sku",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 		"site", "audit", "ssh-key", "tenant-account",
 	}
@@ -956,6 +956,84 @@ func withStdin(t *testing.T, input string, f func() (string, error)) (string, er
 	_ = sw.Close()
 	_, _ = io.Copy(io.Discard, sr)
 	return result, rerr
+}
+
+// --- Lifecycle and task command tests ---
+
+func TestTaskIDFromArgsOrPrompt_ArgWins(t *testing.T) {
+	got, err := taskIDFromArgsOrPrompt([]string{"  abc-123  "}, "Task ID")
+	require.NoError(t, err)
+	assert.Equal(t, "abc-123", got)
+}
+
+func TestTaskIDFromArgsOrPrompt_PromptsWhenNoArg(t *testing.T) {
+	got, err := withStdin(t, "task-from-prompt\n", func() (string, error) {
+		return taskIDFromArgsOrPrompt(nil, "Task ID")
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "task-from-prompt", got)
+}
+
+func TestTaskIDFromArgsOrPrompt_RejectsEmptyArg(t *testing.T) {
+	got, err := withStdin(t, "\n", func() (string, error) {
+		return taskIDFromArgsOrPrompt([]string{"   "}, "Task ID")
+	})
+	require.Error(t, err)
+	assert.Empty(t, got)
+}
+
+func TestPrintTaskIDs_PrintsFromTaskIDsResponse(t *testing.T) {
+	body := []byte(`{"taskIds":["t1","t2","t3"],"siteId":"s-1"}`)
+	out := captureStdout(func() {
+		_ = printTaskIDs(body, "Rack power")
+	})
+	assert.Contains(t, out, "Rack power started; 3 task(s):")
+	assert.Contains(t, out, "t1")
+	assert.Contains(t, out, "t2")
+	assert.Contains(t, out, "t3")
+	assert.Contains(t, out, `"taskIds"`)
+}
+
+func TestPrintTaskIDs_HandlesEmptyTaskIDs(t *testing.T) {
+	body := []byte(`{"taskIds":[]}`)
+	out := captureStdout(func() {
+		_ = printTaskIDs(body, "Rack bringup")
+	})
+	assert.NotContains(t, out, "started")
+	assert.Contains(t, out, `"taskIds"`)
+}
+
+func TestPowerStateChoices_MatchOpenAPI(t *testing.T) {
+	expected := []string{"on", "off", "cycle", "forceoff", "forcecycle"}
+	assert.Equal(t, expected, powerStateChoices,
+		"powerStateChoices must match UpdatePowerStateRequest.state enum from openapi/spec.yaml")
+}
+
+func TestAllCommands_HasLifecycleAndTaskCommands(t *testing.T) {
+	commands := AllCommands()
+	names := make(map[string]bool, len(commands))
+	for _, cmd := range commands {
+		names[cmd.Name] = true
+	}
+	want := []string{
+		"tray list", "tray get",
+		"tray power", "tray firmware", "tray validate",
+		"rack bringup", "rack power", "rack firmware", "rack validate",
+		"rack task get", "rack task cancel",
+	}
+	for _, n := range want {
+		assert.True(t, names[n], "expected command %q to be registered", n)
+	}
+}
+
+func TestRequireSiteScope_ReturnsExistingScope(t *testing.T) {
+	s := &Session{
+		Scope: Scope{SiteID: "site-existing", SiteName: "existing"},
+		Cache: NewCache(),
+	}
+	got, err := requireSiteScope(s, "should not prompt")
+	require.NoError(t, err)
+	assert.Equal(t, "site-existing", got)
 }
 
 // --- Helpers ---

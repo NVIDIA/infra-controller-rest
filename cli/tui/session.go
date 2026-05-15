@@ -113,6 +113,7 @@ func (s *Session) registerFetchers() {
 	s.Resolver.RegisterFetcher("nvlink-logical-partition", s.fetchNVLinkLogicalPartitions)
 	s.Resolver.RegisterFetcher("instance-type", s.fetchInstanceTypes)
 	s.Resolver.RegisterFetcher("dpu-extension-service", s.fetchDPUExtensionServices)
+	s.Resolver.RegisterFetcher("tray", s.fetchTrays)
 }
 
 // fetchAll fetches all pages from a list endpoint and returns raw JSON objects.
@@ -754,6 +755,41 @@ func (s *Session) fetchInstanceTypes(ctx context.Context) ([]NamedItem, error) {
 			Name: str(m, "name"), ID: str(m, "id"), Status: str(m, "status"),
 			Labels: extractLabels(m),
 			Extra:  map[string]string{"siteId": str(m, "siteId")}, Raw: m,
+		}
+	}
+	return result, nil
+}
+
+func (s *Session) fetchTrays(_ context.Context) ([]NamedItem, error) {
+	q := map[string]string{}
+	if s.Scope.SiteID != "" {
+		q["siteId"] = s.Scope.SiteID
+	}
+	items, err := s.fetchAll(apiPath(s, "tray"), q)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]NamedItem, len(items))
+	for i, m := range items {
+		name := strings.TrimSpace(str(m, "name"))
+		if name == "" {
+			name = strings.TrimSpace(str(m, "serialNumber"))
+		}
+		if name == "" {
+			name = str(m, "id")
+		}
+		result[i] = NamedItem{
+			Name: name, ID: str(m, "id"), Status: str(m, "powerState"),
+			Extra: map[string]string{
+				"componentId":     str(m, "componentId"),
+				"type":            str(m, "type"),
+				"manufacturer":    str(m, "manufacturer"),
+				"model":           str(m, "model"),
+				"serialNumber":    str(m, "serialNumber"),
+				"firmwareVersion": str(m, "firmwareVersion"),
+				"rackId":          str(m, "rackId"),
+			},
+			Raw: m,
 		}
 	}
 	return result, nil
