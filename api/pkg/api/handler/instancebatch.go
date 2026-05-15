@@ -894,7 +894,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	// Validate InfiniBand interfaces (shared across all instances)
 	if len(apiRequest.InfiniBandInterfaces) > 0 {
 		// Get InfiniBand capabilities
-		itIbCaps, itIbCapCount, derr := mcDAO.GetAll(ctx, nil, nil, []uuid.UUID{apiInstanceTypeID}, cdb.GetStrPtr(cdbm.MachineCapabilityTypeInfiniBand), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		itIbCaps, itIbCapCount, derr := mcDAO.GetAll(ctx, nil, nil, []uuid.UUID{apiInstanceTypeID}, cdb.GetTypedStrPtr(cdbm.MachineCapabilityTypeInfiniBand), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		if derr != nil {
 			logger.Error().Err(derr).Msg("error retrieving InfiniBand Machine Capabilities from DB for Instance Type")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve InfiniBand Capabilities for Instance Type, DB error", nil)
@@ -978,8 +978,8 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	if isDeviceInfoPresent {
 		// Get DPU capabilities for validation
 		itDpuCaps, itDpuCapCount, derr := mcDAO.GetAll(ctx, nil, nil, []uuid.UUID{apiInstanceTypeID},
-			cdb.GetStrPtr(cdbm.MachineCapabilityTypeNetwork), nil, nil, nil, nil, nil,
-			cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeDPU), nil, nil, nil, nil, nil)
+			cdb.GetTypedStrPtr(cdbm.MachineCapabilityTypeNetwork), nil, nil, nil, nil, nil,
+			cdb.GetTypedStrPtr(cdbm.MachineCapabilityDeviceTypeDPU), nil, nil, nil, nil, nil)
 		if derr != nil {
 			logger.Error().Err(derr).Msg("error retrieving DPU Machine Capabilities")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError,
@@ -1004,7 +1004,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 
 	// Validate NVLink interfaces (shared across all instances)
 	// Get GPU (NVLink) capabilities
-	itNvlCaps, itNvlCapCount, err := mcDAO.GetAll(ctx, nil, nil, []uuid.UUID{apiInstanceTypeID}, cdb.GetStrPtr(cdbm.MachineCapabilityTypeGPU), nil, nil, nil, nil, nil, cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeNVLink), nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+	itNvlCaps, itNvlCapCount, err := mcDAO.GetAll(ctx, nil, nil, []uuid.UUID{apiInstanceTypeID}, cdb.GetTypedStrPtr(cdbm.MachineCapabilityTypeGPU), nil, nil, nil, nil, nil, cdb.GetTypedStrPtr(cdbm.MachineCapabilityDeviceTypeNVLink), nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving GPU (NVLink) Machine Capabilities from DB for Instance Type")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve GPU Capabilities for Instance Type, DB error", nil)

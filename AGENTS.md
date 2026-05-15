@@ -333,6 +333,19 @@ on the underlying primitive until they need it.
   Entity callers reach it via `entity.Labels.FromProto(proto.Metadata.GetLabels())`
   — the proto getter is nil-safe and returns `nil` for missing
   metadata, which the method translates into a `nil` receiver.
+- `db/pkg/db/model.MachineCapabilityType` and `MachineCapabilityDeviceType`
+  (`type X string` with `(X).ToProto() cwssaws.X` and
+  `(*X).FromProto(cwssaws.X)`) are the reference for **typed-string
+  domain enums** that round-trip with proto enum values. The DB column
+  stays a plain string under the named type, but the conversion to /
+  from the proto enum lives as methods on the type — not as a free
+  helper. `(*MachineCapability).ToProto` collapses to
+  `mc.Type.ToProto()` / `mc.DeviceType.ToProto()`, and `FromProto`
+  collapses to `mc.Type.FromProto(...)`. Unknown values silently leave
+  the receiver as the empty string (a warning is logged) so the
+  entity-level `Validate` can be the gate that rejects them; an
+  optional `*X` field with the proto's zero-value enum on the wire
+  drops to `nil` rather than encoding an "unknown" pointer.
 - `APIMachineCapabilities` (`type APIMachineCapabilities
   []APIMachineCapability` with `(APIMachineCapabilities).Validate()`)
   is the reference for slice-shaped values that own list-level rules.

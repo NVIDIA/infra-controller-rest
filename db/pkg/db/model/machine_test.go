@@ -892,7 +892,7 @@ func TestMachineSQLDAO_GetAll(t *testing.T) {
 		{
 			desc: "GetAll with infiniband capabilitytype filters returns objects",
 			filter: MachineFilterInput{
-				CapabilityType: db.GetStrPtr(MachineCapabilityTypeInfiniBand),
+				CapabilityType: db.GetTypedStrPtr(MachineCapabilityTypeInfiniBand),
 			},
 			pageInput: paginator.PageInput{
 				OrderBy: &paginator.OrderBy{
@@ -907,7 +907,7 @@ func TestMachineSQLDAO_GetAll(t *testing.T) {
 		{
 			desc: "GetAll with cpu capabilitytype filters returns objects",
 			filter: MachineFilterInput{
-				CapabilityType: db.GetStrPtr(MachineCapabilityTypeCPU),
+				CapabilityType: db.GetTypedStrPtr(MachineCapabilityTypeCPU),
 			},
 			expectedCount: 1,
 			firstEntry:    &ms1[1],
@@ -1811,7 +1811,7 @@ func TestMachineSQLDAO_GetCount(t *testing.T) {
 		{
 			desc: "filter with CapabilityType",
 			filter: MachineFilterInput{
-				CapabilityType: db.GetStrPtr(MachineCapabilityTypeInfiniBand),
+				CapabilityType: db.GetTypedStrPtr(MachineCapabilityTypeInfiniBand),
 			},
 			expectedCount: 2,
 		},

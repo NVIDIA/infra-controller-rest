@@ -132,7 +132,7 @@ func testMachineBuildMachine(t *testing.T, dbSession *cdb.Session, ip uuid.UUID,
 	return m
 }
 
-func testMachineBuildMachineCapability(t *testing.T, dbSession *cdb.Session, mID *string, capabilityType string, name string, capacity *string, count *int) *cdbm.MachineCapability {
+func testMachineBuildMachineCapability(t *testing.T, dbSession *cdb.Session, mID *string, capabilityType cdbm.MachineCapabilityType, name string, capacity *string, count *int) *cdbm.MachineCapability {
 	mc := &cdbm.MachineCapability{
 		ID:             uuid.New(),
 		MachineID:      mID,
@@ -1262,7 +1262,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			name:                "success when valid capability type is specified in query",
 			reqOrgName:          ipOrg1,
 			user:                ipu,
-			queryCapabilityType: cdb.GetStrPtr(cdbm.MachineCapabilityTypeCPU),
+			queryCapabilityType: cdb.GetTypedStrPtr(cdbm.MachineCapabilityTypeCPU),
 			expectedErr:         false,
 			expectedStatus:      http.StatusOK,
 			expectedCnt:         totalCount / 2,

@@ -3,33 +3,6 @@
 
 package util
 
-import (
-	"errors"
-	"math"
-)
-
-// A convenience function for converting a pointer to
-// a native Go integer to a pointer to a uint32 for
-// use with a protobuf message. Accepts a pointer to
-// an int and returns a uint32 pointer.
-//
-// If the input is nil, nil will be returned.
-// If a pointer to a value greater than
-// uint32 max is submitted, an error will be returned.
-func GetIntPtrToUint32Ptr(i *int) (*uint32, error) {
-	if i == nil {
-		return nil, nil
-	}
-
-	if *i > math.MaxUint32 {
-		return nil, errors.New("conversion to uint32 pointer would exceed uint32 max")
-	}
-
-	i32 := uint32(*i)
-
-	return &i32, nil
-}
-
 // A convenience function for converting a pointer to
 // a uint32 to a pointer to a an int.
 //

@@ -285,7 +285,7 @@ func TestAPIInstanceTypeCreateRequest_Validate(t *testing.T) {
 					{
 						Type:       cdbm.MachineCapabilityTypeNetwork,
 						Name:       "test-name",
-						DeviceType: cdb.GetStrPtr("test-device-type"),
+						DeviceType: cdb.Ptr(cdbm.MachineCapabilityDeviceType("test-device-type")),
 						Count:      cdb.GetIntPtr(1),
 					},
 				},
@@ -301,7 +301,7 @@ func TestAPIInstanceTypeCreateRequest_Validate(t *testing.T) {
 					{
 						Type:       cdbm.MachineCapabilityTypeGPU,
 						Name:       "gpu-0",
-						DeviceType: cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeDPU),
+						DeviceType: cdb.Ptr(cdbm.MachineCapabilityDeviceTypeDPU),
 					},
 				},
 			},
@@ -316,7 +316,7 @@ func TestAPIInstanceTypeCreateRequest_Validate(t *testing.T) {
 					{
 						Type:       cdbm.MachineCapabilityTypeGPU,
 						Name:       "gpu-0",
-						DeviceType: cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeNVLink),
+						DeviceType: cdb.Ptr(cdbm.MachineCapabilityDeviceTypeNVLink),
 					},
 				},
 			},
@@ -331,7 +331,7 @@ func TestAPIInstanceTypeCreateRequest_Validate(t *testing.T) {
 					{
 						Type:       cdbm.MachineCapabilityTypeCPU,
 						Name:       "cpu-0",
-						DeviceType: cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeDPU),
+						DeviceType: cdb.Ptr(cdbm.MachineCapabilityDeviceTypeDPU),
 					},
 				},
 			},

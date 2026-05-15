@@ -417,7 +417,7 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 	// Validate capability type from query param if it is provided
 	qCPtype := c.QueryParam("capabilityType")
 	if qCPtype != "" {
-		_, ok := cdbm.MachineCapabilityTypeChoiceMap[qCPtype]
+		_, ok := cdbm.MachineCapabilityTypeChoiceMap[cdbm.MachineCapabilityType(qCPtype)]
 		if !ok {
 			logger.Warn().Msg(fmt.Sprintf("invalid capabilityType value in query: %v", qCPtype))
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Invalid capabilityType value in query: %v", qCPtype), nil)
