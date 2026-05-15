@@ -686,7 +686,7 @@ func TestCreateInstanceHandler_Handle(t *testing.T) {
 	assert.NotNil(t, al1)
 
 	// InfiniBand Interface Support
-	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp1)
 
 	ist1 := testInstanceBuildInstanceType(t, dbSession, ip, "test-instance-type-1", st1, cdbm.InstanceStatusReady)
@@ -4079,7 +4079,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	assert.NotNil(t, nsgTenant2Site1)
 
 	// InfiniBand Interface Support
-	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp1)
 
 	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
@@ -4090,20 +4090,20 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	// Add InfiniBand capability to Instance Type
 	common.TestBuildMachineCapability(t, dbSession, nil, &ist1.ID, cdbm.MachineCapabilityTypeInfiniBand, "MT28908 Family [ConnectX-6]", nil, nil, cdb.GetStrPtr("Mellanox Technologies"), cdb.GetIntPtr(5), cdb.Ptr(cdbm.MachineCapabilityDeviceType("")), nil)
 
-	ibp2 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp2 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp2)
 
-	ibp3 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp3 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp3)
 
-	ibp4 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp4 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp4)
 
-	ibp6 := testBuildIBPartition(t, dbSession, "test-ibp-ibdup-4slot", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp6 := testBuildIBPartition(t, dbSession, "test-ibp-ibdup-4slot", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp6)
 
 	// Extra InfiniBand Partitions for updating instance with InfiniBand Interfaces
-	ibp5 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st2, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp5 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st2, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp5)
 
 	// Instance with four READY InfiniBand interfaces — distinct (partition ID, device, device instance) per row;
@@ -6974,7 +6974,7 @@ func TestGetInstanceHandler_Handle(t *testing.T) {
 	testUpdateInstance(t, dbSession, inst1)
 
 	// InfiniBand Interface Support
-	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp1)
 
 	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, false, cdb.GetIntPtr(1), cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
@@ -7672,7 +7672,7 @@ func TestGetAllInstanceHandler_Handle(t *testing.T) {
 	testUpdateInstance(t, dbSession, inst1)
 
 	// InfiniBand Interface Support
-	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.Ptr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp1)
 
 	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, false, cdb.GetIntPtr(1), cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
