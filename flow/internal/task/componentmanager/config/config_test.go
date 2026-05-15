@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
 
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nvswitchmanager"
@@ -198,7 +199,7 @@ providers: {}
 
 	assert.True(t, config.HasProvider(nico.ProviderName))
 
-	err = config.Validate(serviceProviderConfigDecoderRegistry(t))
+	err = config.Validate(serviceProviderConfigDecoderRegistry(t), testCatalog(t))
 	require.NoError(t, err)
 }
 
@@ -340,21 +341,48 @@ component_managers:
   compute: mock
 providers:
   custom: {}
-`), registry)
+`), registry, testCatalog(t))
 	require.NoError(t, err)
 
 	assert.True(t, config.HasProvider("custom"))
 	assert.Equal(t, customProviderConfig{name: "custom"}, config.ProviderConfigs["custom"])
 }
 
+func TestParseConfigDerivesProviderForDifferentImplementationName(t *testing.T) {
+	registry := serviceProviderConfigDecoderRegistry(t)
+	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "custom"}))
+
+	config, err := ParseConfig([]byte(`
+component_managers:
+  compute: custom-manager
+`), registry, testCatalog(t))
+	require.NoError(t, err)
+
+	assert.True(t, config.HasProvider("custom"))
+}
+
+func TestParseConfigDerivesMultipleProvidersForManager(t *testing.T) {
+	registry := serviceProviderConfigDecoderRegistry(t)
+	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "custom"}))
+
+	config, err := ParseConfig([]byte(`
+component_managers:
+  compute: multi-provider
+`), registry, testCatalog(t))
+	require.NoError(t, err)
+
+	assert.True(t, config.HasProvider("custom"))
+	assert.True(t, config.HasProvider(nico.ProviderName))
+}
+
 func TestParseConfigRequiresDecoderRegistry(t *testing.T) {
-	_, err := ParseConfig([]byte(`component_managers: {}`), nil)
+	_, err := ParseConfig([]byte(`component_managers: {}`), nil, cmcatalog.Catalog{})
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrProviderConfigDecoderRegistryRequired))
 }
 
 func TestNewConfigRequiresDecoderRegistry(t *testing.T) {
-	_, err := New(map[devicetypes.ComponentType]string{}, nil)
+	_, err := New(map[devicetypes.ComponentType]string{}, nil, cmcatalog.Catalog{})
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrProviderConfigDecoderRegistryRequired))
 }
@@ -362,36 +390,56 @@ func TestNewConfigRequiresDecoderRegistry(t *testing.T) {
 func TestValidateRequiresConfig(t *testing.T) {
 	var config *Config
 
-	err := config.Validate(serviceProviderConfigDecoderRegistry(t))
+	err := config.Validate(serviceProviderConfigDecoderRegistry(t), cmcatalog.Catalog{})
 
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, ErrConfigNotConfigured))
 }
 
-func TestRequiredProviderNamesRequiresDecoderRegistry(t *testing.T) {
-	config := Config{}
-	names, err := config.requiredProviderNames(nil)
-	require.NoError(t, err)
-	assert.Empty(t, names)
-}
-
-func TestRequiredProviderNamesReturnsSortedNames(t *testing.T) {
-	registry := providerapi.NewProviderConfigDecoderRegistry()
-	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "zeta"}))
-	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "alpha"}))
-	require.NoError(t, registry.Register(customProviderConfigDecoder{name: "middle"}))
-
+func TestValidateReportsRequiredProviderManagerIdentity(t *testing.T) {
 	config := Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
-			devicetypes.ComponentTypeCompute:    "zeta",
-			devicetypes.ComponentTypeNVLSwitch:  "alpha",
-			devicetypes.ComponentTypePowerShelf: "middle",
+			devicetypes.ComponentTypeCompute: nico.ProviderName,
 		},
+		ProviderConfigs: map[string]providerapi.ProviderConfig{},
 	}
-	names, err := config.requiredProviderNames(registry)
 
-	require.NoError(t, err)
-	assert.Equal(t, []string{"alpha", "middle", "zeta"}, names)
+	err := config.Validate(
+		serviceProviderConfigDecoderRegistry(t),
+		testCatalog(t),
+	)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, providerapi.ErrProviderNotConfigured))
+
+	var requiredErr RequiredProviderNotConfiguredError
+	require.True(t, errors.As(err, &requiredErr))
+	assert.Equal(t, nico.ProviderName, requiredErr.Provider)
+	assert.Equal(t, devicetypes.ComponentTypeCompute, requiredErr.ComponentType)
+	assert.Equal(t, nico.ProviderName, requiredErr.Implementation)
+}
+
+func TestCompleteProviderConfigsReportsRequiredProviderDecoderManagerIdentity(t *testing.T) {
+	config := Config{
+		ComponentManagers: map[devicetypes.ComponentType]string{
+			devicetypes.ComponentTypeCompute: "custom-manager",
+		},
+		ProviderConfigs: map[string]providerapi.ProviderConfig{},
+	}
+
+	err := config.completeProviderConfigs(
+		providerapi.NewProviderConfigDecoderRegistry(),
+		testCatalog(t),
+	)
+
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, ErrProviderConfigDecoderNotRegistered))
+
+	var decoderErr ProviderConfigDecoderNotRegisteredError
+	require.True(t, errors.As(err, &decoderErr))
+	assert.Equal(t, "custom", decoderErr.Name)
+	assert.Equal(t, devicetypes.ComponentTypeCompute, decoderErr.ComponentType)
+	assert.Equal(t, "custom-manager", decoderErr.Implementation)
 }
 
 func assertInvalidProviderConfigField(
@@ -425,6 +473,7 @@ func TestNewConfigDerivesDefaultProviderConfigs(t *testing.T) {
 			devicetypes.ComponentTypeCompute: nico.ProviderName,
 		},
 		serviceProviderConfigDecoderRegistry(t),
+		testCatalog(t),
 	)
 	require.NoError(t, err)
 
@@ -447,7 +496,11 @@ component_managers:
 `), 0o600)
 	require.NoError(t, err)
 
-	config, err := LoadConfig(path, serviceProviderConfigDecoderRegistry(t))
+	config, err := LoadConfig(
+		path,
+		serviceProviderConfigDecoderRegistry(t),
+		testCatalog(t),
+	)
 	require.NoError(t, err)
 	assert.True(t, config.HasProvider(nico.ProviderName))
 }
@@ -462,7 +515,71 @@ func providerConfigNames(config Config) []string {
 
 func parseConfigWithBuiltins(t *testing.T, data string) (Config, error) {
 	t.Helper()
-	return ParseConfig([]byte(data), serviceProviderConfigDecoderRegistry(t))
+	return ParseConfig(
+		[]byte(data),
+		serviceProviderConfigDecoderRegistry(t),
+		testCatalog(t),
+	)
+}
+
+func testCatalog(t *testing.T) cmcatalog.Catalog {
+	t.Helper()
+
+	catalog, err := cmcatalog.New([]cmcatalog.Descriptor{
+		{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "mock",
+		},
+		{
+			Type:           devicetypes.ComponentTypeNVLSwitch,
+			Implementation: "mock",
+		},
+		{
+			Type:           devicetypes.ComponentTypePowerShelf,
+			Implementation: "mock",
+		},
+		{
+			Type:              devicetypes.ComponentTypeCompute,
+			Implementation:    nico.ProviderName,
+			RequiredProviders: []string{nico.ProviderName},
+		},
+		{
+			Type:              devicetypes.ComponentTypeNVLSwitch,
+			Implementation:    nico.ProviderName,
+			RequiredProviders: []string{nico.ProviderName},
+		},
+		{
+			Type:              devicetypes.ComponentTypePowerShelf,
+			Implementation:    nico.ProviderName,
+			RequiredProviders: []string{nico.ProviderName},
+		},
+		{
+			Type:              devicetypes.ComponentTypePowerShelf,
+			Implementation:    psm.ProviderName,
+			RequiredProviders: []string{psm.ProviderName},
+		},
+		{
+			Type:              devicetypes.ComponentTypeNVLSwitch,
+			Implementation:    nvswitchmanager.ProviderName,
+			RequiredProviders: []string{nvswitchmanager.ProviderName},
+		},
+		{
+			Type:              devicetypes.ComponentTypeCompute,
+			Implementation:    "custom-manager",
+			RequiredProviders: []string{"custom"},
+		},
+		{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "multi-provider",
+			RequiredProviders: []string{
+				"custom",
+				nico.ProviderName,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	return catalog
 }
 
 func serviceProviderConfigDecoderRegistry(t *testing.T) *providerapi.ProviderConfigDecoderRegistry {

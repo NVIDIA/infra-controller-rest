@@ -20,8 +20,8 @@ package componentmanager
 import (
 	"errors"
 	"fmt"
-	"sort"
 
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
@@ -38,33 +38,41 @@ var (
 
 	// ErrComponentManagerFactoryNotRegistered reports that no factories were
 	// registered for a component type.
-	ErrComponentManagerFactoryNotRegistered = errors.New("component manager factory is not registered")
+	ErrComponentManagerFactoryNotRegistered = cmcatalog.ErrComponentManagerFactoryNotRegistered
 
-	// ErrComponentManagerFactoryNotConfigured reports that a descriptor was
-	// registered without a factory.
+	// ErrComponentManagerFactoryNotConfigured reports that a factory spec was
+	// created without a factory.
 	ErrComponentManagerFactoryNotConfigured = errors.New("component manager factory is not configured")
 
-	// ErrDuplicateDescriptor reports duplicate descriptor
-	// registration for the same component type and implementation.
-	ErrDuplicateDescriptor = errors.New("duplicate component manager descriptor")
+	// ErrDuplicateDescriptor reports duplicate descriptor metadata for the same
+	// component type and implementation.
+	ErrDuplicateDescriptor = cmcatalog.ErrDuplicateDescriptor
 
 	// ErrUnknownComponentManagerImplementation reports that the configured
 	// implementation name is not registered for a component type.
-	ErrUnknownComponentManagerImplementation = errors.New("unknown component manager implementation")
+	ErrUnknownComponentManagerImplementation = cmcatalog.ErrUnknownComponentManagerImplementation
 
 	// ErrManagerCreationFailed reports that a registered manager factory failed.
 	ErrManagerCreationFailed = errors.New("component manager creation failed")
+
+	// ErrManagerNotCreated reports that a manager factory returned nil without
+	// an error.
+	ErrManagerNotCreated = errors.New("component manager was not created")
+
+	// ErrManagerDescriptorMismatch reports that a manager factory returned a
+	// manager with different descriptor metadata than its factory spec.
+	ErrManagerDescriptorMismatch = errors.New("component manager descriptor mismatch")
 
 	// ErrConfigNotConfigured reports that a nil component manager config was
 	// provided where a config value is required.
 	ErrConfigNotConfigured = cmconfig.ErrConfigNotConfigured
 
 	// ErrUnknownComponentType reports an unrecognized component type in config.
-	ErrUnknownComponentType = cmconfig.ErrUnknownComponentType
+	ErrUnknownComponentType = cmcatalog.ErrUnknownComponentType
 
 	// ErrComponentManagerImplementationNameEmpty reports that a component type
 	// was configured without an implementation name.
-	ErrComponentManagerImplementationNameEmpty = cmconfig.ErrComponentManagerImplementationNameEmpty
+	ErrComponentManagerImplementationNameEmpty = cmcatalog.ErrComponentManagerImplementationNameEmpty
 
 	// ErrComponentManagersNotConfigured reports that the service config has no
 	// component manager entries.
@@ -132,20 +140,7 @@ func (e ManagerNotConfiguredError) Is(target error) bool {
 
 // ComponentManagerFactoryNotRegisteredError includes the component type that
 // has no registered factories.
-type ComponentManagerFactoryNotRegisteredError struct {
-	ComponentType devicetypes.ComponentType
-}
-
-func (e ComponentManagerFactoryNotRegisteredError) Error() string {
-	return fmt.Sprintf(
-		"no factories registered for component type: %s",
-		devicetypes.ComponentTypeToString(e.ComponentType),
-	)
-}
-
-func (e ComponentManagerFactoryNotRegisteredError) Is(target error) bool {
-	return target == ErrComponentManagerFactoryNotRegistered
-}
+type ComponentManagerFactoryNotRegisteredError = cmcatalog.ComponentManagerFactoryNotRegisteredError
 
 // ComponentManagerFactoryNotConfiguredError includes the descriptor identity
 // that has no factory.
@@ -167,59 +162,11 @@ func (e ComponentManagerFactoryNotConfiguredError) Is(target error) bool {
 }
 
 // DuplicateDescriptorError includes the duplicate descriptor identity.
-type DuplicateDescriptorError struct {
-	ComponentType  devicetypes.ComponentType
-	Implementation string
-}
-
-func (e DuplicateDescriptorError) Error() string {
-	return fmt.Sprintf(
-		"duplicate component manager descriptor for component type %s with implementation %q",
-		devicetypes.ComponentTypeToString(e.ComponentType),
-		e.Implementation,
-	)
-}
-
-func (e DuplicateDescriptorError) Is(target error) bool {
-	return target == ErrDuplicateDescriptor
-}
+type DuplicateDescriptorError = cmcatalog.DuplicateDescriptorError
 
 // UnknownComponentManagerImplementationError includes the implementation name
 // that was requested and the implementations that were available.
-type UnknownComponentManagerImplementationError struct {
-	ComponentType  devicetypes.ComponentType
-	Implementation string
-	Available      []string
-	RegisteredFor  []devicetypes.ComponentType
-}
-
-func (e UnknownComponentManagerImplementationError) Error() string {
-	available := append([]string(nil), e.Available...)
-	sort.Strings(available)
-	msg := fmt.Sprintf(
-		"unknown implementation '%s' for component type %s, available: %v",
-		e.Implementation,
-		devicetypes.ComponentTypeToString(e.ComponentType),
-		available,
-	)
-	if len(e.RegisteredFor) == 0 {
-		return msg
-	}
-
-	registeredFor := make([]string, 0, len(e.RegisteredFor))
-	for _, componentType := range e.RegisteredFor {
-		registeredFor = append(
-			registeredFor,
-			devicetypes.ComponentTypeToString(componentType),
-		)
-	}
-	sort.Strings(registeredFor)
-	return fmt.Sprintf("%s; registered for component types: %v", msg, registeredFor)
-}
-
-func (e UnknownComponentManagerImplementationError) Is(target error) bool {
-	return target == ErrUnknownComponentManagerImplementation
-}
+type UnknownComponentManagerImplementationError = cmcatalog.UnknownComponentManagerImplementationError
 
 // ManagerCreationError includes the configured manager identity and wraps the
 // factory error.
@@ -249,12 +196,54 @@ func (e ManagerCreationError) Is(target error) bool {
 	return target == ErrManagerCreationFailed
 }
 
+// ManagerNotCreatedError includes the descriptor identity whose factory
+// returned no manager.
+type ManagerNotCreatedError struct {
+	ComponentType  devicetypes.ComponentType
+	Implementation string
+}
+
+func (e ManagerNotCreatedError) Error() string {
+	return fmt.Sprintf(
+		"factory returned nil manager for component type %s with implementation '%s'",
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+	)
+}
+
+func (e ManagerNotCreatedError) Is(target error) bool {
+	return target == ErrManagerNotCreated
+}
+
+// ManagerDescriptorMismatchError includes the expected factory spec descriptor
+// and the descriptor reported by the created manager.
+type ManagerDescriptorMismatchError struct {
+	Expected cmcatalog.Descriptor
+	Actual   cmcatalog.Descriptor
+}
+
+func (e ManagerDescriptorMismatchError) Error() string {
+	return fmt.Sprintf(
+		"manager descriptor mismatch: expected %s/%s providers %v, got %s/%s providers %v",
+		devicetypes.ComponentTypeToString(e.Expected.Type),
+		e.Expected.Implementation,
+		e.Expected.RequiredProviders,
+		devicetypes.ComponentTypeToString(e.Actual.Type),
+		e.Actual.Implementation,
+		e.Actual.RequiredProviders,
+	)
+}
+
+func (e ManagerDescriptorMismatchError) Is(target error) bool {
+	return target == ErrManagerDescriptorMismatch
+}
+
 // UnknownComponentTypeError includes the unrecognized component type string.
-type UnknownComponentTypeError = cmconfig.UnknownComponentTypeError
+type UnknownComponentTypeError = cmcatalog.UnknownComponentTypeError
 
 // ComponentManagerImplementationNameEmptyError includes the component type
 // whose configured implementation name is empty.
-type ComponentManagerImplementationNameEmptyError = cmconfig.ComponentManagerImplementationNameEmptyError
+type ComponentManagerImplementationNameEmptyError = cmcatalog.ComponentManagerImplementationNameEmptyError
 
 // UnknownProviderError includes the unknown provider name.
 type UnknownProviderError = providerapi.UnknownProviderError
@@ -284,6 +273,10 @@ type DuplicateProviderConfigError = cmconfig.DuplicateProviderConfigError
 // ProviderConfigDecoderNotRegisteredError includes the provider name with no
 // registered config decoder.
 type ProviderConfigDecoderNotRegisteredError = cmconfig.ProviderConfigDecoderNotRegisteredError
+
+// RequiredProviderNotConfiguredError includes the required provider and the
+// manager identity that requires it.
+type RequiredProviderNotConfiguredError = cmconfig.RequiredProviderNotConfiguredError
 
 // ProviderConfigTypeMismatchError includes the provider config type and the
 // type expected by the caller.

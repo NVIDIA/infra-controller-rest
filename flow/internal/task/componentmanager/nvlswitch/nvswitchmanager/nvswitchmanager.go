@@ -25,6 +25,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nsmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -64,18 +65,26 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 }
 
 // Descriptor returns the NV-Switch Manager NVLSwitch manager descriptor.
-func Descriptor() componentmanager.Descriptor {
-	return componentmanager.Descriptor{
+func Descriptor() cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
 		Type:              devicetypes.ComponentTypeNVLSwitch,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nsmprovider.ProviderName},
-		Factory:           Factory,
 	}
 }
 
-// Type returns the component type this manager handles.
-func (m *Manager) Type() devicetypes.ComponentType {
-	return devicetypes.ComponentTypeNVLSwitch
+// FactorySpec returns the NV-Switch Manager NVLSwitch manager runtime factory
+// spec.
+func FactorySpec() componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: Descriptor(),
+		Factory:    Factory,
+	}
+}
+
+// Descriptor returns the NV-Switch Manager NVLSwitch manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return Descriptor()
 }
 
 // InjectExpectation injects expected configuration or state information for an NVLink switch.

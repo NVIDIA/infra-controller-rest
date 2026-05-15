@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
@@ -69,18 +70,26 @@ func FactoryFor(componentType devicetypes.ComponentType) componentmanager.Manage
 
 // DescriptorFor returns a mock manager descriptor for the specified component
 // type.
-func DescriptorFor(componentType devicetypes.ComponentType) componentmanager.Descriptor {
-	return componentmanager.Descriptor{
+func DescriptorFor(componentType devicetypes.ComponentType) cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
 		Type:           componentType,
 		Implementation: ImplementationName,
-		Factory:        FactoryFor(componentType),
+	}
+}
+
+// FactorySpecFor returns a mock manager runtime factory spec for the specified
+// component type.
+func FactorySpecFor(componentType devicetypes.ComponentType) componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: DescriptorFor(componentType),
+		Factory:    FactoryFor(componentType),
 	}
 }
 
 // Descriptors returns mock descriptors for all component types currently
 // supported by the RLA service.
-func Descriptors() []componentmanager.Descriptor {
-	descriptors := make([]componentmanager.Descriptor, 0, 3)
+func Descriptors() []cmcatalog.Descriptor {
+	descriptors := make([]cmcatalog.Descriptor, 0, 3)
 	for _, ct := range []devicetypes.ComponentType{
 		devicetypes.ComponentTypeCompute,
 		devicetypes.ComponentTypeNVLSwitch,
@@ -91,9 +100,23 @@ func Descriptors() []componentmanager.Descriptor {
 	return descriptors
 }
 
-// Type returns the component type this manager handles.
-func (m *Manager) Type() devicetypes.ComponentType {
-	return m.componentType
+// FactorySpecs returns mock runtime factory specs for all component types
+// currently supported by the RLA service.
+func FactorySpecs() []componentmanager.FactorySpec {
+	factorySpecs := make([]componentmanager.FactorySpec, 0, 3)
+	for _, ct := range []devicetypes.ComponentType{
+		devicetypes.ComponentTypeCompute,
+		devicetypes.ComponentTypeNVLSwitch,
+		devicetypes.ComponentTypePowerShelf,
+	} {
+		factorySpecs = append(factorySpecs, FactorySpecFor(ct))
+	}
+	return factorySpecs
+}
+
+// Descriptor returns the mock manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return DescriptorFor(m.componentType)
 }
 
 // InjectExpectation simulates injecting expected configuration.

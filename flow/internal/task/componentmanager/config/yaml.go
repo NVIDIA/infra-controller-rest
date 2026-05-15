@@ -24,29 +24,32 @@ import (
 
 	"gopkg.in/yaml.v3"
 
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // LoadConfig loads the component manager configuration from a YAML file using
-// the supplied provider config decoders.
+// the supplied provider config decoders and component manager catalog.
 func LoadConfig(
 	path string,
 	decoders *providerapi.ProviderConfigDecoderRegistry,
+	managerCatalog cmcatalog.Catalog,
 ) (Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return Config{}, fmt.Errorf("failed to read config file: %w", err)
 	}
 
-	return ParseConfig(data, decoders)
+	return ParseConfig(data, decoders, managerCatalog)
 }
 
 // ParseConfig parses the component manager configuration from YAML data using
-// the supplied provider config decoders.
+// the supplied provider config decoders and component manager catalog.
 func ParseConfig(
 	data []byte,
 	decoders *providerapi.ProviderConfigDecoderRegistry,
+	managerCatalog cmcatalog.Catalog,
 ) (Config, error) {
 	if decoders == nil {
 		return Config{}, ErrProviderConfigDecoderRegistryRequired
@@ -67,7 +70,7 @@ func ParseConfig(
 		return Config{}, err
 	}
 
-	if err := config.completeProviderConfigs(decoders); err != nil {
+	if err := config.completeProviderConfigs(decoders, managerCatalog); err != nil {
 		return Config{}, err
 	}
 

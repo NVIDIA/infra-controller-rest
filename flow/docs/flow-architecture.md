@@ -341,7 +341,7 @@ See [Component Manager Architecture](component-manager-architecture.md) for deta
 
 ```go
 type ComponentManager interface {
-    Type() devicetypes.ComponentType
+    Descriptor() cmcatalog.Descriptor
 
     // Inject expectation
     InjectExpectation(ctx, target, info) error
