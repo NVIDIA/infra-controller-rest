@@ -15,24 +15,31 @@
  * limitations under the License.
  */
 
+// Package config loads, normalizes, and validates component manager
+// configuration.
+//
+// Config can be built from YAML through LoadConfig or ParseConfig, or from
+// embedded defaults through New. All constructor paths normalize component
+// manager implementation names, decode explicit provider config overrides, and
+// complete missing provider configs from the component manager catalog supplied
+// by the caller.
 package config
 
 import (
-	"sort"
 	"strings"
 
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 // Config holds the component manager configuration.
 //
-// Config values returned by ParseConfig, LoadConfig, and NewConfig are
+// Config values returned by ParseConfig, LoadConfig, and New are
 // normalized: component manager implementation names are trimmed, unknown
 // component types are rejected, explicit provider names are trimmed, duplicate
 // provider names are rejected after trimming, and missing provider configs
-// required by configured component managers are completed from provider
-// defaults.
+// required by catalog descriptors are completed from provider defaults.
 type Config struct {
 	// ComponentManagers maps each component type to the component manager
 	// implementation responsible for managing that type. Each component manager
@@ -41,18 +48,19 @@ type Config struct {
 
 	// ProviderConfigs holds provider-specific typed configs keyed by provider
 	// name. Explicit provider configs override defaults; missing providers
-	// required by configured component manager implementations are completed
-	// with provider defaults. Providers are configured once and can be shared
-	// by multiple component manager implementations.
+	// required by catalog descriptors are completed with provider defaults.
+	// Providers are configured once and can be shared by multiple component
+	// manager implementations.
 	ProviderConfigs map[string]providerapi.ProviderConfig
 }
 
 // New builds a component manager config from a component-manager
-// implementation map and derives default provider configs for implementations
-// backed by a registered provider decoder.
+// implementation map and derives default provider configs from the supplied
+// catalog.
 func New(
 	componentManagers map[devicetypes.ComponentType]string,
 	decoders *providerapi.ProviderConfigDecoderRegistry,
+	managerCatalog cmcatalog.Catalog,
 ) (Config, error) {
 	if decoders == nil {
 		return Config{}, ErrProviderConfigDecoderRegistryRequired
@@ -66,7 +74,7 @@ func New(
 		}
 	}
 
-	if err := config.completeProviderConfigs(decoders); err != nil {
+	if err := config.completeProviderConfigs(decoders, managerCatalog); err != nil {
 		return Config{}, err
 	}
 	return config, nil
@@ -133,27 +141,38 @@ func (c *Config) prepareProviderConfigForAdd(
 }
 
 // completeProviderConfigs enables missing providers based on the configured
-// component manager implementations. Explicit provider configs already present
-// in the config are preserved.
+// component manager catalog descriptors. Explicit provider configs already
+// present in the config are preserved.
 func (c *Config) completeProviderConfigs(
 	decoders *providerapi.ProviderConfigDecoderRegistry,
+	managerCatalog cmcatalog.Catalog,
 ) error {
-	names, err := c.requiredProviderNames(decoders)
+	if decoders == nil {
+		return ErrProviderConfigDecoderRegistryRequired
+	}
+
+	descriptors, err := managerCatalog.SelectedDescriptors(c.ComponentManagers)
 	if err != nil {
 		return err
 	}
 
-	for _, name := range names {
-		if c.HasProvider(name) {
-			continue
-		}
+	for _, descriptor := range descriptors {
+		for _, name := range descriptor.RequiredProviders {
+			if c.HasProvider(name) {
+				continue
+			}
 
-		name, decoder, err := c.prepareProviderConfigForAdd(name, decoders)
-		if err != nil {
-			return err
-		}
+			decoder, ok := decoders.Get(name)
+			if !ok {
+				return ProviderConfigDecoderNotRegisteredError{
+					Name:           name,
+					ComponentType:  descriptor.Type,
+					Implementation: descriptor.Implementation,
+				}
+			}
 
-		c.ProviderConfigs[name] = decoder.DefaultConfig()
+			c.ProviderConfigs[name] = decoder.DefaultConfig()
+		}
 	}
 
 	return nil
@@ -162,6 +181,7 @@ func (c *Config) completeProviderConfigs(
 // Validate verifies the generic component manager config contract.
 func (c *Config) Validate(
 	decoders *providerapi.ProviderConfigDecoderRegistry,
+	managerCatalog cmcatalog.Catalog,
 ) error {
 	if c == nil {
 		return ErrConfigNotConfigured
@@ -175,46 +195,32 @@ func (c *Config) Validate(
 		return ErrProviderConfigDecoderRegistryRequired
 	}
 
-	names, err := c.requiredProviderNames(decoders)
+	descriptors, err := managerCatalog.SelectedDescriptors(c.ComponentManagers)
 	if err != nil {
 		return err
 	}
 
-	for _, name := range names {
-		if !c.HasProvider(name) {
-			return providerapi.ProviderNotConfiguredError{Name: name}
+	for _, descriptor := range descriptors {
+		for _, providerName := range descriptor.RequiredProviders {
+			if _, ok := decoders.Get(providerName); !ok {
+				return ProviderConfigDecoderNotRegisteredError{
+					Name:           providerName,
+					ComponentType:  descriptor.Type,
+					Implementation: descriptor.Implementation,
+				}
+			}
+
+			if !c.HasProvider(providerName) {
+				return RequiredProviderNotConfiguredError{
+					Provider:       providerName,
+					ComponentType:  descriptor.Type,
+					Implementation: descriptor.Implementation,
+				}
+			}
 		}
 	}
+
 	return nil
-}
-
-// requiredProviderNames returns provider names implied by the configured
-// component-manager implementations.
-//
-// Transitional compatibility shim: until manager descriptors exist, an
-// implementation is considered provider-backed when its implementation name
-// matches a registered provider decoder name.
-func (c *Config) requiredProviderNames(
-	decoders *providerapi.ProviderConfigDecoderRegistry,
-) ([]string, error) {
-	names := make(map[string]struct{})
-	for _, implName := range c.ComponentManagers {
-		if _, ok := decoders.Get(implName); ok {
-			names[implName] = struct{}{}
-		}
-	}
-
-	if len(names) == 0 {
-		return nil, nil
-	}
-
-	result := make([]string, 0, len(names))
-	for name := range names {
-		result = append(result, name)
-	}
-
-	sort.Strings(result)
-	return result, nil
 }
 
 // HasProvider checks if a provider is enabled in the configuration.

@@ -27,6 +27,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -60,17 +61,25 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 }
 
 // Descriptor returns the NICo PowerShelf manager descriptor.
-func Descriptor() componentmanager.Descriptor {
-	return componentmanager.Descriptor{
+func Descriptor() cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
 		Type:              devicetypes.ComponentTypePowerShelf,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nicoprovider.ProviderName},
-		Factory:           Factory,
 	}
 }
 
-func (m *Manager) Type() devicetypes.ComponentType {
-	return devicetypes.ComponentTypePowerShelf
+// FactorySpec returns the NICo PowerShelf manager runtime factory spec.
+func FactorySpec() componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: Descriptor(),
+		Factory:    Factory,
+	}
+}
+
+// Descriptor returns the NICo PowerShelf manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return Descriptor()
 }
 
 func powerShelfIDsProto(ids []string) *pb.PowerShelfIdList {

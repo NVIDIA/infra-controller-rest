@@ -20,6 +20,8 @@ package builtin
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -27,6 +29,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/mock"
@@ -53,6 +56,217 @@ func (c testProviderConfig) NewProvider(context.Context) (providerapi.Provider, 
 	return nil, nil
 }
 
+type testServiceProvider struct {
+	name string
+}
+
+func (p testServiceProvider) Name() string {
+	return p.name
+}
+
+type testServiceProviderConfig struct {
+	name         string
+	providerName string
+	err          error
+	nilProvider  bool
+}
+
+func (c testServiceProviderConfig) Name() string {
+	return c.name
+}
+
+func (c testServiceProviderConfig) NewProvider(context.Context) (providerapi.Provider, error) {
+	if c.err != nil {
+		return nil, c.err
+	}
+	if c.nilProvider {
+		return nil, nil
+	}
+
+	name := c.providerName
+	if name == "" {
+		name = c.name
+	}
+	return testServiceProvider{name: name}, nil
+}
+
+func TestDefaultServiceComponentManagers(t *testing.T) {
+	componentManagers := defaultServiceComponentManagers()
+
+	assert.Equal(t, computenico.ImplementationName, componentManagers[devicetypes.ComponentTypeCompute])
+	assert.Equal(t, nvlswitchnico.ImplementationName, componentManagers[devicetypes.ComponentTypeNVLSwitch])
+	assert.Equal(t, powershelfnico.ImplementationName, componentManagers[devicetypes.ComponentTypePowerShelf])
+
+	componentManagers[devicetypes.ComponentTypeCompute] = "mutated"
+	assert.Equal(
+		t,
+		computenico.ImplementationName,
+		defaultServiceComponentManagers()[devicetypes.ComponentTypeCompute],
+	)
+}
+
+func TestLoadConfigUsesDefaultsWithoutPath(t *testing.T) {
+	config, err := LoadConfig("")
+	require.NoError(t, err)
+
+	assert.Equal(
+		t,
+		defaultServiceComponentManagers(),
+		config.ComponentManagers,
+	)
+	assert.True(t, config.HasProvider(nicoprovider.ProviderName))
+	assert.False(t, config.HasProvider(psmprovider.ProviderName))
+
+	nicoConfig, ok := config.ProviderConfigs[nicoprovider.ProviderName].(*nicoprovider.Config)
+	require.True(t, ok)
+	assert.Equal(t, nicoprovider.DefaultTimeout, nicoConfig.Timeout)
+	assert.Equal(
+		t,
+		nicoprovider.DefaultComputePowerDelay,
+		nicoConfig.ComputePowerDelay,
+	)
+}
+
+func TestLoadConfigUsesAuthoritativeFile(t *testing.T) {
+	path := writeServiceConfig(t, `
+component_managers:
+  compute: mock
+providers: {}
+`)
+
+	config, err := LoadConfig(path)
+	require.NoError(t, err)
+
+	assert.Equal(t, "mock", config.ComponentManagers[devicetypes.ComponentTypeCompute])
+	assert.Empty(t, config.ProviderConfigs)
+	assert.False(t, config.HasProvider(nicoprovider.ProviderName))
+}
+
+func TestLoadConfigRequiresComponentManagers(t *testing.T) {
+	path := writeServiceConfig(t, `
+providers: {}
+`)
+
+	config, err := LoadConfig(path)
+
+	require.Empty(t, config.ComponentManagers)
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, cmconfig.ErrComponentManagersNotConfigured))
+}
+
+func TestLoadConfigCompletesMissingProviders(t *testing.T) {
+	path := writeServiceConfig(t, `
+component_managers:
+  compute: nico
+providers: {}
+`)
+
+	config, err := LoadConfig(path)
+
+	require.NoError(t, err)
+	assert.Equal(t, computenico.ImplementationName, config.ComponentManagers[devicetypes.ComponentTypeCompute])
+	assert.True(t, config.HasProvider(nicoprovider.ProviderName))
+}
+
+func TestNewProviderRegistry(t *testing.T) {
+	registry, err := NewProviderRegistry(
+		context.Background(),
+		cmconfig.Config{
+			ProviderConfigs: map[string]providerapi.ProviderConfig{
+				"alpha": testServiceProviderConfig{name: "alpha"},
+				"beta":  testServiceProviderConfig{name: "beta"},
+			},
+		},
+	)
+
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{"alpha", "beta"}, registry.List())
+	assert.True(t, registry.Has("alpha"))
+	assert.True(t, registry.Has("beta"))
+}
+
+func TestNewProviderRegistryErrors(t *testing.T) {
+	rootErr := errors.New("boom")
+
+	tests := []struct {
+		name      string
+		config    cmconfig.Config
+		wantErr   error
+		checkFunc func(*testing.T, error)
+	}{
+		{
+			name: "nil provider config",
+			config: cmconfig.Config{
+				ProviderConfigs: map[string]providerapi.ProviderConfig{
+					"alpha": nil,
+				},
+			},
+			wantErr: providerapi.ErrProviderNotConfigured,
+			checkFunc: func(t *testing.T, err error) {
+				t.Helper()
+				var providerErr providerapi.ProviderNotConfiguredError
+				require.True(t, errors.As(err, &providerErr))
+				assert.Equal(t, "alpha", providerErr.Name)
+			},
+		},
+		{
+			name: "config name mismatch",
+			config: cmconfig.Config{
+				ProviderConfigs: map[string]providerapi.ProviderConfig{
+					"alpha": testServiceProviderConfig{name: "other"},
+				},
+			},
+			wantErr: providerapi.ErrProviderConfigNameMismatch,
+		},
+		{
+			name: "provider creation failed",
+			config: cmconfig.Config{
+				ProviderConfigs: map[string]providerapi.ProviderConfig{
+					"alpha": testServiceProviderConfig{name: "alpha", err: rootErr},
+				},
+			},
+			wantErr: rootErr,
+		},
+		{
+			name: "nil provider",
+			config: cmconfig.Config{
+				ProviderConfigs: map[string]providerapi.ProviderConfig{
+					"alpha": testServiceProviderConfig{
+						name:        "alpha",
+						nilProvider: true,
+					},
+				},
+			},
+			wantErr: providerapi.ErrProviderNotConfigured,
+		},
+		{
+			name: "provider name mismatch",
+			config: cmconfig.Config{
+				ProviderConfigs: map[string]providerapi.ProviderConfig{
+					"alpha": testServiceProviderConfig{
+						name:         "alpha",
+						providerName: "other",
+					},
+				},
+			},
+			wantErr: providerapi.ErrProviderNameMismatch,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			registry, err := NewProviderRegistry(context.Background(), tt.config)
+
+			require.Nil(t, registry)
+			require.Error(t, err)
+			assert.True(t, errors.Is(err, tt.wantErr))
+			if tt.checkFunc != nil {
+				tt.checkFunc(t, err)
+			}
+		})
+	}
+}
+
 func TestNewComponentManagerRegistryInitializesBuiltInMockManagers(t *testing.T) {
 	config := cmconfig.Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
@@ -73,7 +287,7 @@ func TestNewComponentManagerRegistryInitializesBuiltInMockManagers(t *testing.T)
 	for componentType := range config.ComponentManagers {
 		manager, err := registry.GetManager(componentType)
 		require.NoError(t, err)
-		assert.Equal(t, componentType, manager.Type())
+		assert.Equal(t, componentType, manager.Descriptor().Type)
 	}
 }
 
@@ -109,8 +323,32 @@ func TestNewComponentManagerRegistryRejectsImplementationForWrongType(t *testing
 	)
 }
 
+func TestServiceProviderConfigDecoderRegistry(t *testing.T) {
+	registry, err := newProviderDecoderRegistry()
+	require.NoError(t, err)
+
+	assert.ElementsMatch(
+		t,
+		[]string{
+			nicoprovider.ProviderName,
+			psmprovider.ProviderName,
+			nsmprovider.ProviderName,
+		},
+		registry.List(),
+	)
+
+	_, ok := registry.Get(nicoprovider.ProviderName)
+	assert.True(t, ok)
+
+	_, ok = registry.Get(psmprovider.ProviderName)
+	assert.True(t, ok)
+
+	_, ok = registry.Get(nsmprovider.ProviderName)
+	assert.True(t, ok)
+}
+
 func TestServiceCatalog(t *testing.T) {
-	catalog, err := serviceCatalog(cmconfig.Config{})
+	catalog, err := newCatalog()
 
 	require.NoError(t, err)
 
@@ -209,20 +447,6 @@ func TestServiceCatalog(t *testing.T) {
 	).RequiredProviders)
 }
 
-func requireDescriptor(
-	t *testing.T,
-	catalog componentmanager.Catalog,
-	componentType devicetypes.ComponentType,
-	implementation string,
-) componentmanager.Descriptor {
-	t.Helper()
-
-	descriptor, ok := catalog.Get(componentType, implementation)
-	require.True(t, ok)
-	require.NotNil(t, descriptor.Factory)
-	return descriptor
-}
-
 func TestNicoComputePowerDelayUsesProviderConfig(t *testing.T) {
 	delay := 7 * time.Second
 	config := cmconfig.Config{
@@ -264,4 +488,26 @@ func TestNicoComputePowerDelayRejectsUnexpectedConfigType(t *testing.T) {
 	var mismatch componentmanager.ProviderConfigTypeMismatchError
 	require.True(t, errors.As(err, &mismatch))
 	assert.Equal(t, nicoprovider.ProviderName, mismatch.Name)
+}
+
+func writeServiceConfig(t *testing.T, data string) string {
+	t.Helper()
+
+	path := filepath.Join(t.TempDir(), "componentmanager.yaml")
+	err := os.WriteFile(path, []byte(data), 0o600)
+	require.NoError(t, err)
+	return path
+}
+
+func requireDescriptor(
+	t *testing.T,
+	catalog cmcatalog.Catalog,
+	componentType devicetypes.ComponentType,
+	implementation string,
+) cmcatalog.Descriptor {
+	t.Helper()
+
+	descriptor, ok := catalog.Get(componentType, implementation)
+	require.True(t, ok)
+	return descriptor
 }
