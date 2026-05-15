@@ -71,7 +71,7 @@ func testTemporalSiteClientPool(t *testing.T) *sc.ClientPool {
 	return tSiteClientPool
 }
 
-func TestManageInstance_deleteInstanceFromDB_removesIBAndNVLinkInterfaces(t *testing.T) {
+func TestManageInstance_deleteInstanceFromDB(t *testing.T) {
 	ctx := context.Background()
 
 	dbSession := util.TestInitDB(t)
@@ -155,6 +155,21 @@ func TestManageInstance_deleteInstanceFromDB_removesIBAndNVLinkInterfaces(t *tes
 	})
 	require.NoError(t, err)
 
+	// Add SSH Key Group Instance Association
+	skg := util.TestBuildSSHKeyGroup(t, dbSession, "test-ssh-key-group-1", tnOrg, nil, tenant.ID, cdb.GetStrPtr("fbc692b61ffef6fbfc38a3833f6b7e7ae508da75"), cdbm.SSHKeyGroupStatusSynced, tnu.ID)
+	_ = util.TestBuildSSHKeyGroupSiteAssociation(t, dbSession, skg.ID, site.ID, cdb.GetStrPtr("V1-1234567890"), cdbm.SSHKeyGroupSiteAssociationStatusSynced, tnu.ID)
+	_ = util.TestBuildSSHKeyGroupInstanceAssociation(t, dbSession, skg.ID, site.ID, instance.ID, tnu.ID)
+
+	// Add DPU Extension Service Deployment
+	des := util.TestBuildDpuExtensionService(t, dbSession, "test-dpu-extension-service-1", site, tenant, cdbm.DpuExtensionServiceServiceTypeKubernetesPod, cdb.GetStrPtr("V1-1234567890"),
+		&cdbm.DpuExtensionServiceVersionInfo{
+			Version:        "V1-1234567890",
+			Data:           "test-data",
+			HasCredentials: true,
+			Created:        time.Now(),
+		}, []string{"V1-1234567890"}, cdbm.DpuExtensionServiceStatusReady, ipu)
+	_ = util.TestBuildDpuExtensionServiceDeployment(t, dbSession, des.ID, site.ID, tenant.ID, instance.ID, "V1-1234567890", cdbm.DpuExtensionServiceDeploymentStatusRunning, tnu)
+
 	tx, err := cdb.BeginTx(ctx, dbSession, &sql.TxOptions{})
 	require.NoError(t, err)
 
@@ -174,6 +189,16 @@ func TestManageInstance_deleteInstanceFromDB_removesIBAndNVLinkInterfaces(t *tes
 	nvlis, _, err := nvliDAO.GetAll(ctx, nil, cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instance.ID}}, paginator.PageInput{Limit: cdb.GetIntPtr(paginator.TotalLimit)}, nil)
 	require.NoError(t, err)
 	require.Empty(t, nvlis)
+
+	skgiaDAO := cdbm.NewSSHKeyGroupInstanceAssociationDAO(dbSession)
+	skgias, _, err := skgiaDAO.GetAll(ctx, nil, nil, nil, []uuid.UUID{instance.ID}, nil, nil, cdb.GetIntPtr(paginator.TotalLimit), nil)
+	require.NoError(t, err)
+	require.Empty(t, skgias)
+
+	desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(dbSession)
+	desds, _, err := desdDAO.GetAll(ctx, nil, cdbm.DpuExtensionServiceDeploymentFilterInput{InstanceIDs: []uuid.UUID{instance.ID}}, paginator.PageInput{Limit: cdb.GetIntPtr(paginator.TotalLimit)}, nil)
+	require.NoError(t, err)
+	require.Empty(t, desds)
 }
 
 func TestManageInstance_UpdateInstancesInDB(t *testing.T) {
