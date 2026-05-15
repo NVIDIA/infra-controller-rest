@@ -439,7 +439,8 @@ func TestManageExpectedMachine_UpdateExpectedMachinesInDB(t *testing.T) {
 						fmt.Sprintf("ExpectedMachine %v should have been updated", em.ID))
 
 					// Verify labels are updated correctly
-					expectedLabels := cdbm.LabelsFromProtoMetadata(ctrlEM.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(ctrlEM.Metadata.GetLabels())
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(updated.Labels) == 0 {
 						// Both are effectively empty, which is correct
@@ -462,7 +463,8 @@ func TestManageExpectedMachine_UpdateExpectedMachinesInDB(t *testing.T) {
 				assert.NoError(t, perr)
 				created := machinesByID[emID]
 				if created != nil {
-					expectedLabels := cdbm.LabelsFromProtoMetadata(cem.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(cem.Metadata.GetLabels())
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(created.Labels) == 0 {
 						// Both are effectively empty, which is correct

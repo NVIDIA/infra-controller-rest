@@ -258,6 +258,95 @@ predictable and every entity has the same surface:
 cover request-shape conversion, and `(*cdbm.Vpc).ToDeletionRequestProto`
 stays on the entity because there's no API request body for delete.
 
+`InstanceType` is the reference for everything else under this rollout
+(typed-slice validation, typed-map proto behavior, ozzo composition,
+shared conversion helpers): `(*cdbm.InstanceType).ToProto/FromProto`
++ `(*InstanceType).AttachCapabilities` on the entity,
+`APIMachineCapabilities` + `APIMachineCapability` for the list/element
+split, `cdbm.Labels` for the typed map, and
+`common/pkg/util.IntPtrToUint32Ptr` for shared casts.
+
+### Validate cooperates with ToProto
+
+`Validate` and `ToProto` work as a pair: `Validate` enforces every rule
+the wire format relies on, and `ToProto` is a pure mapper that trusts
+the result. The conventions below are how the rules are organised.
+
+1. **Prefer ozzo's built-in rules.** `validation.Required`,
+   `validation.Min`, `validation.Max`, `validation.In`,
+   `validation.Length`, `validation.By`, `validation.Each` compose
+   cleanly inside `validation.ValidateStruct`. Custom helpers like a
+   `validateXBounds(value, name)` free function are usually
+   unnecessary — reach for them only when no built-in fits.
+2. **List-level rules live on a typed slice.** When a request carries
+   a slice and needs both per-element rules and rules that span
+   elements (uniqueness, ordering, cross-element constraints), define
+   `type APIXs []APIX` with its own `Validate()` that calls
+   `validation.Validate(s, validation.Each())` to delegate per-element
+   checks and then enforces the list-level rules. The parent struct
+   wires it up with a single `validation.Field(&parent.Xs)`; ozzo
+   discovers the typed slice's `Validate` via the Validatable
+   interface. See `(APIMachineCapabilities).Validate` for the
+   canonical shape.
+3. **Cross-field rules use named methods via `validation.By`.** When a
+   check spans multiple fields on the same struct, pull it out as a
+   named method on the type and reference it with
+   `validation.By(t.validateX)`. Avoid inline anonymous closures —
+   named methods are discoverable, individually testable, and the
+   `Validate` body reads like a high-level outline of the rules. See
+   `(APIMachineCapability).validateDeviceType` and
+   `validateInactiveDevices`.
+4. **Validators that compose with `validation.By` take `interface{}`.**
+   Helpers used across structs (e.g. `util.ValidateLabels`,
+   `util.ValidateNameCharacters`) match ozzo's `RuleFunc` signature
+   `func(value interface{}) error`, so they drop into
+   `validation.Field(&t.Field, validation.By(util.ValidateX))`
+   directly. Internal type assertion handles the concrete type.
+
+### Named types own their proto behavior
+
+A `map`, `slice`, or other primitive composite that represents a
+domain concept with conversion needs gets a named type with methods,
+not a free function. The receiver-method form keeps the call site
+discoverable (`t.Field.ToProto()` / `t.Field.FromProto(...)`) and
+makes the type the single home for all related behavior. Free
+functions like `LabelsToProto(m map[string]string)` or
+`LabelsFromProtoMetadata(md *Metadata) Labels` are an anti-pattern —
+make the value typed and put the method on it.
+
+`FromProto` on a leaf named type is a pointer-receiver method that
+mutates the receiver in place, mirroring the entity-level
+`(*T).FromProto` shape. A `nil` input clears the receiver to its
+zero value so callers can distinguish "no data reported" from "data
+explicitly cleared." Reach the method on a struct field with
+`t.Field.FromProto(...)` — which requires the field itself to use
+the named type, not the underlying primitive. Entity struct fields
+that round-trip with the proto should be typed accordingly (e.g.
+`Labels Labels` instead of `Labels map[string]string`); CreateInput
+/ UpdateInput shapes that don't call `FromProto` themselves may stay
+on the underlying primitive until they need it.
+
+- `db/pkg/db/model.Labels` (`type Labels map[string]string` with
+  `(Labels).ToProto() []*cwssaws.Label` and
+  `(*Labels).FromProto([]*cwssaws.Label)`) is the reference for
+  map-shaped values that round-trip with workflow `Metadata.Labels`.
+  Entity callers reach it via `entity.Labels.FromProto(proto.Metadata.GetLabels())`
+  — the proto getter is nil-safe and returns `nil` for missing
+  metadata, which the method translates into a `nil` receiver.
+- `APIMachineCapabilities` (`type APIMachineCapabilities
+  []APIMachineCapability` with `(APIMachineCapabilities).Validate()`)
+  is the reference for slice-shaped values that own list-level rules.
+
+### Shared conversion helpers live in `common/pkg/util`
+
+Helpers that convert primitive types (`*int` ↔ `*uint32`, etc.) and
+have no entity association live in `common/pkg/util/converter.go`,
+not in entity-specific files. Under the ToProto / FromProto
+convention they are trusted casts: the bounds checks live in
+`Validate` upstream of them, so the helpers do not return errors and
+do not log warnings — anything that needs to fail belongs in
+`Validate`. `common/pkg/util.IntPtrToUint32Ptr` is the reference.
+
 ### Database transactions
 
 Handler code that touches the database uses the closure-based transaction
