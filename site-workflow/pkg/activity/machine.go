@@ -116,9 +116,9 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	return err
 }
 
-// InsertHealthReportOverrideOnSite applies a health report override on the Site controller.
-func (mm *ManageMachine) InsertHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.InsertHealthReportOverrideRequest) error {
-	logger := log.With().Str("Activity", "InsertHealthReportOverrideOnSite").Logger()
+// CreateMachineHealthReportOverrideOnSite applies a health report override on the Site controller.
+func (mm *ManageMachine) CreateMachineHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.InsertHealthReportOverrideRequest) error {
+	logger := log.With().Str("Activity", "CreateMachineHealthReportOverrideOnSite").Logger()
 	logger.Info().Msg("Starting activity")
 
 	if request == nil || request.MachineId == nil || request.MachineId.Id == "" || request.Override == nil || request.Override.Report == nil {
@@ -141,9 +141,9 @@ func (mm *ManageMachine) InsertHealthReportOverrideOnSite(ctx context.Context, r
 	return nil
 }
 
-// RemoveHealthReportOverrideOnSite removes a health report override on the Site controller.
-func (mm *ManageMachine) RemoveHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.RemoveHealthReportOverrideRequest) error {
-	logger := log.With().Str("Activity", "RemoveHealthReportOverrideOnSite").Logger()
+// DeleteMachineHealthReportOverrideOnSite removes a health report override on the Site controller.
+func (mm *ManageMachine) DeleteMachineHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.RemoveHealthReportOverrideRequest) error {
+	logger := log.With().Str("Activity", "DeleteMachineHealthReportOverrideOnSite").Logger()
 	logger.Info().Msg("Starting activity")
 
 	if request == nil || request.MachineId == nil || request.MachineId.Id == "" || request.Source == "" {

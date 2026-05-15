@@ -119,8 +119,8 @@ func CreateMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.In
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var machineManager activity.ManageMachine
-	if err := workflow.ExecuteActivity(ctx, machineManager.InsertHealthReportOverrideOnSite, request).Get(ctx, nil); err != nil {
-		logger.Error().Err(err).Str("Activity", "InsertHealthReportOverrideOnSite").Msg("Failed to execute activity from workflow")
+	if err := workflow.ExecuteActivity(ctx, machineManager.CreateMachineHealthReportOverrideOnSite, request).Get(ctx, nil); err != nil {
+		logger.Error().Err(err).Str("Activity", "CreateMachineHealthReportOverrideOnSite").Msg("Failed to execute activity from workflow")
 		return err
 	}
 
@@ -146,8 +146,8 @@ func DeleteMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.Re
 	ctx = workflow.WithActivityOptions(ctx, options)
 
 	var machineManager activity.ManageMachine
-	if err := workflow.ExecuteActivity(ctx, machineManager.RemoveHealthReportOverrideOnSite, request).Get(ctx, nil); err != nil {
-		logger.Error().Err(err).Str("Activity", "RemoveHealthReportOverrideOnSite").Msg("Failed to execute activity from workflow")
+	if err := workflow.ExecuteActivity(ctx, machineManager.DeleteMachineHealthReportOverrideOnSite, request).Get(ctx, nil); err != nil {
+		logger.Error().Err(err).Str("Activity", "DeleteMachineHealthReportOverrideOnSite").Msg("Failed to execute activity from workflow")
 		return err
 	}
 

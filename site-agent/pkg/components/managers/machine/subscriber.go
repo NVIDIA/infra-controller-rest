@@ -37,10 +37,10 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered UpdateMachineMetadata workflow")
 
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CreateMachineHealthReportOverride)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Apply Machine Online Repair Health Override workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the CreateMachineHealthReportOverride workflow")
 
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.DeleteMachineHealthReportOverride)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Clear Machine Online Repair Health Override workflow")
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the DeleteMachineHealthReportOverride Override workflow")
 
 	// Register activities
 	machineManager := swa.NewManageMachine(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
@@ -53,11 +53,11 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.UpdateMachineMetadataOnSite)
 	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered UpdateMachineMetadataOnSite activity")
 
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.InsertHealthReportOverrideOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Insert Health Report Override activity")
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.CreateMachineHealthReportOverrideOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the CreateMachineHealthReportOverrideOnSite activity")
 
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.RemoveHealthReportOverrideOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the Remove Health Report Override activity")
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.DeleteMachineHealthReportOverrideOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("Machine: successfully registered the DeleteMachineHealthReportOverrideOnSite activity")
 
 	return nil
 }

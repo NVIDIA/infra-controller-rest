@@ -198,8 +198,8 @@ func (s *MachineWorkflowTestSuite) Test_CreateMachineHealthReportOverride_Succes
 			Mode: cwssaws.OverrideMode_Replace,
 		},
 	}
-	s.env.RegisterActivity(machineManager.InsertHealthReportOverrideOnSite)
-	s.env.OnActivity(machineManager.InsertHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
+	s.env.RegisterActivity(machineManager.CreateMachineHealthReportOverrideOnSite)
+	s.env.OnActivity(machineManager.CreateMachineHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
 	s.env.ExecuteWorkflow(CreateMachineHealthReportOverride, req)
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
@@ -211,8 +211,8 @@ func (s *MachineWorkflowTestSuite) Test_DeleteMachineHealthReportOverride_Succes
 		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
 		Source:    "tenant-reported-issue",
 	}
-	s.env.RegisterActivity(machineManager.RemoveHealthReportOverrideOnSite)
-	s.env.OnActivity(machineManager.RemoveHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
+	s.env.RegisterActivity(machineManager.DeleteMachineHealthReportOverrideOnSite)
+	s.env.OnActivity(machineManager.DeleteMachineHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
 	s.env.ExecuteWorkflow(DeleteMachineHealthReportOverride, req)
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())

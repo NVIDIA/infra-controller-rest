@@ -139,7 +139,7 @@ func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
 	}
 }
 
-func TestManageMachine_InsertHealthReportOverrideOnSite(t *testing.T) {
+func TestManageMachine_CreateMachineHealthReportOverrideOnSite(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
 	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
@@ -158,13 +158,13 @@ func TestManageMachine_InsertHealthReportOverrideOnSite(t *testing.T) {
 			Mode: cwssaws.OverrideMode_Replace,
 		},
 	}
-	assert.NoError(t, mm.InsertHealthReportOverrideOnSite(context.Background(), req))
+	assert.NoError(t, mm.CreateMachineHealthReportOverrideOnSite(context.Background(), req))
 
-	err := mm.InsertHealthReportOverrideOnSite(context.Background(), nil)
+	err := mm.CreateMachineHealthReportOverrideOnSite(context.Background(), nil)
 	assert.Error(t, err)
 }
 
-func TestManageMachine_RemoveHealthReportOverrideOnSite(t *testing.T) {
+func TestManageMachine_DeleteMachineHealthReportOverrideOnSite(t *testing.T) {
 	mockNICo := cClient.NewMockNICoClient()
 
 	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
@@ -175,9 +175,9 @@ func TestManageMachine_RemoveHealthReportOverrideOnSite(t *testing.T) {
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
 		Source:    "tenant-reported-issue",
 	}
-	assert.NoError(t, mm.RemoveHealthReportOverrideOnSite(context.Background(), req))
+	assert.NoError(t, mm.DeleteMachineHealthReportOverrideOnSite(context.Background(), req))
 
-	err := mm.RemoveHealthReportOverrideOnSite(context.Background(), nil)
+	err := mm.DeleteMachineHealthReportOverrideOnSite(context.Background(), nil)
 	assert.Error(t, err)
 }
 
