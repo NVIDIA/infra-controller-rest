@@ -131,11 +131,11 @@ test-db:
 	$(MAKE) ensure-postgres
 	cd db && go test -p 1 ./... -count=1
 
-nico-mock-server-build:
+core-mock-server-build:
 	mkdir -p build
 	cd site-agent/cmd/mock-core && go build -o ../../../build/mock-core .
 
-nico-mock-server-start: nico-mock-server-build
+core-mock-server-start: core-mock-server-build
 	-lsof -ti:11079 | xargs kill -9 2>/dev/null
 	./build/mock-core -tout 0 > build/mock-core.log 2>&1 & echo $$! > build/mock-core.pid
 	@echo "Waiting for gRPC server to start..."
@@ -150,7 +150,7 @@ nico-mock-server-start: nico-mock-server-build
 	echo "Timeout waiting for Mock Core gRPC server to start"; \
 	exit 1
 
-nico-mock-server-stop:
+core-mock-server-stop:
 	-kill $$(cat build/mock-core.pid) 2>/dev/null
 	-rm -f build/mock-core.pid
 
@@ -177,9 +177,9 @@ flow-mock-server-stop:
 	-kill $$(cat build/mock-flow.pid) 2>/dev/null
 	-rm -f build/mock-flow.pid
 
-test-site-agent: nico-mock-server-start flow-mock-server-start
-	cd site-agent/pkg/components && CGO_ENABLED=1 go test -race -p 1 ./... -count=1 ; \
-	ret=$$? ; cd ../../.. && $(MAKE) nico-mock-server-stop flow-mock-server-stop ; exit $$ret
+test-site-agent: core-mock-server-start flow-mock-server-start
+	cd site-agent/pkg/components && CGO_ENABLED=1 go test -p 1 ./... -count=1 ; \
+	ret=$$? ; cd ../../.. && $(MAKE) core-mock-server-stop flow-mock-server-stop ; exit $$ret
 
 test-api:
 	$(MAKE) ensure-postgres

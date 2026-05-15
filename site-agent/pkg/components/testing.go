@@ -289,8 +289,8 @@ func TestInitElektra(t *testing.T) {
 	if testElektra != nil {
 		return
 	}
-	os.Setenv("NICO_CERT_CHECK_INTERVAL", "1") // set this to check if certs were rotated every second to help with unit tests
-	defer os.Unsetenv("NICO_CERT_CHECK_INTERVAL")
+	os.Setenv("CORE_GRPC_CERT_CHECK_INTERVAL", "1") // set this to check if certs were rotated every second to help with unit tests
+	defer os.Unsetenv("CORE_GRPC_CERT_CHECK_INTERVAL")
 
 	// Initialize test Site Agent
 	log.Info().Msg("Elektra: Initializing test Site Agent")

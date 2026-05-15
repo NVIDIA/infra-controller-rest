@@ -69,9 +69,9 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if coreGrpcAddress == "" {
 		coreGrpcAddress = os.Getenv("CARBIDE_ADDRESS")
 	}
-	flag.StringVar(&conf.CoreGrpc.Address, "coreGrpcAddress", coreGrpcAddress, "CoreGrpc Address")
+	flag.StringVar(&conf.CoreGrpc.Address, "coreGrpcAddress", coreGrpcAddress, "Core gRPC Server Address")
 	if conf.CoreGrpc.Address == "" {
-		conf.CoreGrpc.Address = "core-grpc.core-system.svc.cluster.local:1079"
+		conf.CoreGrpc.Address = "core-grpc.nico-system.svc.cluster.local:1079"
 	}
 	coreGrpcSecOpt := os.Getenv("CORE_GRPC_SEC_OPT")
 	if coreGrpcSecOpt == "" {
@@ -86,13 +86,13 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 		cSecOpt = int(client.ServerTLS)
 	}
 	sOpt := 0
-	flag.IntVar(&sOpt, "coreGrpcSecureOptions", cSecOpt, "CoreGrpc security option")
+	flag.IntVar(&sOpt, "coreGrpcSecureOptions", cSecOpt, "Core gRPC security option")
 	conf.CoreGrpc.Secure = client.SecureOptions(sOpt)
 	coreGrpcCAPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
 	if coreGrpcCAPath == "" {
 		coreGrpcCAPath = os.Getenv("CARBIDE_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.CoreGrpc.ServerCAPath, "coreGrpcCertPath", coreGrpcCAPath, "CoreGrpc Cert Path")
+	flag.StringVar(&conf.CoreGrpc.ServerCAPath, "coreGrpcCertPath", coreGrpcCAPath, "Core gRPC Cert Path")
 	if conf.CoreGrpc.ServerCAPath == "" {
 		conf.CoreGrpc.ServerCAPath = DefaultCoreGrpcClientCAPath
 	}
@@ -100,7 +100,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if coreGrpcClientCert == "" {
 		coreGrpcClientCert = os.Getenv("CARBIDE_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.CoreGrpc.ClientCertPath, "coreGrpcClientCertPath", coreGrpcClientCert, "CoreGrpc client Cert Path")
+	flag.StringVar(&conf.CoreGrpc.ClientCertPath, "coreGrpcClientCertPath", coreGrpcClientCert, "Core gRPC client Cert Path")
 	if conf.CoreGrpc.ClientCertPath == "" {
 		conf.CoreGrpc.ClientCertPath = DefaultCoreGrpcClientCertPath
 	}
@@ -108,7 +108,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if coreGrpcClientKey == "" {
 		coreGrpcClientKey = os.Getenv("CARBIDE_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.CoreGrpc.ClientKeyPath, "coreGrpcClientKeyPath", coreGrpcClientKey, "CoreGrpc client Cert Path")
+	flag.StringVar(&conf.CoreGrpc.ClientKeyPath, "coreGrpcClientKeyPath", coreGrpcClientKey, "Core gRPC client Cert Path")
 	if conf.CoreGrpc.ClientKeyPath == "" {
 		conf.CoreGrpc.ClientKeyPath = DefaultCoreGrpcClientKeyPath
 	}
