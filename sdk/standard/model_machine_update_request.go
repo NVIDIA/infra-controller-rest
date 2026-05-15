@@ -43,10 +43,10 @@ type MachineUpdateRequest struct {
 	// Set to `true` to enable maintenance mode and to `false` to disable maintenance mode. Can be set by Provider or Privileged Tenant.
 	SetMaintenanceMode NullableBool `json:"setMaintenanceMode,omitempty"`
 	// Optional message describing the reason for moving Machine into maintenance mode. Can be updated by Provider or Privileged Tenant.
-	MaintenanceMessage  NullableString              `json:"maintenanceMessage,omitempty"`
-	Labels              map[string]string           `json:"labels,omitempty"`
-	OnlineRepairRequest *MachineOnlineRepairRequest `json:"onlineRepairRequest,omitempty"`
-	// Required when `onlineRepairRequest.enabled` is true. Must not be set when exiting online repair (`onlineRepairRequest.enabled` false).
+	MaintenanceMessage NullableString       `json:"maintenanceMessage,omitempty"`
+	Labels             map[string]string    `json:"labels,omitempty"`
+	OnlineRepair       *MachineOnlineRepair `json:"onlineRepair,omitempty"`
+	// Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
 	HealthIssue *HealthIssue `json:"healthIssue,omitempty"`
 }
 
@@ -271,36 +271,36 @@ func (o *MachineUpdateRequest) SetLabels(v map[string]string) {
 	o.Labels = v
 }
 
-// GetOnlineRepairRequest returns the OnlineRepairRequest field value if set, zero value otherwise.
-func (o *MachineUpdateRequest) GetOnlineRepairRequest() MachineOnlineRepairRequest {
-	if o == nil || IsNil(o.OnlineRepairRequest) {
-		var ret MachineOnlineRepairRequest
+// GetOnlineRepair returns the OnlineRepair field value if set, zero value otherwise.
+func (o *MachineUpdateRequest) GetOnlineRepair() MachineOnlineRepair {
+	if o == nil || IsNil(o.OnlineRepair) {
+		var ret MachineOnlineRepair
 		return ret
 	}
-	return *o.OnlineRepairRequest
+	return *o.OnlineRepair
 }
 
-// GetOnlineRepairRequestOk returns a tuple with the OnlineRepairRequest field value if set, nil otherwise
+// GetOnlineRepairOk returns a tuple with the OnlineRepair field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MachineUpdateRequest) GetOnlineRepairRequestOk() (*MachineOnlineRepairRequest, bool) {
-	if o == nil || IsNil(o.OnlineRepairRequest) {
+func (o *MachineUpdateRequest) GetOnlineRepairOk() (*MachineOnlineRepair, bool) {
+	if o == nil || IsNil(o.OnlineRepair) {
 		return nil, false
 	}
-	return o.OnlineRepairRequest, true
+	return o.OnlineRepair, true
 }
 
-// HasOnlineRepairRequest returns a boolean if a field has been set.
-func (o *MachineUpdateRequest) HasOnlineRepairRequest() bool {
-	if o != nil && !IsNil(o.OnlineRepairRequest) {
+// HasOnlineRepair returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasOnlineRepair() bool {
+	if o != nil && !IsNil(o.OnlineRepair) {
 		return true
 	}
 
 	return false
 }
 
-// SetOnlineRepairRequest gets a reference to the given MachineOnlineRepairRequest and assigns it to the OnlineRepairRequest field.
-func (o *MachineUpdateRequest) SetOnlineRepairRequest(v MachineOnlineRepairRequest) {
-	o.OnlineRepairRequest = &v
+// SetOnlineRepair gets a reference to the given MachineOnlineRepair and assigns it to the OnlineRepair field.
+func (o *MachineUpdateRequest) SetOnlineRepair(v MachineOnlineRepair) {
+	o.OnlineRepair = &v
 }
 
 // GetHealthIssue returns the HealthIssue field value if set, zero value otherwise.
@@ -360,8 +360,8 @@ func (o MachineUpdateRequest) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Labels) {
 		toSerialize["labels"] = o.Labels
 	}
-	if !IsNil(o.OnlineRepairRequest) {
-		toSerialize["onlineRepairRequest"] = o.OnlineRepairRequest
+	if !IsNil(o.OnlineRepair) {
+		toSerialize["onlineRepair"] = o.OnlineRepair
 	}
 	if !IsNil(o.HealthIssue) {
 		toSerialize["healthIssue"] = o.HealthIssue

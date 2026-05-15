@@ -17541,8 +17541,8 @@ components:
           type: boolean
           enum: [true]
           description: Tenant confirms risk of instance deletion if escalation to offline breakfix occurs.
-    MachineOnlineRepairRequest:
-      title: MachineOnlineRepairRequest
+    MachineOnlineRepair:
+      title: MachineOnlineRepair
       type: object
       required:
         - enabled
@@ -17573,7 +17573,7 @@ components:
             RackIdentifier: GVX11F01C02
             ServerName: SITE1-C03-Server-02
             RepairStatus: InProgress
-        - onlineRepairRequest:
+        - onlineRepair:
             enabled: true
             policy:
               allowAutoInstanceDeletionOnFailure: false
@@ -17615,10 +17615,10 @@ components:
         labels:
           description: 'Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.'
           $ref: '#/components/schemas/Labels'
-        onlineRepairRequest:
-          $ref: '#/components/schemas/MachineOnlineRepairRequest'
+        onlineRepair:
+          $ref: '#/components/schemas/MachineOnlineRepair'
         healthIssue:
-          description: Required when `onlineRepairRequest.enabled` is true. Must not be set when exiting online repair (`onlineRepairRequest.enabled` false).
+          description: Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
           $ref: '#/components/schemas/HealthIssue'
     MachineInterface:
       title: MachineInterface

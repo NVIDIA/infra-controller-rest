@@ -77,28 +77,31 @@ var (
 
 // APIHealthIssue describes the tenant-reported issue when requesting online repair.
 type APIHealthIssue struct {
+	// Category is the type of the issue
 	Category string `json:"category"`
-	Summary  string `json:"summary"`
-	Details  string `json:"details"`
+	// Summary is the summary of the issue
+	Summary *string `json:"summary"`
+	// Details is the message of the issue
+	Details *string `json:"details"`
 }
 
-// APIOnlineRepairPolicy carries escalation policy for online repair.
-type APIOnlineRepairPolicy struct {
+// APIMachineOnlineRepairPolicy carries escalation policy for online repair.
+type APIMachineOnlineRepairPolicy struct {
 	AllowAutoInstanceDeletionOnFailure *bool `json:"allowAutoInstanceDeletionOnFailure"`
 }
 
-// APIOnlineRepairAcknowledgments are required confirmations to enter online repair.
-type APIOnlineRepairAcknowledgments struct {
+// APIMachineOnlineRepairAcknowledgments are required confirmations to enter online repair.
+type APIMachineOnlineRepairAcknowledgments struct {
 	AcceptDataCorruptionRisk   *bool `json:"acceptDataCorruptionRisk"`
 	AcceptRepairTeamAccess     *bool `json:"acceptRepairTeamAccess"`
 	AcceptInstanceDeletionRisk *bool `json:"acceptInstanceDeletionRisk"`
 }
 
-type APIMachineOnlineRepairRequest struct {
+type APIMachineOnlineRepair struct {
 	// Enabled when true enters in-pool online repair; when false exits online repair.
-	Enabled         *bool                           `json:"enabled"`
-	Policy          *APIOnlineRepairPolicy          `json:"policy,omitempty"`
-	Acknowledgments *APIOnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
+	Enabled         *bool                                  `json:"enabled"`
+	Policy          *APIMachineOnlineRepairPolicy          `json:"policy,omitempty"`
+	Acknowledgments *APIMachineOnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
 }
 
 // APIMachineUpdateRequest is the data structure to capture request to update a Machine
@@ -113,23 +116,23 @@ type APIMachineUpdateRequest struct {
 	MaintenanceMessage *string `json:"maintenanceMessage"`
 	// Labels allows setting a key value pair of arbitrary string metadata for the Machine
 	Labels map[string]string `json:"labels"`
-	// OnlineRepairRequest is the request to enter/exit online repair
-	OnlineRepairRequest *APIMachineOnlineRepairRequest `json:"onlineRepairRequest"`
-	// HealthIssue is required when onlineRepairRequest.enabled is true.
+	// OnlineRepair is the request to enter/exit online repair
+	OnlineRepair *APIMachineOnlineRepair `json:"onlineRepair"`
+	// HealthIssue is required when onlineRepair.enabled is true.
 	HealthIssue *APIHealthIssue `json:"healthIssue"`
 }
 
 // IsOnlineRepair reports whether this request is for in-pool online repair (enter or exit).
 func (mur *APIMachineUpdateRequest) IsOnlineRepair() bool {
-	return mur.OnlineRepairRequest != nil
+	return mur.OnlineRepair != nil
 }
 
 // OnlineRepairEnabled is true when the request enters online repair (enabled == true). Caller must ensure Validate() passed or check for nil Enabled.
-func (mur *APIMachineUpdateRequest) OnlineRepairEntering() bool {
-	if mur.OnlineRepairRequest == nil || mur.OnlineRepairRequest.Enabled == nil {
+func (mur *APIMachineUpdateRequest) OnlineRepairEnabled() bool {
+	if mur.OnlineRepair == nil || mur.OnlineRepair.Enabled == nil {
 		return false
 	}
-	return *mur.OnlineRepairRequest.Enabled
+	return *mur.OnlineRepair.Enabled
 }
 
 // Validate ensure the values passed in request are acceptable
@@ -163,19 +166,19 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		exclusiveOptionsCount++
 	}
 
-	if mur.OnlineRepairRequest != nil {
+	if mur.OnlineRepair != nil {
 		exclusiveOptionsCount++
 	}
 
 	if err == nil && exclusiveOptionsCount > 1 {
 		err = validation.Errors{
-			validationCommonErrorField: errors.New("only one of setMaintenanceMode, instanceTypeId, clearInstanceType, labels, or onlineRepairRequest can be set at a time"),
+			validationCommonErrorField: errors.New("only one of setMaintenanceMode, instanceTypeId, clearInstanceType, labels, or onlineRepair can be set at a time"),
 		}
 	}
 
 	if err == nil && exclusiveOptionsCount == 0 {
 		err = validation.Errors{
-			validationCommonErrorField: errors.New("no updates specified. At least one of setMaintenanceMode, instanceTypeId, clearInstanceType, labels, or onlineRepairRequest must be specified"),
+			validationCommonErrorField: errors.New("no updates specified. At least one of setMaintenanceMode, instanceTypeId, clearInstanceType, labels, or onlineRepair must be specified"),
 		}
 	}
 
@@ -185,49 +188,49 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		}
 	}
 
-	if err == nil && mur.HealthIssue != nil && mur.OnlineRepairRequest == nil {
+	if err == nil && mur.HealthIssue != nil && mur.OnlineRepair == nil {
 		err = validation.Errors{
-			"healthIssue": errors.New("healthIssue must only be set together with onlineRepairRequest"),
+			"healthIssue": errors.New("healthIssue must only be set together with onlineRepair"),
 		}
 	}
 
-	if err == nil && mur.OnlineRepairRequest != nil {
-		orr := mur.OnlineRepairRequest
+	if err == nil && mur.OnlineRepair != nil {
+		orr := mur.OnlineRepair
 		if orr.Enabled == nil {
 			err = validation.Errors{
-				"onlineRepairRequest.enabled": errors.New("enabled is required when onlineRepairRequest is set"),
+				"onlineRepair.enabled": errors.New("enabled is required when onlineRepair is set"),
 			}
 		} else if *orr.Enabled {
 			verr := validation.Errors{}
 			if mur.HealthIssue == nil {
-				verr["HealthIssue"] = errors.New("HealthIssue is required when onlineRepairRequest.enabled is true")
+				verr["HealthIssue"] = errors.New("HealthIssue is required when onlineRepair.enabled is true")
 			} else {
 				mhi := mur.HealthIssue
 				if mhi.Category == "" || !ValidHealthIssueCategories[mhi.Category] {
 					verr["HealthIssue.category"] = errors.New("must be one of HARDWARE, NETWORK, PERFORMANCE, STORAGE, SOFTWARE, OTHER")
 				}
-				if mhi.Summary == "" {
+				if mhi.Summary == nil || *mhi.Summary == "" {
 					verr["HealthIssue.summary"] = errors.New("summary is required")
-				} else if utf8.RuneCountInString(mhi.Summary) > 512 {
+				} else if utf8.RuneCountInString(*mhi.Summary) > 512 {
 					verr["HealthIssue.summary"] = errors.New("summary must be at most 512 characters")
 				}
-				if mhi.Details == "" {
+				if mhi.Details == nil || *mhi.Details == "" {
 					verr["HealthIssue.details"] = errors.New("details is required")
-				} else if utf8.RuneCountInString(mhi.Details) > 8192 {
+				} else if utf8.RuneCountInString(*mhi.Details) > 8192 {
 					verr["HealthIssue.details"] = errors.New("details must be at most 8192 characters")
 				}
 			}
 			if orr.Policy == nil || orr.Policy.AllowAutoInstanceDeletionOnFailure == nil {
-				verr["onlineRepairRequest.policy"] = errors.New("policy.allowAutoInstanceDeletionOnFailure is required when entering online repair")
+				verr["onlineRepair.policy"] = errors.New("policy.allowAutoInstanceDeletionOnFailure is required when entering online repair")
 			}
 			if orr.Acknowledgments == nil {
-				verr["onlineRepairRequest.acknowledgments"] = errors.New("acknowledgments is required when entering online repair")
+				verr["onlineRepair.acknowledgments"] = errors.New("acknowledgments is required when entering online repair")
 			} else {
 				a := orr.Acknowledgments
 				if a.AcceptDataCorruptionRisk == nil || !*a.AcceptDataCorruptionRisk ||
 					a.AcceptRepairTeamAccess == nil || !*a.AcceptRepairTeamAccess ||
 					a.AcceptInstanceDeletionRisk == nil || !*a.AcceptInstanceDeletionRisk {
-					verr["onlineRepairRequest.acknowledgments"] = errors.New("all acknowledgment flags must be true to enter online repair")
+					verr["onlineRepair.acknowledgments"] = errors.New("all acknowledgment flags must be true to enter online repair")
 				}
 			}
 			if len(verr) > 0 {
@@ -236,7 +239,7 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		} else {
 			if mur.HealthIssue != nil || orr.Policy != nil || orr.Acknowledgments != nil {
 				err = validation.Errors{
-					validationCommonErrorField: errors.New("HealthIssue, onlineRepairRequest.policy, and onlineRepairRequest.acknowledgments must not be set when exiting online repair"),
+					validationCommonErrorField: errors.New("HealthIssue, onlineRepair.policy, and onlineRepair.acknowledgments must not be set when exiting online repair"),
 				}
 			}
 		}

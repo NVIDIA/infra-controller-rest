@@ -184,7 +184,7 @@ func (s *MachineWorkflowTestSuite) Test_UpdateMachineMetadata_ActivityFails() {
 	s.Equal(errMsg, applicationErr.Error())
 }
 
-func (s *MachineWorkflowTestSuite) Test_ApplyMachineHealthReportOverride_Success() {
+func (s *MachineWorkflowTestSuite) Test_CreateMachineHealthReportOverride_Success() {
 	var machineManager mActivity.ManageMachine
 	req := &cwssaws.InsertHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
@@ -200,12 +200,12 @@ func (s *MachineWorkflowTestSuite) Test_ApplyMachineHealthReportOverride_Success
 	}
 	s.env.RegisterActivity(machineManager.InsertHealthReportOverrideOnSite)
 	s.env.OnActivity(machineManager.InsertHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
-	s.env.ExecuteWorkflow(ApplyMachineHealthReportOverride, req)
+	s.env.ExecuteWorkflow(CreateMachineHealthReportOverride, req)
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 }
 
-func (s *MachineWorkflowTestSuite) Test_ClearMachineHealthReportOverride_Success() {
+func (s *MachineWorkflowTestSuite) Test_DeleteMachineHealthReportOverride_Success() {
 	var machineManager mActivity.ManageMachine
 	req := &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
@@ -213,7 +213,7 @@ func (s *MachineWorkflowTestSuite) Test_ClearMachineHealthReportOverride_Success
 	}
 	s.env.RegisterActivity(machineManager.RemoveHealthReportOverrideOnSite)
 	s.env.OnActivity(machineManager.RemoveHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
-	s.env.ExecuteWorkflow(ClearMachineHealthReportOverride, req)
+	s.env.ExecuteWorkflow(DeleteMachineHealthReportOverride, req)
 	s.True(s.env.IsWorkflowCompleted())
 	s.NoError(s.env.GetWorkflowError())
 }

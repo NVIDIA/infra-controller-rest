@@ -20,3 +20,6 @@ test/*
 pagination.go
 pagination_test.go
 PAGINATION.md
+
+# MachineOnlineRepair is generated twice (standalone schema + request suffix); single definition lives in model_machine_online_repair.go.
+model_machine_online_repair_request.go

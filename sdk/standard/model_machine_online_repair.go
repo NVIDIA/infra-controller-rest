@@ -1,21 +1,4 @@
 /*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
 NVIDIA Infra Controller REST API
 
 NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
@@ -33,39 +16,39 @@ import (
 	"fmt"
 )
 
-// checks if the MachineOnlineRepairRequest type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &MachineOnlineRepairRequest{}
+// checks if the MachineOnlineRepair type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &MachineOnlineRepair{}
 
-// MachineOnlineRepairRequest Enter or exit in-pool online repair. When `enabled` is true, `policy` and `acknowledgments` are required inside this object, and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
-type MachineOnlineRepairRequest struct {
+// MachineOnlineRepair Enter or exit in-pool online repair. When `enabled` is true, `policy` and `acknowledgments` are required inside this object, and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
+type MachineOnlineRepair struct {
 	// When true, initiates in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine and sets the associated Instance status to Repairing. When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
 	Enabled         bool                         `json:"enabled"`
 	Policy          *OnlineRepairPolicy          `json:"policy,omitempty"`
 	Acknowledgments *OnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
 }
 
-type _MachineOnlineRepairRequest MachineOnlineRepairRequest
+type _MachineOnlineRepair MachineOnlineRepair
 
-// NewMachineOnlineRepairRequest instantiates a new MachineOnlineRepairRequest object
+// NewMachineOnlineRepair instantiates a new MachineOnlineRepair object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMachineOnlineRepairRequest(enabled bool) *MachineOnlineRepairRequest {
-	this := MachineOnlineRepairRequest{}
+func NewMachineOnlineRepair(enabled bool) *MachineOnlineRepair {
+	this := MachineOnlineRepair{}
 	this.Enabled = enabled
 	return &this
 }
 
-// NewMachineOnlineRepairRequestWithDefaults instantiates a new MachineOnlineRepairRequest object
+// NewMachineOnlineRepairWithDefaults instantiates a new MachineOnlineRepair object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewMachineOnlineRepairRequestWithDefaults() *MachineOnlineRepairRequest {
-	this := MachineOnlineRepairRequest{}
+func NewMachineOnlineRepairWithDefaults() *MachineOnlineRepair {
+	this := MachineOnlineRepair{}
 	return &this
 }
 
 // GetEnabled returns the Enabled field value
-func (o *MachineOnlineRepairRequest) GetEnabled() bool {
+func (o *MachineOnlineRepair) GetEnabled() bool {
 	if o == nil {
 		var ret bool
 		return ret
@@ -76,7 +59,7 @@ func (o *MachineOnlineRepairRequest) GetEnabled() bool {
 
 // GetEnabledOk returns a tuple with the Enabled field value
 // and a boolean to check if the value has been set.
-func (o *MachineOnlineRepairRequest) GetEnabledOk() (*bool, bool) {
+func (o *MachineOnlineRepair) GetEnabledOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
@@ -84,12 +67,12 @@ func (o *MachineOnlineRepairRequest) GetEnabledOk() (*bool, bool) {
 }
 
 // SetEnabled sets field value
-func (o *MachineOnlineRepairRequest) SetEnabled(v bool) {
+func (o *MachineOnlineRepair) SetEnabled(v bool) {
 	o.Enabled = v
 }
 
 // GetPolicy returns the Policy field value if set, zero value otherwise.
-func (o *MachineOnlineRepairRequest) GetPolicy() OnlineRepairPolicy {
+func (o *MachineOnlineRepair) GetPolicy() OnlineRepairPolicy {
 	if o == nil || IsNil(o.Policy) {
 		var ret OnlineRepairPolicy
 		return ret
@@ -99,7 +82,7 @@ func (o *MachineOnlineRepairRequest) GetPolicy() OnlineRepairPolicy {
 
 // GetPolicyOk returns a tuple with the Policy field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MachineOnlineRepairRequest) GetPolicyOk() (*OnlineRepairPolicy, bool) {
+func (o *MachineOnlineRepair) GetPolicyOk() (*OnlineRepairPolicy, bool) {
 	if o == nil || IsNil(o.Policy) {
 		return nil, false
 	}
@@ -107,7 +90,7 @@ func (o *MachineOnlineRepairRequest) GetPolicyOk() (*OnlineRepairPolicy, bool) {
 }
 
 // HasPolicy returns a boolean if a field has been set.
-func (o *MachineOnlineRepairRequest) HasPolicy() bool {
+func (o *MachineOnlineRepair) HasPolicy() bool {
 	if o != nil && !IsNil(o.Policy) {
 		return true
 	}
@@ -116,12 +99,12 @@ func (o *MachineOnlineRepairRequest) HasPolicy() bool {
 }
 
 // SetPolicy gets a reference to the given OnlineRepairPolicy and assigns it to the Policy field.
-func (o *MachineOnlineRepairRequest) SetPolicy(v OnlineRepairPolicy) {
+func (o *MachineOnlineRepair) SetPolicy(v OnlineRepairPolicy) {
 	o.Policy = &v
 }
 
 // GetAcknowledgments returns the Acknowledgments field value if set, zero value otherwise.
-func (o *MachineOnlineRepairRequest) GetAcknowledgments() OnlineRepairAcknowledgments {
+func (o *MachineOnlineRepair) GetAcknowledgments() OnlineRepairAcknowledgments {
 	if o == nil || IsNil(o.Acknowledgments) {
 		var ret OnlineRepairAcknowledgments
 		return ret
@@ -131,7 +114,7 @@ func (o *MachineOnlineRepairRequest) GetAcknowledgments() OnlineRepairAcknowledg
 
 // GetAcknowledgmentsOk returns a tuple with the Acknowledgments field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MachineOnlineRepairRequest) GetAcknowledgmentsOk() (*OnlineRepairAcknowledgments, bool) {
+func (o *MachineOnlineRepair) GetAcknowledgmentsOk() (*OnlineRepairAcknowledgments, bool) {
 	if o == nil || IsNil(o.Acknowledgments) {
 		return nil, false
 	}
@@ -139,7 +122,7 @@ func (o *MachineOnlineRepairRequest) GetAcknowledgmentsOk() (*OnlineRepairAcknow
 }
 
 // HasAcknowledgments returns a boolean if a field has been set.
-func (o *MachineOnlineRepairRequest) HasAcknowledgments() bool {
+func (o *MachineOnlineRepair) HasAcknowledgments() bool {
 	if o != nil && !IsNil(o.Acknowledgments) {
 		return true
 	}
@@ -148,11 +131,11 @@ func (o *MachineOnlineRepairRequest) HasAcknowledgments() bool {
 }
 
 // SetAcknowledgments gets a reference to the given OnlineRepairAcknowledgments and assigns it to the Acknowledgments field.
-func (o *MachineOnlineRepairRequest) SetAcknowledgments(v OnlineRepairAcknowledgments) {
+func (o *MachineOnlineRepair) SetAcknowledgments(v OnlineRepairAcknowledgments) {
 	o.Acknowledgments = &v
 }
 
-func (o MachineOnlineRepairRequest) MarshalJSON() ([]byte, error) {
+func (o MachineOnlineRepair) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
@@ -160,7 +143,7 @@ func (o MachineOnlineRepairRequest) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-func (o MachineOnlineRepairRequest) ToMap() (map[string]interface{}, error) {
+func (o MachineOnlineRepair) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["enabled"] = o.Enabled
 	if !IsNil(o.Policy) {
@@ -172,7 +155,7 @@ func (o MachineOnlineRepairRequest) ToMap() (map[string]interface{}, error) {
 	return toSerialize, nil
 }
 
-func (o *MachineOnlineRepairRequest) UnmarshalJSON(data []byte) (err error) {
+func (o *MachineOnlineRepair) UnmarshalJSON(data []byte) (err error) {
 	// This validates that all required properties are included in the JSON object
 	// by unmarshalling the object into a generic map with string keys and checking
 	// that every required field exists as a key in the generic map.
@@ -194,53 +177,53 @@ func (o *MachineOnlineRepairRequest) UnmarshalJSON(data []byte) (err error) {
 		}
 	}
 
-	varMachineOnlineRepairRequest := _MachineOnlineRepairRequest{}
+	varMachineOnlineRepair := _MachineOnlineRepair{}
 
 	decoder := json.NewDecoder(bytes.NewReader(data))
 	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&varMachineOnlineRepairRequest)
+	err = decoder.Decode(&varMachineOnlineRepair)
 
 	if err != nil {
 		return err
 	}
 
-	*o = MachineOnlineRepairRequest(varMachineOnlineRepairRequest)
+	*o = MachineOnlineRepair(varMachineOnlineRepair)
 
 	return err
 }
 
-type NullableMachineOnlineRepairRequest struct {
-	value *MachineOnlineRepairRequest
+type NullableMachineOnlineRepair struct {
+	value *MachineOnlineRepair
 	isSet bool
 }
 
-func (v NullableMachineOnlineRepairRequest) Get() *MachineOnlineRepairRequest {
+func (v NullableMachineOnlineRepair) Get() *MachineOnlineRepair {
 	return v.value
 }
 
-func (v *NullableMachineOnlineRepairRequest) Set(val *MachineOnlineRepairRequest) {
+func (v *NullableMachineOnlineRepair) Set(val *MachineOnlineRepair) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableMachineOnlineRepairRequest) IsSet() bool {
+func (v NullableMachineOnlineRepair) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableMachineOnlineRepairRequest) Unset() {
+func (v *NullableMachineOnlineRepair) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableMachineOnlineRepairRequest(val *MachineOnlineRepairRequest) *NullableMachineOnlineRepairRequest {
-	return &NullableMachineOnlineRepairRequest{value: val, isSet: true}
+func NewNullableMachineOnlineRepair(val *MachineOnlineRepair) *NullableMachineOnlineRepair {
+	return &NullableMachineOnlineRepair{value: val, isSet: true}
 }
 
-func (v NullableMachineOnlineRepairRequest) MarshalJSON() ([]byte, error) {
+func (v NullableMachineOnlineRepair) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableMachineOnlineRepairRequest) UnmarshalJSON(src []byte) error {
+func (v *NullableMachineOnlineRepair) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

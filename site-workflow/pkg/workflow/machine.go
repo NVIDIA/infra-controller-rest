@@ -101,9 +101,9 @@ func UpdateMachineMetadata(ctx workflow.Context, request *cwssaws.MachineMetadat
 	return nil
 }
 
-// ApplyMachineHealthReportOverride inserts the tenant-reported OnlineRepair health override on Site.
-func ApplyMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.InsertHealthReportOverrideRequest) error {
-	logger := log.With().Str("Workflow", "ApplyMachineHealthReportOverride").Logger()
+// CreateMachineHealthReportOverride inserts the tenant-reported OnlineRepair health override on Site.
+func CreateMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.InsertHealthReportOverrideRequest) error {
+	logger := log.With().Str("Workflow", "CreateMachineHealthReportOverride").Logger()
 	logger.Info().Msg("Starting workflow")
 
 	retrypolicy := &temporal.RetryPolicy{
@@ -128,9 +128,9 @@ func ApplyMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.Ins
 	return nil
 }
 
-// ClearMachineHealthReportOverride removes the tenant-reported OnlineRepair health override on Site.
-func ClearMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.RemoveHealthReportOverrideRequest) error {
-	logger := log.With().Str("Workflow", "ClearMachineHealthReportOverride").Logger()
+// DeleteMachineHealthReportOverride removes the tenant-reported OnlineRepair health override on Site.
+func DeleteMachineHealthReportOverride(ctx workflow.Context, request *cwssaws.RemoveHealthReportOverrideRequest) error {
+	logger := log.With().Str("Workflow", "DeleteMachineHealthReportOverride").Logger()
 	logger.Info().Msg("Starting workflow")
 
 	retrypolicy := &temporal.RetryPolicy{
