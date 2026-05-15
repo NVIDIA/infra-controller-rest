@@ -95,15 +95,15 @@ func TestManageRack_GetRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock Flow client
-			mockFlowClient := cClient.NewMockFlowClient()
+			// Create mock Flow gRPC client
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
 
 			// Create atomic client and swap with mock
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
 
 			// Create ManageRack instance
-			manageRack := NewManageRack(flowAtomicClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -188,15 +188,15 @@ func TestManageRack_GetRacks(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create mock Flow client
-			mockFlowClient := cClient.NewMockFlowClient()
+			// Create mock Flow gRPC client
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
 
 			// Create atomic client and swap with mock
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
 
 			// Create ManageRack instance
-			manageRack := NewManageRack(flowAtomicClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -335,14 +335,14 @@ func TestManageRack_ValidateRackComponents(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock Flow client
-			mockFlowClient := cClient.NewMockFlowClient()
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
 
 			// Create atomic client and swap with mock
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
 
 			// Create ManageRack instance
-			manageRack := NewManageRack(flowAtomicClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -410,10 +410,10 @@ func TestManageRack_PowerOnRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.PowerOnRack(ctx, tt.request)
@@ -491,10 +491,10 @@ func TestManageRack_PowerOffRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.PowerOffRack(ctx, tt.request)
@@ -572,10 +572,10 @@ func TestManageRack_PowerResetRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.PowerResetRack(ctx, tt.request)
@@ -632,10 +632,10 @@ func TestManageRack_BringUpRack(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.BringUpRack(ctx, tt.request)
@@ -697,10 +697,10 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.GetTaskByID(ctx, tt.request)
@@ -758,10 +758,10 @@ func TestManageRack_CancelTask(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.CancelTask(ctx, tt.request)
@@ -844,10 +844,10 @@ func TestManageRack_UpgradeFirmware(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockFlowClient := cClient.NewMockFlowClient()
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
-			manageRack := NewManageRack(flowAtomicClient)
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
 			result, err := manageRack.UpgradeFirmware(ctx, tt.request)

@@ -15,29 +15,29 @@
  * limitations under the License.
  */
 
-package managerapi
+package coregrpc
 
 import (
-	"context"
-
-	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
+	Manager "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
 )
 
-// FlowExpansion - Flow Expansion
-type FlowExpansion interface{}
+// ManagerAccess - access to all managers
+var ManagerAccess *Manager.ManagerAccess
 
-// FlowInterface - interface to Flow
-type FlowInterface interface {
-	// List all the apis of Flow here
-	Init()
-	Start()
-	CreateGRPCClient() error
-	GetGRPCClient() *client.FlowClient
-	UpdateGRPCClientState(err error)
-	CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.FlowClient, err error)
-	RegisterGRPC()
-	RegisterSubscriber() error
-	GetState() []string
-	GetGRPCClientVersion() int64
-	FlowExpansion
+// API - all API interface
+//
+//nolint:all
+type API struct{} //nolint:all
+
+// NewCoreGrpcManager - returns a new instance of helm manager
+func NewCoreGrpcManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
+	ManagerAccess = &Manager.ManagerAccess{
+		Data: &Manager.ManagerData{
+			EB: superForge,
+		},
+		API:  superAPI,
+		Conf: superConf,
+	}
+	return &API{}
 }

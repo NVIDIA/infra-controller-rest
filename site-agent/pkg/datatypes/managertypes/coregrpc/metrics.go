@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package nicotypes
+package coregrpctypes
 
 import "time"
 

@@ -38,7 +38,7 @@ func (api *API) RegisterSubscriber() error {
 
 	// Register activities
 
-	subnetManager := swa.NewManageSubnet(ManagerAccess.Data.EB.Managers.NICo.Client)
+	subnetManager := swa.NewManageSubnet(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register CreateSubnetOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(subnetManager.CreateSubnetOnSite)

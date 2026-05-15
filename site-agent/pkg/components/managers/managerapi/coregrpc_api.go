@@ -15,29 +15,28 @@
  * limitations under the License.
  */
 
-package flow
+package managerapi
 
 import (
-	Manager "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/datatypes/elektratypes"
+	"context"
+
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 )
 
-// ManagerAccess - access to all managers
-var ManagerAccess *Manager.ManagerAccess
+// CoreGrpcExpansion - CoreGrpc Expansion
+type CoreGrpcExpansion interface{}
 
-// API - all API interface
-//
-//nolint:all
-type API struct{} //nolint:all
-
-// NewFlowManager - returns a new instance of helm manager
-func NewFlowManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
-	ManagerAccess = &Manager.ManagerAccess{
-		Data: &Manager.ManagerData{
-			EB: superForge,
-		},
-		API:  superAPI,
-		Conf: superConf,
-	}
-	return &API{}
+// CoreGrpcInterface - interface to CoreGrpc
+type CoreGrpcInterface interface {
+	// List all the apis of Carbide here
+	Init()
+	Start()
+	CreateGrpcClient() error
+	GetGrpcClient() *client.CoreGrpcClient
+	UpdateGrpcClientState(err error)
+	CreateGrpcClientActivity(ctx context.Context, ResourceID string) (client *client.CoreGrpcClient, err error)
+	RegisterGrpc()
+	GetState() []string
+	GetGrpcClientVersion() int64
+	CoreGrpcExpansion
 }

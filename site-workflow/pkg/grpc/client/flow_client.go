@@ -44,21 +44,22 @@ import (
 
 // Errors
 var (
-	ErrFlowClientInvalidAddress    = errors.New("FlowClient: invalid address")
-	ErrFlowClientInvalidDialOpts   = errors.New("FlowClient: invalid dial options")
-	ErrFlowClientInvalidSecureOpts = errors.New("FlowClient: invalid secure options")
-	ErrFlowClientInvalidServerCA   = errors.New("FlowClient: invalid server CA")
-	ErrFlowClientInvalidClientCA   = errors.New("FlowClient: invalid client CA")
-	ErrFlowClientInvalidClientKey  = errors.New("FlowClient: invalid client key")
-	ErrFlowClientInvalidClientCert = errors.New("FlowClient: invalid client cert")
+	ErrFlowGrpcClientInvalidAddress    = errors.New("FlowGrpcClient: invalid address")
+	ErrFlowGrpcClientInvalidDialOpts   = errors.New("FlowGrpcClient: invalid dial options")
+	ErrFlowGrpcClientInvalidSecureOpts = errors.New("FlowGrpcClient: invalid secure options")
+	ErrFlowGrpcClientInvalidServerCA   = errors.New("FlowGrpcClient: invalid server CA")
+	ErrFlowGrpcClientInvalidClientCA   = errors.New("FlowGrpcClient: invalid client CA")
+	ErrFlowGrpcClientInvalidClientKey  = errors.New("FlowGrpcClient: invalid client key")
+	ErrFlowGrpcClientInvalidClientCert = errors.New("FlowGrpcClient: invalid client cert")
+	ErrFlowGrpcClientNotConnected      = errors.New("FlowGrpcClient: gRPC client is not connected to the server")
 )
 
 // SecureOptions is the enum for the secure options
-type FlowClientSecureOptions int
+type FlowGrpcClientSecureOptions int
 
 const (
 	// FlowInsecureGrpc is the insecure dial option
-	FlowInsecureGrpc FlowClientSecureOptions = iota
+	FlowInsecureGrpc FlowGrpcClientSecureOptions = iota
 	// FlowServerTLS is the secure dial option for server tls
 	FlowServerTLS
 	// FlowMutualTLS for mutual tls
@@ -69,11 +70,11 @@ const (
 )
 
 // FlowClientConfig is the data structure for the client configuration
-type FlowClientConfig struct {
+type FlowGrpcClientConfig struct {
 	// The address of the server <host>:<port>
 	Address string
 	// Secure flag
-	Secure FlowClientSecureOptions
+	Secure FlowGrpcClientSecureOptions
 	// Skip Server Auth
 	SkipServerAuth bool
 	// The TLS certificate for the server
@@ -86,14 +87,14 @@ type FlowClientConfig struct {
 	ClientMetrics Metrics
 }
 
-// NewFlowClient creates a new FlowClient
-func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
+// NewFlowGrpcClient creates a new FlowGrpcClient
+func NewFlowGrpcClient(config *FlowGrpcClientConfig) (client *FlowGrpcClient, err error) {
 	// Validate the config
 	if config.Address == "" {
-		log.Error().Err(ErrFlowClientInvalidAddress).Msg("FlowClient: no address provided")
-		return nil, ErrFlowClientInvalidAddress
+		log.Error().Err(ErrFlowGrpcClientInvalidAddress).Msg("FlowGrpcClient: no address provided")
+		return nil, ErrFlowGrpcClientInvalidAddress
 	}
-	client = &FlowClient{}
+	client = &FlowGrpcClient{}
 
 	switch config.Secure {
 	case FlowInsecureGrpc:
@@ -106,20 +107,20 @@ func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 		log.Debug().Msg("FlowClient: server TLS")
 		// Validate the config contains server ca path
 		if config.ServerCAPath == "" {
-			log.Error().Err(ErrFlowClientInvalidServerCA).Msg("FlowClient: no server ca path provided")
-			return nil, ErrFlowClientInvalidServerCA
+			log.Error().Err(ErrFlowGrpcClientInvalidServerCA).Msg("FlowGrpcClient: No server CA path provided")
+			return nil, ErrFlowGrpcClientInvalidServerCA
 		}
 		if config.SkipServerAuth {
 			// Server TLS
 			// connect with TLS but not mutual TLS
-			log.Info().Msg("FlowClient: skipping server auth in TLS ( Warn: This shouldn't be used in Prod)")
+			log.Info().Msg("FlowGrpcClient: Skipping server auth in TLS (WARNING: This should not be used in Production)")
 			tlsConfig := &tls.Config{
 				InsecureSkipVerify: true,
 			}
 			// Load the server ca
 			_, err := credentials.NewClientTLSFromFile(config.ServerCAPath, "")
 			if err != nil {
-				log.Error().Err(err).Msg("FlowClient: failed to load server ca")
+				log.Error().Err(err).Msg("FlowGrpcClient: Failed to load server CA cert")
 				return nil, err
 			}
 
@@ -133,7 +134,7 @@ func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 			// Load the server ca
 			creds, err := credentials.NewClientTLSFromFile(config.ServerCAPath, "")
 			if err != nil {
-				log.Error().Err(err).Msg("FlowClient: failed to load server ca")
+				log.Error().Err(err).Msg("FlowGrpcClient: Failed to load server CA cert")
 				return nil, err
 			}
 			// Append the dial option
@@ -142,23 +143,23 @@ func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 	case FlowMutualTLS:
 		// Mutual TLS
 		// connect with mutual TLS
-		log.Debug().Msg("FlowClient: mutual TLS")
+		log.Debug().Msg("FlowGrpcClient: Using mutual TLS connection")
 		// 1. Load the client certificates
 		clientCert, err := tls.LoadX509KeyPair(config.ClientCertPath, config.ClientKeyPath)
 		if err != nil {
-			log.Error().Err(err).Msg("FlowClient: failed to load client certificates")
+			log.Error().Err(err).Msg("FlowGrpcClient: Failed to load client certificates")
 			return nil, err
 		}
 		// 2. Load the Trust chain, root ca
 		cabytes, err := os.ReadFile(config.ServerCAPath)
 		if err != nil {
-			log.Error().Err(err).Msg("FlowClient: failed to load Root CA certificates")
+			log.Error().Err(err).Msg("FlowGrpcClient: Failed to load Root CA certificates")
 
 			return nil, err
 		}
 		capool := x509.NewCertPool()
 		if !capool.AppendCertsFromPEM(cabytes) {
-			return nil, fmt.Errorf("FlowClient: failed to append ca certificates to ca pool")
+			return nil, fmt.Errorf("FlowGrpcClient: Failed to append CA cert to CA pool")
 		}
 		mutualTLSConfig := &tls.Config{
 			Certificates: []tls.Certificate{clientCert},
@@ -170,8 +171,8 @@ func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 		client.dialOpts = append(client.dialOpts, grpc.WithTransportCredentials(creds))
 
 	default:
-		log.Error().Err(ErrFlowClientInvalidSecureOpts).Msg("FlowClient: invalid dial options")
-		return nil, ErrFlowClientInvalidSecureOpts
+		log.Error().Err(ErrFlowGrpcClientInvalidSecureOpts).Msg("FlowGrpcClient: Invalid dial options")
+		return nil, ErrFlowGrpcClientInvalidSecureOpts
 	}
 
 	// configure interceptors
@@ -197,154 +198,154 @@ func NewFlowClient(config *FlowClientConfig) (client *FlowClient, err error) {
 	// Create the client connection
 	client.conn, err = grpc.NewClient(config.Address, client.dialOpts...)
 	if err != nil {
-		log.Error().Err(err).Msg("FlowClient: failed to initialize gRPC client")
+		log.Error().Err(err).Msg("FlowGrpcClient: Failed to initialize gRPC client")
 		return nil, err
 	}
-	log.Info().Msg("FlowClient: gRPC client initialized")
+	log.Info().Msg("FlowGrpcClient: gRPC client initialized")
 
 	// Create Flow client
-	client.flow = flowv1.NewFlowClient(client.conn)
-	log.Info().Msg("FlowClient: client created")
+	client.grpcServiceClient = flowv1.NewFlowClient(client.conn)
+	log.Info().Msg("FlowGrpcClient: gRPC service client created")
 
 	// Check the version of the server
 	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(5000)*time.Millisecond))
 	defer cancel()
-	_, err = client.flow.Version(ctx, &flowv1.VersionRequest{})
+	_, err = client.grpcServiceClient.Version(ctx, &flowv1.VersionRequest{})
 	if err != nil {
-		log.Error().Err(err).Msg("FlowClient: failed to get version from server")
-		return nil, fmt.Errorf("FlowClient: failed to get version from server: %w", err)
+		log.Error().Err(err).Msg("FlowGrpcClient: Failed to get version from server")
+		return nil, fmt.Errorf("FlowGrpcClient: Failed to get version from server: %w", err)
 	}
 
-	log.Info().Msg("FlowClient: successfully connected to server")
+	log.Info().Msg("FlowGrpcClient: Successfully connected to server")
 
 	return client, nil
 }
 
-// FlowClient is the data structure for the client
-type FlowClient struct {
+// FlowGrpcClient is the data structure for the client
+type FlowGrpcClient struct {
 	// The client connection
 	conn *grpc.ClientConn
 	// gRPC dial options
 	dialOpts []grpc.DialOption
-	// flow client interface
-	flow flowv1.FlowClient
+	// gRPC service client interface
+	grpcServiceClient flowv1.FlowClient
 }
 
 // Close gracefully shuts down the client's gRPC connection.
-func (cc *FlowClient) Close() error {
-	if cc.conn != nil {
+func (fg *FlowGrpcClient) Close() error {
+	if fg.conn != nil {
 		// Close the grpc.ClientConn.
-		return cc.conn.Close()
+		return fg.conn.Close()
 	}
 	return nil
 }
 
-// Flow client getter
-func (client *FlowClient) Flow() flowv1.FlowClient {
-	return client.flow
+// GrpcService client getter
+func (client *FlowGrpcClient) GrpcServiceClient() flowv1.FlowClient {
+	return client.grpcServiceClient
 }
 
 // FlowAtomicClient is an atomic wrapper around the FlowClient
-type FlowAtomicClient struct {
-	Config  *FlowClientConfig
+type FlowGrpcAtomicClient struct {
+	Config  *FlowGrpcClientConfig
 	value   *atomic.Value
 	version atomic.Int64
 }
 
-// Version returns the current version of the FlowClient
-func (rac *FlowAtomicClient) Version() int64 {
-	return rac.version.Load()
+// Version returns the current version of the FlowGrpcClient
+func (fgac *FlowGrpcAtomicClient) Version() int64 {
+	return fgac.version.Load()
 }
 
-// SwapClient atomically replaces the current FlowClient with a new one,
+// SwapClient atomically replaces the current FlowGrpcClient with a new one,
 // returning the old client for the caller to manage.
-func (rac *FlowAtomicClient) SwapClient(newClient *FlowClient) *FlowClient {
+func (fgac *FlowGrpcAtomicClient) SwapClient(newClient *FlowGrpcClient) *FlowGrpcClient {
 
 	// Atomically replace the current client with the new one and return the old client.
-	oldClientInterface := rac.value.Swap(newClient)
+	oldClientInterface := fgac.value.Swap(newClient)
 
-	// Type assert the returned value to *FlowClient.
+	// Type assert the returned value to *FlowGrpcClient.
 	// This should always succeed if the correct type was stored initially.
-	oldClient, ok := oldClientInterface.(*FlowClient)
+	oldClient, ok := oldClientInterface.(*FlowGrpcClient)
 	if !ok {
-		log.Error().Msg("SwapClient: Type assertion failed for the old client")
+		log.Error().Msg("FlowGrpcAtomicClient: Type assertion failed for the old client")
 		return nil
 	}
 
 	// Increment the version number
-	rac.version.Add(1)
+	fgac.version.Add(1)
 
 	return oldClient
 }
 
-// GetClient returns the current version of Flow client from the atomic value.
+// GetClient returns the current version of FlowGrpcClient from the atomic value.
 // Returns nil if the client has not been initialized yet.
-func (rac *FlowAtomicClient) GetClient() *FlowClient {
-	v := rac.value.Load()
+func (fgac *FlowGrpcAtomicClient) GetClient() *FlowGrpcClient {
+	v := fgac.value.Load()
 	if v == nil {
 		return nil
 	}
-	client, _ := v.(*FlowClient)
+	client, _ := v.(*FlowGrpcClient)
 
 	return client
 }
 
-// GetFlowClient returns the underlying Flow gRPC client. Returns ErrClientNotConnected
+// GrpcServiceClient returns the underlying Flow gRPC service. Returns ErrFlowGrpcClientNotConnected
 // if the client has not been initialized or is not currently connected.
-// Prefer this over GetClient() + manual nil-check + .Flow() at call sites.
-func (rac *FlowAtomicClient) GetFlowClient() (flowv1.FlowClient, error) {
-	client := rac.GetClient()
+// Prefer this over GetClient() + manual nil-check + .GrpcServiceClient() at call sites.
+func (fgac *FlowGrpcAtomicClient) GrpcServiceClient() (flowv1.FlowClient, error) {
+	client := fgac.GetClient()
 	if client == nil {
-		return nil, ErrClientNotConnected
+		return nil, ErrFlowGrpcClientNotConnected
 	}
 	// It's true that NewFlowClient always populates the inner flow field, BUT,
 	// guard against zero-value FlowClient instances slipping in via direct
 	// construction. Without this, a misconstructed wrapper would yield (nil,
 	// nil) and break things.
-	flow := client.Flow()
-	if flow == nil {
-		return nil, ErrClientNotConnected
+	grpcServiceClient := client.GrpcServiceClient()
+	if grpcServiceClient == nil {
+		return nil, ErrFlowGrpcClientNotConnected
 	}
-	return flow, nil
+	return grpcServiceClient, nil
 }
 
 // CheckAndReloadCerts continuously monitors the TLS certificates for changes.
-// If a change is detected, it reinitializes the FlowClient with the new certificates to ensure secure communication.
-func (rac *FlowAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {
+// If a change is detected, it reinitializes the FlowGrpcClient with the new certificates to ensure secure communication.
+func (fgac *FlowGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialServerCAMD5 []byte) {
 	// Initialize contextual logger
-	logger := log.With().Str("Component", "Flow").Str("Operation", "CheckAndReloadCerts").Logger()
+	logger := log.With().Str("Component", "FlowGrpc").Str("Operation", "CheckAndReloadCerts").Logger()
 
-	ticker := time.NewTicker(getFlowCertificateCheckInterval())
+	ticker := time.NewTicker(getFlowGrpcCertificateCheckInterval())
 	defer ticker.Stop()
 
 	lastClientCertMD5, lastServerCAMD5 := initialClientCertMD5, initialServerCAMD5
 
 	for range ticker.C {
-		changed, newClientMD5, newServerMD5, err := rac.CheckCertificates(lastClientCertMD5, lastServerCAMD5)
+		changed, newClientMD5, newServerMD5, err := fgac.CheckCertificates(lastClientCertMD5, lastServerCAMD5)
 		if err != nil {
 			logger.Error().Err(err).Msg("Error checking certificates for changes")
 			continue
 		}
 
 		if changed {
-			newClient, err := NewFlowClient(rac.Config)
+			newClient, err := NewFlowGrpcClient(fgac.Config)
 			if err != nil {
 				logger.Error().Err(err).Msg("Failed to reinitialize gRPC client with new certificates")
 				continue
 			}
 
 			// Atomically update the client instance and get the old one.
-			oldClient := rac.SwapClient(newClient)
+			oldClient := fgac.SwapClient(newClient)
 
 			// Delayed closure of the old client.
-			go func(clientToClose *FlowClient) {
+			go func(clientToClose *FlowGrpcClient) {
 				// Delay the closure to allow ongoing client requests to complete.
 				time.Sleep(10 * time.Second) // Adjust the delay as needed.
 
 				// Ensure the client exists and has a connection to close.
 				if clientToClose != nil {
 					if err := clientToClose.Close(); err != nil {
-						log.Error().Err(err).Msg("Error closing old FlowClient connection")
+						log.Error().Err(err).Msg("Error closing old FlowGrpcClient connection")
 					}
 				}
 			}(oldClient)
@@ -358,9 +359,9 @@ func (rac *FlowAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initialSe
 }
 
 // GetInitialCertMD5 retrieves the MD5 hash of the initial set of certificate that the client is Using
-func (rac *FlowAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []byte, err error) {
+func (fgac *FlowGrpcAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []byte, err error) {
 	// Load and hash the client certificate
-	clientCertBytes, err := os.ReadFile(rac.Config.ClientCertPath)
+	clientCertBytes, err := os.ReadFile(fgac.Config.ClientCertPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -368,7 +369,7 @@ func (rac *FlowAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []b
 	clientCertMD5 = clientCertMD5Hash[:]
 
 	// Load and hash the server CA certificate using os.ReadFile
-	serverCABytes, err := os.ReadFile(rac.Config.ServerCAPath)
+	serverCABytes, err := os.ReadFile(fgac.Config.ServerCAPath)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -379,16 +380,16 @@ func (rac *FlowAtomicClient) GetInitialCertMD5() (clientCertMD5, serverCAMD5 []b
 }
 
 // CheckCertificates checks if the client and server CA certificates have changed
-func (rac *FlowAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5 []byte) (bool, []byte, []byte, error) {
+func (fgac *FlowGrpcAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD5 []byte) (bool, []byte, []byte, error) {
 	// Load and hash the client certificate using os.ReadFile
-	clientCertBytes, err := os.ReadFile(rac.Config.ClientCertPath)
+	clientCertBytes, err := os.ReadFile(fgac.Config.ClientCertPath)
 	if err != nil {
 		return false, lastClientCertMD5, lastServerCAMD5, err
 	}
 	clientCertMD5 := md5.Sum(clientCertBytes)
 
 	// Load and hash the server CA certificate using os.ReadFile
-	serverCABytes, err := os.ReadFile(rac.Config.ServerCAPath)
+	serverCABytes, err := os.ReadFile(fgac.Config.ServerCAPath)
 	if err != nil {
 		return false, lastClientCertMD5, lastServerCAMD5, err
 	}
@@ -403,9 +404,9 @@ func (rac *FlowAtomicClient) CheckCertificates(lastClientCertMD5, lastServerCAMD
 }
 
 // NewFlowAtomicClient creates a new FlowAtomicClient
-func NewFlowAtomicClient(config *FlowClientConfig) *FlowAtomicClient {
+func NewFlowGrpcAtomicClient(config *FlowGrpcClientConfig) *FlowGrpcAtomicClient {
 	// Create the atomic value
-	atomicClient := &FlowAtomicClient{
+	atomicClient := &FlowGrpcAtomicClient{
 		Config:  config,
 		value:   &atomic.Value{},
 		version: atomic.Int64{},
@@ -414,18 +415,18 @@ func NewFlowAtomicClient(config *FlowClientConfig) *FlowAtomicClient {
 	return atomicClient
 }
 
-func getFlowCertificateCheckInterval() time.Duration {
-	value, ok := os.LookupEnv("FLOW_CERT_CHECK_INTERVAL")
+func getFlowGrpcCertificateCheckInterval() time.Duration {
+	value, ok := os.LookupEnv("FLOW_GRPC_CERT_CHECK_INTERVAL")
 	if !ok {
 		return defaultCheckFlowCertificateIntervalSeconds * time.Second
 	}
 	interval, err := strconv.Atoi(value)
 	if err != nil {
-		log.Error().Err(err).Str("FLOW_CERT_CHECK_INTERVAL", value).Msg("Invalid FLOW_CERT_CHECK_INTERVAL value; using default.")
+		log.Error().Err(err).Str("FLOW_GRPC_CERT_CHECK_INTERVAL", value).Msg("Invalid FLOW_GRPC_CERT_CHECK_INTERVAL value; using default.")
 		return defaultCheckFlowCertificateIntervalSeconds * time.Second
 	}
 	if interval <= 0 {
-		log.Error().Int("FLOW_CERT_CHECK_INTERVAL", interval).Msg("FLOW_CERT_CHECK_INTERVAL must be > 0; using default.")
+		log.Error().Int("FLOW_GRPC_CERT_CHECK_INTERVAL", interval).Msg("FLOW_GRPC_CERT_CHECK_INTERVAL must be > 0; using default.")
 		return defaultCheckFlowCertificateIntervalSeconds * time.Second
 	}
 	return time.Duration(interval) * time.Second

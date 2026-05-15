@@ -29,19 +29,19 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/bootstrap"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/coregrpc"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedrack"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flow"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flowgrpc"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instance"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instancetype"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/machine"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/networksecuritygroup"
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nico"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nvlinklogicalpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/operatingsystem"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sku"
@@ -60,7 +60,7 @@ import (
 
 // NewAPIHandlers - handle new api
 func NewAPIHandlers() {
-	managerapi.ManagerHdl = managerapi.ManagerAPI{
+	managerapi.ManagerHandler = managerapi.ManagerAPI{
 		// Add all the Managers here
 		Orchestrator:           &workflow.API{},
 		VPC:                    &vpc.API{},
@@ -69,7 +69,7 @@ func NewAPIHandlers() {
 		Subnet:                 &subnet.API{},
 		Instance:               &instance.API{},
 		Machine:                &machine.API{},
-		NICo:                   &nico.API{},
+		CoreGrpc:               &coregrpc.API{},
 		Bootstrap:              &bootstrap.BoostrapAPI{},
 		SSHKeyGroup:            &sshkeygroup.API{},
 		InfiniBandPartition:    &infinibandpartition.API{},
@@ -85,18 +85,18 @@ func NewAPIHandlers() {
 		SKU:                    &sku.API{},
 		DpuExtensionService:    &dpuextensionservice.API{},
 		NVLinkLogicalPartition: &nvlinklogicalpartition.API{},
-		Flow:                   &flow.API{},
+		FlowGrpc:               &flowgrpc.API{},
 	}
 }
 
-// NewInstance - new instance with the parent datastruct
+// NewInstance - new instance with the parent data structure
 func NewInstance(superforge *elektratypes.Elektra) (*Manager, error) {
 	NewAPIHandlers()
 	ManagerAccess = &Manager{
 		Data: &managerapi.ManagerData{
 			EB: superforge,
 		},
-		API: &managerapi.ManagerHdl,
+		API: &managerapi.ManagerHandler,
 		Conf: &managerapi.ManagerConf{
 			EB: superforge.Conf,
 		},
@@ -113,7 +113,7 @@ func (Managers *Manager) NewInstance() {
 	Managers.VpcPrefix()
 	Managers.Subnet()
 	Managers.Instance()
-	Managers.NICo()
+	Managers.CoreGrpc()
 	Managers.Machine()
 	Managers.Bootstrap()
 	Managers.SSHKeyGroup()
@@ -130,11 +130,11 @@ func (Managers *Manager) NewInstance() {
 	Managers.SKU()
 	Managers.DpuExtensionService()
 	Managers.NVLinkLogicalPartition()
-	Managers.Flow()
+	Managers.FlowGrpc()
 	Managers.VpcPeering()
 }
 
-// Init - initialize all the mgrs
+// Init - initialize all managers
 func (Managers *Manager) Init() {
 	ManagerAccess.Data.EB.Log.Info().Msg("Managers: Initializing all the managers")
 	// register version metric (build_version, build_date)
@@ -159,7 +159,7 @@ func (Managers *Manager) Init() {
 	ManagerAccess.Data.EB.HealthStatus.Store(uint64(computils.CompUnhealthy))
 
 	Managers.Orchestrator().Init()
-	Managers.NICo().Init()
+	Managers.CoreGrpc().Init()
 	Managers.Bootstrap().Init()
 	Managers.VPC().Init()
 	Managers.VpcPrefix().Init()
@@ -179,19 +179,19 @@ func (Managers *Manager) Init() {
 	Managers.SKU().Init()
 	Managers.DpuExtensionService().Init()
 	Managers.NVLinkLogicalPartition().Init()
-	Managers.Flow().Init()
+	Managers.FlowGrpc().Init()
 	Managers.VpcPeering().Init()
 }
 
-// Start - start the mgrs
+// Start - start all managers
 func (Managers *Manager) Start() {
 	go StartMetricServer()
 	StartHTTPServer()
 	ManagerAccess.Data.EB.Log.Info().Msg("Managers: Starting all the managers")
-	Managers.NICo().Start()
+	Managers.CoreGrpc().Start()
 	Managers.Bootstrap().Start()
 	Managers.Orchestrator().Start()
-	Managers.Flow().Start()
+	Managers.FlowGrpc().Start()
 }
 
 // StartMetricServer - Start serving Metric Server

@@ -69,7 +69,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("MachineValidation: Successfully registered RemoveMachineValidationExternalConfig workflow")
 
 	// Register activities
-	machineValidationManager := swa.NewManageMachineValidation(ManagerAccess.Data.EB.Managers.NICo.Client)
+	machineValidationManager := swa.NewManageMachineValidation(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register EnableDisableMachineValidationTestOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineValidationManager.EnableDisableMachineValidationTestOnSite)

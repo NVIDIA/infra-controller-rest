@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package nicotypes
+package flowgrpctypes
 
 import (
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"go.uber.org/atomic"
 )
 
-// State - NICo state
+// State - Flow state
 type State struct {
 	// GrpcFail the number of times the rpc has failed
 	GrpcFail atomic.Uint64
@@ -36,23 +36,23 @@ type State struct {
 	WflowMetrics WorkflowMetrics
 }
 
-// NICo represents the gRPC client for NICo and state
-type NICo struct {
-	Client *client.NICoCoreAtomicClient
+// FlowGrpc represents the gRPC client for FlowGrpc and state
+type FlowGrpc struct {
+	Client *client.FlowGrpcAtomicClient
 	State  *State
 }
 
-// NewNICoInstance creates a new instance of NICo
-func NewNICoInstance() *NICo {
-	nico := &NICo{
+// NewFlowGrpcInstance creates a new instance of FlowGrpc
+func NewFlowGrpcInstance() *FlowGrpc {
+	f := &FlowGrpc{
 		State:  &State{},
-		Client: client.NewNICoCoreAtomicClient(&client.NICoCoreClientConfig{}),
+		Client: client.NewFlowGrpcAtomicClient(&client.FlowGrpcClientConfig{}),
 	}
 
-	return nico
+	return f
 }
 
-// GetClient returns the NICo client
-func (c *NICo) GetClient() *client.NICoCoreClient {
+// GetClient returns the Flow client
+func (c *FlowGrpc) GetClient() *client.FlowGrpcClient {
 	return c.Client.GetClient()
 }

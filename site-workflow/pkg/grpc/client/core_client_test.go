@@ -28,7 +28,7 @@ import (
 	wflows "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
-func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
+func TestCoreGrpcAtomicClient_GetInitialCertMD5(t *testing.T) {
 	// Generate files for MD5 hash testing
 	// clientCertBytes := []byte("new test cert file")
 	clientCertPath := "/tmp/tls.crt"
@@ -54,7 +54,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 	serverCAMD5 := serverCAMD5Hash[:]
 
 	type fields struct {
-		Config *NICoCoreClientConfig
+		Config *CoreGrpcClientConfig
 	}
 	tests := []struct {
 		name              string
@@ -66,7 +66,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 		{
 			name: "test that we can get the initial cert md5s",
 			fields: fields{
-				Config: &NICoCoreClientConfig{
+				Config: &CoreGrpcClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -77,7 +77,7 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cac := &NICoCoreAtomicClient{
+			cac := &CoreGrpcAtomicClient{
 				Config: tt.fields.Config,
 			}
 			gotClientCertMD5, gotServerCAMD5, err := cac.GetInitialCertMD5()
@@ -93,25 +93,25 @@ func TestNICoAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 }
 
-func TestNICoAtomicClient_GetClient_ReturnsNilWhenUninitialized(t *testing.T) {
-	cac := &NICoCoreAtomicClient{
+func TestCoreGrpcAtomicClient_GetClient_ReturnsNilWhenUninitialized(t *testing.T) {
+	cac := &CoreGrpcAtomicClient{
 		value: &atomic.Value{},
 	}
 	// GetClient should return nil without panicking when no client has been stored
 	assert.Nil(t, cac.GetClient())
 }
 
-func TestNICoAtomicClient_GetClient_ReturnsClientAfterSwap(t *testing.T) {
-	cac := &NICoCoreAtomicClient{
+func TestCoreGrpcAtomicClient_GetClient_ReturnsClientAfterSwap(t *testing.T) {
+	cac := &CoreGrpcAtomicClient{
 		value: &atomic.Value{},
 	}
 	// Simulate storing a client via SwapClient
-	testClient := &NICoCoreClient{}
+	testClient := &CoreGrpcClient{}
 	cac.value.Store(testClient)
 	assert.Equal(t, testClient, cac.GetClient())
 }
 
-func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
+func TestCoreGrpcAtomicClient_CheckCertificates(t *testing.T) {
 	// Generate files for MD5 hash testing
 	// clientCertBytes := []byte("new test cert file")
 	clientCertPath := "/tmp/tls.crt"
@@ -143,7 +143,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 	lastServerCAMD5 := val[:]
 
 	type fields struct {
-		Config *NICoCoreClientConfig
+		Config *CoreGrpcClientConfig
 	}
 	type args struct {
 		lastClientCertMD5 []byte
@@ -159,7 +159,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns true when the certificates have changed",
 			fields: fields{
-				Config: &NICoCoreClientConfig{
+				Config: &CoreGrpcClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -173,7 +173,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns false when the certificates have not changed",
 			fields: fields{
-				Config: &NICoCoreClientConfig{
+				Config: &CoreGrpcClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -187,7 +187,7 @@ func TestNICoAtomicClient_CheckCertificates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cac := &NICoCoreAtomicClient{
+			cac := &CoreGrpcAtomicClient{
 				Config: tt.fields.Config,
 			}
 			got, _, _, err := cac.CheckCertificates(tt.args.lastClientCertMD5, tt.args.lastServerCAMD5)

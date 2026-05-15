@@ -34,15 +34,15 @@ import (
 )
 
 const (
-	DefaultNICoClientCAPath   = "/etc/nico/ca.crt"
-	DefaultNICoClientCertPath = "/etc/nico/tls.crt"
-	DefaultNICoClientKeyPath  = "/etc/nico/tls.key"
+	DefaultCoreGrpcClientCAPath   = "/etc/core-grpc/ca.crt"
+	DefaultCoreGrpcClientCertPath = "/etc/core-grpc/tls.crt"
+	DefaultCoreGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
 
-	// Flow uses the same SPIFFE trust domain (nico.local) and vault-nico-issuer as NICo,
-	// so we can reuse the NICo certificates for mTLS with Flow.
-	DefaultFlowClientCAPath   = "/etc/nico/ca.crt"
-	DefaultFlowClientCertPath = "/etc/nico/tls.crt"
-	DefaultFlowClientKeyPath  = "/etc/nico/tls.key"
+	// Flow uses the same SPIFFE trust domain (core-grpc.local) and vault-core-grpc-issuer as Core gRPC,
+	// so we can reuse the Core gRPC certificates for mTLS with Flow gRPC.
+	DefaultFlowGrpcClientCAPath   = "/etc/core-grpc/ca.crt"
+	DefaultFlowGrpcClientCertPath = "/etc/core-grpc/tls.crt"
+	DefaultFlowGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
 )
 
 // NewElektraConfig reads configurations from env variables and returns
@@ -56,103 +56,103 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	var disableBootstrap string
 	var watcherInterval string
 	var podName string
-	var skipServerAuth string
+	var skipCoreGrpcServerAuth string
 
 	// Determine environment in which app is running.
 	conf.RunningIn = determineEnvironment()
 	conf.UtMode = utMode
 
-	// NICo config
-	// For each env var, try the new NICO_* name first then fall back to the legacy CARBIDE_* name.
-	// TODO: remove CARBIDE_* fallbacks once deployment config repo is fully updated to NICO_* vars.
-	nicoAddress := os.Getenv("NICO_ADDRESS")
-	if nicoAddress == "" {
-		nicoAddress = os.Getenv("CARBIDE_ADDRESS")
+	// Core gRPC config
+	// For each env var, try the new CORE_GRPC_* name first then fall back to the legacy CARBIDE_* name.
+	// TODO: remove CARBIDE_* fallbacks once deployment config repo is fully updated to CORE_GRPC_* vars.
+	coreGrpcAddress := os.Getenv("CORE_GRPC_ADDRESS")
+	if coreGrpcAddress == "" {
+		coreGrpcAddress = os.Getenv("CARBIDE_ADDRESS")
 	}
-	flag.StringVar(&conf.NICo.Address, "nicoAddress", nicoAddress, "NICo Address")
-	if conf.NICo.Address == "" {
-		conf.NICo.Address = "nico-api.nico-system.svc.cluster.local:1079"
+	flag.StringVar(&conf.CoreGrpc.Address, "coreGrpcAddress", coreGrpcAddress, "CoreGrpc Address")
+	if conf.CoreGrpc.Address == "" {
+		conf.CoreGrpc.Address = "core-grpc.core-system.svc.cluster.local:1079"
 	}
-	nicoSecOpt := os.Getenv("NICO_SEC_OPT")
-	if nicoSecOpt == "" {
-		nicoSecOpt = os.Getenv("CARBIDE_SEC_OPT") // TODO: remove once deployment config repo is updated
+	coreGrpcSecOpt := os.Getenv("CORE_GRPC_SEC_OPT")
+	if coreGrpcSecOpt == "" {
+		coreGrpcSecOpt = os.Getenv("CARBIDE_SEC_OPT") // TODO: remove once deployment config repo is updated
 	}
-	cSecOpt, err := strconv.Atoi(nicoSecOpt)
+	cSecOpt, err := strconv.Atoi(coreGrpcSecOpt)
 	if err != nil {
 		log.Info().Msg(err.Error())
 		cSecOpt = int(client.ServerTLS)
 	}
-	if cSecOpt < int(client.InsecuregRPC) && cSecOpt > int(client.MutualTLS) {
+	if cSecOpt < int(client.InsecureGrpc) && cSecOpt > int(client.MutualTLS) {
 		cSecOpt = int(client.ServerTLS)
 	}
 	sOpt := 0
-	flag.IntVar(&sOpt, "nicoSecureOptions", cSecOpt, "NICo security option")
-	conf.NICo.Secure = client.SecureOptions(sOpt)
-	nicoCAPath := os.Getenv("NICO_CA_CERT_PATH")
-	if nicoCAPath == "" {
-		nicoCAPath = os.Getenv("CARBIDE_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
+	flag.IntVar(&sOpt, "coreGrpcSecureOptions", cSecOpt, "CoreGrpc security option")
+	conf.CoreGrpc.Secure = client.SecureOptions(sOpt)
+	coreGrpcCAPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
+	if coreGrpcCAPath == "" {
+		coreGrpcCAPath = os.Getenv("CARBIDE_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.NICo.ServerCAPath, "nicoCertPath", nicoCAPath, "NICo Cert Path")
-	if conf.NICo.ServerCAPath == "" {
-		conf.NICo.ServerCAPath = DefaultNICoClientCAPath
+	flag.StringVar(&conf.CoreGrpc.ServerCAPath, "coreGrpcCertPath", coreGrpcCAPath, "CoreGrpc Cert Path")
+	if conf.CoreGrpc.ServerCAPath == "" {
+		conf.CoreGrpc.ServerCAPath = DefaultCoreGrpcClientCAPath
 	}
-	nicoClientCert := os.Getenv("NICO_CLIENT_CERT_PATH")
-	if nicoClientCert == "" {
-		nicoClientCert = os.Getenv("CARBIDE_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
+	coreGrpcClientCert := os.Getenv("CORE_GRPC_CLIENT_CERT_PATH")
+	if coreGrpcClientCert == "" {
+		coreGrpcClientCert = os.Getenv("CARBIDE_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.NICo.ClientCertPath, "nicoClientCertPath", nicoClientCert, "NICo client Cert Path")
-	if conf.NICo.ClientCertPath == "" {
-		conf.NICo.ClientCertPath = DefaultNICoClientCertPath
+	flag.StringVar(&conf.CoreGrpc.ClientCertPath, "coreGrpcClientCertPath", coreGrpcClientCert, "CoreGrpc client Cert Path")
+	if conf.CoreGrpc.ClientCertPath == "" {
+		conf.CoreGrpc.ClientCertPath = DefaultCoreGrpcClientCertPath
 	}
-	nicoClientKey := os.Getenv("NICO_CLIENT_KEY_PATH")
-	if nicoClientKey == "" {
-		nicoClientKey = os.Getenv("CARBIDE_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
+	coreGrpcClientKey := os.Getenv("CORE_GRPC_CLIENT_KEY_PATH")
+	if coreGrpcClientKey == "" {
+		coreGrpcClientKey = os.Getenv("CARBIDE_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.NICo.ClientKeyPath, "nicoClientKeyPath", nicoClientKey, "NICo client Cert Path")
-	if conf.NICo.ClientKeyPath == "" {
-		conf.NICo.ClientKeyPath = DefaultNICoClientKeyPath
+	flag.StringVar(&conf.CoreGrpc.ClientKeyPath, "coreGrpcClientKeyPath", coreGrpcClientKey, "CoreGrpc client Cert Path")
+	if conf.CoreGrpc.ClientKeyPath == "" {
+		conf.CoreGrpc.ClientKeyPath = DefaultCoreGrpcClientKeyPath
 	}
 
-	log.Info().Msg(conf.NICo.Address)
-	log.Info().Msg(strconv.Itoa(int(conf.NICo.Secure)))
-
-	log.Info().Msg("CA Path:" + conf.NICo.ServerCAPath)
-	log.Info().Msg("client Cert:" + conf.NICo.ClientCertPath)
-	log.Info().Msg("client Key:" + conf.NICo.ClientKeyPath)
+	log.Info().Msg("Core gRPC Address:" + conf.CoreGrpc.Address)
+	log.Info().Msg("Core gRPC Secure Options:" + strconv.Itoa(int(conf.CoreGrpc.Secure)))
+	log.Info().Msg("Core gRPC CA Path:" + conf.CoreGrpc.ServerCAPath)
+	log.Info().Msg("Core gRPC client Cert:" + conf.CoreGrpc.ClientCertPath)
+	log.Info().Msg("Core gRPC client Key:" + conf.CoreGrpc.ClientKeyPath)
 
 	// Flow config
-	flag.StringVar(&conf.Flow.Address, "flowAddress", os.Getenv("FLOW_ADDRESS"), "Flow Address")
-	if conf.Flow.Address == "" {
-		conf.Flow.Address = "flow.flow.svc.cluster.local:50051"
+	flag.StringVar(&conf.FlowGrpc.Address, "flowGrpcAddress", os.Getenv("FLOW_GRPC_ADDRESS"), "Flow gRPC Address")
+	if conf.FlowGrpc.Address == "" {
+		conf.FlowGrpc.Address = "flow.flow.svc.cluster.local:50051"
 	}
-	flowSecOpt, err := strconv.Atoi(os.Getenv("FLOW_SEC_OPT"))
+	flowGrpcSecOpt, err := strconv.Atoi(os.Getenv("FLOW_GRPC_SEC_OPT"))
 	if err != nil {
-		log.Info().Msg("Invalid Flow security option, using default")
-		flowSecOpt = int(client.FlowServerTLS)
+		log.Info().Msg("Invalid Flow gRPC security option, using default")
+		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
-	if flowSecOpt < int(client.FlowInsecureGrpc) || flowSecOpt > int(client.FlowMutualTLS) {
-		flowSecOpt = int(client.FlowServerTLS)
-	}
-	flowOpt := 0
-	flag.IntVar(&flowOpt, "flowSecureOptions", flowSecOpt, "Flow security option")
-	conf.Flow.Secure = client.FlowClientSecureOptions(flowOpt)
-	flag.StringVar(&conf.Flow.ServerCAPath, "flowCertPath", os.Getenv("FLOW_CA_CERT_PATH"), "Flow CA Cert Path")
-	if conf.Flow.ServerCAPath == "" {
-		conf.Flow.ServerCAPath = DefaultFlowClientCAPath
-	}
-	flag.StringVar(&conf.Flow.ClientCertPath, "flowClientCertPath", os.Getenv("FLOW_CLIENT_CERT_PATH"), "Flow client Cert Path")
-	if conf.Flow.ClientCertPath == "" {
-		conf.Flow.ClientCertPath = DefaultFlowClientCertPath
-	}
-	flag.StringVar(&conf.Flow.ClientKeyPath, "flowClientKeyPath", os.Getenv("FLOW_CLIENT_KEY_PATH"), "Flow client Key Path")
-	if conf.Flow.ClientKeyPath == "" {
-		conf.Flow.ClientKeyPath = DefaultFlowClientKeyPath
+	if flowGrpcSecOpt < int(client.FlowInsecureGrpc) || flowGrpcSecOpt > int(client.FlowMutualTLS) {
+		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
 
-	log.Info().Msg("Flow Address:" + conf.Flow.Address)
-	log.Info().Msg("Flow CA Path:" + conf.Flow.ServerCAPath)
-	log.Info().Msg("Flow client Cert:" + conf.Flow.ClientCertPath)
-	log.Info().Msg("Flow client Key:" + conf.Flow.ClientKeyPath)
+	flowGrpcSecOpt = 0
+	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option")
+	conf.FlowGrpc.Secure = client.FlowGrpcClientSecureOptions(flowGrpcSecOpt)
+	flag.StringVar(&conf.FlowGrpc.ServerCAPath, "flowGrpcCertPath", os.Getenv("FLOW_GRPC_CA_CERT_PATH"), "Flow gRPC CA Cert Path")
+	if conf.FlowGrpc.ServerCAPath == "" {
+		conf.FlowGrpc.ServerCAPath = DefaultFlowGrpcClientCAPath
+	}
+	flag.StringVar(&conf.FlowGrpc.ClientCertPath, "flowGrpcClientCertPath", os.Getenv("FLOW_GRPC_CLIENT_CERT_PATH"), "Flow gRPC client Cert Path")
+	if conf.FlowGrpc.ClientCertPath == "" {
+		conf.FlowGrpc.ClientCertPath = DefaultFlowGrpcClientCertPath
+	}
+	flag.StringVar(&conf.FlowGrpc.ClientKeyPath, "flowGrpcClientKeyPath", os.Getenv("FLOW_GRPC_CLIENT_KEY_PATH"), "Flow gRPC client Key Path")
+	if conf.FlowGrpc.ClientKeyPath == "" {
+		conf.FlowGrpc.ClientKeyPath = DefaultFlowGrpcClientKeyPath
+	}
+
+	log.Info().Msg("Flow gRPC Address:" + conf.FlowGrpc.Address)
+	log.Info().Msg("Flow gRPC CA Path:" + conf.FlowGrpc.ServerCAPath)
+	log.Info().Msg("Flow gRPC client Cert:" + conf.FlowGrpc.ClientCertPath)
+	log.Info().Msg("Flow gRPC client Key:" + conf.FlowGrpc.ClientKeyPath)
 
 	// General config
 	flag.StringVar(&conf.MetricsPort, "metricsPort", os.Getenv("METRICS_PORT"), "Metrics port number")
@@ -169,13 +169,13 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flag.StringVar(&conf.TemporalSecret, "temporalSecret", os.Getenv("TEMPORAL_CERT"), "Temporal cert secret")
 	flag.StringVar(&conf.CloudVersion, "cloudVersion", os.Getenv("CLOUD_WORKFLOW_VERSION"), "Cloud Workflow Proto version")
 	flag.StringVar(&conf.SiteVersion, "siteVersion", os.Getenv("SITE_WORKFLOW_VERSION"), "Site Workflow Proto version")
-	flag.StringVar(&skipServerAuth, "nicoSkipServerAuth", os.Getenv("SKIP_GRPC_SERVER_AUTH"), "Skip gRPC server auth in TLS")
+	flag.StringVar(&skipCoreGrpcServerAuth, "coreGrpcSkipServerAuth", os.Getenv("SKIP_GRPC_SERVER_AUTH"), "Skip gRPC server auth in TLS")
 
-	var skipFlowServerAuth string
-	flag.StringVar(&skipFlowServerAuth, "flowSkipServerAuth", os.Getenv("SKIP_FLOW_GRPC_SERVER_AUTH"), "Skip Flow gRPC server auth in TLS")
+	var skipFlowGrpcServerAuth string
+	flag.StringVar(&skipFlowGrpcServerAuth, "flowGrpcSkipServerAuth", os.Getenv("SKIP_FLOW_GRPC_SERVER_AUTH"), "Skip Flow gRPC server auth in TLS")
 
-	var flowEnabled string
-	flag.StringVar(&flowEnabled, "flowEnabled", os.Getenv("FLOW_ENABLED"), "Enable Flow")
+	var flowGrpcEnabled string
+	flag.StringVar(&flowGrpcEnabled, "flowGrpcEnabled", os.Getenv("FLOW_GRPC_ENABLED"), "Enable Flow gRPC")
 
 	if conf.MetricsPort == "" {
 		log.Fatal().Msg("error loading config, invalid metrics port")
@@ -211,9 +211,9 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	conf.DevMode = strings.ToLower(devmode) == "true"
 	conf.EnableTLS = strings.ToLower(enableTLS) == "true"
 	conf.DisableBootstrap = strings.ToLower(disableBootstrap) == "true"
-	conf.NICo.SkipServerAuth = strings.ToLower(skipServerAuth) == "true"
-	conf.Flow.SkipServerAuth = strings.ToLower(skipFlowServerAuth) == "true"
-	conf.Flow.Enabled = strings.ToLower(flowEnabled) == "true"
+	conf.CoreGrpc.SkipServerAuth = strings.ToLower(skipCoreGrpcServerAuth) == "true"
+	conf.FlowGrpc.SkipServerAuth = strings.ToLower(skipFlowGrpcServerAuth) == "true"
+	conf.FlowGrpc.Enabled = strings.ToLower(flowGrpcEnabled) == "true"
 
 	// Initialize the WatcherInterval to default if not defined
 	if watcherInterval == "" {
@@ -271,7 +271,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flag.StringVar(&conf.Temporal.TemporalSubscribeQueue, "TemporalSubscribeQueue", temporalSubscribeQueue, "Temporal Subscribe queue")
 	flag.StringVar(&conf.Temporal.TemporalPublishNamespace, "TemporalPublishNamespace", temporalPublishNamespace, "Temporal Publish Namespace")
 	flag.StringVar(&conf.Temporal.TemporalSubscribeNamespace, "TemporalSubscribeNamespace", temporalSubscribeNamespace, "Temporal Subscribe Namespace")
-	flag.StringVar(&conf.Temporal.ClusterID, "ClusterID", clusterID, "NICo Site cluster ID")
+	flag.StringVar(&conf.Temporal.ClusterID, "ClusterID", clusterID, "NICo Site Cluster ID")
 	flag.StringVar(&conf.Temporal.TemporalCertPath, "TemporalCertPath", temporalCertPath, "Temporal cert path")
 	flag.StringVar(&conf.Temporal.TemporalServer, "TemporalServer", os.Getenv("TEMPORAL_SERVER"), "Temporal server")
 	flag.StringVar(&conf.Temporal.TemporalInventorySchedule, "TemporalInventorySchedule", os.Getenv("TEMPORAL_INVENTORY_SCHEDULE"), "Temporal Inventory schedule")

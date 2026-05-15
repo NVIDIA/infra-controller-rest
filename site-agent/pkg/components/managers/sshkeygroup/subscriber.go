@@ -41,7 +41,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("SSHKeyGroup: Successfully registered DeleteSSHKeyGroupV2 workflow")
 
 	// Register activities
-	sshKeyGroupManager := swa.NewManageSSHKeyGroup(ManagerAccess.Data.EB.Managers.NICo.Client)
+	sshKeyGroupManager := swa.NewManageSSHKeyGroup(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register CreateSSHKeyGroupOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(sshKeyGroupManager.CreateSSHKeyGroupOnSite)

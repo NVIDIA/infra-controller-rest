@@ -49,7 +49,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("InstanceType: Successfully registered RemoveMachineInstanceTypeAssociation workflow")
 
 	// Register activities
-	instanceTypeManager := swa.NewManageInstanceType(ManagerAccess.Data.EB.Managers.NICo.Client)
+	instanceTypeManager := swa.NewManageInstanceType(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register CreateInstanceTypeOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(instanceTypeManager.CreateInstanceTypeOnSite)

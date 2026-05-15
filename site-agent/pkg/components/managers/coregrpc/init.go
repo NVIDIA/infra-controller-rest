@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package nico
+package coregrpc
 
 import (
 	"fmt"
@@ -25,43 +25,43 @@ import (
 )
 
 const (
-	// MetricCarbideStatus - Metric Carbide Status
-	MetricCarbideStatus = "carbide_health_status"
+	// MetricCoreGrpcStatus - Metric Core GRPC Status
+	MetricCoreGrpcStatus = "carbide_health_status"
 )
 
 // Init - initialize carbide manager
-func (carbide *API) Init() {
-	ManagerAccess.Data.EB.Log.Info().Msg("Carbide: Initializing the carbide")
+func (coregrpc *API) Init() {
+	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Initializing Core gRPC client")
 
 	prometheus.MustRegister(
 		prometheus.NewGaugeFunc(prometheus.GaugeOpts{
 			Namespace: "elektra_site_agent",
-			Name:      MetricCarbideStatus,
-			Help:      "Carbide gRPC health status",
+			Name:      MetricCoreGrpcStatus,
+			Help:      "Core gRPC health status",
 		},
 			func() float64 {
-				return float64(ManagerAccess.Data.EB.Managers.NICo.State.HealthStatus.Load())
+				return float64(ManagerAccess.Data.EB.Managers.CoreGrpc.State.HealthStatus.Load())
 			}))
-	ManagerAccess.Data.EB.Managers.NICo.State.HealthStatus.Store(uint64(computils.CompNotKnown))
+	ManagerAccess.Data.EB.Managers.CoreGrpc.State.HealthStatus.Store(uint64(computils.CompNotKnown))
 
 	// initialize workflow metrics
-	ManagerAccess.Data.EB.Managers.NICo.State.WflowMetrics = newWorkflowMetrics()
+	ManagerAccess.Data.EB.Managers.CoreGrpc.State.WflowMetrics = newWorkflowMetrics()
 }
 
 // Start - start carbide manager
-func (carbide *API) Start() {
-	ManagerAccess.Data.EB.Log.Info().Msg("Carbide: Starting the carbide")
+func (coregrpc *API) Start() {
+	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Starting the core gRPC client")
 
 	// Create the client here
 	// Each workflow will check and reinitialize the client if needed
-	if err := carbide.CreateGRPCClient(); err != nil {
-		ManagerAccess.Data.EB.Log.Error().Msgf("Carbide: failed to create GRPC client: %v", err)
+	if err := coregrpc.CreateGrpcClient(); err != nil {
+		ManagerAccess.Data.EB.Log.Error().Msgf("Core gRPC: failed to create gRPC client: %v", err)
 	}
 }
 
 // GetState Machine
-func (carbide *API) GetState() []string {
-	state := ManagerAccess.Data.EB.Managers.NICo.State
+func (coregrpc *API) GetState() []string {
+	state := ManagerAccess.Data.EB.Managers.CoreGrpc.State
 	var strs []string
 	strs = append(strs, fmt.Sprintln(" GRPC Succeeded:", state.GrpcSucc.Load()))
 	strs = append(strs, fmt.Sprintln(" GRPC Failed:", state.GrpcFail.Load()))
@@ -71,7 +71,7 @@ func (carbide *API) GetState() []string {
 	return strs
 }
 
-// GetGRPCClientVersion returns the current version of the GRPC client
-func (carbide *API) GetGRPCClientVersion() int64 {
-	return ManagerAccess.Data.EB.Managers.NICo.Client.Version()
+// GetGrpcClientVersion returns the current version of the gRPC client
+func (coregrpc *API) GetGrpcClientVersion() int64 {
+	return ManagerAccess.Data.EB.Managers.CoreGrpc.Client.Version()
 }
