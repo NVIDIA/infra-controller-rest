@@ -71,7 +71,7 @@ provider, err := providerapi.GetTyped[*nico.Provider](
 
 ```go
 type ComponentManager interface {
-    Type() devicetypes.ComponentType
+    Descriptor() cmcatalog.Descriptor
     InjectExpectation(ctx, target, info) error
     PowerControl(ctx, target, info) error
     FirmwareControl(ctx, target, info) error
@@ -88,17 +88,21 @@ type ManagerFactory func(providers *providerapi.ProviderRegistry) (ComponentMana
 
 Factory functions create component manager instances. They receive the `ProviderRegistry` to retrieve any required providers.
 
+`catalog.Descriptor` contains static implementation metadata used for
+configuration validation. `FactorySpec` pairs that descriptor with the runtime
+factory used after service config has been loaded.
+
 ### Catalog and Registry
 
-The `Catalog` stores validated descriptors for implementations compiled into a
-service binary:
-- `NewCatalog()` - Validate descriptors and index them by component type and
+The `catalog.Catalog` stores validated descriptors for implementations compiled
+into a service binary:
+- `catalog.New()` - Validate descriptors and index them by component type and
   implementation
 - `ListImplementations()` - List supported implementations by component type
 
-The `Registry` stores active managers selected from a catalog:
+The `Registry` stores active managers selected from runtime factory specs:
 - `NewRegistry()` - Create managers based on configuration and the supplied
-  catalog
+  factory specs
 - `GetManager()` - Retrieve active manager for a component type, returning a
   descriptive error when the registry is not configured or no manager is active
 - `GetDescriptor()` - Retrieve the descriptor selected for a component type
@@ -108,7 +112,9 @@ The `Registry` stores active managers selected from a catalog:
 
 ```
 internal/task/componentmanager/
-├── componentmanager.go      # ComponentManager interface, Registry
+├── manager.go               # ComponentManager interface
+├── factory_spec.go          # Manager factories and factory specs
+├── registry.go              # Active component manager registry
 ├── providerapi/             # Provider interfaces and registries
 ├── config.go                # Configuration parsing
 ├── mock/
@@ -235,7 +241,7 @@ func serviceProviderConfigDecoders() []providerapi.ProviderConfigDecoder {
 `cmd/serve.go` does not need provider-specific construction code. It loads the
 service config through `builtin.LoadConfig`, then creates providers from the
 decoded generic provider configs. Built-in provider decoders and component
-manager factory registration both live in `internal/task/componentmanager/builtin`.
+manager factory specs both live in `internal/task/componentmanager/builtin`.
 
 ---
 
@@ -255,6 +261,7 @@ import (
     "fmt"
 
     "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+    cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
     "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
     myapiprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/myapi"
     "github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -287,18 +294,25 @@ func Factory(providers *providerapi.ProviderRegistry) (componentmanager.Componen
 }
 
 // Descriptor returns this implementation's descriptor.
-func Descriptor() componentmanager.Descriptor {
-    return componentmanager.Descriptor{
+func Descriptor() cmcatalog.Descriptor {
+    return cmcatalog.Descriptor{
         Type:              devicetypes.ComponentTypeCompute,
         Implementation:    ImplementationName,
         RequiredProviders: []string{myapiprovider.ProviderName},
-        Factory:           Factory,
     }
 }
 
-// Type returns the component type.
-func (m *Manager) Type() devicetypes.ComponentType {
-    return devicetypes.ComponentTypeCompute
+// FactorySpec returns this implementation's runtime factory spec.
+func FactorySpec() componentmanager.FactorySpec {
+    return componentmanager.FactorySpec{
+        Descriptor: Descriptor(),
+        Factory:    Factory,
+    }
+}
+
+// Descriptor returns this implementation's descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+    return Descriptor()
 }
 
 // InjectExpectation implements ComponentManager.
@@ -324,15 +338,26 @@ Update the service-supported manager catalog in
 
 ```go
 import (
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+    cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
+    cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
     myimpl "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/myimpl"
 )
 
-func serviceCatalog(config cmconfig.Config) (componentmanager.Catalog, error) {
-    descriptors := []componentmanager.Descriptor{
+func serviceDescriptors() []cmcatalog.Descriptor {
+    descriptors := []cmcatalog.Descriptor{
         // ... existing descriptors ...
         myimpl.Descriptor(), // Add new implementation
     }
-    return componentmanager.NewCatalog(descriptors)
+    return descriptors
+}
+
+func serviceFactorySpecs(config cmconfig.Config) ([]componentmanager.FactorySpec, error) {
+    factorySpecs := []componentmanager.FactorySpec{
+        // ... existing factory specs ...
+        myimpl.FactorySpec(), // Add new implementation
+    }
+    return factorySpecs, nil
 }
 ```
 

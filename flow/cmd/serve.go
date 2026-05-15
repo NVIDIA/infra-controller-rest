@@ -36,7 +36,6 @@ import (
 	svc "github.com/NVIDIA/infra-controller-rest/flow/internal/service"
 	cmbuiltin "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/builtin"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	temporalmanager "github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/manager"
 	pkgcerts "github.com/NVIDIA/infra-controller-rest/flow/pkg/certs"
 )
@@ -86,64 +85,6 @@ func init() {
 	// Component manager config: priority is CLI flag > env var > service default config.
 	serveCmd.Flags().StringVarP(&componentMgrConfig, "component-config", "c", "", "Path to component manager config file (YAML)")               //nolint:lll
 	serveCmd.Flags().BoolVar(&devMode, "dev-mode", false, "Enable developer options (gRPC reflection, debug logging). Not for production use.") //nolint:lll
-}
-
-// initProviderRegistry creates and initializes the provider registry from
-// decoded provider configs.
-func initProviderRegistry(
-	ctx context.Context,
-	config cmconfig.Config,
-) (*providerapi.ProviderRegistry, error) {
-	providerRegistry := providerapi.NewProviderRegistry()
-
-	for name, providerConfig := range config.ProviderConfigs {
-		// loadComponentManagerConfig builds ProviderConfigs through the
-		// service decoders, which either return a concrete config or an
-		// error. The nil check below is defensive: a custom decoder
-		// registry passed to cmconfig.ParseConfig is not bound by that
-		// invariant, so we reject nil configs here rather than panic on
-		// providerConfig.Name().
-		if providerConfig == nil {
-			return nil, providerapi.ProviderNotConfiguredError{Name: name}
-		}
-		configName := providerConfig.Name()
-		if name != configName {
-			return nil, providerapi.ProviderConfigNameMismatchError{
-				Name:       name,
-				ConfigName: configName,
-			}
-		}
-
-		provider, err := providerConfig.NewProvider(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("create provider %q: %w", name, err)
-		}
-		if provider == nil {
-			return nil, providerapi.ProviderNotConfiguredError{Name: name}
-		}
-
-		providerName := provider.Name()
-		if providerName != name {
-			return nil, providerapi.ProviderNameMismatchError{
-				Name:         name,
-				ProviderName: providerName,
-			}
-		}
-		if err := providerRegistry.Register(provider); err != nil {
-			return nil, err
-		}
-		log.Info().
-			Str("provider", name).
-			Msg("Initialized provider")
-	}
-
-	// Log all registered providers
-	registeredProviders := providerRegistry.List()
-	log.Info().
-		Strs("providers", registeredProviders).
-		Msg("Provider registry initialized")
-
-	return providerRegistry, nil
 }
 
 // loadComponentManagerConfig loads the component manager configuration with the following priority:
@@ -224,7 +165,7 @@ func doServe() {
 	}
 
 	// Initialize provider registry (creates API clients based on config)
-	providerRegistry, err := initProviderRegistry(ctx, cmConfig)
+	providerRegistry, err := cmbuiltin.NewProviderRegistry(ctx, cmConfig)
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize provider registry: %v", err)
 	}

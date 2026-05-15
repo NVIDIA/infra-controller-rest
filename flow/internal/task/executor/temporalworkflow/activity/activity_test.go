@@ -46,7 +46,7 @@ func TestActivitiesReturnErrorWhenComponentManagerRegistryIsMissing(t *testing.T
 
 func TestActivitiesReturnErrorWhenComponentManagerIsMissing(t *testing.T) {
 	registry, err := componentmanager.NewRegistry(
-		componentmanager.Catalog{},
+		nil,
 		cmconfig.Config{},
 		providerapi.NewProviderRegistry(),
 	)
