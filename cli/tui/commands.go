@@ -3407,6 +3407,9 @@ var labelCapableListCommands = []string{
 	"machine list",
 	"network-security-group list",
 	"expected-machine list",
+	"expected-rack list",
+	"expected-switch list",
+	"expected-power-shelf list",
 	"infiniband-partition list",
 }
 
