@@ -582,7 +582,7 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		MaintenanceMessage *string
 		Labels             map[string]string
 		OnlineRepair       *APIMachineOnlineRepair
-		HealthIssue        *APIHealthIssue
+		HealthIssue        *APIMachineHealthIssue
 	}
 	tests := []struct {
 		name    string
@@ -737,13 +737,23 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 						AcceptInstanceDeletionRisk: cdb.GetBoolPtr(true),
 					},
 				},
-				HealthIssue: &APIHealthIssue{
-					Category: "STORAGE",
+				HealthIssue: &APIMachineHealthIssue{
+					Category: HealthIssueStorage,
 					Summary:  cdb.GetStrPtr("Disk issue"),
 					Details:  cdb.GetStrPtr("logs and ticket refs"),
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "test invalid enter online repair without HealthIssue (APIMachineOnlineRepair.Enabled true requires non-nil HealthIssue)",
+			fields: fields{
+				OnlineRepair: &APIMachineOnlineRepair{
+					Enabled: cdb.GetBoolPtr(true),
+				},
+				HealthIssue: nil,
+			},
+			wantErr: true,
 		},
 		{
 			name: "test invalid enter online repair with maintenance also set",
@@ -761,8 +771,8 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 				},
 				SetMaintenanceMode: cdb.GetBoolPtr(true),
 				MaintenanceMessage: cdb.GetStrPtr("needs work"),
-				HealthIssue: &APIHealthIssue{
-					Category: "OTHER",
+				HealthIssue: &APIMachineHealthIssue{
+					Category: HealthIssueOther,
 					Summary:  cdb.GetStrPtr("s"),
 					Details:  cdb.GetStrPtr("d"),
 				},
@@ -781,8 +791,8 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		{
 			name: "test invalid HealthIssue without onlineRepair",
 			fields: fields{
-				HealthIssue: &APIHealthIssue{
-					Category: "STORAGE",
+				HealthIssue: &APIMachineHealthIssue{
+					Category: HealthIssueStorage,
 					Summary:  cdb.GetStrPtr("x"),
 					Details:  cdb.GetStrPtr("y"),
 				},

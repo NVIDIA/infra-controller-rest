@@ -63,11 +63,6 @@ import (
 
 const MachineMissingDelayThreshold = 24 * time.Hour
 
-const (
-	machineOnlineRepairHealthOverrideSourceTenant = "tenant-reported-issue"
-	machineHealthAlertIDOnlineRepair              = "OnLineRepair"
-)
-
 // ~~~~~ Utility for Gets ~~~~~ //
 func getAPIMachines(ctx context.Context, ms []cdbm.Machine, logger zerolog.Logger, tx *cdb.Tx, dbSession *cdb.Session, includeMetadata bool, isProviderOrPrivilegedTenant bool) ([]*model.APIMachine, *cutil.APIError) {
 	// Get status details
@@ -1443,7 +1438,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Instance must be in Ready state to enter online repair (current state: %s)", inst.Status), nil)
 			}
 
-			insReq, ierr := buildOnlineRepairHealthInsertRequest(machine.ID, &apiRequest)
+			insReq, ierr := apiRequest.ToInsertHealthReportOverrideProto(machine.ID)
 			if ierr != nil {
 				logger.Error().Err(ierr).Msg("failed to build online repair health override request")
 				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to build online repair request", nil)
@@ -1521,7 +1516,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 			rmReq := &cwssaws.RemoveHealthReportOverrideRequest{
 				MachineId: &cwssaws.MachineId{Id: machine.ID},
-				Source:    machineOnlineRepairHealthOverrideSourceTenant,
+				Source:    model.MachineOnlineRepairHealthOverrideSourceTenant,
 			}
 
 			wfOpts := temporalClient.StartWorkflowOptions{
@@ -1575,37 +1570,6 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 	logger.Info().Msg("finishing API handler")
 
 	return c.JSON(http.StatusOK, apiMs[0])
-}
-
-func buildOnlineRepairHealthInsertRequest(machineID string, req *model.APIMachineUpdateRequest) (*cwssaws.InsertHealthReportOverrideRequest, error) {
-	mhi := req.HealthIssue
-	msg, err := model.BuildOnlineRepairHealthOverrideMessageJSON(*mhi.Details, mhi.Category, *mhi.Summary)
-	if err != nil {
-		return nil, err
-	}
-	tgt := "tenant-reported"
-	alert := &cwssaws.HealthProbeAlert{
-		Id:            machineHealthAlertIDOnlineRepair,
-		Target:        &tgt,
-		Message:       msg,
-		TenantMessage: cdb.GetStrPtr(fmt.Sprintf("TenantReportedIssue: %s", *mhi.Summary)),
-		Classifications: []string{
-			"PreventAllocations",
-			"PreventInstanceDeletion",
-			"SuppressExternalAlerting",
-		},
-	}
-	hr := &cwssaws.HealthReport{
-		Source: machineOnlineRepairHealthOverrideSourceTenant,
-		Alerts: []*cwssaws.HealthProbeAlert{alert},
-	}
-	return &cwssaws.InsertHealthReportOverrideRequest{
-		MachineId: &cwssaws.MachineId{Id: machineID},
-		Override: &cwssaws.HealthReportOverride{
-			Report: hr,
-			Mode:   cwssaws.OverrideMode_Replace,
-		},
-	}, nil
 }
 
 // GetMachineStatusDetailsHandler is the API Handler for getting Machine StatusDetail records

@@ -1476,8 +1476,8 @@ func (iur APIInstanceUpdateRequest) Validate() error {
 // APIInstanceDeleteRequest is the data structure to capture request to delete an Instance
 type APIInstanceDeleteRequest struct {
 	// MachineHealthIssue is the report of a machine health issue
-	MachineHealthIssue *APIHealthIssue `json:"machineHealthIssue"`
-	IsRepairTenant     *bool           `json:"isRepairTenant"`
+	MachineHealthIssue *APIMachineHealthIssue `json:"machineHealthIssue"`
+	IsRepairTenant     *bool                  `json:"isRepairTenant"`
 }
 
 // Validate ensures the values passed in request are acceptable

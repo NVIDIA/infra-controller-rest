@@ -20,6 +20,10 @@ package model
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"maps"
+	"slices"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -30,6 +34,8 @@ import (
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 const (
@@ -37,16 +43,31 @@ const (
 	MachineMaxLabelCount = 10
 	// InstanceLabelOnlineRepairAllowAutoDeletion records repairPolicy.allowAutoInstanceDeletionOnFailure from the last enter-online-repair request ("true" / "false").
 	InstanceLabelOnlineRepairAllowAutoDeletion = "onlineRepair.allowAutoInstanceDeletionOnFailure"
+	// MachineOnlineRepairHealthOverrideSourceTenant is the source of the online repair health override.
+	MachineOnlineRepairHealthOverrideSourceTenant = "tenant-reported-issue"
+	// MachineHealthAlertIDOnlineRepair is the ID of the online repair health alert.
+	MachineHealthAlertIDOnlineRepair = "OnLineRepair"
+	// TenantReportedIssueAlertID is the ID of the tenant-reported issue health alert.
+	TenantReportedIssueAlertID = "tenant-reported"
+)
+
+const (
+	HealthIssueHardware    = "Hardware"
+	HealthIssueNetwork     = "Network"
+	HealthIssuePerformance = "Performance"
+	HealthIssueStorage     = "Storage"
+	HealthIssueSoftware    = "Software"
+	HealthIssueOther       = "Other"
 )
 
 // ValidHealthIssueCategories lists accepted HealthIssue.category values for online repair.
-var ValidHealthIssueCategories = map[string]bool{
-	"HARDWARE":    true,
-	"NETWORK":     true,
-	"PERFORMANCE": true,
-	"STORAGE":     true,
-	"SOFTWARE":    true,
-	"OTHER":       true,
+var ValidHealthIssueCategoriesMap = map[string]string{
+	HealthIssueHardware:    "HARDWARE",
+	HealthIssueNetwork:     "NETWORK",
+	HealthIssuePerformance: "PERFORMANCE",
+	HealthIssueStorage:     "STORAGE",
+	HealthIssueSoftware:    "SOFTWARE",
+	HealthIssueOther:       "OTHER",
 }
 
 var (
@@ -75,8 +96,8 @@ var (
 	}
 )
 
-// APIHealthIssue describes the tenant-reported issue when requesting online repair.
-type APIHealthIssue struct {
+// APIMachineHealthIssue describes the tenant-reported issue when requesting online repair.
+type APIMachineHealthIssue struct {
 	// Category is the type of the issue
 	Category string `json:"category"`
 	// Summary is the summary of the issue
@@ -119,7 +140,7 @@ type APIMachineUpdateRequest struct {
 	// OnlineRepair is the request to enter/exit online repair
 	OnlineRepair *APIMachineOnlineRepair `json:"onlineRepair"`
 	// HealthIssue is required when onlineRepair.enabled is true.
-	HealthIssue *APIHealthIssue `json:"healthIssue"`
+	HealthIssue *APIMachineHealthIssue `json:"healthIssue"`
 }
 
 // IsOnlineRepair reports whether this request is for in-pool online repair (enter or exit).
@@ -203,21 +224,22 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		} else if *orr.Enabled {
 			verr := validation.Errors{}
 			if mur.HealthIssue == nil {
-				verr["HealthIssue"] = errors.New("HealthIssue is required when onlineRepair.enabled is true")
+				verr["healthIssue"] = errors.New("healthIssue is required when onlineRepair.enabled is true")
 			} else {
 				mhi := mur.HealthIssue
-				if mhi.Category == "" || !ValidHealthIssueCategories[mhi.Category] {
-					verr["HealthIssue.category"] = errors.New("must be one of HARDWARE, NETWORK, PERFORMANCE, STORAGE, SOFTWARE, OTHER")
+				if _, ok := ValidHealthIssueCategoriesMap[mhi.Category]; !ok || mhi.Category == "" {
+					allowed := slices.Collect(maps.Keys(ValidHealthIssueCategoriesMap))
+					verr["healthIssue.category"] = errors.New("must be one of " + strings.Join(allowed, ", "))
 				}
 				if mhi.Summary == nil || *mhi.Summary == "" {
-					verr["HealthIssue.summary"] = errors.New("summary is required")
+					verr["healthIssue.summary"] = errors.New("summary is required")
 				} else if utf8.RuneCountInString(*mhi.Summary) > 512 {
-					verr["HealthIssue.summary"] = errors.New("summary must be at most 512 characters")
+					verr["healthIssue.summary"] = errors.New("summary must be at most 512 characters")
 				}
 				if mhi.Details == nil || *mhi.Details == "" {
-					verr["HealthIssue.details"] = errors.New("details is required")
+					verr["healthIssue.details"] = errors.New("details is required")
 				} else if utf8.RuneCountInString(*mhi.Details) > 8192 {
-					verr["HealthIssue.details"] = errors.New("details must be at most 8192 characters")
+					verr["healthIssue.details"] = errors.New("details must be at most 8192 characters")
 				}
 			}
 			if orr.Policy == nil || orr.Policy.AllowAutoInstanceDeletionOnFailure == nil {
@@ -239,7 +261,7 @@ func (mur APIMachineUpdateRequest) Validate() error {
 		} else {
 			if mur.HealthIssue != nil || orr.Policy != nil || orr.Acknowledgments != nil {
 				err = validation.Errors{
-					validationCommonErrorField: errors.New("HealthIssue, onlineRepair.policy, and onlineRepair.acknowledgments must not be set when exiting online repair"),
+					validationCommonErrorField: errors.New("healthIssue, onlineRepair.policy, and onlineRepair.acknowledgments must not be set when exiting online repair"),
 				}
 			}
 		}
@@ -252,22 +274,45 @@ func (mur APIMachineUpdateRequest) Validate() error {
 	return err
 }
 
-// BuildOnlineRepairHealthOverrideMessageJSON builds the JSON payload stored in the health alert message field.
-func BuildOnlineRepairHealthOverrideMessageJSON(details, category, summary string) (string, error) {
-	type payload struct {
+func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID string) (*cwssaws.InsertHealthReportOverrideRequest, error) {
+	mhi := mur.HealthIssue
+
+	m, err := json.Marshal(struct {
 		Details       string `json:"details"`
 		IssueCategory string `json:"issue_category"`
 		Summary       string `json:"summary"`
-	}
-	b, err := json.Marshal(payload{
-		Details:       details,
-		IssueCategory: category,
-		Summary:       summary,
+	}{
+		Details:       *mhi.Details,
+		IssueCategory: ValidHealthIssueCategoriesMap[mhi.Category],
+		Summary:       *mhi.Summary,
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return string(b), nil
+	msg := string(m)
+
+	alert := &cwssaws.HealthProbeAlert{
+		Id:            MachineHealthAlertIDOnlineRepair,
+		Target:        cdb.GetStrPtr(TenantReportedIssueAlertID),
+		Message:       msg,
+		TenantMessage: cdb.GetStrPtr(fmt.Sprintf("TenantReportedIssue: %s", *mhi.Summary)),
+		Classifications: []string{
+			"PreventAllocations",
+			"PreventInstanceDeletion",
+			"SuppressExternalAlerting",
+		},
+	}
+	hr := &cwssaws.HealthReport{
+		Source: MachineOnlineRepairHealthOverrideSourceTenant,
+		Alerts: []*cwssaws.HealthProbeAlert{alert},
+	}
+	return &cwssaws.InsertHealthReportOverrideRequest{
+		MachineId: &cwssaws.MachineId{Id: machineID},
+		Override: &cwssaws.HealthReportOverride{
+			Report: hr,
+			Mode:   cwssaws.OverrideMode_Replace,
+		},
+	}, nil
 }
 
 // APIMachine is the data structure to capture API representation of a Machine
