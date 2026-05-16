@@ -1144,7 +1144,7 @@ func (futh UpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	}
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
-		fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
+		apiRequest.Targets, fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
 	if err != nil {
 		return err
 	}
@@ -1259,7 +1259,7 @@ func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	targetSpec := request.Filter.ToTargetSpec()
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
-		fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
+		request.Targets, fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
 	if err != nil {
 		return err
 	}

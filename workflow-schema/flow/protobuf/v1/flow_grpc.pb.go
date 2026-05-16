@@ -20,7 +20,7 @@
 // - protoc             (unknown)
 // source: flow.proto
 
-package flow
+package v1
 
 import (
 	context "context"

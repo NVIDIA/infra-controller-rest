@@ -17151,6 +17151,34 @@ components:
             - string
             - 'null'
           description: Target firmware version.
+        targets:
+          type: array
+          items:
+            type: string
+          description: |-
+            Optional subset of firmware targets to update within each matched tray.
+            Names are lowercase and select sub-parts of the tray
+            (BMC, BIOS, etc.). The accepted set per tray type comes from
+            the Flow service's NICo proto bindings (which mirror Core's
+            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            so the supported values track Core as new sub-parts are added:
+              - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
+              - powershelf trays (PowerShelfComponent): currently pmc, psu
+              - compute trays (ComputeTrayComponent): currently bmc, bios
+                (currently NOT honored end-to-end: the NICo compute-firmware
+                path goes through SetFirmwareUpdateTimeWindow + auto-update,
+                which has no per-target selection; the request is logged
+                and the whole bundle is applied. Will be honored once
+                compute moves to UpdateComponentFirmware.)
+            Omitted or empty means "update everything in the bundle"
+            (the historical default). Unknown names are rejected.
+            Requires `version` to be set.
+      examples:
+        - siteId: 550e8400-e29b-41d4-a716-446655440000
+          filter:
+            type: switch
+          version: '24.11.0'
+          targets: [bmc, nvos]
     UpdatePowerStateRequest:
       title: UpdatePowerStateRequest
       type: object
@@ -17215,9 +17243,34 @@ components:
             - string
             - 'null'
           description: Target firmware version.
+        targets:
+          type: array
+          items:
+            type: string
+          description: |-
+            Optional subset of firmware targets to update within the targeted tray.
+            Names are lowercase and select sub-parts of the tray
+            (BMC, BIOS, etc.). The accepted set per tray type comes from
+            the Flow service's NICo proto bindings (which mirror Core's
+            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            so the supported values track Core as new sub-parts are added:
+              - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
+              - powershelf trays (PowerShelfComponent): currently pmc, psu
+              - compute trays (ComputeTrayComponent): currently bmc, bios
+                (currently NOT honored end-to-end: the NICo compute-firmware
+                path goes through SetFirmwareUpdateTimeWindow + auto-update,
+                which has no per-target selection; the request is logged
+                and the whole bundle is applied. Will be honored once
+                compute moves to UpdateComponentFirmware.)
+            Omitted or empty means "update everything in the bundle"
+            (the historical default). Unknown names are rejected.
+            Requires `version` to be set.
       examples:
         - siteId: 550e8400-e29b-41d4-a716-446655440000
           version: '24.11.0'
+        - siteId: 550e8400-e29b-41d4-a716-446655440000
+          version: '24.11.0'
+          targets: [bmc, nvos]
         - siteId: 550e8400-e29b-41d4-a716-446655440000
     FirmwareUpdateResponse:
       title: FirmwareUpdateResponse

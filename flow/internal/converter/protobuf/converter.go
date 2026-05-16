@@ -1239,6 +1239,7 @@ func ScheduledOperationFrom(
 		info := &operations.FirmwareControlTaskInfo{
 			Operation:     operations.FirmwareOperationUpgrade,
 			TargetVersion: r.UpgradeFirmware.GetTargetVersion(),
+			SubTargets:    r.UpgradeFirmware.GetSubTargets(),
 		}
 
 		if r.UpgradeFirmware.GetStartTime() != nil {
