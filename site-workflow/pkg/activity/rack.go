@@ -307,6 +307,37 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *flowv1.GetTasksB
 	return response, nil
 }
 
+// ListTasks lists tasks matching the given filters via Flow. The filters
+// in flowv1.ListTasksRequest combine with AND; pagination, ordering, and
+// totals are computed by Flow over the post-filter result set.
+func (mr *ManageRack) ListTasks(ctx context.Context, request *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
+	logger := log.With().Str("Activity", "ListTasks").Logger()
+	logger.Info().Msg("Starting activity")
+
+	if request == nil {
+		err := errors.New("received empty list tasks request")
+		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
+	}
+
+	flow, err := mr.FlowAtomicClient.GetFlowClient()
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := flow.ListTasks(ctx, request)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Failed to list tasks using Flow API")
+		return nil, swe.WrapErr(err)
+	}
+
+	logger.Info().
+		Int("TaskCount", len(response.GetTasks())).
+		Int32("Total", response.GetTotal()).
+		Msg("Completed activity")
+
+	return response, nil
+}
+
 // CancelTask cancels a task by its UUID via Flow.
 //
 // Cancel is best-effort: Flow marks the task Terminated and terminates the

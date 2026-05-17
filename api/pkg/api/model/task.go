@@ -19,6 +19,8 @@ package model
 
 import (
 	"fmt"
+	"net/url"
+	"strconv"
 	"time"
 
 	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
@@ -97,4 +99,42 @@ func (r *APICancelTaskRequest) Validate() error {
 		return fmt.Errorf("siteId is required")
 	}
 	return nil
+}
+
+// APIListTasksRequest captures the query parameters shared by the
+// rack-scoped and tray-scoped task list endpoints. PageNumber / PageSize
+// are captured here as raw strings (parallel to the validated *int form
+// bound onto pagination.PageRequest) so they participate in workflow ID
+// hashing — two concurrent requests for different pages must not collide
+// onto the same workflow execution.
+type APIListTasksRequest struct {
+	SiteID     string `query:"siteId"`
+	ActiveOnly bool   `query:"activeOnly"`
+	PageNumber string `query:"pageNumber"`
+	PageSize   string `query:"pageSize"`
+}
+
+func (r *APIListTasksRequest) Validate() error {
+	if r.SiteID == "" {
+		return fmt.Errorf("siteId query parameter is required")
+	}
+	return nil
+}
+
+// QueryValues returns the known query parameters used for deterministic
+// workflow ID hashing. Pagination params are included so that concurrent
+// requests on different pages get distinct workflow IDs.
+func (r *APIListTasksRequest) QueryValues() url.Values {
+	v := url.Values{}
+	v.Set("siteId", r.SiteID)
+	if r.ActiveOnly {
+		v.Set("activeOnly", strconv.FormatBool(r.ActiveOnly))
+	}
+	if r.PageNumber != "" {
+		v.Set("pageNumber", r.PageNumber)
+	}
+	if r.PageSize != "" {
+		v.Set("pageSize", r.PageSize)
+	}
+	return v
 }

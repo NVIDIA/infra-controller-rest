@@ -305,6 +305,43 @@ func GetRackTask(ctx workflow.Context, request *flowv1.GetTasksByIDsRequest) (*f
 	return &response, nil
 }
 
+// ListTasks is a workflow to list tasks matching the filters in the
+// request (rack_id, component_id, active_only, pagination) via Flow.
+func ListTasks(ctx workflow.Context, request *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
+	logger := log.With().Str("Workflow", "Rack").Str("Action", "ListTasks").Logger()
+
+	logger.Info().Msg("Starting workflow")
+
+	retrypolicy := &temporal.RetryPolicy{
+		InitialInterval:    1 * time.Second,
+		BackoffCoefficient: 2.0,
+		MaximumInterval:    10 * time.Second,
+		MaximumAttempts:    2,
+	}
+	options := workflow.ActivityOptions{
+		StartToCloseTimeout: 2 * time.Minute,
+		RetryPolicy:         retrypolicy,
+	}
+
+	ctx = workflow.WithActivityOptions(ctx, options)
+
+	var rackManager activity.ManageRack
+	var response flowv1.ListTasksResponse
+
+	err := workflow.ExecuteActivity(ctx, rackManager.ListTasks, request).Get(ctx, &response)
+	if err != nil {
+		logger.Error().Err(err).Str("Activity", "ListTasks").Msg("Failed to execute activity from workflow")
+		return nil, err
+	}
+
+	logger.Info().
+		Int("TaskCount", len(response.GetTasks())).
+		Int32("Total", response.GetTotal()).
+		Msg("Completing workflow")
+
+	return &response, nil
+}
+
 // CancelRackTask is a workflow to cancel a rack task by its UUID via Flow.
 //
 // Cancel is best-effort: Flow marks the task Terminated and terminates the

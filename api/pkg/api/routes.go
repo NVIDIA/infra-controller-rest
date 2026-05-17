@@ -888,7 +888,9 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetSkuHandler(dbSession, tc, cfg),
 		},
-		// Rack endpoints (Flow)
+		// Task endpoints (Flow). The /rack/task/* paths are kept as
+		// backwards-compatible aliases; new clients should prefer
+		// /task/* and the rack/tray-scoped /{id}/task list endpoints.
 		{
 			Path:    apiPathPrefix + "/rack/task/:id",
 			Method:  http.MethodGet,
@@ -896,6 +898,16 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 		},
 		{
 			Path:    apiPathPrefix + "/rack/task/:id/cancel",
+			Method:  http.MethodPost,
+			Handler: apiHandler.NewCancelTaskHandler(dbSession, tc, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/task/:id",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetTaskHandler(dbSession, tc, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/task/:id/cancel",
 			Method:  http.MethodPost,
 			Handler: apiHandler.NewCancelTaskHandler(dbSession, tc, scp, cfg),
 		},
@@ -949,6 +961,11 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodPost,
 			Handler: apiHandler.NewBringUpRackHandler(dbSession, tc, scp, cfg),
 		},
+		{
+			Path:    apiPathPrefix + "/rack/:id/task",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetRackTasksHandler(dbSession, tc, scp, cfg),
+		},
 		// Tray endpoints (Flow)
 		{
 			Path:    apiPathPrefix + "/tray",
@@ -989,6 +1006,11 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Path:    apiPathPrefix + "/tray/:id/validation",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewValidateTrayHandler(dbSession, tc, scp, cfg),
+		},
+		{
+			Path:    apiPathPrefix + "/tray/:id/task",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetTrayTasksHandler(dbSession, tc, scp, cfg),
 		},
 	}
 

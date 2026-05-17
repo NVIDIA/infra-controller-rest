@@ -765,6 +765,18 @@ func (r *FlowServerImpl) ListTasks(ctx context.Context, req *flowv1.ListTasksReq
 		if req.RackId != nil && task.RackId != nil && task.RackId.Id != req.RackId.Id {
 			continue
 		}
+		if req.ComponentId != nil {
+			found := false
+			for _, cu := range task.GetComponentUuids() {
+				if cu != nil && cu.Id == req.ComponentId.Id {
+					found = true
+					break
+				}
+			}
+			if !found {
+				continue
+			}
+		}
 		tasks = append(tasks, task)
 	}
 

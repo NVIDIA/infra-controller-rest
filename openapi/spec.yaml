@@ -222,6 +222,9 @@ tags:
   - name: Tray
     description: |-
       Tray represents a component within a Rack.
+  - name: Task
+    description: |-
+      Task represents an asynchronous, site-scoped operation tracked by Flow (e.g. firmware update, power state change, rack bring-up). Tasks are created as a side effect of operations on Racks, Trays, or other components; this section covers the endpoints used to inspect and cancel them.
   - name: Network Security Group
     description: |-
       Network Security Group is a security policy that controls the traffic flowing between Instances.
@@ -10361,6 +10364,210 @@ paths:
           $ref: '#/components/responses/NotFoundError'
       tags:
         - Rack
+  '/v2/org/{org}/nico/task/{id}':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Task
+    get:
+      summary: Retrieve a Task
+      operationId: get-task
+      description: |-
+        Get a Task by UUID.
+
+        Tasks are site-scoped; `siteId` must be the Site where the task was created.
+        Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the task (tasks are site-scoped).
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RackTask'
+              examples:
+                example-1:
+                  value:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    status: Running
+                    description: Power on rack components
+                    message: 'Processing 3 of 5 components'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Task
+  '/v2/org/{org}/nico/task/{id}/cancel':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Task
+    post:
+      summary: Cancel a Task
+      operationId: cancel-task
+      description: |-
+        Cancel a Task.
+
+        Cancellation is best-effort and idempotent: tasks in non-terminal
+        states (`Pending`, `Running`, `Waiting`) are marked `Terminated`
+        and any underlying Temporal workflow is terminated. Cancelling an
+        already-`Terminated` task returns the same task without changes.
+        Tasks that have already finished (`Succeeded` or `Failed`) cannot
+        be cancelled.
+
+        Tasks are site-scoped; `siteId` must be the Site where the task was
+        created. Org must have an Infrastructure Provider entity. User must
+        have `FORGE_PROVIDER_ADMIN` authorization role.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - siteId
+              properties:
+                siteId:
+                  type: string
+                  format: uuid
+                  description: ID of the Site that owns the task (tasks are site-scoped).
+            examples:
+              example-1:
+                value:
+                  siteId: 660e8400-e29b-41d4-a716-446655440000
+      responses:
+        '202':
+          description: |-
+            Accepted. The cancellation request was accepted and the task as
+            last reported by Flow is returned. Clients should `GET` the task
+            to observe the final state, since cancellation is best-effort
+            and the underlying workflow may still be terminating.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RackTask'
+              examples:
+                example-1:
+                  value:
+                    id: 550e8400-e29b-41d4-a716-446655440000
+                    status: Terminated
+                    description: Power on rack components
+                    message: Cancelled by user
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Task
+  '/v2/org/{org}/nico/rack/{id}/task':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Rack
+    get:
+      summary: List Tasks for a Rack
+      operationId: get-rack-tasks
+      description: |-
+        List Tasks targeting the specified Rack.
+
+        Tasks are site-scoped; `siteId` must be the Site that owns the Rack. Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        Filters compose with AND: setting `activeOnly=true` restricts the result to tasks that are still in a non-terminal state (`Pending`, `Running`, `Waiting`). Results are paginated; the `X-Pagination` response header reports the total count over the post-filter set.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the Rack.
+        - schema:
+            type: boolean
+            default: false
+          name: activeOnly
+          in: query
+          description: Restrict results to non-terminal Tasks.
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RackTask'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":2}'
+              description: Pagination result in JSON format
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Rack
   '/v2/org/{org}/nico/tray':
     parameters:
       - schema:
@@ -10916,6 +11123,83 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Tray
+  '/v2/org/{org}/nico/tray/{id}/task':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Tray
+    get:
+      summary: List Tasks for a Tray
+      operationId: get-tray-tasks
+      description: |-
+        List Tasks targeting the specified Tray.
+
+        Tasks are site-scoped; `siteId` must be the Site that owns the Tray. Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        Filters compose with AND: setting `activeOnly=true` restricts the result to tasks that are still in a non-terminal state (`Pending`, `Running`, `Waiting`). Results are paginated; the `X-Pagination` response header reports the total count over the post-filter set.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the Tray.
+        - schema:
+            type: boolean
+            default: false
+          name: activeOnly
+          in: query
+          description: Restrict results to non-terminal Tasks.
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RackTask'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":2}'
+              description: Pagination result in JSON format
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
       tags:
         - Tray
   '/v2/org/{org}/nico/network-security-group':
