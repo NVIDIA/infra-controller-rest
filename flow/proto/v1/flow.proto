@@ -613,10 +613,20 @@ message IngestRackRequest {
     optional UUID rule_id = 4;            // optional: override rule resolution with a specific rule
 }
 
+// ListTasks - list Tasks with optional filters.
+//
+// Filters compose with AND: a Task is returned only if it satisfies every
+// set filter. Unset optional fields are not applied; with no filter set
+// every Task is returned subject to pagination.
 message ListTasksRequest {
-    optional UUID rack_id = 1;
-    bool active_only = 2;
+    optional UUID rack_id = 1;                  // Restrict to Tasks created against this rack.
+    bool active_only = 2;                       // Restrict to non-terminal Tasks (Waiting, Pending, Running).
     optional Pagination pagination = 3;
+    // Restrict to Tasks that target this component UUID, regardless of
+    // component type. A rack_id + component_id combination that references
+    // a component not on the given rack is not an error; it yields an
+    // empty result.
+    optional UUID component_id = 4;
 }
 
 message ListTasksResponse {

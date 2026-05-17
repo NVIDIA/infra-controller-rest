@@ -4812,11 +4812,21 @@ func (x *IngestRackRequest) GetRuleId() *UUID {
 	return nil
 }
 
+// ListTasks - list Tasks with optional filters.
+//
+// Filters compose with AND: a Task is returned only if it satisfies every
+// set filter. Unset optional fields are not applied; with no filter set
+// every Task is returned subject to pagination.
 type ListTasksRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	RackId        *UUID                  `protobuf:"bytes,1,opt,name=rack_id,json=rackId,proto3,oneof" json:"rack_id,omitempty"`
-	ActiveOnly    bool                   `protobuf:"varint,2,opt,name=active_only,json=activeOnly,proto3" json:"active_only,omitempty"`
-	Pagination    *Pagination            `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
+	state      protoimpl.MessageState `protogen:"open.v1"`
+	RackId     *UUID                  `protobuf:"bytes,1,opt,name=rack_id,json=rackId,proto3,oneof" json:"rack_id,omitempty"`        // Restrict to Tasks created against this rack.
+	ActiveOnly bool                   `protobuf:"varint,2,opt,name=active_only,json=activeOnly,proto3" json:"active_only,omitempty"` // Restrict to non-terminal Tasks (Waiting, Pending, Running).
+	Pagination *Pagination            `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
+	// Restrict to Tasks that target this component UUID, regardless of
+	// component type. A rack_id + component_id combination that references
+	// a component not on the given rack is not an error; it yields an
+	// empty result.
+	ComponentId   *UUID `protobuf:"bytes,4,opt,name=component_id,json=componentId,proto3,oneof" json:"component_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -4868,6 +4878,13 @@ func (x *ListTasksRequest) GetActiveOnly() bool {
 func (x *ListTasksRequest) GetPagination() *Pagination {
 	if x != nil {
 		return x.Pagination
+	}
+	return nil
+}
+
+func (x *ListTasksRequest) GetComponentId() *UUID {
+	if x != nil {
+		return x.ComponentId
 	}
 	return nil
 }
@@ -7985,17 +8002,19 @@ const file_flow_proto_rawDesc = "" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12&\n" +
 	"\arule_id\x18\x04 \x01(\v2\b.v1.UUIDH\x00R\x06ruleId\x88\x01\x01B\n" +
 	"\n" +
-	"\b_rule_id\"\xab\x01\n" +
+	"\b_rule_id\"\xee\x01\n" +
 	"\x10ListTasksRequest\x12&\n" +
 	"\arack_id\x18\x01 \x01(\v2\b.v1.UUIDH\x00R\x06rackId\x88\x01\x01\x12\x1f\n" +
 	"\vactive_only\x18\x02 \x01(\bR\n" +
 	"activeOnly\x123\n" +
 	"\n" +
 	"pagination\x18\x03 \x01(\v2\x0e.v1.PaginationH\x01R\n" +
-	"pagination\x88\x01\x01B\n" +
+	"pagination\x88\x01\x01\x120\n" +
+	"\fcomponent_id\x18\x04 \x01(\v2\b.v1.UUIDH\x02R\vcomponentId\x88\x01\x01B\n" +
 	"\n" +
 	"\b_rack_idB\r\n" +
-	"\v_pagination\"I\n" +
+	"\v_paginationB\x0f\n" +
+	"\r_component_id\"I\n" +
 	"\x11ListTasksResponse\x12\x1e\n" +
 	"\x05tasks\x18\x01 \x03(\v2\b.v1.TaskR\x05tasks\x12\x14\n" +
 	"\x05total\x18\x02 \x01(\x05R\x05total\";\n" +
@@ -8595,196 +8614,197 @@ var file_flow_proto_depIdxs = []int32{
 	14,  // 108: v1.IngestRackRequest.rule_id:type_name -> v1.UUID
 	14,  // 109: v1.ListTasksRequest.rack_id:type_name -> v1.UUID
 	31,  // 110: v1.ListTasksRequest.pagination:type_name -> v1.Pagination
-	35,  // 111: v1.ListTasksResponse.tasks:type_name -> v1.Task
-	14,  // 112: v1.GetTasksByIDsRequest.task_ids:type_name -> v1.UUID
-	35,  // 113: v1.GetTasksByIDsResponse.tasks:type_name -> v1.Task
-	14,  // 114: v1.CancelTaskRequest.task_id:type_name -> v1.UUID
-	35,  // 115: v1.CancelTaskResponse.task:type_name -> v1.Task
-	14,  // 116: v1.OperationRule.id:type_name -> v1.UUID
-	11,  // 117: v1.OperationRule.operation_type:type_name -> v1.OperationType
-	129, // 118: v1.OperationRule.created_at:type_name -> google.protobuf.Timestamp
-	129, // 119: v1.OperationRule.updated_at:type_name -> google.protobuf.Timestamp
-	11,  // 120: v1.CreateOperationRuleRequest.operation_type:type_name -> v1.OperationType
-	14,  // 121: v1.CreateOperationRuleResponse.id:type_name -> v1.UUID
-	14,  // 122: v1.UpdateOperationRuleRequest.rule_id:type_name -> v1.UUID
-	14,  // 123: v1.DeleteOperationRuleRequest.rule_id:type_name -> v1.UUID
-	14,  // 124: v1.SetRuleAsDefaultRequest.rule_id:type_name -> v1.UUID
-	14,  // 125: v1.GetOperationRuleRequest.rule_id:type_name -> v1.UUID
-	11,  // 126: v1.ListOperationRulesRequest.operation_type:type_name -> v1.OperationType
-	90,  // 127: v1.ListOperationRulesResponse.rules:type_name -> v1.OperationRule
-	14,  // 128: v1.AssociateRuleWithRackRequest.rack_id:type_name -> v1.UUID
-	14,  // 129: v1.AssociateRuleWithRackRequest.rule_id:type_name -> v1.UUID
-	14,  // 130: v1.DisassociateRuleFromRackRequest.rack_id:type_name -> v1.UUID
-	11,  // 131: v1.DisassociateRuleFromRackRequest.operation_type:type_name -> v1.OperationType
-	14,  // 132: v1.GetRackRuleAssociationRequest.rack_id:type_name -> v1.UUID
-	11,  // 133: v1.GetRackRuleAssociationRequest.operation_type:type_name -> v1.OperationType
-	14,  // 134: v1.GetRackRuleAssociationResponse.rule_id:type_name -> v1.UUID
-	14,  // 135: v1.ListRackRuleAssociationsRequest.rack_id:type_name -> v1.UUID
-	14,  // 136: v1.RackRuleAssociation.rack_id:type_name -> v1.UUID
-	11,  // 137: v1.RackRuleAssociation.operation_type:type_name -> v1.OperationType
-	14,  // 138: v1.RackRuleAssociation.rule_id:type_name -> v1.UUID
-	129, // 139: v1.RackRuleAssociation.created_at:type_name -> google.protobuf.Timestamp
-	129, // 140: v1.RackRuleAssociation.updated_at:type_name -> google.protobuf.Timestamp
-	104, // 141: v1.ListRackRuleAssociationsResponse.associations:type_name -> v1.RackRuleAssociation
-	12,  // 142: v1.ScheduleSpec.type:type_name -> v1.ScheduleSpecType
-	106, // 143: v1.ScheduleConfig.spec:type_name -> v1.ScheduleSpec
-	13,  // 144: v1.ScheduleConfig.overlap_policy:type_name -> v1.OverlapPolicy
-	14,  // 145: v1.TaskSchedule.id:type_name -> v1.UUID
-	106, // 146: v1.TaskSchedule.spec:type_name -> v1.ScheduleSpec
-	13,  // 147: v1.TaskSchedule.overlap_policy:type_name -> v1.OverlapPolicy
-	129, // 148: v1.TaskSchedule.next_run_at:type_name -> google.protobuf.Timestamp
-	129, // 149: v1.TaskSchedule.last_run_at:type_name -> google.protobuf.Timestamp
-	129, // 150: v1.TaskSchedule.created_at:type_name -> google.protobuf.Timestamp
-	129, // 151: v1.TaskSchedule.updated_at:type_name -> google.protobuf.Timestamp
-	77,  // 152: v1.ScheduledOperation.power_on:type_name -> v1.PowerOnRackRequest
-	78,  // 153: v1.ScheduledOperation.power_off:type_name -> v1.PowerOffRackRequest
-	79,  // 154: v1.ScheduledOperation.power_reset:type_name -> v1.PowerResetRackRequest
-	80,  // 155: v1.ScheduledOperation.bring_up:type_name -> v1.BringUpRackRequest
-	56,  // 156: v1.ScheduledOperation.upgrade_firmware:type_name -> v1.UpgradeFirmwareRequest
-	81,  // 157: v1.ScheduledOperation.ingest:type_name -> v1.IngestRackRequest
-	107, // 158: v1.CreateTaskScheduleRequest.schedule:type_name -> v1.ScheduleConfig
-	109, // 159: v1.CreateTaskScheduleRequest.operation:type_name -> v1.ScheduledOperation
-	14,  // 160: v1.GetTaskScheduleRequest.id:type_name -> v1.UUID
-	14,  // 161: v1.ListTaskSchedulesRequest.rack_id:type_name -> v1.UUID
-	31,  // 162: v1.ListTaskSchedulesRequest.pagination:type_name -> v1.Pagination
-	108, // 163: v1.ListTaskSchedulesResponse.task_schedules:type_name -> v1.TaskSchedule
-	14,  // 164: v1.UpdateTaskScheduleRequest.id:type_name -> v1.UUID
-	107, // 165: v1.UpdateTaskScheduleRequest.schedule:type_name -> v1.ScheduleConfig
-	130, // 166: v1.UpdateTaskScheduleRequest.update_mask:type_name -> google.protobuf.FieldMask
-	14,  // 167: v1.PauseTaskScheduleRequest.id:type_name -> v1.UUID
-	14,  // 168: v1.ResumeTaskScheduleRequest.id:type_name -> v1.UUID
-	14,  // 169: v1.DeleteTaskScheduleRequest.id:type_name -> v1.UUID
-	14,  // 170: v1.TriggerTaskScheduleRequest.id:type_name -> v1.UUID
-	14,  // 171: v1.TaskScheduleScope.id:type_name -> v1.UUID
-	14,  // 172: v1.TaskScheduleScope.schedule_id:type_name -> v1.UUID
-	14,  // 173: v1.TaskScheduleScope.rack_id:type_name -> v1.UUID
-	26,  // 174: v1.TaskScheduleScope.types:type_name -> v1.ComponentTypes
-	25,  // 175: v1.TaskScheduleScope.components:type_name -> v1.ComponentTargets
-	14,  // 176: v1.TaskScheduleScope.last_task_id:type_name -> v1.UUID
-	129, // 177: v1.TaskScheduleScope.created_at:type_name -> google.protobuf.Timestamp
-	14,  // 178: v1.AddTaskScheduleScopeRequest.schedule_id:type_name -> v1.UUID
-	23,  // 179: v1.AddTaskScheduleScopeRequest.target_spec:type_name -> v1.OperationTargetSpec
-	119, // 180: v1.AddTaskScheduleScopeResponse.scopes:type_name -> v1.TaskScheduleScope
-	14,  // 181: v1.RemoveTaskScheduleScopeRequest.scope_id:type_name -> v1.UUID
-	14,  // 182: v1.UpdateTaskScheduleScopeRequest.schedule_id:type_name -> v1.UUID
-	23,  // 183: v1.UpdateTaskScheduleScopeRequest.desired_scope:type_name -> v1.OperationTargetSpec
-	119, // 184: v1.UpdateTaskScheduleScopeResponse.scopes:type_name -> v1.TaskScheduleScope
-	14,  // 185: v1.ListTaskScheduleScopesRequest.schedule_id:type_name -> v1.UUID
-	119, // 186: v1.ListTaskScheduleScopesResponse.scopes:type_name -> v1.TaskScheduleScope
-	109, // 187: v1.CheckScheduleConflictsRequest.operation:type_name -> v1.ScheduledOperation
-	14,  // 188: v1.CheckScheduleConflictsRequest.exclude_schedule_id:type_name -> v1.UUID
-	108, // 189: v1.CheckScheduleConflictsResponse.conflicts:type_name -> v1.TaskSchedule
-	88,  // 190: v1.Flow.Version:input_type -> v1.VersionRequest
-	110, // 191: v1.Flow.CreateTaskSchedule:input_type -> v1.CreateTaskScheduleRequest
-	111, // 192: v1.Flow.GetTaskSchedule:input_type -> v1.GetTaskScheduleRequest
-	112, // 193: v1.Flow.ListTaskSchedules:input_type -> v1.ListTaskSchedulesRequest
-	114, // 194: v1.Flow.UpdateTaskSchedule:input_type -> v1.UpdateTaskScheduleRequest
-	115, // 195: v1.Flow.PauseTaskSchedule:input_type -> v1.PauseTaskScheduleRequest
-	116, // 196: v1.Flow.ResumeTaskSchedule:input_type -> v1.ResumeTaskScheduleRequest
-	117, // 197: v1.Flow.DeleteTaskSchedule:input_type -> v1.DeleteTaskScheduleRequest
-	118, // 198: v1.Flow.TriggerTaskSchedule:input_type -> v1.TriggerTaskScheduleRequest
-	120, // 199: v1.Flow.AddTaskScheduleScope:input_type -> v1.AddTaskScheduleScopeRequest
-	122, // 200: v1.Flow.RemoveTaskScheduleScope:input_type -> v1.RemoveTaskScheduleScopeRequest
-	123, // 201: v1.Flow.UpdateTaskScheduleScope:input_type -> v1.UpdateTaskScheduleScopeRequest
-	125, // 202: v1.Flow.ListTaskScheduleScopes:input_type -> v1.ListTaskScheduleScopesRequest
-	127, // 203: v1.Flow.CheckScheduleConflicts:input_type -> v1.CheckScheduleConflictsRequest
-	36,  // 204: v1.Flow.CreateExpectedRack:input_type -> v1.CreateExpectedRackRequest
-	38,  // 205: v1.Flow.GetRackInfoByID:input_type -> v1.GetRackInfoByIDRequest
-	39,  // 206: v1.Flow.GetRackInfoBySerial:input_type -> v1.GetRackInfoBySerialRequest
-	46,  // 207: v1.Flow.GetListOfRacks:input_type -> v1.GetListOfRacksRequest
-	41,  // 208: v1.Flow.PatchRack:input_type -> v1.PatchRackRequest
-	67,  // 209: v1.Flow.DeleteRack:input_type -> v1.DeleteRackRequest
-	69,  // 210: v1.Flow.PurgeRack:input_type -> v1.PurgeRackRequest
-	56,  // 211: v1.Flow.UpgradeFirmware:input_type -> v1.UpgradeFirmwareRequest
-	80,  // 212: v1.Flow.BringUpRack:input_type -> v1.BringUpRackRequest
-	81,  // 213: v1.Flow.IngestRack:input_type -> v1.IngestRackRequest
-	77,  // 214: v1.Flow.PowerOnRack:input_type -> v1.PowerOnRackRequest
-	78,  // 215: v1.Flow.PowerOffRack:input_type -> v1.PowerOffRackRequest
-	79,  // 216: v1.Flow.PowerResetRack:input_type -> v1.PowerResetRackRequest
-	43,  // 217: v1.Flow.GetComponentInfoByID:input_type -> v1.GetComponentInfoByIDRequest
-	44,  // 218: v1.Flow.GetComponentInfoBySerial:input_type -> v1.GetComponentInfoBySerialRequest
-	57,  // 219: v1.Flow.GetComponents:input_type -> v1.GetComponentsRequest
-	59,  // 220: v1.Flow.ValidateComponents:input_type -> v1.ValidateComponentsRequest
-	63,  // 221: v1.Flow.AddComponent:input_type -> v1.AddComponentRequest
-	73,  // 222: v1.Flow.PatchComponent:input_type -> v1.PatchComponentRequest
-	65,  // 223: v1.Flow.DeleteComponent:input_type -> v1.DeleteComponentRequest
-	71,  // 224: v1.Flow.PurgeComponent:input_type -> v1.PurgeComponentRequest
-	48,  // 225: v1.Flow.CreateNVLDomain:input_type -> v1.CreateNVLDomainRequest
-	50,  // 226: v1.Flow.AttachRacksToNVLDomain:input_type -> v1.AttachRacksToNVLDomainRequest
-	51,  // 227: v1.Flow.DetachRacksFromNVLDomain:input_type -> v1.DetachRacksFromNVLDomainRequest
-	52,  // 228: v1.Flow.GetListOfNVLDomains:input_type -> v1.GetListOfNVLDomainsRequest
-	54,  // 229: v1.Flow.GetRacksForNVLDomain:input_type -> v1.GetRacksForNVLDomainRequest
-	82,  // 230: v1.Flow.ListTasks:input_type -> v1.ListTasksRequest
-	84,  // 231: v1.Flow.GetTasksByIDs:input_type -> v1.GetTasksByIDsRequest
-	86,  // 232: v1.Flow.CancelTask:input_type -> v1.CancelTaskRequest
-	91,  // 233: v1.Flow.CreateOperationRule:input_type -> v1.CreateOperationRuleRequest
-	93,  // 234: v1.Flow.UpdateOperationRule:input_type -> v1.UpdateOperationRuleRequest
-	94,  // 235: v1.Flow.DeleteOperationRule:input_type -> v1.DeleteOperationRuleRequest
-	96,  // 236: v1.Flow.GetOperationRule:input_type -> v1.GetOperationRuleRequest
-	97,  // 237: v1.Flow.ListOperationRules:input_type -> v1.ListOperationRulesRequest
-	95,  // 238: v1.Flow.SetRuleAsDefault:input_type -> v1.SetRuleAsDefaultRequest
-	99,  // 239: v1.Flow.AssociateRuleWithRack:input_type -> v1.AssociateRuleWithRackRequest
-	100, // 240: v1.Flow.DisassociateRuleFromRack:input_type -> v1.DisassociateRuleFromRackRequest
-	101, // 241: v1.Flow.GetRackRuleAssociation:input_type -> v1.GetRackRuleAssociationRequest
-	103, // 242: v1.Flow.ListRackRuleAssociations:input_type -> v1.ListRackRuleAssociationsRequest
-	89,  // 243: v1.Flow.Version:output_type -> v1.BuildInfo
-	108, // 244: v1.Flow.CreateTaskSchedule:output_type -> v1.TaskSchedule
-	108, // 245: v1.Flow.GetTaskSchedule:output_type -> v1.TaskSchedule
-	113, // 246: v1.Flow.ListTaskSchedules:output_type -> v1.ListTaskSchedulesResponse
-	108, // 247: v1.Flow.UpdateTaskSchedule:output_type -> v1.TaskSchedule
-	108, // 248: v1.Flow.PauseTaskSchedule:output_type -> v1.TaskSchedule
-	108, // 249: v1.Flow.ResumeTaskSchedule:output_type -> v1.TaskSchedule
-	131, // 250: v1.Flow.DeleteTaskSchedule:output_type -> google.protobuf.Empty
-	75,  // 251: v1.Flow.TriggerTaskSchedule:output_type -> v1.SubmitTaskResponse
-	121, // 252: v1.Flow.AddTaskScheduleScope:output_type -> v1.AddTaskScheduleScopeResponse
-	131, // 253: v1.Flow.RemoveTaskScheduleScope:output_type -> google.protobuf.Empty
-	124, // 254: v1.Flow.UpdateTaskScheduleScope:output_type -> v1.UpdateTaskScheduleScopeResponse
-	126, // 255: v1.Flow.ListTaskScheduleScopes:output_type -> v1.ListTaskScheduleScopesResponse
-	128, // 256: v1.Flow.CheckScheduleConflicts:output_type -> v1.CheckScheduleConflictsResponse
-	37,  // 257: v1.Flow.CreateExpectedRack:output_type -> v1.CreateExpectedRackResponse
-	40,  // 258: v1.Flow.GetRackInfoByID:output_type -> v1.GetRackInfoResponse
-	40,  // 259: v1.Flow.GetRackInfoBySerial:output_type -> v1.GetRackInfoResponse
-	47,  // 260: v1.Flow.GetListOfRacks:output_type -> v1.GetListOfRacksResponse
-	42,  // 261: v1.Flow.PatchRack:output_type -> v1.PatchRackResponse
-	68,  // 262: v1.Flow.DeleteRack:output_type -> v1.DeleteRackResponse
-	70,  // 263: v1.Flow.PurgeRack:output_type -> v1.PurgeRackResponse
-	75,  // 264: v1.Flow.UpgradeFirmware:output_type -> v1.SubmitTaskResponse
-	75,  // 265: v1.Flow.BringUpRack:output_type -> v1.SubmitTaskResponse
-	75,  // 266: v1.Flow.IngestRack:output_type -> v1.SubmitTaskResponse
-	75,  // 267: v1.Flow.PowerOnRack:output_type -> v1.SubmitTaskResponse
-	75,  // 268: v1.Flow.PowerOffRack:output_type -> v1.SubmitTaskResponse
-	75,  // 269: v1.Flow.PowerResetRack:output_type -> v1.SubmitTaskResponse
-	45,  // 270: v1.Flow.GetComponentInfoByID:output_type -> v1.GetComponentInfoResponse
-	45,  // 271: v1.Flow.GetComponentInfoBySerial:output_type -> v1.GetComponentInfoResponse
-	58,  // 272: v1.Flow.GetComponents:output_type -> v1.GetComponentsResponse
-	60,  // 273: v1.Flow.ValidateComponents:output_type -> v1.ValidateComponentsResponse
-	64,  // 274: v1.Flow.AddComponent:output_type -> v1.AddComponentResponse
-	74,  // 275: v1.Flow.PatchComponent:output_type -> v1.PatchComponentResponse
-	66,  // 276: v1.Flow.DeleteComponent:output_type -> v1.DeleteComponentResponse
-	72,  // 277: v1.Flow.PurgeComponent:output_type -> v1.PurgeComponentResponse
-	49,  // 278: v1.Flow.CreateNVLDomain:output_type -> v1.CreateNVLDomainResponse
-	131, // 279: v1.Flow.AttachRacksToNVLDomain:output_type -> google.protobuf.Empty
-	131, // 280: v1.Flow.DetachRacksFromNVLDomain:output_type -> google.protobuf.Empty
-	53,  // 281: v1.Flow.GetListOfNVLDomains:output_type -> v1.GetListOfNVLDomainsResponse
-	55,  // 282: v1.Flow.GetRacksForNVLDomain:output_type -> v1.GetRacksForNVLDomainResponse
-	83,  // 283: v1.Flow.ListTasks:output_type -> v1.ListTasksResponse
-	85,  // 284: v1.Flow.GetTasksByIDs:output_type -> v1.GetTasksByIDsResponse
-	87,  // 285: v1.Flow.CancelTask:output_type -> v1.CancelTaskResponse
-	92,  // 286: v1.Flow.CreateOperationRule:output_type -> v1.CreateOperationRuleResponse
-	131, // 287: v1.Flow.UpdateOperationRule:output_type -> google.protobuf.Empty
-	131, // 288: v1.Flow.DeleteOperationRule:output_type -> google.protobuf.Empty
-	90,  // 289: v1.Flow.GetOperationRule:output_type -> v1.OperationRule
-	98,  // 290: v1.Flow.ListOperationRules:output_type -> v1.ListOperationRulesResponse
-	131, // 291: v1.Flow.SetRuleAsDefault:output_type -> google.protobuf.Empty
-	131, // 292: v1.Flow.AssociateRuleWithRack:output_type -> google.protobuf.Empty
-	131, // 293: v1.Flow.DisassociateRuleFromRack:output_type -> google.protobuf.Empty
-	102, // 294: v1.Flow.GetRackRuleAssociation:output_type -> v1.GetRackRuleAssociationResponse
-	105, // 295: v1.Flow.ListRackRuleAssociations:output_type -> v1.ListRackRuleAssociationsResponse
-	243, // [243:296] is the sub-list for method output_type
-	190, // [190:243] is the sub-list for method input_type
-	190, // [190:190] is the sub-list for extension type_name
-	190, // [190:190] is the sub-list for extension extendee
-	0,   // [0:190] is the sub-list for field type_name
+	14,  // 111: v1.ListTasksRequest.component_id:type_name -> v1.UUID
+	35,  // 112: v1.ListTasksResponse.tasks:type_name -> v1.Task
+	14,  // 113: v1.GetTasksByIDsRequest.task_ids:type_name -> v1.UUID
+	35,  // 114: v1.GetTasksByIDsResponse.tasks:type_name -> v1.Task
+	14,  // 115: v1.CancelTaskRequest.task_id:type_name -> v1.UUID
+	35,  // 116: v1.CancelTaskResponse.task:type_name -> v1.Task
+	14,  // 117: v1.OperationRule.id:type_name -> v1.UUID
+	11,  // 118: v1.OperationRule.operation_type:type_name -> v1.OperationType
+	129, // 119: v1.OperationRule.created_at:type_name -> google.protobuf.Timestamp
+	129, // 120: v1.OperationRule.updated_at:type_name -> google.protobuf.Timestamp
+	11,  // 121: v1.CreateOperationRuleRequest.operation_type:type_name -> v1.OperationType
+	14,  // 122: v1.CreateOperationRuleResponse.id:type_name -> v1.UUID
+	14,  // 123: v1.UpdateOperationRuleRequest.rule_id:type_name -> v1.UUID
+	14,  // 124: v1.DeleteOperationRuleRequest.rule_id:type_name -> v1.UUID
+	14,  // 125: v1.SetRuleAsDefaultRequest.rule_id:type_name -> v1.UUID
+	14,  // 126: v1.GetOperationRuleRequest.rule_id:type_name -> v1.UUID
+	11,  // 127: v1.ListOperationRulesRequest.operation_type:type_name -> v1.OperationType
+	90,  // 128: v1.ListOperationRulesResponse.rules:type_name -> v1.OperationRule
+	14,  // 129: v1.AssociateRuleWithRackRequest.rack_id:type_name -> v1.UUID
+	14,  // 130: v1.AssociateRuleWithRackRequest.rule_id:type_name -> v1.UUID
+	14,  // 131: v1.DisassociateRuleFromRackRequest.rack_id:type_name -> v1.UUID
+	11,  // 132: v1.DisassociateRuleFromRackRequest.operation_type:type_name -> v1.OperationType
+	14,  // 133: v1.GetRackRuleAssociationRequest.rack_id:type_name -> v1.UUID
+	11,  // 134: v1.GetRackRuleAssociationRequest.operation_type:type_name -> v1.OperationType
+	14,  // 135: v1.GetRackRuleAssociationResponse.rule_id:type_name -> v1.UUID
+	14,  // 136: v1.ListRackRuleAssociationsRequest.rack_id:type_name -> v1.UUID
+	14,  // 137: v1.RackRuleAssociation.rack_id:type_name -> v1.UUID
+	11,  // 138: v1.RackRuleAssociation.operation_type:type_name -> v1.OperationType
+	14,  // 139: v1.RackRuleAssociation.rule_id:type_name -> v1.UUID
+	129, // 140: v1.RackRuleAssociation.created_at:type_name -> google.protobuf.Timestamp
+	129, // 141: v1.RackRuleAssociation.updated_at:type_name -> google.protobuf.Timestamp
+	104, // 142: v1.ListRackRuleAssociationsResponse.associations:type_name -> v1.RackRuleAssociation
+	12,  // 143: v1.ScheduleSpec.type:type_name -> v1.ScheduleSpecType
+	106, // 144: v1.ScheduleConfig.spec:type_name -> v1.ScheduleSpec
+	13,  // 145: v1.ScheduleConfig.overlap_policy:type_name -> v1.OverlapPolicy
+	14,  // 146: v1.TaskSchedule.id:type_name -> v1.UUID
+	106, // 147: v1.TaskSchedule.spec:type_name -> v1.ScheduleSpec
+	13,  // 148: v1.TaskSchedule.overlap_policy:type_name -> v1.OverlapPolicy
+	129, // 149: v1.TaskSchedule.next_run_at:type_name -> google.protobuf.Timestamp
+	129, // 150: v1.TaskSchedule.last_run_at:type_name -> google.protobuf.Timestamp
+	129, // 151: v1.TaskSchedule.created_at:type_name -> google.protobuf.Timestamp
+	129, // 152: v1.TaskSchedule.updated_at:type_name -> google.protobuf.Timestamp
+	77,  // 153: v1.ScheduledOperation.power_on:type_name -> v1.PowerOnRackRequest
+	78,  // 154: v1.ScheduledOperation.power_off:type_name -> v1.PowerOffRackRequest
+	79,  // 155: v1.ScheduledOperation.power_reset:type_name -> v1.PowerResetRackRequest
+	80,  // 156: v1.ScheduledOperation.bring_up:type_name -> v1.BringUpRackRequest
+	56,  // 157: v1.ScheduledOperation.upgrade_firmware:type_name -> v1.UpgradeFirmwareRequest
+	81,  // 158: v1.ScheduledOperation.ingest:type_name -> v1.IngestRackRequest
+	107, // 159: v1.CreateTaskScheduleRequest.schedule:type_name -> v1.ScheduleConfig
+	109, // 160: v1.CreateTaskScheduleRequest.operation:type_name -> v1.ScheduledOperation
+	14,  // 161: v1.GetTaskScheduleRequest.id:type_name -> v1.UUID
+	14,  // 162: v1.ListTaskSchedulesRequest.rack_id:type_name -> v1.UUID
+	31,  // 163: v1.ListTaskSchedulesRequest.pagination:type_name -> v1.Pagination
+	108, // 164: v1.ListTaskSchedulesResponse.task_schedules:type_name -> v1.TaskSchedule
+	14,  // 165: v1.UpdateTaskScheduleRequest.id:type_name -> v1.UUID
+	107, // 166: v1.UpdateTaskScheduleRequest.schedule:type_name -> v1.ScheduleConfig
+	130, // 167: v1.UpdateTaskScheduleRequest.update_mask:type_name -> google.protobuf.FieldMask
+	14,  // 168: v1.PauseTaskScheduleRequest.id:type_name -> v1.UUID
+	14,  // 169: v1.ResumeTaskScheduleRequest.id:type_name -> v1.UUID
+	14,  // 170: v1.DeleteTaskScheduleRequest.id:type_name -> v1.UUID
+	14,  // 171: v1.TriggerTaskScheduleRequest.id:type_name -> v1.UUID
+	14,  // 172: v1.TaskScheduleScope.id:type_name -> v1.UUID
+	14,  // 173: v1.TaskScheduleScope.schedule_id:type_name -> v1.UUID
+	14,  // 174: v1.TaskScheduleScope.rack_id:type_name -> v1.UUID
+	26,  // 175: v1.TaskScheduleScope.types:type_name -> v1.ComponentTypes
+	25,  // 176: v1.TaskScheduleScope.components:type_name -> v1.ComponentTargets
+	14,  // 177: v1.TaskScheduleScope.last_task_id:type_name -> v1.UUID
+	129, // 178: v1.TaskScheduleScope.created_at:type_name -> google.protobuf.Timestamp
+	14,  // 179: v1.AddTaskScheduleScopeRequest.schedule_id:type_name -> v1.UUID
+	23,  // 180: v1.AddTaskScheduleScopeRequest.target_spec:type_name -> v1.OperationTargetSpec
+	119, // 181: v1.AddTaskScheduleScopeResponse.scopes:type_name -> v1.TaskScheduleScope
+	14,  // 182: v1.RemoveTaskScheduleScopeRequest.scope_id:type_name -> v1.UUID
+	14,  // 183: v1.UpdateTaskScheduleScopeRequest.schedule_id:type_name -> v1.UUID
+	23,  // 184: v1.UpdateTaskScheduleScopeRequest.desired_scope:type_name -> v1.OperationTargetSpec
+	119, // 185: v1.UpdateTaskScheduleScopeResponse.scopes:type_name -> v1.TaskScheduleScope
+	14,  // 186: v1.ListTaskScheduleScopesRequest.schedule_id:type_name -> v1.UUID
+	119, // 187: v1.ListTaskScheduleScopesResponse.scopes:type_name -> v1.TaskScheduleScope
+	109, // 188: v1.CheckScheduleConflictsRequest.operation:type_name -> v1.ScheduledOperation
+	14,  // 189: v1.CheckScheduleConflictsRequest.exclude_schedule_id:type_name -> v1.UUID
+	108, // 190: v1.CheckScheduleConflictsResponse.conflicts:type_name -> v1.TaskSchedule
+	88,  // 191: v1.Flow.Version:input_type -> v1.VersionRequest
+	110, // 192: v1.Flow.CreateTaskSchedule:input_type -> v1.CreateTaskScheduleRequest
+	111, // 193: v1.Flow.GetTaskSchedule:input_type -> v1.GetTaskScheduleRequest
+	112, // 194: v1.Flow.ListTaskSchedules:input_type -> v1.ListTaskSchedulesRequest
+	114, // 195: v1.Flow.UpdateTaskSchedule:input_type -> v1.UpdateTaskScheduleRequest
+	115, // 196: v1.Flow.PauseTaskSchedule:input_type -> v1.PauseTaskScheduleRequest
+	116, // 197: v1.Flow.ResumeTaskSchedule:input_type -> v1.ResumeTaskScheduleRequest
+	117, // 198: v1.Flow.DeleteTaskSchedule:input_type -> v1.DeleteTaskScheduleRequest
+	118, // 199: v1.Flow.TriggerTaskSchedule:input_type -> v1.TriggerTaskScheduleRequest
+	120, // 200: v1.Flow.AddTaskScheduleScope:input_type -> v1.AddTaskScheduleScopeRequest
+	122, // 201: v1.Flow.RemoveTaskScheduleScope:input_type -> v1.RemoveTaskScheduleScopeRequest
+	123, // 202: v1.Flow.UpdateTaskScheduleScope:input_type -> v1.UpdateTaskScheduleScopeRequest
+	125, // 203: v1.Flow.ListTaskScheduleScopes:input_type -> v1.ListTaskScheduleScopesRequest
+	127, // 204: v1.Flow.CheckScheduleConflicts:input_type -> v1.CheckScheduleConflictsRequest
+	36,  // 205: v1.Flow.CreateExpectedRack:input_type -> v1.CreateExpectedRackRequest
+	38,  // 206: v1.Flow.GetRackInfoByID:input_type -> v1.GetRackInfoByIDRequest
+	39,  // 207: v1.Flow.GetRackInfoBySerial:input_type -> v1.GetRackInfoBySerialRequest
+	46,  // 208: v1.Flow.GetListOfRacks:input_type -> v1.GetListOfRacksRequest
+	41,  // 209: v1.Flow.PatchRack:input_type -> v1.PatchRackRequest
+	67,  // 210: v1.Flow.DeleteRack:input_type -> v1.DeleteRackRequest
+	69,  // 211: v1.Flow.PurgeRack:input_type -> v1.PurgeRackRequest
+	56,  // 212: v1.Flow.UpgradeFirmware:input_type -> v1.UpgradeFirmwareRequest
+	80,  // 213: v1.Flow.BringUpRack:input_type -> v1.BringUpRackRequest
+	81,  // 214: v1.Flow.IngestRack:input_type -> v1.IngestRackRequest
+	77,  // 215: v1.Flow.PowerOnRack:input_type -> v1.PowerOnRackRequest
+	78,  // 216: v1.Flow.PowerOffRack:input_type -> v1.PowerOffRackRequest
+	79,  // 217: v1.Flow.PowerResetRack:input_type -> v1.PowerResetRackRequest
+	43,  // 218: v1.Flow.GetComponentInfoByID:input_type -> v1.GetComponentInfoByIDRequest
+	44,  // 219: v1.Flow.GetComponentInfoBySerial:input_type -> v1.GetComponentInfoBySerialRequest
+	57,  // 220: v1.Flow.GetComponents:input_type -> v1.GetComponentsRequest
+	59,  // 221: v1.Flow.ValidateComponents:input_type -> v1.ValidateComponentsRequest
+	63,  // 222: v1.Flow.AddComponent:input_type -> v1.AddComponentRequest
+	73,  // 223: v1.Flow.PatchComponent:input_type -> v1.PatchComponentRequest
+	65,  // 224: v1.Flow.DeleteComponent:input_type -> v1.DeleteComponentRequest
+	71,  // 225: v1.Flow.PurgeComponent:input_type -> v1.PurgeComponentRequest
+	48,  // 226: v1.Flow.CreateNVLDomain:input_type -> v1.CreateNVLDomainRequest
+	50,  // 227: v1.Flow.AttachRacksToNVLDomain:input_type -> v1.AttachRacksToNVLDomainRequest
+	51,  // 228: v1.Flow.DetachRacksFromNVLDomain:input_type -> v1.DetachRacksFromNVLDomainRequest
+	52,  // 229: v1.Flow.GetListOfNVLDomains:input_type -> v1.GetListOfNVLDomainsRequest
+	54,  // 230: v1.Flow.GetRacksForNVLDomain:input_type -> v1.GetRacksForNVLDomainRequest
+	82,  // 231: v1.Flow.ListTasks:input_type -> v1.ListTasksRequest
+	84,  // 232: v1.Flow.GetTasksByIDs:input_type -> v1.GetTasksByIDsRequest
+	86,  // 233: v1.Flow.CancelTask:input_type -> v1.CancelTaskRequest
+	91,  // 234: v1.Flow.CreateOperationRule:input_type -> v1.CreateOperationRuleRequest
+	93,  // 235: v1.Flow.UpdateOperationRule:input_type -> v1.UpdateOperationRuleRequest
+	94,  // 236: v1.Flow.DeleteOperationRule:input_type -> v1.DeleteOperationRuleRequest
+	96,  // 237: v1.Flow.GetOperationRule:input_type -> v1.GetOperationRuleRequest
+	97,  // 238: v1.Flow.ListOperationRules:input_type -> v1.ListOperationRulesRequest
+	95,  // 239: v1.Flow.SetRuleAsDefault:input_type -> v1.SetRuleAsDefaultRequest
+	99,  // 240: v1.Flow.AssociateRuleWithRack:input_type -> v1.AssociateRuleWithRackRequest
+	100, // 241: v1.Flow.DisassociateRuleFromRack:input_type -> v1.DisassociateRuleFromRackRequest
+	101, // 242: v1.Flow.GetRackRuleAssociation:input_type -> v1.GetRackRuleAssociationRequest
+	103, // 243: v1.Flow.ListRackRuleAssociations:input_type -> v1.ListRackRuleAssociationsRequest
+	89,  // 244: v1.Flow.Version:output_type -> v1.BuildInfo
+	108, // 245: v1.Flow.CreateTaskSchedule:output_type -> v1.TaskSchedule
+	108, // 246: v1.Flow.GetTaskSchedule:output_type -> v1.TaskSchedule
+	113, // 247: v1.Flow.ListTaskSchedules:output_type -> v1.ListTaskSchedulesResponse
+	108, // 248: v1.Flow.UpdateTaskSchedule:output_type -> v1.TaskSchedule
+	108, // 249: v1.Flow.PauseTaskSchedule:output_type -> v1.TaskSchedule
+	108, // 250: v1.Flow.ResumeTaskSchedule:output_type -> v1.TaskSchedule
+	131, // 251: v1.Flow.DeleteTaskSchedule:output_type -> google.protobuf.Empty
+	75,  // 252: v1.Flow.TriggerTaskSchedule:output_type -> v1.SubmitTaskResponse
+	121, // 253: v1.Flow.AddTaskScheduleScope:output_type -> v1.AddTaskScheduleScopeResponse
+	131, // 254: v1.Flow.RemoveTaskScheduleScope:output_type -> google.protobuf.Empty
+	124, // 255: v1.Flow.UpdateTaskScheduleScope:output_type -> v1.UpdateTaskScheduleScopeResponse
+	126, // 256: v1.Flow.ListTaskScheduleScopes:output_type -> v1.ListTaskScheduleScopesResponse
+	128, // 257: v1.Flow.CheckScheduleConflicts:output_type -> v1.CheckScheduleConflictsResponse
+	37,  // 258: v1.Flow.CreateExpectedRack:output_type -> v1.CreateExpectedRackResponse
+	40,  // 259: v1.Flow.GetRackInfoByID:output_type -> v1.GetRackInfoResponse
+	40,  // 260: v1.Flow.GetRackInfoBySerial:output_type -> v1.GetRackInfoResponse
+	47,  // 261: v1.Flow.GetListOfRacks:output_type -> v1.GetListOfRacksResponse
+	42,  // 262: v1.Flow.PatchRack:output_type -> v1.PatchRackResponse
+	68,  // 263: v1.Flow.DeleteRack:output_type -> v1.DeleteRackResponse
+	70,  // 264: v1.Flow.PurgeRack:output_type -> v1.PurgeRackResponse
+	75,  // 265: v1.Flow.UpgradeFirmware:output_type -> v1.SubmitTaskResponse
+	75,  // 266: v1.Flow.BringUpRack:output_type -> v1.SubmitTaskResponse
+	75,  // 267: v1.Flow.IngestRack:output_type -> v1.SubmitTaskResponse
+	75,  // 268: v1.Flow.PowerOnRack:output_type -> v1.SubmitTaskResponse
+	75,  // 269: v1.Flow.PowerOffRack:output_type -> v1.SubmitTaskResponse
+	75,  // 270: v1.Flow.PowerResetRack:output_type -> v1.SubmitTaskResponse
+	45,  // 271: v1.Flow.GetComponentInfoByID:output_type -> v1.GetComponentInfoResponse
+	45,  // 272: v1.Flow.GetComponentInfoBySerial:output_type -> v1.GetComponentInfoResponse
+	58,  // 273: v1.Flow.GetComponents:output_type -> v1.GetComponentsResponse
+	60,  // 274: v1.Flow.ValidateComponents:output_type -> v1.ValidateComponentsResponse
+	64,  // 275: v1.Flow.AddComponent:output_type -> v1.AddComponentResponse
+	74,  // 276: v1.Flow.PatchComponent:output_type -> v1.PatchComponentResponse
+	66,  // 277: v1.Flow.DeleteComponent:output_type -> v1.DeleteComponentResponse
+	72,  // 278: v1.Flow.PurgeComponent:output_type -> v1.PurgeComponentResponse
+	49,  // 279: v1.Flow.CreateNVLDomain:output_type -> v1.CreateNVLDomainResponse
+	131, // 280: v1.Flow.AttachRacksToNVLDomain:output_type -> google.protobuf.Empty
+	131, // 281: v1.Flow.DetachRacksFromNVLDomain:output_type -> google.protobuf.Empty
+	53,  // 282: v1.Flow.GetListOfNVLDomains:output_type -> v1.GetListOfNVLDomainsResponse
+	55,  // 283: v1.Flow.GetRacksForNVLDomain:output_type -> v1.GetRacksForNVLDomainResponse
+	83,  // 284: v1.Flow.ListTasks:output_type -> v1.ListTasksResponse
+	85,  // 285: v1.Flow.GetTasksByIDs:output_type -> v1.GetTasksByIDsResponse
+	87,  // 286: v1.Flow.CancelTask:output_type -> v1.CancelTaskResponse
+	92,  // 287: v1.Flow.CreateOperationRule:output_type -> v1.CreateOperationRuleResponse
+	131, // 288: v1.Flow.UpdateOperationRule:output_type -> google.protobuf.Empty
+	131, // 289: v1.Flow.DeleteOperationRule:output_type -> google.protobuf.Empty
+	90,  // 290: v1.Flow.GetOperationRule:output_type -> v1.OperationRule
+	98,  // 291: v1.Flow.ListOperationRules:output_type -> v1.ListOperationRulesResponse
+	131, // 292: v1.Flow.SetRuleAsDefault:output_type -> google.protobuf.Empty
+	131, // 293: v1.Flow.AssociateRuleWithRack:output_type -> google.protobuf.Empty
+	131, // 294: v1.Flow.DisassociateRuleFromRack:output_type -> google.protobuf.Empty
+	102, // 295: v1.Flow.GetRackRuleAssociation:output_type -> v1.GetRackRuleAssociationResponse
+	105, // 296: v1.Flow.ListRackRuleAssociations:output_type -> v1.ListRackRuleAssociationsResponse
+	244, // [244:297] is the sub-list for method output_type
+	191, // [191:244] is the sub-list for method input_type
+	191, // [191:191] is the sub-list for extension type_name
+	191, // [191:191] is the sub-list for extension extendee
+	0,   // [0:191] is the sub-list for field type_name
 }
 
 func init() { file_flow_proto_init() }
