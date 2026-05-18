@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package nico
+package flowgrpc
 
 import (
 	"context"
@@ -26,35 +26,33 @@ import (
 	"go.temporal.io/sdk/log"
 )
 
-// CreateGRPCClientActivity - Create GRPC client Activity
-func (Carbide *API) CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.NICoCoreClient, err error) {
-	// Create the VPC
-	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Carbide: Starting  the gRPC connection Activity")
-
+// CreateGrpcClientActivity is an activity to create a Flow gRPC client
+func (flowgrpc *API) CreateGrpcClientActivity(ctx context.Context, ResourceID string) (client *client.FlowGrpcClient, err error) {
 	// Use temporal logger for temporal logs
 	logger := activity.GetLogger(ctx)
-	withLogger := log.With(logger, "Activity", "CreateGRPCClientActivity", "ResourceReq", ResourceID)
-	withLogger.Info("Carbide: Starting  the gRPC connection Activity")
+
+	slogger := log.With(logger, "Activity", "CreateGrpcClientActivity", "ResourceID", ResourceID)
+	slogger.Info("Flow: Starting the gRPC connection Activity")
 
 	// Create the client
-	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Carbide: Creating  grpc client")
+	slogger.Info("Flow: Creating gRPC client")
 
-	err = Carbide.CreateGRPCClient()
+	err = flowgrpc.CreateGrpcClient()
 	if err != nil {
 		return nil, err
 	}
-	return Carbide.GetGRPCClient(), nil
+	return flowgrpc.GetGrpcClient(), nil
 }
 
-// RegisterGRPC - Register GRPC
-func (Carbide *API) RegisterGRPC() {
+// RegisterGrpc - Register gRPC client activity
+func (flowgrpc *API) RegisterGrpc() {
 	// Register activity
 	activityRegisterOptions := activity.RegisterOptions{
-		Name: "CreateGRPCClientActivity",
+		Name: "CreateRlaGrpcClientActivity",
 	}
 
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivityWithOptions(
-		ManagerAccess.API.NICo.CreateGRPCClientActivity, activityRegisterOptions,
+		flowgrpc.CreateGrpcClientActivity, activityRegisterOptions,
 	)
-	ManagerAccess.Data.EB.Log.Info().Msg("Carbide: successfully registered GRPC client activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: successfully registered gRPC client activity")
 }

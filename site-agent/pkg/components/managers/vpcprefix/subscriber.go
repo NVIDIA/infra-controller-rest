@@ -41,7 +41,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("VpcPrefix: Successfully registered DeleteVpcPrefix workflow")
 
 	// Register activities
-	vpcPrefixManager := swa.NewManageVpcPrefix(ManagerAccess.Data.EB.Managers.NICo.Client)
+	vpcPrefixManager := swa.NewManageVpcPrefix(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register CreateVpcPrefixOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(vpcPrefixManager.CreateVpcPrefixOnSite)

@@ -74,6 +74,15 @@ func DescriptorFor(componentType devicetypes.ComponentType) cmcatalog.Descriptor
 	return cmcatalog.Descriptor{
 		Type:           componentType,
 		Implementation: ImplementationName,
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityBringUpControl,
+			cmcatalog.CapabilityBringUpStatus,
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
 	}
 }
 

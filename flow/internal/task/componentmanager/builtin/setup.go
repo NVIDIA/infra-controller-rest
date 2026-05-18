@@ -135,11 +135,6 @@ func NewComponentManagerRegistry(
 	config cmconfig.Config,
 	providers *providerapi.ProviderRegistry,
 ) (*componentmanager.Registry, error) {
-	catalog, err := newCatalog()
-	if err != nil {
-		return nil, err
-	}
-
 	factorySpecs, err := serviceFactorySpecs(config)
 	if err != nil {
 		return nil, err
@@ -148,14 +143,6 @@ func NewComponentManagerRegistry(
 	registry, err := componentmanager.NewRegistry(factorySpecs, config, providers)
 	if err != nil {
 		return nil, fmt.Errorf("initialize component managers: %w", err)
-	}
-
-	impls := catalog.ListImplementations()
-	for compType, names := range impls {
-		log.Debug().
-			Str("component_type", compType.String()).
-			Strs("implementations", names).
-			Msg("Registered component manager implementations")
 	}
 
 	return registry, nil

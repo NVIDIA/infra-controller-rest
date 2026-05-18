@@ -37,7 +37,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("Machine: Successfully registered UpdateMachineMetadata workflow")
 
 	// Register activities
-	machineManager := swa.NewManageMachine(ManagerAccess.Data.EB.Managers.NICo.Client)
+	machineManager := swa.NewManageMachine(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register SetMachineMaintenanceOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(machineManager.SetMachineMaintenanceOnSite)

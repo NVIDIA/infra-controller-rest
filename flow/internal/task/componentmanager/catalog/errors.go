@@ -44,6 +44,14 @@ var (
 	// ErrUnknownComponentManagerImplementation reports that the configured
 	// implementation name is not registered for a component type.
 	ErrUnknownComponentManagerImplementation = errors.New("unknown component manager implementation")
+
+	// ErrCapabilityNameEmpty reports that a descriptor declared an empty
+	// capability name.
+	ErrCapabilityNameEmpty = errors.New("component manager capability name is empty")
+
+	// ErrUnknownCapability reports that a descriptor declared an unsupported
+	// capability name.
+	ErrUnknownCapability = errors.New("unknown component manager capability")
 )
 
 // UnknownComponentTypeError includes the unrecognized component type string.
@@ -149,4 +157,29 @@ func (e UnknownComponentManagerImplementationError) Error() string {
 
 func (e UnknownComponentManagerImplementationError) Is(target error) bool {
 	return target == ErrUnknownComponentManagerImplementation
+}
+
+// CapabilityNameEmptyError reports an empty capability name in descriptor
+// metadata.
+type CapabilityNameEmptyError struct{}
+
+func (e CapabilityNameEmptyError) Error() string {
+	return ErrCapabilityNameEmpty.Error()
+}
+
+func (e CapabilityNameEmptyError) Is(target error) bool {
+	return target == ErrCapabilityNameEmpty
+}
+
+// UnknownCapabilityError includes the unsupported capability name.
+type UnknownCapabilityError struct {
+	Capability Capability
+}
+
+func (e UnknownCapabilityError) Error() string {
+	return fmt.Sprintf("%s: %q", ErrUnknownCapability, e.Capability)
+}
+
+func (e UnknownCapabilityError) Is(target error) bool {
+	return target == ErrUnknownCapability
 }

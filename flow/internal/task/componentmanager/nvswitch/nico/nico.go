@@ -73,6 +73,14 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypeNVSwitch,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nicoprovider.ProviderName},
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityFirmwareConsistencyCheck,
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
 	}
 }
 

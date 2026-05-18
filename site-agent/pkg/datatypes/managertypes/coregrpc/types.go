@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package flowtypes
+package coregrpctypes
 
 import (
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"go.uber.org/atomic"
 )
 
-// State - Flow state
+// State - Core gRPC state
 type State struct {
 	// GrpcFail the number of times the rpc has failed
 	GrpcFail atomic.Uint64
@@ -36,23 +36,23 @@ type State struct {
 	WflowMetrics WorkflowMetrics
 }
 
-// Flow represents the gRPC client for Flow and state
-type Flow struct {
-	Client *client.FlowAtomicClient
+// CoreGrpc represents the gRPC client for Core gRPC and state
+type CoreGrpc struct {
+	Client *client.CoreGrpcAtomicClient
 	State  *State
 }
 
-// NewFlowInstance creates a new instance of Flow
-func NewFlowInstance() *Flow {
-	f := &Flow{
+// NewCoreGrpcInstance creates a new instance of Core gRPC
+func NewCoreGrpcInstance() *CoreGrpc {
+	coreGrpc := &CoreGrpc{
 		State:  &State{},
-		Client: client.NewFlowAtomicClient(&client.FlowClientConfig{}),
+		Client: client.NewCoreGrpcAtomicClient(&client.CoreGrpcClientConfig{}),
 	}
 
-	return f
+	return coreGrpc
 }
 
-// GetClient returns the Flow client
-func (c *Flow) GetClient() *client.FlowClient {
+// GetClient returns the Core gRPC client
+func (c *CoreGrpc) GetClient() *client.CoreGrpcClient {
 	return c.Client.GetClient()
 }

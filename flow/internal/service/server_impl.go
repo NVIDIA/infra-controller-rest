@@ -868,9 +868,10 @@ func (rs *FlowServerImpl) ListTasks(
 	req *pb.ListTasksRequest,
 ) (*pb.ListTasksResponse, error) {
 	options := &taskcommon.TaskListOptions{
-		TaskType:   taskcommon.TaskTypeUnknown,
-		RackID:     protobuf.UUIDFrom(req.GetRackId()),
-		ActiveOnly: req.GetActiveOnly(),
+		TaskType:    taskcommon.TaskTypeUnknown,
+		RackID:      protobuf.UUIDFrom(req.GetRackId()),
+		ComponentID: protobuf.UUIDFrom(req.GetComponentId()),
+		ActiveOnly:  req.GetActiveOnly(),
 	}
 
 	pagination := protobuf.PaginationFrom(req.GetPagination())

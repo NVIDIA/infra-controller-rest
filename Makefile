@@ -15,7 +15,7 @@
 
 .PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers
 .PHONY: build docker-build docker-build-local
-.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate nico-mock-server-build nico-mock-server-start nico-mock-server-stop flow-mock-server-build flow-mock-server-start flow-mock-server-stop
+.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate core-mock-server-build core-mock-server-start core-mock-server-stop flow-mock-server-build flow-mock-server-start flow-mock-server-stop
 .PHONY: validate-openapi preview-openapi generate-client
 .PHONY: pre-commit-install pre-commit-run pre-commit-update
 
@@ -70,7 +70,7 @@ postgres-down:
 clean:
 	@echo "Cleaning up test resources..."
 	-$(MAKE) postgres-down
-	-$(MAKE) nico-mock-server-stop
+	-$(MAKE) core-mock-server-stop
 	-$(MAKE) flow-mock-server-stop
 	@echo "Stopping kind cluster..."
 	-$(MAKE) kind-down
@@ -131,11 +131,11 @@ test-db:
 	$(MAKE) ensure-postgres
 	cd db && go test -p 1 ./... -count=1
 
-nico-mock-server-build:
+core-mock-server-build:
 	mkdir -p build
 	cd site-agent/cmd/mock-core && go build -o ../../../build/mock-core .
 
-nico-mock-server-start: nico-mock-server-build
+core-mock-server-start: core-mock-server-build
 	-lsof -ti:11079 | xargs kill -9 2>/dev/null
 	./build/mock-core -tout 0 > build/mock-core.log 2>&1 & echo $$! > build/mock-core.pid
 	@echo "Waiting for gRPC server to start..."
@@ -150,7 +150,7 @@ nico-mock-server-start: nico-mock-server-build
 	echo "Timeout waiting for Mock Core gRPC server to start"; \
 	exit 1
 
-nico-mock-server-stop:
+core-mock-server-stop:
 	-kill $$(cat build/mock-core.pid) 2>/dev/null
 	-rm -f build/mock-core.pid
 
@@ -177,9 +177,9 @@ flow-mock-server-stop:
 	-kill $$(cat build/mock-flow.pid) 2>/dev/null
 	-rm -f build/mock-flow.pid
 
-test-site-agent: nico-mock-server-start flow-mock-server-start
+test-site-agent: core-mock-server-start flow-mock-server-start
 	cd site-agent/pkg/components && CGO_ENABLED=1 go test -race -p 1 ./... -count=1 ; \
-	ret=$$? ; cd ../../.. && $(MAKE) nico-mock-server-stop flow-mock-server-stop ; exit $$ret
+	ret=$$? ; cd ../../.. && $(MAKE) core-mock-server-stop flow-mock-server-stop ; exit $$ret
 
 test-api:
 	$(MAKE) ensure-postgres

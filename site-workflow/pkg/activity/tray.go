@@ -30,7 +30,7 @@ import (
 
 // ManageTray is an activity wrapper for Tray management via Flow
 type ManageTray struct {
-	FlowAtomicClient *cClient.FlowAtomicClient
+	flowGrpcAtomicClient *cClient.FlowGrpcAtomicClient
 }
 
 // GetTray retrieves a tray by its UUID from Flow
@@ -53,12 +53,14 @@ func (mt *ManageTray) GetTray(ctx context.Context, request *flowv1.GetComponentI
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mt.FlowAtomicClient.GetFlowClient()
-	if err != nil {
-		return nil, err
+	grpcClient := mt.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, cClient.ErrFlowGrpcClientNotConnected
 	}
 
-	response, err := flow.GetComponentInfoByID(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	response, err := grpcServiceClient.GetComponentInfoByID(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get tray by ID using Flow API")
 		return nil, swe.WrapErr(err)
@@ -80,12 +82,14 @@ func (mt *ManageTray) GetTrays(ctx context.Context, request *flowv1.GetComponent
 	}
 
 	// Call Flow gRPC endpoint
-	flow, err := mt.FlowAtomicClient.GetFlowClient()
-	if err != nil {
-		return nil, err
+	grpcClient := mt.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, cClient.ErrFlowGrpcClientNotConnected
 	}
 
-	response, err := flow.GetComponents(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	response, err := grpcServiceClient.GetComponents(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get list of trays using Flow API")
 		return nil, swe.WrapErr(err)
@@ -97,8 +101,8 @@ func (mt *ManageTray) GetTrays(ctx context.Context, request *flowv1.GetComponent
 }
 
 // NewManageTray returns a new ManageTray client
-func NewManageTray(flowClient *cClient.FlowAtomicClient) ManageTray {
+func NewManageTray(flowGrpcAtomicClient *cClient.FlowGrpcAtomicClient) ManageTray {
 	return ManageTray{
-		FlowAtomicClient: flowClient,
+		flowGrpcAtomicClient: flowGrpcAtomicClient,
 	}
 }
