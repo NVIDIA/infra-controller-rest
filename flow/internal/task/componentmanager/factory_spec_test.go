@@ -153,9 +153,9 @@ func TestSelectFactorySpecsRejectsUnknownImplementation(t *testing.T) {
 				managerFactory(devicetypes.ComponentTypeCompute, "known"),
 			),
 			testFactorySpec(
-				devicetypes.ComponentTypeNVLSwitch,
+				devicetypes.ComponentTypeNVSwitch,
 				"switch",
-				managerFactory(devicetypes.ComponentTypeNVLSwitch, "switch"),
+				managerFactory(devicetypes.ComponentTypeNVSwitch, "switch"),
 			),
 		},
 		map[devicetypes.ComponentType]string{
@@ -174,6 +174,6 @@ func TestSelectFactorySpecsRejectsUnknownImplementation(t *testing.T) {
 	require.Equal(t, "switch", implErr.Implementation)
 	require.Equal(t, []string{"known"}, implErr.Available)
 	require.Equal(t, []devicetypes.ComponentType{
-		devicetypes.ComponentTypeNVLSwitch,
+		devicetypes.ComponentTypeNVSwitch,
 	}, implErr.RegisteredFor)
 }

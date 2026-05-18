@@ -170,7 +170,7 @@ func TestParseRackJSON(t *testing.T) {
 		"component without id generates uuid": {
 			json: `{
 				"info": {},
-				"components": [{"type": "nvlswitch", "info": {"name": "sw1"}}]
+				"components": [{"type": "nvswitch", "info": {"name": "sw1"}}]
 			}`,
 			validate: func(t *testing.T, rack *types.Rack) {
 				require.Len(t, rack.Components, 1)

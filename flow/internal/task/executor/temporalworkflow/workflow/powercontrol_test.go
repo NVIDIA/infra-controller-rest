@@ -110,7 +110,7 @@ func createDefaultPowerRuleDef(op operations.PowerOperation) *operationrules.Rul
 					MainOperation: operationrules.ActionConfig{Name: operationrules.ActionPowerControl},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   1,
 					DelayAfter:    15 * time.Second,
@@ -139,7 +139,7 @@ func createDefaultPowerRuleDef(op operations.PowerOperation) *operationrules.Rul
 					MainOperation: operationrules.ActionConfig{Name: operationrules.ActionPowerControl},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   1,
 					DelayAfter:    5 * time.Second,
@@ -187,12 +187,12 @@ func TestPowerControlWorkflow(t *testing.T) {
 	computeID1 := uuid.New()
 	computeID2 := uuid.New()
 	powershelfID := uuid.New()
-	nvlswitchID := uuid.New()
+	nvswitchID := uuid.New()
 
-	// Full set of components (PowerShelf, NVLSwitch, Compute)
+	// Full set of components (PowerShelf, NVSwitch, Compute)
 	fullComponents := []*component.Component{
 		newTestComponent(powershelfID, "powershelf-1", "ext-powershelf-1", devicetypes.ComponentTypePowerShelf),
-		newTestComponent(nvlswitchID, "nvlswitch-1", "ext-nvlswitch-1", devicetypes.ComponentTypeNVLSwitch),
+		newTestComponent(nvswitchID, "nvswitch-1", "ext-nvswitch-1", devicetypes.ComponentTypeNVSwitch),
 		newTestComponent(computeID1, "compute-1", "ext-compute-1", devicetypes.ComponentTypeCompute),
 		newTestComponent(computeID2, "compute-2", "ext-compute-2", devicetypes.ComponentTypeCompute),
 	}

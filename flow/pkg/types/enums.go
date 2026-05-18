@@ -83,7 +83,7 @@ const (
 	DiffTypeUnknown    DiffType = "Unknown"
 	DiffTypeMissing    DiffType = "Missing"
 	DiffTypeUnexpected DiffType = "Unexpected"
-	DiffTypeDrift      DiffType = "Drift"
+	DiffTypeMismatch   DiffType = "Mismatch"
 )
 
 // OperationType represents the type of operation (power control, firmware, etc.).

@@ -92,7 +92,7 @@ func Descriptors() []cmcatalog.Descriptor {
 	descriptors := make([]cmcatalog.Descriptor, 0, 3)
 	for _, ct := range []devicetypes.ComponentType{
 		devicetypes.ComponentTypeCompute,
-		devicetypes.ComponentTypeNVLSwitch,
+		devicetypes.ComponentTypeNVSwitch,
 		devicetypes.ComponentTypePowerShelf,
 	} {
 		descriptors = append(descriptors, DescriptorFor(ct))
@@ -106,7 +106,7 @@ func FactorySpecs() []componentmanager.FactorySpec {
 	factorySpecs := make([]componentmanager.FactorySpec, 0, 3)
 	for _, ct := range []devicetypes.ComponentType{
 		devicetypes.ComponentTypeCompute,
-		devicetypes.ComponentTypeNVLSwitch,
+		devicetypes.ComponentTypeNVSwitch,
 		devicetypes.ComponentTypePowerShelf,
 	} {
 		factorySpecs = append(factorySpecs, FactorySpecFor(ct))

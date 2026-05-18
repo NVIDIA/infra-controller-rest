@@ -195,9 +195,9 @@ func TestNewRegistryErrors(t *testing.T) {
 					managerFactory(devicetypes.ComponentTypeCompute, "nico"),
 				),
 				testFactorySpec(
-					devicetypes.ComponentTypeNVLSwitch,
+					devicetypes.ComponentTypeNVSwitch,
 					"nvswitchmanager",
-					managerFactory(devicetypes.ComponentTypeNVLSwitch, "nvswitchmanager"),
+					managerFactory(devicetypes.ComponentTypeNVSwitch, "nvswitchmanager"),
 				),
 			},
 			cmconfig.Config{
@@ -217,7 +217,7 @@ func TestNewRegistryErrors(t *testing.T) {
 		require.Equal(t, "nvswitchmanager", implErr.Implementation)
 		require.Equal(t, []string{"nico"}, implErr.Available)
 		require.Equal(t, []devicetypes.ComponentType{
-			devicetypes.ComponentTypeNVLSwitch,
+			devicetypes.ComponentTypeNVSwitch,
 		}, implErr.RegisteredFor)
 	})
 
@@ -286,7 +286,7 @@ func TestNewRegistryErrors(t *testing.T) {
 				testFactorySpec(
 					devicetypes.ComponentTypeCompute,
 					"wrong-type",
-					managerFactory(devicetypes.ComponentTypeNVLSwitch, "wrong-type"),
+					managerFactory(devicetypes.ComponentTypeNVSwitch, "wrong-type"),
 				),
 			},
 			cmconfig.Config{
@@ -304,7 +304,7 @@ func TestNewRegistryErrors(t *testing.T) {
 		require.True(t, errors.As(err, &mismatchErr))
 		require.Equal(t, devicetypes.ComponentTypeCompute, mismatchErr.Expected.Type)
 		require.Equal(t, "wrong-type", mismatchErr.Expected.Implementation)
-		require.Equal(t, devicetypes.ComponentTypeNVLSwitch, mismatchErr.Actual.Type)
+		require.Equal(t, devicetypes.ComponentTypeNVSwitch, mismatchErr.Actual.Type)
 		require.Equal(t, "wrong-type", mismatchErr.Actual.Implementation)
 	})
 }
@@ -323,11 +323,11 @@ func TestCreateManagerRejectsDescriptorMismatch(t *testing.T) {
 				"custom",
 			),
 			factory: managerFactory(
-				devicetypes.ComponentTypeNVLSwitch,
+				devicetypes.ComponentTypeNVSwitch,
 				"custom",
 			),
 			wantActual: testDescriptor(
-				devicetypes.ComponentTypeNVLSwitch,
+				devicetypes.ComponentTypeNVSwitch,
 				"custom",
 			),
 		},
@@ -400,15 +400,15 @@ func TestNewRegistryReturnsNilWhenManagerValidationFails(t *testing.T) {
 				managerFactory(devicetypes.ComponentTypeCompute, "compute"),
 			),
 			testFactorySpec(
-				devicetypes.ComponentTypeNVLSwitch,
+				devicetypes.ComponentTypeNVSwitch,
 				"wrong-type",
 				managerFactory(devicetypes.ComponentTypePowerShelf, "wrong-type"),
 			),
 		},
 		cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
-				devicetypes.ComponentTypeCompute:   "compute",
-				devicetypes.ComponentTypeNVLSwitch: "wrong-type",
+				devicetypes.ComponentTypeCompute:  "compute",
+				devicetypes.ComponentTypeNVSwitch: "wrong-type",
 			},
 		},
 		providerapi.NewProviderRegistry(),
@@ -459,15 +459,15 @@ func TestRegistryGetAllManagers(t *testing.T) {
 				managerFactory(devicetypes.ComponentTypeCompute, "compute"),
 			),
 			testFactorySpec(
-				devicetypes.ComponentTypeNVLSwitch,
+				devicetypes.ComponentTypeNVSwitch,
 				"switch",
-				managerFactory(devicetypes.ComponentTypeNVLSwitch, "switch"),
+				managerFactory(devicetypes.ComponentTypeNVSwitch, "switch"),
 			),
 		},
 		cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
-				devicetypes.ComponentTypeCompute:   "compute",
-				devicetypes.ComponentTypeNVLSwitch: "switch",
+				devicetypes.ComponentTypeCompute:  "compute",
+				devicetypes.ComponentTypeNVSwitch: "switch",
 			},
 		},
 		providerapi.NewProviderRegistry(),
@@ -483,6 +483,6 @@ func TestRegistryGetAllManagers(t *testing.T) {
 	}
 	require.ElementsMatch(t, []cmcatalog.Descriptor{
 		testDescriptor(devicetypes.ComponentTypeCompute, "compute"),
-		testDescriptor(devicetypes.ComponentTypeNVLSwitch, "switch"),
+		testDescriptor(devicetypes.ComponentTypeNVSwitch, "switch"),
 	}, descriptors)
 }

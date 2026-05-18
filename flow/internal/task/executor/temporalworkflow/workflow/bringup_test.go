@@ -228,7 +228,7 @@ func TestBringUpWorkflowWithIngestion(t *testing.T) {
 	testComponents := []task.WorkflowComponent{
 		{ComponentID: "ps-1", Type: devicetypes.ComponentTypePowerShelf},
 		{ComponentID: "compute-1", Type: devicetypes.ComponentTypeCompute},
-		{ComponentID: "switch-1", Type: devicetypes.ComponentTypeNVLSwitch},
+		{ComponentID: "switch-1", Type: devicetypes.ComponentTypeNVSwitch},
 	}
 
 	ingestRule := &operationrules.RuleDefinition{
@@ -253,7 +253,7 @@ func TestBringUpWorkflowWithIngestion(t *testing.T) {
 				},
 			},
 			{
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 				Stage:         1,
 				MaxParallel:   0,
 				Timeout:       10 * time.Minute,

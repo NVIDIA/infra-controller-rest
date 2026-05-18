@@ -994,7 +994,7 @@ ValidateTray Validate a Tray
 
 Validate a Tray by comparing expected vs actual state.
 
-Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
 Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
@@ -1181,7 +1181,7 @@ Validate Tray components by comparing expected vs actual state.
 
 If no filter is specified, validates all trays in the Site. Use rackId/rackName to scope to a specific rack, and name/manufacturer/type to filter by tray attributes.
 
-Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
 Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 

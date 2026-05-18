@@ -1565,7 +1565,7 @@ ValidateRack Validate a Rack
 
 Validate a Rack's components by comparing expected vs actual state.
 
-Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
 Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
@@ -1724,7 +1724,7 @@ Validate Rack components by comparing expected vs actual state.
 
 If no filter is specified, validates all racks in the Site. Filters can narrow the scope to specific racks by name or manufacturer.
 
-Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
 Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
 

@@ -52,7 +52,7 @@ func init() {
 // future work.
 var injectExpectationComponentOrder = []devicetypes.ComponentType{
 	devicetypes.ComponentTypePowerShelf,
-	devicetypes.ComponentTypeNVLSwitch,
+	devicetypes.ComponentTypeNVSwitch,
 	devicetypes.ComponentTypeCompute,
 	devicetypes.ComponentTypeToRSwitch,
 	devicetypes.ComponentTypeUMS,

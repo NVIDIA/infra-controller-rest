@@ -97,7 +97,7 @@ func TestManageTray_GetTray(t *testing.T) {
 			},
 			mockResp: &flowv1.GetComponentInfoResponse{
 				Component: &flowv1.Component{
-					Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+					Type: flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH,
 					Info: &flowv1.DeviceInfo{
 						Id:   &flowv1.UUID{Id: "switch-tray-id"},
 						Name: "NVSwitch Tray",
@@ -202,7 +202,7 @@ func TestManageTray_GetTrays(t *testing.T) {
 						},
 					},
 					{
-						Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+						Type: flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH,
 						Info: &flowv1.DeviceInfo{
 							Id:   &flowv1.UUID{Id: "tray-2"},
 							Name: "Switch Tray 1",

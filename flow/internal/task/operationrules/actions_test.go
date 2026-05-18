@@ -104,7 +104,7 @@ func TestActionConfig_Validate(t *testing.T) {
 				Timeout:      3 * time.Minute,
 				PollInterval: 10 * time.Second,
 				Parameters: map[string]any{
-					ParamComponentTypes: []string{"compute", "nvlswitch"},
+					ParamComponentTypes: []string{"compute", "nvswitch"},
 				},
 			},
 			wantErr: false,
@@ -199,7 +199,7 @@ func TestActionConfig_ValidateParameters(t *testing.T) {
 				Timeout:      3 * time.Minute,
 				PollInterval: 10 * time.Second,
 				Parameters: map[string]any{
-					ParamComponentTypes: []any{"compute", "nvlswitch"},
+					ParamComponentTypes: []any{"compute", "nvswitch"},
 				},
 			},
 			wantErr: false,
