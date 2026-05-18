@@ -47,6 +47,120 @@ import (
 	tp "go.temporal.io/sdk/temporal"
 )
 
+// ~~~~~ Position resolution helpers ~~~~~ //
+
+// positionMatcher tests whether a component's position satisfies the
+// independent slot / trayIdx filters. A nil filter on either dimension
+// is "don't care"; a component without a position cannot match a set
+// constraint. Slot and TrayIdx compose via AND.
+type positionMatcher struct {
+	Slot    *int32
+	TrayIdx *int32
+}
+
+// active reports whether at least one position dimension is filtered.
+func (p positionMatcher) active() bool {
+	return p.Slot != nil || p.TrayIdx != nil
+}
+
+func (p positionMatcher) matches(comp *flowv1.Component) bool {
+	if !p.active() {
+		return true
+	}
+	pos := comp.GetPosition()
+	if pos == nil {
+		return false
+	}
+	if p.Slot != nil && pos.GetSlotId() != *p.Slot {
+		return false
+	}
+	if p.TrayIdx != nil && pos.GetTrayIdx() != *p.TrayIdx {
+		return false
+	}
+	return true
+}
+
+// resolveTrayUUIDsByPosition enumerates trays for the given baseSpec via
+// Flow's GetTrays workflow and returns the UUIDs of components whose
+// RackPosition matches the position filter.
+//
+// baseSpec is the OperationTargetSpec the request would otherwise have
+// produced (rack scope, component-pinning ids/componentIds, or "all
+// trays in site"); the resolver simply post-filters its result by
+// position. An empty result is not an error — callers decide whether to
+// treat it as a no-op or surface 404.
+//
+// This exists because Flow has no by-position component target shape;
+// REST resolves position to component UUIDs and then drives the
+// downstream workflow with a ComponentTargets spec built from the
+// resolved UUIDs.
+func resolveTrayUUIDsByPosition(
+	ctx context.Context,
+	stc tClient.Client,
+	baseSpec *flowv1.OperationTargetSpec,
+	pos positionMatcher,
+) ([]string, error) {
+	flowReq := &flowv1.GetComponentsRequest{TargetSpec: baseSpec}
+
+	workflowID := fmt.Sprintf("tray-resolve-by-position-%s",
+		common.RequestHash(flowReq))
+	workflowOptions := tClient.StartWorkflowOptions{
+		ID:                       workflowID,
+		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+		TaskQueue:                queue.SiteTaskQueue,
+		WorkflowIDReusePolicy:    temporalEnums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
+	}
+
+	wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+	defer cancel()
+
+	we, err := stc.ExecuteWorkflow(wfCtx, workflowOptions, "GetTrays", flowReq)
+	if err != nil {
+		return nil, fmt.Errorf("execute GetTrays workflow: %w", err)
+	}
+
+	var resp flowv1.GetComponentsResponse
+	if err := we.Get(wfCtx, &resp); err != nil {
+		var timeoutErr *tp.TimeoutError
+		if errors.As(err, &timeoutErr) || errors.Is(err, context.DeadlineExceeded) || wfCtx.Err() != nil {
+			return nil, fmt.Errorf("GetTrays workflow timed out: %w", err)
+		}
+		return nil, fmt.Errorf("get GetTrays result: %w", err)
+	}
+
+	uuids := make([]string, 0, len(resp.GetComponents()))
+	for _, comp := range resp.GetComponents() {
+		if !pos.matches(comp) {
+			continue
+		}
+		if id := comp.GetInfo().GetId(); id != nil && id.GetId() != "" {
+			uuids = append(uuids, id.GetId())
+		}
+	}
+	return uuids, nil
+}
+
+// componentTargetSpecFromUUIDs builds an OperationTargetSpec that targets
+// the given component UUIDs. Returns nil for an empty slice, which Flow
+// rejects; callers should short-circuit before calling.
+func componentTargetSpecFromUUIDs(uuids []string) *flowv1.OperationTargetSpec {
+	if len(uuids) == 0 {
+		return nil
+	}
+	targets := make([]*flowv1.ComponentTarget, 0, len(uuids))
+	for _, id := range uuids {
+		targets = append(targets, &flowv1.ComponentTarget{
+			Identifier: &flowv1.ComponentTarget_Id{Id: &flowv1.UUID{Id: id}},
+		})
+	}
+	return &flowv1.OperationTargetSpec{
+		Targets: &flowv1.OperationTargetSpec_Components{
+			Components: &flowv1.ComponentTargets{Targets: targets},
+		},
+	}
+}
+
 // ~~~~~ Get Tray Handler ~~~~~ //
 
 // GetTrayHandler is the API Handler for getting a Tray by ID
@@ -246,6 +360,8 @@ func NewGetAllTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param type query string false "Filter by tray type (Compute, NVLSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by component ID (use repeated params for multiple values)"
 // @Param id query string false "Filter by tray UUID (use repeated params for multiple values)"
+// @Param slot query int false "Filter by rack slot ID. Requires rackId or rackName; mutually exclusive with id/componentId."
+// @Param trayIdx query int false "Disambiguates trays sharing the same slot. Requires slot."
 // @Param orderBy query string false "Order by field (e.g. name_ASC, manufacturer_DESC)"
 // @Param pageNumber query int false "Page number (1-based)"
 // @Param pageSize query int false "Page size"
@@ -358,7 +474,11 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 		orderBy = model.GetProtoTrayOrderByFromQueryParam(pageRequest.OrderBy.Field, strings.ToUpper(pageRequest.OrderBy.Order))
 	}
 	flowRequest.OrderBy = orderBy
-	if pageRequest.Offset != nil && pageRequest.Limit != nil {
+	// Position filtering (slot/trayIdx) is applied REST-side because Flow
+	// has no slot filter. Push-down pagination would prune the result set
+	// before slot filtering and produce a wrong total, so disable it here
+	// and paginate the post-filtered slice below.
+	if pageRequest.Offset != nil && pageRequest.Limit != nil && !apiRequest.HasPositionFilter() {
 		flowRequest.Pagination = &flowv1.Pagination{
 			Offset: int32(*pageRequest.Offset),
 			Limit:  int32(*pageRequest.Limit),
@@ -404,16 +524,44 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to get Trays: %s", err), nil)
 	}
 
-	apiTrays := make([]*model.APITray, 0, len(flowResponse.GetComponents()))
-	for _, comp := range flowResponse.GetComponents() {
+	components := flowResponse.GetComponents()
+	total := int(flowResponse.GetTotal())
+
+	// Apply REST-side slot/trayIdx filter and re-paginate the filtered slice.
+	// When position filter is set, Flow returned the full rack scope (see
+	// pagination handling above); slice off the requested page after
+	// filtering so the response respects pageNumber/pageSize.
+	if apiRequest.HasPositionFilter() {
+		filtered := components[:0:0]
+		for _, comp := range components {
+			if apiRequest.MatchesPosition(comp) {
+				filtered = append(filtered, comp)
+			}
+		}
+		components = filtered
+		total = len(components)
+
+		if pageRequest.Offset != nil && pageRequest.Limit != nil {
+			start := *pageRequest.Offset
+			if start > total {
+				start = total
+			}
+			end := start + *pageRequest.Limit
+			if end > total {
+				end = total
+			}
+			components = components[start:end]
+		}
+	}
+
+	apiTrays := make([]*model.APITray, 0, len(components))
+	for _, comp := range components {
 		apiTray := model.NewAPITray(comp)
 		if apiTray != nil {
 			apiTrays = append(apiTrays, apiTray)
 		}
 	}
 
-	// Set pagination response header
-	total := int(flowResponse.GetTotal())
 	pageResponse := pagination.NewPageResponse(*pageRequest.PageNumber, *pageRequest.PageSize, total, pageRequest.OrderByStr)
 	pageHeader, err := json.Marshal(pageResponse)
 	if err != nil {
@@ -638,6 +786,8 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param manufacturer query string false "Filter trays by manufacturer"
 // @Param type query string false "Filter trays by type (Compute, NVLSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)"
+// @Param slot query int false "Validate only the tray at this rack slot. Requires rackId or rackName."
+// @Param trayIdx query int false "Disambiguates trays sharing the same slot. Requires slot."
 // @Success 200 {object} model.APIRackValidationResult
 // @Router /v2/org/{org}/nico/tray/validation [get]
 func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
@@ -721,9 +871,25 @@ func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build Flow request from validated request struct
+	// Resolve slot/trayIdx (when set) to component UUIDs before building
+	// the flow request: Flow has no by-position target shape.
+	targetSpec := apiRequest.ToTargetSpec()
+	if apiRequest.HasPositionFilter() {
+		uuids, resolveErr := resolveTrayUUIDsByPosition(ctx, stc, targetSpec,
+			positionMatcher{Slot: apiRequest.Slot, TrayIdx: apiRequest.TrayIdx})
+		if resolveErr != nil {
+			logger.Error().Err(resolveErr).Msg("failed to resolve trays by position")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to resolve trays by position", nil)
+		}
+		if len(uuids) == 0 {
+			logger.Info().Msg("no trays match position filter; returning empty validation result")
+			return c.JSON(http.StatusOK, model.NewAPIRackValidationResult(&flowv1.ValidateComponentsResponse{}))
+		}
+		targetSpec = componentTargetSpecFromUUIDs(uuids)
+	}
+
 	flowRequest := &flowv1.ValidateComponentsRequest{
-		TargetSpec: apiRequest.ToTargetSpec(),
+		TargetSpec: targetSpec,
 		Filters:    apiRequest.ToFilters(),
 	}
 
@@ -1006,8 +1172,23 @@ func (pctbh BatchUpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build TargetSpec from filter (nil filter = all trays)
+	// Build TargetSpec from filter (nil filter = all trays). When the
+	// filter pins a rack position (slot/trayIdx), Flow has no by-position
+	// target shape, so we resolve to component UUIDs first.
 	targetSpec := request.Filter.ToTargetSpec()
+	if request.Filter.HasPositionFilter() {
+		uuids, resolveErr := resolveTrayUUIDsByPosition(ctx, stc, targetSpec,
+			positionMatcher{Slot: request.Filter.Slot, TrayIdx: request.Filter.TrayIdx})
+		if resolveErr != nil {
+			logger.Error().Err(resolveErr).Msg("failed to resolve trays by position")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to resolve trays by position", nil)
+		}
+		if len(uuids) == 0 {
+			logger.Info().Msg("no trays match position filter; returning empty task list")
+			return c.JSON(http.StatusOK, model.NewAPIUpdatePowerStateResponse(nil))
+		}
+		targetSpec = componentTargetSpecFromUUIDs(uuids)
+	}
 
 	flowResp, err := common.ExecutePowerControlWorkflow(ctx, c, logger, stc, targetSpec, request.State,
 		fmt.Sprintf("tray-power-state-batch-update-%s-%s", request.State, common.RequestHash(request.Filter)), "Tray")
@@ -1255,8 +1436,23 @@ func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Build TargetSpec from filter (nil filter = all trays)
+	// Build TargetSpec from filter (nil filter = all trays). When the
+	// filter pins a rack position (slot/trayIdx), resolve to component
+	// UUIDs first; Flow has no by-position target shape.
 	targetSpec := request.Filter.ToTargetSpec()
+	if request.Filter.HasPositionFilter() {
+		uuids, resolveErr := resolveTrayUUIDsByPosition(ctx, stc, targetSpec,
+			positionMatcher{Slot: request.Filter.Slot, TrayIdx: request.Filter.TrayIdx})
+		if resolveErr != nil {
+			logger.Error().Err(resolveErr).Msg("failed to resolve trays by position")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to resolve trays by position", nil)
+		}
+		if len(uuids) == 0 {
+			logger.Info().Msg("no trays match position filter; returning empty task list")
+			return c.JSON(http.StatusOK, model.NewAPIUpdateFirmwareResponse(nil))
+		}
+		targetSpec = componentTargetSpecFromUUIDs(uuids)
+	}
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
 		fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")

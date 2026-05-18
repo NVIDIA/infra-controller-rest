@@ -22,6 +22,7 @@ import (
 	"maps"
 	"net/url"
 	"slices"
+	"strconv"
 
 	"github.com/google/uuid"
 
@@ -109,12 +110,20 @@ func GetProtoTrayOrderByFromQueryParam(fieldName, direction string) *flowv1.Orde
 
 // TrayFilter specifies which trays to target in a batch operation.
 // If nil or empty, the operation targets all trays in the site.
+//
+// Slot and TrayIdx are independent position dimensions. Either, both, or
+// neither may be set, and they compose with the rest of the filter via
+// AND: a tray must satisfy every set field to match. An incompatible
+// combination (e.g. ids that don't sit at the requested slot) is not a
+// validation error — it just yields an empty result set.
 type TrayFilter struct {
 	RackID       *string  `json:"rackId,omitempty"`
 	RackName     *string  `json:"rackName,omitempty"`
 	Type         *string  `json:"type,omitempty"`
 	ComponentIDs []string `json:"componentIds,omitempty"`
 	IDs          []string `json:"ids,omitempty"`
+	Slot         *int32   `json:"slot,omitempty"`
+	TrayIdx      *int32   `json:"trayIdx,omitempty"`
 }
 
 // Validate checks the tray filter fields.
@@ -155,6 +164,38 @@ func (f *TrayFilter) Validate() error {
 	}
 
 	return nil
+}
+
+// HasPositionFilter reports whether the filter constrains tray position
+// on either dimension. When true, callers cannot use ToTargetSpec
+// directly to drive the workflow: Flow has no by-position target shape,
+// so the position must first be resolved to component UUIDs via a
+// lookup and then passed as a ComponentTargets spec. ToTargetSpec
+// ignores Slot/TrayIdx.
+func (f *TrayFilter) HasPositionFilter() bool {
+	return f != nil && (f.Slot != nil || f.TrayIdx != nil)
+}
+
+// MatchesPosition reports whether the given component satisfies the
+// filter's position constraints. Slot and TrayIdx are independent: each
+// is checked only when set, and a component without a position cannot
+// match a set constraint. Returns true when neither dimension is set,
+// so it is safe to call unconditionally as a post-filter pass.
+func (f *TrayFilter) MatchesPosition(comp *flowv1.Component) bool {
+	if f == nil || (f.Slot == nil && f.TrayIdx == nil) {
+		return true
+	}
+	pos := comp.GetPosition()
+	if pos == nil {
+		return false
+	}
+	if f.Slot != nil && pos.GetSlotId() != *f.Slot {
+		return false
+	}
+	if f.TrayIdx != nil && pos.GetTrayIdx() != *f.TrayIdx {
+		return false
+	}
+	return true
 }
 
 // ToTargetSpec converts the filter to an Flow OperationTargetSpec.
@@ -250,6 +291,11 @@ type APITrayGetAllRequest struct {
 	Type         *string  `query:"type"`
 	ComponentIDs []string `query:"componentId"`
 	IDs          []string `query:"id"`
+	// Slot and TrayIdx are independent position filters. They compose
+	// with the rest of the request via AND; an incompatible combination
+	// just yields an empty result.
+	Slot    *int32 `query:"slot"`
+	TrayIdx *int32 `query:"trayIdx"`
 }
 
 // Validate checks field formats and enforces the Flow protobuf oneof constraints:
@@ -259,6 +305,10 @@ type APITrayGetAllRequest struct {
 //   - componentId requires type (ExternalRef needs type)
 //   - type must be one of the supported tray types
 //   - each entry in IDs must be a valid UUID
+//
+// slot and trayIdx do not impose extra validation: they compose with
+// the other filters via AND and may legally be set with or without rack
+// scope, with or without ids/componentIds.
 func (r *APITrayGetAllRequest) Validate() error {
 	err := validation.ValidateStruct(r,
 		validation.Field(&r.RackID,
@@ -292,6 +342,31 @@ func (r *APITrayGetAllRequest) Validate() error {
 	}
 
 	return nil
+}
+
+// HasPositionFilter reports whether the request constrains tray
+// position on either dimension. See TrayFilter.HasPositionFilter.
+func (r *APITrayGetAllRequest) HasPositionFilter() bool {
+	return r != nil && (r.Slot != nil || r.TrayIdx != nil)
+}
+
+// MatchesPosition reports whether the given component satisfies the
+// request's slot/trayIdx constraints. See TrayFilter.MatchesPosition.
+func (r *APITrayGetAllRequest) MatchesPosition(comp *flowv1.Component) bool {
+	if r == nil || (r.Slot == nil && r.TrayIdx == nil) {
+		return true
+	}
+	pos := comp.GetPosition()
+	if pos == nil {
+		return false
+	}
+	if r.Slot != nil && pos.GetSlotId() != *r.Slot {
+		return false
+	}
+	if r.TrayIdx != nil && pos.GetTrayIdx() != *r.TrayIdx {
+		return false
+	}
+	return true
 }
 
 // ToProto converts a validated APITrayGetAllRequest to an Flow GetComponentsRequest.
@@ -403,6 +478,12 @@ func (r *APITrayGetAllRequest) QueryValues() url.Values {
 	for _, id := range r.IDs {
 		v.Add("id", id)
 	}
+	if r.Slot != nil {
+		v.Set("slot", strconv.FormatInt(int64(*r.Slot), 10))
+	}
+	if r.TrayIdx != nil {
+		v.Set("trayIdx", strconv.FormatInt(int64(*r.TrayIdx), 10))
+	}
 	return v
 }
 
@@ -415,6 +496,10 @@ type APITrayValidateAllRequest struct {
 	Manufacturer []string `query:"manufacturer"`
 	Type         *string  `query:"type"`
 	ComponentIDs []string `query:"componentId"`
+	// Slot and TrayIdx are independent position filters; see TrayFilter
+	// for the position filter semantics.
+	Slot    *int32 `query:"slot"`
+	TrayIdx *int32 `query:"trayIdx"`
 }
 
 // Validate checks constraints on the request parameters.
@@ -442,6 +527,31 @@ func (r *APITrayValidateAllRequest) Validate() error {
 		return validation.Errors{"componentId": fmt.Errorf("type is required when componentId is provided")}
 	}
 	return nil
+}
+
+// HasPositionFilter reports whether the request constrains tray
+// position on either dimension. See TrayFilter.HasPositionFilter.
+func (r *APITrayValidateAllRequest) HasPositionFilter() bool {
+	return r != nil && (r.Slot != nil || r.TrayIdx != nil)
+}
+
+// MatchesPosition reports whether the given component satisfies the
+// request's slot/trayIdx constraints. See TrayFilter.MatchesPosition.
+func (r *APITrayValidateAllRequest) MatchesPosition(comp *flowv1.Component) bool {
+	if r == nil || (r.Slot == nil && r.TrayIdx == nil) {
+		return true
+	}
+	pos := comp.GetPosition()
+	if pos == nil {
+		return false
+	}
+	if r.Slot != nil && pos.GetSlotId() != *r.Slot {
+		return false
+	}
+	if r.TrayIdx != nil && pos.GetTrayIdx() != *r.TrayIdx {
+		return false
+	}
+	return true
 }
 
 // ToTargetSpec converts the request's targeting fields to an Flow OperationTargetSpec.
@@ -534,6 +644,12 @@ func (r *APITrayValidateAllRequest) QueryValues() url.Values {
 	}
 	for _, cid := range r.ComponentIDs {
 		v.Add("componentId", cid)
+	}
+	if r.Slot != nil {
+		v.Set("slot", strconv.FormatInt(int64(*r.Slot), 10))
+	}
+	if r.TrayIdx != nil {
+		v.Set("trayIdx", strconv.FormatInt(int64(*r.TrayIdx), 10))
 	}
 	return v
 }

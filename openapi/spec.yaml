@@ -10381,6 +10381,7 @@ paths:
         - `rackId` and `rackName` are mutually exclusive
         - `rackId`/`rackName` cannot be combined with `id`/`componentId` (rack-level vs component-level targeting)
         - `componentId` requires `type` to be specified
+        - `slot` and `trayIdx` are independent position filters that compose with the rest of the query via AND; an incompatible combination simply returns an empty result
       parameters:
         - schema:
             type: string
@@ -10420,6 +10421,20 @@ paths:
           name: id
           in: query
           description: Filter by tray UUID. Can be specified multiple times to filter on more than one tray ID.
+        - schema:
+            type: integer
+            format: int32
+          name: slot
+          in: query
+          description: |-
+            Restrict to trays at this rack slot. Composes with the rest of the filter via AND.
+        - schema:
+            type: integer
+            format: int32
+          name: trayIdx
+          in: query
+          description: |-
+            Restrict to trays with this index within their slot (used to disambiguate NVLSwitch trays sharing one slot). Composes with the rest of the filter via AND.
         - schema:
             type: integer
             example: 1
@@ -10616,6 +10631,22 @@ paths:
           in: query
           required: false
           description: Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)
+        - schema:
+            type: integer
+            format: int32
+          name: slot
+          in: query
+          required: false
+          description: |-
+            Restrict validation to trays at this rack slot. Composes with the rest of the filter via AND.
+        - schema:
+            type: integer
+            format: int32
+          name: trayIdx
+          in: query
+          required: false
+          description: |-
+            Restrict validation to trays with this index within their slot (used to disambiguate NVLSwitch trays sharing one slot). Composes with the rest of the filter via AND.
       responses:
         '200':
           description: OK
@@ -16947,7 +16978,7 @@ components:
       description: |-
         Filter criteria for selecting trays in batch operations. If omitted or empty, all trays in the site are targeted.
 
-        Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`.
+        Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slot` and `trayIdx` are independent position filters that compose with the rest of the filter via AND; an incompatible combination simply yields an empty result.
       properties:
         rackId:
           type: string
@@ -16974,6 +17005,16 @@ components:
             type: string
             format: uuid
           description: Filter by tray UUID
+        slot:
+          type: integer
+          format: int32
+          description: |-
+            Restrict to trays at this rack slot. Composes with the rest of the filter via AND.
+        trayIdx:
+          type: integer
+          format: int32
+          description: |-
+            Restrict to trays with this index within their slot (used to disambiguate NVLSwitch trays sharing one slot). Composes with the rest of the filter via AND.
     BatchUpdateRackPowerStateRequest:
       title: BatchUpdateRackPowerStateRequest
       type: object
