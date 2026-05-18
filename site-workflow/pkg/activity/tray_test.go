@@ -122,14 +122,14 @@ func TestManageTray_GetTray(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock Flow client
-			mockFlowClient := cClient.NewMockFlowClient()
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
 
 			// Create atomic client and swap with mock
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
 
 			// Create ManageTray instance
-			manageTray := NewManageTray(flowAtomicClient)
+			manageTray := NewManageTray(flowGrpcAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -276,14 +276,14 @@ func TestManageTray_GetTrays(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create mock Flow client
-			mockFlowClient := cClient.NewMockFlowClient()
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
 
 			// Create atomic client and swap with mock
-			flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
-			flowAtomicClient.SwapClient(mockFlowClient)
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
 
 			// Create ManageTray instance
-			manageTray := NewManageTray(flowAtomicClient)
+			manageTray := NewManageTray(flowGrpcAtomicClient)
 
 			// Execute activity with context injection
 			ctx := context.Background()
@@ -313,11 +313,11 @@ func TestManageTray_GetTrays(t *testing.T) {
 
 func TestNewManageTray(t *testing.T) {
 	// Create a mock Flow client
-	flowAtomicClient := cClient.NewFlowAtomicClient(&cClient.FlowClientConfig{})
+	flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
 
 	// Test constructor
-	manageTray := NewManageTray(flowAtomicClient)
+	manageTray := NewManageTray(flowGrpcAtomicClient)
 
-	assert.NotNil(t, manageTray.FlowAtomicClient)
-	assert.Equal(t, flowAtomicClient, manageTray.FlowAtomicClient)
+	assert.NotNil(t, manageTray.flowGrpcAtomicClient)
+	assert.Equal(t, flowGrpcAtomicClient, manageTray.flowGrpcAtomicClient)
 }

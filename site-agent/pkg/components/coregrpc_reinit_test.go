@@ -22,21 +22,21 @@ import (
 	"time"
 )
 
-func TestNICoClientReinitializationOnCertRenewal(t *testing.T) {
-	// Initial setup with TestInitElektra which configures the NICo client with initial certificates
+func TestCoreGrpcClientReinitializationOnCertRenewal(t *testing.T) {
+	// Initial setup with TestInitElektra which configures the Core gRPC client with initial certificates
 	TestInitElektra(t)
-	initialVersion := testElektra.manager.API.NICo.GetGRPCClientVersion()
+	initialVersion := testElektra.manager.API.CoreGrpc.GetGrpcClientVersion()
 
 	// Regenerate and replace the certificates to simulate renewal
-	SetupTestCerts(t, testElektraTypes.Conf.NICo.ClientCertPath, testElektraTypes.Conf.NICo.ClientKeyPath, testElektraTypes.Conf.NICo.ServerCAPath)
+	SetupTestCerts(t, testElektraTypes.Conf.CoreGrpc.ClientCertPath, testElektraTypes.Conf.CoreGrpc.ClientKeyPath, testElektraTypes.Conf.CoreGrpc.ServerCAPath)
 
 	// Wait a few seconds to allow any background processes to complete
 	time.Sleep(time.Second * 5)
-	renewedVersion := testElektra.manager.API.NICo.GetGRPCClientVersion()
+	renewedVersion := testElektra.manager.API.CoreGrpc.GetGrpcClientVersion()
 
 	if renewedVersion > initialVersion {
-		t.Logf("The NICo client was successfully reinitialized from version %d to %d.", initialVersion, renewedVersion)
+		t.Logf("The Core gRPC client was successfully reinitialized from version %d to %d.", initialVersion, renewedVersion)
 	} else {
-		t.Errorf("The NICo client was not reinitialized as expected. It remains at version %d.", initialVersion)
+		t.Errorf("The Core gRPC client was not reinitialized as expected. It remains at version %d.", initialVersion)
 	}
 }

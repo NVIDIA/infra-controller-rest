@@ -157,7 +157,7 @@ func GetSAStatus(path string) {
 }
 
 func UpdateState(Elektra *elektratypes.Elektra) {
-	if (CompStatus(Elektra.Managers.NICo.State.HealthStatus.Load()) == CompHealthy) &&
+	if (CompStatus(Elektra.Managers.CoreGrpc.State.HealthStatus.Load()) == CompHealthy) &&
 		(CompStatus(Elektra.Managers.Workflow.State.HealthStatus.Load()) == CompHealthy) {
 		Elektra.HealthStatus.Store(uint64(CompHealthy))
 	} else {
