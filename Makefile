@@ -15,7 +15,7 @@
 
 .PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers
 .PHONY: build docker-build docker-build-local
-.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate nico-mock-server-build nico-mock-server-start nico-mock-server-stop flow-mock-server-build flow-mock-server-start flow-mock-server-stop
+.PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate core-mock-server-build core-mock-server-start core-mock-server-stop flow-mock-server-build flow-mock-server-start flow-mock-server-stop
 .PHONY: validate-openapi preview-openapi generate-client
 .PHONY: pre-commit-install pre-commit-run pre-commit-update
 
@@ -70,7 +70,7 @@ postgres-down:
 clean:
 	@echo "Cleaning up test resources..."
 	-$(MAKE) postgres-down
-	-$(MAKE) nico-mock-server-stop
+	-$(MAKE) core-mock-server-stop
 	-$(MAKE) flow-mock-server-stop
 	@echo "Stopping kind cluster..."
 	-$(MAKE) kind-down
