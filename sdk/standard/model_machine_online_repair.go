@@ -1,4 +1,21 @@
 /*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/*
 NVIDIA Infra Controller REST API
 
 NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.
@@ -22,9 +39,9 @@ var _ MappedNullable = &MachineOnlineRepair{}
 // MachineOnlineRepair Enter or exit in-pool online repair. When `enabled` is true, `policy` and `acknowledgments` are required inside this object, and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
 type MachineOnlineRepair struct {
 	// When true, initiates in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine and sets the associated Instance status to Repairing. When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
-	Enabled         bool                         `json:"enabled"`
-	Policy          *OnlineRepairPolicy          `json:"policy,omitempty"`
-	Acknowledgments *OnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
+	Enabled         bool                                `json:"enabled"`
+	Policy          *MachineOnlineRepairPolicy          `json:"policy,omitempty"`
+	Acknowledgments *MachineOnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
 }
 
 type _MachineOnlineRepair MachineOnlineRepair
@@ -72,9 +89,9 @@ func (o *MachineOnlineRepair) SetEnabled(v bool) {
 }
 
 // GetPolicy returns the Policy field value if set, zero value otherwise.
-func (o *MachineOnlineRepair) GetPolicy() OnlineRepairPolicy {
+func (o *MachineOnlineRepair) GetPolicy() MachineOnlineRepairPolicy {
 	if o == nil || IsNil(o.Policy) {
-		var ret OnlineRepairPolicy
+		var ret MachineOnlineRepairPolicy
 		return ret
 	}
 	return *o.Policy
@@ -82,7 +99,7 @@ func (o *MachineOnlineRepair) GetPolicy() OnlineRepairPolicy {
 
 // GetPolicyOk returns a tuple with the Policy field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MachineOnlineRepair) GetPolicyOk() (*OnlineRepairPolicy, bool) {
+func (o *MachineOnlineRepair) GetPolicyOk() (*MachineOnlineRepairPolicy, bool) {
 	if o == nil || IsNil(o.Policy) {
 		return nil, false
 	}
@@ -98,15 +115,15 @@ func (o *MachineOnlineRepair) HasPolicy() bool {
 	return false
 }
 
-// SetPolicy gets a reference to the given OnlineRepairPolicy and assigns it to the Policy field.
-func (o *MachineOnlineRepair) SetPolicy(v OnlineRepairPolicy) {
+// SetPolicy gets a reference to the given MachineOnlineRepairPolicy and assigns it to the Policy field.
+func (o *MachineOnlineRepair) SetPolicy(v MachineOnlineRepairPolicy) {
 	o.Policy = &v
 }
 
 // GetAcknowledgments returns the Acknowledgments field value if set, zero value otherwise.
-func (o *MachineOnlineRepair) GetAcknowledgments() OnlineRepairAcknowledgments {
+func (o *MachineOnlineRepair) GetAcknowledgments() MachineOnlineRepairAcknowledgments {
 	if o == nil || IsNil(o.Acknowledgments) {
-		var ret OnlineRepairAcknowledgments
+		var ret MachineOnlineRepairAcknowledgments
 		return ret
 	}
 	return *o.Acknowledgments
@@ -114,7 +131,7 @@ func (o *MachineOnlineRepair) GetAcknowledgments() OnlineRepairAcknowledgments {
 
 // GetAcknowledgmentsOk returns a tuple with the Acknowledgments field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MachineOnlineRepair) GetAcknowledgmentsOk() (*OnlineRepairAcknowledgments, bool) {
+func (o *MachineOnlineRepair) GetAcknowledgmentsOk() (*MachineOnlineRepairAcknowledgments, bool) {
 	if o == nil || IsNil(o.Acknowledgments) {
 		return nil, false
 	}
@@ -130,8 +147,8 @@ func (o *MachineOnlineRepair) HasAcknowledgments() bool {
 	return false
 }
 
-// SetAcknowledgments gets a reference to the given OnlineRepairAcknowledgments and assigns it to the Acknowledgments field.
-func (o *MachineOnlineRepair) SetAcknowledgments(v OnlineRepairAcknowledgments) {
+// SetAcknowledgments gets a reference to the given MachineOnlineRepairAcknowledgments and assigns it to the Acknowledgments field.
+func (o *MachineOnlineRepair) SetAcknowledgments(v MachineOnlineRepairAcknowledgments) {
 	o.Acknowledgments = &v
 }
 

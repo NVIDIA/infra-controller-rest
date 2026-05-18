@@ -150,51 +150,6 @@ func getAPIMachines(ctx context.Context, ms []cdbm.Machine, logger zerolog.Logge
 	return apiMs, nil
 }
 
-// isProviderOrTenant returns the Infrastructure Provider and Tenant for the org if the user is a Provider Admin or Tenant Admin
-func isProviderOrTenant(ctx context.Context, logger zerolog.Logger, dbSession *cdb.Session, org string, userOrgDetails *cdbm.Org) (*cdbm.InfrastructureProvider, *cdbm.Tenant, *cutil.APIError) {
-	isProvider := auth.ValidateUserRolesInOrg(*userOrgDetails, nil, auth.ProviderAdminRole, auth.ProviderViewerRole)
-
-	var infrastructureProvider *cdbm.InfrastructureProvider
-	var tenant *cdbm.Tenant
-	var err error
-
-	if isProvider {
-		infrastructureProvider, err = common.GetInfrastructureProviderForOrg(ctx, nil, dbSession, org)
-		if err != nil {
-			if errors.Is(err, common.ErrOrgInstrastructureProviderNotFound) {
-				return nil, nil, cutil.NewAPIError(http.StatusNotFound, "Infrastructure Provider not found in org", nil)
-			}
-			logger.Error().Err(err).Msg("error getting infrastructure provider for org")
-			return nil, nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve infrastructure provider for org, DB error", nil)
-		}
-	} else {
-		isTenant := auth.ValidateUserRolesInOrg(*userOrgDetails, nil, auth.TenantAdminRole)
-		if !isTenant {
-			logger.Warn().Msg("user does not have required role, access denied")
-			return nil, nil, cutil.NewAPIError(http.StatusForbidden, "User doesn't have Provider Admin or Tenant Admin role", nil)
-		}
-
-		// Get Tenant for org
-		tenant, err = common.GetTenantForOrg(ctx, nil, dbSession, org)
-		if err != nil {
-			if errors.Is(err, common.ErrOrgTenantNotFound) {
-				logger.Warn().Msg("organization doesn't have a Tenant associated, access denied")
-				return nil, nil, cutil.NewAPIError(http.StatusForbidden, "Organization doesn't have a Provider or Tenant associated", nil)
-			}
-			logger.Error().Err(err).Msg("error retrieving Tenant for Organization")
-			return nil, nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Tenant for Organization, DB error", nil)
-		}
-
-		// Check Tenant config
-		if tenant.Config == nil {
-			logger.Warn().Msg("unexpected empty Tenant configuration in DB, defaulting to empty config")
-			tenant.Config = &cdbm.TenantConfig{}
-		}
-	}
-
-	return infrastructureProvider, tenant, nil
-}
-
 // ~~~~~ GetAll Handler ~~~~~ //
 
 // GetAllMachineHandler is the API Handler for getting all Machines
@@ -261,9 +216,8 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, fmt.Sprintf("Failed to validate membership for org: %s", org), nil)
 	}
 
-	// Validate role, only Provider Admins or Tenant Admins with TargetedInstanceCreation capability are allowed to retrieve Machines
-	userOrgDetails, _ := dbUser.OrgData.GetOrgByName(org)
-	infrastructureProvider, tenant, apiError := isProviderOrTenant(ctx, logger, gamh.dbSession, org, userOrgDetails)
+	// Validate role: Provider Admins or Viewers, or privileged Tenant Admins (TargetedInstanceCreation; see filters below).
+	infrastructureProvider, tenant, apiError := common.IsProviderOrTenant(ctx, logger, gamh.dbSession, org, dbUser, true, true)
 	if apiError != nil {
 		return cutil.NewAPIErrorResponse(c, apiError.Code, apiError.Message, apiError.Data)
 	}
@@ -614,9 +568,8 @@ func (gmh GetMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, fmt.Sprintf("Failed to validate membership for org: %s", org), nil)
 	}
 
-	// Validate role, only Provider Admins or Tenant Admins with TargetedInstanceCreation capability are allowed to retrieve Machines
-	userOrgDetails, _ := dbUser.OrgData.GetOrgByName(org)
-	infrastructureProvider, tenant, apiError := isProviderOrTenant(ctx, logger, gmh.dbSession, org, userOrgDetails)
+	// Validate role: Provider Admins or Viewers, or Tenant Admins (association with the Machine is enforced below: privileged tenant account, or Instance on this Machine).
+	infrastructureProvider, tenant, apiError := common.IsProviderOrTenant(ctx, logger, gmh.dbSession, org, dbUser, true, false)
 	if apiError != nil {
 		return cutil.NewAPIErrorResponse(c, apiError.Code, apiError.Message, apiError.Data)
 	}

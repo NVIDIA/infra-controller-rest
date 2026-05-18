@@ -47,7 +47,7 @@ type MachineUpdateRequest struct {
 	Labels             map[string]string    `json:"labels,omitempty"`
 	OnlineRepair       *MachineOnlineRepair `json:"onlineRepair,omitempty"`
 	// Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
-	HealthIssue *HealthIssue `json:"healthIssue,omitempty"`
+	HealthIssue *MachineHealthIssue `json:"healthIssue,omitempty"`
 }
 
 // NewMachineUpdateRequest instantiates a new MachineUpdateRequest object
@@ -304,9 +304,9 @@ func (o *MachineUpdateRequest) SetOnlineRepair(v MachineOnlineRepair) {
 }
 
 // GetHealthIssue returns the HealthIssue field value if set, zero value otherwise.
-func (o *MachineUpdateRequest) GetHealthIssue() HealthIssue {
+func (o *MachineUpdateRequest) GetHealthIssue() MachineHealthIssue {
 	if o == nil || IsNil(o.HealthIssue) {
-		var ret HealthIssue
+		var ret MachineHealthIssue
 		return ret
 	}
 	return *o.HealthIssue
@@ -314,7 +314,7 @@ func (o *MachineUpdateRequest) GetHealthIssue() HealthIssue {
 
 // GetHealthIssueOk returns a tuple with the HealthIssue field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *MachineUpdateRequest) GetHealthIssueOk() (*HealthIssue, bool) {
+func (o *MachineUpdateRequest) GetHealthIssueOk() (*MachineHealthIssue, bool) {
 	if o == nil || IsNil(o.HealthIssue) {
 		return nil, false
 	}
@@ -330,8 +330,8 @@ func (o *MachineUpdateRequest) HasHealthIssue() bool {
 	return false
 }
 
-// SetHealthIssue gets a reference to the given HealthIssue and assigns it to the HealthIssue field.
-func (o *MachineUpdateRequest) SetHealthIssue(v HealthIssue) {
+// SetHealthIssue gets a reference to the given MachineHealthIssue and assigns it to the HealthIssue field.
+func (o *MachineUpdateRequest) SetHealthIssue(v MachineHealthIssue) {
 	o.HealthIssue = &v
 }
 

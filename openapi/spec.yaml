@@ -16169,32 +16169,6 @@ components:
             - boolean
             - 'null'
           description: Should be set to true for Tenants who are performing investigation/repairing the Machine. Otherwise omit or set to false
-    MachineHealthIssue:
-      title: MachineHealthIssue
-      type: object
-      examples:
-        - category: Network
-          summary: Machine has DPU connectivity error
-      description: Data describing health issue with a Machine
-      properties:
-        category:
-          type: string
-          enum:
-            - Hardware
-            - Network
-            - Performance
-            - Other
-          description: Category of the issue
-        summary:
-          type:
-            - string
-            - 'null'
-          description: Short summary describing the issue
-        details:
-          type:
-            - string
-            - 'null'
-          description: Details about the issue helpful for diagnosis
     Interface:
       title: Interface
       type: object
@@ -17486,8 +17460,8 @@ components:
         status:
           $ref: '#/components/schemas/MachineStatus'
           readOnly: true
-    HealthIssue:
-      title: HealthIssue
+    MachineHealthIssue:
+      title: MachineHealthIssue
       type: object
       required:
         - category
@@ -17497,12 +17471,12 @@ components:
         category:
           type: string
           enum:
-            - HARDWARE
-            - NETWORK
-            - PERFORMANCE
-            - STORAGE
-            - SOFTWARE
-            - OTHER
+            - Hardware
+            - Network
+            - Performance
+            - Storage
+            - Software
+            - Other
           description: High-level category for the tenant-reported issue.
         summary:
           type: string
@@ -17512,8 +17486,8 @@ components:
           type: string
           maxLength: 8192
           description: Diagnostic information, logs, ticket numbers, etc.
-    OnlineRepairPolicy:
-      title: OnlineRepairPolicy
+    MachineOnlineRepairPolicy:
+      title: MachineOnlineRepairPolicy
       type: object
       required:
         - allowAutoInstanceDeletionOnFailure
@@ -17521,8 +17495,8 @@ components:
         allowAutoInstanceDeletionOnFailure:
           type: boolean
           description: When true, escalation to offline breakfix (permanent delete / deallocate) is allowed if online repair cannot be completed.
-    OnlineRepairAcknowledgments:
-      title: OnlineRepairAcknowledgments
+    MachineOnlineRepairAcknowledgments:
+      title: MachineOnlineRepairAcknowledgments
       type: object
       required:
         - acceptDataCorruptionRisk
@@ -17546,20 +17520,20 @@ components:
       type: object
       required:
         - enabled
-      description: >-
+      description: |-
         Enter or exit in-pool online repair. When `enabled` is true, `policy` and `acknowledgments` are required inside this object,
         and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
       properties:
         enabled:
           type: boolean
-          description: >-
+          description: |-
             When true, initiates in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine
             and sets the associated Instance status to Repairing. When false, exits online repair: clears the health override and returns
             the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
         policy:
-          $ref: '#/components/schemas/OnlineRepairPolicy'
+          $ref: '#/components/schemas/MachineOnlineRepairPolicy'
         acknowledgments:
-          $ref: '#/components/schemas/OnlineRepairAcknowledgments'
+          $ref: '#/components/schemas/MachineOnlineRepairAcknowledgments'
     MachineUpdateRequest:
       title: MachineUpdateRequest
       type: object
@@ -17619,7 +17593,7 @@ components:
           $ref: '#/components/schemas/MachineOnlineRepair'
         healthIssue:
           description: Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
-          $ref: '#/components/schemas/HealthIssue'
+          $ref: '#/components/schemas/MachineHealthIssue'
     MachineInterface:
       title: MachineInterface
       type: object
