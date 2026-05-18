@@ -140,12 +140,12 @@ func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
 }
 
 func TestManageMachine_CreateMachineHealthReportOverrideOnSite(t *testing.T) {
-	mockNICo := cClient.NewMockNICoClient()
+	mockCoreGrpcClient := cClient.NewMockCoreGrpcClient()
 
-	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
-	nicoCoreAtomicClient.SwapClient(mockNICo)
+	coreGrpcAtomicClient := cClient.NewCoreGrpcAtomicClient(&cClient.CoreGrpcClientConfig{})
+	coreGrpcAtomicClient.SwapClient(mockCoreGrpcClient)
 
-	mm := NewManageMachine(nicoCoreAtomicClient)
+	mm := NewManageMachine(coreGrpcAtomicClient)
 	req := &cwssaws.InsertHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
 		Override: &cwssaws.HealthReportOverride{
@@ -165,12 +165,12 @@ func TestManageMachine_CreateMachineHealthReportOverrideOnSite(t *testing.T) {
 }
 
 func TestManageMachine_DeleteMachineHealthReportOverrideOnSite(t *testing.T) {
-	mockNICo := cClient.NewMockNICoClient()
+	mockCoreGrpcClient := cClient.NewMockCoreGrpcClient()
 
-	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
-	nicoCoreAtomicClient.SwapClient(mockNICo)
+	coreGrpcAtomicClient := cClient.NewCoreGrpcAtomicClient(&cClient.CoreGrpcClientConfig{})
+	coreGrpcAtomicClient.SwapClient(mockCoreGrpcClient)
 
-	mm := NewManageMachine(nicoCoreAtomicClient)
+	mm := NewManageMachine(coreGrpcAtomicClient)
 	req := &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
 		Source:    "tenant-reported-issue",

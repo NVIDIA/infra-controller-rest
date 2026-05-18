@@ -125,13 +125,13 @@ func (mm *ManageMachine) CreateMachineHealthReportOverrideOnSite(ctx context.Con
 		return temporal.NewNonRetryableApplicationError("invalid InsertHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or override report"))
 	}
 
-	nicoClient := mm.nicoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err := rpcClient.InsertHealthReportOverride(ctx, request)
+	_, err := grpcServiceClient.InsertHealthReportOverride(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to insert health report override using Site Controller API")
 		return swe.WrapErr(err)
@@ -150,13 +150,13 @@ func (mm *ManageMachine) DeleteMachineHealthReportOverrideOnSite(ctx context.Con
 		return temporal.NewNonRetryableApplicationError("invalid RemoveHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or source"))
 	}
 
-	nicoClient := mm.nicoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err := rpcClient.RemoveHealthReportOverride(ctx, request)
+	_, err := grpcServiceClient.RemoveHealthReportOverride(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to remove health report override using Site Controller API")
 		return swe.WrapErr(err)
