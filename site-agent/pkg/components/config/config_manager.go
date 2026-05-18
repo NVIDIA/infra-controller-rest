@@ -183,10 +183,10 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flag.StringVar(&conf.MetricsPort, "metricsPort", os.Getenv("METRICS_PORT"), "Metrics port number")
 	flag.StringVar(&conf.Temporal.Host, "temporalHost", os.Getenv("TEMPORAL_HOST"), "Temporal hostname/IP")
 	flag.StringVar(&conf.Temporal.Port, "temporalPort", os.Getenv("TEMPORAL_PORT"), "Temporal port")
-	flag.StringVar(&enableDebug, "EnableDebug", os.Getenv("ENABLE_DEBUG"), "Debug log level setting")
-	flag.StringVar(&devmode, "DevMode", os.Getenv("DEV_MODE"), "Local development")
-	flag.StringVar(&enableTLS, "EnableTLS", os.Getenv("ENABLE_TLS"), "Elable TLS based auth")
-	flag.StringVar(&disableBootstrap, "DisableBootstrap", os.Getenv("DISABLE_BOOTSTRAP"), "Disable secret based bootstrap")
+	flag.StringVar(&enableDebug, "enableDebug", os.Getenv("ENABLE_DEBUG"), "Debug log level setting")
+	flag.StringVar(&devmode, "devMode", os.Getenv("DEV_MODE"), "Local development")
+	flag.StringVar(&enableTLS, "enableTLS", os.Getenv("ENABLE_TLS"), "Enable TLS based auth")
+	flag.StringVar(&disableBootstrap, "disableBootstrap", os.Getenv("DISABLE_BOOTSTRAP"), "Disable secret based bootstrap")
 	flag.StringVar(&conf.BootstrapSecret, "bootstrapSecret", os.Getenv("BOOTSTRAP_SECRET"), "Bootstrap secret")
 	flag.StringVar(&watcherInterval, "watcherInterval", os.Getenv("WATCHER_INTERVAL"), "Watcher Interval")
 	flag.StringVar(&podName, "podName", os.Getenv("POD_NAME"), "POD Name")
@@ -194,7 +194,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flag.StringVar(&conf.TemporalSecret, "temporalSecret", os.Getenv("TEMPORAL_CERT"), "Temporal cert secret")
 	flag.StringVar(&conf.CloudVersion, "cloudVersion", os.Getenv("CLOUD_WORKFLOW_VERSION"), "Cloud Workflow Proto version")
 	flag.StringVar(&conf.SiteVersion, "siteVersion", os.Getenv("SITE_WORKFLOW_VERSION"), "Site Workflow Proto version")
-	flag.StringVar(&skipCoreGrpcServerAuth, "coreGrpcSkipServerAuth", os.Getenv("SKIP_GRPC_SERVER_AUTH"), "Skip gRPC server auth in TLS")
+	flag.StringVar(&skipCoreGrpcServerAuth, "skipCoreGrpcServerAuth", os.Getenv("SKIP_GRPC_SERVER_AUTH"), "Skip gRPC server auth in TLS")
 
 	var skipFlowGrpcServerAuth string
 	flag.StringVar(&skipFlowGrpcServerAuth, "flowGrpcSkipServerAuth", os.Getenv("SKIP_FLOW_GRPC_SERVER_AUTH"), "Skip Flow gRPC server auth in TLS")

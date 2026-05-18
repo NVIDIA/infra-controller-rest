@@ -396,13 +396,15 @@ func NewCoreGrpcAtomicClient(config *CoreGrpcClientConfig) *CoreGrpcAtomicClient
 }
 
 func getCertificateCheckInterval() time.Duration {
-	var err error
-	if value, ok := os.LookupEnv("CORE_GRPC_CERT_CHECK_INTERVAL"); ok {
-		if interval, err := strconv.Atoi(value); err == nil {
+	value, ok := os.LookupEnv("CORE_GRPC_CERT_CHECK_INTERVAL")
+	if ok {
+		interval, err := strconv.Atoi(value)
+		if err == nil {
 			return time.Duration(interval) * time.Second
 		}
-		log.Error().Err(err).Msg("Invalid CORE_GRPC_CERT_CHECK_INTERVAL value; using default.")
+		log.Error().Err(err).Str("CORE_GRPC_CERT_CHECK_INTERVAL", value).Msg("Invalid value specified for Core gRPC certificate check interval")
 	}
+	log.Warn().Msg("Using default Core gRPC certificate check interval")
 	return defaultCheckCertificateIntervalSeconds * time.Second
 }
 
