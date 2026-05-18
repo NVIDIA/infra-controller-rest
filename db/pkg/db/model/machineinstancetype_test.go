@@ -30,6 +30,13 @@ import (
 	otrace "go.opentelemetry.io/otel/trace"
 )
 
+func TestMachineInstanceType_ToRemoveAssociationRequestProto(t *testing.T) {
+	mit := &MachineInstanceType{MachineID: "machine-1"}
+	req := mit.ToRemoveAssociationRequestProto()
+	assert.NotNil(t, req)
+	assert.Equal(t, "machine-1", req.MachineId)
+}
+
 // reset the tables needed for MachineInstanceType tests
 func testMachineInstanceTypeSetupSchema(t *testing.T, dbSession *db.Session) {
 	testInstanceTypeSetupSchema(t, dbSession)
