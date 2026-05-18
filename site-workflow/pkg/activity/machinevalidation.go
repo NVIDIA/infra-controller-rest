@@ -61,12 +61,14 @@ func (mmv *ManageMachineValidation) EnableDisableMachineValidationTestOnSite(ctx
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = coreGrpcClient.GrpcServiceClient().MachineValidationTestEnableDisableTest(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.MachineValidationTestEnableDisableTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to enable/disable machine validation test using Core gRPC API")
 		return swe.WrapErr(err)
@@ -96,12 +98,14 @@ func (mmv *ManageMachineValidation) PersistValidationResultOnSite(ctx context.Co
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = coreGrpcClient.GrpcServiceClient().PersistValidationResult(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.PersistValidationResult(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to persist validation results using Core gRPC API")
 		return swe.WrapErr(err)
@@ -129,12 +133,14 @@ func (mmv *ManageMachineValidation) GetMachineValidationResultsFromSite(ctx cont
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := coreGrpcClient.GrpcServiceClient().GetMachineValidationResults(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationResults(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation results using Core gRPC API")
 		return nil, swe.WrapErr(err)
@@ -164,12 +170,14 @@ func (mmv *ManageMachineValidation) GetMachineValidationRunsFromSite(ctx context
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := coreGrpcClient.GrpcServiceClient().GetMachineValidationRuns(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationRuns(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation runs using Core gRPC API")
 		return nil, err
@@ -197,12 +205,14 @@ func (mmv *ManageMachineValidation) GetMachineValidationTestsFromSite(ctx contex
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := coreGrpcClient.GrpcServiceClient().GetMachineValidationTests(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationTests(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation tests using Core gRPC API")
 		return nil, swe.WrapErr(err)
@@ -236,12 +246,14 @@ func (mmv *ManageMachineValidation) AddMachineValidationTestOnSite(ctx context.C
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	response, err := coreGrpcClient.GrpcServiceClient().AddMachineValidationTest(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	response, err := grpcServiceClient.AddMachineValidationTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to add machine validation test using Core gRPC API")
 		return nil, swe.WrapErr(err)
@@ -275,12 +287,14 @@ func (mmv *ManageMachineValidation) UpdateMachineValidationTestOnSite(ctx contex
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = coreGrpcClient.GrpcServiceClient().UpdateMachineValidationTest(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.UpdateMachineValidationTest(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update machine validation test using Core gRPC API")
 		return swe.WrapErr(err)
@@ -308,12 +322,14 @@ func (mmv *ManageMachineValidation) GetMachineValidationExternalConfigsFromSite(
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := coreGrpcClient.GrpcServiceClient().GetMachineValidationExternalConfigs(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationExternalConfigs(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to get machine validation external configs using Core gRPC API")
 		return nil, swe.WrapErr(err)
@@ -343,12 +359,14 @@ func (mmv *ManageMachineValidation) AddUpdateMachineValidationExternalConfigOnSi
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = coreGrpcClient.GrpcServiceClient().AddUpdateMachineValidationExternalConfig(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.AddUpdateMachineValidationExternalConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to add/update machine validation external config using Core gRPC API")
 		return swe.WrapErr(err)
@@ -378,12 +396,14 @@ func (mmv *ManageMachineValidation) RemoveMachineValidationExternalConfigOnSite(
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mmv.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = coreGrpcClient.GrpcServiceClient().RemoveMachineValidationExternalConfig(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.RemoveMachineValidationExternalConfig(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to remove machine validation external config using Core gRPC API")
 		return swe.WrapErr(err)

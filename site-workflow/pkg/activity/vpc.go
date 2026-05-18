@@ -72,8 +72,8 @@ func NewManageVPCInventory(config ManageInventoryConfig) ManageVPCInventory {
 	}
 }
 
-func vpcFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func vpcFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	idList, err := grpcServiceClient.FindVpcIds(ctx, &cwssaws.VpcSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -81,8 +81,8 @@ func vpcFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]
 	return idList.GetVpcIds(), nil
 }
 
-func vpcFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcId) ([]*cwssaws.Vpc, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func vpcFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcId) ([]*cwssaws.Vpc, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	list, err := grpcServiceClient.FindVpcsByIds(ctx, &cwssaws.VpcsByIdsRequest{
 		VpcIds: ids,
 	})
@@ -96,14 +96,14 @@ func vpcFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, i
 // instancePagedInventoryPostProcess will attach NSG propagation
 // information for the inventory page of VPCs.
 // This will only be called for pages with inventory.
-func vpcPagedInventoryPostProcess(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, inventory *cwssaws.VPCInventory) (*cwssaws.VPCInventory, error) {
+func vpcPagedInventoryPostProcess(ctx context.Context, grpcClient *cClient.CoreGrpcClient, inventory *cwssaws.VPCInventory) (*cwssaws.VPCInventory, error) {
 	vpcIds := make([]string, len(inventory.GetVpcs()))
 
 	for i, vpc := range inventory.GetVpcs() {
 		vpcIds[i] = vpc.GetId().GetValue()
 	}
 
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	propList, err := grpcServiceClient.GetNetworkSecurityGroupPropagationStatus(ctx, &cwssaws.GetNetworkSecurityGroupPropagationStatusRequest{
 		VpcIds: vpcIds,
 	})

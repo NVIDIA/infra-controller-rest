@@ -59,11 +59,11 @@ func (meri *ManageExpectedRackInventory) DiscoverExpectedRackInventory(ctx conte
 	}
 
 	// Get Site Controller gRPC client
-	coreGrpcClient := meri.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := meri.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call GetAllExpectedRacks to get full list of ExpectedRacks on Site
 	erList, err := grpcServiceClient.GetAllExpectedRacks(ctx, &emptypb.Empty{})
@@ -239,11 +239,11 @@ func (mer *ManageExpectedRack) CreateExpectedRackOnSite(ctx context.Context, req
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mer.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mer.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.AddExpectedRack(ctx, request)
 	if err != nil {
@@ -278,11 +278,11 @@ func (mer *ManageExpectedRack) UpdateExpectedRackOnSite(ctx context.Context, req
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mer.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mer.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateExpectedRack(ctx, request)
 	if err != nil {
@@ -315,11 +315,11 @@ func (mer *ManageExpectedRack) DeleteExpectedRackOnSite(ctx context.Context, req
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mer.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mer.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteExpectedRack(ctx, request)
 	if err != nil {
@@ -359,11 +359,11 @@ func (mer *ManageExpectedRack) ReplaceAllExpectedRacksOnSite(ctx context.Context
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mer.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mer.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err := grpcServiceClient.ReplaceAllExpectedRacks(ctx, request)
 	if err != nil {
@@ -383,11 +383,11 @@ func (mer *ManageExpectedRack) DeleteAllExpectedRacksOnSite(ctx context.Context)
 	logger.Info().Msg("Starting activity")
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mer.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mer.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err := grpcServiceClient.DeleteAllExpectedRacks(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -420,14 +420,15 @@ func (mer *ManageExpectedRack) CreateExpectedRackOnFlow(ctx context.Context, req
 		return nil
 	}
 
-	flowClient := mer.flowGrpcAtomicClient.GetClient()
-	if flowClient == nil {
+	grpcClient := mer.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		logger.Warn().Msg("Flow client not connected, skipping Flow expected rack creation")
 		return nil
 	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	rack := expectedRackToFlowRack(request)
-	_, err := flowClient.GrpcServiceClient().CreateExpectedRack(ctx, &flowv1.CreateExpectedRackRequest{Rack: rack})
+	_, err := grpcServiceClient.CreateExpectedRack(ctx, &flowv1.CreateExpectedRackRequest{Rack: rack})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Rack on Flow")
 		return swe.WrapErr(err)

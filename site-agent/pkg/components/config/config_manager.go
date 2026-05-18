@@ -34,13 +34,13 @@ import (
 )
 
 const (
-	DefaultCoreGrpcClientCAPath   = "/etc/core-grpc/ca.crt"
+	DefaultCoreGrpcCACertPath     = "/etc/core-grpc/ca.crt"
 	DefaultCoreGrpcClientCertPath = "/etc/core-grpc/tls.crt"
 	DefaultCoreGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
 
 	// Flow uses the same SPIFFE trust domain (core-grpc.local) and vault-core-grpc-issuer as Core gRPC,
 	// so we can reuse the Core gRPC certificates for mTLS with Flow gRPC.
-	DefaultFlowGrpcClientCAPath   = "/etc/core-grpc/ca.crt"
+	DefaultFlowGrpcCACertPath     = "/etc/core-grpc/ca.crt"
 	DefaultFlowGrpcClientCertPath = "/etc/core-grpc/tls.crt"
 	DefaultFlowGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
 )
@@ -88,36 +88,37 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	sOpt := 0
 	flag.IntVar(&sOpt, "coreGrpcSecureOptions", cSecOpt, "Core gRPC security option")
 	conf.CoreGrpc.Secure = client.SecureOptions(sOpt)
-	coreGrpcCAPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
-	if coreGrpcCAPath == "" {
-		coreGrpcCAPath = os.Getenv("CARBIDE_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
+
+	coreGrpcCACertPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
+	if coreGrpcCACertPath == "" {
+		coreGrpcCACertPath = os.Getenv("CARBIDE_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.CoreGrpc.ServerCAPath, "coreGrpcCertPath", coreGrpcCAPath, "Core gRPC Cert Path")
+	flag.StringVar(&conf.CoreGrpc.ServerCAPath, "coreGrpcCACertPath", coreGrpcCACertPath, "Core gRPC CA Cert Path")
 	if conf.CoreGrpc.ServerCAPath == "" {
-		conf.CoreGrpc.ServerCAPath = DefaultCoreGrpcClientCAPath
+		conf.CoreGrpc.ServerCAPath = DefaultCoreGrpcCACertPath
 	}
-	coreGrpcClientCert := os.Getenv("CORE_GRPC_CLIENT_CERT_PATH")
-	if coreGrpcClientCert == "" {
-		coreGrpcClientCert = os.Getenv("CARBIDE_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
+	coreGrpcClientCertPath := os.Getenv("CORE_GRPC_CLIENT_CERT_PATH")
+	if coreGrpcClientCertPath == "" {
+		coreGrpcClientCertPath = os.Getenv("CARBIDE_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.CoreGrpc.ClientCertPath, "coreGrpcClientCertPath", coreGrpcClientCert, "Core gRPC client Cert Path")
+	flag.StringVar(&conf.CoreGrpc.ClientCertPath, "coreGrpcClientCertPath", coreGrpcClientCertPath, "Core gRPC client Cert Path")
 	if conf.CoreGrpc.ClientCertPath == "" {
 		conf.CoreGrpc.ClientCertPath = DefaultCoreGrpcClientCertPath
 	}
-	coreGrpcClientKey := os.Getenv("CORE_GRPC_CLIENT_KEY_PATH")
-	if coreGrpcClientKey == "" {
-		coreGrpcClientKey = os.Getenv("CARBIDE_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
+	coreGrpcClientKeyPath := os.Getenv("CORE_GRPC_CLIENT_KEY_PATH")
+	if coreGrpcClientKeyPath == "" {
+		coreGrpcClientKeyPath = os.Getenv("CARBIDE_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.CoreGrpc.ClientKeyPath, "coreGrpcClientKeyPath", coreGrpcClientKey, "Core gRPC client Cert Path")
+	flag.StringVar(&conf.CoreGrpc.ClientKeyPath, "coreGrpcClientKeyPath", coreGrpcClientKeyPath, "Core gRPC client Key Path")
 	if conf.CoreGrpc.ClientKeyPath == "" {
 		conf.CoreGrpc.ClientKeyPath = DefaultCoreGrpcClientKeyPath
 	}
 
 	log.Info().Msg("Core gRPC Address:" + conf.CoreGrpc.Address)
 	log.Info().Msg("Core gRPC Secure Options:" + strconv.Itoa(int(conf.CoreGrpc.Secure)))
-	log.Info().Msg("Core gRPC CA Path:" + conf.CoreGrpc.ServerCAPath)
-	log.Info().Msg("Core gRPC client Cert:" + conf.CoreGrpc.ClientCertPath)
-	log.Info().Msg("Core gRPC client Key:" + conf.CoreGrpc.ClientKeyPath)
+	log.Info().Msg("Core gRPC CA Cert Path:" + conf.CoreGrpc.ServerCAPath)
+	log.Info().Msg("Core gRPC client Cert Path:" + conf.CoreGrpc.ClientCertPath)
+	log.Info().Msg("Core gRPC client Key Path:" + conf.CoreGrpc.ClientKeyPath)
 
 	// Flow config
 	flag.StringVar(&conf.FlowGrpc.Address, "flowGrpcAddress", os.Getenv("FLOW_GRPC_ADDRESS"), "Flow gRPC Address")
@@ -136,23 +137,47 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	flowGrpcSecOpt = 0
 	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option")
 	conf.FlowGrpc.Secure = client.FlowGrpcClientSecureOptions(flowGrpcSecOpt)
-	flag.StringVar(&conf.FlowGrpc.ServerCAPath, "flowGrpcCertPath", os.Getenv("FLOW_GRPC_CA_CERT_PATH"), "Flow gRPC CA Cert Path")
-	if conf.FlowGrpc.ServerCAPath == "" {
-		conf.FlowGrpc.ServerCAPath = DefaultFlowGrpcClientCAPath
+
+	flowGrpcCACertPath := os.Getenv("FLOW_GRPC_CA_CERT_PATH")
+	if flowGrpcCACertPath == "" {
+		flowGrpcCACertPath = os.Getenv("FLOW_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
 	}
-	flag.StringVar(&conf.FlowGrpc.ClientCertPath, "flowGrpcClientCertPath", os.Getenv("FLOW_GRPC_CLIENT_CERT_PATH"), "Flow gRPC client Cert Path")
+	if flowGrpcCACertPath == "" {
+		flowGrpcCACertPath = os.Getenv("CARBIDE_CA_CERT_PATH") // TODO: remove once deployment config repo is updated
+	}
+	flag.StringVar(&conf.FlowGrpc.ServerCAPath, "flowGrpcCACertPath", flowGrpcCACertPath, "Flow gRPC CA Cert Path")
+	if conf.FlowGrpc.ServerCAPath == "" {
+		conf.FlowGrpc.ServerCAPath = DefaultFlowGrpcCACertPath
+	}
+
+	flowGrpcClientCertPath := os.Getenv("FLOW_GRPC_CLIENT_CERT_PATH")
+	if flowGrpcClientCertPath == "" {
+		flowGrpcClientCertPath = os.Getenv("FLOW_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
+	}
+	if flowGrpcClientCertPath == "" {
+		flowGrpcClientCertPath = os.Getenv("CARBIDE_CLIENT_CERT_PATH") // TODO: remove once deployment config repo is updated
+	}
+	flag.StringVar(&conf.FlowGrpc.ClientCertPath, "flowGrpcClientCertPath", flowGrpcClientCertPath, "Flow gRPC client Cert Path")
 	if conf.FlowGrpc.ClientCertPath == "" {
 		conf.FlowGrpc.ClientCertPath = DefaultFlowGrpcClientCertPath
 	}
-	flag.StringVar(&conf.FlowGrpc.ClientKeyPath, "flowGrpcClientKeyPath", os.Getenv("FLOW_GRPC_CLIENT_KEY_PATH"), "Flow gRPC client Key Path")
+
+	flowGrpcClientKeyPath := os.Getenv("FLOW_GRPC_CLIENT_KEY_PATH")
+	if flowGrpcClientKeyPath == "" {
+		flowGrpcClientKeyPath = os.Getenv("FLOW_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
+	}
+	if flowGrpcClientKeyPath == "" {
+		flowGrpcClientKeyPath = os.Getenv("CARBIDE_CLIENT_KEY_PATH") // TODO: remove once deployment config repo is updated
+	}
+	flag.StringVar(&conf.FlowGrpc.ClientKeyPath, "flowGrpcClientKeyPath", flowGrpcClientKeyPath, "Flow gRPC client Key Path")
 	if conf.FlowGrpc.ClientKeyPath == "" {
 		conf.FlowGrpc.ClientKeyPath = DefaultFlowGrpcClientKeyPath
 	}
 
 	log.Info().Msg("Flow gRPC Address:" + conf.FlowGrpc.Address)
-	log.Info().Msg("Flow gRPC CA Path:" + conf.FlowGrpc.ServerCAPath)
-	log.Info().Msg("Flow gRPC client Cert:" + conf.FlowGrpc.ClientCertPath)
-	log.Info().Msg("Flow gRPC client Key:" + conf.FlowGrpc.ClientKeyPath)
+	log.Info().Msg("Flow gRPC CA Cert Path:" + conf.FlowGrpc.ServerCAPath)
+	log.Info().Msg("Flow gRPC client Cert Path:" + conf.FlowGrpc.ClientCertPath)
+	log.Info().Msg("Flow gRPC client Key Path:" + conf.FlowGrpc.ClientKeyPath)
 
 	// General config
 	flag.StringVar(&conf.MetricsPort, "metricsPort", os.Getenv("METRICS_PORT"), "Metrics port number")

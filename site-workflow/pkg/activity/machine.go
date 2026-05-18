@@ -62,11 +62,11 @@ func (mm *ManageMachine) SetMachineMaintenanceOnSite(ctx context.Context, reques
 	}
 
 	// Call Core gRPC endpoint to set SetMaintenance request
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.SetMaintenance(ctx, request)
 	if err != nil {
@@ -99,11 +99,11 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	}
 
 	// Call Core gRPC endpoint to update Machine metadata
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateMachineMetadata(ctx, request)
 	if err != nil {
@@ -131,11 +131,11 @@ func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs 
 	}
 
 	// Call Core gRPC API endpoint to get DPU Machines by IDs
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Convert string IDs to MachineId objects
 	machineIDs := make([]*cwssaws.MachineId, 0, len(dpuMachineIDs))
@@ -209,11 +209,11 @@ func (mmi *ManageMachineInventory) CollectAndPublishMachineInventory(ctx context
 	}
 
 	// Call Core gRPC endpoint to get available Machine IDs
-	coreGrpcClient := mmi.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	machineIDList, err := grpcServiceClient.FindMachineIds(ctx, &cwssaws.MachineSearchConfig{})
 	if err != nil {

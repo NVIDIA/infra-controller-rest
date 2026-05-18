@@ -63,8 +63,11 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Get Site Controller gRPC client
-	coreGrpcClient := mesi.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := mesi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call GetAllExpectedSwitches to get full list of ExpectedSwitches on Site
 	esList, err := grpcServiceClient.GetAllExpectedSwitches(ctx, &emptypb.Empty{})
@@ -287,8 +290,11 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mes.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := mes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call NICo gRPC endpoint
 	_, err = grpcServiceClient.AddExpectedSwitch(ctx, request)
@@ -324,8 +330,11 @@ func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mes.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := mes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateExpectedSwitch(ctx, request)
 	if err != nil {
@@ -355,14 +364,15 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnFlow(ctx context.Context,
 		return nil
 	}
 
-	flowClient := mes.flowGrpcAtomicClient.GetClient()
-	if flowClient == nil {
+	grpcClient := mes.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		logger.Warn().Msg("Flow client not connected, skipping Flow component creation")
 		return nil
 	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	component := expectedSwitchToFlowComponent(request)
-	_, err := flowClient.GrpcServiceClient().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
+	_, err := grpcServiceClient.AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Switch component on Flow")
 		return swe.WrapErr(err)
@@ -450,8 +460,11 @@ func (mes *ManageExpectedSwitch) DeleteExpectedSwitchOnSite(ctx context.Context,
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mes.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := mes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteExpectedSwitch(ctx, request)
 	if err != nil {

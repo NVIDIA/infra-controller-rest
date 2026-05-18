@@ -57,8 +57,8 @@ func NewManageInfiniBandPartitionInventory(config ManageInventoryConfig) ManageI
 	}
 }
 
-func ibpFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.IBPartitionId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func ibpFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.IBPartitionId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	idList, err := grpcServiceClient.FindIBPartitionIds(ctx, &cwssaws.IBPartitionSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -66,8 +66,8 @@ func ibpFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]
 	return idList.GetIbPartitionIds(), nil
 }
 
-func ibpFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.IBPartitionId) ([]*cwssaws.IBPartition, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func ibpFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.IBPartitionId) ([]*cwssaws.IBPartition, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	list, err := grpcServiceClient.FindIBPartitionsByIds(ctx, &cwssaws.IBPartitionsByIdsRequest{
 		IbPartitionIds: ids,
 	})
@@ -138,11 +138,11 @@ func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mibp.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mibp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call NICo gRPC endpoint
 	_, err = grpcServiceClient.CreateIBPartition(ctx, request)
@@ -176,11 +176,11 @@ func (mibp *ManageInfiniBandPartition) UpdateInfiniBandPartitionOnSite(ctx conte
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	coreGrpcClient := mibp.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mibp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateIBPartition(ctx, request)
 	if err != nil {
@@ -213,11 +213,11 @@ func (mipb *ManageInfiniBandPartition) DeleteInfiniBandPartitionOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mipb.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mipb.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteIBPartition(ctx, request)
 	if err != nil {

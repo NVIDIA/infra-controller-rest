@@ -63,11 +63,11 @@ func (memi *ManageExpectedMachineInventory) DiscoverExpectedMachineInventory(ctx
 	}
 
 	// Get Site Controller gRPC client
-	coreGrpcClient := memi.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := memi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call GetAllExpectedMachines to get full list of ExpectedMachines on Site
 	emList, err := grpcServiceClient.GetAllExpectedMachines(ctx, &emptypb.Empty{})
@@ -290,11 +290,11 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnSite(ctx context.Contex
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mem.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mem.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call NICo gRPC endpoint
 	_, err = grpcServiceClient.AddExpectedMachine(ctx, request)
@@ -330,11 +330,11 @@ func (mem *ManageExpectedMachine) UpdateExpectedMachineOnSite(ctx context.Contex
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mem.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mem.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateExpectedMachine(ctx, request)
 	if err != nil {
@@ -367,11 +367,11 @@ func (mem *ManageExpectedMachine) DeleteExpectedMachineOnSite(ctx context.Contex
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mem.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mem.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteExpectedMachine(ctx, request)
 	if err != nil {
@@ -404,11 +404,11 @@ func (mem *ManageExpectedMachine) CreateExpectedMachinesOnSite(ctx context.Conte
 	}
 
 	// Call Site Controller gRPC batch endpoint
-	coreGrpcClient := mem.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mem.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call the batch CreateExpectedMachines endpoint
 	response, err := grpcServiceClient.CreateExpectedMachines(ctx, request)
@@ -593,11 +593,11 @@ func (mem *ManageExpectedMachine) UpdateExpectedMachinesOnSite(ctx context.Conte
 	}
 
 	// Call Site Controller gRPC batch endpoint
-	coreGrpcClient := mem.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mem.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call the batch UpdateExpectedMachines endpoint
 	response, err := grpcServiceClient.UpdateExpectedMachines(ctx, request)

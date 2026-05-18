@@ -184,8 +184,8 @@ func (mvpi *ManageVpcPrefixInventory) DiscoverVpcPrefixInventory(ctx context.Con
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func vpcPrefixFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcPrefixId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func vpcPrefixFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcPrefixId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	idList, err := grpcServiceClient.SearchVpcPrefixes(ctx, &cwssaws.VpcPrefixSearchQuery{})
 	if err != nil {
 		return nil, err
@@ -193,8 +193,8 @@ func vpcPrefixFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClien
 	return idList.VpcPrefixIds, nil
 }
 
-func vpcPrefixFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcPrefixId) ([]*cwssaws.VpcPrefix, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func vpcPrefixFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcPrefixId) ([]*cwssaws.VpcPrefix, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	list, err := grpcServiceClient.GetVpcPrefixes(ctx, &cwssaws.VpcPrefixGetRequest{
 		VpcPrefixIds: ids,
 	})

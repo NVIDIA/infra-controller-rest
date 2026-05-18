@@ -74,11 +74,11 @@ func (mm *ManageSubnet) CreateSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.CreateNetworkSegment(ctx, request)
 	if err != nil {
@@ -114,11 +114,11 @@ func (mm *ManageSubnet) DeleteSubnetOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteNetworkSegment(ctx, request)
 	if err != nil {
@@ -164,8 +164,8 @@ func NewManageSubnetInventory(config ManageInventoryConfig) ManageSubnetInventor
 	}
 }
 
-func subnetFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.NetworkSegmentId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func subnetFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.NetworkSegmentId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	idList, err := grpcServiceClient.FindNetworkSegmentIds(ctx, &cwssaws.NetworkSegmentSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -173,8 +173,8 @@ func subnetFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) 
 	return idList.GetNetworkSegmentsIds(), nil
 }
 
-func subnetFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.NetworkSegmentId) ([]*cwssaws.NetworkSegment, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func subnetFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.NetworkSegmentId) ([]*cwssaws.NetworkSegment, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	list, err := grpcServiceClient.FindNetworkSegmentsByIds(ctx, &cwssaws.NetworkSegmentsByIdsRequest{
 		NetworkSegmentsIds: ids,
 	})

@@ -69,11 +69,11 @@ func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mos.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mos.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.CreateOsImage(ctx, request)
 	if err != nil {
@@ -110,11 +110,11 @@ func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mos.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mos.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateOsImage(ctx, request)
 	if err != nil {
@@ -149,11 +149,11 @@ func (mos *ManageOperatingSystem) DeleteOsImageOnSite(ctx context.Context, reque
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mos.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mos.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteOsImage(ctx, request)
 	if err != nil {
@@ -194,11 +194,11 @@ func (moii *ManageOsImageInventory) DiscoverOsImageInventory(ctx context.Context
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func osImageFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
+func osImageFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
-func osImageFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
+func osImageFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
@@ -224,9 +224,9 @@ func osImagePagedInventory(allItemIDs []*cwssaws.UUID, pagedItems []*cwssaws.OsI
 	return inventory
 }
 
-func osImageFindFallback(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
+func osImageFindFallback(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
 	request := &cwssaws.ListOsImageRequest{}
-	items, err := coreGrpcClient.GrpcServiceClient().ListOsImage(ctx, request)
+	items, err := grpcClient.GrpcServiceClient().ListOsImage(ctx, request)
 	if err != nil {
 		return nil, nil, err
 	}

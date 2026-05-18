@@ -59,11 +59,11 @@ func (mm *ManageInstance) UpdateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateInstanceConfig(ctx, request)
 	if err != nil {
@@ -96,11 +96,11 @@ func (mm *ManageInstance) CreateInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.AllocateInstance(ctx, request)
 	if err != nil {
@@ -138,11 +138,11 @@ func (mm *ManageInstance) CreateInstancesOnSite(ctx context.Context, request *cw
 		}
 	}
 
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.AllocateInstances(ctx, request)
 	if err != nil {
@@ -174,11 +174,11 @@ func (mm *ManageInstance) RebootInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.InvokeInstancePower(ctx, request)
 	if err != nil {
@@ -211,11 +211,11 @@ func (mm *ManageInstance) DeleteInstanceOnSite(ctx context.Context, request *cws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.ReleaseInstance(ctx, request)
 	if err != nil {
@@ -262,8 +262,8 @@ func NewManageInstanceInventory(config ManageInventoryConfig) ManageInstanceInve
 	}
 }
 
-func instanceFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.InstanceId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func instanceFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.InstanceId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	instanceIdList, err := grpcServiceClient.FindInstanceIds(ctx, &cwssaws.InstanceSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -271,8 +271,8 @@ func instanceFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient
 	return instanceIdList.GetInstanceIds(), nil
 }
 
-func instanceFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.InstanceId) ([]*cwssaws.Instance, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func instanceFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.InstanceId) ([]*cwssaws.Instance, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	instanceList, err := grpcServiceClient.FindInstancesByIds(ctx, &cwssaws.InstancesByIdsRequest{
 		InstanceIds: ids,
 	})
@@ -285,14 +285,14 @@ func instanceFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClie
 
 // instancePagedInventoryPostProcess will attach NSG propagation information for the inventory page of instances.
 // This will only be called for pages with inventory.
-func instancePagedInventoryPostProcess(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, inventory *cwssaws.InstanceInventory) (*cwssaws.InstanceInventory, error) {
+func instancePagedInventoryPostProcess(ctx context.Context, grpcClient *cClient.CoreGrpcClient, inventory *cwssaws.InstanceInventory) (*cwssaws.InstanceInventory, error) {
 	instanceIds := make([]string, len(inventory.GetInstances()))
 
 	for i, instance := range inventory.GetInstances() {
 		instanceIds[i] = instance.GetId().GetValue()
 	}
 
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	propList, err := grpcServiceClient.GetNetworkSecurityGroupPropagationStatus(ctx, &cwssaws.GetNetworkSecurityGroupPropagationStatusRequest{
 		InstanceIds: instanceIds,
 	})

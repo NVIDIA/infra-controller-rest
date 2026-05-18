@@ -63,8 +63,11 @@ func (mepsi *ManageExpectedPowerShelfInventory) DiscoverExpectedPowerShelfInvent
 	}
 
 	// Get Site Controller gRPC client
-	coreGrpcClient := mepsi.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := mepsi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call GetAllExpectedPowerShelves to get full list of ExpectedPowerShelves on Site
 	epsList, err := grpcServiceClient.GetAllExpectedPowerShelves(ctx, &emptypb.Empty{})
@@ -287,8 +290,11 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := meps.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := meps.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call NICo gRPC endpoint
 	_, err = grpcServiceClient.AddExpectedPowerShelf(ctx, request)
@@ -324,8 +330,11 @@ func (meps *ManageExpectedPowerShelf) UpdateExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := meps.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := meps.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateExpectedPowerShelf(ctx, request)
 	if err != nil {
@@ -355,14 +364,15 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnFlow(ctx context
 		return nil
 	}
 
-	flowClient := meps.flowGrpcAtomicClient.GetClient()
-	if flowClient == nil {
+	grpcClient := meps.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		logger.Warn().Msg("Flow client not connected, skipping Flow component creation")
 		return nil
 	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	component := expectedPowerShelfToFlowComponent(request)
-	_, err := flowClient.GrpcServiceClient().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
+	_, err := grpcServiceClient.AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Power Shelf component on Flow")
 		return swe.WrapErr(err)
@@ -455,8 +465,11 @@ func (meps *ManageExpectedPowerShelf) DeleteExpectedPowerShelfOnSite(ctx context
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := meps.coreGrpcAtomicClient.GetClient()
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcClient := meps.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteExpectedPowerShelf(ctx, request)
 	if err != nil {

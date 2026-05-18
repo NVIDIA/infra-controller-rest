@@ -56,8 +56,8 @@ func NewManageSSHKeyGroupInventory(config ManageInventoryConfig) ManageSSHKeyGro
 	}
 }
 
-func sshKeyGroupFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.TenantKeysetIdentifier, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func sshKeyGroupFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.TenantKeysetIdentifier, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	idList, err := grpcServiceClient.FindTenantKeysetIds(ctx, &cwssaws.TenantKeysetSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -65,8 +65,8 @@ func sshKeyGroupFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcCli
 	return idList.GetKeysetIds(), nil
 }
 
-func sshKeyGroupFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.TenantKeysetIdentifier) ([]*cwssaws.TenantKeyset, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func sshKeyGroupFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.TenantKeysetIdentifier) ([]*cwssaws.TenantKeyset, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	list, err := grpcServiceClient.FindTenantKeysetsByIds(ctx, &cwssaws.TenantKeysetsByIdsRequest{
 		KeysetIds: ids,
 	})
@@ -134,11 +134,11 @@ func (mmi *ManageSSHKeyGroup) CreateSSHKeyGroupOnSite(ctx context.Context, reque
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mmi.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.CreateTenantKeyset(ctx, request)
 	if err != nil {
@@ -175,11 +175,11 @@ func (mmi *ManageSSHKeyGroup) UpdateSSHKeyGroupOnSite(ctx context.Context, reque
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mmi.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateTenantKeyset(ctx, request)
 	if err != nil {
@@ -214,11 +214,11 @@ func (mmi *ManageSSHKeyGroup) DeleteSSHKeyGroupOnSite(ctx context.Context, reque
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mmi.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteTenantKeyset(ctx, request)
 	if err != nil {

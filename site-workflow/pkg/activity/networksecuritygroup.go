@@ -64,13 +64,13 @@ func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Core gRPC endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := coreGrpcClient.GrpcServiceClient()
+	rpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.CreateNetworkSecurityGroup(ctx, request)
+	_, err = rpcServiceClient.CreateNetworkSecurityGroup(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create NetworkSecurityGroup using Core gRPC API")
 		return swe.WrapErr(err)
@@ -104,13 +104,13 @@ func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := coreGrpcClient.GrpcServiceClient()
+	rpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.UpdateNetworkSecurityGroup(ctx, request)
+	_, err = rpcServiceClient.UpdateNetworkSecurityGroup(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to update config for NetworkSecurityGroup using Core gRPC API")
 		return swe.WrapErr(err)
@@ -144,13 +144,13 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := coreGrpcClient.GrpcServiceClient()
+	rpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.DeleteNetworkSecurityGroup(ctx, request)
+	_, err = rpcServiceClient.DeleteNetworkSecurityGroup(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to delete NetworkSecurityGroup using Core gRPC API")
 		return swe.WrapErr(err)
@@ -194,9 +194,9 @@ func NewManageNetworkSecurityGroupInventory(config ManageInventoryConfig) Manage
 	}
 }
 
-func networkSecurityGroupFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
+func networkSecurityGroupFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
 	// Call Core gRPC API endpoint
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	networkSecurityGroupIdList, err := grpcServiceClient.FindNetworkSecurityGroupIds(ctx, &cwssaws.FindNetworkSecurityGroupIdsRequest{})
 	if err != nil {
 		return nil, err
@@ -204,7 +204,7 @@ func networkSecurityGroupFindIDs(ctx context.Context, coreGrpcClient *cClient.Co
 	return util.StringsToProtobufUUIDList(networkSecurityGroupIdList.GetNetworkSecurityGroupIds()), nil
 }
 
-func networkSecurityGroupFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
+func networkSecurityGroupFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
 	nsgIDs := make([]string, len(ids))
 
 	for i, id := range ids {
@@ -212,7 +212,7 @@ func networkSecurityGroupFindByIDs(ctx context.Context, coreGrpcClient *cClient.
 	}
 
 	// Call Core gRPC API endpoint
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	networkSecurityGroupList, err := grpcServiceClient.FindNetworkSecurityGroupsByIds(ctx, &cwssaws.FindNetworkSecurityGroupsByIdsRequest{
 		NetworkSecurityGroupIds: nsgIDs,
 	})

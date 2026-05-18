@@ -58,8 +58,8 @@ func NewManageDpuExtensionServiceInventory(config ManageInventoryConfig) ManageD
 	}
 }
 
-func dpuExtensionServiceFindIDs(ctx context.Context, nicoClient *cclient.CoreGrpcClient) ([]string, error) {
-	grpcServiceClient := nicoClient.GrpcServiceClient()
+func dpuExtensionServiceFindIDs(ctx context.Context, grpcClient *cclient.CoreGrpcClient) ([]string, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	result, err := grpcServiceClient.FindDpuExtensionServiceIds(ctx, &cwssaws.DpuExtensionServiceSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -68,8 +68,8 @@ func dpuExtensionServiceFindIDs(ctx context.Context, nicoClient *cclient.CoreGrp
 	return result.ServiceIds, nil
 }
 
-func dpuExtensionServiceFindByIDs(ctx context.Context, nicoClient *cclient.CoreGrpcClient, ids []string) ([]*cwssaws.DpuExtensionService, error) {
-	grpcServiceClient := nicoClient.GrpcServiceClient()
+func dpuExtensionServiceFindByIDs(ctx context.Context, grpcClient *cclient.CoreGrpcClient, ids []string) ([]*cwssaws.DpuExtensionService, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	result, err := grpcServiceClient.FindDpuExtensionServicesByIds(ctx, &cwssaws.DpuExtensionServicesByIdsRequest{
 		ServiceIds: ids,
 	})
@@ -104,7 +104,7 @@ func dpuExtensionServicePagedInventory(allItemIDs []string, pagedItems []*cwssaw
 
 // ManageDpuExtensionService is an activity wrapper for DPU Extension Service management
 type ManageDpuExtensionService struct {
-	CoreGrpcAtomicClient *cclient.CoreGrpcAtomicClient
+	coreGrpcAtomicClient *cclient.CoreGrpcAtomicClient
 }
 
 // CreateDpuExtensionServiceOnSite is an activity to create a new DPU Extension Service on Site
@@ -131,13 +131,13 @@ func (mdes *ManageDpuExtensionService) CreateDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mdes.CoreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mdes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cclient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	createdDpuExtensionService, err := rpcClient.CreateDpuExtensionService(ctx, request)
+	createdDpuExtensionService, err := grpcServiceClient.CreateDpuExtensionService(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create DPU Extension Service using Core gRPC API")
 		return nil, swe.WrapErr(err)
@@ -168,11 +168,11 @@ func (mdes *ManageDpuExtensionService) UpdateDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mdes.CoreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mdes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	updatedDpuExtensionService, err := grpcServiceClient.UpdateDpuExtensionService(ctx, request)
 	if err != nil {
@@ -205,11 +205,11 @@ func (mdes *ManageDpuExtensionService) DeleteDpuExtensionServiceOnSite(ctx conte
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mdes.CoreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mdes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteDpuExtensionService(ctx, request)
 	if err != nil {
@@ -242,11 +242,11 @@ func (mdes *ManageDpuExtensionService) GetDpuExtensionServiceVersionsInfoOnSite(
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mdes.CoreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mdes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cclient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	versionInfos, err := grpcServiceClient.GetDpuExtensionServiceVersionsInfo(ctx, request)
 	if err != nil {
@@ -262,6 +262,6 @@ func (mdes *ManageDpuExtensionService) GetDpuExtensionServiceVersionsInfoOnSite(
 // NewManageDpuExtensionService returns a new ManageDpuExtensionService activity
 func NewManageDpuExtensionService(coreGrpcAtomicClient *cclient.CoreGrpcAtomicClient) ManageDpuExtensionService {
 	return ManageDpuExtensionService{
-		CoreGrpcAtomicClient: coreGrpcAtomicClient,
+		coreGrpcAtomicClient: coreGrpcAtomicClient,
 	}
 }

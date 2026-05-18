@@ -60,11 +60,11 @@ func (mm *ManageInstanceType) CreateInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.CreateInstanceType(ctx, request)
 	if err != nil {
@@ -97,11 +97,11 @@ func (mm *ManageInstanceType) UpdateInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateInstanceType(ctx, request)
 	if err != nil {
@@ -134,11 +134,11 @@ func (mm *ManageInstanceType) DeleteInstanceTypeOnSite(ctx context.Context, requ
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteInstanceType(ctx, request)
 	if err != nil {
@@ -174,11 +174,11 @@ func (mm *ManageInstanceType) AssociateMachinesWithInstanceTypeOnSite(ctx contex
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.AssociateMachinesWithInstanceType(ctx, request)
 	if err != nil {
@@ -212,11 +212,11 @@ func (mm *ManageInstanceType) RemoveMachineInstanceTypeAssociationOnSite(ctx con
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mm.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.RemoveMachineInstanceTypeAssociation(ctx, request)
 	if err != nil {
@@ -262,9 +262,9 @@ func NewManageInstanceTypeInventory(config ManageInventoryConfig) ManageInstance
 	}
 }
 
-func instanceTypeFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
+func instanceTypeFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
 	// Call Core gRPC API endpoint
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	instanceTypeIdList, err := grpcServiceClient.FindInstanceTypeIds(ctx, &cwssaws.FindInstanceTypeIdsRequest{})
 	if err != nil {
 		return nil, err
@@ -272,9 +272,9 @@ func instanceTypeFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcCl
 	return util.StringsToProtobufUUIDList(instanceTypeIdList.GetInstanceTypeIds()), nil
 }
 
-func instanceTypeFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.InstanceType, error) {
+func instanceTypeFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.InstanceType, error) {
 	// Call Core gRPC API endpoint
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	instanceTypeList, err := grpcServiceClient.FindInstanceTypesByIds(ctx, &cwssaws.FindInstanceTypesByIdsRequest{
 		InstanceTypeIds: util.ProtobufUUIDListToStringList(ids),
 	})

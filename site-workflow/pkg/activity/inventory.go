@@ -103,19 +103,19 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 
 	// define workflow name
 	workflowName := fmt.Sprintf("Update%sInventory", impl.itemType)
-	// get nico client
-	coreGrpcClient := impl.config.CoreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	// get Core gRPC client
+	grpcClient := impl.config.CoreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
 
 	// find IDs
-	allIDs, err := impl.internalFindIDs(ctx, coreGrpcClient)
+	allIDs, err := impl.internalFindIDs(ctx, grpcClient)
 	if err != nil {
 		if grpcStatus, ok := status.FromError(err); ok {
 			if grpcStatus.Code() == codes.Unimplemented {
 				log.Info().Msg("Using fallback API to get inventory")
-				if err = impl.collectAndPublishFallback(ctx, logger, coreGrpcClient, workflowName, workflowOptions); err == nil {
+				if err = impl.collectAndPublishFallback(ctx, logger, grpcClient, workflowName, workflowOptions); err == nil {
 					return err
 				}
 			}
@@ -154,7 +154,7 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 	sitePagedIDs := cClient.SliceToChunks(allIDs, impl.config.SitePageSize)
 	for sitePage, siteItemIDs := range sitePagedIDs {
 		// find items by IDs
-		siteItems, err := impl.internalFindByIDs(ctx, coreGrpcClient, siteItemIDs)
+		siteItems, err := impl.internalFindByIDs(ctx, grpcClient, siteItemIDs)
 		if err != nil {
 			logger.Warn().Err(err).Int("Site Page", sitePage+1).Msg("Failed to retrieve using Core gRPC API")
 			return err
@@ -183,7 +183,7 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 
 			// Handle any requested post processing
 			if impl.internalPagedInventoryPostProcess != nil {
-				inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, coreGrpcClient, inventoryPage)
+				inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, grpcClient, inventoryPage)
 				if err != nil {
 					return err
 				}
@@ -203,11 +203,11 @@ func (impl *manageInventoryImpl[K, R, P]) CollectAndPublishInventory(ctx context
 }
 
 func (impl *manageInventoryImpl[K, R, P]) collectAndPublishFallback(ctx context.Context, logger *zerolog.Logger,
-	coreGrpcClient *cClient.CoreGrpcClient, workflowName string, workflowOptions tClient.StartWorkflowOptions) error {
+	grpcClient *cClient.CoreGrpcClient, workflowName string, workflowOptions tClient.StartWorkflowOptions) error {
 	if impl.internalFindFallback == nil {
 		return errors.New("no fallback find function defined")
 	}
-	allIDs, siteItems, err := impl.internalFindFallback(ctx, coreGrpcClient)
+	allIDs, siteItems, err := impl.internalFindFallback(ctx, grpcClient)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to retrieve using Site Controller fallback API")
 		// Error encountered before we've published anything, report inventory collection error to Cloud
@@ -253,7 +253,7 @@ func (impl *manageInventoryImpl[K, R, P]) collectAndPublishFallback(ctx context.
 
 		// Handle any requested post processing
 		if impl.internalPagedInventoryPostProcess != nil {
-			inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, coreGrpcClient, inventoryPage)
+			inventoryPage, err = impl.internalPagedInventoryPostProcess(ctx, grpcClient, inventoryPage)
 			if err != nil {
 				return err
 			}

@@ -59,11 +59,11 @@ func (mt *ManageTenant) CreateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mt.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mt.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.CreateTenant(ctx, request)
 	if err != nil {
@@ -96,11 +96,11 @@ func (mt *ManageTenant) UpdateTenantOnSite(ctx context.Context, request *cwssaws
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mt.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mt.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.UpdateTenant(ctx, request)
 	if err != nil {
@@ -146,8 +146,8 @@ func NewManageTenantInventory(config ManageInventoryConfig) ManageTenantInventor
 	}
 }
 
-func tenantFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]string, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func tenantFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]string, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	idList, err := grpcServiceClient.FindTenantOrganizationIds(ctx, &cwssaws.TenantSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -155,8 +155,8 @@ func tenantFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) 
 	return idList.GetTenantOrganizationIds(), nil
 }
 
-func tenantFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []string) ([]*cwssaws.Tenant, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func tenantFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []string) ([]*cwssaws.Tenant, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	list, err := grpcServiceClient.FindTenantsByOrganizationIds(ctx, &cwssaws.TenantByOrganizationIdsRequest{
 		OrganizationIds: ids,
 	})

@@ -148,8 +148,8 @@ func (mvi *ManageVpcPeeringInventory) DiscoverVpcPeeringInventory(ctx context.Co
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func vpcPeeringFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcPeeringId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func vpcPeeringFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcPeeringId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	resp, err := grpcServiceClient.FindVpcPeeringIds(ctx, &cwssaws.VpcPeeringSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -157,8 +157,8 @@ func vpcPeeringFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClie
 	return resp.VpcPeeringIds, nil
 }
 
-func vpcPeeringFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func vpcPeeringFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	req := &cwssaws.VpcPeeringsByIdsRequest{
 		VpcPeeringIds: ids,
 	}

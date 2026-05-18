@@ -56,8 +56,8 @@ func NewManageNVLinkLogicalPartitionInventory(config ManageInventoryConfig) Mana
 	}
 }
 
-func nvllpFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) ([]*cwssaws.NVLinkLogicalPartitionId, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func nvllpFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.NVLinkLogicalPartitionId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	resp, err := grpcServiceClient.FindNVLinkLogicalPartitionIds(ctx, &cwssaws.NVLinkLogicalPartitionSearchFilter{})
 	if err != nil {
 		return nil, err
@@ -69,8 +69,8 @@ func nvllpFindIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient) (
 	return ids, nil
 }
 
-func nvllpFindByIDs(ctx context.Context, coreGrpcClient *cClient.CoreGrpcClient, ids []*cwssaws.NVLinkLogicalPartitionId) ([]*cwssaws.NVLinkLogicalPartition, error) {
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+func nvllpFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.NVLinkLogicalPartitionId) ([]*cwssaws.NVLinkLogicalPartition, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	req := &cwssaws.NVLinkLogicalPartitionsByIdsRequest{
 		PartitionIds: ids,
 	}
@@ -145,11 +145,11 @@ func (mnvllp *ManageNVLinkLogicalPartition) CreateNVLinkLogicalPartitionOnSite(c
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mnvllp.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mnvllp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return nil, cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call Core gRPC endpoint
 	nvLinkLogicalPartition, err := grpcServiceClient.CreateNVLinkLogicalPartition(ctx, request)
@@ -188,11 +188,11 @@ func (mnvllp *ManageNVLinkLogicalPartition) UpdateNVLinkLogicalPartitionOnSite(c
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mnvllp.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mnvllp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call Core gRPC endpoint
 	_, err = grpcServiceClient.UpdateNVLinkLogicalPartition(ctx, request)
@@ -226,11 +226,11 @@ func (mnvllp *ManageNVLinkLogicalPartition) DeleteNVLinkLogicalPartitionOnSite(c
 	}
 
 	// Call Core gRPC API endpoint
-	coreGrpcClient := mnvllp.coreGrpcAtomicClient.GetClient()
-	if coreGrpcClient == nil {
+	grpcClient := mnvllp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	grpcServiceClient := coreGrpcClient.GrpcServiceClient()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	_, err = grpcServiceClient.DeleteNVLinkLogicalPartition(ctx, request)
 	if err != nil {
