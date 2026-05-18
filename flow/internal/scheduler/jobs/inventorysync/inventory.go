@@ -58,13 +58,13 @@ func runInventoryOne(
 	allDrifts = append(allDrifts, machineDrifts...)
 
 	// Sync NVSwitches: dispatch based on configured component manager
-	var nvlSwitchDrifts []model.ComponentDrift
+	var nvSwitchDrifts []model.ComponentDrift
 	if cmConfig.ComponentManagers[devicetypes.ComponentTypeNVSwitch] == nicoprovider.ProviderName {
-		nvlSwitchDrifts = syncNVSwitchesNICo(ctx, pool, nicoClient)
+		nvSwitchDrifts = syncNVSwitchesNICo(ctx, pool, nicoClient)
 	} else {
-		nvlSwitchDrifts = syncNVSwitches(ctx, pool, nicoClient, nsmClient)
+		nvSwitchDrifts = syncNVSwitches(ctx, pool, nicoClient, nsmClient)
 	}
-	allDrifts = append(allDrifts, nvlSwitchDrifts...)
+	allDrifts = append(allDrifts, nvSwitchDrifts...)
 
 	// Sync powershelves: dispatch based on configured component manager
 	var powershelfDrifts []model.ComponentDrift

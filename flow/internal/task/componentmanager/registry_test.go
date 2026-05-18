@@ -467,7 +467,7 @@ func TestRegistryComponentTypes(t *testing.T) {
 		cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
 				devicetypes.ComponentTypeNVSwitch: "switch",
-				devicetypes.ComponentTypeCompute:   "compute",
+				devicetypes.ComponentTypeCompute:  "compute",
 			},
 		},
 		providerapi.NewProviderRegistry(),
@@ -515,7 +515,7 @@ func TestRegistryDescriptors(t *testing.T) {
 		cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
 				devicetypes.ComponentTypeNVSwitch: "switch",
-				devicetypes.ComponentTypeCompute:   "compute",
+				devicetypes.ComponentTypeCompute:  "compute",
 			},
 		},
 		providerapi.NewProviderRegistry(),

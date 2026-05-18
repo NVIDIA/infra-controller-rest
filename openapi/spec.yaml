@@ -16796,7 +16796,7 @@ components:
           description: ID of the rack this component belongs to
         type:
           type: string
-          description: Type of the component (e.g. ComponentTypeCompute, ComponentTypeNvlswitch)
+          description: Type of the component (e.g. ComponentTypeCompute, ComponentTypeNVSwitch)
         name:
           type: string
           description: Name of the component
