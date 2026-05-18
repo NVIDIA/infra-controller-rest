@@ -48,7 +48,13 @@ const (
 	// MachineHealthAlertIDOnlineRepair is the ID of the online repair health alert.
 	MachineHealthAlertIDOnlineRepair = "OnLineRepair"
 	// TenantReportedIssueAlertID is the ID of the tenant-reported issue health alert.
-	TenantReportedIssueAlertID = "tenant-reported"
+	MachineTenantReportedIssueAlertID = "tenant-reported"
+)
+
+const (
+	MachineAlertClassificationPreventAllocations       = "PreventAllocations"       // Prevents new allocations from being created on the machine.
+	MachineAlertClassificationPreventInstanceDeletion  = "PreventInstanceDeletion"  // Prevents the Instance from being deleted.
+	MachineAlertClassificationSuppressExternalAlerting = "SuppressExternalAlerting" // Suppresses external alerting for the alert.
 )
 
 const (
@@ -293,13 +299,13 @@ func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID s
 
 	alert := &cwssaws.HealthProbeAlert{
 		Id:            MachineHealthAlertIDOnlineRepair,
-		Target:        cdb.GetStrPtr(TenantReportedIssueAlertID),
+		Target:        cdb.GetStrPtr(MachineTenantReportedIssueAlertID),
 		Message:       msg,
 		TenantMessage: cdb.GetStrPtr(fmt.Sprintf("TenantReportedIssue: %s", *mhi.Summary)),
 		Classifications: []string{
-			"PreventAllocations",
-			"PreventInstanceDeletion",
-			"SuppressExternalAlerting",
+			MachineAlertClassificationPreventAllocations,
+			MachineAlertClassificationPreventInstanceDeletion,
+			MachineAlertClassificationSuppressExternalAlerting,
 		},
 	}
 	hr := &cwssaws.HealthReport{
@@ -312,6 +318,13 @@ func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID s
 			Report: hr,
 			Mode:   cwssaws.OverrideMode_Replace,
 		},
+	}, nil
+}
+
+func (mur APIMachineUpdateRequest) ToRemoveHealthReportOverrideProto(machineID string) (*cwssaws.RemoveHealthReportOverrideRequest, error) {
+	return &cwssaws.RemoveHealthReportOverrideRequest{
+		MachineId: &cwssaws.MachineId{Id: machineID},
+		Source:    MachineOnlineRepairHealthOverrideSourceTenant,
 	}, nil
 }
 

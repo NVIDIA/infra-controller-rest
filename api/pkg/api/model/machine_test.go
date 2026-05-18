@@ -816,3 +816,115 @@ func TestAPIMachineUpdateRequest_Validate(t *testing.T) {
 		})
 	}
 }
+
+func TestAPIMachineUpdateRequest_ToInsertHealthReportOverrideProto(t *testing.T) {
+	type fields struct {
+		HealthIssue *APIMachineHealthIssue
+	}
+	tests := []struct {
+		name      string
+		machineID string
+		fields    fields
+		wantErr   bool
+	}{
+		{
+			name:      "maps Storage health issue to proto payload with STORAGE issue_category",
+			machineID: "161c4de4-afb3-4839-a5bd-305f9dea8744",
+			fields: fields{
+				HealthIssue: &APIMachineHealthIssue{
+					Category: HealthIssueStorage,
+					Summary:  cdb.GetStrPtr("storage subsystem degraded"),
+					Details:  cdb.GetStrPtr("disk SMART errors in slot 2"),
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "maps Hardware health issue to proto payload with HARDWARE issue_category",
+			machineID: "261c4de4-afb3-4839-a5bd-305f9dea87445",
+			fields: fields{
+				HealthIssue: &APIMachineHealthIssue{
+					Category: HealthIssueHardware,
+					Summary:  cdb.GetStrPtr("NIC link flapping"),
+					Details:  cdb.GetStrPtr("port 1 logs attached"),
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mur := APIMachineUpdateRequest{
+				HealthIssue: tt.fields.HealthIssue,
+			}
+			got, err := mur.ToInsertHealthReportOverrideProto(tt.machineID)
+			require.Equal(t, tt.wantErr, err != nil, "error: %v", err)
+			if tt.wantErr {
+				return
+			}
+			require.NotNil(t, got)
+			require.NotNil(t, got.MachineId)
+			assert.Equal(t, tt.machineID, got.MachineId.Id)
+			require.NotNil(t, got.Override)
+			assert.Equal(t, cwssaws.OverrideMode_Replace, got.Override.Mode)
+			require.NotNil(t, got.Override.Report)
+			assert.Equal(t, MachineOnlineRepairHealthOverrideSourceTenant, got.Override.Report.Source)
+
+			require.Len(t, got.Override.Report.Alerts, 1)
+			alert := got.Override.Report.Alerts[0]
+			assert.Equal(t, MachineHealthAlertIDOnlineRepair, alert.Id)
+			require.NotNil(t, alert.Target)
+			assert.Equal(t, MachineTenantReportedIssueAlertID, *alert.Target)
+
+			mhi := tt.fields.HealthIssue
+			require.NotNil(t, mhi)
+			require.NotNil(t, alert.TenantMessage)
+			assert.Equal(t, "TenantReportedIssue: "+*mhi.Summary, *alert.TenantMessage)
+			assert.Equal(t, []string{
+				MachineAlertClassificationPreventAllocations,
+				MachineAlertClassificationPreventInstanceDeletion,
+				MachineAlertClassificationSuppressExternalAlerting,
+			}, alert.Classifications)
+
+			var payload struct {
+				Details       string `json:"details"`
+				IssueCategory string `json:"issue_category"`
+				Summary       string `json:"summary"`
+			}
+			require.NoError(t, json.Unmarshal([]byte(alert.Message), &payload))
+			assert.Equal(t, *mhi.Details, payload.Details)
+			assert.Equal(t, ValidHealthIssueCategoriesMap[mhi.Category], payload.IssueCategory)
+			assert.Equal(t, *mhi.Summary, payload.Summary)
+		})
+	}
+}
+
+func TestAPIMachineUpdateRequest_ToRemoveHealthReportOverrideProto(t *testing.T) {
+	tests := []struct {
+		name       string
+		machineID  string
+		wantSource string
+	}{
+		{
+			name:       "builds remove request with machine id and tenant-reported-issue source",
+			machineID:  "aabbccdd-eeff-0011-2233-445566778899",
+			wantSource: MachineOnlineRepairHealthOverrideSourceTenant,
+		},
+		{
+			name:       "builds remove request for another machine id",
+			machineID:  "bbccddee-ff00-1122-3344-556677889900",
+			wantSource: MachineOnlineRepairHealthOverrideSourceTenant,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mur := APIMachineUpdateRequest{}
+			got, err := mur.ToRemoveHealthReportOverrideProto(tt.machineID)
+			require.NoError(t, err)
+			require.NotNil(t, got)
+			require.NotNil(t, got.MachineId)
+			assert.Equal(t, tt.machineID, got.MachineId.Id)
+			assert.Equal(t, tt.wantSource, got.GetSource())
+		})
+	}
+}

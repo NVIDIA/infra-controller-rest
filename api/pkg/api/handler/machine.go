@@ -1467,9 +1467,10 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance after clearing online repair", nil)
 			}
 
-			rmReq := &cwssaws.RemoveHealthReportOverrideRequest{
-				MachineId: &cwssaws.MachineId{Id: machine.ID},
-				Source:    model.MachineOnlineRepairHealthOverrideSourceTenant,
+			rmReq, err := apiRequest.ToRemoveHealthReportOverrideProto(machine.ID)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to build remove online repair health override request")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to build remove online repair request", nil)
 			}
 
 			wfOpts := temporalClient.StartWorkflowOptions{
