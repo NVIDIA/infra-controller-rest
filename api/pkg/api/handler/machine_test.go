@@ -2627,7 +2627,10 @@ func TestMachineHandler_Update(t *testing.T) {
 					}
 				}
 
-				assert.NotEqual(t, rst.Updated.String(), tt.args.reqMachine.Updated.String())
+				// Online repair updates Instance (and Site workflow); Machine row may not be touched, so Updated can match.
+				if tt.args.verifyOnlineRepair == nil {
+					assert.NotEqual(t, rst.Updated.String(), tt.args.reqMachine.Updated.String())
+				}
 
 				mitDAO := cdbm.NewMachineInstanceTypeDAO(dbSession)
 
