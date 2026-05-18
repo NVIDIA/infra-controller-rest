@@ -70,6 +70,11 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypeNVLSwitch,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nsmprovider.ProviderName},
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityPowerControl,
+		},
 	}
 }
 
