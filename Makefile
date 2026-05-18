@@ -178,7 +178,7 @@ flow-mock-server-stop:
 	-rm -f build/mock-flow.pid
 
 test-site-agent: core-mock-server-start flow-mock-server-start
-	cd site-agent/pkg/components && CGO_ENABLED=1 go test -p 1 ./... -count=1 ; \
+	cd site-agent/pkg/components && CGO_ENABLED=1 go test -race -p 1 ./... -count=1 ; \
 	ret=$$? ; cd ../../.. && $(MAKE) core-mock-server-stop flow-mock-server-stop ; exit $$ret
 
 test-api:

@@ -296,7 +296,7 @@ func (meps *ManageExpectedPowerShelf) CreateExpectedPowerShelfOnSite(ctx context
 	}
 	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	// Call NICo gRPC endpoint
+	// Call Core gRPC endpoint
 	_, err = grpcServiceClient.AddExpectedPowerShelf(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Power Shelf using Core gRPC API")

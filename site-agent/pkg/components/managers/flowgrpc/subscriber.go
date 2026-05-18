@@ -117,7 +117,7 @@ func (flowgrpc *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered CancelTask activity")
 
 	// Register the tray subscribers here
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Registering tray workflows")
+	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Registering tray workflows")
 
 	// Register Tray workflows
 

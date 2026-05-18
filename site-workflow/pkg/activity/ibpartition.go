@@ -144,7 +144,7 @@ func (mibp *ManageInfiniBandPartition) CreateInfiniBandPartitionOnSite(ctx conte
 	}
 	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	// Call NICo gRPC endpoint
+	// Call Core gRPC endpoint
 	_, err = grpcServiceClient.CreateIBPartition(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create InfiniBand Partition using Core gRPC API")

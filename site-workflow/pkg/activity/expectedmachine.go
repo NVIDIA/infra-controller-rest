@@ -296,7 +296,7 @@ func (mem *ManageExpectedMachine) CreateExpectedMachineOnSite(ctx context.Contex
 	}
 	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	// Call NICo gRPC endpoint
+	// Call Core gRPC endpoint
 	_, err = grpcServiceClient.AddExpectedMachine(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Machine using Core gRPC API")

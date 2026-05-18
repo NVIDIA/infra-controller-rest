@@ -296,7 +296,7 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 	}
 	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	// Call NICo gRPC endpoint
+	// Call Core gRPC endpoint
 	_, err = grpcServiceClient.AddExpectedSwitch(ctx, request)
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Switch using Core gRPC API")
