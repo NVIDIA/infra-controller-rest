@@ -64,8 +64,15 @@ const (
 	ServerTLS
 	// MutualTLS for mutual tls
 	MutualTLS
+
 	// defaultCheckCertificateIntervalSeconds is the default interval to check for certificate changes
 	defaultCheckCertificateIntervalSeconds = 15 * 60 // 15 minutes in seconds
+
+	// gRPC client default dial timeout
+	defaultCoreGrpcDialTimeoutSeconds = 5 // 5 seconds
+
+	// Core gRPC client default retry interval
+	CoreGrpcConnectionRetryIntervalSeconds = 5 // 5 seconds
 )
 
 // CoreGrpcClientConfig is the data structure for the client configuration
@@ -86,7 +93,8 @@ type CoreGrpcClientConfig struct {
 	ClientMetrics Metrics
 }
 
-// NewCoreGrpcClient creates a new CoreGrpcClient
+// NewCoreGrpcClient creates a new Core gRPC client, this is called by Site Agent startup code and cert reload routine
+// Caller is responsible for retrying connection failure
 func NewCoreGrpcClient(config *CoreGrpcClientConfig) (client *CoreGrpcClient, err error) {
 	// Validate the config
 	if config.Address == "" {
@@ -207,7 +215,7 @@ func NewCoreGrpcClient(config *CoreGrpcClientConfig) (client *CoreGrpcClient, er
 	log.Info().Msg("CoreGrpcClient: Client created")
 
 	// Check the version of the server
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(5000)*time.Millisecond))
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(defaultCoreGrpcDialTimeoutSeconds)*time.Second))
 	defer cancel()
 	_, err = client.grpcServiceClient.Version(ctx, &wflows.VersionRequest{})
 	if err != nil {
@@ -308,9 +316,11 @@ func (cac *CoreGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initi
 		}
 
 		if changed {
+			// If this fails then Site Agent will not be able to connect to the Core gRPC server, we need to reduce the ticker interval to 1 second and log an error
 			newClient, err := NewCoreGrpcClient(cac.Config)
 			if err != nil {
-				logger.Error().Err(err).Msg("Failed to reinitialize gRPC client with new certificates")
+				logger.Error().Err(err).Msgf("Failed to reinitialize gRPC client with new certificates, retrying again in %d seconds", CoreGrpcConnectionRetryIntervalSeconds)
+				ticker.Reset(CoreGrpcConnectionRetryIntervalSeconds * time.Second)
 				continue
 			}
 
@@ -334,6 +344,9 @@ func (cac *CoreGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initi
 
 			// Update the stored MD5 hashes with the new ones for the next comparison.
 			lastClientCertMD5, lastServerCAMD5 = newClientMD5, newServerMD5
+
+			// Reset the ticker interval to the default
+			ticker.Reset(getCertificateCheckInterval())
 		}
 	}
 }

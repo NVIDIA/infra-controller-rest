@@ -73,21 +73,21 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if conf.CoreGrpc.Address == "" {
 		conf.CoreGrpc.Address = "core-grpc.nico-system.svc.cluster.local:1079"
 	}
-	coreGrpcSecOpt := os.Getenv("CORE_GRPC_SEC_OPT")
-	if coreGrpcSecOpt == "" {
-		coreGrpcSecOpt = os.Getenv("CARBIDE_SEC_OPT") // TODO: remove once deployment config repo is updated
+
+	coreGrpcSecOptStr := os.Getenv("CORE_GRPC_SEC_OPT")
+	if coreGrpcSecOptStr == "" {
+		coreGrpcSecOptStr = os.Getenv("CARBIDE_SEC_OPT") // TODO: remove once deployment config repo is updated
 	}
-	cSecOpt, err := strconv.Atoi(coreGrpcSecOpt)
+	coreGrpcSecOpt, err := strconv.Atoi(coreGrpcSecOptStr)
 	if err != nil {
-		log.Info().Msg(err.Error())
-		cSecOpt = int(client.ServerTLS)
+		log.Info().Err(err).Msg("Invalid Core gRPC security option, using server TLS as default")
+		coreGrpcSecOpt = int(client.ServerTLS)
 	}
-	if cSecOpt < int(client.InsecureGrpc) && cSecOpt > int(client.MutualTLS) {
-		cSecOpt = int(client.ServerTLS)
+	if coreGrpcSecOpt < int(client.InsecureGrpc) && coreGrpcSecOpt > int(client.MutualTLS) {
+		coreGrpcSecOpt = int(client.ServerTLS)
 	}
-	sOpt := 0
-	flag.IntVar(&sOpt, "coreGrpcSecureOptions", cSecOpt, "Core gRPC security option")
-	conf.CoreGrpc.Secure = client.SecureOptions(sOpt)
+	flag.IntVar(&coreGrpcSecOpt, "coreGrpcSecureOptions", coreGrpcSecOpt, "Core gRPC security option") // This is a no-op, just defines the flag
+	conf.CoreGrpc.Secure = client.SecureOptions(coreGrpcSecOpt)
 
 	coreGrpcCACertPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
 	if coreGrpcCACertPath == "" {
@@ -125,17 +125,20 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if conf.FlowGrpc.Address == "" {
 		conf.FlowGrpc.Address = "flow.flow.svc.cluster.local:50051"
 	}
-	flowGrpcSecOpt, err := strconv.Atoi(os.Getenv("FLOW_GRPC_SEC_OPT"))
+
+	flowGrpcSecOptStr := os.Getenv("FLOW_GRPC_SEC_OPT")
+	if flowGrpcSecOptStr == "" {
+		flowGrpcSecOptStr = os.Getenv("FLOW_SEC_OPT") // TODO: remove once deployment config repo is updated
+	}
+	flowGrpcSecOpt, err := strconv.Atoi(flowGrpcSecOptStr)
 	if err != nil {
-		log.Info().Msg("Invalid Flow gRPC security option, using default")
+		log.Info().Err(err).Msg("Invalid Flow gRPC security option, using server TLS as default")
 		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
 	if flowGrpcSecOpt < int(client.FlowInsecureGrpc) || flowGrpcSecOpt > int(client.FlowMutualTLS) {
 		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
-
-	flowGrpcSecOpt = 0
-	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option")
+	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option") // This is a no-op, just defines the flag
 	conf.FlowGrpc.Secure = client.FlowGrpcClientSecureOptions(flowGrpcSecOpt)
 
 	flowGrpcCACertPath := os.Getenv("FLOW_GRPC_CA_CERT_PATH")

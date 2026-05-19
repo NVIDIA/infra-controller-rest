@@ -19,25 +19,29 @@ package flowgrpc
 
 import (
 	"fmt"
+	"time"
 
 	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
-	// MetricFlowStatus - Metric Flow Status
-	MetricFlowStatus = "flow_health_status"
+	// MetricFlowStatus is the metric name for the Flow gRPC health status
+	MetricFlowStatus = "flow_grpc_health_status"
+
+	// Flow gRPC client default retry interval
+	FlowGrpcConnectionRetryIntervalSeconds = 5 // 5 seconds
 )
 
-// Init - initialize Flow manager
+// Init initializes the Flow gRPC client manager
 func (flowgrpc *API) Init() {
 	// Check if Flow is enabled via environment variable
 	if !ManagerAccess.Conf.EB.FlowGrpc.Enabled {
-		ManagerAccess.Data.EB.Log.Info().Msg("Flow: Flow is disabled, skipping initialization")
+		ManagerAccess.Data.EB.Log.Info().Msg("Flow: Flow gRPC is disabled, skipping initialization")
 		return
 	}
 
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Initializing Flow manager")
+	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Initializing Flow gRPC client manager")
 
 	prometheus.MustRegister(
 		prometheus.NewGaugeFunc(prometheus.GaugeOpts{
@@ -48,30 +52,37 @@ func (flowgrpc *API) Init() {
 			func() float64 {
 				return float64(ManagerAccess.Data.EB.Managers.FlowGrpc.State.HealthStatus.Load())
 			}))
+
 	ManagerAccess.Data.EB.Managers.FlowGrpc.State.HealthStatus.Store(uint64(computils.CompNotKnown))
 
 	// initialize workflow metrics
 	ManagerAccess.Data.EB.Managers.FlowGrpc.State.WflowMetrics = newWorkflowMetrics()
 }
 
-// Start - Start Flow manager
+// Start starts the Flow gRPC client manager
 func (flowgrpc *API) Start() {
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: Starting Flow gRPC client")
+	ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: Starting Flow gRPC client manager")
 
 	// Check if Flow is enabled via environment variable
 	if !ManagerAccess.Conf.EB.FlowGrpc.Enabled {
-		ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: Flow is disabled, skipping gRPC client initialization")
+		ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: Flow gRPC is disabled, skipping initialization")
 		return
 	}
 
-	// Create the client here
-	// Each workflow will check and reinitialize the client if needed
-	if err := flowgrpc.CreateGrpcClient(); err != nil {
-		ManagerAccess.Data.EB.Log.Error().Msgf("Flow gRPC: failed to create gRPC client: %v", err)
+	// Keep retrying to create the client until it succeeds
+	for {
+		err := flowgrpc.CreateGrpcClient()
+		if err != nil {
+			ManagerAccess.Data.EB.Log.Error().Msgf("Flow gRPC: failed to create gRPC client: %v", err)
+			time.Sleep(FlowGrpcConnectionRetryIntervalSeconds * time.Second)
+			continue
+		}
+		ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: successfully created gRPC client")
+		break
 	}
 }
 
-// GetState Machine
+// GetState returns the current state of the Flow gRPC client manager
 func (flowgrpc *API) GetState() []string {
 	state := ManagerAccess.Data.EB.Managers.FlowGrpc.State
 	var strs []string
@@ -83,7 +94,7 @@ func (flowgrpc *API) GetState() []string {
 	return strs
 }
 
-// GetGrpcClientVersion returns the current version of the gRPC client
+// GetGrpcClientVersion returns the current version of the Flow gRPC client
 func (flowgrpc *API) GetGrpcClientVersion() int64 {
 	return ManagerAccess.Data.EB.Managers.FlowGrpc.Client.Version()
 }
