@@ -496,7 +496,7 @@ func Test_expectedSwitchToFlowComponent(t *testing.T) {
 			HostId:             int32Ptr(0),
 		}
 		component := expectedSwitchToFlowComponent(es)
-		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH, component.Type)
 		assert.Equal(t, "es-001", component.Info.Id.Id)
 		assert.Equal(t, "SW-001", component.Info.SerialNumber)
 		assert.Equal(t, "nvl-switch-1", component.Info.Name)
@@ -521,7 +521,7 @@ func Test_expectedSwitchToFlowComponent(t *testing.T) {
 			SwitchSerialNumber: "SW-002",
 		}
 		component := expectedSwitchToFlowComponent(es)
-		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH, component.Type)
+		assert.Equal(t, flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH, component.Type)
 		assert.Empty(t, component.Info.Name)
 		assert.Empty(t, component.Info.Manufacturer)
 		assert.Nil(t, component.Info.Model)

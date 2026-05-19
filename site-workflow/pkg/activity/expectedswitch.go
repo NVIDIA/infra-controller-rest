@@ -385,7 +385,7 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnFlow(ctx context.Context,
 // expectedSwitchToFlowComponent converts a NICo ExpectedSwitch proto to an Flow Component proto
 func expectedSwitchToFlowComponent(es *cwssaws.ExpectedSwitch) *flowv1.Component {
 	component := &flowv1.Component{
-		Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+		Type: flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH,
 		Info: &flowv1.DeviceInfo{
 			Id:           &flowv1.UUID{Id: es.GetExpectedSwitchId().GetValue()},
 			SerialNumber: es.GetSwitchSerialNumber(),

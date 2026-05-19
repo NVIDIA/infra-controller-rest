@@ -36,7 +36,7 @@ var _ MappedNullable = &ComponentDiff{}
 
 // ComponentDiff A single component difference found during rack validation
 type ComponentDiff struct {
-	// Type of difference: Unknown, Missing, Unexpected, or Drift
+	// Type of difference: Unknown, Missing, Unexpected, or Mismatch
 	Type *string `json:"type,omitempty"`
 	// Flow internal component UUID
 	Id *string `json:"id,omitempty"`
@@ -44,7 +44,7 @@ type ComponentDiff struct {
 	ComponentId *string        `json:"componentId,omitempty"`
 	Expected    *RackComponent `json:"expected,omitempty"`
 	Actual      *RackComponent `json:"actual,omitempty"`
-	// List of field differences (populated when type is DiffTypeDrift)
+	// List of field differences (populated when type is Mismatch)
 	FieldDiffs []FieldDiff `json:"fieldDiffs,omitempty"`
 }
 

@@ -33,8 +33,8 @@ import (
 	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/mock"
-	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nico"
-	nvlswitchnsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nvswitchmanager"
+	nvswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvswitch/nico"
+	nvswitchnsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvswitch/nvswitchmanager"
 	powershelfnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/nico"
 	powershelfpsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/psm"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
@@ -94,7 +94,7 @@ func TestDefaultServiceComponentManagers(t *testing.T) {
 	componentManagers := defaultServiceComponentManagers()
 
 	assert.Equal(t, computenico.ImplementationName, componentManagers[devicetypes.ComponentTypeCompute])
-	assert.Equal(t, nvlswitchnico.ImplementationName, componentManagers[devicetypes.ComponentTypeNVLSwitch])
+	assert.Equal(t, nvswitchnico.ImplementationName, componentManagers[devicetypes.ComponentTypeNVSwitch])
 	assert.Equal(t, powershelfnico.ImplementationName, componentManagers[devicetypes.ComponentTypePowerShelf])
 
 	componentManagers[devicetypes.ComponentTypeCompute] = "mutated"
@@ -271,7 +271,7 @@ func TestNewComponentManagerRegistryInitializesBuiltInMockManagers(t *testing.T)
 	config := cmconfig.Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
 			devicetypes.ComponentTypeCompute:    mock.ImplementationName,
-			devicetypes.ComponentTypeNVLSwitch:  mock.ImplementationName,
+			devicetypes.ComponentTypeNVSwitch:   mock.ImplementationName,
 			devicetypes.ComponentTypePowerShelf: mock.ImplementationName,
 		},
 	}
@@ -294,7 +294,7 @@ func TestNewComponentManagerRegistryInitializesBuiltInMockManagers(t *testing.T)
 func TestNewComponentManagerRegistryRejectsImplementationForWrongType(t *testing.T) {
 	config := cmconfig.Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
-			devicetypes.ComponentTypeCompute: nvlswitchnsm.ImplementationName,
+			devicetypes.ComponentTypeCompute: nvswitchnsm.ImplementationName,
 		},
 	}
 
@@ -310,7 +310,7 @@ func TestNewComponentManagerRegistryRejectsImplementationForWrongType(t *testing
 	var implErr componentmanager.UnknownComponentManagerImplementationError
 	require.True(t, errors.As(err, &implErr))
 	assert.Equal(t, devicetypes.ComponentTypeCompute, implErr.ComponentType)
-	assert.Equal(t, nvlswitchnsm.ImplementationName, implErr.Implementation)
+	assert.Equal(t, nvswitchnsm.ImplementationName, implErr.Implementation)
 	assert.ElementsMatch(
 		t,
 		[]string{computenico.ImplementationName, mock.ImplementationName},
@@ -318,7 +318,7 @@ func TestNewComponentManagerRegistryRejectsImplementationForWrongType(t *testing
 	)
 	assert.Equal(
 		t,
-		[]devicetypes.ComponentType{devicetypes.ComponentTypeNVLSwitch},
+		[]devicetypes.ComponentType{devicetypes.ComponentTypeNVSwitch},
 		implErr.RegisteredFor,
 	)
 }
@@ -362,10 +362,10 @@ func TestServiceCatalog(t *testing.T) {
 		t,
 		[]string{
 			mock.ImplementationName,
-			nvlswitchnico.ImplementationName,
-			nvlswitchnsm.ImplementationName,
+			nvswitchnico.ImplementationName,
+			nvswitchnsm.ImplementationName,
 		},
-		implementations[devicetypes.ComponentTypeNVLSwitch],
+		implementations[devicetypes.ComponentTypeNVSwitch],
 	)
 	assert.Equal(
 		t,
@@ -400,9 +400,9 @@ func TestServiceCatalog(t *testing.T) {
 			},
 		},
 		{
-			name:              "nvlswitch nico",
-			componentType:     devicetypes.ComponentTypeNVLSwitch,
-			implementation:    nvlswitchnico.ImplementationName,
+			name:              "nvswitch nico",
+			componentType:     devicetypes.ComponentTypeNVSwitch,
+			implementation:    nvswitchnico.ImplementationName,
 			requiredProviders: []string{nicoprovider.ProviderName},
 			capabilities: cmcatalog.CapabilitySet{
 				cmcatalog.CapabilityFirmwareConsistencyCheck,
@@ -414,9 +414,9 @@ func TestServiceCatalog(t *testing.T) {
 			},
 		},
 		{
-			name:              "nvlswitch nvswitchmanager",
-			componentType:     devicetypes.ComponentTypeNVLSwitch,
-			implementation:    nvlswitchnsm.ImplementationName,
+			name:              "nvswitch nvswitchmanager",
+			componentType:     devicetypes.ComponentTypeNVSwitch,
+			implementation:    nvswitchnsm.ImplementationName,
 			requiredProviders: []string{nsmprovider.ProviderName},
 			capabilities: cmcatalog.CapabilitySet{
 				cmcatalog.CapabilityFirmwareControl,
@@ -457,8 +457,8 @@ func TestServiceCatalog(t *testing.T) {
 			capabilities:   mockCapabilities(),
 		},
 		{
-			name:           "nvlswitch mock",
-			componentType:  devicetypes.ComponentTypeNVLSwitch,
+			name:           "nvswitch mock",
+			componentType:  devicetypes.ComponentTypeNVSwitch,
 			implementation: mock.ImplementationName,
 			capabilities:   mockCapabilities(),
 		},

@@ -9741,7 +9741,7 @@ paths:
 
         If no filter is specified, validates all racks in the Site. Filters can narrow the scope to specific racks by name or manufacturer.
 
-        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -9778,7 +9778,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 10
                 example-with-diffs:
                   value:
@@ -9802,7 +9802,7 @@ paths:
                               macAddress: 'AA:BB:CC:DD:EE:01'
                               ipAddress: 10.0.0.101
                           powerState: 'on'
-                      - type: Drift
+                      - type: Mismatch
                         id: 770e8400-e29b-41d4-a716-446655440002
                         componentId: comp-2
                         fieldDiffs:
@@ -9812,7 +9812,7 @@ paths:
                     totalDiffs: 2
                     missingCount: 1
                     unexpectedCount: 0
-                    driftCount: 1
+                    mismatchCount: 1
                     matchCount: 8
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -9841,7 +9841,7 @@ paths:
       description: |-
         Validate a Rack's components by comparing expected vs actual state.
 
-        Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -9866,7 +9866,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 5
                 example-with-diffs:
                   value:
@@ -9890,7 +9890,7 @@ paths:
                               macAddress: 'AA:BB:CC:DD:EE:01'
                               ipAddress: 10.0.0.101
                           powerState: 'on'
-                      - type: Drift
+                      - type: Mismatch
                         id: 770e8400-e29b-41d4-a716-446655440002
                         componentId: comp-2
                         fieldDiffs:
@@ -9900,7 +9900,7 @@ paths:
                     totalDiffs: 2
                     missingCount: 1
                     unexpectedCount: 0
-                    driftCount: 1
+                    mismatchCount: 1
                     matchCount: 3
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -10564,7 +10564,7 @@ paths:
 
         If no filter is specified, validates all trays in the Site. Use rackId/rackName to scope to a specific rack, and name/manufacturer/type to filter by tray attributes.
 
-        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -10630,7 +10630,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 10
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -10659,7 +10659,7 @@ paths:
       description: |-
         Validate a Tray by comparing expected vs actual state.
 
-        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -10684,7 +10684,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 5
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -16729,7 +16729,7 @@ components:
         unexpectedCount:
           type: integer
           description: Number of components found in the source system but not expected
-        driftCount:
+        mismatchCount:
           type: integer
           description: Number of components present in both but with field differences
         matchCount:
@@ -16742,12 +16742,12 @@ components:
       properties:
         type:
           type: string
-          description: 'Type of difference: Unknown, Missing, Unexpected, or Drift'
+          description: 'Type of difference: Unknown, Missing, Unexpected, or Mismatch'
           enum:
             - Unknown
             - Missing
             - Unexpected
-            - Drift
+            - Mismatch
         id:
           type: string
           format: uuid
@@ -16761,7 +16761,7 @@ components:
           $ref: '#/components/schemas/RackComponent'
         fieldDiffs:
           type: array
-          description: List of field differences (populated when type is DiffTypeDrift)
+          description: List of field differences (populated when type is Mismatch)
           items:
             $ref: '#/components/schemas/FieldDiff'
     FieldDiff:
@@ -16796,7 +16796,7 @@ components:
           description: ID of the rack this component belongs to
         type:
           type: string
-          description: Type of the component (e.g. ComponentTypeCompute, ComponentTypeNvlswitch)
+          description: Type of the component (e.g. ComponentTypeCompute, ComponentTypeNVSwitch)
         name:
           type: string
           description: Name of the component
@@ -16849,7 +16849,7 @@ components:
     Tray:
       title: Tray
       type: object
-      description: 'Tray represents a component within a rack (e.g. compute node, NVL switch, power shelf)'
+      description: 'Tray represents a component within a rack (e.g. compute node, NVSwitch, power shelf)'
       examples:
         - id: 660e8400-e29b-41d4-a716-446655440001
           componentId: fm100ht4v4mce2qstjnl8970nnj3ie6ecek4mtjn27pea4kre5gsa49jg0g

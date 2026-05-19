@@ -57,7 +57,7 @@ func init() {
 	componentTypeToMap = map[devicetypes.ComponentType]pb.ComponentType{
 		devicetypes.ComponentTypeUnknown:    pb.ComponentType_COMPONENT_TYPE_UNKNOWN,
 		devicetypes.ComponentTypeCompute:    pb.ComponentType_COMPONENT_TYPE_COMPUTE,
-		devicetypes.ComponentTypeNVLSwitch:  pb.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+		devicetypes.ComponentTypeNVSwitch:   pb.ComponentType_COMPONENT_TYPE_NVSWITCH,
 		devicetypes.ComponentTypePowerShelf: pb.ComponentType_COMPONENT_TYPE_POWERSHELF,
 		devicetypes.ComponentTypeToRSwitch:  pb.ComponentType_COMPONENT_TYPE_TORSWITCH,
 		devicetypes.ComponentTypeUMS:        pb.ComponentType_COMPONENT_TYPE_UMS,

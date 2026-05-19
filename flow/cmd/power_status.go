@@ -51,6 +51,6 @@ func init() {
 	powerStatusCmd.Flags().String("rack-ids", "", "Comma-separated list of rack UUIDs")
 	powerStatusCmd.Flags().String("rack-names", "", "Comma-separated list of rack names")
 	powerStatusCmd.Flags().String("component-ids", "", "Comma-separated list of component IDs")
-	powerStatusCmd.Flags().StringP("type", "t", "", "Component type: compute, nvlswitch, powershelf")
+	powerStatusCmd.Flags().StringP("type", "t", "", "Component type: compute, nvswitch, powershelf")
 	powerStatusCmd.Flags().StringP("output", "o", "json", "Output format: json, table")
 }

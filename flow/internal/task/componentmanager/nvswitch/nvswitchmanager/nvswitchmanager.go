@@ -43,7 +43,7 @@ type Manager struct {
 	nsmClient nsmapi.Client
 }
 
-// New creates a new NV-Switch Manager-based NVLSwitch Manager instance.
+// New creates a new NV-Switch Manager-based NVSwitch Manager instance.
 func New(nsmClient nsmapi.Client) *Manager {
 	return &Manager{
 		nsmClient: nsmClient,
@@ -58,16 +58,16 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 		nsmprovider.ProviderName,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("nvlswitch/nvswitchmanager requires nvswitchmanager provider: %w", err)
+		return nil, fmt.Errorf("nvswitch/nvswitchmanager requires nvswitchmanager provider: %w", err)
 	}
 
 	return New(provider.Client()), nil
 }
 
-// Descriptor returns the NV-Switch Manager NVLSwitch manager descriptor.
+// Descriptor returns the NV-Switch Manager NVSwitch manager descriptor.
 func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypeNVLSwitch,
+		Type:              devicetypes.ComponentTypeNVSwitch,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nsmprovider.ProviderName},
 		Capabilities: cmcatalog.CapabilitySet{
@@ -78,7 +78,7 @@ func Descriptor() cmcatalog.Descriptor {
 	}
 }
 
-// FactorySpec returns the NV-Switch Manager NVLSwitch manager runtime factory
+// FactorySpec returns the NV-Switch Manager NVSwitch manager runtime factory
 // spec.
 func FactorySpec() componentmanager.FactorySpec {
 	return componentmanager.FactorySpec{
@@ -87,7 +87,7 @@ func FactorySpec() componentmanager.FactorySpec {
 	}
 }
 
-// Descriptor returns the NV-Switch Manager NVLSwitch manager descriptor.
+// Descriptor returns the NV-Switch Manager NVSwitch manager descriptor.
 func (m *Manager) Descriptor() cmcatalog.Descriptor {
 	return Descriptor()
 }
@@ -98,7 +98,7 @@ func (m *Manager) InjectExpectation(
 	_ common.Target,
 	_ operations.InjectExpectationTaskInfo,
 ) error {
-	return fmt.Errorf("InjectExpectation not yet implemented for NVLSwitch (nvswitchmanager)")
+	return fmt.Errorf("InjectExpectation not yet implemented for NVSwitch (nvswitchmanager)")
 }
 
 // PowerControl performs power operations on NVLink switches via the NV-Switch Manager API.
@@ -108,7 +108,7 @@ func (m *Manager) PowerControl(
 	info operations.PowerControlTaskInfo,
 ) error {
 	log.Debug().Msgf(
-		"NVLSwitch (nvswitchmanager) power control %s op %s activity received",
+		"NVSwitch (nvswitchmanager) power control %s op %s activity received",
 		target.String(),
 		info.Operation.String(),
 	)

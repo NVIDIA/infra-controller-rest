@@ -502,8 +502,8 @@ func setupValidateTestData(mgr *mockManager) (uuid.UUID, []uuid.UUID) {
 				RackID:          rackID,
 			},
 			{
-				Type:            devicetypes.ComponentTypeNVLSwitch,
-				Info:            deviceinfo.DeviceInfo{ID: comp3ID, Name: "nvlswitch-01", Manufacturer: "Mellanox"},
+				Type:            devicetypes.ComponentTypeNVSwitch,
+				Info:            deviceinfo.DeviceInfo{ID: comp3ID, Name: "nvswitch-01", Manufacturer: "Mellanox"},
 				FirmwareVersion: "2.0.0",
 				RackID:          rackID,
 			},
@@ -560,7 +560,7 @@ func TestValidateComponents_NoFilters(t *testing.T) {
 	// 3 drifts: comp1 mismatch, comp2 missing_in_actual, comp3 mismatch
 	assert.Equal(t, int32(3), resp.TotalDiffs)
 	assert.Equal(t, 3, len(resp.Diffs))
-	assert.Equal(t, int32(2), resp.DriftCount)
+	assert.Equal(t, int32(2), resp.MismatchCount)
 	assert.Equal(t, int32(1), resp.MissingCount)
 }
 
@@ -589,10 +589,10 @@ func TestValidateComponents_WithTypeFilter(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	// Only comp1 (mismatch) and comp2 (missing_in_actual) are compute; comp3 (nvlswitch) is filtered out
+	// Only comp1 (mismatch) and comp2 (missing_in_actual) are compute; comp3 (nvswitch) is filtered out
 	assert.Equal(t, int32(2), resp.TotalDiffs)
 	assert.Equal(t, 2, len(resp.Diffs))
-	assert.Equal(t, int32(1), resp.DriftCount)
+	assert.Equal(t, int32(1), resp.MismatchCount)
 	assert.Equal(t, int32(1), resp.MissingCount)
 }
 
@@ -624,7 +624,7 @@ func TestValidateComponents_WithNameFilter(t *testing.T) {
 	// Only comp1 (compute-01) matches the name filter
 	assert.Equal(t, int32(1), resp.TotalDiffs)
 	assert.Equal(t, 1, len(resp.Diffs))
-	assert.Equal(t, int32(1), resp.DriftCount) // comp1 is mismatch
+	assert.Equal(t, int32(1), resp.MismatchCount) // comp1 is a mismatch
 	assert.Equal(t, int32(0), resp.UnexpectedCount)
 }
 
@@ -653,9 +653,9 @@ func TestValidateComponents_WithManufacturerFilter(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	// Only comp3 (nvlswitch-01, Mellanox) matches
+	// Only comp3 (nvswitch-01, Mellanox) matches
 	assert.Equal(t, int32(1), resp.TotalDiffs)
-	assert.Equal(t, int32(1), resp.DriftCount) // comp3 is mismatch
+	assert.Equal(t, int32(1), resp.MismatchCount) // comp3 is a mismatch
 }
 
 func TestValidateComponents_WithPagination(t *testing.T) {

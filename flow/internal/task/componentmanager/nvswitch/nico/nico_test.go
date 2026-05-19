@@ -76,7 +76,7 @@ func TestInjectExpectation(t *testing.T) {
 			m := New(tc.client)
 
 			target := common.Target{
-				Type:         devicetypes.ComponentTypeNVLSwitch,
+				Type:         devicetypes.ComponentTypeNVSwitch,
 				ComponentIDs: []string{"switch-1"},
 			}
 
@@ -97,7 +97,7 @@ func TestPowerControl(t *testing.T) {
 	m := New(nicoapi.NewMockClient())
 
 	target := common.Target{
-		Type:         devicetypes.ComponentTypeNVLSwitch,
+		Type:         devicetypes.ComponentTypeNVSwitch,
 		ComponentIDs: []string{"switch-1", "switch-2"},
 	}
 
@@ -111,7 +111,7 @@ func TestFirmwareControl(t *testing.T) {
 	m := New(nicoapi.NewMockClient())
 
 	target := common.Target{
-		Type:         devicetypes.ComponentTypeNVLSwitch,
+		Type:         devicetypes.ComponentTypeNVSwitch,
 		ComponentIDs: []string{"switch-1"},
 	}
 
@@ -125,7 +125,7 @@ func TestGetFirmwareStatus(t *testing.T) {
 	m := New(nicoapi.NewMockClient())
 
 	target := common.Target{
-		Type:         devicetypes.ComponentTypeNVLSwitch,
+		Type:         devicetypes.ComponentTypeNVSwitch,
 		ComponentIDs: []string{"switch-1"},
 	}
 

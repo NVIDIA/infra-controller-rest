@@ -209,7 +209,7 @@ func TestComponentFilterEqual(t *testing.T) {
 	typesAB := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindTypes, Types: []string{"COMPUTE", "POWERSHELF"}})
 	typesBA := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindTypes, Types: []string{"POWERSHELF", "COMPUTE"}})
 	typesA := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindTypes, Types: []string{"COMPUTE"}})
-	typesC := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindTypes, Types: []string{"NVLSwitch"}})
+	typesC := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindTypes, Types: []string{"NVSwitch"}})
 
 	compsAB := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindComponents, Components: []uuid.UUID{compA, compB}})
 	compsBA := mustMarshalFilter(t, &ComponentFilter{Kind: ComponentFilterKindComponents, Components: []uuid.UUID{compB, compA}})

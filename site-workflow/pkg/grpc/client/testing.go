@@ -1664,7 +1664,7 @@ func (mfgsc *MockFlowGrpcServiceClient) ValidateComponents(ctx context.Context, 
 		TotalDiffs:      0,
 		MissingCount:    0,
 		UnexpectedCount: 0,
-		DriftCount:      0,
+		MismatchCount:   0,
 		MatchCount:      0,
 	}
 	return out, nil

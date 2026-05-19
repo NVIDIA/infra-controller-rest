@@ -46,7 +46,7 @@ type Manager struct {
 	nicoClient nicoapi.Client
 }
 
-// New creates a new NICo-based NVLSwitch Manager instance.
+// New creates a new NICo-based NVSwitch Manager instance.
 func New(nicoClient nicoapi.Client) *Manager {
 	return &Manager{
 		nicoClient: nicoClient,
@@ -61,16 +61,16 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 		nicoprovider.ProviderName,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("nvlswitch/nico requires nico provider: %w", err)
+		return nil, fmt.Errorf("nvswitch/nico requires nico provider: %w", err)
 	}
 
 	return New(provider.Client()), nil
 }
 
-// Descriptor returns the NICo NVLSwitch manager descriptor.
+// Descriptor returns the NICo NVSwitch manager descriptor.
 func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypeNVLSwitch,
+		Type:              devicetypes.ComponentTypeNVSwitch,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nicoprovider.ProviderName},
 		Capabilities: cmcatalog.CapabilitySet{
@@ -84,7 +84,7 @@ func Descriptor() cmcatalog.Descriptor {
 	}
 }
 
-// FactorySpec returns the NICo NVLSwitch manager runtime factory spec.
+// FactorySpec returns the NICo NVSwitch manager runtime factory spec.
 func FactorySpec() componentmanager.FactorySpec {
 	return componentmanager.FactorySpec{
 		Descriptor: Descriptor(),
@@ -92,7 +92,7 @@ func FactorySpec() componentmanager.FactorySpec {
 	}
 }
 
-// Descriptor returns the NICo NVLSwitch manager descriptor.
+// Descriptor returns the NICo NVSwitch manager descriptor.
 func (m *Manager) Descriptor() cmcatalog.Descriptor {
 	return Descriptor()
 }
@@ -141,7 +141,7 @@ func (m *Manager) PowerControl(
 	info operations.PowerControlTaskInfo,
 ) error {
 	log.Debug().Msgf(
-		"NVLSwitch power control %s op %s via NICo",
+		"NVSwitch power control %s op %s via NICo",
 		target.String(),
 		info.Operation.String(),
 	)
@@ -163,7 +163,7 @@ func (m *Manager) PowerControl(
 	case operations.PowerOperationForceRestart:
 		action = pb.SystemPowerControl_SYSTEM_POWER_CONTROL_FORCE_RESTART
 	default:
-		return fmt.Errorf("unsupported power operation for NVLSwitch: %v", info.Operation)
+		return fmt.Errorf("unsupported power operation for NVSwitch: %v", info.Operation)
 	}
 
 	req := &pb.ComponentPowerControlRequest{
@@ -184,7 +184,7 @@ func (m *Manager) PowerControl(
 		}
 	}
 
-	log.Info().Msgf("NVLSwitch power control %s on %s completed via NICo",
+	log.Info().Msgf("NVSwitch power control %s on %s completed via NICo",
 		info.Operation.String(), target.String())
 	return nil
 }
@@ -250,7 +250,7 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	log.Debug().
 		Str("components", target.String()).
 		Str("target_version", info.TargetVersion).
-		Msg("Starting firmware update for NVLSwitch via NICo")
+		Msg("Starting firmware update for NVSwitch via NICo")
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
@@ -259,11 +259,11 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	if info.TargetVersion == "" {
 		upToDate, err := m.checkFirmwareUpToDate(ctx, target)
 		if err != nil {
-			log.Warn().Err(err).Msg("NVLSwitch idempotency check failed, proceeding with update")
+			log.Warn().Err(err).Msg("NVSwitch idempotency check failed, proceeding with update")
 		} else if upToDate {
 			log.Info().
 				Str("components", target.String()).
-				Msg("All NVLSwitch firmware already at desired version, skipping update")
+				Msg("All NVSwitch firmware already at desired version, skipping update")
 			return nil
 		}
 	}
@@ -291,7 +291,7 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	log.Info().
 		Str("components", target.String()).
 		Str("target_version", info.TargetVersion).
-		Msg("Firmware update started for NVLSwitch via NICo")
+		Msg("Firmware update started for NVSwitch via NICo")
 	return nil
 }
 
@@ -327,7 +327,7 @@ func (m *Manager) checkFirmwareUpToDate(ctx context.Context, target common.Targe
 
 // getActualFirmwareVersions queries GetComponentInventory for the target
 // switches and extracts firmware versions from the exploration reports.
-// report.FirmwareVersions is empty for NVLSwitches (Core's FirmwareConfig
+// report.FirmwareVersions is empty for NVSwitches (Core's FirmwareConfig
 // only covers host/DPU), so fall back to the raw Redfish FirmwareInventory
 // entries in report.Service[].Inventories[], keyed by Inventory.Id.
 func (m *Manager) getActualFirmwareVersions(ctx context.Context, target common.Target) (map[string]map[string]string, error) {
@@ -392,7 +392,7 @@ func (m *Manager) VerifyFirmwareConsistency(ctx context.Context, target common.T
 			referenceJSON = currentJSON
 		} else if currentJSON != referenceJSON {
 			return fmt.Errorf(
-				"NVLSwitch firmware versions are inconsistent: switch %s has %s, expected %s",
+				"NVSwitch firmware versions are inconsistent: switch %s has %s, expected %s",
 				id, currentJSON, referenceJSON,
 			)
 		}
@@ -401,7 +401,7 @@ func (m *Manager) VerifyFirmwareConsistency(ctx context.Context, target common.T
 	log.Info().
 		Int("switch_count", len(target.ComponentIDs)).
 		Str("firmware_versions", referenceJSON).
-		Msg("All NVLSwitch firmware versions are consistent")
+		Msg("All NVSwitch firmware versions are consistent")
 	return nil
 }
 
@@ -429,7 +429,7 @@ func firmwareVersionsMatch(desired, actual map[string]string) bool {
 func (m *Manager) GetFirmwareStatus(ctx context.Context, target common.Target) (map[string]operations.FirmwareUpdateStatus, error) {
 	log.Debug().
 		Str("components", target.String()).
-		Msg("GetFirmwareStatus called for NVLSwitch")
+		Msg("GetFirmwareStatus called for NVSwitch")
 
 	if err := target.Validate(); err != nil {
 		return nil, fmt.Errorf("target is invalid: %w", err)
@@ -528,7 +528,7 @@ func (m *Manager) BringUpControl(
 ) error {
 	log.Info().
 		Str("components", target.String()).
-		Msg("NVLSwitch BringUpControl: placeholder")
+		Msg("NVSwitch BringUpControl: placeholder")
 	return nil
 }
 
@@ -538,7 +538,7 @@ func (m *Manager) GetBringUpStatus(
 ) (map[string]operations.MachineBringUpState, error) {
 	log.Info().
 		Str("components", target.String()).
-		Msg("NVLSwitch GetBringUpStatus: placeholder")
+		Msg("NVSwitch GetBringUpStatus: placeholder")
 
 	result := make(
 		map[string]operations.MachineBringUpState,
