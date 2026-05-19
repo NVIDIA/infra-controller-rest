@@ -41,9 +41,9 @@ type MachineHealthIssue struct {
 	// High-level category for the tenant-reported issue.
 	Category string `json:"category"`
 	// Brief description of the issue for operators.
-	Summary string `json:"summary"`
+	Summary NullableString `json:"summary"`
 	// Diagnostic information, logs, ticket numbers, etc.
-	Details string `json:"details"`
+	Details NullableString `json:"details"`
 }
 
 type _MachineHealthIssue MachineHealthIssue
@@ -52,7 +52,7 @@ type _MachineHealthIssue MachineHealthIssue
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewMachineHealthIssue(category string, summary string, details string) *MachineHealthIssue {
+func NewMachineHealthIssue(category string, summary NullableString, details NullableString) *MachineHealthIssue {
 	this := MachineHealthIssue{}
 	this.Category = category
 	this.Summary = summary
@@ -93,51 +93,55 @@ func (o *MachineHealthIssue) SetCategory(v string) {
 }
 
 // GetSummary returns the Summary field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MachineHealthIssue) GetSummary() string {
-	if o == nil {
+	if o == nil || o.Summary.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Summary
+	return *o.Summary.Get()
 }
 
 // GetSummaryOk returns a tuple with the Summary field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineHealthIssue) GetSummaryOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Summary, true
+	return o.Summary.Get(), o.Summary.IsSet()
 }
 
 // SetSummary sets field value
 func (o *MachineHealthIssue) SetSummary(v string) {
-	o.Summary = v
+	o.Summary.Set(&v)
 }
 
 // GetDetails returns the Details field value
+// If the value is explicit nil, the zero value for string will be returned
 func (o *MachineHealthIssue) GetDetails() string {
-	if o == nil {
+	if o == nil || o.Details.Get() == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Details
+	return *o.Details.Get()
 }
 
 // GetDetailsOk returns a tuple with the Details field value
 // and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *MachineHealthIssue) GetDetailsOk() (*string, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return &o.Details, true
+	return o.Details.Get(), o.Details.IsSet()
 }
 
 // SetDetails sets field value
 func (o *MachineHealthIssue) SetDetails(v string) {
-	o.Details = v
+	o.Details.Set(&v)
 }
 
 func (o MachineHealthIssue) MarshalJSON() ([]byte, error) {
@@ -151,8 +155,8 @@ func (o MachineHealthIssue) MarshalJSON() ([]byte, error) {
 func (o MachineHealthIssue) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	toSerialize["category"] = o.Category
-	toSerialize["summary"] = o.Summary
-	toSerialize["details"] = o.Details
+	toSerialize["summary"] = o.Summary.Get()
+	toSerialize["details"] = o.Details.Get()
 	return toSerialize, nil
 }
 

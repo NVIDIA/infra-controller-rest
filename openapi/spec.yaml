@@ -17479,11 +17479,15 @@ components:
             - Other
           description: High-level category for the tenant-reported issue.
         summary:
-          type: string
+          type: 
+            - string
+            - 'null'
           maxLength: 512
           description: Brief description of the issue for operators.
         details:
-          type: string
+          type: 
+            - string
+            - 'null'
           maxLength: 8192
           description: Diagnostic information, logs, ticket numbers, etc.
     MachineOnlineRepairPolicy:

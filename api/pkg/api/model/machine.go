@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -49,6 +50,10 @@ const (
 	MachineHealthAlertIDOnlineRepair = "OnLineRepair"
 	// TenantReportedIssueAlertID is the ID of the tenant-reported issue health alert.
 	MachineTenantReportedIssueAlertID = "tenant-reported"
+	// MachineHealthIssueSummaryMaxLength is the maximum length of the summary of the MachineHealthIssue.
+	MachineHealthIssueSummaryMaxLength = 512
+	// MachineHealthIssueDetailsMaxLength is the maximum length of the details of the MachineHealthIssue.
+	MachineHealthIssueDetailsMaxLength = 8192
 )
 
 const (
@@ -239,13 +244,13 @@ func (mur APIMachineUpdateRequest) Validate() error {
 				}
 				if mhi.Summary == nil || *mhi.Summary == "" {
 					verr["healthIssue.summary"] = errors.New("summary is required")
-				} else if utf8.RuneCountInString(*mhi.Summary) > 512 {
-					verr["healthIssue.summary"] = errors.New("summary must be at most 512 characters")
+				} else if utf8.RuneCountInString(*mhi.Summary) > MachineHealthIssueSummaryMaxLength {
+					verr["healthIssue.summary"] = errors.New("summary must be at most " + strconv.Itoa(MachineHealthIssueSummaryMaxLength) + " characters")
 				}
 				if mhi.Details == nil || *mhi.Details == "" {
 					verr["healthIssue.details"] = errors.New("details is required")
-				} else if utf8.RuneCountInString(*mhi.Details) > 8192 {
-					verr["healthIssue.details"] = errors.New("details must be at most 8192 characters")
+				} else if utf8.RuneCountInString(*mhi.Details) > MachineHealthIssueDetailsMaxLength {
+					verr["healthIssue.details"] = errors.New("details must be at most " + strconv.Itoa(MachineHealthIssueDetailsMaxLength) + " characters")
 				}
 			}
 			if orr.Policy == nil || orr.Policy.AllowAutoInstanceDeletionOnFailure == nil {
