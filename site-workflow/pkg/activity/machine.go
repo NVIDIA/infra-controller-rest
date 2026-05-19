@@ -116,6 +116,56 @@ func (mm *ManageMachine) UpdateMachineMetadataOnSite(ctx context.Context, reques
 	return err
 }
 
+// CreateMachineHealthReportOverrideOnSite applies a health report override on the Site controller.
+func (mm *ManageMachine) CreateMachineHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.InsertHealthReportOverrideRequest) error {
+	logger := log.With().Str("Activity", "CreateMachineHealthReportOverrideOnSite").Logger()
+	logger.Info().Msg("Starting activity")
+
+	if request == nil || request.MachineId == nil || request.MachineId.Id == "" || request.Override == nil || request.Override.Report == nil {
+		return temporal.NewNonRetryableApplicationError("invalid InsertHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or override report"))
+	}
+
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err := grpcServiceClient.InsertHealthReportOverride(ctx, request)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Failed to insert health report override using Site Controller API")
+		return swe.WrapErr(err)
+	}
+
+	logger.Info().Msg("Completed activity")
+	return nil
+}
+
+// DeleteMachineHealthReportOverrideOnSite removes a health report override on the Site controller.
+func (mm *ManageMachine) DeleteMachineHealthReportOverrideOnSite(ctx context.Context, request *cwssaws.RemoveHealthReportOverrideRequest) error {
+	logger := log.With().Str("Activity", "DeleteMachineHealthReportOverrideOnSite").Logger()
+	logger.Info().Msg("Starting activity")
+
+	if request == nil || request.MachineId == nil || request.MachineId.Id == "" || request.Source == "" {
+		return temporal.NewNonRetryableApplicationError("invalid RemoveHealthReportOverride request", swe.ErrTypeInvalidRequest, errors.New("missing machine id or source"))
+	}
+
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err := grpcServiceClient.RemoveHealthReportOverride(ctx, request)
+	if err != nil {
+		logger.Warn().Err(err).Msg("Failed to remove health report override using Site Controller API")
+		return swe.WrapErr(err)
+	}
+
+	logger.Info().Msg("Completed activity")
+	return nil
+}
+
 // GetDpuMachinesByIDs is an activity to retrieve DPU Machines by IDs with network configuration
 func (mm *ManageMachine) GetDpuMachinesByIDs(ctx context.Context, dpuMachineIDs []string) ([]*cwssaws.DpuMachine, error) {
 	logger := log.With().Str("Activity", "GetDpuMachinesByIDs").Logger()

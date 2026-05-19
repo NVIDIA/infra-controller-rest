@@ -34,7 +34,7 @@ import (
 // checks if the MachineUpdateRequest type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &MachineUpdateRequest{}
 
-// MachineUpdateRequest Request data to update Machine. Instance Type attribute updates, maintenance attribute updates and labels updates must be specified in separate requests. They cannot be proceessed at the same time.
+// MachineUpdateRequest Request data to update Machine. Instance Type attribute updates, maintenance attribute updates, labels updates, and in-pool online repair (enter or exit) must be specified in separate requests. They cannot be processed at the same time.
 type MachineUpdateRequest struct {
 	// Update the Instance Type of the Machine. Cannot be specified when clearing Instance Type. Can only be updated by Provider.
 	InstanceTypeId NullableString `json:"instanceTypeId,omitempty"`
@@ -43,9 +43,11 @@ type MachineUpdateRequest struct {
 	// Set to `true` to enable maintenance mode and to `false` to disable maintenance mode. Can be set by Provider or Privileged Tenant.
 	SetMaintenanceMode NullableBool `json:"setMaintenanceMode,omitempty"`
 	// Optional message describing the reason for moving Machine into maintenance mode. Can be updated by Provider or Privileged Tenant.
-	MaintenanceMessage NullableString `json:"maintenanceMessage,omitempty"`
-	// Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.
-	Labels map[string]string `json:"labels,omitempty"`
+	MaintenanceMessage NullableString       `json:"maintenanceMessage,omitempty"`
+	Labels             map[string]string    `json:"labels,omitempty"`
+	OnlineRepair       *MachineOnlineRepair `json:"onlineRepair,omitempty"`
+	// Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
+	HealthIssue *MachineHealthIssue `json:"healthIssue,omitempty"`
 }
 
 // NewMachineUpdateRequest instantiates a new MachineUpdateRequest object
@@ -269,6 +271,70 @@ func (o *MachineUpdateRequest) SetLabels(v map[string]string) {
 	o.Labels = v
 }
 
+// GetOnlineRepair returns the OnlineRepair field value if set, zero value otherwise.
+func (o *MachineUpdateRequest) GetOnlineRepair() MachineOnlineRepair {
+	if o == nil || IsNil(o.OnlineRepair) {
+		var ret MachineOnlineRepair
+		return ret
+	}
+	return *o.OnlineRepair
+}
+
+// GetOnlineRepairOk returns a tuple with the OnlineRepair field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *MachineUpdateRequest) GetOnlineRepairOk() (*MachineOnlineRepair, bool) {
+	if o == nil || IsNil(o.OnlineRepair) {
+		return nil, false
+	}
+	return o.OnlineRepair, true
+}
+
+// HasOnlineRepair returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasOnlineRepair() bool {
+	if o != nil && !IsNil(o.OnlineRepair) {
+		return true
+	}
+
+	return false
+}
+
+// SetOnlineRepair gets a reference to the given MachineOnlineRepair and assigns it to the OnlineRepair field.
+func (o *MachineUpdateRequest) SetOnlineRepair(v MachineOnlineRepair) {
+	o.OnlineRepair = &v
+}
+
+// GetHealthIssue returns the HealthIssue field value if set, zero value otherwise.
+func (o *MachineUpdateRequest) GetHealthIssue() MachineHealthIssue {
+	if o == nil || IsNil(o.HealthIssue) {
+		var ret MachineHealthIssue
+		return ret
+	}
+	return *o.HealthIssue
+}
+
+// GetHealthIssueOk returns a tuple with the HealthIssue field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *MachineUpdateRequest) GetHealthIssueOk() (*MachineHealthIssue, bool) {
+	if o == nil || IsNil(o.HealthIssue) {
+		return nil, false
+	}
+	return o.HealthIssue, true
+}
+
+// HasHealthIssue returns a boolean if a field has been set.
+func (o *MachineUpdateRequest) HasHealthIssue() bool {
+	if o != nil && !IsNil(o.HealthIssue) {
+		return true
+	}
+
+	return false
+}
+
+// SetHealthIssue gets a reference to the given MachineHealthIssue and assigns it to the HealthIssue field.
+func (o *MachineUpdateRequest) SetHealthIssue(v MachineHealthIssue) {
+	o.HealthIssue = &v
+}
+
 func (o MachineUpdateRequest) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -293,6 +359,12 @@ func (o MachineUpdateRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Labels) {
 		toSerialize["labels"] = o.Labels
+	}
+	if !IsNil(o.OnlineRepair) {
+		toSerialize["onlineRepair"] = o.OnlineRepair
+	}
+	if !IsNil(o.HealthIssue) {
+		toSerialize["healthIssue"] = o.HealthIssue
 	}
 	return toSerialize, nil
 }

@@ -7059,6 +7059,7 @@ paths:
                   machineHealthIssue:
                     category: Network
                     summary: Machine has DPU connectivity error
+                    details: Tenant observed repeated link flaps on the DPU uplink.
                   isRepairTenant: false
         description: Optional request data to report health issues with the underlying Machine
     patch:
@@ -15605,6 +15606,7 @@ components:
         - Configuring
         - Ready
         - Updating
+        - Repairing
         - Rebooting
         - Terminating
         - Error
@@ -16155,6 +16157,7 @@ components:
         - machineHealthIssue:
             category: Network
             summary: Machine has DPU connectivity error
+            details: Tenant observed repeated link flaps on the DPU uplink.
           isRepairTenant: false
       description: Request data to delete Instance
       properties:
@@ -16166,32 +16169,6 @@ components:
             - boolean
             - 'null'
           description: Should be set to true for Tenants who are performing investigation/repairing the Machine. Otherwise omit or set to false
-    MachineHealthIssue:
-      title: MachineHealthIssue
-      type: object
-      examples:
-        - category: Network
-          summary: Machine has DPU connectivity error
-      description: Data describing health issue with a Machine
-      properties:
-        category:
-          type: string
-          enum:
-            - Hardware
-            - Network
-            - Performance
-            - Other
-          description: Category of the issue
-        summary:
-          type:
-            - string
-            - 'null'
-          description: Short summary describing the issue
-        details:
-          type:
-            - string
-            - 'null'
-          description: Details about the issue helpful for diagnosis
     Interface:
       title: Interface
       type: object
@@ -17483,6 +17460,83 @@ components:
         status:
           $ref: '#/components/schemas/MachineStatus'
           readOnly: true
+    MachineHealthIssue:
+      title: MachineHealthIssue
+      type: object
+      required:
+        - category
+        - summary
+        - details
+      properties:
+        category:
+          type: string
+          enum:
+            - Hardware
+            - Network
+            - Performance
+            - Storage
+            - Software
+            - Other
+          description: High-level category for the tenant-reported issue.
+        summary:
+          type: 
+            - string
+            - 'null'
+          maxLength: 512
+          description: Brief description of the issue for operators.
+        details:
+          type: 
+            - string
+            - 'null'
+          maxLength: 8192
+          description: Diagnostic information, logs, ticket numbers, etc.
+    MachineOnlineRepairPolicy:
+      title: MachineOnlineRepairPolicy
+      type: object
+      required:
+        - allowAutoInstanceDeletionOnFailure
+      properties:
+        allowAutoInstanceDeletionOnFailure:
+          type: boolean
+          description: When true, escalation to offline breakfix (permanent delete / deallocate) is allowed if online repair cannot be completed.
+    MachineOnlineRepairAcknowledgments:
+      title: MachineOnlineRepairAcknowledgments
+      type: object
+      required:
+        - acceptDataCorruptionRisk
+        - acceptRepairTeamAccess
+        - acceptInstanceDeletionRisk
+      properties:
+        acceptDataCorruptionRisk:
+          type: boolean
+          enum: [true]
+          description: Tenant confirms data may be corrupted during repair.
+        acceptRepairTeamAccess:
+          type: boolean
+          enum: [true]
+          description: Tenant confirms the dedicated repair team will have access to the instance.
+        acceptInstanceDeletionRisk:
+          type: boolean
+          enum: [true]
+          description: Tenant confirms risk of instance deletion if escalation to offline breakfix occurs.
+    MachineOnlineRepair:
+      title: MachineOnlineRepair
+      type: object
+      required:
+        - enabled
+      description: |-
+        Enable or disable online repair of a Machine. Online repair facilitates repairing a Machine without the Tenant having to release the Machine by deleting the Instance. When `enabled` is true, `policy` and `acknowledgments` are required inside this object,
+        and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
+      properties:
+        enabled:
+          type: boolean
+          description: |-
+            When true, initiates the online repair process: applies the tenant-reported OnlineRepair health override on the Machine and sets the associated Instance status to Repairing.
+            When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
+        policy:
+          $ref: '#/components/schemas/MachineOnlineRepairPolicy'
+        acknowledgments:
+          $ref: '#/components/schemas/MachineOnlineRepairAcknowledgments'
     MachineUpdateRequest:
       title: MachineUpdateRequest
       type: object
@@ -17496,7 +17550,19 @@ components:
             RackIdentifier: GVX11F01C02
             ServerName: SITE1-C03-Server-02
             RepairStatus: InProgress
-      description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates and labels updates must be specified in separate requests. They cannot be proceessed at the same time.'
+        - onlineRepair:
+            enabled: true
+            policy:
+              allowAutoInstanceDeletionOnFailure: false
+            acknowledgments:
+              acceptDataCorruptionRisk: true
+              acceptRepairTeamAccess: true
+              acceptInstanceDeletionRisk: true
+        - healthIssue:
+            category: Storage
+            summary: Disk errors on OSD
+            details: 'Ticket FORGE-12345; smartctl logs attached'
+      description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates, labels updates, and in-pool online repair (enter or exit) must be specified in separate requests. They cannot be processed at the same time.'
       properties:
         instanceTypeId:
           type:
@@ -17526,6 +17592,11 @@ components:
         labels:
           description: 'Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.'
           $ref: '#/components/schemas/Labels'
+        onlineRepair:
+          $ref: '#/components/schemas/MachineOnlineRepair'
+        healthIssue:
+          description: Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
+          $ref: '#/components/schemas/MachineHealthIssue'
     MachineInterface:
       title: MachineInterface
       type: object
