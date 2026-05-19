@@ -47,7 +47,6 @@ import (
 	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
-	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -267,10 +266,7 @@ func (cmith CreateMachineInstanceTypeHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	associateMachinesRequest := &cwssaws.AssociateMachinesWithInstanceTypeRequest{
-		InstanceTypeId: it.ID.String(),
-		MachineIds:     apiRequest.MachineIDs,
-	}
+	associateMachinesRequest := apiRequest.ToProto(it)
 
 	workflowOptions := temporalClient.StartWorkflowOptions{
 		ID:                       "associate-machines-with-instance-type-" + it.ID.String(),
@@ -691,9 +687,7 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 
 	// Now that machine data is "versioned" in NICo, a future update will likely
 	// allow us to send in IfVersion here to protect against concurrent updates.
-	associateMachinesRequest := &cwssaws.RemoveMachineInstanceTypeAssociationRequest{
-		MachineId: mit.MachineID,
-	}
+	removeAssociationRequest := mit.ToRemoveAssociationRequestProto()
 
 	workflowOptions := temporalClient.StartWorkflowOptions{
 		ID:                       "remove-machine-instance-type-association" + it.ID.String(),
@@ -708,7 +702,7 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 	defer cancel()
 
 	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "RemoveMachineInstanceTypeAssociation", associateMachinesRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "RemoveMachineInstanceTypeAssociation", removeAssociationRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to remove Machine association with InstanceType")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to remove Machine association with Instance Type on Site: %s", err), nil)

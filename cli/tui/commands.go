@@ -128,6 +128,15 @@ func AllCommands() []Command {
 		{Name: "expected-machine list", Description: "List expected machines", Run: cmdExpectedMachineList},
 		{Name: "expected-machine get", Description: "Get expected machine details", Run: cmdExpectedMachineGet},
 
+		{Name: "expected-rack list", Description: "List expected racks", Run: cmdExpectedRackList},
+		{Name: "expected-rack get", Description: "Get expected rack details", Run: cmdExpectedRackGet},
+
+		{Name: "expected-switch list", Description: "List expected switches", Run: cmdExpectedSwitchList},
+		{Name: "expected-switch get", Description: "Get expected switch details", Run: cmdExpectedSwitchGet},
+
+		{Name: "expected-power-shelf list", Description: "List expected power shelves", Run: cmdExpectedPowerShelfList},
+		{Name: "expected-power-shelf get", Description: "Get expected power shelf details", Run: cmdExpectedPowerShelfGet},
+
 		{Name: "infiniband-partition list", Description: "List InfiniBand partitions", Run: cmdInfiniBandPartitionList},
 		{Name: "infiniband-partition get", Description: "Get InfiniBand partition details", Run: cmdInfiniBandPartitionGet},
 
@@ -146,6 +155,8 @@ func AllCommands() []Command {
 		{Name: "tenant stats", Description: "Get tenant stats", Run: cmdTenantStats},
 		{Name: "infrastructure-provider current", Description: "Get current infrastructure provider", Run: cmdInfraProviderCurrent},
 		{Name: "infrastructure-provider stats", Description: "Get infrastructure provider stats", Run: cmdInfraProviderStats},
+
+		{Name: "service-account current", Description: "Get current service account status", Run: cmdServiceAccountCurrent},
 
 		{Name: "login", Description: "Login / refresh auth token", Run: cmdLogin},
 		{Name: "help", Description: "Show available commands", Run: cmdHelp},
@@ -177,6 +188,7 @@ func appendScopeFlags(s *Session, parts []string) []string {
 	switch resource {
 	case "vpc", "allocation", "ip-block", "operating-system", "ssh-key-group",
 		"network-security-group", "sku", "rack", "expected-machine", "instance-type",
+		"expected-rack", "expected-switch", "expected-power-shelf",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition":
 		if scopeSiteID != "" {
 			out = append(out, "--site-id", scopeSiteID)
@@ -907,16 +919,121 @@ func cmdMachineList(s *Session, args []string) error {
 	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
 	defer printLabelHint(os.Stderr, items, merged)
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tSTATUS\tSITE\tVPC\tLABELS\tID")
+	fmt.Fprintln(tw, "NAME\tSTATUS\tBLOCKED BY\tSITE\tVPC\tLABELS\tID")
 	for _, item := range items {
 		siteName := s.Resolver.ResolveID("site", item.Extra["siteId"])
 		vpcNames := strings.TrimSpace(vpcNamesByMachineID[item.ID])
 		if vpcNames == "" {
 			vpcNames = "-"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", item.Name, item.Status, siteName, vpcNames, formatLabels(item.Labels, 60), item.ID)
+		blockedBy := summarizeBlockingAlert(item.Raw)
+		if blockedBy == "" {
+			blockedBy = "-"
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", item.Name, item.Status, blockedBy, siteName, vpcNames, formatLabels(item.Labels, 60), item.ID)
 	}
 	return tw.Flush()
+}
+
+// blockingHealthAlert captures the fields from MachineHealthProbeAlert that we
+// surface in machine list/get to explain why a machine is blocked. Populated
+// from raw[health][alerts][n] when alerts[n].classifications contains
+// "PreventAllocations".
+type blockingHealthAlert struct {
+	ID              string
+	Target          string
+	Message         string
+	Classifications []string
+}
+
+// extractBlockingAlerts walks raw["health"]["alerts"] and returns the alerts
+// whose classifications include "PreventAllocations". These are the alerts
+// that prevent the machine from being allocated to a tenant, which is what
+// operators care about when triaging Error-state machines. Other alert types
+// are intentionally skipped to keep the table column actionable instead of
+// noisy.
+func extractBlockingAlerts(raw interface{}) []blockingHealthAlert {
+	m, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	health, ok := m["health"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	rawAlerts, ok := health["alerts"].([]interface{})
+	if !ok {
+		return nil
+	}
+	out := make([]blockingHealthAlert, 0, len(rawAlerts))
+	for _, ra := range rawAlerts {
+		alert, ok := ra.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		classifications := stringSliceField(alert, "classifications")
+		if !containsCaseInsensitive(classifications, "PreventAllocations") {
+			continue
+		}
+		out = append(out, blockingHealthAlert{
+			ID:              str(alert, "id"),
+			Target:          str(alert, "target"),
+			Message:         str(alert, "message"),
+			Classifications: classifications,
+		})
+	}
+	return out
+}
+
+// summarizeBlockingAlert returns a short one-line summary for the machine list
+// table column. Returns "" when the machine has no blocking alerts. Format is
+// "<id>" or "<id> <target>" when target is concise enough to fit -- target is
+// truncated at 24 chars to keep table rows readable on standard terminals.
+func summarizeBlockingAlert(raw interface{}) string {
+	alerts := extractBlockingAlerts(raw)
+	if len(alerts) == 0 {
+		return ""
+	}
+	a := alerts[0]
+	id := strings.TrimSpace(a.ID)
+	target := strings.TrimSpace(a.Target)
+	if id == "" && target == "" {
+		return ""
+	}
+	if target == "" {
+		return id
+	}
+	const maxTarget = 24
+	if len(target) > maxTarget {
+		target = target[:maxTarget-3] + "..."
+	}
+	if id == "" {
+		return target
+	}
+	return id + " " + target
+}
+
+func stringSliceField(m map[string]interface{}, key string) []string {
+	raw, ok := m[key].([]interface{})
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(raw))
+	for _, v := range raw {
+		if s, ok := v.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func containsCaseInsensitive(haystack []string, needle string) bool {
+	for _, h := range haystack {
+		if strings.EqualFold(strings.TrimSpace(h), needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func cmdOSList(s *Session, _ []string) error {
@@ -2236,6 +2353,99 @@ func cmdExpectedMachineList(s *Session, args []string) error {
 	return tw.Flush()
 }
 
+func cmdExpectedRackList(s *Session, args []string) error {
+	LogCmd(s, "expected-rack", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "expected-rack")
+	if err != nil {
+		return err
+	}
+	_, cmdLabels, sortKey, err := parseLabelArgs(args)
+	if err != nil {
+		return err
+	}
+	merged, mergeErr := mergeLabels(s.Scope.LabelFilters, cmdLabels)
+	if mergeErr != nil {
+		return mergeErr
+	}
+	items = filterByLabels(items, merged)
+	if sortKey != "" {
+		items = sortByLabelKey(items, sortKey)
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	defer printLabelHint(os.Stderr, items, merged)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tRACK ID\tPROFILE\tSITE\tLABELS\tID")
+	for _, item := range items {
+		siteName := s.Resolver.ResolveID("site", item.Extra["siteId"])
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["rackId"], item.Extra["rackProfileId"], siteName,
+			formatLabels(item.Labels, 60), item.ID)
+	}
+	return tw.Flush()
+}
+
+func cmdExpectedSwitchList(s *Session, args []string) error {
+	LogCmd(s, "expected-switch", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "expected-switch")
+	if err != nil {
+		return err
+	}
+	_, cmdLabels, sortKey, err := parseLabelArgs(args)
+	if err != nil {
+		return err
+	}
+	merged, mergeErr := mergeLabels(s.Scope.LabelFilters, cmdLabels)
+	if mergeErr != nil {
+		return mergeErr
+	}
+	items = filterByLabels(items, merged)
+	if sortKey != "" {
+		items = sortByLabelKey(items, sortKey)
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	defer printLabelHint(os.Stderr, items, merged)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tSWITCH SN\tBMC MAC\tRACK\tMANUFACTURER\tLABELS\tID")
+	for _, item := range items {
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["switchSerialNumber"], item.Extra["bmcMacAddress"],
+			item.Extra["rackId"], item.Extra["manufacturer"],
+			formatLabels(item.Labels, 60), item.ID)
+	}
+	return tw.Flush()
+}
+
+func cmdExpectedPowerShelfList(s *Session, args []string) error {
+	LogCmd(s, "expected-power-shelf", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "expected-power-shelf")
+	if err != nil {
+		return err
+	}
+	_, cmdLabels, sortKey, err := parseLabelArgs(args)
+	if err != nil {
+		return err
+	}
+	merged, mergeErr := mergeLabels(s.Scope.LabelFilters, cmdLabels)
+	if mergeErr != nil {
+		return mergeErr
+	}
+	items = filterByLabels(items, merged)
+	if sortKey != "" {
+		items = sortByLabelKey(items, sortKey)
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	defer printLabelHint(os.Stderr, items, merged)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tSHELF SN\tBMC MAC\tRACK\tMANUFACTURER\tLABELS\tID")
+	for _, item := range items {
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["shelfSerialNumber"], item.Extra["bmcMacAddress"],
+			item.Extra["rackId"], item.Extra["manufacturer"],
+			formatLabels(item.Labels, 60), item.ID)
+	}
+	return tw.Flush()
+}
+
 func cmdInfiniBandPartitionList(s *Session, args []string) error {
 	LogCmd(s, "infiniband-partition", "list")
 	items, err := s.Resolver.Fetch(context.Background(), "infiniband-partition")
@@ -2715,7 +2925,82 @@ func cmdMachineGet(s *Session, args []string) error {
 		return err
 	}
 	LogCmd(s, "machine", "get", item.ID)
-	return getAndPrint(s, apiPath(s, "machine/{id}"), item.ID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "machine/{id}"), map[string]string{"id": item.ID}, nil, nil)
+	if err != nil {
+		return err
+	}
+	printMachineHealthSummary(os.Stdout, body)
+	return printDetailJSON(os.Stdout, body)
+}
+
+// printMachineHealthSummary prints a human-readable summary of blocking
+// health alerts and tenant-usability state above the verbose JSON. Operators
+// triaging an Error-state machine should not have to scan multi-page JSON to
+// find the blocker -- the summary surfaces the most actionable signals (id,
+// target, classifications, short message, isUsableByTenant) up front. When
+// there are no blocking alerts the summary block is suppressed entirely so
+// healthy-machine output stays unchanged.
+func printMachineHealthSummary(w io.Writer, body []byte) {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return
+	}
+	alerts := extractBlockingAlerts(raw)
+	if len(alerts) == 0 {
+		return
+	}
+	status := strings.TrimSpace(str(raw, "status"))
+	usable, hasUsable := raw["isUsableByTenant"].(bool)
+
+	fmt.Fprintln(w, Bold("Blocking health alerts:"))
+	if status != "" {
+		fmt.Fprintf(w, "  Status: %s\n", status)
+	}
+	if hasUsable {
+		fmt.Fprintf(w, "  Usable by tenant: %t\n", usable)
+	}
+	for i, a := range alerts {
+		fmt.Fprintf(w, "  [%d] %s\n", i+1, a.ID)
+		if t := strings.TrimSpace(a.Target); t != "" {
+			fmt.Fprintf(w, "      Target: %s\n", t)
+		}
+		if len(a.Classifications) > 0 {
+			fmt.Fprintf(w, "      Classifications: %s\n", strings.Join(a.Classifications, ", "))
+		}
+		if msg := shortMessage(a.Message); msg != "" {
+			fmt.Fprintf(w, "      Message: %s\n", msg)
+		}
+	}
+	fmt.Fprintln(w)
+}
+
+// shortMessage trims an alert message to a single readable line. Health
+// alerts often include multi-line probe output; the first non-empty line is
+// usually the actionable summary, so we surface that and indicate truncation
+// when more lines follow.
+func shortMessage(msg string) string {
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		return ""
+	}
+	lines := strings.Split(msg, "\n")
+	first := strings.TrimSpace(lines[0])
+	if first == "" {
+		for _, l := range lines[1:] {
+			if t := strings.TrimSpace(l); t != "" {
+				first = t
+				break
+			}
+		}
+	}
+	const maxLen = 200
+	if len(first) > maxLen {
+		first = first[:maxLen-3] + "..."
+	}
+	if len(lines) > 1 && strings.TrimSpace(strings.Join(lines[1:], "")) != "" {
+		first += " (...)"
+	}
+	return first
 }
 
 func cmdOSGet(s *Session, args []string) error {
@@ -2836,6 +3121,33 @@ func cmdExpectedMachineGet(s *Session, args []string) error {
 	return getAndPrint(s, apiPath(s, "expected-machine/{id}"), item.ID)
 }
 
+func cmdExpectedRackGet(s *Session, args []string) error {
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "expected-rack", "Expected Rack", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "expected-rack", "get", item.ID)
+	return getAndPrint(s, apiPath(s, "expected-rack/{id}"), item.ID)
+}
+
+func cmdExpectedSwitchGet(s *Session, args []string) error {
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "expected-switch", "Expected Switch", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "expected-switch", "get", item.ID)
+	return getAndPrint(s, apiPath(s, "expected-switch/{id}"), item.ID)
+}
+
+func cmdExpectedPowerShelfGet(s *Session, args []string) error {
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "expected-power-shelf", "Expected Power Shelf", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "expected-power-shelf", "get", item.ID)
+	return getAndPrint(s, apiPath(s, "expected-power-shelf/{id}"), item.ID)
+}
+
 func cmdInfiniBandPartitionGet(s *Session, args []string) error {
 	item, err := s.Resolver.ResolveWithArgs(context.Background(), "infiniband-partition", "InfiniBand Partition", args)
 	if err != nil {
@@ -2924,6 +3236,15 @@ func cmdInfraProviderStats(s *Session, _ []string) error {
 	body, _, err := s.Client.Do("GET", apiPath(s, "infrastructure-provider/current/stats"), nil, nil, nil)
 	if err != nil {
 		return fmt.Errorf("getting infrastructure provider stats: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdServiceAccountCurrent(s *Session, _ []string) error {
+	LogCmd(s, "service-account", "current")
+	body, _, err := s.Client.Do("GET", apiPath(s, "service-account/current"), nil, nil, nil)
+	if err != nil {
+		return fmt.Errorf("getting service account: %w", err)
 	}
 	return printDetailJSON(os.Stdout, body)
 }
@@ -3086,6 +3407,9 @@ var labelCapableListCommands = []string{
 	"machine list",
 	"network-security-group list",
 	"expected-machine list",
+	"expected-rack list",
+	"expected-switch list",
+	"expected-power-shelf list",
 	"infiniband-partition list",
 }
 

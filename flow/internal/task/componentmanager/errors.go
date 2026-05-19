@@ -74,6 +74,14 @@ var (
 	// was configured without an implementation name.
 	ErrComponentManagerImplementationNameEmpty = cmcatalog.ErrComponentManagerImplementationNameEmpty
 
+	// ErrCapabilityNameEmpty reports that a descriptor declared an empty
+	// capability name.
+	ErrCapabilityNameEmpty = cmcatalog.ErrCapabilityNameEmpty
+
+	// ErrUnknownCapability reports that a descriptor declared an unsupported
+	// capability name.
+	ErrUnknownCapability = cmcatalog.ErrUnknownCapability
+
 	// ErrComponentManagersNotConfigured reports that the service config has no
 	// component manager entries.
 	ErrComponentManagersNotConfigured = cmconfig.ErrComponentManagersNotConfigured
@@ -224,13 +232,15 @@ type ManagerDescriptorMismatchError struct {
 
 func (e ManagerDescriptorMismatchError) Error() string {
 	return fmt.Sprintf(
-		"manager descriptor mismatch: expected %s/%s providers %v, got %s/%s providers %v",
+		"manager descriptor mismatch: expected %s/%s providers %v capabilities %v, got %s/%s providers %v capabilities %v",
 		devicetypes.ComponentTypeToString(e.Expected.Type),
 		e.Expected.Implementation,
 		e.Expected.RequiredProviders,
+		e.Expected.Capabilities.Strings(),
 		devicetypes.ComponentTypeToString(e.Actual.Type),
 		e.Actual.Implementation,
 		e.Actual.RequiredProviders,
+		e.Actual.Capabilities.Strings(),
 	)
 }
 
@@ -244,6 +254,13 @@ type UnknownComponentTypeError = cmcatalog.UnknownComponentTypeError
 // ComponentManagerImplementationNameEmptyError includes the component type
 // whose configured implementation name is empty.
 type ComponentManagerImplementationNameEmptyError = cmcatalog.ComponentManagerImplementationNameEmptyError
+
+// CapabilityNameEmptyError reports an empty capability name in descriptor
+// metadata.
+type CapabilityNameEmptyError = cmcatalog.CapabilityNameEmptyError
+
+// UnknownCapabilityError includes the unsupported capability name.
+type UnknownCapabilityError = cmcatalog.UnknownCapabilityError
 
 // UnknownProviderError includes the unknown provider name.
 type UnknownProviderError = providerapi.UnknownProviderError

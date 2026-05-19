@@ -123,6 +123,29 @@ func (t *Task) UpdateTaskStatus(
 	return err
 }
 
+// taskComponentIDFilter restricts a query to tasks whose attributes
+// reference a specific component UUID. The UUID may live under any bucket
+// of attributes.components_by_type, which rules out a fixed @> check
+// against a known key and forces a jsonpath expression. The predicate is
+// served by the GIN (jsonb_path_ops) index on task.attributes added in
+// migration 20260517000000.
+type taskComponentIDFilter struct {
+	componentID uuid.UUID
+}
+
+func (f taskComponentIDFilter) ApplyTo(q *bun.SelectQuery) *bun.SelectQuery {
+	// bun rewrites '?' in a query string as a placeholder, which collides
+	// both with PG's '@?' operator and with jsonpath's own '?(filter)'
+	// syntax. Build the predicate as raw SQL and inject it via bun.Safe so
+	// bun does not rescan it for '?'. uuid.UUID.String() emits only hex
+	// and hyphens, so it cannot close the SQL string literal or inject.
+	expr := fmt.Sprintf(
+		`attributes @? '$.components_by_type.*[*] ? (@ == "%s")'::jsonpath`,
+		f.componentID.String(),
+	)
+	return q.Where("?", bun.Safe(expr))
+}
+
 func taskListOptionsToFilterable(
 	options *taskcommon.TaskListOptions,
 ) dbquery.Filterable {
@@ -164,10 +187,36 @@ func taskListOptionsToFilterable(
 		})
 	}
 
-	return &dbquery.FilterGroup{
+	group := &dbquery.FilterGroup{
 		Filters:   filters,
 		Connector: dbquery.ConnectorAND,
 	}
+
+	// ComponentID needs a jsonpath expression on attributes, which the
+	// generic Filter type does not express, so combine it with the rest
+	// via a small composite Filterable.
+	if options.ComponentID != uuid.Nil {
+		return taskFilterables{
+			group,
+			taskComponentIDFilter{componentID: options.ComponentID},
+		}
+	}
+
+	return group
+}
+
+// taskFilterables is an AND-combination of several Filterables. Each entry
+// applies its own predicates to the same query, which bun joins with AND.
+type taskFilterables []dbquery.Filterable
+
+func (fs taskFilterables) ApplyTo(q *bun.SelectQuery) *bun.SelectQuery {
+	for _, f := range fs {
+		if f == nil {
+			continue
+		}
+		q = f.ApplyTo(q)
+	}
+	return q
 }
 
 // GetTask retrieves the task by its UUID.

@@ -228,7 +228,7 @@ func workflowOrchestrator() error {
 	}
 
 	// Register all manager flows here
-	ManagerAccess.API.NICo.RegisterGRPC()
+	ManagerAccess.API.CoreGrpc.RegisterGrpc()
 
 	// TODO: all RegisterSubscriber calls return an error and we ignore them. Should we?
 	ManagerAccess.API.VPC.RegisterSubscriber()
@@ -292,12 +292,12 @@ func workflowOrchestrator() error {
 	ManagerAccess.API.NVLinkLogicalPartition.RegisterSubscriber()
 	ManagerAccess.API.NVLinkLogicalPartition.RegisterPublisher()
 
-	// Flow Rack workflows (only registered if Flow is enabled)
-	if ManagerAccess.Conf.EB.Flow.Enabled {
-		if ManagerAccess.API.Flow != nil {
-			ManagerAccess.API.Flow.RegisterSubscriber()
+	// Flow workflows (only registered if Flow gRPC is enabled)
+	if ManagerAccess.Conf.EB.FlowGrpc.Enabled {
+		if ManagerAccess.API.FlowGrpc != nil {
+			ManagerAccess.API.FlowGrpc.RegisterSubscriber()
 		} else {
-			log.Error().Msg("Flow: Flow is enabled in config but Flow manager is not initialized")
+			log.Error().Msg("FlowGrpc: Flow gRPC is enabled in config but Flow gRPC manager is not initialized")
 		}
 	}
 

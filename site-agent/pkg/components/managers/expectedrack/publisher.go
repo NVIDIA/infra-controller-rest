@@ -35,7 +35,7 @@ func (api *API) RegisterPublisher() error {
 	// Register DiscoverExpectedRackInventory activity
 	inventoryManager := swa.NewManageExpectedRackInventory(
 		uuid.MustParse(ManagerAccess.Conf.EB.Temporal.ClusterID),
-		ManagerAccess.Data.EB.Managers.NICo.Client,
+		ManagerAccess.Data.EB.Managers.CoreGrpc.Client,
 		ManagerAccess.Data.EB.Managers.Workflow.Temporal.Publisher,
 		ManagerAccess.Conf.EB.Temporal.TemporalPublishQueue,
 		InventoryCloudPageSize,

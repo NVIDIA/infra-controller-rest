@@ -377,74 +377,111 @@ func TestServiceCatalog(t *testing.T) {
 		implementations[devicetypes.ComponentTypePowerShelf],
 	)
 
-	assert.Equal(
-		t,
-		[]string{nicoprovider.ProviderName},
-		requireDescriptor(
-			t,
-			catalog,
-			devicetypes.ComponentTypeCompute,
-			computenico.ImplementationName,
-		).RequiredProviders,
-	)
-	assert.Equal(
-		t,
-		[]string{nicoprovider.ProviderName},
-		requireDescriptor(
-			t,
-			catalog,
-			devicetypes.ComponentTypeNVLSwitch,
-			nvlswitchnico.ImplementationName,
-		).RequiredProviders,
-	)
-	assert.Equal(
-		t,
-		[]string{nsmprovider.ProviderName},
-		requireDescriptor(
-			t,
-			catalog,
-			devicetypes.ComponentTypeNVLSwitch,
-			nvlswitchnsm.ImplementationName,
-		).RequiredProviders,
-	)
-	assert.Equal(
-		t,
-		[]string{nicoprovider.ProviderName},
-		requireDescriptor(
-			t,
-			catalog,
-			devicetypes.ComponentTypePowerShelf,
-			powershelfnico.ImplementationName,
-		).RequiredProviders,
-	)
-	assert.Equal(
-		t,
-		[]string{psmprovider.ProviderName},
-		requireDescriptor(
-			t,
-			catalog,
-			devicetypes.ComponentTypePowerShelf,
-			powershelfpsm.ImplementationName,
-		).RequiredProviders,
-	)
-	assert.Empty(t, requireDescriptor(
-		t,
-		catalog,
-		devicetypes.ComponentTypeCompute,
-		mock.ImplementationName,
-	).RequiredProviders)
-	assert.Empty(t, requireDescriptor(
-		t,
-		catalog,
-		devicetypes.ComponentTypeNVLSwitch,
-		mock.ImplementationName,
-	).RequiredProviders)
-	assert.Empty(t, requireDescriptor(
-		t,
-		catalog,
-		devicetypes.ComponentTypePowerShelf,
-		mock.ImplementationName,
-	).RequiredProviders)
+	tests := []struct {
+		name              string
+		componentType     devicetypes.ComponentType
+		implementation    string
+		requiredProviders []string
+		capabilities      cmcatalog.CapabilitySet
+	}{
+		{
+			name:              "compute nico",
+			componentType:     devicetypes.ComponentTypeCompute,
+			implementation:    computenico.ImplementationName,
+			requiredProviders: []string{nicoprovider.ProviderName},
+			capabilities: cmcatalog.CapabilitySet{
+				cmcatalog.CapabilityBringUpControl,
+				cmcatalog.CapabilityBringUpStatus,
+				cmcatalog.CapabilityFirmwareControl,
+				cmcatalog.CapabilityFirmwareStatus,
+				cmcatalog.CapabilityInjectExpectation,
+				cmcatalog.CapabilityPowerControl,
+				cmcatalog.CapabilityPowerStatus,
+			},
+		},
+		{
+			name:              "nvlswitch nico",
+			componentType:     devicetypes.ComponentTypeNVLSwitch,
+			implementation:    nvlswitchnico.ImplementationName,
+			requiredProviders: []string{nicoprovider.ProviderName},
+			capabilities: cmcatalog.CapabilitySet{
+				cmcatalog.CapabilityFirmwareConsistencyCheck,
+				cmcatalog.CapabilityFirmwareControl,
+				cmcatalog.CapabilityFirmwareStatus,
+				cmcatalog.CapabilityInjectExpectation,
+				cmcatalog.CapabilityPowerControl,
+				cmcatalog.CapabilityPowerStatus,
+			},
+		},
+		{
+			name:              "nvlswitch nvswitchmanager",
+			componentType:     devicetypes.ComponentTypeNVLSwitch,
+			implementation:    nvlswitchnsm.ImplementationName,
+			requiredProviders: []string{nsmprovider.ProviderName},
+			capabilities: cmcatalog.CapabilitySet{
+				cmcatalog.CapabilityFirmwareControl,
+				cmcatalog.CapabilityFirmwareStatus,
+				cmcatalog.CapabilityPowerControl,
+			},
+		},
+		{
+			name:              "powershelf nico",
+			componentType:     devicetypes.ComponentTypePowerShelf,
+			implementation:    powershelfnico.ImplementationName,
+			requiredProviders: []string{nicoprovider.ProviderName},
+			capabilities: cmcatalog.CapabilitySet{
+				cmcatalog.CapabilityFirmwareControl,
+				cmcatalog.CapabilityFirmwareStatus,
+				cmcatalog.CapabilityInjectExpectation,
+				cmcatalog.CapabilityPowerControl,
+				cmcatalog.CapabilityPowerStatus,
+			},
+		},
+		{
+			name:              "powershelf psm",
+			componentType:     devicetypes.ComponentTypePowerShelf,
+			implementation:    powershelfpsm.ImplementationName,
+			requiredProviders: []string{psmprovider.ProviderName},
+			capabilities: cmcatalog.CapabilitySet{
+				cmcatalog.CapabilityFirmwareControl,
+				cmcatalog.CapabilityFirmwareStatus,
+				cmcatalog.CapabilityInjectExpectation,
+				cmcatalog.CapabilityPowerControl,
+				cmcatalog.CapabilityPowerStatus,
+			},
+		},
+		{
+			name:           "compute mock",
+			componentType:  devicetypes.ComponentTypeCompute,
+			implementation: mock.ImplementationName,
+			capabilities:   mockCapabilities(),
+		},
+		{
+			name:           "nvlswitch mock",
+			componentType:  devicetypes.ComponentTypeNVLSwitch,
+			implementation: mock.ImplementationName,
+			capabilities:   mockCapabilities(),
+		},
+		{
+			name:           "powershelf mock",
+			componentType:  devicetypes.ComponentTypePowerShelf,
+			implementation: mock.ImplementationName,
+			capabilities:   mockCapabilities(),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			descriptor := requireDescriptor(
+				t,
+				catalog,
+				tt.componentType,
+				tt.implementation,
+			)
+			assert.ElementsMatch(t, tt.requiredProviders, descriptor.RequiredProviders)
+			assertDescriptorCapabilities(t, descriptor, tt.capabilities...)
+		})
+	}
 }
 
 func TestNicoComputePowerDelayUsesProviderConfig(t *testing.T) {
@@ -510,4 +547,28 @@ func requireDescriptor(
 	descriptor, ok := catalog.Get(componentType, implementation)
 	require.True(t, ok)
 	return descriptor
+}
+
+func assertDescriptorCapabilities(
+	t *testing.T,
+	descriptor cmcatalog.Descriptor,
+	capabilities ...cmcatalog.Capability,
+) {
+	t.Helper()
+
+	expected, err := cmcatalog.CapabilitySet(capabilities).Normalize()
+	require.NoError(t, err)
+	assert.Equal(t, expected, descriptor.Capabilities)
+}
+
+func mockCapabilities() cmcatalog.CapabilitySet {
+	return cmcatalog.CapabilitySet{
+		cmcatalog.CapabilityBringUpControl,
+		cmcatalog.CapabilityBringUpStatus,
+		cmcatalog.CapabilityFirmwareControl,
+		cmcatalog.CapabilityFirmwareStatus,
+		cmcatalog.CapabilityInjectExpectation,
+		cmcatalog.CapabilityPowerControl,
+		cmcatalog.CapabilityPowerStatus,
+	}
 }
