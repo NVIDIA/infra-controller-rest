@@ -36,9 +36,9 @@ import (
 // checks if the MachineOnlineRepair type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &MachineOnlineRepair{}
 
-// MachineOnlineRepair Enter or exit in-pool online repair. When `enabled` is true, `policy` and `acknowledgments` are required inside this object, and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
+// MachineOnlineRepair Enable or disable online repair of a Machine. Online repair facilitates repairing a Machine without the Tenant having to release the Machine by deleting the Instance. When `enabled` is true, `policy` and `acknowledgments` are required inside this object, and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
 type MachineOnlineRepair struct {
-	// When true, initiates in-pool online repair: applies the tenant-reported OnlineRepair health override on the machine and sets the associated Instance status to Repairing. When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
+	// When true, initiates the online repair process: applies the tenant-reported OnlineRepair health override on the Machine and sets the associated Instance status to Repairing. When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
 	Enabled         bool                                `json:"enabled"`
 	Policy          *MachineOnlineRepairPolicy          `json:"policy,omitempty"`
 	Acknowledgments *MachineOnlineRepairAcknowledgments `json:"acknowledgments,omitempty"`
