@@ -43,7 +43,7 @@ Specify exactly ONE of the following options:
 
 Component types (required for rack-ids/rack-names):
   --type compute     : Compute nodes
-  --type nvlswitch   : NVL switches  
+  --type nvswitch   : NVSwitches  
   --type powershelf  : Power shelves
   --type torswitch   : ToR switches
   --type ums         : UMS
@@ -57,8 +57,8 @@ Examples:
   # Get all compute components from racks by name
   flow component expected --rack-names "rack-1,rack-2" --type compute
 
-  # Get NVL switches from rack by ID
-  flow component expected --rack-ids "uuid-1,uuid-2" --type nvlswitch
+  # Get NVSwitches from rack by ID
+  flow component expected --rack-ids "uuid-1,uuid-2" --type nvswitch
 
   # Get components by component IDs
   flow component expected --component-ids "machine-1,machine-2"
@@ -84,7 +84,7 @@ func init() {
 	expectedCmd.Flags().StringVar(&expectedRackIDs, "rack-ids", "", "Comma-separated list of rack UUIDs")
 	expectedCmd.Flags().StringVar(&expectedRackNames, "rack-names", "", "Comma-separated list of rack names")
 	expectedCmd.Flags().StringVar(&expectedComponentIDs, "component-ids", "", "Comma-separated list of component IDs")
-	expectedCmd.Flags().StringVarP(&expectedComponentType, "type", "t", "", "Component type: compute, nvlswitch, powershelf, torswitch, ums, cdu")
+	expectedCmd.Flags().StringVarP(&expectedComponentType, "type", "t", "", "Component type: compute, nvswitch, powershelf, torswitch, ums, cdu")
 	expectedCmd.Flags().StringVarP(&expectedOutput, "output", "o", "json", "Output format: json, table")
 }
 

@@ -23,7 +23,7 @@ import (
 )
 
 // ManagerHdl - local handle to be assigned
-var ManagerHdl ManagerAPI
+var ManagerHandler ManagerAPI
 
 // ManagerAccess - access to all APIs/data/conf
 // nolint
@@ -49,7 +49,7 @@ type ManagerAPI struct {
 	Instance               InstanceInterface
 	Machine                MachineInterface
 	Orchestrator           OrchestratorInterface
-	NICo                   NICoInterface
+	CoreGrpc               CoreGrpcInterface
 	SSHKeyGroup            SSHKeyGroupInterface
 	InfiniBandPartition    InfiniBandPartitionInterface
 	Tenant                 TenantInterface
@@ -64,7 +64,7 @@ type ManagerAPI struct {
 	SKU                    SKUInterface
 	DpuExtensionService    DpuExtensionServiceInterface
 	NVLinkLogicalPartition NVLinkLogicalPartitionInterface
-	Flow                   FlowInterface
+	FlowGrpc               FlowGrpcInterface
 }
 
 // ManagerConf - Conf struct

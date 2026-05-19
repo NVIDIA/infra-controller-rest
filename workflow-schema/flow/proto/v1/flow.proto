@@ -144,7 +144,7 @@ message RackPosition {
 enum ComponentType {
     COMPONENT_TYPE_UNKNOWN = 0;
     COMPONENT_TYPE_COMPUTE = 1;
-    COMPONENT_TYPE_NVLSWITCH = 2;
+    COMPONENT_TYPE_NVSWITCH = 2;
     COMPONENT_TYPE_POWERSHELF = 3;
     COMPONENT_TYPE_TORSWITCH = 4;
     COMPONENT_TYPE_UMS = 5;
@@ -461,7 +461,7 @@ message GetComponentsResponse {
 }
 
 message ValidateComponentsRequest {
-    optional OperationTargetSpec target_spec = 1;   // Optional: Flexible targeting: rack(s) with optional type filter, or specific components. If not provided, returns all drifts.
+    optional OperationTargetSpec target_spec = 1;   // Optional: Flexible targeting: rack(s) with optional type filter, or specific components. If not provided, returns all diffs.
     repeated Filter filters = 2;           // Filter conditions for component queries
     optional Pagination pagination = 3;
     optional OrderBy order_by = 4;
@@ -474,7 +474,7 @@ message ValidateComponentsResponse {
     // Summary counts
     int32 missing_count = 3;     // Expected by Flow but not found in the component manager service
     int32 unexpected_count = 4;  // Found in the component manager service but not expected by Flow
-    int32 drift_count = 5;
+    int32 mismatch_count = 5;    // In both but with field differences
     int32 match_count = 6;
 }
 
@@ -482,7 +482,7 @@ enum DiffType {
     DIFF_TYPE_UNKNOWN = 0;
     DIFF_TYPE_MISSING = 1;       // Expected by Flow but not found in the component manager service
     DIFF_TYPE_UNEXPECTED = 2;    // Found in the component manager service but not expected by Flow
-    DIFF_TYPE_DRIFT = 3;         // In both but with field differences
+    DIFF_TYPE_MISMATCH = 3;      // In both but with field differences
 }
 
 message ComponentDiff {
@@ -490,7 +490,7 @@ message ComponentDiff {
     string component_id = 2;    // Component ID assigned by the component manager service
     Component expected = 3;     // Populated when type is MISSING
     Component actual = 4;
-    repeated FieldDiff field_diffs = 5; // Populated when type is DRIFT
+    repeated FieldDiff field_diffs = 5; // Populated when type is MISMATCH
     UUID id = 6;                // Flow internal component UUID
 }
 

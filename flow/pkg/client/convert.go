@@ -217,7 +217,7 @@ func componentTypeFromProto(ct pb.ComponentType) types.ComponentType {
 	switch ct {
 	case pb.ComponentType_COMPONENT_TYPE_COMPUTE:
 		return types.ComponentTypeCompute
-	case pb.ComponentType_COMPONENT_TYPE_NVLSWITCH:
+	case pb.ComponentType_COMPONENT_TYPE_NVSWITCH:
 		return types.ComponentTypeNVSwitch
 	case pb.ComponentType_COMPONENT_TYPE_POWERSHELF:
 		return types.ComponentTypePowerShelf
@@ -273,8 +273,8 @@ func diffTypeFromProto(dt pb.DiffType) types.DiffType {
 		return types.DiffTypeMissing
 	case pb.DiffType_DIFF_TYPE_UNEXPECTED:
 		return types.DiffTypeUnexpected
-	case pb.DiffType_DIFF_TYPE_DRIFT:
-		return types.DiffTypeDrift
+	case pb.DiffType_DIFF_TYPE_MISMATCH:
+		return types.DiffTypeMismatch
 	default:
 		return types.DiffTypeUnknown
 	}
@@ -446,7 +446,7 @@ func componentTypeToProto(ct types.ComponentType) pb.ComponentType {
 	case types.ComponentTypeCompute:
 		return pb.ComponentType_COMPONENT_TYPE_COMPUTE
 	case types.ComponentTypeNVSwitch:
-		return pb.ComponentType_COMPONENT_TYPE_NVLSWITCH
+		return pb.ComponentType_COMPONENT_TYPE_NVSWITCH
 	case types.ComponentTypePowerShelf:
 		return pb.ComponentType_COMPONENT_TYPE_POWERSHELF
 	case types.ComponentTypeTORSwitch:
@@ -477,7 +477,7 @@ func componentTypeToString(ct types.ComponentType) string {
 	case types.ComponentTypeCompute:
 		return "Compute"
 	case types.ComponentTypeNVSwitch:
-		return "NVLSwitch"
+		return "NVSwitch"
 	case types.ComponentTypePowerShelf:
 		return "PowerShelf"
 	case types.ComponentTypeTORSwitch:

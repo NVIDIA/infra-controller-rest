@@ -888,9 +888,9 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetSkuHandler(dbSession, tc, cfg),
 		},
-		// Task endpoints (Flow). The /rack/task/* paths are kept as
-		// backwards-compatible aliases; new clients should prefer
-		// /task/* and the rack/tray-scoped /{id}/task list endpoints.
+		// Task endpoints (Flow). /rack/task/* and /task/* share get/cancel
+		// handlers; list operations are exposed under /rack/{id}/task and
+		// /tray/{id}/task.
 		{
 			Path:    apiPathPrefix + "/rack/task/:id",
 			Method:  http.MethodGet,

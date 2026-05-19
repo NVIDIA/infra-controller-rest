@@ -486,7 +486,7 @@ func TestHandleExpectedPowershelves(t *testing.T) {
 	assert.False(t, ok, "PMC 7 should NOT be registered (multiple IP addresses)")
 }
 
-// TestHandleExpectedNVSwitches tests that expected NVLSwitches are registered with NSM
+// TestHandleExpectedNVSwitches tests that expected NVSwitches are registered with NSM
 func TestHandleExpectedNVSwitches(t *testing.T) {
 	ctx := context.Background()
 
@@ -514,8 +514,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW1: Happy path, BMC + NVOS DHCPed, should be newly registered ---
 	sw1 := model.Component{
-		Name:         "nvlswitch-1",
-		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:         "nvswitch-1",
+		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer: "NVMfg",
 		SerialNumber: "sw-serial-001",
 		RackID:       rack.ID,
@@ -535,8 +535,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW2: Happy path, second new registration ---
 	sw2 := model.Component{
-		Name:         "nvlswitch-2",
-		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:         "nvswitch-2",
+		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer: "NVMfg",
 		SerialNumber: "sw-serial-002",
 		RackID:       rack.ID,
@@ -556,8 +556,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW3: BMC has NOT DHCPed — should NOT register, produces missing_in_actual drift ---
 	sw3 := model.Component{
-		Name:         "nvlswitch-3",
-		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:         "nvswitch-3",
+		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer: "NVMfg",
 		SerialNumber: "sw-serial-003",
 		RackID:       rack.ID,
@@ -577,8 +577,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW4: BMC DHCPed but NVOS NOT DHCPed — should NOT register, produces missing_in_actual drift ---
 	sw4 := model.Component{
-		Name:         "nvlswitch-4",
-		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:         "nvswitch-4",
+		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer: "NVMfg",
 		SerialNumber: "sw-serial-004",
 		RackID:       rack.ID,
@@ -598,8 +598,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW5: Not in NICo expected switches — should NOT register ---
 	sw5 := model.Component{
-		Name:         "nvlswitch-5",
-		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:         "nvswitch-5",
+		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer: "NVMfg",
 		SerialNumber: "sw-serial-005",
 		RackID:       rack.ID,
@@ -619,8 +619,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW6: BMC has multiple IPs — should NOT register ---
 	sw6 := model.Component{
-		Name:         "nvlswitch-6",
-		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:         "nvswitch-6",
+		Type:         devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer: "NVMfg",
 		SerialNumber: "sw-serial-006",
 		RackID:       rack.ID,
@@ -640,8 +640,8 @@ func TestHandleExpectedNVSwitches(t *testing.T) {
 
 	// --- SW7: Already registered with NSM — should direct-write firmware_version + external_id, serial mismatch drift ---
 	sw7 := model.Component{
-		Name:            "nvlswitch-7",
-		Type:            devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVLSwitch),
+		Name:            "nvswitch-7",
+		Type:            devicetypes.ComponentTypeToString(devicetypes.ComponentTypeNVSwitch),
 		Manufacturer:    "NVMfg",
 		SerialNumber:    "sw-serial-007",
 		RackID:          rack.ID,
@@ -870,7 +870,7 @@ func defaultComponentManagerTestConfig() cmconfig.Config {
 	return cmconfig.Config{
 		ComponentManagers: map[devicetypes.ComponentType]string{
 			devicetypes.ComponentTypeCompute:    "mock",
-			devicetypes.ComponentTypeNVLSwitch:  "mock",
+			devicetypes.ComponentTypeNVSwitch:   "mock",
 			devicetypes.ComponentTypePowerShelf: "mock",
 		},
 		ProviderConfigs: map[string]providerapi.ProviderConfig{},

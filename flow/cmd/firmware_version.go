@@ -51,6 +51,6 @@ func init() {
 	firmwareVersionCmd.Flags().String("rack-ids", "", "Comma-separated list of rack UUIDs")
 	firmwareVersionCmd.Flags().String("rack-names", "", "Comma-separated list of rack names")
 	firmwareVersionCmd.Flags().String("component-ids", "", "Comma-separated list of component IDs")
-	firmwareVersionCmd.Flags().StringP("type", "t", "", "Component type: compute, nvlswitch, powershelf")
+	firmwareVersionCmd.Flags().StringP("type", "t", "", "Component type: compute, nvswitch, powershelf")
 	firmwareVersionCmd.Flags().StringP("output", "o", "json", "Output format: json, table")
 }

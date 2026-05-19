@@ -691,7 +691,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      5,
 			},
 			expectedStatus: http.StatusOK,
@@ -715,7 +715,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 				TotalDiffs:      1,
 				MissingCount:    1,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      4,
 			},
 			expectedStatus: http.StatusOK,
@@ -782,7 +782,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 					resp.TotalDiffs = tt.mockResponse.TotalDiffs
 					resp.MissingCount = tt.mockResponse.MissingCount
 					resp.UnexpectedCount = tt.mockResponse.UnexpectedCount
-					resp.DriftCount = tt.mockResponse.DriftCount
+					resp.MismatchCount = tt.mockResponse.MismatchCount
 					resp.MatchCount = tt.mockResponse.MatchCount
 				}).Return(nil)
 			} else {
@@ -888,7 +888,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      10,
 			},
 			expectedStatus: http.StatusOK,
@@ -906,7 +906,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      5,
 			},
 			expectedStatus: http.StatusOK,
@@ -922,7 +922,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 			mockResponse: &flowv1.ValidateComponentsResponse{
 				Diffs: []*flowv1.ComponentDiff{
 					{
-						Type:        flowv1.DiffType_DIFF_TYPE_DRIFT,
+						Type:        flowv1.DiffType_DIFF_TYPE_MISMATCH,
 						ComponentId: "comp-1",
 						FieldDiffs: []*flowv1.FieldDiff{
 							{
@@ -936,7 +936,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 				TotalDiffs:      1,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      1,
+				MismatchCount:   1,
 				MatchCount:      7,
 			},
 			expectedStatus: http.StatusOK,
@@ -1005,7 +1005,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 					resp.TotalDiffs = tt.mockResponse.TotalDiffs
 					resp.MissingCount = tt.mockResponse.MissingCount
 					resp.UnexpectedCount = tt.mockResponse.UnexpectedCount
-					resp.DriftCount = tt.mockResponse.DriftCount
+					resp.MismatchCount = tt.mockResponse.MismatchCount
 					resp.MatchCount = tt.mockResponse.MatchCount
 				}).Return(nil)
 			} else {

@@ -859,7 +859,7 @@ func convertValidateComponentsResponse(rsp *pb.ValidateComponentsResponse) *Vali
 		TotalDiffs:      int(rsp.TotalDiffs),
 		MissingCount:    int(rsp.MissingCount),
 		UnexpectedCount: int(rsp.UnexpectedCount),
-		DriftCount:      int(rsp.DriftCount),
+		MismatchCount:   int(rsp.MismatchCount),
 		MatchCount:      int(rsp.MatchCount),
 	}
 }

@@ -94,7 +94,7 @@ func TestIsCompute(t *testing.T) {
 	comp := New(devicetypes.ComponentTypeCompute, nil, "", nil)
 	assert.True(t, comp.IsCompute())
 
-	comp = New(devicetypes.ComponentTypeNVLSwitch, nil, "", nil)
+	comp = New(devicetypes.ComponentTypeNVSwitch, nil, "", nil)
 	assert.False(t, comp.IsCompute())
 }
 

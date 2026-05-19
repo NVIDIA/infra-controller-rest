@@ -45,7 +45,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("DpuExtensionService: Successfully registered GetDpuExtensionServiceVersionsInfo workflow")
 
 	// Register activities
-	dpuExtServiceManager := swa.NewManageDpuExtensionService(ManagerAccess.Data.EB.Managers.NICo.Client)
+	dpuExtServiceManager := swa.NewManageDpuExtensionService(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register CreateDpuExtensionServiceOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(dpuExtServiceManager.CreateDpuExtensionServiceOnSite)

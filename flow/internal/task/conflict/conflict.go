@@ -51,7 +51,7 @@ import (
 // ComponentType assignment rationale:
 //   - PowerShelf power ops have RequireComponentOverlap=false (rack-level):
 //     cutting power to a shelf affects all components regardless of UUIDs.
-//   - Compute / NVLSwitch power and firmware ops use
+//   - Compute / NVSwitch power and firmware ops use
 //     RequireComponentOverlap=true: isolated to their targeted components.
 //   - BringUp has RequireComponentOverlap=false (rack-level): comprehensive.
 //   - ComponentTypeUnknown (zero value) acts as a wildcard — matches any
@@ -96,15 +96,15 @@ var builtinRule = &Rule{ //nolint
 			},
 			RequireComponentOverlap: true,
 		},
-		// NVLSwitch power ops block each other on overlapping components.
+		// NVSwitch power ops block each other on overlapping components.
 		{
 			A: OperationSpec{
 				OperationType: string(taskcommon.TaskTypePowerControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			B: OperationSpec{
 				OperationType: string(taskcommon.TaskTypePowerControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			RequireComponentOverlap: true,
 		},
@@ -122,17 +122,17 @@ var builtinRule = &Rule{ //nolint
 			},
 			RequireComponentOverlap: true,
 		},
-		// NVLSwitch power ops block firmware upgrades on overlapping
-		// NVLSwitch components.
+		// NVSwitch power ops block firmware upgrades on overlapping
+		// NVSwitch components.
 		{
 			A: OperationSpec{
 				OperationType: string(taskcommon.TaskTypePowerControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			B: OperationSpec{
 				OperationType: string(
 					taskcommon.TaskTypeFirmwareControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			RequireComponentOverlap: true,
 		},

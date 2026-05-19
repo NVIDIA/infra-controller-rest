@@ -607,7 +607,7 @@ func (r *FlowServerImpl) ValidateComponents(ctx context.Context, req *flowv1.Val
 	var diffs []*flowv1.ComponentDiff
 	missingCount := 0
 	unexpectedCount := 0
-	driftCount := 0
+	mismatchCount := 0
 	matchCount := 0
 
 	// Find components only in expected
@@ -646,11 +646,11 @@ func (r *FlowServerImpl) ValidateComponents(ctx context.Context, req *flowv1.Val
 					ActualValue:   actualComp.FirmwareVersion,
 				})
 				diffs = append(diffs, &flowv1.ComponentDiff{
-					Type:        flowv1.DiffType_DIFF_TYPE_DRIFT,
+					Type:        flowv1.DiffType_DIFF_TYPE_MISMATCH,
 					ComponentId: compID,
 					FieldDiffs:  fieldDiffs,
 				})
-				driftCount++
+				mismatchCount++
 			} else {
 				matchCount++
 			}
@@ -662,7 +662,7 @@ func (r *FlowServerImpl) ValidateComponents(ctx context.Context, req *flowv1.Val
 		TotalDiffs:      int32(len(diffs)),
 		MissingCount:    int32(missingCount),
 		UnexpectedCount: int32(unexpectedCount),
-		DriftCount:      int32(driftCount),
+		MismatchCount:   int32(mismatchCount),
 		MatchCount:      int32(matchCount),
 	}, nil
 }

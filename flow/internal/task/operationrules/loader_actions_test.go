@@ -56,12 +56,12 @@ rules:
             timeout: 3m
             poll_interval: 10s
             parameters:
-              component_types: ["compute", "nvlswitch"]
+              component_types: ["compute", "nvswitch"]
           - name: Sleep
             parameters:
               duration: 30s
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 4
         timeout: 15m

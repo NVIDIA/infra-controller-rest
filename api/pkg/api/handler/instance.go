@@ -808,6 +808,12 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 	var nvlifcs []cdbm.NVLinkInterface
 	var ssd *cdbm.StatusDetail
 
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+
 	err = cdb.WithTx(ctx, cih.dbSession, func(tx *cdb.Tx) error {
 		// ==================== Step 4: Machine Selection  ====================
 
@@ -1594,23 +1600,12 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 		if err != nil {
 			var timeoutErr *tp.TimeoutError
 			if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-
 				logger.Error().Err(err).Msg("failed to create Instance, timeout occurred executing workflow on Site.")
-
-				// Create a new context deadlines
-				newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-				defer newcancel()
-
-				// Initiate termination workflow
-				serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing create Instance workflow")
-				if serr != nil {
-					logger.Error().Err(serr).Msg("failed to terminate Temporal workflow for creating Instance")
-					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous Instance creation workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+				timeoutCause := err
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Instance", "CreateInstanceV2")
 				}
-
-				logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous create Instance workflow successfully")
-
-				return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to create Instance, timeout occurred executing workflow on Site: %s", err), nil)
+				return cutil.NewAPIError(http.StatusInternalServerError, "Instance create workflow timed out", nil)
 			}
 
 			code, err := common.UnwrapWorkflowError(err)
@@ -1622,6 +1617,9 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
 	if err != nil {
 		return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
 	}
@@ -1673,6 +1671,12 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 	var dbskgs []cdbm.SSHKeyGroup
 	var ssds []cdbm.StatusDetail
 	reqCtx := ctx
+
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
 	err = cdb.WithTx(ctx, uih.dbSession, func(tx *cdb.Tx) error {
 		// Prepare DAOs
@@ -1780,23 +1784,12 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 		if wferr != nil {
 			var timeoutErr *tp.TimeoutError
 			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
-
 				logger.Error().Err(wferr).Msg("failed to reboot Instance, timeout occurred executing workflow on Site.")
-
-				// Create a new context deadlines
-				newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-				defer newcancel()
-
-				// Initiate termination workflow
-				serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing reboot Instance workflow")
-				if serr != nil {
-					logger.Error().Err(serr).Msg("failed to terminate Temporal workflow for reboot Instance")
-					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous Instance reboot workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+				timeoutCause := wferr
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, *logger, stc, wid, timeoutCause, "Instance", "RebootInstanceV2")
 				}
-
-				logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous reboot Instance workflow successfully")
-
-				return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to reboot Instance, timeout occurred executing workflow on Site: %s", wferr), nil)
+				return cutil.NewAPIError(http.StatusInternalServerError, "Instance reboot workflow timed out", nil)
 			}
 			code, unwrapped := common.UnwrapWorkflowError(wferr)
 			logger.Error().Err(unwrapped).Msg("failed to execute Temporal workflow to reboot Instance")
@@ -1808,6 +1801,9 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 
 		return nil
 	})
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
 	if err != nil {
 		return common.HandleTxError(c, *logger, err, "Failed to reboot Instance, DB transaction error")
 	}
@@ -2723,6 +2719,13 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	var ssds []cdbm.StatusDetail
 	reqCtx := ctx
 	reIssueNVLinkInterfaces := false
+
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+
 	err = cdb.WithTx(ctx, uih.dbSession, func(tx *cdb.Tx) error {
 		// Prepare DAOs
 		sdDAO := cdbm.NewStatusDetailDAO(uih.dbSession)
@@ -3418,23 +3421,12 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		if wferr != nil {
 			var timeoutErr *tp.TimeoutError
 			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
-
 				logger.Error().Err(wferr).Msg("failed to update Instance, timeout occurred executing workflow on Site.")
-
-				// Create a new context deadlines
-				newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-				defer newcancel()
-
-				// Initiate termination workflow
-				serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing update Instance workflow")
-				if serr != nil {
-					logger.Error().Err(serr).Msg("failed to terminate Temporal workflow for update Instance")
-					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous Instance update workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+				timeoutCause := wferr
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Instance", "UpdateInstance")
 				}
-
-				logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous update Instance workflow successfully")
-
-				return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to update Instance, timeout occurred executing workflow on Site: %s", wferr), nil)
+				return cutil.NewAPIError(http.StatusInternalServerError, "Instance update workflow timed out", nil)
 			}
 
 			code, unwrapped := common.UnwrapWorkflowError(wferr)
@@ -3446,6 +3438,9 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
 	if err != nil {
 		return common.HandleTxError(c, logger, err, "Failed to update Instance, DB transaction error")
 	}
@@ -4556,6 +4551,12 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Instance deletion request data", verr)
 	}
 
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
+
 	err = cdb.WithTx(ctx, dih.dbSession, func(tx *cdb.Tx) error {
 		// Update Instance to set status to Deleting
 		_, derr := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, Status: cdb.GetStrPtr(cdbm.InstanceStatusTerminating)})
@@ -4650,23 +4651,12 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 		if wferr != nil {
 			var timeoutErr *tp.TimeoutError
 			if errors.As(wferr, &timeoutErr) || wfCtx.Err() != nil {
-
 				logger.Error().Err(wferr).Msg("failed to delete Instance, timeout occurred executing workflow on Site.")
-
-				// Create a new context deadlines
-				newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-				defer newcancel()
-
-				// Initiate termination workflow
-				serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing delete Instance workflow")
-				if serr != nil {
-					logger.Error().Err(serr).Msg("failed to terminate Temporal workflow for deleting Instance")
-					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous Instance deletion workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+				timeoutCause := wferr
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Instance", "DeleteInstanceV2")
 				}
-
-				logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous delete Instance workflow successfully")
-
-				return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to delete Instance, timeout occurred executing workflow on Site: %s", wferr), nil)
+				return cutil.NewAPIError(http.StatusInternalServerError, "Instance delete workflow timed out", nil)
 			}
 
 			code, unwrapped := common.UnwrapWorkflowError(wferr)
@@ -4678,6 +4668,9 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
 	if err != nil {
 		return common.HandleTxError(c, logger, err, "Failed to delete Instance, DB transaction error")
 	}

@@ -34,10 +34,12 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	svc "github.com/NVIDIA/infra-controller-rest/flow/internal/service"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
 	cmbuiltin "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/builtin"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	temporalmanager "github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/manager"
 	pkgcerts "github.com/NVIDIA/infra-controller-rest/flow/pkg/certs"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
 const (
@@ -178,6 +180,7 @@ func doServe() {
 	if err != nil {
 		log.Fatal().Msgf("failed to initialize component manager registry: %v", err)
 	}
+	logComponentManagerRegistry(cmRegistry)
 
 	temporalManagerConf := temporalmanager.Config{
 		ClientConf: *temporalConf,
@@ -252,5 +255,26 @@ func doServe() {
 
 	if err := service.Start(ctx); err != nil {
 		log.Fatal().Msgf("failed to start the service: %v\n", err)
+	}
+}
+
+func logComponentManagerRegistry(registry *componentmanager.Registry) {
+	descriptors, err := registry.Descriptors()
+	if err != nil {
+		log.Warn().
+			Err(err).
+			Msg("Component manager registry report unavailable")
+		return
+	}
+
+	for _, descriptor := range descriptors {
+		log.Info().
+			Str(
+				"component_type",
+				devicetypes.ComponentTypeToString(descriptor.Type),
+			).
+			Str("implementation", descriptor.Implementation).
+			Strs("capabilities", descriptor.Capabilities.Strings()).
+			Msg("Active component manager capabilities")
 	}
 }

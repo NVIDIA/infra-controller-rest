@@ -101,12 +101,10 @@ func (r *APICancelTaskRequest) Validate() error {
 	return nil
 }
 
-// APIListTasksRequest captures the query parameters shared by the
-// rack-scoped and tray-scoped task list endpoints. PageNumber / PageSize
-// are captured here as raw strings (parallel to the validated *int form
-// bound onto pagination.PageRequest) so they participate in workflow ID
-// hashing — two concurrent requests for different pages must not collide
-// onto the same workflow execution.
+// APIListTasksRequest binds query parameters for rack- and tray-scoped task
+// list endpoints. PageNumber and PageSize are retained as strings (alongside
+// the validated values on pagination.PageRequest) so pagination is included
+// in workflow ID hashing and distinct pages do not reuse the same execution.
 type APIListTasksRequest struct {
 	SiteID     string `query:"siteId"`
 	ActiveOnly bool   `query:"activeOnly"`
@@ -121,9 +119,9 @@ func (r *APIListTasksRequest) Validate() error {
 	return nil
 }
 
-// QueryValues returns the known query parameters used for deterministic
-// workflow ID hashing. Pagination params are included so that concurrent
-// requests on different pages get distinct workflow IDs.
+// QueryValues returns query parameters that participate in deterministic
+// workflow ID hashing, including pagination fields so concurrent requests
+// for different pages do not reuse the same workflow execution.
 func (r *APIListTasksRequest) QueryValues() url.Values {
 	v := url.Values{}
 	v.Set("siteId", r.SiteID)

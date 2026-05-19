@@ -19,6 +19,10 @@ kind: Job
 metadata:
   name: {{ include "nico-rest-db.name" . }}-migration-{{ $tag }}
   namespace: {{ include "nico-rest-db.namespace" . }}
+  annotations:
+    "helm.sh/hook": pre-install,pre-upgrade
+    "helm.sh/hook-weight": "-5"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
   labels:
     {{- include "nico-rest-db.labels" . | nindent 4 }}
 spec:

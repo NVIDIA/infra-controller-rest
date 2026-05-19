@@ -35,7 +35,7 @@ import (
 // These names match Flow's internal ComponentTypeFromString (case-insensitive).
 var APIToProtoComponentTypeName = map[string]string{
 	"Compute":    "COMPONENT_TYPE_COMPUTE",
-	"NVLSwitch":  "COMPONENT_TYPE_NVLSWITCH",
+	"NVSwitch":   "COMPONENT_TYPE_NVSWITCH",
 	"PowerShelf": "COMPONENT_TYPE_POWERSHELF",
 }
 
@@ -43,7 +43,7 @@ var APIToProtoComponentTypeName = map[string]string{
 var ProtoToAPIComponentTypeName = map[flowv1.ComponentType]string{
 	flowv1.ComponentType_COMPONENT_TYPE_UNKNOWN:    "Unknown",
 	flowv1.ComponentType_COMPONENT_TYPE_COMPUTE:    "Compute",
-	flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH:  "NVLSwitch",
+	flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH:   "NVSwitch",
 	flowv1.ComponentType_COMPONENT_TYPE_POWERSHELF: "PowerShelf",
 }
 

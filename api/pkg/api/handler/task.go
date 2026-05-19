@@ -376,14 +376,11 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 }
 
 // ~~~~~ List Tasks Handlers ~~~~~ //
-//
-// The rack-scoped and tray-scoped task list endpoints share the same
-// auth + site lookup + Flow workflow plumbing; the only differences are
-// the path parameter they consume (rack ID vs tray UUID) and which
-// flowv1.ListTasksRequest field carries it (RackId vs ComponentId).
 
-// listTasksHandlerCommon is the shared dependency set for the list
-// handlers below.
+// listTasksHandlerCommon holds dependencies for GetRackTasksHandler and
+// GetTrayTasksHandler. Both handlers authorize the caller, resolve the site,
+// apply pagination, and invoke the ListTasks workflow; filtering differs only
+// by whether ListTasksRequest carries RackId (rack) or ComponentId (tray).
 type listTasksHandlerCommon struct {
 	dbSession  *cdb.Session
 	tc         tClient.Client
@@ -392,8 +389,8 @@ type listTasksHandlerCommon struct {
 	tracerSpan *cutil.TracerSpan
 }
 
-// listTasksContext bundles the request-derived state shared by the list
-// handlers after authorization and site lookup succeed.
+// listTasksContext holds request-derived state for list handlers after
+// authorization and site lookup complete.
 type listTasksContext struct {
 	apiRequest  model.APIListTasksRequest
 	pageRequest pagination.PageRequest
@@ -401,15 +398,14 @@ type listTasksContext struct {
 	stc         tClient.Client
 }
 
-// prepareListTasks runs the standard auth + site + pagination plumbing
-// shared by the rack- and tray-scoped task list handlers.
+// prepareListTasks authorizes the request, resolves the site, and binds
+// pagination for rack- and tray-scoped task list handlers.
 //
-// Contract: on success it returns (listTasksContext, nil); on any
-// failure it writes the error response itself via cutil.NewAPIErrorResponse
-// and returns (nil, echoResult). Callers MUST short-circuit on
-// `lc == nil`, not on `err != nil` — cutil.NewAPIErrorResponse typically
-// returns nil from c.JSON on the happy path, so a non-nil error is not
-// a reliable abort signal.
+// Returns (listTasksContext, nil) on success. On failure it writes the HTTP
+// response via cutil.NewAPIErrorResponse and returns (nil, echoResult).
+// Callers must abort when lc == nil, not when err != nil: NewAPIErrorResponse
+// often returns a nil error after c.JSON succeeds, so err is not a reliable
+// signal that the handler should continue.
 func (h listTasksHandlerCommon) prepareListTasks(c echo.Context, ctx context.Context, logger zerolog.Logger, org string, dbUser *cdbm.User) (*listTasksContext, error) {
 	var apiRequest model.APIListTasksRequest
 	if err := common.ValidateKnownQueryParams(c.QueryParams(), apiRequest); err != nil {
@@ -478,8 +474,8 @@ func (h listTasksHandlerCommon) prepareListTasks(c echo.Context, ctx context.Con
 		logger.Warn().Err(err).Msg("error binding pagination request data into API model")
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Failed to parse request pagination data", nil)
 	}
-	// Tasks have no documented orderBy fields yet; pass an empty allow list
-	// so Validate enforces the page bounds but rejects orderBy.
+	// No orderBy fields are defined for Tasks; reject orderBy while validating
+	// page bounds.
 	if err := pageRequest.Validate(nil); err != nil {
 		logger.Warn().Err(err).Msg("error validating pagination request data")
 		return nil, cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Failed to validate pagination request data", err)

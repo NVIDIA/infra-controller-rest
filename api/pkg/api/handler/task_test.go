@@ -213,11 +213,9 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 	}
 }
 
-// runListTasksHandlerCases drives both GetRackTasksHandler and
-// GetTrayTasksHandler through the same matrix; the only differences are
-// the URL path segment, the param name, and the workflow name asserted
-// against the Temporal mock. Both call the "ListTasks" workflow, so the
-// workflow assertion is the same.
+// runListTasksHandlerCases exercises GetRackTasksHandler and GetTrayTasksHandler
+// with a shared case matrix. pathFmt and the path parameter differ per handler;
+// both invoke the ListTasks workflow and use the same Temporal mock expectation.
 type listTasksHandlerCase struct {
 	name           string
 	reqOrg         string
@@ -273,8 +271,7 @@ func runListTasksHandlerCases(t *testing.T, pathFmt string, handle func(echo.Con
 			var tasks []model.APIRackTask
 			require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &tasks))
 			require.Len(t, tasks, len(tt.mockTasks))
-			// Pagination header should be present on success.
-			require.NotEmpty(t, rec.Header().Get("X-Pagination"))
+			require.NotEmpty(t, rec.Header().Get("X-Pagination"), "X-Pagination")
 		})
 	}
 }

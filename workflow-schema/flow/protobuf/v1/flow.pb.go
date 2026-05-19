@@ -94,7 +94,7 @@ type ComponentType int32
 const (
 	ComponentType_COMPONENT_TYPE_UNKNOWN    ComponentType = 0
 	ComponentType_COMPONENT_TYPE_COMPUTE    ComponentType = 1
-	ComponentType_COMPONENT_TYPE_NVLSWITCH  ComponentType = 2
+	ComponentType_COMPONENT_TYPE_NVSWITCH   ComponentType = 2
 	ComponentType_COMPONENT_TYPE_POWERSHELF ComponentType = 3
 	ComponentType_COMPONENT_TYPE_TORSWITCH  ComponentType = 4
 	ComponentType_COMPONENT_TYPE_UMS        ComponentType = 5
@@ -106,7 +106,7 @@ var (
 	ComponentType_name = map[int32]string{
 		0: "COMPONENT_TYPE_UNKNOWN",
 		1: "COMPONENT_TYPE_COMPUTE",
-		2: "COMPONENT_TYPE_NVLSWITCH",
+		2: "COMPONENT_TYPE_NVSWITCH",
 		3: "COMPONENT_TYPE_POWERSHELF",
 		4: "COMPONENT_TYPE_TORSWITCH",
 		5: "COMPONENT_TYPE_UMS",
@@ -115,7 +115,7 @@ var (
 	ComponentType_value = map[string]int32{
 		"COMPONENT_TYPE_UNKNOWN":    0,
 		"COMPONENT_TYPE_COMPUTE":    1,
-		"COMPONENT_TYPE_NVLSWITCH":  2,
+		"COMPONENT_TYPE_NVSWITCH":   2,
 		"COMPONENT_TYPE_POWERSHELF": 3,
 		"COMPONENT_TYPE_TORSWITCH":  4,
 		"COMPONENT_TYPE_UMS":        5,
@@ -555,7 +555,7 @@ const (
 	DiffType_DIFF_TYPE_UNKNOWN    DiffType = 0
 	DiffType_DIFF_TYPE_MISSING    DiffType = 1 // Expected by Flow but not found in the component manager service
 	DiffType_DIFF_TYPE_UNEXPECTED DiffType = 2 // Found in the component manager service but not expected by Flow
-	DiffType_DIFF_TYPE_DRIFT      DiffType = 3 // In both but with field differences
+	DiffType_DIFF_TYPE_MISMATCH   DiffType = 3 // In both but with field differences
 )
 
 // Enum value maps for DiffType.
@@ -564,13 +564,13 @@ var (
 		0: "DIFF_TYPE_UNKNOWN",
 		1: "DIFF_TYPE_MISSING",
 		2: "DIFF_TYPE_UNEXPECTED",
-		3: "DIFF_TYPE_DRIFT",
+		3: "DIFF_TYPE_MISMATCH",
 	}
 	DiffType_value = map[string]int32{
 		"DIFF_TYPE_UNKNOWN":    0,
 		"DIFF_TYPE_MISSING":    1,
 		"DIFF_TYPE_UNEXPECTED": 2,
-		"DIFF_TYPE_DRIFT":      3,
+		"DIFF_TYPE_MISMATCH":   3,
 	}
 )
 
@@ -3525,7 +3525,7 @@ func (x *GetComponentsResponse) GetTotal() int32 {
 
 type ValidateComponentsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	TargetSpec    *OperationTargetSpec   `protobuf:"bytes,1,opt,name=target_spec,json=targetSpec,proto3,oneof" json:"target_spec,omitempty"` // Optional: Flexible targeting: rack(s) with optional type filter, or specific components. If not provided, returns all drifts.
+	TargetSpec    *OperationTargetSpec   `protobuf:"bytes,1,opt,name=target_spec,json=targetSpec,proto3,oneof" json:"target_spec,omitempty"` // Optional: Flexible targeting: rack(s) with optional type filter, or specific components. If not provided, returns all diffs.
 	Filters       []*Filter              `protobuf:"bytes,2,rep,name=filters,proto3" json:"filters,omitempty"`                               // Filter conditions for component queries
 	Pagination    *Pagination            `protobuf:"bytes,3,opt,name=pagination,proto3,oneof" json:"pagination,omitempty"`
 	OrderBy       *OrderBy               `protobuf:"bytes,4,opt,name=order_by,json=orderBy,proto3,oneof" json:"order_by,omitempty"`
@@ -3598,7 +3598,7 @@ type ValidateComponentsResponse struct {
 	// Summary counts
 	MissingCount    int32 `protobuf:"varint,3,opt,name=missing_count,json=missingCount,proto3" json:"missing_count,omitempty"`          // Expected by Flow but not found in the component manager service
 	UnexpectedCount int32 `protobuf:"varint,4,opt,name=unexpected_count,json=unexpectedCount,proto3" json:"unexpected_count,omitempty"` // Found in the component manager service but not expected by Flow
-	DriftCount      int32 `protobuf:"varint,5,opt,name=drift_count,json=driftCount,proto3" json:"drift_count,omitempty"`
+	MismatchCount   int32 `protobuf:"varint,5,opt,name=mismatch_count,json=mismatchCount,proto3" json:"mismatch_count,omitempty"`       // In both but with field differences
 	MatchCount      int32 `protobuf:"varint,6,opt,name=match_count,json=matchCount,proto3" json:"match_count,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
@@ -3662,9 +3662,9 @@ func (x *ValidateComponentsResponse) GetUnexpectedCount() int32 {
 	return 0
 }
 
-func (x *ValidateComponentsResponse) GetDriftCount() int32 {
+func (x *ValidateComponentsResponse) GetMismatchCount() int32 {
 	if x != nil {
-		return x.DriftCount
+		return x.MismatchCount
 	}
 	return 0
 }
@@ -3682,7 +3682,7 @@ type ComponentDiff struct {
 	ComponentId   string                 `protobuf:"bytes,2,opt,name=component_id,json=componentId,proto3" json:"component_id,omitempty"` // Component ID assigned by the component manager service
 	Expected      *Component             `protobuf:"bytes,3,opt,name=expected,proto3" json:"expected,omitempty"`                          // Populated when type is MISSING
 	Actual        *Component             `protobuf:"bytes,4,opt,name=actual,proto3" json:"actual,omitempty"`
-	FieldDiffs    []*FieldDiff           `protobuf:"bytes,5,rep,name=field_diffs,json=fieldDiffs,proto3" json:"field_diffs,omitempty"` // Populated when type is DRIFT
+	FieldDiffs    []*FieldDiff           `protobuf:"bytes,5,rep,name=field_diffs,json=fieldDiffs,proto3" json:"field_diffs,omitempty"` // Populated when type is MISMATCH
 	Id            *UUID                  `protobuf:"bytes,6,opt,name=id,proto3" json:"id,omitempty"`                                   // Flow internal component UUID
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -7899,15 +7899,14 @@ const file_flow_proto_rawDesc = "" +
 	"\border_by\x18\x04 \x01(\v2\v.v1.OrderByH\x02R\aorderBy\x88\x01\x01B\x0e\n" +
 	"\f_target_specB\r\n" +
 	"\v_paginationB\v\n" +
-	"\t_order_by\"\xf8\x01\n" +
+	"\t_order_by\"\xfe\x01\n" +
 	"\x1aValidateComponentsResponse\x12'\n" +
 	"\x05diffs\x18\x01 \x03(\v2\x11.v1.ComponentDiffR\x05diffs\x12\x1f\n" +
 	"\vtotal_diffs\x18\x02 \x01(\x05R\n" +
 	"totalDiffs\x12#\n" +
 	"\rmissing_count\x18\x03 \x01(\x05R\fmissingCount\x12)\n" +
-	"\x10unexpected_count\x18\x04 \x01(\x05R\x0funexpectedCount\x12\x1f\n" +
-	"\vdrift_count\x18\x05 \x01(\x05R\n" +
-	"driftCount\x12\x1f\n" +
+	"\x10unexpected_count\x18\x04 \x01(\x05R\x0funexpectedCount\x12%\n" +
+	"\x0emismatch_count\x18\x05 \x01(\x05R\rmismatchCount\x12\x1f\n" +
 	"\vmatch_count\x18\x06 \x01(\x05R\n" +
 	"matchCount\"\xf0\x01\n" +
 	"\rComponentDiff\x12 \n" +
@@ -8221,11 +8220,11 @@ const file_flow_proto_rawDesc = "" +
 	"\aBMCType\x12\x14\n" +
 	"\x10BMC_TYPE_UNKNOWN\x10\x00\x12\x11\n" +
 	"\rBMC_TYPE_HOST\x10\x01\x12\x10\n" +
-	"\fBMC_TYPE_DPU\x10\x02*\xd2\x01\n" +
+	"\fBMC_TYPE_DPU\x10\x02*\xd1\x01\n" +
 	"\rComponentType\x12\x1a\n" +
 	"\x16COMPONENT_TYPE_UNKNOWN\x10\x00\x12\x1a\n" +
-	"\x16COMPONENT_TYPE_COMPUTE\x10\x01\x12\x1c\n" +
-	"\x18COMPONENT_TYPE_NVLSWITCH\x10\x02\x12\x1d\n" +
+	"\x16COMPONENT_TYPE_COMPUTE\x10\x01\x12\x1b\n" +
+	"\x17COMPONENT_TYPE_NVSWITCH\x10\x02\x12\x1d\n" +
 	"\x19COMPONENT_TYPE_POWERSHELF\x10\x03\x12\x1c\n" +
 	"\x18COMPONENT_TYPE_TORSWITCH\x10\x04\x12\x16\n" +
 	"\x12COMPONENT_TYPE_UMS\x10\x05\x12\x16\n" +
@@ -8273,12 +8272,12 @@ const file_flow_proto_rawDesc = "" +
 	"\x13TASK_STATUS_WAITING\x10\x06*S\n" +
 	"\x10TaskExecutorType\x12\x1e\n" +
 	"\x1aTASK_EXECUTOR_TYPE_UNKNOWN\x10\x00\x12\x1f\n" +
-	"\x1bTASK_EXECUTOR_TYPE_TEMPORAL\x10\x01*g\n" +
+	"\x1bTASK_EXECUTOR_TYPE_TEMPORAL\x10\x01*j\n" +
 	"\bDiffType\x12\x15\n" +
 	"\x11DIFF_TYPE_UNKNOWN\x10\x00\x12\x15\n" +
 	"\x11DIFF_TYPE_MISSING\x10\x01\x12\x18\n" +
-	"\x14DIFF_TYPE_UNEXPECTED\x10\x02\x12\x13\n" +
-	"\x0fDIFF_TYPE_DRIFT\x10\x03*p\n" +
+	"\x14DIFF_TYPE_UNEXPECTED\x10\x02\x12\x16\n" +
+	"\x12DIFF_TYPE_MISMATCH\x10\x03*p\n" +
 	"\x10ConflictStrategy\x12!\n" +
 	"\x1dCONFLICT_STRATEGY_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17CONFLICT_STRATEGY_QUEUE\x10\x01\x12\x1c\n" +
