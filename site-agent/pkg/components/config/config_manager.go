@@ -86,7 +86,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 		log.Info().Err(err).Msg("Invalid Core gRPC security option, using server TLS as default")
 		coreGrpcSecOpt = int(client.ServerTLS)
 	}
-	if coreGrpcSecOpt < int(client.InsecureGrpc) && coreGrpcSecOpt > int(client.MutualTLS) {
+	if coreGrpcSecOpt < int(client.InsecureGrpc) || coreGrpcSecOpt > int(client.MutualTLS) {
 		coreGrpcSecOpt = int(client.ServerTLS)
 	}
 	flag.IntVar(&coreGrpcSecOpt, "coreGrpcSecureOptions", coreGrpcSecOpt, "Core gRPC security option")
