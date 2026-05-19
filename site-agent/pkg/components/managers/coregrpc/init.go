@@ -66,7 +66,7 @@ func (coregrpc *API) Start() {
 		if time.Since(start) >= client.CoreGrpcConnectionRetryTimeout {
 			panic(fmt.Errorf("Core gRPC: failed to create gRPC client within %s: %w", client.CoreGrpcConnectionRetryTimeout, err))
 		}
-		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("retry_in", backoff).Msg("Core gRPC: failed to create gRPC client, retrying")
+		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("RetryIn", backoff).Msg("Core gRPC: failed to create gRPC client, retrying")
 		time.Sleep(backoff)
 		backoff *= 2
 		if backoff > client.CoreGrpcConnectionBackoffMax {

@@ -79,7 +79,7 @@ func (flowgrpc *API) Start() {
 		if time.Since(start) >= client.FlowGrpcConnectionRetryTimeout {
 			panic(fmt.Errorf("Flow gRPC: failed to create gRPC client within %s: %w", client.FlowGrpcConnectionRetryTimeout, err))
 		}
-		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("retry_in", backoff).Msg("Flow gRPC: failed to create gRPC client, retrying")
+		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("RetryIn", backoff).Msg("Flow gRPC: failed to create gRPC client, retrying")
 		time.Sleep(backoff)
 		backoff *= 2
 		if backoff > client.FlowGrpcConnectionBackoffMax {

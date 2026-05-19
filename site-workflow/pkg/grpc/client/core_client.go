@@ -341,7 +341,7 @@ func (cac *CoreGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initi
 				panic(fmt.Errorf("Core gRPC: failed to reinitialize gRPC client with new certificates within %s: %w",
 					CoreGrpcConnectionRetryTimeout, err))
 			}
-			logger.Error().Err(err).Dur("RetryInSeconds", reloadBackoff).Msg("Failed to reinitialize gRPC client with new certificates, retrying")
+			logger.Error().Err(err).Dur("RetryIn", reloadBackoff).Msg("Failed to reinitialize gRPC client with new certificates, retrying")
 			ticker.Reset(reloadBackoff)
 			reloadBackoff *= 2
 			if reloadBackoff > CoreGrpcConnectionBackoffMax {

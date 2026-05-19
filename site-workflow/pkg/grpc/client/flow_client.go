@@ -360,7 +360,7 @@ func (fgac *FlowGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, init
 				panic(fmt.Errorf("Flow gRPC: failed to reinitialize gRPC client with new certificates within %s: %w",
 					FlowGrpcConnectionRetryTimeout, err))
 			}
-			logger.Error().Err(err).Dur("RetryInSeconds", reloadBackoff).Msg("Failed to reinitialize gRPC client with new certificates, retrying")
+			logger.Error().Err(err).Dur("RetryIn", reloadBackoff).Msg("Failed to reinitialize gRPC client with new certificates, retrying")
 			ticker.Reset(reloadBackoff)
 			reloadBackoff *= 2
 			if reloadBackoff > FlowGrpcConnectionBackoffMax {
