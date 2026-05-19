@@ -262,7 +262,7 @@ core-protogen:
 	go fmt ./...
 
 flow-proto:
-	FLOW_DIR=flow \
+	FLOW_DIR=flow; \
 	ls "$${FLOW_DIR}/proto/v1"; \
 	for file in "$${FLOW_DIR}"/proto/v1/*.proto; do \
 		cp "$$file" "workflow-schema/flow/proto/v1/"; \
