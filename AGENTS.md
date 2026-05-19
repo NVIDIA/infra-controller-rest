@@ -258,6 +258,130 @@ predictable and every entity has the same surface:
 cover request-shape conversion, and `(*cdbm.Vpc).ToDeletionRequestProto`
 stays on the entity because there's no API request body for delete.
 
+### Database transactions
+
+Handler code that touches the database uses the closure-based transaction
+helpers from `db/pkg/db`, not manual `BeginTx`/`Commit`/`Rollback`. Most of
+the rules below are lessons from the WithTx migration of every primary
+handler — applying them keeps the next handler's diff predictable.
+
+1. **Use `cdb.WithTx` / `cdb.WithTxResult`.** Both run the closure in a
+   transaction and unwind it for you on error. `WithTxResult[T]` returns a
+   single `T` from the closure; `WithTx` returns only `error` and uses
+   outer-scope variables for any outputs.
+2. **Pick one or the other — don't mix.** `WithTxResult` paired with
+   outer-scope partner vars populated inside the closure is the worst of
+   both worlds. Either use `WithTxResult` cleanly (single value out) or use
+   `WithTx` with every output as an outer-scope variable. The Network
+   Security Group, InfiniBand Partition, and VPC Prefix handlers were
+   reworked specifically to settle this.
+3. **Reads belong outside the transaction unless they need to be inside.**
+   Pure input-validation reads (does this site exist, does the tenant own
+   it, is the SSH key on this tenant) hold the tx open and pin a DB
+   connection for no benefit. Move them above the `cdb.WithTx(...)` call
+   and start the tx only when writes begin. Reads that *do* belong inside
+   are: anything done under an advisory lock for race protection,
+   anything whose result drives a write decision that must see the locked
+   state (e.g. existing associations used for sync-state diff), and
+   reads done in the same tx as their dependent writes for read-your-writes
+   consistency.
+4. **Acquire an advisory lock at the top of the closure for TOCTOU-prone
+   flows.** When the closure does read-then-mutate on one entity (or two
+   concurrent writers could both pass a pre-flight check), call
+   `tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(<key>), nil)`
+   first. After the lock, re-read whatever you pre-checked outside the tx
+   so the check and the write happen against the same snapshot. Don't keep
+   the pre-flight check around if the in-tx check covers it — one source
+   of truth is clearer than two.
+5. **Workflow-trigger flows use the `timeoutResp` pattern.** When the
+   closure does `stc.ExecuteWorkflow` + `we.Get(...)`, a timeout has to
+   terminate the workflow *after* the DB tx unwinds so the cleanup call
+   doesn't block holding a connection. Declare `var timeoutResp func() error`
+   in the outer scope, set it inside the timeout branch, return a
+   `cutil.NewAPIError` from the closure to roll back the tx, then call
+   `timeoutResp()` after `WithTx` returns:
+
+   ```go
+   var timeoutResp func() error
+   err = cdb.WithTx(ctx, dbSession, func(tx *cdb.Tx) error {
+       // ... writes ...
+       we, wferr := stc.ExecuteWorkflow(wfCtx, opts, "CreateInstanceV2", req)
+       // ... wferr handling ...
+       wferr = we.Get(wfCtx, nil)
+       if wferr != nil {
+           var timeoutErr *tp.TimeoutError
+           if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+               timeoutCause := wferr // explicit capture; defensive against future refactors
+               timeoutResp = func() error {
+                   return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Instance", "CreateInstanceV2")
+               }
+               return cutil.NewAPIError(http.StatusInternalServerError, "Instance create workflow timed out", nil)
+           }
+           // ... non-timeout error paths ...
+       }
+       return nil
+   })
+   // Surface real tx-helper errors first so they aren't masked by the
+   // timeout response (commit/rollback failures wrap into something other
+   // than the cutil.APIError marker we returned for the timeout case).
+   if err != nil {
+       var apiErr *cutil.APIError
+       if !errors.As(err, &apiErr) {
+           return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
+       }
+   }
+   if timeoutResp != nil {
+       return timeoutResp()
+   }
+   if err != nil {
+       return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
+   }
+   ```
+
+   Notes:
+   - `common.TerminateWorkflowOnTimeOut` replaces ~12 lines of inline
+     `stc.TerminateWorkflow` + manual context boilerplate. Always prefer it.
+   - **Pass the literal workflow name** (the exact string used in
+     `stc.ExecuteWorkflow`), not a shortened action label. The helper uses
+     it in logs and the termination reason, so `"CreateInstanceV2"` —
+     not `"Create"` — is what should be there.
+   - **Capture the timeout error explicitly** (`timeoutCause := wferr`)
+     before the closure literal. The closure-scoped variable usually
+     preserves the right value due to Go's per-iteration scoping, but the
+     explicit capture documents intent and is resilient to future
+     refactors that rename or move things around.
+6. **Error returns inside vs. outside the closure.** Inside, return
+   `cutil.NewAPIError(code, msg, data)` — `common.HandleTxError` translates
+   it to a response after the tx unwinds. Outside (post-`WithTx`), return
+   `cutil.NewAPIErrorResponse(c, code, msg, data)` directly. When moving a
+   read out of the closure, the error path's constructor needs to flip too.
+7. **Don't leak raw DB errors to clients.** Pass `nil` (not the underlying
+   `derr`) as the `data` argument of `cutil.NewAPIError` /
+   `cutil.NewAPIErrorResponse`. Log the underlying error with the contextual
+   `logger` so it lands in server logs without ending up in the response
+   payload.
+8. **Split assign-and-condition into two statements.** Prefer
+
+   ```go
+   derr := someDAO.Action(ctx, tx, ...)
+   if derr != nil {
+       logger.Error().Err(derr).Msg("...")
+       return cutil.NewAPIError(http.StatusInternalServerError, "...", nil)
+   }
+   ```
+
+   over `if derr := someDAO.Action(...); derr != nil { ... }`. This is a
+   reviewer preference applied consistently across the codebase — the
+   wider scope on the error variable is a feature, not a bug, and the two
+   statements read more cleanly than the combined form.
+
+The Instance handlers (`api/pkg/api/handler/instance.go`) cover rules 1–8
+end-to-end across Create/Update/Reboot/Delete and serve as the most
+complete reference. SSH Key Group's Create handler is the cleanest example
+of rule 3 (validation reads hoisted out of the tx). NVLink Logical
+Partition's Delete handler shows the rule 5 `timeoutResp`-gating pattern
+in its simplest form.
+
 ## Git Workflow
 
 When writing git commit messages, follow the conventions below:
