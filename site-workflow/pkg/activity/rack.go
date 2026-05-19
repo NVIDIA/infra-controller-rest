@@ -332,14 +332,16 @@ func (mr *ManageRack) ListTasks(ctx context.Context, request *flowv1.ListTasksRe
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	flow, err := mr.FlowAtomicClient.GetFlowClient()
-	if err != nil {
-		return nil, err
+	grpcClient := mr.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, cClient.ErrFlowGrpcClientNotConnected
 	}
 
-	response, err := flow.ListTasks(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	response, err := grpcServiceClient.ListTasks(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to list tasks using Flow API")
+		logger.Warn().Err(err).Msg("Failed to list tasks using Flow gRPC API")
 		return nil, swe.WrapErr(err)
 	}
 

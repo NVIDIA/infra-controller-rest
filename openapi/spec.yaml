@@ -224,7 +224,7 @@ tags:
       Tray represents a component within a Rack.
   - name: Task
     description: |-
-      Task represents an asynchronous, site-scoped operation tracked by Flow (e.g. firmware update, power state change, rack bring-up). Tasks are created as a side effect of operations on Racks, Trays, or other components; this section covers the endpoints used to inspect and cancel them.
+      Task represents an asynchronous, site-scoped operation (for example firmware update, power state change, or rack bring-up). Tasks are created when operations run against Racks, Trays, or other components. Endpoints in this tag retrieve or cancel a Task by ID; list Tasks for a Rack or Tray under the Rack and Tray tags.
   - name: Network Security Group
     description: |-
       Network Security Group is a security policy that controls the traffic flowing between Instances.
@@ -10341,10 +10341,10 @@ paths:
       responses:
         '202':
           description: |-
-            Accepted. The cancellation request was accepted and the task as
-            last reported by Flow is returned. Clients should `GET` the task
-            to observe the final state, since cancellation is best-effort
-            and the underlying workflow may still be terminating.
+            Accepted. The cancellation request was accepted and the Task's
+            last known state is returned. Clients should `GET` the task to
+            observe the final state, since cancellation is best-effort and
+            the operation may still be terminating.
           content:
             application/json:
               schema:
@@ -10468,10 +10468,10 @@ paths:
       responses:
         '202':
           description: |-
-            Accepted. The cancellation request was accepted and the task as
-            last reported by Flow is returned. Clients should `GET` the task
-            to observe the final state, since cancellation is best-effort
-            and the underlying workflow may still be terminating.
+            Accepted. The cancellation request was accepted and the Task's
+            last known state is returned. Clients should `GET` the task to
+            observe the final state, since cancellation is best-effort and
+            the operation may still be terminating.
           content:
             application/json:
               schema:

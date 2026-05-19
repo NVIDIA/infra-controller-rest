@@ -720,6 +720,50 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 	}
 }
 
+func TestManageRack_ListTasks(t *testing.T) {
+	tests := []struct {
+		name        string
+		request     *flowv1.ListTasksRequest
+		wantErr     bool
+		errContains string
+	}{
+		{
+			name:        "nil request returns error",
+			request:     nil,
+			wantErr:     true,
+			errContains: "empty list tasks request",
+		},
+		{
+			name:    "successful request",
+			request: &flowv1.ListTasksRequest{},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockFlowGrpcClient := cClient.NewMockFlowGrpcClient()
+			flowGrpcAtomicClient := cClient.NewFlowGrpcAtomicClient(&cClient.FlowGrpcClientConfig{})
+			flowGrpcAtomicClient.SwapClient(mockFlowGrpcClient)
+			manageRack := NewManageRack(flowGrpcAtomicClient)
+
+			ctx := context.Background()
+			result, err := manageRack.ListTasks(ctx, tt.request)
+
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+			assert.NotNil(t, result)
+		})
+	}
+}
+
 func TestManageRack_CancelTask(t *testing.T) {
 	tests := []struct {
 		name        string
