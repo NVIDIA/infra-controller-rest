@@ -71,8 +71,12 @@ const (
 	// gRPC client default dial timeout
 	defaultFlowGrpcDialTimeoutSeconds = 5 // 5 seconds
 
-	// Flow gRPC client default retry interval
-	FlowGrpcConnectionRetryIntervalSeconds = 5 // 5 seconds
+	// FlowGrpcConnectionRetryTimeout is the maximum time to retry establishing a Flow gRPC connection.
+	FlowGrpcConnectionRetryTimeout = 15 * time.Minute
+	// FlowGrpcConnectionBackoffInitial is the initial delay between connection retries.
+	FlowGrpcConnectionBackoffInitial = 5 * time.Second
+	// FlowGrpcConnectionBackoffMax is the maximum delay between connection retries.
+	FlowGrpcConnectionBackoffMax = 60 * time.Second
 )
 
 // FlowClientConfig is the data structure for the client configuration
@@ -326,6 +330,10 @@ func (fgac *FlowGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, init
 	defer ticker.Stop()
 
 	lastClientCertMD5, lastServerCAMD5 := initialClientCertMD5, initialServerCAMD5
+	var (
+		reloadStarted time.Time
+		reloadBackoff time.Duration
+	)
 
 	for range ticker.C {
 		changed, newClientMD5, newServerMD5, err := fgac.CheckCertificates(lastClientCertMD5, lastServerCAMD5)
@@ -334,38 +342,58 @@ func (fgac *FlowGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, init
 			continue
 		}
 
-		if changed {
-			newClient, err := NewFlowGrpcClient(fgac.Config)
-			if err != nil {
-				logger.Error().Err(err).Msgf("Failed to reinitialize gRPC client with new certificates, retrying again in %d seconds", FlowGrpcConnectionRetryIntervalSeconds)
-				ticker.Reset(FlowGrpcConnectionRetryIntervalSeconds * time.Second)
-				continue
-			}
-
-			// Atomically update the client instance and get the old one.
-			oldClient := fgac.SwapClient(newClient)
-
-			// Delayed closure of the old client.
-			go func(clientToClose *FlowGrpcClient) {
-				// Delay the closure to allow ongoing client requests to complete.
-				time.Sleep(10 * time.Second) // Adjust the delay as needed.
-
-				// Ensure the client exists and has a connection to close.
-				if clientToClose != nil {
-					if err := clientToClose.Close(); err != nil {
-						log.Error().Err(err).Msg("Error closing old FlowGrpcClient connection")
-					}
-				}
-			}(oldClient)
-
-			logger.Info().Msg("gRPC client successfully reinitialized with new certificates")
-
-			// Update the stored MD5 hashes with the new ones for the next comparison.
-			lastClientCertMD5, lastServerCAMD5 = newClientMD5, newServerMD5
-
-			// Reset the ticker interval to the default
-			ticker.Reset(getFlowGrpcCertificateCheckInterval())
+		if !changed && reloadBackoff == 0 {
+			continue
 		}
+
+		if reloadBackoff == 0 {
+			reloadStarted = time.Now()
+			reloadBackoff = FlowGrpcConnectionBackoffInitial
+		} else if time.Since(reloadStarted) >= FlowGrpcConnectionRetryTimeout {
+			panic(fmt.Errorf("Flow gRPC: failed to reinitialize gRPC client with new certificates within %s",
+				FlowGrpcConnectionRetryTimeout))
+		}
+
+		newClient, err := NewFlowGrpcClient(fgac.Config)
+		if err != nil {
+			if time.Since(reloadStarted) >= FlowGrpcConnectionRetryTimeout {
+				panic(fmt.Errorf("Flow gRPC: failed to reinitialize gRPC client with new certificates within %s: %w",
+					FlowGrpcConnectionRetryTimeout, err))
+			}
+			logger.Error().Err(err).Dur("RetryInSeconds", reloadBackoff).Msg("Failed to reinitialize gRPC client with new certificates, retrying")
+			ticker.Reset(reloadBackoff)
+			reloadBackoff *= 2
+			if reloadBackoff > FlowGrpcConnectionBackoffMax {
+				reloadBackoff = FlowGrpcConnectionBackoffMax
+			}
+			continue
+		}
+
+		reloadBackoff = 0
+
+		// Atomically update the client instance and get the old one.
+		oldClient := fgac.SwapClient(newClient)
+
+		// Delayed closure of the old client.
+		go func(clientToClose *FlowGrpcClient) {
+			// Delay the closure to allow ongoing client requests to complete.
+			time.Sleep(10 * time.Second) // Adjust the delay as needed.
+
+			// Ensure the client exists and has a connection to close.
+			if clientToClose != nil {
+				if err := clientToClose.Close(); err != nil {
+					log.Error().Err(err).Msg("Error closing old FlowGrpcClient connection")
+				}
+			}
+		}(oldClient)
+
+		logger.Info().Msg("gRPC client successfully reinitialized with new certificates")
+
+		// Update the stored MD5 hashes with the new ones for the next comparison.
+		lastClientCertMD5, lastServerCAMD5 = newClientMD5, newServerMD5
+
+		// Reset the ticker interval to the default
+		ticker.Reset(getFlowGrpcCertificateCheckInterval())
 	}
 }
 

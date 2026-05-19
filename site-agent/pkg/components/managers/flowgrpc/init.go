@@ -22,15 +22,13 @@ import (
 	"time"
 
 	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
 	// MetricFlowStatus is the metric name for the Flow gRPC health status
 	MetricFlowStatus = "flow_grpc_health_status"
-
-	// Flow gRPC client default retry interval
-	FlowGrpcConnectionRetryIntervalSeconds = 5 // 5 seconds
 )
 
 // Init initializes the Flow gRPC client manager
@@ -69,16 +67,24 @@ func (flowgrpc *API) Start() {
 		return
 	}
 
-	// Keep retrying to create the client until it succeeds
+	// Site Agent should not be able to start if the Flow gRPC is enabled but the client cannot be created
+	start := time.Now()
+	backoff := client.FlowGrpcConnectionBackoffInitial
 	for {
 		err := flowgrpc.CreateGrpcClient()
-		if err != nil {
-			ManagerAccess.Data.EB.Log.Error().Msgf("Flow gRPC: failed to create gRPC client: %v", err)
-			time.Sleep(FlowGrpcConnectionRetryIntervalSeconds * time.Second)
-			continue
+		if err == nil {
+			ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: successfully created gRPC client")
+			break
 		}
-		ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: successfully created gRPC client")
-		break
+		if time.Since(start) >= client.FlowGrpcConnectionRetryTimeout {
+			panic(fmt.Errorf("Flow gRPC: failed to create gRPC client within %s: %w", client.FlowGrpcConnectionRetryTimeout, err))
+		}
+		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("retry_in", backoff).Msg("Flow gRPC: failed to create gRPC client, retrying")
+		time.Sleep(backoff)
+		backoff *= 2
+		if backoff > client.FlowGrpcConnectionBackoffMax {
+			backoff = client.FlowGrpcConnectionBackoffMax
+		}
 	}
 }
 

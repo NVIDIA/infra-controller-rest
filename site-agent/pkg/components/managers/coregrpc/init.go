@@ -54,16 +54,24 @@ func (coregrpc *API) Init() {
 func (coregrpc *API) Start() {
 	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Starting Core gRPC client manager")
 
-	// Keep retrying to create the client until it succeeds
+	// Site Agent should not be able to start if the Core gRPC client cannot be created
+	start := time.Now()
+	backoff := client.CoreGrpcConnectionBackoffInitial
 	for {
 		err := coregrpc.CreateGrpcClient()
-		if err != nil {
-			ManagerAccess.Data.EB.Log.Error().Err(err).Msgf("Core gRPC: failed to create gRPC client, trying again in %d seconds", client.CoreGrpcConnectionRetryIntervalSeconds)
-			time.Sleep(client.CoreGrpcConnectionRetryIntervalSeconds * time.Second)
-			continue
+		if err == nil {
+			ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: successfully created gRPC client")
+			break
 		}
-		ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: successfully created gRPC client")
-		break
+		if time.Since(start) >= client.CoreGrpcConnectionRetryTimeout {
+			panic(fmt.Errorf("Core gRPC: failed to create gRPC client within %s: %w", client.CoreGrpcConnectionRetryTimeout, err))
+		}
+		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("retry_in", backoff).Msg("Core gRPC: failed to create gRPC client, retrying")
+		time.Sleep(backoff)
+		backoff *= 2
+		if backoff > client.CoreGrpcConnectionBackoffMax {
+			backoff = client.CoreGrpcConnectionBackoffMax
+		}
 	}
 }
 

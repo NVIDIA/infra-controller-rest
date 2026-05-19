@@ -89,7 +89,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if coreGrpcSecOpt < int(client.InsecureGrpc) && coreGrpcSecOpt > int(client.MutualTLS) {
 		coreGrpcSecOpt = int(client.ServerTLS)
 	}
-	flag.IntVar(&coreGrpcSecOpt, "coreGrpcSecureOptions", coreGrpcSecOpt, "Core gRPC security option") // This is a no-op, just defines the flag
+	flag.IntVar(&coreGrpcSecOpt, "coreGrpcSecureOptions", coreGrpcSecOpt, "Core gRPC security option")
 	conf.CoreGrpc.Secure = client.SecureOptions(coreGrpcSecOpt)
 
 	coreGrpcCACertPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
@@ -145,7 +145,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	if flowGrpcSecOpt < int(client.FlowInsecureGrpc) || flowGrpcSecOpt > int(client.FlowMutualTLS) {
 		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
-	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option") // This is a no-op, just defines the flag
+	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option")
 	conf.FlowGrpc.Secure = client.FlowGrpcClientSecureOptions(flowGrpcSecOpt)
 
 	flowGrpcCACertPath := os.Getenv("FLOW_GRPC_CA_CERT_PATH")
@@ -302,14 +302,14 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 		temporalCertPath = msf
 	}
 
-	flag.StringVar(&conf.Temporal.TemporalPublishQueue, "TemporalPublishQueue", temporalPublishQueue, "Temporal Publish queue")
-	flag.StringVar(&conf.Temporal.TemporalSubscribeQueue, "TemporalSubscribeQueue", temporalSubscribeQueue, "Temporal Subscribe queue")
-	flag.StringVar(&conf.Temporal.TemporalPublishNamespace, "TemporalPublishNamespace", temporalPublishNamespace, "Temporal Publish Namespace")
-	flag.StringVar(&conf.Temporal.TemporalSubscribeNamespace, "TemporalSubscribeNamespace", temporalSubscribeNamespace, "Temporal Subscribe Namespace")
-	flag.StringVar(&conf.Temporal.ClusterID, "ClusterID", clusterID, "NICo Site Cluster ID")
-	flag.StringVar(&conf.Temporal.TemporalCertPath, "TemporalCertPath", temporalCertPath, "Temporal cert path")
-	flag.StringVar(&conf.Temporal.TemporalServer, "TemporalServer", os.Getenv("TEMPORAL_SERVER"), "Temporal server")
-	flag.StringVar(&conf.Temporal.TemporalInventorySchedule, "TemporalInventorySchedule", os.Getenv("TEMPORAL_INVENTORY_SCHEDULE"), "Temporal Inventory schedule")
+	flag.StringVar(&conf.Temporal.TemporalPublishQueue, "temporalPublishQueue", temporalPublishQueue, "Temporal Publish queue")
+	flag.StringVar(&conf.Temporal.TemporalSubscribeQueue, "temporalSubscribeQueue", temporalSubscribeQueue, "Temporal Subscribe queue")
+	flag.StringVar(&conf.Temporal.TemporalPublishNamespace, "temporalPublishNamespace", temporalPublishNamespace, "Temporal Publish Namespace")
+	flag.StringVar(&conf.Temporal.TemporalSubscribeNamespace, "temporalSubscribeNamespace", temporalSubscribeNamespace, "Temporal Subscribe Namespace")
+	flag.StringVar(&conf.Temporal.ClusterID, "clusterID", clusterID, "NICo Site Cluster ID")
+	flag.StringVar(&conf.Temporal.TemporalCertPath, "temporalCertPath", temporalCertPath, "Temporal cert path")
+	flag.StringVar(&conf.Temporal.TemporalServer, "temporalServer", os.Getenv("TEMPORAL_SERVER"), "Temporal server")
+	flag.StringVar(&conf.Temporal.TemporalInventorySchedule, "temporalInventorySchedule", os.Getenv("TEMPORAL_INVENTORY_SCHEDULE"), "Temporal Inventory schedule")
 
 	if conf.Temporal.TemporalPublishQueue == "" {
 		log.Fatal().Msg("error loading config, Temporal publish queue must be specified")
