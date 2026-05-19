@@ -34,12 +34,15 @@ import (
 )
 
 const (
+	// Core gRPC default address and certificate paths
+	DefaultCoreGrpcAddress        = "core-grpc.nico-system.svc.cluster.local:1079"
 	DefaultCoreGrpcCACertPath     = "/etc/core-grpc/ca.crt"
 	DefaultCoreGrpcClientCertPath = "/etc/core-grpc/tls.crt"
 	DefaultCoreGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
 
 	// Flow uses the same SPIFFE trust domain (core-grpc.local) and vault-core-grpc-issuer as Core gRPC,
 	// so we can reuse the Core gRPC certificates for mTLS with Flow gRPC.
+	DefaultFlowGrpcAddress        = "flow.flow.svc.cluster.local:50051"
 	DefaultFlowGrpcCACertPath     = "/etc/core-grpc/ca.crt"
 	DefaultFlowGrpcClientCertPath = "/etc/core-grpc/tls.crt"
 	DefaultFlowGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
@@ -71,7 +74,7 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	}
 	flag.StringVar(&conf.CoreGrpc.Address, "coreGrpcAddress", coreGrpcAddress, "Core gRPC Server Address")
 	if conf.CoreGrpc.Address == "" {
-		conf.CoreGrpc.Address = "core-grpc.nico-system.svc.cluster.local:1079"
+		conf.CoreGrpc.Address = DefaultCoreGrpcAddress
 	}
 
 	coreGrpcSecOptStr := os.Getenv("CORE_GRPC_SEC_OPT")
@@ -121,9 +124,13 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	log.Info().Msg("Core gRPC client Key Path:" + conf.CoreGrpc.ClientKeyPath)
 
 	// Flow config
-	flag.StringVar(&conf.FlowGrpc.Address, "flowGrpcAddress", os.Getenv("FLOW_GRPC_ADDRESS"), "Flow gRPC Address")
+	flowGrpcAddress := os.Getenv("FLOW_GRPC_ADDRESS")
+	if flowGrpcAddress == "" {
+		flowGrpcAddress = os.Getenv("FLOW_ADDRESS") // TODO: remove once deployment config repo is updated
+	}
+	flag.StringVar(&conf.FlowGrpc.Address, "flowGrpcAddress", flowGrpcAddress, "Flow gRPC Address")
 	if conf.FlowGrpc.Address == "" {
-		conf.FlowGrpc.Address = "flow.flow.svc.cluster.local:50051"
+		conf.FlowGrpc.Address = DefaultFlowGrpcAddress
 	}
 
 	flowGrpcSecOptStr := os.Getenv("FLOW_GRPC_SEC_OPT")
