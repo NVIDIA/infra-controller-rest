@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package nico
+package flowgrpc
 
 import (
 	Manager "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
@@ -30,8 +30,8 @@ var ManagerAccess *Manager.ManagerAccess
 //nolint:all
 type API struct{} //nolint:all
 
-// NewNICoManager - returns a new instance of helm manager
-func NewNICoManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
+// NewFlowGrpcManager - returns a new instance of helm manager
+func NewFlowGrpcManager(superForge *elektratypes.Elektra, superAPI *Manager.ManagerAPI, superConf *Manager.ManagerConf) *API {
 	ManagerAccess = &Manager.ManagerAccess{
 		Data: &Manager.ManagerData{
 			EB: superForge,

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package flow
+package flowgrpc
 
 import (
 	"fmt"
@@ -30,9 +30,9 @@ const (
 )
 
 // Init - initialize Flow manager
-func (f *API) Init() {
+func (flowgrpc *API) Init() {
 	// Check if Flow is enabled via environment variable
-	if !ManagerAccess.Conf.EB.Flow.Enabled {
+	if !ManagerAccess.Conf.EB.FlowGrpc.Enabled {
 		ManagerAccess.Data.EB.Log.Info().Msg("Flow: Flow is disabled, skipping initialization")
 		return
 	}
@@ -46,44 +46,44 @@ func (f *API) Init() {
 			Help:      "Flow gRPC health status",
 		},
 			func() float64 {
-				return float64(ManagerAccess.Data.EB.Managers.Flow.State.HealthStatus.Load())
+				return float64(ManagerAccess.Data.EB.Managers.FlowGrpc.State.HealthStatus.Load())
 			}))
-	ManagerAccess.Data.EB.Managers.Flow.State.HealthStatus.Store(uint64(computils.CompNotKnown))
+	ManagerAccess.Data.EB.Managers.FlowGrpc.State.HealthStatus.Store(uint64(computils.CompNotKnown))
 
 	// initialize workflow metrics
-	ManagerAccess.Data.EB.Managers.Flow.State.WflowMetrics = newWorkflowMetrics()
+	ManagerAccess.Data.EB.Managers.FlowGrpc.State.WflowMetrics = newWorkflowMetrics()
 }
 
 // Start - Start Flow manager
-func (f *API) Start() {
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Starting Flow manager")
+func (flowgrpc *API) Start() {
+	ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: Starting Flow gRPC client")
 
 	// Check if Flow is enabled via environment variable
-	if !ManagerAccess.Conf.EB.Flow.Enabled {
-		ManagerAccess.Data.EB.Log.Info().Msg("Flow: Flow is disabled, skipping gRPC client initialization")
+	if !ManagerAccess.Conf.EB.FlowGrpc.Enabled {
+		ManagerAccess.Data.EB.Log.Info().Msg("Flow gRPC: Flow is disabled, skipping gRPC client initialization")
 		return
 	}
 
 	// Create the client here
 	// Each workflow will check and reinitialize the client if needed
-	if err := f.CreateGRPCClient(); err != nil {
-		ManagerAccess.Data.EB.Log.Error().Msgf("Flow: failed to create GRPC client: %v", err)
+	if err := flowgrpc.CreateGrpcClient(); err != nil {
+		ManagerAccess.Data.EB.Log.Error().Msgf("Flow gRPC: failed to create gRPC client: %v", err)
 	}
 }
 
 // GetState Machine
-func (f *API) GetState() []string {
-	state := ManagerAccess.Data.EB.Managers.Flow.State
+func (flowgrpc *API) GetState() []string {
+	state := ManagerAccess.Data.EB.Managers.FlowGrpc.State
 	var strs []string
 	strs = append(strs, fmt.Sprintln(" GRPC Succeeded:", state.GrpcSucc.Load()))
 	strs = append(strs, fmt.Sprintln(" GRPC Failed:", state.GrpcFail.Load()))
-	strs = append(strs, fmt.Sprintln(" Flow Status:", computils.CompStatus(state.HealthStatus.Load())))
-	strs = append(strs, fmt.Sprintln(" Flow Last Error:", state.Err))
+	strs = append(strs, fmt.Sprintln(" GRPC Status:", computils.CompStatus(state.HealthStatus.Load())))
+	strs = append(strs, fmt.Sprintln(" GRPC Last Error:", state.Err))
 
 	return strs
 }
 
-// GetGrpcClientVersion returns the current version of the GRPC client
-func (f *API) GetGRPCClientVersion() int64 {
-	return ManagerAccess.Data.EB.Managers.Flow.Client.Version()
+// GetGrpcClientVersion returns the current version of the gRPC client
+func (flowgrpc *API) GetGrpcClientVersion() int64 {
+	return ManagerAccess.Data.EB.Managers.FlowGrpc.Client.Version()
 }

@@ -40,7 +40,7 @@ import (
 // ManageExpectedSwitchInventory is an activity wrapper for Expected Switch inventory collection and publishing
 type ManageExpectedSwitchInventory struct {
 	siteID                uuid.UUID
-	nicoCoreAtomicClient  *cclient.NICoCoreAtomicClient
+	coreGrpcAtomicClient  *cclient.CoreGrpcAtomicClient
 	temporalPublishClient tClient.Client
 	temporalPublishQueue  string
 	cloudPageSize         int
@@ -63,13 +63,16 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Get Site Controller gRPC client
-	nicoClient := mesi.nicoCoreAtomicClient.GetClient()
-	rpcClient := nicoClient.NICo()
+	grpcClient := mesi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	// Call GetAllExpectedSwitches to get full list of ExpectedSwitches on Site
-	esList, err := rpcClient.GetAllExpectedSwitches(ctx, &emptypb.Empty{})
+	esList, err := grpcServiceClient.GetAllExpectedSwitches(ctx, &emptypb.Empty{})
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to retrieve ExpectedSwitches using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to retrieve ExpectedSwitches using Core gRPC API")
 
 		// Error encountered before we've published anything, report inventory collection error to Cloud
 		inventory := &cwssaws.ExpectedSwitchInventory{
@@ -89,9 +92,9 @@ func (mesi *ManageExpectedSwitchInventory) DiscoverExpectedSwitchInventory(ctx c
 	}
 
 	// Call GetAllExpectedSwitchesLinked to get linked Switch IDs
-	linkedList, lerr := rpcClient.GetAllExpectedSwitchesLinked(ctx, &emptypb.Empty{})
+	linkedList, lerr := grpcServiceClient.GetAllExpectedSwitchesLinked(ctx, &emptypb.Empty{})
 	if lerr != nil {
-		logger.Warn().Err(lerr).Msg("Failed to retrieve linked Switch IDs using Site Controller API")
+		logger.Warn().Err(lerr).Msg("Failed to retrieve linked Switch IDs using Core gRPC API")
 
 		// Fatal error - report inventory collection error to Cloud
 		inventory := &cwssaws.ExpectedSwitchInventory{
@@ -241,10 +244,10 @@ func getPagedExpectedSwitchInventory(
 }
 
 // NewManageExpectedSwitchInventory returns a ManageInventory implementation for Expected Switch activity
-func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoCoreAtomicClient *cclient.NICoCoreAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
+func NewManageExpectedSwitchInventory(siteID uuid.UUID, coreGrpcAtomicClient *cclient.CoreGrpcAtomicClient, temporalPublishClient tClient.Client, temporalPublishQueue string, cloudPageSize int) ManageExpectedSwitchInventory {
 	return ManageExpectedSwitchInventory{
 		siteID:                siteID,
-		nicoCoreAtomicClient:  nicoCoreAtomicClient,
+		coreGrpcAtomicClient:  coreGrpcAtomicClient,
 		temporalPublishClient: temporalPublishClient,
 		temporalPublishQueue:  temporalPublishQueue,
 		cloudPageSize:         cloudPageSize,
@@ -253,15 +256,15 @@ func NewManageExpectedSwitchInventory(siteID uuid.UUID, nicoCoreAtomicClient *cc
 
 // ManageExpectedSwitch is an activity wrapper for Expected Switch management
 type ManageExpectedSwitch struct {
-	NICoCoreAtomicClient *cclient.NICoCoreAtomicClient
-	FlowAtomicClient     *cclient.FlowAtomicClient
+	coreGrpcAtomicClient *cclient.CoreGrpcAtomicClient
+	flowGrpcAtomicClient *cclient.FlowGrpcAtomicClient
 }
 
 // NewManageExpectedSwitch returns a new ManageExpectedSwitch client
-func NewManageExpectedSwitch(nicoClient *cclient.NICoCoreAtomicClient, flowClient *cclient.FlowAtomicClient) ManageExpectedSwitch {
+func NewManageExpectedSwitch(coreGrpcAtomicClient *cclient.CoreGrpcAtomicClient, flowGrpcAtomicClient *cclient.FlowGrpcAtomicClient) ManageExpectedSwitch {
 	return ManageExpectedSwitch{
-		NICoCoreAtomicClient: nicoClient,
-		FlowAtomicClient:     flowClient,
+		coreGrpcAtomicClient: coreGrpcAtomicClient,
+		flowGrpcAtomicClient: flowGrpcAtomicClient,
 	}
 }
 
@@ -286,14 +289,17 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnSite(ctx context.Context,
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mes.NICoCoreAtomicClient.GetClient()
-	rpcClient := nicoClient.NICo()
+	// Call Core gRPC API endpoint
+	grpcClient := mes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	// Call NICo gRPC endpoint
-	_, err = rpcClient.AddExpectedSwitch(ctx, request)
+	// Call Core gRPC endpoint
+	_, err = grpcServiceClient.AddExpectedSwitch(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create Expected Switch using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to create Expected Switch using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -323,13 +329,16 @@ func (mes *ManageExpectedSwitch) UpdateExpectedSwitchOnSite(ctx context.Context,
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mes.NICoCoreAtomicClient.GetClient()
-	rpcClient := nicoClient.NICo()
+	// Call Core gRPC API endpoint
+	grpcClient := mes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.UpdateExpectedSwitch(ctx, request)
+	_, err = grpcServiceClient.UpdateExpectedSwitch(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to update Expected Switch using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to update Expected Switch using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -350,19 +359,20 @@ func (mes *ManageExpectedSwitch) CreateExpectedSwitchOnFlow(ctx context.Context,
 	}
 
 	// If Flow client is not configured, skip gracefully
-	if mes.FlowAtomicClient == nil {
+	if mes.flowGrpcAtomicClient == nil {
 		logger.Warn().Msg("Flow client not configured, skipping Flow component creation")
 		return nil
 	}
 
-	flowClient := mes.FlowAtomicClient.GetClient()
-	if flowClient == nil {
+	grpcClient := mes.flowGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
 		logger.Warn().Msg("Flow client not connected, skipping Flow component creation")
 		return nil
 	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
 	component := expectedSwitchToFlowComponent(request)
-	_, err := flowClient.Flow().AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
+	_, err := grpcServiceClient.AddComponent(ctx, &flowv1.AddComponentRequest{Component: component})
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to create Expected Switch component on Flow")
 		return swe.WrapErr(err)
@@ -449,13 +459,16 @@ func (mes *ManageExpectedSwitch) DeleteExpectedSwitchOnSite(ctx context.Context,
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mes.NICoCoreAtomicClient.GetClient()
-	rpcClient := nicoClient.NICo()
+	// Call Core gRPC API endpoint
+	grpcClient := mes.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cclient.ErrCoreGrpcClientNotConnected
+	}
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.DeleteExpectedSwitch(ctx, request)
+	_, err = grpcServiceClient.DeleteExpectedSwitch(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to delete Expected Switch using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to delete Expected Switch using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 

@@ -94,9 +94,13 @@ func (s TaskStatus) IsFinished() bool {
 }
 
 type TaskListOptions struct {
-	TaskType   TaskType
-	RackID     uuid.UUID
-	ActiveOnly bool
+	TaskType TaskType
+	RackID   uuid.UUID
+	// ComponentID, when non-zero, restricts results to tasks whose
+	// TaskAttributes.ComponentsByType contains this UUID under any
+	// component type.
+	ComponentID uuid.UUID
+	ActiveOnly  bool
 }
 
 type OperationRuleListOptions struct {

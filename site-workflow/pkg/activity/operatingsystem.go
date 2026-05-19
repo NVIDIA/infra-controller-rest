@@ -23,7 +23,6 @@ import (
 	"time"
 
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
-	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/rs/zerolog/log"
@@ -36,13 +35,13 @@ import (
 
 // ManageOperatingSystem is an activity wrapper for Operating System management
 type ManageOperatingSystem struct {
-	NICoCoreAtomicClient *client.NICoCoreAtomicClient
+	coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient
 }
 
 // NewManageOperatingSystem returns a new ManageOperatingSystem client
-func NewManageOperatingSystem(nicoClient *client.NICoCoreAtomicClient) ManageOperatingSystem {
+func NewManageOperatingSystem(coreGrpcClient *cClient.CoreGrpcAtomicClient) ManageOperatingSystem {
 	return ManageOperatingSystem{
-		NICoCoreAtomicClient: nicoClient,
+		coreGrpcAtomicClient: coreGrpcClient,
 	}
 }
 
@@ -69,16 +68,16 @@ func (mos *ManageOperatingSystem) CreateOsImageOnSite(ctx context.Context, reque
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mos.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mos.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.CreateOsImage(ctx, request)
+	_, err = grpcServiceClient.CreateOsImage(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create OS Image using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to create OS Image using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -110,16 +109,16 @@ func (mos *ManageOperatingSystem) UpdateOsImageOnSite(ctx context.Context, reque
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mos.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mos.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.UpdateOsImage(ctx, request)
+	_, err = grpcServiceClient.UpdateOsImage(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to update OS Image using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to update OS Image using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -149,16 +148,16 @@ func (mos *ManageOperatingSystem) DeleteOsImageOnSite(ctx context.Context, reque
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mos.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mos.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.DeleteOsImage(ctx, request)
+	_, err = grpcServiceClient.DeleteOsImage(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to delete OS Image using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to delete OS Image using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -195,11 +194,11 @@ func (moii *ManageOsImageInventory) DiscoverOsImageInventory(ctx context.Context
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func osImageFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, error) {
+func osImageFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
-func osImageFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
+func osImageFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.OsImage, error) {
 	return nil, gstatus.Error(gcodes.Unimplemented, "")
 }
 
@@ -225,9 +224,9 @@ func osImagePagedInventory(allItemIDs []*cwssaws.UUID, pagedItems []*cwssaws.OsI
 	return inventory
 }
 
-func osImageFindFallback(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
+func osImageFindFallback(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, []*cwssaws.OsImage, error) {
 	request := &cwssaws.ListOsImageRequest{}
-	items, err := nicoClient.NICo().ListOsImage(ctx, request)
+	items, err := grpcClient.GrpcServiceClient().ListOsImage(ctx, request)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -30,10 +30,10 @@ import (
 )
 
 func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
-	mockNICo := cClient.NewMockNICoClient()
+	mockCoreGrpcClient := cClient.NewMockCoreGrpcClient()
 
-	nicoCoreAtomicClient := cClient.NewNICoCoreAtomicClient(&cClient.NICoCoreClientConfig{})
-	nicoCoreAtomicClient.SwapClient(mockNICo)
+	coreGrpcAtomicClient := cClient.NewCoreGrpcAtomicClient(&cClient.CoreGrpcClientConfig{})
+	coreGrpcAtomicClient.SwapClient(mockCoreGrpcClient)
 
 	wid := "test-workflow-id"
 	wrun := &tmocks.WorkflowRun{}
@@ -41,7 +41,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 
 	type fields struct {
 		siteID               uuid.UUID
-		nicoCoreAtomicClient *cClient.NICoCoreAtomicClient
+		coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient
 		temporalPublishQueue string
 		sitePageSize         int
 		cloudPageSize        int
@@ -58,7 +58,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 			name: "test collecting and publishing sku inventory, empty inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient: nicoCoreAtomicClient,
+				coreGrpcAtomicClient: coreGrpcAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -71,7 +71,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 			name: "test collecting and publishing sku inventory, normal inventory",
 			fields: fields{
 				siteID:               uuid.New(),
-				nicoCoreAtomicClient: nicoCoreAtomicClient,
+				coreGrpcAtomicClient: coreGrpcAtomicClient,
 				temporalPublishQueue: "test-queue",
 				sitePageSize:         100,
 				cloudPageSize:        25,
@@ -89,9 +89,9 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 				mock.AnythingOfType("string"), mock.AnythingOfType("uuid.UUID"), mock.Anything).Return(wrun, nil)
 			tc.AssertNumberOfCalls(t, "ExecuteWorkflow", 0)
 
-			manageInstance := NewManageSkuInventory(ManageInventoryConfig{
+			manageSkuInventory := NewManageSkuInventory(ManageInventoryConfig{
 				SiteID:                tt.fields.siteID,
-				NICoCoreAtomicClient:  tt.fields.nicoCoreAtomicClient,
+				CoreGrpcAtomicClient:  tt.fields.coreGrpcAtomicClient,
 				TemporalPublishClient: tc,
 				TemporalPublishQueue:  tt.fields.temporalPublishQueue,
 				SitePageSize:          tt.fields.sitePageSize,
@@ -106,7 +106,7 @@ func TestManageSkuInventory_DiscoverSkuInventory(t *testing.T) {
 				totalPages++
 			}
 
-			err := manageInstance.DiscoverSkuInventory(ctx)
+			err := manageSkuInventory.DiscoverSkuInventory(ctx)
 			assert.NoError(t, err)
 
 			if tt.args.wantTotalItems == 0 {

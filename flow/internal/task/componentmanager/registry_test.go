@@ -442,11 +442,108 @@ func TestRegistryFindManager(t *testing.T) {
 	})
 }
 
-func TestRegistryGetAllManagers(t *testing.T) {
+func TestRegistryComponentTypes(t *testing.T) {
 	t.Run("nil registry", func(t *testing.T) {
 		var registry *Registry
 
-		managers := registry.GetAllManagers()
+		componentTypes := registry.ComponentTypes()
+
+		require.Nil(t, componentTypes)
+	})
+
+	registry, err := NewRegistry(
+		[]FactorySpec{
+			testFactorySpec(
+				devicetypes.ComponentTypeNVLSwitch,
+				"switch",
+				managerFactory(devicetypes.ComponentTypeNVLSwitch, "switch"),
+			),
+			testFactorySpec(
+				devicetypes.ComponentTypeCompute,
+				"compute",
+				managerFactory(devicetypes.ComponentTypeCompute, "compute"),
+			),
+		},
+		cmconfig.Config{
+			ComponentManagers: map[devicetypes.ComponentType]string{
+				devicetypes.ComponentTypeNVLSwitch: "switch",
+				devicetypes.ComponentTypeCompute:   "compute",
+			},
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	componentTypes := registry.ComponentTypes()
+
+	require.Equal(t, []devicetypes.ComponentType{
+		devicetypes.ComponentTypeCompute,
+		devicetypes.ComponentTypeNVLSwitch,
+	}, componentTypes)
+
+	componentTypes[0] = devicetypes.ComponentTypePowerShelf
+	require.Equal(t, []devicetypes.ComponentType{
+		devicetypes.ComponentTypeCompute,
+		devicetypes.ComponentTypeNVLSwitch,
+	}, registry.ComponentTypes())
+}
+
+func TestRegistryDescriptors(t *testing.T) {
+	t.Run("nil registry", func(t *testing.T) {
+		var registry *Registry
+
+		descriptors, err := registry.Descriptors()
+
+		require.Nil(t, descriptors)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrRegistryNotConfigured))
+	})
+
+	registry, err := NewRegistry(
+		[]FactorySpec{
+			testFactorySpec(
+				devicetypes.ComponentTypeNVLSwitch,
+				"switch",
+				managerFactory(devicetypes.ComponentTypeNVLSwitch, "switch"),
+			),
+			testFactorySpec(
+				devicetypes.ComponentTypeCompute,
+				"compute",
+				managerFactory(devicetypes.ComponentTypeCompute, "compute"),
+			),
+		},
+		cmconfig.Config{
+			ComponentManagers: map[devicetypes.ComponentType]string{
+				devicetypes.ComponentTypeNVLSwitch: "switch",
+				devicetypes.ComponentTypeCompute:   "compute",
+			},
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	descriptors, err := registry.Descriptors()
+
+	require.NoError(t, err)
+	require.Equal(t, []cmcatalog.Descriptor{
+		{
+			Type:              devicetypes.ComponentTypeCompute,
+			Implementation:    "compute",
+			RequiredProviders: []string{},
+		},
+		{
+			Type:              devicetypes.ComponentTypeNVLSwitch,
+			Implementation:    "switch",
+			RequiredProviders: []string{},
+		},
+	}, descriptors)
+}
+
+func TestRegistryComponentManagers(t *testing.T) {
+	t.Run("nil registry", func(t *testing.T) {
+		var registry *Registry
+
+		managers := registry.ComponentManagers()
 
 		require.Nil(t, managers)
 	})
@@ -454,34 +551,34 @@ func TestRegistryGetAllManagers(t *testing.T) {
 	registry, err := NewRegistry(
 		[]FactorySpec{
 			testFactorySpec(
-				devicetypes.ComponentTypeCompute,
-				"compute",
-				managerFactory(devicetypes.ComponentTypeCompute, "compute"),
-			),
-			testFactorySpec(
 				devicetypes.ComponentTypeNVLSwitch,
 				"switch",
 				managerFactory(devicetypes.ComponentTypeNVLSwitch, "switch"),
 			),
+			testFactorySpec(
+				devicetypes.ComponentTypeCompute,
+				"compute",
+				managerFactory(devicetypes.ComponentTypeCompute, "compute"),
+			),
 		},
 		cmconfig.Config{
 			ComponentManagers: map[devicetypes.ComponentType]string{
-				devicetypes.ComponentTypeCompute:   "compute",
 				devicetypes.ComponentTypeNVLSwitch: "switch",
+				devicetypes.ComponentTypeCompute:   "compute",
 			},
 		},
 		providerapi.NewProviderRegistry(),
 	)
 	require.NoError(t, err)
 
-	managers := registry.GetAllManagers()
+	managers := registry.ComponentManagers()
 
 	require.Len(t, managers, 2)
 	descriptors := make([]cmcatalog.Descriptor, 0, len(managers))
 	for _, manager := range managers {
 		descriptors = append(descriptors, manager.Descriptor())
 	}
-	require.ElementsMatch(t, []cmcatalog.Descriptor{
+	require.Equal(t, []cmcatalog.Descriptor{
 		testDescriptor(devicetypes.ComponentTypeCompute, "compute"),
 		testDescriptor(devicetypes.ComponentTypeNVLSwitch, "switch"),
 	}, descriptors)

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package flow
+package coregrpc
 
 import (
 	"context"
@@ -27,33 +27,34 @@ import (
 )
 
 // CreateGRPCClientActivity - Create GRPC client Activity
-func (Flow *API) CreateGRPCClientActivity(ctx context.Context, ResourceID string) (client *client.FlowClient, err error) {
-	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Flow: Starting the gRPC connection Activity")
+func (coregrpc *API) CreateGrpcClientActivity(ctx context.Context, ResourceID string) (client *client.CoreGrpcClient, err error) {
+	// Create the VPC
+	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Core gRPC: Starting  the gRPC connection Activity")
 
 	// Use temporal logger for temporal logs
 	logger := activity.GetLogger(ctx)
-	withLogger := log.With(logger, "Activity", "CreateGRPCClientActivity", "ResourceReq", ResourceID)
-	withLogger.Info("Flow: Starting the gRPC connection Activity")
+	withLogger := log.With(logger, "Activity", "CreateGrpcClientActivity", "ResourceReq", ResourceID)
+	withLogger.Info("Core gRPC: Starting gRPC connection Activity")
 
 	// Create the client
-	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Flow: Creating gRPC client")
+	ManagerAccess.Data.EB.Log.Info().Interface("Request", ResourceID).Msg("Core gRPC: Creating gRPC client")
 
-	err = Flow.CreateGRPCClient()
+	err = coregrpc.CreateGrpcClient()
 	if err != nil {
 		return nil, err
 	}
-	return Flow.GetGRPCClient(), nil
+	return coregrpc.GetGrpcClient(), nil
 }
 
 // RegisterGRPC - Register GRPC
-func (Flow *API) RegisterGRPC() {
+func (coregrpc *API) RegisterGrpc() {
 	// Register activity
 	activityRegisterOptions := activity.RegisterOptions{
-		Name: "CreateRlaGrpcClientActivity",
+		Name: "CreateGrpcClientActivity",
 	}
 
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivityWithOptions(
-		ManagerAccess.API.Flow.CreateGRPCClientActivity, activityRegisterOptions,
+		ManagerAccess.API.CoreGrpc.CreateGrpcClientActivity, activityRegisterOptions,
 	)
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: successfully registered GRPC client activity")
+	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: successfully registered gRPC client activity")
 }

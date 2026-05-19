@@ -53,9 +53,9 @@ func NewManageSkuInventory(config ManageInventoryConfig) ManageSkuInventory {
 	}
 }
 
-func skuFindIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient) ([]string, error) {
-	rpcClient := nicoClient.NICo()
-	result, err := rpcClient.GetAllSkuIds(ctx, nil)
+func skuFindIDs(ctx context.Context, grpcClient *cclient.CoreGrpcClient) ([]string, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	result, err := grpcServiceClient.GetAllSkuIds(ctx, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,9 @@ func skuFindIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient) ([]stri
 	return ids, nil
 }
 
-func skuFindByIDs(ctx context.Context, nicoClient *cclient.NICoCoreClient, ids []string) ([]*cwssaws.Sku, error) {
-	rpcClient := nicoClient.NICo()
-	result, err := rpcClient.FindSkusByIds(ctx, &cwssaws.SkusByIdsRequest{
+func skuFindByIDs(ctx context.Context, grpcClient *cclient.CoreGrpcClient, ids []string) ([]*cwssaws.Sku, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	result, err := grpcServiceClient.FindSkusByIds(ctx, &cwssaws.SkusByIdsRequest{
 		Ids: ids,
 	})
 	if err != nil {

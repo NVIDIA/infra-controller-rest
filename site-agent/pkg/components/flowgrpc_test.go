@@ -22,7 +22,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flow"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flowgrpc"
 	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +32,7 @@ import (
 // TestRlaRack - test the Flow grpc client
 func TestRlaRack(t *testing.T) {
 	TestInitElektra(t)
-	grpcClient := testElektra.manager.API.Flow.GetGRPCClient()
+	grpcClient := testElektra.manager.API.FlowGrpc.GetGrpcClient()
 
 	var rack *flowv1.Rack
 
@@ -67,7 +67,7 @@ func TestRlaRack(t *testing.T) {
 						},
 					},
 				}
-				_, createErr := grpcClient.Flow().CreateExpectedRack(ctx, createReq)
+				_, createErr := grpcClient.GrpcServiceClient().CreateExpectedRack(ctx, createReq)
 				assert.Nil(t, createErr)
 
 				// Now test GetRackInfoByID
@@ -77,9 +77,9 @@ func TestRlaRack(t *testing.T) {
 					Id: &flowv1.UUID{Id: rackID},
 				}
 
-				response, err := grpcClient.Flow().GetRackInfoByID(ctx, getRequest)
+				response, err := grpcClient.GrpcServiceClient().GetRackInfoByID(ctx, getRequest)
 				span.End()
-				flow.ManagerAccess.API.Flow.UpdateGRPCClientState(err)
+				flowgrpc.ManagerAccess.API.FlowGrpc.UpdateGrpcClientState(err)
 				if err != nil {
 					t.Log(err.Error())
 				}
@@ -90,18 +90,18 @@ func TestRlaRack(t *testing.T) {
 				assert.Equal(t, rackID, response.Rack.Info.Id.Id)
 				rpcSucc++
 				assert.Equal(t, 0,
-					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcFail.Load()))
+					int(flowgrpc.ManagerAccess.Data.EB.Managers.FlowGrpc.State.GrpcFail.Load()))
 				assert.Equal(t, rpcSucc,
-					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcSucc.Load()))
+					int(flowgrpc.ManagerAccess.Data.EB.Managers.FlowGrpc.State.GrpcSucc.Load()))
 				rack = response.Rack
 				t.Log("GRPCResponse", response)
 			case "list":
 				ctx := context.Background()
 				ctx, span := otel.Tracer(os.Getenv("LS_SERVICE_NAME")).Start(ctx, "FlowTest-GetListOfRacks")
 				listRequest := &flowv1.GetListOfRacksRequest{}
-				resq, err := grpcClient.Flow().GetListOfRacks(ctx, listRequest)
+				resq, err := grpcClient.GrpcServiceClient().GetListOfRacks(ctx, listRequest)
 				span.End()
-				flow.ManagerAccess.API.Flow.UpdateGRPCClientState(err)
+				flowgrpc.ManagerAccess.API.FlowGrpc.UpdateGrpcClientState(err)
 				if err != nil {
 					t.Log(err.Error())
 				}
@@ -121,9 +121,9 @@ func TestRlaRack(t *testing.T) {
 				}
 				rpcSucc++
 				assert.Equal(t, 0,
-					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcFail.Load()))
+					int(flowgrpc.ManagerAccess.Data.EB.Managers.FlowGrpc.State.GrpcFail.Load()))
 				assert.Equal(t, rpcSucc,
-					int(flow.ManagerAccess.Data.EB.Managers.Flow.State.GrpcSucc.Load()))
+					int(flowgrpc.ManagerAccess.Data.EB.Managers.FlowGrpc.State.GrpcSucc.Load()))
 				t.Log("GRPCResponse", resq)
 			default:
 				panic("invalid operation name")
