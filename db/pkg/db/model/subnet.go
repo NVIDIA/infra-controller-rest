@@ -20,10 +20,15 @@ package model
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"net/netip"
+	"strings"
 	"time"
 
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
+	cipam "github.com/NVIDIA/infra-controller-rest/ipam"
 	"github.com/google/uuid"
 
 	"github.com/uptrace/bun"
@@ -74,6 +79,7 @@ var (
 		SubnetStatusDeleted:      true,
 		SubnetStatusError:        true,
 	}
+	errSubnetNoIPv4Prefix = errors.New("subnet has no IPv4 prefix")
 )
 
 // Subnet is a network construct for bare-metal machines
@@ -230,6 +236,9 @@ type SubnetDAO interface {
 	Clear(ctx context.Context, tx *db.Tx, input SubnetClearInput) (*Subnet, error)
 	//
 	Delete(ctx context.Context, tx *db.Tx, id uuid.UUID) error
+	//
+	// GetPrefixUsage returns IPv4 interface usage for this subnet (in-memory IPAM simulation).
+	GetPrefixUsage(ctx context.Context, tx *db.Tx, sn *Subnet) (*cipam.Usage, error)
 }
 
 // SubnetSQLDAO is an implementation of the SubnetDAO interface
@@ -676,6 +685,107 @@ func (ssd SubnetSQLDAO) Delete(ctx context.Context, tx *db.Tx, id uuid.UUID) err
 	}
 
 	return nil
+}
+
+// subnetIPv4CidrForUsage returns the IPv4 CIDR for the subnet
+func subnetIPv4CidrForUsage(sn *Subnet) (string, error) {
+	if sn.IPv4Prefix == nil || *sn.IPv4Prefix == "" {
+		return "", fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet %q: %w", sn.ID.String(), errSubnetNoIPv4Prefix)
+	}
+	p := *sn.IPv4Prefix
+	if strings.Contains(p, "/") {
+		return p, nil
+	}
+	return fmt.Sprintf("%s/%d", p, sn.PrefixLength), nil
+}
+
+// queryEthernetInterfaceIPsForSubnet returns iface row count and, for interfaces with IPs,
+// each interface's assigned addresses. COUNT(*) equals len(rows) for the same join/filter on one SELECT.
+func queryEthernetInterfaceIPsForSubnet(ctx context.Context, idb bun.IDB, subnetID uuid.UUID) (ifaceRows int64, ipStrings [][]string, err error) {
+	type row struct {
+		IPAddresses []string `bun:"ip_addresses,array"`
+	}
+	var rows []row
+	err = idb.NewRaw(
+		`SELECT ifc.ip_addresses FROM "interface" AS ifc INNER JOIN instance AS inst ON inst.id = ifc.instance_id
+		 WHERE ifc.subnet_id = ? AND ifc.deleted IS NULL AND inst.deleted IS NULL`,
+		subnetID,
+	).Scan(ctx, &rows)
+	if err != nil {
+		return 0, nil, err
+	}
+	count := int64(len(rows))
+	ips := make([][]string, 0, len(rows))
+	for _, r := range rows {
+		if len(r.IPAddresses) > 0 {
+			ips = append(ips, r.IPAddresses)
+		}
+	}
+	return count, ips, nil
+}
+
+// GetPrefixUsage derives IPv4 interface usage stats for this Subnet via an in-memory IPAM simulation.
+func (ssd SubnetSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, sn *Subnet) (*cipam.Usage, error) {
+	if sn == nil {
+		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet: nil Subnet")
+	}
+
+	cidr, err := subnetIPv4CidrForUsage(sn)
+	if err != nil {
+		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet %q: %w", sn.ID.String(), errSubnetNoIPv4Prefix)
+	}
+
+	idb := db.GetIDB(tx, ssd.dbSession)
+	ifcount, ips, err := queryEthernetInterfaceIPsForSubnet(ctx, idb, sn.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ipmer := cipam.New(ctx)
+	parent, err := ipmer.NewPrefix(ctx, cidr)
+	if err != nil {
+		return nil, err
+	}
+
+	parentCidr := parent.Cidr
+	pp, err := netip.ParsePrefix(parentCidr)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ipAddresses := range ips {
+		for _, ipStr := range ipAddresses {
+			a, ierr := netip.ParseAddr(strings.TrimSpace(ipStr))
+			if ierr != nil || !a.Is4() {
+				continue
+			}
+			if !pp.Contains(a) {
+				continue
+			}
+			if _, ierr := ipmer.AcquireSpecificIP(ctx, parentCidr, a.String()); ierr != nil {
+				continue
+			}
+		}
+	}
+
+	root := ipmer.PrefixFrom(ctx, parentCidr)
+	if root == nil {
+		return nil, fmt.Errorf("subnet usage: prefix %q disappeared from in-memory IPAM", parentCidr)
+	}
+
+	u := root.Usage()
+
+	acquiredIPs := uint64(ifcount) + 2
+	if acquiredIPs > u.AvailableIPs {
+		acquiredIPs = u.AvailableIPs
+	}
+	return &cipam.Usage{
+		AvailableIPs:              u.AvailableIPs,
+		AcquiredIPs:               acquiredIPs,
+		AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
+		AvailablePrefixes:         u.AvailablePrefixes,
+		AcquiredPrefixes:          uint64(ifcount),
+	}, nil
 }
 
 // NewSubnetDAO returns a new SubnetDAO

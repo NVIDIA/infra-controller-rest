@@ -57,7 +57,7 @@ type Subnet struct {
 	PrefixLength *int32         `json:"prefixLength,omitempty"`
 	RoutingType  NullableString `json:"routingType,omitempty"`
 	Status       *SubnetStatus  `json:"status,omitempty"`
-	// Present when query param `includeUsageStats=true`. IPAM IPv4 usage within this Subnet (available/acquired IPs and child prefixes used by Instances and other allocations).
+	// Present when query param `includeUsageStats=true`. IPv4 counters treat each Ethernet interface as one assigned host plus reserves for gateway and subnet bookkeeping.
 	UsageStats    *IpBlockUsageStats `json:"usageStats,omitempty"`
 	StatusHistory []StatusDetail     `json:"statusHistory,omitempty"`
 	Created       *time.Time         `json:"created,omitempty"`

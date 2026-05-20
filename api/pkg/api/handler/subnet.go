@@ -41,7 +41,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
-	modelutil "github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
@@ -594,7 +593,7 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Subnets", nil)
 	}
 
-	puSubnetMap := map[uuid.UUID]*cip.Usage{}
+	sbusageMap := map[uuid.UUID]*cip.Usage{}
 	if includeUsageStats {
 		for i := range subnets {
 			sn := &subnets[i]
@@ -602,12 +601,12 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 				logger.Error().Str("subnetId", sn.ID.String()).Msg("Subnet missing IPv4 Block relation for usage stats")
 				continue
 			}
-			prefixUsage, serr := modelutil.GetInterfaceBasedUsageForSubnet(ctx, gash.dbSession.DB, sn)
+			prefixUsage, serr := sDAO.GetPrefixUsage(ctx, nil, sn)
 			if serr != nil {
 				logger.Error().Err(serr).Str("subnetId", sn.ID.String()).Msg("error retrieving usage stats for Subnet")
 				continue
 			}
-			puSubnetMap[sn.ID] = prefixUsage
+			sbusageMap[sn.ID] = prefixUsage
 		}
 	}
 
@@ -635,8 +634,8 @@ func (gash GetAllSubnetHandler) Handle(c echo.Context) error {
 	// get status details
 	for _, sn := range subnets {
 		cursn := sn
-		cipu := puSubnetMap[sn.ID]
-		apiSubnet := model.NewAPISubnet(&cursn, ssdMap[sn.ID.String()], cipu)
+		snusage := sbusageMap[sn.ID]
+		apiSubnet := model.NewAPISubnet(&cursn, ssdMap[sn.ID.String()], snusage)
 		apiSubnets = append(apiSubnets, apiSubnet)
 	}
 
@@ -781,13 +780,13 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for subnet", nil)
 	}
 
-	var puSubnet *cip.Usage
+	var sbusage *cip.Usage
 	if includeUsageStats {
 		if subnet.IPv4Block == nil {
 			logger.Error().Str("subnetId", subnet.ID.String()).Msg("Subnet missing IPv4 Block relation for usage stats")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for Subnet", nil)
 		}
-		puSubnet, err = modelutil.GetInterfaceBasedUsageForSubnet(ctx, gsh.dbSession.DB, subnet)
+		sbusage, err = sDAO.GetPrefixUsage(ctx, nil, subnet)
 		if err != nil {
 			logger.Error().Err(err).Msg("error retrieving usage stats for Subnet")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Usage Stats for Subnet", nil)
@@ -795,7 +794,7 @@ func (gsh GetSubnetHandler) Handle(c echo.Context) error {
 	}
 
 	// Send response
-	apiInstance := model.NewAPISubnet(subnet, ssds, puSubnet)
+	apiInstance := model.NewAPISubnet(subnet, ssds, sbusage)
 	logger.Info().Msg("finishing API handler")
 	return c.JSON(http.StatusOK, apiInstance)
 }

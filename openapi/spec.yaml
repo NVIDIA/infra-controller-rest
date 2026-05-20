@@ -13968,10 +13968,18 @@ components:
           siteId: ea144def-d68f-44c3-9485-4b103fa2686f
           vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
           tenantId: f97df110-f4de-492e-8849-4a6af68026b0
-          prefix: 192.168.1.0/24
+          prefix: 192.168.1.0/26
           ipBlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
-          prefixLength: 20
+          prefixLength: 26
           status: Ready
+          usageStats:
+            availableIPs: 58
+            acquiredIPs: 6
+            availablePrefixes:
+              - 192.168.1.4/31
+              - 192.168.1.8/31
+            availableSmallestPrefixes: 29
+            acquiredPrefixes: 2
           statusHistory:
             - status: Ready
               message: 'Received VPC prefix creation request, ready'
@@ -14025,9 +14033,9 @@ components:
         usageStats:
           $ref: '#/components/schemas/IpBlockUsageStats'
           readOnly: true
-          description: >-
-            Present when query param `includeUsageStats=true`. IPAM usage within this VPC prefix
-            (available/acquired IPs and child prefixes consumed by Instances and other allocations).
+          description: |-
+            Present when query param `includeUsageStats=true`. IPv4 usage applies interface-based rules (including 2 IPs per Ethernet interface slot);
+            `availablePrefixes` reflects `/31`-sized subdivisions inferred from assigned interface IP addresses.
         statusHistory:
           type: array
           items:
@@ -14126,6 +14134,41 @@ components:
               updated: '2019-08-24T14:15:22Z'
           created: '2019-08-24T14:15:22Z'
           updated: '2019-08-24T14:15:22Z'
+        - id: 82e4c3a7-5b4d-4c8e-a2f1-1c09d06e9120
+          name: inference-training-net
+          description: Provisioned subnet with IPv4 usage (from GET includeUsageStats=true)
+          siteId: ea144def-d68f-44c3-9485-4b103fa2686f
+          vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
+          tenantId: f97df110-f4de-492e-8849-4a6af68026b0
+          controllerNetworkSegmentId: abe7b0e8-67db-4e89-903e-fc4f2bd7f034
+          ipv4Prefix: 204.168.16.0
+          ipv4BlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
+          ipv4Gateway: 204.168.16.1
+          ipv6Prefix: null
+          ipv6BlockId: null
+          ipv6Gateway: null
+          prefixLength: 20
+          routingType: Public
+          status: Ready
+          usageStats:
+            availableIPs: 4090
+            acquiredIPs: 6
+            availablePrefixes:
+              - 204.168.31.240/31
+              - 204.168.31.242/31
+            availableSmallestPrefixes: 0
+            acquiredPrefixes: 4
+          statusHistory:
+            - status: Ready
+              message: Subnet has been successfully provisioned on Site
+              created: '2019-08-24T16:02:38Z'
+              updated: '2019-08-24T16:02:38Z'
+            - status: Pending
+              message: 'Request received, pending processing'
+              created: '2019-08-24T14:15:22Z'
+              updated: '2019-08-24T14:15:22Z'
+          created: '2019-08-24T14:15:22Z'
+          updated: '2019-08-24T16:02:38Z'
       properties:
         id:
           type: string
@@ -14205,9 +14248,8 @@ components:
         usageStats:
           $ref: '#/components/schemas/IpBlockUsageStats'
           readOnly: true
-          description: >-
-            Present when query param `includeUsageStats=true`. IPAM IPv4 usage within this Subnet (available/acquired
-            IPs and child prefixes used by Instances and other allocations).
+          description: |-
+            Present when query param `includeUsageStats=true`. IPv4 counters treat each Ethernet interface as one assigned host plus reserves for gateway and subnet bookkeeping.
         statusHistory:
           type: array
           items:
