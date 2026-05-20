@@ -228,8 +228,6 @@ func workflowOrchestrator() error {
 	}
 
 	// Register all manager flows here
-	ManagerAccess.API.CoreGrpc.RegisterGrpc()
-
 	// TODO: all RegisterSubscriber calls return an error and we ignore them. Should we?
 	ManagerAccess.API.VPC.RegisterSubscriber()
 	ManagerAccess.API.VPC.RegisterPublisher()
