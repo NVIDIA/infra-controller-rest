@@ -20,7 +20,6 @@ package util
 import (
 	"errors"
 	"fmt"
-	"net/netip"
 
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"gopkg.in/yaml.v3"
@@ -174,36 +173,4 @@ func ProtobufLabelsFromAPILabels(labels map[string]string) []*cwssaws.Label {
 		})
 	}
 	return protoLabels
-}
-
-// ipv4UsableHostAddressesForPrefixBits returns assignable IPv4 host count for a prefix length (/32 and /31 special-cased).
-func ipv4UsableHostAddressesForPrefixBits(prefixBits int) uint64 {
-	if prefixBits < 0 || prefixBits > 32 {
-		return 0
-	}
-	hostBits := 32 - prefixBits
-	switch {
-	case hostBits == 0:
-		return 1
-	case prefixBits == 31:
-		return 2
-	default:
-		total := uint64(1) << uint(hostBits)
-		if total >= 2 {
-			return total - 2
-		}
-		return total
-	}
-}
-
-// IPv4UsableHostAddrsFromCidr returns usable IPv4 host addresses for the given CIDR for interface/instance usage stats.
-func IPv4UsableHostAddrsFromCidr(cidr string) (uint64, error) {
-	p, err := netip.ParsePrefix(cidr)
-	if err != nil {
-		return 0, err
-	}
-	if !p.Addr().Is4() {
-		return 0, fmt.Errorf("usage stats support IPv4 only, got %s", cidr)
-	}
-	return ipv4UsableHostAddressesForPrefixBits(int(p.Bits())), nil
 }

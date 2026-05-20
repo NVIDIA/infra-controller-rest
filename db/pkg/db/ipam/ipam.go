@@ -36,12 +36,6 @@ var (
 	ErrPrefixDoesNotExistForIPBlock = errors.New("prefix does not exist for IPBlock in ipam db")
 	// ErrNilIPBlock is the error when a nil IPBlock was passed
 	ErrNilIPBlock = errors.New("ipblock parameter is nil")
-	// ErrNilVpcPrefix is the error when a nil VpcPrefix was passed
-	ErrNilVpcPrefix = errors.New("vpcPrefix parameter is nil")
-	// ErrNilSubnet is the error when a nil Subnet was passed
-	ErrNilSubnet = errors.New("subnet parameter is nil")
-	// ErrSubnetNoIPv4Prefix is returned when a Subnet has no IPv4 prefix to resolve IPAM CIDR
-	ErrSubnetNoIPv4Prefix = errors.New("subnet has no IPv4 prefix")
 )
 
 // ~~~~~ IPAM Utilities ~~~~~ //
@@ -79,28 +73,6 @@ func GetIpamNamespaceForIPBlock(ctx context.Context, routingType string, infrast
 // GetCidrForIPBlock will return the cidr given the prefix, and block size
 func GetCidrForIPBlock(ctx context.Context, prefix string, blockSize int) string {
 	return fmt.Sprintf("%s/%d", prefix, blockSize)
-}
-
-func getVpcPrefixCidr(ctx context.Context, vpcPrefix *cdbm.VpcPrefix) string {
-	if vpcPrefix == nil {
-		return ""
-	}
-	if strings.Contains(vpcPrefix.Prefix, "/") {
-		return vpcPrefix.Prefix
-	}
-	return GetCidrForIPBlock(ctx, vpcPrefix.Prefix, vpcPrefix.PrefixLength)
-}
-
-func cidrPrefixesEqual(a, b string) bool {
-	pa, err := netip.ParsePrefix(a)
-	if err != nil {
-		return false
-	}
-	pb, err := netip.ParsePrefix(b)
-	if err != nil {
-		return false
-	}
-	return pa.Masked() == pb.Masked()
 }
 
 // CreateIpamEntryForIPBlock will create an ipam entry in the ipam DB for the IPBlock
@@ -171,101 +143,6 @@ func GetIpamUsageForIPBlock(ctx context.Context, ipamDB cipam.Storage, ipBlock *
 			AcquiredPrefixes:          ipamPrefix.Usage().AcquiredPrefixes,
 		}, nil
 	}
-}
-
-// GetIpamUsageForVpcPrefix returns IPAM usage for the VPC Prefix CIDR subtree within the parent IP Block namespace (same source as allocations for Instances on this prefix).
-func GetIpamUsageForVpcPrefix(ctx context.Context, ipamDB cipam.Storage, vpcPrefix *cdbm.VpcPrefix, ipBlock *cdbm.IPBlock) (*cipam.Usage, error) {
-	if vpcPrefix == nil {
-		return nil, ErrNilVpcPrefix
-	}
-	if ipBlock == nil {
-		return nil, ErrNilIPBlock
-	}
-
-	vpcCidr := getVpcPrefixCidr(ctx, vpcPrefix)
-	parentCidr := GetCidrForIPBlock(ctx, ipBlock.Prefix, ipBlock.PrefixLength)
-
-	if ipBlock.FullGrant && cidrPrefixesEqual(vpcCidr, parentCidr) {
-		return &cipam.Usage{
-			AvailableIPs:              0,
-			AcquiredIPs:               0,
-			AvailableSmallestPrefixes: 0,
-			AvailablePrefixes:         nil,
-			AcquiredPrefixes:          1,
-		}, nil
-	}
-
-	ipamer := cipam.NewWithStorage(ipamDB)
-	namespace := GetIpamNamespaceForIPBlock(ctx, ipBlock.RoutingType, ipBlock.InfrastructureProviderID.String(), ipBlock.SiteID.String())
-	ipamer.SetNamespace(namespace)
-	ipamPrefix := ipamer.PrefixFrom(ctx, vpcCidr)
-	if ipamPrefix == nil {
-		return nil, fmt.Errorf("did not find prefix for VPC prefix: %s", vpcPrefix.ID.String())
-	}
-	u := ipamPrefix.Usage()
-	return &cipam.Usage{
-		AvailableIPs:              u.AvailableIPs,
-		AcquiredIPs:               u.AcquiredIPs,
-		AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
-		AvailablePrefixes:         u.AvailablePrefixes,
-		AcquiredPrefixes:          u.AcquiredPrefixes,
-	}, nil
-}
-
-func getSubnetIPv4Cidr(ctx context.Context, subnet *cdbm.Subnet) (string, error) {
-	if subnet == nil {
-		return "", ErrNilSubnet
-	}
-	if subnet.IPv4Prefix == nil || *subnet.IPv4Prefix == "" {
-		return "", ErrSubnetNoIPv4Prefix
-	}
-	p := *subnet.IPv4Prefix
-	if strings.Contains(p, "/") {
-		return p, nil
-	}
-	return GetCidrForIPBlock(ctx, p, subnet.PrefixLength), nil
-}
-
-// GetIpamUsageForSubnet returns IPAM usage for the Subnet's IPv4 CIDR subtree within the parent IPv4 IP Block namespace.
-func GetIpamUsageForSubnet(ctx context.Context, ipamDB cipam.Storage, subnet *cdbm.Subnet, ipBlock *cdbm.IPBlock) (*cipam.Usage, error) {
-	if subnet == nil {
-		return nil, ErrNilSubnet
-	}
-	if ipBlock == nil {
-		return nil, ErrNilIPBlock
-	}
-
-	subnetCidr, err := getSubnetIPv4Cidr(ctx, subnet)
-	if err != nil {
-		return nil, err
-	}
-	parentCidr := GetCidrForIPBlock(ctx, ipBlock.Prefix, ipBlock.PrefixLength)
-
-	if ipBlock.FullGrant && cidrPrefixesEqual(subnetCidr, parentCidr) {
-		return &cipam.Usage{
-			AvailableIPs:              0,
-			AcquiredIPs:               0,
-			AvailableSmallestPrefixes: 0,
-			AvailablePrefixes:         nil,
-			AcquiredPrefixes:          1,
-		}, nil
-	}
-
-	ipamer := cipam.NewWithStorage(ipamDB)
-	namespace := GetIpamNamespaceForIPBlock(ctx, ipBlock.RoutingType, ipBlock.InfrastructureProviderID.String(), ipBlock.SiteID.String())
-	ipamer.SetNamespace(namespace)
-	ipamPrefix := ipamer.PrefixFrom(ctx, subnetCidr)
-	if ipamPrefix == nil {
-		return nil, fmt.Errorf("did not find prefix for Subnet: %s", subnet.ID.String())
-	}
-	u := ipamPrefix.Usage()
-	return &cipam.Usage{
-		AvailableIPs:              u.AvailableIPs,
-		AcquiredIPs:               u.AcquiredIPs,
-		AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
-		AvailablePrefixes:         u.AvailablePrefixes,
-		AcquiredPrefixes:          u.AcquiredPrefixes,
-	}, nil
 }
 
 // CreateChildIpamEntryForIPBlock will create an child ipam entry in the ipam DB for the given parent IP Block, with a given child block size
