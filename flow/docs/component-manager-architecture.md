@@ -32,7 +32,7 @@ The Component Manager system uses two main patterns:
 │  │   ├── "nico" → Factory → Manager (uses nico.Provider)  │   │
 │  │   └── "mock"    → Factory → Manager (no provider needed)     │   │
 │  ├─────────────────────────────────────────────────────────────┤   │
-│  │ ComponentType: NVLSwitch                                     │   │
+│  │ ComponentType: NVSwitch                                     │   │
 │  │   ├── "nico" → Factory → Manager                          │   │
 │  │   └── "mock"    → Factory → Manager                          │   │
 │  ├─────────────────────────────────────────────────────────────┤   │
@@ -127,9 +127,9 @@ internal/task/componentmanager/
 ├── compute/
 │   └── nico/
 │       └── nico.go       # NICo-based compute manager
-├── nvlswitch/
+├── nvswitch/
 │   └── nico/
-│       └── nico.go       # NICo-based NVL switch manager
+│       └── nico.go       # NICo-based NVSwitch manager
 └── powershelf/
     └── psm/
         └── psm.go           # PSM-based power shelf manager
@@ -368,7 +368,7 @@ Now you can use the new implementation in YAML config:
 ```yaml
 component_managers:
   compute: myimpl
-  nvlswitch: nico
+  nvswitch: nico
   powershelf: psm
 
 providers:
@@ -414,6 +414,6 @@ Use the mock implementation in test configuration:
 ```yaml
 component_managers:
   compute: mock
-  nvlswitch: mock
+  nvswitch: mock
   powershelf: mock
 ```

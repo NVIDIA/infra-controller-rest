@@ -34,7 +34,7 @@ var (
 
 Components are routed to the appropriate service based on type:
   - Compute    → NICo AddExpectedMachine API
-  - NVLSwitch  → NICo AddExpectedSwitch API
+  - NVSwitch  → NICo AddExpectedSwitch API
   - PowerShelf → PSM RegisterPowershelves API
 
 Specify racks by ID or name:

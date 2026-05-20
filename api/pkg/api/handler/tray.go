@@ -243,7 +243,7 @@ func NewGetAllTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param siteId query string true "ID of the Site"
 // @Param rackId query string false "Filter by Rack ID"
 // @Param rackName query string false "Filter by Rack name"
-// @Param type query string false "Filter by tray type (Compute, NVLSwitch, PowerShelf)"
+// @Param type query string false "Filter by tray type (Compute, NVSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by component ID (use repeated params for multiple values)"
 // @Param id query string false "Filter by tray UUID (use repeated params for multiple values)"
 // @Param orderBy query string false "Order by field (e.g. name_ASC, manufacturer_DESC)"
@@ -636,7 +636,7 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param rackName query string false "Scope to a specific Rack by name (mutually exclusive with rackId)"
 // @Param name query string false "Filter trays by name"
 // @Param manufacturer query string false "Filter trays by manufacturer"
-// @Param type query string false "Filter trays by type (Compute, NVLSwitch, PowerShelf)"
+// @Param type query string false "Filter trays by type (Compute, NVSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)"
 // @Success 200 {object} model.APIRackValidationResult
 // @Router /v2/org/{org}/nico/tray/validation [get]

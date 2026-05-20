@@ -18,6 +18,7 @@
 package componentmanager
 
 import (
+	"slices"
 	"sync"
 
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
@@ -28,6 +29,8 @@ import (
 
 // Registry maintains the active component managers selected from factory specs.
 type Registry struct {
+	// active is protected by mu because remote managers may be registered at
+	// runtime after the initial config-based registry construction.
 	mu     sync.RWMutex
 	active map[devicetypes.ComponentType]ComponentManager
 }
@@ -164,8 +167,44 @@ func (r *Registry) GetDescriptor(
 	return manager.Descriptor().Normalize()
 }
 
-// GetAllManagers returns all active managers.
-func (r *Registry) GetAllManagers() []ComponentManager {
+// ComponentTypes returns the component types with active managers, sorted by
+// component type.
+func (r *Registry) ComponentTypes() []devicetypes.ComponentType {
+	if r == nil {
+		return nil
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.componentTypesLocked()
+}
+
+// Descriptors returns normalized descriptors for all active managers, sorted by
+// component type.
+func (r *Registry) Descriptors() ([]cmcatalog.Descriptor, error) {
+	if r == nil {
+		return nil, ErrRegistryNotConfigured
+	}
+
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	componentTypes := r.componentTypesLocked()
+	descriptors := make([]cmcatalog.Descriptor, 0, len(componentTypes))
+	for _, componentType := range componentTypes {
+		descriptor, err := r.active[componentType].Descriptor().Normalize()
+		if err != nil {
+			return nil, err
+		}
+		descriptors = append(descriptors, descriptor)
+	}
+
+	return descriptors, nil
+}
+
+// ComponentManagers returns all active managers, sorted by component type.
+func (r *Registry) ComponentManagers() []ComponentManager {
 	if r == nil {
 		return nil
 	}
@@ -174,8 +213,17 @@ func (r *Registry) GetAllManagers() []ComponentManager {
 	defer r.mu.RUnlock()
 
 	managers := make([]ComponentManager, 0, len(r.active))
-	for _, manager := range r.active {
-		managers = append(managers, manager)
+	for _, componentType := range r.componentTypesLocked() {
+		managers = append(managers, r.active[componentType])
 	}
 	return managers
+}
+
+func (r *Registry) componentTypesLocked() []devicetypes.ComponentType {
+	componentTypes := make([]devicetypes.ComponentType, 0, len(r.active))
+	for componentType := range r.active {
+		componentTypes = append(componentTypes, componentType)
+	}
+	slices.Sort(componentTypes)
+	return componentTypes
 }

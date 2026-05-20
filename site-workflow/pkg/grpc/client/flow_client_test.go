@@ -53,7 +53,7 @@ func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 	serverCAMD5 := serverCAMD5Hash[:]
 
 	type fields struct {
-		Config *FlowClientConfig
+		Config *FlowGrpcClientConfig
 	}
 	tests := []struct {
 		name              string
@@ -65,7 +65,7 @@ func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 		{
 			name: "test that we can get the initial cert md5s",
 			fields: fields{
-				Config: &FlowClientConfig{
+				Config: &FlowGrpcClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -76,7 +76,7 @@ func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rac := &FlowAtomicClient{
+			rac := &FlowGrpcAtomicClient{
 				Config: tt.fields.Config,
 			}
 			gotClientCertMD5, gotServerCAMD5, err := rac.GetInitialCertMD5()
@@ -92,32 +92,32 @@ func TestFlowAtomicClient_GetInitialCertMD5(t *testing.T) {
 	}
 }
 
-func TestFlowAtomicClient_GetFlowClient_ReturnsErrWhenUninitialized(t *testing.T) {
-	rac := &FlowAtomicClient{
+func TestFlowGrpcAtomicClient_GrpcServiceClient_ReturnsErrWhenUninitialized(t *testing.T) {
+	rac := &FlowGrpcAtomicClient{
 		value: &atomic.Value{},
 	}
-	// GetFlowClient should return ErrClientNotConnected when no client has been stored,
+	// GrpcServiceClient should return ErrFlowClientNotConnected when no client has been stored,
 	// rather than panicking on a nil-pointer deref.
-	flow, err := rac.GetFlowClient()
-	assert.Nil(t, flow)
-	assert.ErrorIs(t, err, ErrClientNotConnected)
+	grpcServiceClient, err := rac.GrpcServiceClient()
+	assert.Nil(t, grpcServiceClient)
+	assert.ErrorIs(t, err, ErrFlowGrpcClientNotConnected)
 }
 
-func TestFlowAtomicClient_GetFlowClient_ReturnsFlowAfterSwap(t *testing.T) {
-	rac := &FlowAtomicClient{
+func TestFlowGrpcAtomicClient_GrpcServiceClient_ReturnsFlowAfterSwap(t *testing.T) {
+	rac := &FlowGrpcAtomicClient{
 		value: &atomic.Value{},
 	}
-	// Once a FlowClient with a populated flow field is stored, GetFlowClient
+	// Once a FlowClient with a populated grpcServiceClient field is stored, GrpcServiceClient
 	// should return that exact inner client. We construct a stub via
 	// flowv1.NewFlowClient(nil); it isn't usable for real RPCs but is a non-nil
 	// flowv1.FlowClient interface value, which is all we need to exercise the
 	// success path.
 	expected := flowv1.NewFlowClient((*grpc.ClientConn)(nil))
-	rac.value.Store(&FlowClient{flow: expected})
-	got, err := rac.GetFlowClient()
+	rac.value.Store(&FlowGrpcClient{grpcServiceClient: expected})
+	grpcServiceClient, err := rac.GrpcServiceClient()
 	assert.NoError(t, err)
-	assert.NotNil(t, got)
-	assert.Equal(t, expected, got)
+	assert.NotNil(t, grpcServiceClient)
+	assert.Equal(t, expected, grpcServiceClient)
 }
 
 func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
@@ -150,7 +150,7 @@ func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
 	lastServerCAMD5 := val[:]
 
 	type fields struct {
-		Config *FlowClientConfig
+		Config *FlowGrpcClientConfig
 	}
 	type args struct {
 		lastClientCertMD5 []byte
@@ -166,7 +166,7 @@ func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns true when the certificates have changed",
 			fields: fields{
-				Config: &FlowClientConfig{
+				Config: &FlowGrpcClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -180,7 +180,7 @@ func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
 		{
 			name: "test that check certificates returns false when the certificates have not changed",
 			fields: fields{
-				Config: &FlowClientConfig{
+				Config: &FlowGrpcClientConfig{
 					ClientCertPath: clientCertPath,
 					ServerCAPath:   serverCAPath,
 				},
@@ -194,7 +194,7 @@ func TestFlowAtomicClient_CheckCertificates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rac := &FlowAtomicClient{
+			rac := &FlowGrpcAtomicClient{
 				Config: tt.fields.Config,
 			}
 			got, _, _, err := rac.CheckCertificates(tt.args.lastClientCertMD5, tt.args.lastServerCAMD5)

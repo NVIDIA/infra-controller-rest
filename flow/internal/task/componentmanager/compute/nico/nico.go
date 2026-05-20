@@ -90,6 +90,15 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypeCompute,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nicoprovider.ProviderName},
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityBringUpControl,
+			cmcatalog.CapabilityBringUpStatus,
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
 	}
 }
 

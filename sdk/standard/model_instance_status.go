@@ -42,6 +42,7 @@ const (
 	INSTANCESTATUS_CONFIGURING  InstanceStatus = "Configuring"
 	INSTANCESTATUS_READY        InstanceStatus = "Ready"
 	INSTANCESTATUS_UPDATING     InstanceStatus = "Updating"
+	INSTANCESTATUS_REPAIRING    InstanceStatus = "Repairing"
 	INSTANCESTATUS_REBOOTING    InstanceStatus = "Rebooting"
 	INSTANCESTATUS_TERMINATING  InstanceStatus = "Terminating"
 	INSTANCESTATUS_ERROR        InstanceStatus = "Error"
@@ -54,6 +55,7 @@ var AllowedInstanceStatusEnumValues = []InstanceStatus{
 	"Configuring",
 	"Ready",
 	"Updating",
+	"Repairing",
 	"Rebooting",
 	"Terminating",
 	"Error",

@@ -37,7 +37,7 @@ import (
 
 // ManageNetworkSecurityGroup is an activity wrapper for NetworkSecurityGroup management tasks that allows injecting DB access
 type ManageNetworkSecurityGroup struct {
-	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
+	coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient
 }
 
 // Function to Create NICo NetworkSecurityGroup with the Site Controller
@@ -63,16 +63,16 @@ func (mm *ManageNetworkSecurityGroup) CreateNetworkSecurityGroupOnSite(ctx conte
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	rpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.CreateNetworkSecurityGroup(ctx, request)
+	_, err = rpcServiceClient.CreateNetworkSecurityGroup(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create NetworkSecurityGroup using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to create NetworkSecurityGroup using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -103,16 +103,16 @@ func (mm *ManageNetworkSecurityGroup) UpdateNetworkSecurityGroupOnSite(ctx conte
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	rpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.UpdateNetworkSecurityGroup(ctx, request)
+	_, err = rpcServiceClient.UpdateNetworkSecurityGroup(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to update config for NetworkSecurityGroup using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to update config for NetworkSecurityGroup using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -143,16 +143,16 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mm.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mm.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	rpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.DeleteNetworkSecurityGroup(ctx, request)
+	_, err = rpcServiceClient.DeleteNetworkSecurityGroup(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to delete NetworkSecurityGroup using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to delete NetworkSecurityGroup using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -162,9 +162,9 @@ func (mm *ManageNetworkSecurityGroup) DeleteNetworkSecurityGroupOnSite(ctx conte
 }
 
 // NewManageNetworkSecurityGroup returns a new ManageNetworkSecurityGroup activity
-func NewManageNetworkSecurityGroup(nicoClient *cClient.NICoCoreAtomicClient) ManageNetworkSecurityGroup {
+func NewManageNetworkSecurityGroup(coreGrpcClient *cClient.CoreGrpcAtomicClient) ManageNetworkSecurityGroup {
 	return ManageNetworkSecurityGroup{
-		NICoCoreAtomicClient: nicoClient,
+		coreGrpcAtomicClient: coreGrpcClient,
 	}
 }
 
@@ -194,26 +194,26 @@ func NewManageNetworkSecurityGroupInventory(config ManageInventoryConfig) Manage
 	}
 }
 
-func networkSecurityGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.UUID, error) {
-	// Call Site Controller gRPC endpoint
-	rpcClient := nicoClient.NICo()
-	networkSecurityGroupIdList, err := rpcClient.FindNetworkSecurityGroupIds(ctx, &cwssaws.FindNetworkSecurityGroupIdsRequest{})
+func networkSecurityGroupFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.UUID, error) {
+	// Call Core gRPC API endpoint
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	networkSecurityGroupIdList, err := grpcServiceClient.FindNetworkSecurityGroupIds(ctx, &cwssaws.FindNetworkSecurityGroupIdsRequest{})
 	if err != nil {
 		return nil, err
 	}
 	return util.StringsToProtobufUUIDList(networkSecurityGroupIdList.GetNetworkSecurityGroupIds()), nil
 }
 
-func networkSecurityGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
+func networkSecurityGroupFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.UUID) ([]*cwssaws.NetworkSecurityGroup, error) {
 	nsgIDs := make([]string, len(ids))
 
 	for i, id := range ids {
 		nsgIDs[i] = id.GetValue()
 	}
 
-	// Call Site Controller gRPC endpoint
-	rpcClient := nicoClient.NICo()
-	networkSecurityGroupList, err := rpcClient.FindNetworkSecurityGroupsByIds(ctx, &cwssaws.FindNetworkSecurityGroupsByIdsRequest{
+	// Call Core gRPC API endpoint
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	networkSecurityGroupList, err := grpcServiceClient.FindNetworkSecurityGroupsByIds(ctx, &cwssaws.FindNetworkSecurityGroupsByIdsRequest{
 		NetworkSecurityGroupIds: nsgIDs,
 	})
 	if err != nil {

@@ -30,13 +30,13 @@ import (
 
 // ManageMachineValidation is an activity wrapper for Machine Validation management
 type ManageMachineValidation struct {
-	NICoCoreAtomicClient *client.NICoCoreAtomicClient
+	coreGrpcAtomicClient *client.CoreGrpcAtomicClient
 }
 
 // NewManageMachineValidation returns a new ManageMachineValidation client
-func NewManageMachineValidation(nicoClient *client.NICoCoreAtomicClient) ManageMachineValidation {
+func NewManageMachineValidation(coreGrpcClient *client.CoreGrpcAtomicClient) ManageMachineValidation {
 	return ManageMachineValidation{
-		NICoCoreAtomicClient: nicoClient,
+		coreGrpcAtomicClient: coreGrpcClient,
 	}
 }
 
@@ -60,15 +60,17 @@ func (mmv *ManageMachineValidation) EnableDisableMachineValidationTestOnSite(ctx
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = nicoClient.NICo().MachineValidationTestEnableDisableTest(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.MachineValidationTestEnableDisableTest(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to enable/disable machine validation test using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to enable/disable machine validation test using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -95,15 +97,17 @@ func (mmv *ManageMachineValidation) PersistValidationResultOnSite(ctx context.Co
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = nicoClient.NICo().PersistValidationResult(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.PersistValidationResult(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to persist validation results using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to persist validation results using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -128,15 +132,17 @@ func (mmv *ManageMachineValidation) GetMachineValidationResultsFromSite(ctx cont
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return nil, client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := nicoClient.NICo().GetMachineValidationResults(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationResults(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get machine validation results using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to get machine validation results using Core gRPC API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -163,15 +169,17 @@ func (mmv *ManageMachineValidation) GetMachineValidationRunsFromSite(ctx context
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return nil, client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := nicoClient.NICo().GetMachineValidationRuns(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationRuns(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get machine validation runs using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to get machine validation runs using Core gRPC API")
 		return nil, err
 	}
 
@@ -196,15 +204,17 @@ func (mmv *ManageMachineValidation) GetMachineValidationTestsFromSite(ctx contex
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return nil, client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := nicoClient.NICo().GetMachineValidationTests(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationTests(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get machine validation tests using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to get machine validation tests using Core gRPC API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -235,15 +245,17 @@ func (mmv *ManageMachineValidation) AddMachineValidationTestOnSite(ctx context.C
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return nil, client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	response, err := nicoClient.NICo().AddMachineValidationTest(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	response, err := grpcServiceClient.AddMachineValidationTest(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to add machine validation test using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to add machine validation test using Core gRPC API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -274,15 +286,17 @@ func (mmv *ManageMachineValidation) UpdateMachineValidationTestOnSite(ctx contex
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = nicoClient.NICo().UpdateMachineValidationTest(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.UpdateMachineValidationTest(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to update machine validation test using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to update machine validation test using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -307,15 +321,17 @@ func (mmv *ManageMachineValidation) GetMachineValidationExternalConfigsFromSite(
 		return nil, temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return nil, client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return nil, client.ErrCoreGrpcClientNotConnected
 	}
 
-	result, err := nicoClient.NICo().GetMachineValidationExternalConfigs(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	result, err := grpcServiceClient.GetMachineValidationExternalConfigs(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to get machine validation external configs using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to get machine validation external configs using Core gRPC API")
 		return nil, swe.WrapErr(err)
 	}
 
@@ -342,15 +358,17 @@ func (mmv *ManageMachineValidation) AddUpdateMachineValidationExternalConfigOnSi
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = nicoClient.NICo().AddUpdateMachineValidationExternalConfig(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.AddUpdateMachineValidationExternalConfig(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to add/update machine validation external config using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to add/update machine validation external config using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -377,15 +395,17 @@ func (mmv *ManageMachineValidation) RemoveMachineValidationExternalConfigOnSite(
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmv.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC endpoint
+	grpcClient := mmv.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return client.ErrCoreGrpcClientNotConnected
 	}
 
-	_, err = nicoClient.NICo().RemoveMachineValidationExternalConfig(ctx, request)
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+
+	_, err = grpcServiceClient.RemoveMachineValidationExternalConfig(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to remove machine validation external config using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to remove machine validation external config using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 

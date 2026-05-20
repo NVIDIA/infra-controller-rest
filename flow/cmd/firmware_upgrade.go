@@ -85,7 +85,7 @@ func init() {
 	firmwareUpgradeCmd.Flags().StringVar(&firmwareUpgradeRackIDs, "rack-ids", "", "Comma-separated list of rack UUIDs")
 	firmwareUpgradeCmd.Flags().StringVar(&firmwareUpgradeRackNames, "rack-names", "", "Comma-separated list of rack names")
 	firmwareUpgradeCmd.Flags().StringVar(&firmwareUpgradeComponentIDs, "component-ids", "", "Comma-separated list of component IDs")
-	firmwareUpgradeCmd.Flags().StringVarP(&firmwareUpgradeComponentType, "type", "t", "", "Component type: compute, nvlswitch, powershelf (required for rack-ids/rack-names)")
+	firmwareUpgradeCmd.Flags().StringVarP(&firmwareUpgradeComponentType, "type", "t", "", "Component type: compute, nvswitch, powershelf (required for rack-ids/rack-names)")
 	firmwareUpgradeCmd.Flags().StringVarP(&firmwareUpgradeStartTime, "start", "s", "", "Start time (default: now)")
 	firmwareUpgradeCmd.Flags().StringVarP(&firmwareUpgradeEndTime, "end", "e", "", "End time (default: start + 24h)")
 }
@@ -140,7 +140,7 @@ func doFirmwareUpgrade() {
 	// Parse and validate component type (required for rack-ids/rack-names)
 	componentType := parseComponentTypeToTypes(firmwareUpgradeComponentType)
 	if (hasRackIDs || hasRackNames) && componentType == types.ComponentTypeUnknown {
-		log.Fatal().Msg("--type is required when using --rack-ids or --rack-names (compute, nvlswitch, powershelf)")
+		log.Fatal().Msg("--type is required when using --rack-ids or --rack-names (compute, nvswitch, powershelf)")
 	}
 
 	// Parse time strings with defaults

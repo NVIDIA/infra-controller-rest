@@ -1149,6 +1149,8 @@ func getNICoInstanceStatus(controllerInstanceTenantState cwsv1.TenantState) (str
 		return cdbm.InstanceStatusReady, "Instance is ready for use"
 	case cwsv1.TenantState_CONFIGURING:
 		return cdbm.InstanceStatusConfiguring, "Instance is being configured on Site"
+	case cwsv1.TenantState_REPAIRING:
+		return cdbm.InstanceStatusRepairing, "Instance is undergoing online-repair"
 	case cwsv1.TenantState_TERMINATING:
 		return cdbm.InstanceStatusTerminating, "Instance is terminating on Site"
 	case cwsv1.TenantState_TERMINATED:

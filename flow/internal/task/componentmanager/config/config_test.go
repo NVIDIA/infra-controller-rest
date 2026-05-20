@@ -69,7 +69,7 @@ func TestParseConfigWithExplicitProviders(t *testing.T) {
 	config, err := parseConfigWithBuiltins(t, `
 component_managers:
   compute: nico
-  nvlswitch: nvswitchmanager
+  nvswitch: nvswitchmanager
   powershelf: psm
 providers:
   nico:
@@ -83,7 +83,7 @@ providers:
 	require.NoError(t, err)
 
 	assert.Equal(t, nico.ProviderName, config.ComponentManagers[devicetypes.ComponentTypeCompute])
-	assert.Equal(t, nvswitchmanager.ProviderName, config.ComponentManagers[devicetypes.ComponentTypeNVLSwitch])
+	assert.Equal(t, nvswitchmanager.ProviderName, config.ComponentManagers[devicetypes.ComponentTypeNVSwitch])
 	assert.Equal(t, psm.ProviderName, config.ComponentManagers[devicetypes.ComponentTypePowerShelf])
 
 	nicoConfig, ok := config.ProviderConfigs[nico.ProviderName].(*nico.Config)
@@ -111,7 +111,7 @@ func TestParseConfigDerivesProviders(t *testing.T) {
 			configYAML: `
 component_managers:
   compute: mock
-  nvlswitch: mock
+  nvswitch: mock
   powershelf: mock
 `,
 			wantEnabled: nil,
@@ -136,7 +136,7 @@ component_managers:
 			name: "nvswitchmanager",
 			configYAML: `
 component_managers:
-  nvlswitch: nvswitchmanager
+  nvswitch: nvswitchmanager
 `,
 			wantEnabled: []string{nvswitchmanager.ProviderName},
 		},
@@ -145,7 +145,7 @@ component_managers:
 			configYAML: `
 component_managers:
   compute: nico
-  nvlswitch: nico
+  nvswitch: nico
   powershelf: psm
 `,
 			wantEnabled: []string{nico.ProviderName, psm.ProviderName},
@@ -531,7 +531,7 @@ func testCatalog(t *testing.T) cmcatalog.Catalog {
 			Implementation: "mock",
 		},
 		{
-			Type:           devicetypes.ComponentTypeNVLSwitch,
+			Type:           devicetypes.ComponentTypeNVSwitch,
 			Implementation: "mock",
 		},
 		{
@@ -544,7 +544,7 @@ func testCatalog(t *testing.T) cmcatalog.Catalog {
 			RequiredProviders: []string{nico.ProviderName},
 		},
 		{
-			Type:              devicetypes.ComponentTypeNVLSwitch,
+			Type:              devicetypes.ComponentTypeNVSwitch,
 			Implementation:    nico.ProviderName,
 			RequiredProviders: []string{nico.ProviderName},
 		},
@@ -559,7 +559,7 @@ func testCatalog(t *testing.T) cmcatalog.Catalog {
 			RequiredProviders: []string{psm.ProviderName},
 		},
 		{
-			Type:              devicetypes.ComponentTypeNVLSwitch,
+			Type:              devicetypes.ComponentTypeNVSwitch,
 			Implementation:    nvswitchmanager.ProviderName,
 			RequiredProviders: []string{nvswitchmanager.ProviderName},
 		},

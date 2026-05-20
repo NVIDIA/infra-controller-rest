@@ -232,7 +232,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_No
 		TotalDiffs:      0,
 		MissingCount:    0,
 		UnexpectedCount: 0,
-		DriftCount:      0,
+		MismatchCount:   0,
 		MatchCount:      5,
 	}
 
@@ -279,7 +279,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_Wi
 				ComponentId: "comp-1",
 			},
 			{
-				Type:        flowv1.DiffType_DIFF_TYPE_DRIFT,
+				Type:        flowv1.DiffType_DIFF_TYPE_MISMATCH,
 				ComponentId: "comp-2",
 				FieldDiffs: []*flowv1.FieldDiff{
 					{
@@ -293,7 +293,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_Wi
 		TotalDiffs:      2,
 		MissingCount:    1,
 		UnexpectedCount: 0,
-		DriftCount:      1,
+		MismatchCount:   1,
 		MatchCount:      3,
 	}
 
@@ -311,7 +311,7 @@ func (s *ValidateRackComponentsTestSuite) Test_ValidateRackComponents_Success_Wi
 	s.NoError(s.env.GetWorkflowResult(&response))
 	s.Equal(int32(2), response.TotalDiffs)
 	s.Equal(int32(1), response.MissingCount)
-	s.Equal(int32(1), response.DriftCount)
+	s.Equal(int32(1), response.MismatchCount)
 	s.Equal(int32(3), response.MatchCount)
 	s.Equal(2, len(response.Diffs))
 }

@@ -41,7 +41,7 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("OperatingSystem: Successfully registered DeleteOsImage workflow")
 
 	// Register activities
-	osImageManager := swa.NewManageOperatingSystem(ManagerAccess.Data.EB.Managers.NICo.Client)
+	osImageManager := swa.NewManageOperatingSystem(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 
 	// Register CreateOsImageOnSite
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(osImageManager.CreateOsImageOnSite)

@@ -106,6 +106,15 @@ func TestAPIBatchTrayFirmwareUpdateRequest_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "valid - with filter and version",
+			request: APIBatchTrayFirmwareUpdateRequest{
+				SiteID:  "site-1",
+				Filter:  &TrayFilter{IDs: []string{"550e8400-e29b-41d4-a716-446655440000"}},
+				Version: strPtr("24.11.0"),
+			},
+			wantErr: false,
+		},
+		{
 			name: "valid - targets with version",
 			request: APIBatchTrayFirmwareUpdateRequest{
 				SiteID:  "site-1",

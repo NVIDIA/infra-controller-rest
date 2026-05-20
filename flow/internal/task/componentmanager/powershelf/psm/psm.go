@@ -74,6 +74,13 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypePowerShelf,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{psmprovider.ProviderName},
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
 	}
 }
 

@@ -61,7 +61,7 @@ func ruleKey(operationType common.TaskType, operation string) string {
 }
 
 // buildPowerOnRule creates the hardcoded default rule for power on operations.
-// Order: PowerShelf → NVLSwitch → Compute.
+// Order: PowerShelf → NVSwitch → Compute.
 func buildPowerOnRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Power On",
@@ -96,7 +96,7 @@ func buildPowerOnRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -149,7 +149,7 @@ func buildPowerOnRule() *OperationRule {
 }
 
 // buildPowerOffRule creates the hardcoded default rule for power off operations.
-// Order: Compute → NVLSwitch → PowerShelf.
+// Order: Compute → NVSwitch → PowerShelf.
 func buildPowerOffRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Power Off",
@@ -184,7 +184,7 @@ func buildPowerOffRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -240,8 +240,8 @@ func buildPowerOffRule() *OperationRule {
 // Each stage explicitly specifies the power operation to avoid inheriting the
 // composite "restart" operation from the task context (which would send
 // BMC GRACEFUL_RESTART — an atomic off→on — instead of separate off/on).
-// Off order: Compute → NVLSwitch → PowerShelf.
-// On order:  PowerShelf → NVLSwitch → Compute.
+// Off order: Compute → NVSwitch → PowerShelf.
+// On order:  PowerShelf → NVSwitch → Compute.
 func buildRestartRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Restart",
@@ -280,7 +280,7 @@ func buildRestartRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -362,7 +362,7 @@ func buildRestartRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         5,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -429,7 +429,7 @@ func buildRestartRule() *OperationRule {
 // operation_rules table.
 //
 //	Stage 1: Compute firmware update
-//	Stage 2: NVLSwitch firmware update
+//	Stage 2: NVSwitch firmware update
 func buildFirmwareUpgradeRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Firmware Upgrade",
@@ -458,9 +458,9 @@ func buildFirmwareUpgradeRule() *OperationRule {
 						},
 					},
 				},
-				// === Stage 2: NVLSwitch firmware update ===
+				// === Stage 2: NVSwitch firmware update ===
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       45 * time.Minute,
@@ -484,7 +484,7 @@ func buildFirmwareUpgradeRule() *OperationRule {
 
 // buildForcePowerOnRule creates the hardcoded default rule for
 // forced power on operations (no per-step verification).
-// Order: PowerShelf → NVLSwitch → Compute, then parallel verify all.
+// Order: PowerShelf → NVSwitch → Compute, then parallel verify all.
 func buildForcePowerOnRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Force Power On",
@@ -509,7 +509,7 @@ func buildForcePowerOnRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -565,7 +565,7 @@ func buildForcePowerOnRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         4, // Parallel with PowerShelf
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
@@ -585,7 +585,7 @@ func buildForcePowerOnRule() *OperationRule {
 				},
 				{
 					ComponentType: devicetypes.ComponentTypeCompute,
-					Stage:         4, // Parallel with PowerShelf and NVLSwitch
+					Stage:         4, // Parallel with PowerShelf and NVSwitch
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
 					RetryPolicy: &RetryPolicy{
@@ -609,7 +609,7 @@ func buildForcePowerOnRule() *OperationRule {
 
 // buildForcePowerOffRule creates the hardcoded default rule for
 // forced power off operations (no per-step verification).
-// Order: Compute → NVLSwitch → PowerShelf, then parallel verify all.
+// Order: Compute → NVSwitch → PowerShelf, then parallel verify all.
 func buildForcePowerOffRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Force Power Off",
@@ -642,7 +642,7 @@ func buildForcePowerOffRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -706,7 +706,7 @@ func buildForcePowerOffRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         4, // Parallel with PowerShelf
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
@@ -726,7 +726,7 @@ func buildForcePowerOffRule() *OperationRule {
 				},
 				{
 					ComponentType: devicetypes.ComponentTypeCompute,
-					Stage:         4, // Parallel with PowerShelf and NVLSwitch
+					Stage:         4, // Parallel with PowerShelf and NVSwitch
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
 					RetryPolicy: &RetryPolicy{
@@ -753,8 +753,8 @@ func buildForcePowerOffRule() *OperationRule {
 // Stage 1: PowerShelf — power on, verify power on
 // Stage 2: Compute    — power on (bring-up gate), verify power on
 // Stage 3: Compute    — firmware check vs desired, trigger update + poll if needed
-// Stage 4: NVLSwitch  — power on (bring-up), verify power on
-// Stage 5: NVLSwitch  — verify firmware consistency (no firmware update)
+// Stage 4: NVSwitch  — power on (bring-up), verify power on
+// Stage 5: NVSwitch  — verify firmware consistency (no firmware update)
 // Stage 6: Compute    — restart (power cycle for firmware activation)
 func buildBringUpRule() *OperationRule {
 	return &OperationRule{
@@ -840,9 +840,9 @@ func buildBringUpRule() *OperationRule {
 						},
 					},
 				},
-				// === Stage 4: NVLSwitch — power on, verify ===
+				// === Stage 4: NVSwitch — power on, verify ===
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         4,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -868,9 +868,9 @@ func buildBringUpRule() *OperationRule {
 						},
 					},
 				},
-				// === Stage 5: NVLSwitch — verify firmware consistency only ===
+				// === Stage 5: NVSwitch — verify firmware consistency only ===
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         5,
 					MaxParallel:   0,
 					Timeout:       10 * time.Minute,
@@ -962,7 +962,7 @@ func buildIngestRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         1, // Parallel with Compute
 					MaxParallel:   0,
 					Timeout:       10 * time.Minute,
@@ -978,8 +978,8 @@ func buildIngestRule() *OperationRule {
 // buildForceRestartRule creates the hardcoded default rule for forced restart.
 // Skips per-stage verification for speed but verifies the "off"
 // state before proceeding to power on, ensuring a real power cycle occurs.
-// Off order:  Compute → NVLSwitch → PowerShelf.
-// On order:   PowerShelf → NVLSwitch → Compute.
+// Off order:  Compute → NVSwitch → PowerShelf.
+// On order:   PowerShelf → NVSwitch → Compute.
 func buildForceRestartRule() *OperationRule {
 	return &OperationRule{
 		Name:          "Hardcoded Default Force Restart",
@@ -1018,7 +1018,7 @@ func buildForceRestartRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         2,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -1091,7 +1091,7 @@ func buildForceRestartRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         4, // Parallel with PowerShelf
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
@@ -1111,7 +1111,7 @@ func buildForceRestartRule() *OperationRule {
 				},
 				{
 					ComponentType: devicetypes.ComponentTypeCompute,
-					Stage:         4, // Parallel with PowerShelf and NVLSwitch
+					Stage:         4, // Parallel with PowerShelf and NVSwitch
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
 					RetryPolicy: &RetryPolicy{
@@ -1156,7 +1156,7 @@ func buildForceRestartRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         6,
 					MaxParallel:   0,
 					Timeout:       15 * time.Minute,
@@ -1226,7 +1226,7 @@ func buildForceRestartRule() *OperationRule {
 					},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         8, // Parallel with PowerShelf
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
@@ -1246,7 +1246,7 @@ func buildForceRestartRule() *OperationRule {
 				},
 				{
 					ComponentType: devicetypes.ComponentTypeCompute,
-					Stage:         8, // Parallel with PowerShelf and NVLSwitch
+					Stage:         8, // Parallel with PowerShelf and NVSwitch
 					MaxParallel:   0,
 					Timeout:       4 * time.Minute,
 					RetryPolicy: &RetryPolicy{

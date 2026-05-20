@@ -37,12 +37,13 @@ type APIUpdateFirmwareRequest struct {
 	// carbide-core/crates/rpc/proto/forge.proto); see
 	// flow/pkg/common/firmwarecomponents for the resolution logic and
 	// helpers like SupportedNICoNVSwitchNames.
-	// Empty/nil means "update everything in the bundle". Requires Version.
+	// Empty/nil means "update everything in the bundle". When non-empty,
+	// requires Version.
 	//
 	// REST surface intentionally calls these "targets" to avoid confusion
 	// with carbide's tray-level "Component" vocabulary; the downstream
-	// Flow proto field is still named `components` and represents the
-	// same enum subset.
+	// Flow proto field is named `sub_targets` and represents the same
+	// enum subset.
 	Targets []string `json:"targets,omitempty"`
 }
 
@@ -106,7 +107,7 @@ type APIBatchTrayFirmwareUpdateRequest struct {
 	Version *string     `json:"version,omitempty"`
 	// Targets, when non-empty, restricts the update to a subset of
 	// firmware sub-parts within each matched tray. Same semantics as the
-	// single-tray variant. Requires Version.
+	// single-tray variant. When non-empty, requires Version.
 	Targets []string `json:"targets,omitempty"`
 }
 
@@ -115,8 +116,10 @@ func (r *APIBatchTrayFirmwareUpdateRequest) Validate() error {
 	if r.SiteID == "" {
 		return fmt.Errorf("siteId is required")
 	}
-	if err := r.Filter.Validate(); err != nil {
-		return err
+	if r.Filter != nil {
+		if err := r.Filter.Validate(); err != nil {
+			return err
+		}
 	}
 	return validateFirmwareTargets(r.Targets, r.Version)
 }
