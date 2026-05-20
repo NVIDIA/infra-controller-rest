@@ -687,18 +687,6 @@ func (ssd SubnetSQLDAO) Delete(ctx context.Context, tx *db.Tx, id uuid.UUID) err
 	return nil
 }
 
-// subnetIPv4CidrForUsage returns the IPv4 CIDR for the subnet
-func subnetIPv4CidrForUsage(sn *Subnet) (string, error) {
-	if sn.IPv4Prefix == nil || *sn.IPv4Prefix == "" {
-		return "", fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet %q: %w", sn.ID.String(), errSubnetNoIPv4Prefix)
-	}
-	p := *sn.IPv4Prefix
-	if strings.Contains(p, "/") {
-		return p, nil
-	}
-	return fmt.Sprintf("%s/%d", p, sn.PrefixLength), nil
-}
-
 // queryEthernetInterfaceIPsForSubnet returns iface row count and, for interfaces with IPs,
 // each interface's assigned addresses. COUNT(*) equals len(rows) for the same join/filter on one SELECT.
 func queryEthernetInterfaceIPsForSubnet(ctx context.Context, idb bun.IDB, subnetID uuid.UUID) (ifaceRows int64, ipStrings [][]string, err error) {
@@ -730,9 +718,16 @@ func (ssd SubnetSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, sn *Subne
 		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet: nil Subnet")
 	}
 
-	cidr, err := subnetIPv4CidrForUsage(sn)
-	if err != nil {
+	if sn.IPv4Prefix == nil || *sn.IPv4Prefix == "" {
 		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet %q: %w", sn.ID.String(), errSubnetNoIPv4Prefix)
+	}
+	p := *sn.IPv4Prefix
+
+	var cidr string
+	if strings.Contains(p, "/") {
+		cidr = p
+	} else {
+		cidr = fmt.Sprintf("%s/%d", p, sn.PrefixLength)
 	}
 
 	idb := db.GetIDB(tx, ssd.dbSession)

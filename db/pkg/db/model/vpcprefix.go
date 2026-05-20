@@ -451,16 +451,6 @@ func (vpsd VpcPrefixSQLDAO) Delete(ctx context.Context, tx *db.Tx, id uuid.UUID)
 	return nil
 }
 
-func vpcPrefixIPv4CidrForUsage(vp *VpcPrefix) string {
-	if vp == nil {
-		return ""
-	}
-	if strings.Contains(vp.Prefix, "/") {
-		return vp.Prefix
-	}
-	return fmt.Sprintf("%s/%d", vp.Prefix, vp.PrefixLength)
-}
-
 // queryEthernetInterfaceIPsForVPCPrefix returns iface row count (all matching ethernet interfaces)
 // and, for each row with assigned IPs, a slice of that interface's IPv4 addresses.
 // One SELECT suffices: COUNT(*) equals the number of result rows given the same join/filter.
@@ -494,8 +484,12 @@ func (vpsd VpcPrefixSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, vp *V
 		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for VPCPrefix: nil VPCPrefix")
 	}
 
-	// derive the IPv4 CIDR for the VPC prefix
-	cidr := vpcPrefixIPv4CidrForUsage(vp)
+	var cidr string
+	if strings.Contains(vp.Prefix, "/") {
+		cidr = vp.Prefix
+	} else {
+		cidr = fmt.Sprintf("%s/%d", vp.Prefix, vp.PrefixLength)
+	}
 	if cidr == "" {
 		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for VPCPrefix %q: no IPv4 CIDR", vp.ID.String())
 	}

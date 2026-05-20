@@ -510,7 +510,7 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve VPC Prefixes", nil)
 	}
 
-	vpuMap := map[uuid.UUID]*cip.Usage{}
+	vpusageMap := map[uuid.UUID]*cip.Usage{}
 	if includeUsageStats {
 		for i := range vpcPrefixes {
 			vp := &vpcPrefixes[i]
@@ -518,12 +518,12 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 				logger.Error().Str("vpcPrefixId", vp.ID.String()).Msg("VPC prefix missing IP Block relation for usage stats")
 				continue
 			}
-			vpu, serr := vpcPrefixDAO.GetPrefixUsage(ctx, nil, vp)
+			vpusage, serr := vpcPrefixDAO.GetPrefixUsage(ctx, nil, vp)
 			if serr != nil {
 				logger.Error().Err(serr).Msg("error retrieving usage stats for VPC prefix")
 				continue
 			}
-			vpuMap[vp.ID] = vpu
+			vpusageMap[vp.ID] = vpusage
 		}
 	}
 
@@ -551,7 +551,7 @@ func (gash GetAllVpcPrefixHandler) Handle(c echo.Context) error {
 	// get status details
 	for _, vp := range vpcPrefixes {
 		curvp := vp
-		cipu := vpuMap[vp.ID]
+		cipu := vpusageMap[vp.ID]
 		apiVpcPrefix := model.NewAPIVpcPrefix(&curvp, ssdMap[vp.ID.String()], cipu)
 		apiVpcPrefixes = append(apiVpcPrefixes, apiVpcPrefix)
 	}

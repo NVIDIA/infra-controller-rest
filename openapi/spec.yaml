@@ -2934,8 +2934,9 @@ paths:
           in: query
           name: includeUsageStats
           description: >-
-            When true, includes IPAM usage for each VPC prefix (`usageStats`), same shape as IP Block usage
-            (available/acquired IPs and child prefixes). Loads the parent IP Block relation internally if needed.
+            When true, each VPC Prefix includes IPv4 `usageStats` using the same JSON shape as IP Block usage counters.
+            Values are projected from ethernet interface addresses on Instances in this prefix (`/31`-paired consumption; counts include two host addresses per interface slot).
+            The parent IP Block relation may be loaded internally when resolving allocation context.
         - schema:
             type: integer
             example: 1
@@ -3039,8 +3040,9 @@ paths:
           in: query
           name: includeUsageStats
           description: >-
-            When true, includes IPAM usage for this VPC prefix (`usageStats`), same shape as IP Block usage.
-            Loads the parent IP Block relation internally if needed.
+            When true, each VPC Prefix includes IPv4 `usageStats` using the same JSON shape as IP Block usage counters.
+            Values are projected from ethernet interface addresses on Instances in this prefix (`/31`-paired consumption; counts include two host addresses per interface slot).
+            The parent IP Block relation may be loaded internally when resolving allocation context.
     delete:
       summary: Delete VPC Prefix
       operationId: delete-vpc-prefix
@@ -3181,8 +3183,9 @@ paths:
           in: query
           name: includeUsageStats
           description: >-
-            When true, includes IPAM usage for each Subnet's IPv4 space (`usageStats`), same shape as IP Block usage.
-            Loads the parent IPv4 IP Block relation internally if needed.
+            When true, each Subnet includes IPv4 `usageStats` using the same JSON shape as IP Block usage counters.
+            Figures account for ethernet interfaces on Instances in this Subnet—one host address per interface plus allowances for gateway and subnet bookkeeping on the `/` IPv4 allocation.
+            The parent IPv4 IP Block relation may be loaded internally when resolving allocation context.
         - schema:
             type: integer
             example: 1
@@ -3350,8 +3353,9 @@ paths:
           in: query
           name: includeUsageStats
           description: >-
-            When true, includes IPAM usage for this Subnet's IPv4 space (`usageStats`), same shape as IP Block usage.
-            Loads the parent IPv4 IP Block relation internally if needed.
+            When true, each Subnet includes IPv4 `usageStats` using the same JSON shape as IP Block usage counters.
+            Figures account for ethernet interfaces on Instances in this Subnet—one host address per interface plus allowances for gateway and subnet bookkeeping on the `/` IPv4 allocation.
+            The parent IPv4 IP Block relation may be loaded internally when resolving allocation context.
     delete:
       summary: Delete Subnet
       operationId: delete-subnet

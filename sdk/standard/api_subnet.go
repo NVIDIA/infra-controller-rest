@@ -329,7 +329,7 @@ func (r ApiGetAllSubnetRequest) IncludeRelation(includeRelation string) ApiGetAl
 	return r
 }
 
-// When true, includes IPAM usage for each Subnet&#39;s IPv4 space (&#x60;usageStats&#x60;), same shape as IP Block usage. Loads the parent IPv4 IP Block relation internally if needed.
+// When true, each Subnet includes IPv4 &#x60;usageStats&#x60; using the same JSON shape as IP Block usage counters. Figures account for ethernet interfaces on Instances in this Subnet—one host address per interface plus allowances for gateway and subnet bookkeeping on the &#x60;/&#x60; IPv4 allocation. The parent IPv4 IP Block relation may be loaded internally when resolving allocation context.
 func (r ApiGetAllSubnetRequest) IncludeUsageStats(includeUsageStats bool) ApiGetAllSubnetRequest {
 	r.includeUsageStats = &includeUsageStats
 	return r
@@ -509,7 +509,7 @@ func (r ApiGetSubnetRequest) IncludeRelation(includeRelation string) ApiGetSubne
 	return r
 }
 
-// When true, includes IPAM usage for this Subnet&#39;s IPv4 space (&#x60;usageStats&#x60;), same shape as IP Block usage. Loads the parent IPv4 IP Block relation internally if needed.
+// When true, each Subnet includes IPv4 &#x60;usageStats&#x60; using the same JSON shape as IP Block usage counters. Figures account for ethernet interfaces on Instances in this Subnet—one host address per interface plus allowances for gateway and subnet bookkeeping on the &#x60;/&#x60; IPv4 allocation. The parent IPv4 IP Block relation may be loaded internally when resolving allocation context.
 func (r ApiGetSubnetRequest) IncludeUsageStats(includeUsageStats bool) ApiGetSubnetRequest {
 	r.includeUsageStats = &includeUsageStats
 	return r
