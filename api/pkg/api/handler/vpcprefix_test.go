@@ -1175,18 +1175,18 @@ func TestVpcPrefixHandler_Get(t *testing.T) {
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
 	tests := []struct {
-		name                   string
-		reqOrgName             string
-		user                   *cdbm.User
-		id                     string
-		expectedErr            bool
-		expectedStatus         int
-		queryIncludeRelations1 *string
-		queryIncludeRelations2 *string
-		queryIncludeRelations3 *string
-		queryIncludeUsageStats *string
-		expectedVpcName        *string
-		expectetIPName         *string
+		name                            string
+		reqOrgName                      string
+		user                            *cdbm.User
+		id                              string
+		expectedErr                     bool
+		expectedStatus                  int
+		queryIncludeRelations1          *string
+		queryIncludeRelations2          *string
+		queryIncludeRelations3          *string
+		queryIncludeUsageStats          *string
+		expectedVpcName                 *string
+		expectetIPName                  *string
 		expectUsageStatsNonNil          bool
 		verifyUsageAcquisitionFromIface bool
 		verifyChildSpanner              bool
