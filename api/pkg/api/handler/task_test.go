@@ -367,7 +367,7 @@ func TestGetRackTasksHandler_Handle(t *testing.T) {
 		},
 	}
 
-	runListTasksHandlerCases(t, "/v2/org/%s/nico/rack/%s/tasks", handler.Handle, scp, site.ID.String(), cases)
+	runListTasksHandlerCases(t, "/v2/org/%s/nico/rack/%s/task", handler.Handle, scp, site.ID.String(), cases)
 }
 
 func TestGetTrayTasksHandler_Handle(t *testing.T) {
@@ -436,7 +436,7 @@ func TestGetTrayTasksHandler_Handle(t *testing.T) {
 		},
 	}
 
-	runListTasksHandlerCases(t, "/v2/org/%s/nico/tray/%s/tasks", handler.Handle, scp, site.ID.String(), cases)
+	runListTasksHandlerCases(t, "/v2/org/%s/nico/tray/%s/task", handler.Handle, scp, site.ID.String(), cases)
 }
 
 func TestCancelTaskHandler_Handle(t *testing.T) {

@@ -410,7 +410,7 @@ func NewGetRackTasksHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.C
 // @Param pageNumber query integer false "Page number of results returned"
 // @Param pageSize query integer false "Number of results per page"
 // @Success 200 {array} model.APIRackTask
-// @Router /v2/org/{org}/nico/rack/{id}/tasks [get]
+// @Router /v2/org/{org}/nico/rack/{id}/task [get]
 func (h GetRackTasksHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("RackTasks", "List", c, h.tracerSpan)
 	if handlerSpan != nil {
@@ -593,7 +593,7 @@ func NewGetTrayTasksHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.C
 // @Param pageNumber query integer false "Page number of results returned"
 // @Param pageSize query integer false "Number of results per page"
 // @Success 200 {array} model.APIRackTask
-// @Router /v2/org/{org}/nico/tray/{id}/tasks [get]
+// @Router /v2/org/{org}/nico/tray/{id}/task [get]
 func (h GetTrayTasksHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TrayTasks", "List", c, h.tracerSpan)
 	if handlerSpan != nil {

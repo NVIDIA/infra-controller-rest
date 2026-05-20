@@ -40,15 +40,15 @@ import (
 type TaskAPIService service
 
 type ApiCancelTaskRequest struct {
-	ctx                   context.Context
-	ApiService            *TaskAPIService
-	org                   string
-	id                    string
-	cancelRackTaskRequest *CancelRackTaskRequest
+	ctx               context.Context
+	ApiService        *TaskAPIService
+	org               string
+	id                string
+	cancelTaskRequest *CancelTaskRequest
 }
 
-func (r ApiCancelTaskRequest) CancelRackTaskRequest(cancelRackTaskRequest CancelRackTaskRequest) ApiCancelTaskRequest {
-	r.cancelRackTaskRequest = &cancelRackTaskRequest
+func (r ApiCancelTaskRequest) CancelTaskRequest(cancelTaskRequest CancelTaskRequest) ApiCancelTaskRequest {
+	r.cancelTaskRequest = &cancelTaskRequest
 	return r
 }
 
@@ -60,6 +60,9 @@ func (r ApiCancelTaskRequest) Execute() (*RackTask, *http.Response, error) {
 CancelTask Cancel a Task
 
 Cancel a Task.
+
+The same handler is also mounted at `/v2/org/{org}/nico/rack/task/{id}/cancel`
+for backward compatibility; prefer this path for new clients.
 
 Cancellation is best-effort and idempotent: tasks in non-terminal
 states (`Pending`, `Running`, `Waiting`) are marked `Terminated`
@@ -109,8 +112,8 @@ func (a *TaskAPIService) CancelTaskExecute(r ApiCancelTaskRequest) (*RackTask, *
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
-	if r.cancelRackTaskRequest == nil {
-		return localVarReturnValue, nil, reportError("cancelRackTaskRequest is required and must be specified")
+	if r.cancelTaskRequest == nil {
+		return localVarReturnValue, nil, reportError("cancelTaskRequest is required and must be specified")
 	}
 
 	// to determine the Content-Type header
@@ -131,7 +134,7 @@ func (a *TaskAPIService) CancelTaskExecute(r ApiCancelTaskRequest) (*RackTask, *
 		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
 	}
 	// body params
-	localVarPostBody = r.cancelRackTaskRequest
+	localVarPostBody = r.cancelTaskRequest
 	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
 	if err != nil {
 		return localVarReturnValue, nil, err
@@ -223,6 +226,9 @@ func (r ApiGetTaskRequest) Execute() (*RackTask, *http.Response, error) {
 GetTask Retrieve a Task
 
 Get a Task by UUID.
+
+The same handler is also mounted at `/v2/org/{org}/nico/rack/task/{id}` for
+backward compatibility; prefer this path for new clients.
 
 Tasks are site-scoped; `siteId` must be the Site where the task was created.
 Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
