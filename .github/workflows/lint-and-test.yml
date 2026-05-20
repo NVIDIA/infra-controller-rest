@@ -304,14 +304,14 @@ jobs:
           echo "Testing module: ${{ matrix.module }}"
 
           if [ "${{ matrix.module }}" = "site-agent" ]; then
-            make nico-mock-server-start
+            make core-mock-server-start
             make flow-mock-server-start
           fi
 
           go test -v -race -p 1 ./${{ matrix.module }}/... -coverprofile=coverage-${{ matrix.module }}.txt -covermode=atomic 2>&1 | tee test-output-${{ matrix.module }}.txt
 
           if [ "${{ matrix.module }}" = "site-agent" ]; then
-            make nico-mock-server-stop
+            make core-mock-server-stop
             make flow-mock-server-stop
           fi
 

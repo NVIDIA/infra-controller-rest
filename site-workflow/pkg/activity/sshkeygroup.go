@@ -23,7 +23,6 @@ import (
 	"time"
 
 	swe "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/error"
-	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	cClient "github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/rs/zerolog/log"
@@ -57,16 +56,18 @@ func NewManageSSHKeyGroupInventory(config ManageInventoryConfig) ManageSSHKeyGro
 	}
 }
 
-func sshKeyGroupFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.TenantKeysetIdentifier, error) {
-	idList, err := nicoClient.NICo().FindTenantKeysetIds(ctx, &cwssaws.TenantKeysetSearchFilter{})
+func sshKeyGroupFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.TenantKeysetIdentifier, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	idList, err := grpcServiceClient.FindTenantKeysetIds(ctx, &cwssaws.TenantKeysetSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
 	return idList.GetKeysetIds(), nil
 }
 
-func sshKeyGroupFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.TenantKeysetIdentifier) ([]*cwssaws.TenantKeyset, error) {
-	list, err := nicoClient.NICo().FindTenantKeysetsByIds(ctx, &cwssaws.TenantKeysetsByIdsRequest{
+func sshKeyGroupFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.TenantKeysetIdentifier) ([]*cwssaws.TenantKeyset, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	list, err := grpcServiceClient.FindTenantKeysetsByIds(ctx, &cwssaws.TenantKeysetsByIdsRequest{
 		KeysetIds: ids,
 	})
 	if err != nil {
@@ -99,13 +100,13 @@ func sshKeyGroupPagedInventory(allItemIDs []*cwssaws.TenantKeysetIdentifier, pag
 
 // ManageSSHKeyGroup is an activity wrapper for SSHKeyGroup management
 type ManageSSHKeyGroup struct {
-	NICoCoreAtomicClient *client.NICoCoreAtomicClient
+	coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient
 }
 
 // NewManageSSHKeyGroup returns a new ManageSSHKeyGroup client
-func NewManageSSHKeyGroup(nicoClient *client.NICoCoreAtomicClient) ManageSSHKeyGroup {
+func NewManageSSHKeyGroup(coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient) ManageSSHKeyGroup {
 	return ManageSSHKeyGroup{
-		NICoCoreAtomicClient: nicoClient,
+		coreGrpcAtomicClient: coreGrpcAtomicClient,
 	}
 }
 
@@ -132,16 +133,16 @@ func (mmi *ManageSSHKeyGroup) CreateSSHKeyGroupOnSite(ctx context.Context, reque
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmi.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.CreateTenantKeyset(ctx, request)
+	_, err = grpcServiceClient.CreateTenantKeyset(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create SSH Key Group using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to create SSH Key Group using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -173,16 +174,16 @@ func (mmi *ManageSSHKeyGroup) UpdateSSHKeyGroupOnSite(ctx context.Context, reque
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmi.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.UpdateTenantKeyset(ctx, request)
+	_, err = grpcServiceClient.UpdateTenantKeyset(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to update SSH Key Group using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to update SSH Key Group using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -212,16 +213,16 @@ func (mmi *ManageSSHKeyGroup) DeleteSSHKeyGroupOnSite(ctx context.Context, reque
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller gRPC endpoint
-	nicoClient := mmi.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return client.ErrClientNotConnected
+	// Call Core gRPC API endpoint
+	grpcClient := mmi.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.DeleteTenantKeyset(ctx, request)
+	_, err = grpcServiceClient.DeleteTenantKeyset(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to delete SSH Key Group using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to delete SSH Key Group using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 

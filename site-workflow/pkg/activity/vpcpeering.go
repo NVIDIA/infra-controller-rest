@@ -32,13 +32,13 @@ import (
 
 // ManageVpcPeering is an activity wrapper for VpcPeering management
 type ManageVpcPeering struct {
-	NICoCoreAtomicClient *cClient.NICoCoreAtomicClient
+	coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient
 }
 
 // NewManageVpcPeering returns a new ManageVpcPeering client
-func NewManageVpcPeering(nicoClient *cClient.NICoCoreAtomicClient) ManageVpcPeering {
+func NewManageVpcPeering(coreGrpcAtomicClient *cClient.CoreGrpcAtomicClient) ManageVpcPeering {
 	return ManageVpcPeering{
-		NICoCoreAtomicClient: nicoClient,
+		coreGrpcAtomicClient: coreGrpcAtomicClient,
 	}
 }
 
@@ -67,16 +67,16 @@ func (mvp *ManageVpcPeering) CreateVpcPeeringOnSite(ctx context.Context, request
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller API
-	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	// Call Core gRPC API
+	grpcClient := mvp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.CreateVpcPeering(ctx, request)
+	_, err = grpcServiceClient.CreateVpcPeering(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to create VpcPeering using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to create VpcPeering using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -104,16 +104,16 @@ func (mvp *ManageVpcPeering) DeleteVpcPeeringOnSite(ctx context.Context, request
 		return temporal.NewNonRetryableApplicationError(err.Error(), swe.ErrTypeInvalidRequest, err)
 	}
 
-	// Call Site Controller API
-	nicoClient := mvp.NICoCoreAtomicClient.GetClient()
-	if nicoClient == nil {
-		return cClient.ErrClientNotConnected
+	// Call Core gRPC API
+	grpcClient := mvp.coreGrpcAtomicClient.GetClient()
+	if grpcClient == nil {
+		return cClient.ErrCoreGrpcClientNotConnected
 	}
-	rpcClient := nicoClient.NICo()
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 
-	_, err = rpcClient.DeleteVpcPeering(ctx, request)
+	_, err = grpcServiceClient.DeleteVpcPeering(ctx, request)
 	if err != nil {
-		logger.Warn().Err(err).Msg("Failed to delete VpcPeering using Site Controller API")
+		logger.Warn().Err(err).Msg("Failed to delete VpcPeering using Core gRPC API")
 		return swe.WrapErr(err)
 	}
 
@@ -141,33 +141,35 @@ func (mvi *ManageVpcPeeringInventory) DiscoverVpcPeeringInventory(ctx context.Co
 	inventoryImpl := manageInventoryImpl[*cwssaws.VpcPeeringId, *cwssaws.VpcPeering, *cwssaws.VPCPeeringInventory]{
 		itemType:               "VpcPeering",
 		config:                 mvi.config,
-		internalFindIDs:        VpcPeeringFindIDs,
-		internalFindByIDs:      VpcPeeringFindByIDs,
-		internalPagedInventory: VpcPeeringPagedInventory,
+		internalFindIDs:        vpcPeeringFindIDs,
+		internalFindByIDs:      vpcPeeringFindByIDs,
+		internalPagedInventory: vpcPeeringPagedInventory,
 	}
 	return inventoryImpl.CollectAndPublishInventory(ctx, &logger)
 }
 
-func VpcPeeringFindIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient) ([]*cwssaws.VpcPeeringId, error) {
-	resp, err := nicoClient.NICo().FindVpcPeeringIds(ctx, &cwssaws.VpcPeeringSearchFilter{})
+func vpcPeeringFindIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient) ([]*cwssaws.VpcPeeringId, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
+	resp, err := grpcServiceClient.FindVpcPeeringIds(ctx, &cwssaws.VpcPeeringSearchFilter{})
 	if err != nil {
 		return nil, err
 	}
 	return resp.VpcPeeringIds, nil
 }
 
-func VpcPeeringFindByIDs(ctx context.Context, nicoClient *cClient.NICoCoreClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
+func vpcPeeringFindByIDs(ctx context.Context, grpcClient *cClient.CoreGrpcClient, ids []*cwssaws.VpcPeeringId) ([]*cwssaws.VpcPeering, error) {
+	grpcServiceClient := grpcClient.GrpcServiceClient()
 	req := &cwssaws.VpcPeeringsByIdsRequest{
 		VpcPeeringIds: ids,
 	}
-	resp, err := nicoClient.NICo().FindVpcPeeringsByIds(ctx, req)
+	resp, err := grpcServiceClient.FindVpcPeeringsByIds(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 	return resp.GetVpcPeerings(), nil
 }
 
-func VpcPeeringPagedInventory(allItemIDs []*cwssaws.VpcPeeringId, pagedItems []*cwssaws.VpcPeering, input *pagedInventoryInput) *cwssaws.VPCPeeringInventory {
+func vpcPeeringPagedInventory(allItemIDs []*cwssaws.VpcPeeringId, pagedItems []*cwssaws.VpcPeering, input *pagedInventoryInput) *cwssaws.VPCPeeringInventory {
 	itemIDs := []string{}
 	for _, id := range allItemIDs {
 		itemIDs = append(itemIDs, id.GetValue())

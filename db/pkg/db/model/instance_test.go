@@ -732,6 +732,29 @@ func TestInstanceSQLDAO_GetCountByStatus(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, i4)
 
+	i5, err := isd.Create(
+		ctx, nil,
+		InstanceCreateInput{
+			Name:                     "test5",
+			TenantID:                 tenant1.ID,
+			InfrastructureProviderID: ip.ID,
+			SiteID:                   site.ID,
+			InstanceTypeID:           &instanceType.ID,
+			VpcID:                    vpc.ID,
+			MachineID:                &machine.ID,
+			Hostname:                 db.GetStrPtr("test.com"),
+			OperatingSystemID:        db.GetUUIDPtr(operatingSystem.ID),
+			IpxeScript:               db.GetStrPtr("ipxe"),
+			AlwaysBootWithCustomIpxe: true,
+			UserData:                 db.GetStrPtr("userdata"),
+			Labels:                   map[string]string{},
+			Status:                   InstanceStatusRepairing,
+			CreatedBy:                user.ID,
+		},
+	)
+	assert.NoError(t, err)
+	assert.NotNil(t, i5)
+
 	// OTEL Spanner configuration
 	_, _, ctx = testCommonTraceProviderSetup(t, ctx)
 
@@ -758,16 +781,17 @@ func TestInstanceSQLDAO_GetCountByStatus(t *testing.T) {
 			},
 			wantErr:   nil,
 			wantEmpty: false,
-			wantCount: 4,
+			wantCount: 5,
 			wantStatusMap: map[string]int{
 				InstanceStatusPending:      2,
 				InstanceStatusProvisioning: 1,
 				InstanceStatusConfiguring:  0,
 				InstanceStatusReady:        1,
 				InstanceStatusUpdating:     0,
+				InstanceStatusRepairing:    1,
 				InstanceStatusTerminating:  0,
 				InstanceStatusError:        0,
-				"total":                    4,
+				"total":                    5,
 			},
 			reqTenant:          db.GetUUIDPtr(tenant1.ID),
 			verifyChildSpanner: true,
@@ -794,16 +818,17 @@ func TestInstanceSQLDAO_GetCountByStatus(t *testing.T) {
 			},
 			wantErr:   nil,
 			wantEmpty: false,
-			wantCount: 4,
+			wantCount: 5,
 			wantStatusMap: map[string]int{
 				InstanceStatusPending:      2,
 				InstanceStatusProvisioning: 1,
 				InstanceStatusConfiguring:  0,
 				InstanceStatusReady:        1,
 				InstanceStatusUpdating:     0,
+				InstanceStatusRepairing:    1,
 				InstanceStatusTerminating:  0,
 				InstanceStatusError:        0,
-				"total":                    4,
+				"total":                    5,
 			},
 		},
 	}
@@ -824,6 +849,7 @@ func TestInstanceSQLDAO_GetCountByStatus(t *testing.T) {
 				assert.EqualValues(t, tt.wantStatusMap, got)
 				if len(got) > 0 {
 					assert.EqualValues(t, got[InstanceStatusPending], 2)
+					assert.EqualValues(t, got[InstanceStatusRepairing], 1)
 					assert.EqualValues(t, got["total"], tt.wantCount)
 				}
 			}

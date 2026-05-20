@@ -66,7 +66,7 @@ func TestRuleDefinition_CalculateWorkflowTimeout(t *testing.T) {
 						Timeout:       10 * time.Minute,
 					},
 					{
-						ComponentType: devicetypes.ComponentTypeNVLSwitch,
+						ComponentType: devicetypes.ComponentTypeNVSwitch,
 						Stage:         1,
 						Timeout:       15 * time.Minute, // Max in stage
 					},
@@ -90,7 +90,7 @@ func TestRuleDefinition_CalculateWorkflowTimeout(t *testing.T) {
 						Timeout:       10 * time.Minute,
 					},
 					{
-						ComponentType: devicetypes.ComponentTypeNVLSwitch,
+						ComponentType: devicetypes.ComponentTypeNVSwitch,
 						Stage:         2,
 						Timeout:       15 * time.Minute,
 					},
@@ -115,7 +115,7 @@ func TestRuleDefinition_CalculateWorkflowTimeout(t *testing.T) {
 						Timeout:       10 * time.Minute,
 					},
 					{
-						ComponentType: devicetypes.ComponentTypeNVLSwitch,
+						ComponentType: devicetypes.ComponentTypeNVSwitch,
 						Stage:         1,
 						Timeout:       12 * time.Minute, // Max in stage 1
 					},
@@ -140,7 +140,7 @@ func TestRuleDefinition_CalculateWorkflowTimeout(t *testing.T) {
 						Timeout:       0, // Zero timeout
 					},
 					{
-						ComponentType: devicetypes.ComponentTypeNVLSwitch,
+						ComponentType: devicetypes.ComponentTypeNVSwitch,
 						Stage:         2,
 						Timeout:       10 * time.Minute,
 					},

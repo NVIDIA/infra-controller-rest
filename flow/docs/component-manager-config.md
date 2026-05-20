@@ -30,7 +30,7 @@ with the embedded defaults.
 ```yaml
 component_managers:
   compute: <implementation>
-  nvlswitch: <implementation>
+  nvswitch: <implementation>
   powershelf: <implementation>
 ```
 
@@ -44,7 +44,7 @@ Available implementations:
 | Component Type | Available Implementations | Description |
 |----------------|---------------------------|-------------|
 | `compute` | `nico`, `mock` | Manages compute nodes |
-| `nvlswitch` | `nico`, `nvswitchmanager`, `mock` | Manages NVLink switches |
+| `nvswitch` | `nico`, `nvswitchmanager`, `mock` | Manages NVLink switches |
 | `powershelf` | `nico`, `psm`, `mock` | Manages power shelves |
 
 ### Providers
@@ -68,8 +68,8 @@ equivalent to omitting the section for provider-backed component managers.
 
 | Provider | Used By | Description |
 |----------|---------|-------------|
-| `nico` | compute, nvlswitch, powershelf/nico | NICo API for machine management |
-| `nvswitchmanager` | nvlswitch/nvswitchmanager | NV-Switch Manager API for NVLink switch management |
+| `nico` | compute, nvswitch, powershelf/nico | NICo API for machine management |
+| `nvswitchmanager` | nvswitch/nvswitchmanager | NV-Switch Manager API for NVLink switch management |
 | `psm` | powershelf/psm | Power Shelf Manager API |
 
 #### Provider Options
@@ -89,7 +89,7 @@ Duration strings use Go format: `30s`, `1m`, `2m30s`, etc.
 # Equivalent to builtin.LoadConfig("")
 component_managers:
   compute: nico
-  nvlswitch: nico
+  nvswitch: nico
   powershelf: nico
 
 providers:
@@ -104,7 +104,7 @@ providers:
 # Uses mock implementations - no external dependencies
 component_managers:
   compute: mock
-  nvlswitch: mock
+  nvswitch: mock
   powershelf: mock
 
 # No providers section needed for mock implementations
@@ -113,10 +113,10 @@ component_managers:
 ### Mixed Configuration (e.g., partial testing)
 
 ```yaml
-# Real power shelf management, mock compute/nvlswitch
+# Real power shelf management, mock compute/nvswitch
 component_managers:
   compute: mock
-  nvlswitch: mock
+  nvswitch: mock
   powershelf: psm
 
 providers:
@@ -129,7 +129,7 @@ providers:
 Providers are automatically enabled based on the component manager implementations:
 
 - If any component uses `nico` → NICo provider is enabled with defaults
-- If `nvlswitch` uses `nvswitchmanager` → NV-Switch Manager provider is enabled with defaults
+- If `nvswitch` uses `nvswitchmanager` → NV-Switch Manager provider is enabled with defaults
 - If `powershelf` uses `psm` → PSM provider is enabled with defaults
 
 This allows minimal configuration:
@@ -137,7 +137,7 @@ This allows minimal configuration:
 ```yaml
 component_managers:
   compute: nico
-  nvlswitch: nvswitchmanager
+  nvswitch: nvswitchmanager
   powershelf: psm
 # Providers auto-enabled based on implementations above
 ```
@@ -147,7 +147,7 @@ Provider entries can override only the providers that need non-default settings:
 ```yaml
 component_managers:
   compute: nico
-  nvlswitch: nvswitchmanager
+  nvswitch: nvswitchmanager
   powershelf: psm
 
 providers:

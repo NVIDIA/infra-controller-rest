@@ -41,7 +41,7 @@ func parseComponentTypeToTypes(s string) types.ComponentType {
 	switch strings.ToLower(s) {
 	case "compute":
 		return types.ComponentTypeCompute
-	case "nvlswitch", "nvl-switch":
+	case "nvswitch", "nvl-switch":
 		return types.ComponentTypeNVSwitch
 	case "powershelf", "power-shelf":
 		return types.ComponentTypePowerShelf

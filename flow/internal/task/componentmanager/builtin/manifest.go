@@ -23,8 +23,8 @@ import (
 	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/mock"
-	nvlswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nico"
-	nvlswitchnsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvlswitch/nvswitchmanager"
+	nvswitchnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvswitch/nico"
+	nvswitchnsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/nvswitch/nvswitchmanager"
 	powershelfnico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/nico"
 	powershelfpsm "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/powershelf/psm"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
@@ -44,7 +44,7 @@ import (
 func defaultServiceComponentManagers() map[devicetypes.ComponentType]string {
 	return map[devicetypes.ComponentType]string{
 		devicetypes.ComponentTypeCompute:    computenico.ImplementationName,
-		devicetypes.ComponentTypeNVLSwitch:  nvlswitchnico.ImplementationName,
+		devicetypes.ComponentTypeNVSwitch:   nvswitchnico.ImplementationName,
 		devicetypes.ComponentTypePowerShelf: powershelfnico.ImplementationName,
 	}
 }
@@ -68,8 +68,8 @@ func serviceProviderConfigDecoders() []providerapi.ProviderConfigDecoder {
 func serviceDescriptors() []cmcatalog.Descriptor {
 	descriptors := []cmcatalog.Descriptor{
 		computenico.Descriptor(),
-		nvlswitchnico.Descriptor(),
-		nvlswitchnsm.Descriptor(),
+		nvswitchnico.Descriptor(),
+		nvswitchnsm.Descriptor(),
 		powershelfnico.Descriptor(),
 		powershelfpsm.Descriptor(),
 	}
@@ -93,8 +93,8 @@ func serviceFactorySpecs(
 
 	factorySpecs := []componentmanager.FactorySpec{
 		computenico.FactorySpec(computePowerDelay),
-		nvlswitchnico.FactorySpec(),
-		nvlswitchnsm.FactorySpec(),
+		nvswitchnico.FactorySpec(),
+		nvswitchnsm.FactorySpec(),
 		powershelfnico.FactorySpec(),
 		powershelfpsm.FactorySpec(),
 	}

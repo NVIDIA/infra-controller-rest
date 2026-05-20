@@ -59,7 +59,7 @@ func newAddCmd() *cobra.Command {
 Required:
   --rack-id          : Rack UUID to add the component to
   --name             : Component name
-  --type             : Component type (compute, nvlswitch, powershelf, torswitch, ums, cdu)
+  --type             : Component type (compute, nvswitch, powershelf, torswitch, ums, cdu)
   --manufacturer     : Manufacturer
   --serial-number    : Serial number
 
@@ -90,7 +90,7 @@ Examples:
 
 	cmd.Flags().StringVar(&addRackID, "rack-id", "", "Rack UUID (required)")
 	cmd.Flags().StringVar(&addName, "name", "", "Component name (required)")
-	cmd.Flags().StringVarP(&addType, "type", "t", "", "Component type: compute, nvlswitch, powershelf, torswitch, ums, cdu (required)")
+	cmd.Flags().StringVarP(&addType, "type", "t", "", "Component type: compute, nvswitch, powershelf, torswitch, ums, cdu (required)")
 	cmd.Flags().StringVar(&addManufacturer, "manufacturer", "", "Manufacturer (required)")
 	cmd.Flags().StringVar(&addSerialNumber, "serial-number", "", "Serial number (required)")
 	cmd.Flags().StringVar(&addModel, "model", "", "Model name")

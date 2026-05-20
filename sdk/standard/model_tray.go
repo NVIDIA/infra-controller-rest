@@ -34,7 +34,7 @@ import (
 // checks if the Tray type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &Tray{}
 
-// Tray Tray represents a component within a rack (e.g. compute node, NVL switch, power shelf)
+// Tray Tray represents a component within a rack (e.g. compute node, NVSwitch, power shelf)
 type Tray struct {
 	// Unique identifier of the Tray
 	Id *string `json:"id,omitempty"`

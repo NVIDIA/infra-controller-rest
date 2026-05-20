@@ -494,9 +494,9 @@ func TestBuiltinRule(t *testing.T) {
 			expected: false,
 		},
 		{
-			// Compute and NVLSwitch power ops are isolated — no entry
+			// Compute and NVSwitch power ops are isolated — no entry
 			// covers cross-type conflicts at component scope.
-			name: "compute power safe with nvlswitch power",
+			name: "compute power safe with nvswitch power",
 			incoming: makeTaskWithType(
 				rackID,
 				taskcommon.TaskTypePowerControl, "power_on",
@@ -505,7 +505,7 @@ func TestBuiltinRule(t *testing.T) {
 			activeTasks: []*taskdef.Task{
 				makeTaskWithType(rackID,
 					taskcommon.TaskTypePowerControl, "power_on",
-					devicetypes.ComponentTypeNVLSwitch, uuid.New()),
+					devicetypes.ComponentTypeNVSwitch, uuid.New()),
 			},
 			expected: false,
 		},

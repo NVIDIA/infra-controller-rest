@@ -24,6 +24,7 @@ import (
 
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewAPIMachineInstanceType(t *testing.T) {
@@ -73,6 +74,27 @@ func TestNewAPIMachineInstanceType(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAPIMachineInstanceTypeCreateRequest_ToProto(t *testing.T) {
+	id := uuid.New()
+	it := &cdbm.InstanceType{ID: id}
+
+	t.Run("populates id and machine ids", func(t *testing.T) {
+		apiRequest := APIMachineInstanceTypeCreateRequest{MachineIDs: []string{"m1", "m2"}}
+		req := apiRequest.ToProto(it)
+		assert.NotNil(t, req)
+		assert.Equal(t, id.String(), req.InstanceTypeId)
+		assert.Equal(t, []string{"m1", "m2"}, req.MachineIds)
+	})
+
+	t.Run("nil machine ids", func(t *testing.T) {
+		apiRequest := APIMachineInstanceTypeCreateRequest{}
+		req := apiRequest.ToProto(it)
+		assert.NotNil(t, req)
+		assert.Equal(t, id.String(), req.InstanceTypeId)
+		assert.Nil(t, req.MachineIds)
+	})
 }
 
 func TestAPIMachineInstanceTypeCreateRequest_Validate(t *testing.T) {

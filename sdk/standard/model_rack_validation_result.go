@@ -45,7 +45,7 @@ type RackValidationResult struct {
 	// Number of components found in the source system but not expected
 	UnexpectedCount *int32 `json:"unexpectedCount,omitempty"`
 	// Number of components present in both but with field differences
-	DriftCount *int32 `json:"driftCount,omitempty"`
+	MismatchCount *int32 `json:"mismatchCount,omitempty"`
 	// Number of components that match between expected and actual
 	MatchCount *int32 `json:"matchCount,omitempty"`
 }
@@ -195,36 +195,36 @@ func (o *RackValidationResult) SetUnexpectedCount(v int32) {
 	o.UnexpectedCount = &v
 }
 
-// GetDriftCount returns the DriftCount field value if set, zero value otherwise.
-func (o *RackValidationResult) GetDriftCount() int32 {
-	if o == nil || IsNil(o.DriftCount) {
+// GetMismatchCount returns the MismatchCount field value if set, zero value otherwise.
+func (o *RackValidationResult) GetMismatchCount() int32 {
+	if o == nil || IsNil(o.MismatchCount) {
 		var ret int32
 		return ret
 	}
-	return *o.DriftCount
+	return *o.MismatchCount
 }
 
-// GetDriftCountOk returns a tuple with the DriftCount field value if set, nil otherwise
+// GetMismatchCountOk returns a tuple with the MismatchCount field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *RackValidationResult) GetDriftCountOk() (*int32, bool) {
-	if o == nil || IsNil(o.DriftCount) {
+func (o *RackValidationResult) GetMismatchCountOk() (*int32, bool) {
+	if o == nil || IsNil(o.MismatchCount) {
 		return nil, false
 	}
-	return o.DriftCount, true
+	return o.MismatchCount, true
 }
 
-// HasDriftCount returns a boolean if a field has been set.
-func (o *RackValidationResult) HasDriftCount() bool {
-	if o != nil && !IsNil(o.DriftCount) {
+// HasMismatchCount returns a boolean if a field has been set.
+func (o *RackValidationResult) HasMismatchCount() bool {
+	if o != nil && !IsNil(o.MismatchCount) {
 		return true
 	}
 
 	return false
 }
 
-// SetDriftCount gets a reference to the given int32 and assigns it to the DriftCount field.
-func (o *RackValidationResult) SetDriftCount(v int32) {
-	o.DriftCount = &v
+// SetMismatchCount gets a reference to the given int32 and assigns it to the MismatchCount field.
+func (o *RackValidationResult) SetMismatchCount(v int32) {
+	o.MismatchCount = &v
 }
 
 // GetMatchCount returns the MatchCount field value if set, zero value otherwise.
@@ -281,8 +281,8 @@ func (o RackValidationResult) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.UnexpectedCount) {
 		toSerialize["unexpectedCount"] = o.UnexpectedCount
 	}
-	if !IsNil(o.DriftCount) {
-		toSerialize["driftCount"] = o.DriftCount
+	if !IsNil(o.MismatchCount) {
+		toSerialize["mismatchCount"] = o.MismatchCount
 	}
 	if !IsNil(o.MatchCount) {
 		toSerialize["matchCount"] = o.MatchCount

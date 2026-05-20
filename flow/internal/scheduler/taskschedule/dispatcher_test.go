@@ -327,7 +327,7 @@ func TestScopeToTargetSpec(t *testing.T) {
 				RackID: rackID,
 				ComponentFilter: mustMarshalFilter(t, &dbmodel.ComponentFilter{
 					Kind:  dbmodel.ComponentFilterKindTypes,
-					Types: []string{"COMPUTE", "NVLSWITCH"},
+					Types: []string{"COMPUTE", "NVSWITCH"},
 				}),
 			},
 			want: operation.TargetSpec{
@@ -336,20 +336,20 @@ func TestScopeToTargetSpec(t *testing.T) {
 						Identifier: identifier.Identifier{ID: rackID},
 						ComponentTypes: []devicetypes.ComponentType{
 							devicetypes.ComponentTypeCompute,
-							devicetypes.ComponentTypeNVLSwitch,
+							devicetypes.ComponentTypeNVSwitch,
 						},
 					},
 				},
 			},
 		},
 		"types filter — mixed types across categories": {
-			// COMPUTE (compute), NVLSWITCH (network), POWERSHELF (power), TORSWITCH (ToR)
+			// COMPUTE (compute), NVSWITCH (network), POWERSHELF (power), TORSWITCH (ToR)
 			// exercises the full ComponentTypeFromString mapping loop with diverse types.
 			scope: &dbmodel.TaskScheduleScope{
 				RackID: rackID,
 				ComponentFilter: mustMarshalFilter(t, &dbmodel.ComponentFilter{
 					Kind:  dbmodel.ComponentFilterKindTypes,
-					Types: []string{"COMPUTE", "NVLSWITCH", "POWERSHELF", "TORSWITCH"},
+					Types: []string{"COMPUTE", "NVSWITCH", "POWERSHELF", "TORSWITCH"},
 				}),
 			},
 			want: operation.TargetSpec{
@@ -358,7 +358,7 @@ func TestScopeToTargetSpec(t *testing.T) {
 						Identifier: identifier.Identifier{ID: rackID},
 						ComponentTypes: []devicetypes.ComponentType{
 							devicetypes.ComponentTypeCompute,
-							devicetypes.ComponentTypeNVLSwitch,
+							devicetypes.ComponentTypeNVSwitch,
 							devicetypes.ComponentTypePowerShelf,
 							devicetypes.ComponentTypeToRSwitch,
 						},

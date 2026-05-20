@@ -42,6 +42,8 @@ const (
 	InstanceStatusReady = "Ready"
 	// InstanceStatusUpdating indicates that the Instance is receiving system updates
 	InstanceStatusUpdating = "Updating"
+	// InstanceStatusRepairing indicates the Instance is under in-pool online repair
+	InstanceStatusRepairing = "Repairing"
 	// InstanceStatusError indicates that the Instance provisioning has failed
 	InstanceStatusError = "Error"
 	// InstanceStatusTerminating indicates that the Instance is being terminated
@@ -133,6 +135,7 @@ var (
 		InstanceStatusPending:            true,
 		InstanceStatusReady:              true,
 		InstanceStatusUpdating:           true,
+		InstanceStatusRepairing:          true,
 		InstanceStatusError:              true,
 		InstanceStatusConfiguring:        true,
 		InstanceStatusProvisioning:       true,
@@ -429,6 +432,7 @@ func (isd InstanceSQLDAO) GetCountByStatus(ctx context.Context, tx *db.Tx, tenan
 		InstanceStatusConfiguring:  0,
 		InstanceStatusReady:        0,
 		InstanceStatusUpdating:     0,
+		InstanceStatusRepairing:    0,
 		InstanceStatusTerminating:  0,
 		InstanceStatusError:        0,
 	}

@@ -333,7 +333,7 @@ func TestPowerControlWorkflow_CompositeVerification(t *testing.T) {
 						Parameters: map[string]any{
 							operationrules.ParamComponentTypes: []string{
 								"compute",
-								"nvlswitch",
+								"nvswitch",
 							},
 						},
 					},

@@ -868,9 +868,10 @@ func (rs *FlowServerImpl) ListTasks(
 	req *pb.ListTasksRequest,
 ) (*pb.ListTasksResponse, error) {
 	options := &taskcommon.TaskListOptions{
-		TaskType:   taskcommon.TaskTypeUnknown,
-		RackID:     protobuf.UUIDFrom(req.GetRackId()),
-		ActiveOnly: req.GetActiveOnly(),
+		TaskType:    taskcommon.TaskTypeUnknown,
+		RackID:      protobuf.UUIDFrom(req.GetRackId()),
+		ComponentID: protobuf.UUIDFrom(req.GetComponentId()),
+		ActiveOnly:  req.GetActiveOnly(),
 	}
 
 	pagination := protobuf.PaginationFrom(req.GetPagination())
@@ -1241,6 +1242,7 @@ func (rs *FlowServerImpl) UpgradeFirmware(
 		Operation:     operations.FirmwareOperationUpgrade,
 		TargetVersion: req.GetTargetVersion(),
 		RuleID:        protobuf.UUIDStringFrom(req.GetRuleId()),
+		SubTargets:    req.GetSubTargets(),
 	}
 
 	// Parse optional time parameters for scheduled upgrade
@@ -1533,7 +1535,7 @@ func (rs *FlowServerImpl) ValidateComponents(
 
 	// Convert store drifts to proto response
 	var diffs []*pb.ComponentDiff
-	var missingCount, unexpectedCount, driftCount, matchCount int32
+	var missingCount, unexpectedCount, mismatchCount, matchCount int32
 
 	for _, sd := range storeDrifts {
 		var compUUID *pb.UUID
@@ -1569,18 +1571,18 @@ func (rs *FlowServerImpl) ValidateComponents(
 				})
 			}
 			diffs = append(diffs, &pb.ComponentDiff{
-				Type:        pb.DiffType_DIFF_TYPE_DRIFT,
+				Type:        pb.DiffType_DIFF_TYPE_MISMATCH,
 				Id:          compUUID,
 				ComponentId: componentID,
 				FieldDiffs:  fieldDiffs,
 			})
-			driftCount++
+			mismatchCount++
 		}
 	}
 
-	// Calculate match count: if we have targeted components, matches = targeted - drifts
+	// Calculate match count: if we have targeted components, matches = targeted - mismatches
 	if targetSpec != nil {
-		matchCount = filteredComponentCount - missingCount - driftCount
+		matchCount = filteredComponentCount - missingCount - mismatchCount
 		if matchCount < 0 {
 			matchCount = 0
 		}
@@ -1603,7 +1605,7 @@ func (rs *FlowServerImpl) ValidateComponents(
 		TotalDiffs:      totalDiffs,
 		MissingCount:    missingCount,
 		UnexpectedCount: unexpectedCount,
-		DriftCount:      driftCount,
+		MismatchCount:   mismatchCount,
 		MatchCount:      matchCount,
 	}, nil
 }
