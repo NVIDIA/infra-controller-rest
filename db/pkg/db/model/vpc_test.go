@@ -1649,7 +1649,7 @@ func TestVpc_FromProto(t *testing.T) {
 		assert.Equal(t, nvllpID, *v.NVLinkLogicalPartitionID)
 		require.NotNil(t, v.Description)
 		assert.Equal(t, "primary", *v.Description)
-		assert.Equal(t, map[string]string{"env": "prod"}, v.Labels)
+		assert.Equal(t, Labels{"env": "prod"}, v.Labels)
 	})
 
 	t.Run("missing optional fields are explicitly cleared", func(t *testing.T) {

@@ -106,7 +106,7 @@ type Vpc struct {
 	NetworkSecurityGroupID                 *string                                 `bun:"network_security_group_id"`
 	NetworkSecurityGroup                   *NetworkSecurityGroup                   `bun:"rel:belongs-to,join:network_security_group_id=id"`
 	NetworkSecurityGroupPropagationDetails *NetworkSecurityGroupPropagationDetails `bun:"network_security_group_propagation_details,type:jsonb"`
-	Labels                                 map[string]string                       `bun:"labels,type:jsonb"`
+	Labels                                 Labels                                  `bun:"labels,type:jsonb"`
 	Status                                 string                                  `bun:"status,notnull"`
 	IsMissingOnSite                        bool                                    `bun:"is_missing_on_site,notnull"`
 	Created                                time.Time                               `bun:"created,nullzero,notnull,default:current_timestamp"`
@@ -227,7 +227,7 @@ func (vpc *Vpc) FromProto(proto *cwssaws.Vpc) {
 			desc := proto.Metadata.Description
 			vpc.Description = &desc
 		}
-		vpc.Labels = LabelsFromProtoMetadata(proto.Metadata)
+		vpc.Labels.FromProto(proto.Metadata.GetLabels())
 	} else {
 		vpc.Description = nil
 		vpc.Labels = nil

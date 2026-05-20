@@ -34,6 +34,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/firmwarecomponents"
 )
 
 const (
@@ -250,10 +251,16 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	log.Debug().
 		Str("components", target.String()).
 		Str("target_version", info.TargetVersion).
+		Strs("sub_targets", info.SubTargets).
 		Msg("Starting firmware update for NVSwitch via NICo")
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	subComponents, err := firmwarecomponents.ParseNICoNVSwitch(info.SubTargets)
+	if err != nil {
+		return err
 	}
 
 	if info.TargetVersion == "" {
@@ -271,7 +278,8 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	req := &pb.UpdateComponentFirmwareRequest{
 		Target: &pb.UpdateComponentFirmwareRequest_Switches{
 			Switches: &pb.UpdateSwitchFirmwareTarget{
-				SwitchIds: switchIDsProto(target.ComponentIDs),
+				SwitchIds:  switchIDsProto(target.ComponentIDs),
+				Components: subComponents,
 			},
 		},
 		TargetVersion: info.TargetVersion,

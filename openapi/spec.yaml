@@ -222,6 +222,9 @@ tags:
   - name: Tray
     description: |-
       Tray represents a component within a Rack.
+  - name: Task
+    description: |-
+      Task represents an asynchronous, site-scoped operation (for example firmware update, power state change, or rack bring-up). Tasks are created when operations run against Racks, Trays, or other components. Endpoints in this tag retrieve or cancel a Task by ID; list Tasks for a Rack or Tray under the Rack and Tray tags.
   - name: Network Security Group
     description: |-
       Network Security Group is a security policy that controls the traffic flowing between Instances.
@@ -10235,7 +10238,7 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
       tags:
         - Rack
-  '/v2/org/{org}/nico/rack/task/{id}':
+  '/v2/org/{org}/nico/task/{id}':
     parameters:
       - schema:
           type: string
@@ -10252,9 +10255,12 @@ paths:
         description: UUID of the Task
     get:
       summary: Retrieve a Task
-      operationId: get-rack-task
+      operationId: get-task
       description: |-
         Get a Task by UUID.
+
+        The same handler is also mounted at `/v2/org/{org}/nico/rack/task/{id}` for
+        backward compatibility; prefer this path for new clients.
 
         Tasks are site-scoped; `siteId` must be the Site where the task was created.
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
@@ -10287,8 +10293,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
       tags:
-        - Rack
-  '/v2/org/{org}/nico/rack/task/{id}/cancel':
+        - Task
+  '/v2/org/{org}/nico/task/{id}/cancel':
     parameters:
       - schema:
           type: string
@@ -10305,9 +10311,12 @@ paths:
         description: UUID of the Task
     post:
       summary: Cancel a Task
-      operationId: cancel-rack-task
+      operationId: cancel-task
       description: |-
         Cancel a Task.
+
+        The same handler is also mounted at `/v2/org/{org}/nico/rack/task/{id}/cancel`
+        for backward compatibility; prefer this path for new clients.
 
         Cancellation is best-effort and idempotent: tasks in non-terminal
         states (`Pending`, `Running`, `Waiting`) are marked `Terminated`
@@ -10318,7 +10327,7 @@ paths:
 
         Tasks are site-scoped; `siteId` must be the Site where the task was
         created. Org must have an Infrastructure Provider entity. User must
-        have `FORGE_PROVIDER_ADMIN` authorization role.
+        have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -10339,10 +10348,10 @@ paths:
       responses:
         '202':
           description: |-
-            Accepted. The cancellation request was accepted and the task as
-            last reported by Flow is returned. Clients should `GET` the task
-            to observe the final state, since cancellation is best-effort
-            and the underlying workflow may still be terminating.
+            Accepted. The cancellation request was accepted and the Task's
+            last known state is returned. Clients should `GET` the task to
+            observe the final state, since cancellation is best-effort and
+            the operation may still be terminating.
           content:
             application/json:
               schema:
@@ -10354,6 +10363,83 @@ paths:
                     status: Terminated
                     description: Power on rack components
                     message: Cancelled by user
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Task
+  '/v2/org/{org}/nico/rack/{id}/task':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Rack
+    get:
+      summary: Retrieve all Tasks for a Rack
+      operationId: get-rack-tasks
+      description: |-
+        List Tasks targeting the specified Rack.
+
+        Tasks are site-scoped; `siteId` must be the Site that owns the Rack. Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        Filters compose with AND: setting `activeOnly=true` restricts the result to tasks that are still in a non-terminal state (`Pending`, `Running`, `Waiting`). Results are paginated; the `X-Pagination` response header reports the total count over the post-filter set.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the Rack.
+        - schema:
+            type: boolean
+            default: false
+          name: activeOnly
+          in: query
+          description: Restrict results to non-terminal Tasks.
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RackTask'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":2}'
+              description: Pagination result in JSON format
         '400':
           $ref: '#/components/responses/ValidationError'
         '403':
@@ -10917,6 +11003,83 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Tray
+  '/v2/org/{org}/nico/tray/{id}/task':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Tray
+    get:
+      summary: Retrieve all Tasks for a Tray
+      operationId: get-tray-tasks
+      description: |-
+        List Tasks targeting the specified Tray.
+
+        Tasks are site-scoped; `siteId` must be the Site that owns the Tray. Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        Filters compose with AND: setting `activeOnly=true` restricts the result to tasks that are still in a non-terminal state (`Pending`, `Running`, `Waiting`). Results are paginated; the `X-Pagination` response header reports the total count over the post-filter set.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the Tray.
+        - schema:
+            type: boolean
+            default: false
+          name: activeOnly
+          in: query
+          description: Restrict results to non-terminal Tasks.
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RackTask'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":2}'
+              description: Pagination result in JSON format
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
       tags:
         - Tray
   '/v2/org/{org}/nico/network-security-group':
@@ -17128,6 +17291,42 @@ components:
             - string
             - 'null'
           description: Target firmware version.
+        targets:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            enum:
+              - bmc
+              - cpld
+              - bios
+              - nvos
+              - pmc
+              - psu
+          description: |-
+            Optional subset of firmware targets to update within each matched tray.
+            Names are lowercase and select sub-parts of the tray
+            (BMC, BIOS, etc.). The accepted set per tray type comes from
+            the Flow service's NICo proto bindings (which mirror Core's
+            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            so the supported values track Core as new sub-parts are added:
+              - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
+              - powershelf trays (PowerShelfComponent): currently pmc, psu
+              - compute trays (ComputeTrayComponent): currently bmc, bios
+                (currently NOT honored end-to-end: the NICo compute-firmware
+                path goes through SetFirmwareUpdateTimeWindow + auto-update,
+                which has no per-target selection; the request is logged
+                and the whole bundle is applied. Will be honored once
+                compute moves to UpdateComponentFirmware.)
+            Omitted or empty means "update everything in the bundle"
+            (the historical default). Unknown names are rejected.
+            Requires `version` to be set.
+      examples:
+        - siteId: 550e8400-e29b-41d4-a716-446655440000
+          filter:
+            type: switch
+          version: '24.11.0'
+          targets: [bmc, nvos]
     UpdatePowerStateRequest:
       title: UpdatePowerStateRequest
       type: object
@@ -17192,9 +17391,42 @@ components:
             - string
             - 'null'
           description: Target firmware version.
+        targets:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            enum:
+              - bmc
+              - cpld
+              - bios
+              - nvos
+              - pmc
+              - psu
+          description: |-
+            Optional subset of firmware targets to update within the targeted tray.
+            Names are lowercase and select sub-parts of the tray
+            (BMC, BIOS, etc.). The accepted set per tray type comes from
+            the Flow service's NICo proto bindings (which mirror Core's
+            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            so the supported values track Core as new sub-parts are added:
+              - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
+              - powershelf trays (PowerShelfComponent): currently pmc, psu
+              - compute trays (ComputeTrayComponent): currently bmc, bios
+                (currently NOT honored end-to-end: the NICo compute-firmware
+                path goes through SetFirmwareUpdateTimeWindow + auto-update,
+                which has no per-target selection; the request is logged
+                and the whole bundle is applied. Will be honored once
+                compute moves to UpdateComponentFirmware.)
+            Omitted or empty means "update everything in the bundle"
+            (the historical default). Unknown names are rejected.
+            Requires `version` to be set.
       examples:
         - siteId: 550e8400-e29b-41d4-a716-446655440000
           version: '24.11.0'
+        - siteId: 550e8400-e29b-41d4-a716-446655440000
+          version: '24.11.0'
+          targets: [bmc, nvos]
         - siteId: 550e8400-e29b-41d4-a716-446655440000
     FirmwareUpdateResponse:
       title: FirmwareUpdateResponse

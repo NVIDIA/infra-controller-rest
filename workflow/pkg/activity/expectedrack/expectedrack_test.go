@@ -466,7 +466,8 @@ func TestManageExpectedRack_UpdateExpectedRacksInDB(t *testing.T) {
 					assert.Equal(t, reportedDescription, updated.Description,
 						fmt.Sprintf("ExpectedRack %v Description should match", er.RackID))
 
-					expectedLabels := cdbm.LabelsFromProtoMetadata(ctrlER.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(ctrlER.Metadata.GetLabels())
 					if len(expectedLabels) == 0 && len(updated.Labels) == 0 {
 						// Both effectively empty, which is correct
 					} else {
@@ -501,7 +502,8 @@ func TestManageExpectedRack_UpdateExpectedRacksInDB(t *testing.T) {
 					assert.Equal(t, reportedDescription, created.Description,
 						fmt.Sprintf("ExpectedRack %v Description should match on creation", cer.RackId.Id))
 
-					expectedLabels := cdbm.LabelsFromProtoMetadata(cer.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(cer.Metadata.GetLabels())
 					if len(expectedLabels) == 0 && len(created.Labels) == 0 {
 						// Both effectively empty, which is correct
 					} else {

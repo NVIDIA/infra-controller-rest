@@ -324,6 +324,7 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	log.Debug().
 		Str("components", target.String()).
 		Str("target_version", info.TargetVersion).
+		Strs("sub_targets", info.SubTargets).
 		Msg("Scheduling firmware update for compute via NICo")
 
 	if m.nicoClient == nil {
@@ -332,6 +333,19 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	if len(info.SubTargets) > 0 {
+		// SetFirmwareUpdateTimeWindow + SetMachineAutoUpdate (the path used
+		// here for compute trays) do not expose per-sub-target selection;
+		// auto-update will install whatever is in the desired bundle. Log
+		// the requested subset so the limitation is visible until we can
+		// route this through UpdateComponentFirmware (planned alongside the
+		// version → FW Object identifier migration).
+		log.Warn().
+			Str("components", target.String()).
+			Strs("sub_targets", info.SubTargets).
+			Msg("compute firmware sub-target selection is not yet honored; whole bundle will be applied")
 	}
 
 	desiredEntries, err := m.nicoClient.GetDesiredFirmwareVersions(ctx)
