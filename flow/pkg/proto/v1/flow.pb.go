@@ -3836,10 +3836,13 @@ func (x *FieldDiff) GetActualValue() string {
 	return ""
 }
 
-// AddComponent - add a single component to an existing rack
+// AddComponent - ingest a single component into the inventory. The component
+// may optionally be attached to an existing rack via component.rack_id; when
+// rack_id is omitted the component is stored without a rack assignment and
+// can be moved into a rack later via PatchComponent.
 type AddComponentRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Component     *Component             `protobuf:"bytes,1,opt,name=component,proto3" json:"component,omitempty"` // Required: the component to add; component.rack_id must be set
+	Component     *Component             `protobuf:"bytes,1,opt,name=component,proto3" json:"component,omitempty"` // Required: the component to add. component.rack_id is optional.
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

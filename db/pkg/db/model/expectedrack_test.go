@@ -86,7 +86,7 @@ func TestExpectedRack_FromProto(t *testing.T) {
 		assert.Equal(t, "type-A", er.RackProfileID)
 		assert.Equal(t, "rack-name", er.Name)
 		assert.Equal(t, "primary rack", er.Description)
-		assert.Equal(t, map[string]string{"env": "prod"}, er.Labels)
+		assert.Equal(t, Labels{"env": "prod"}, er.Labels)
 	})
 
 	t.Run("nil Metadata clears Name/Description and Labels", func(t *testing.T) {
@@ -268,9 +268,9 @@ func TestExpectedRackDAO_Create(t *testing.T) {
 					assert.Equal(t, input.Description, er.Description)
 					if input.Labels == nil {
 						// default is empty map
-						assert.Equal(t, map[string]string{}, er.Labels)
+						assert.Equal(t, Labels{}, er.Labels)
 					} else {
-						assert.Equal(t, input.Labels, er.Labels)
+						assert.Equal(t, Labels(input.Labels), er.Labels)
 					}
 				}
 
@@ -737,7 +737,7 @@ func TestExpectedRackDAO_Update(t *testing.T) {
 					assert.Equal(t, *tc.input.Description, got.Description)
 				}
 				if tc.input.Labels != nil {
-					assert.Equal(t, tc.input.Labels, got.Labels)
+					assert.Equal(t, Labels(tc.input.Labels), got.Labels)
 				}
 
 				if tc.verifyChildSpanner {

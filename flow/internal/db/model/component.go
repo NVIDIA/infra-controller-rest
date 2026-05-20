@@ -35,24 +35,26 @@ import (
 type Component struct {
 	bun.BaseModel `bun:"table:component,alias:c"`
 
-	ID              uuid.UUID           `bun:"id,pk,type:uuid,default:gen_random_uuid()"`
-	Name            string              `bun:"name"`
-	Type            string              `bun:"type,type:varchar(16),default:'Compute'"`
-	Manufacturer    string              `bun:"manufacturer,notnull,unique:component_manufacturer_serial_idx"`
-	Model           string              `bun:"model"`
-	SerialNumber    string              `bun:"serial_number,notnull,notnull,unique:component_manufacturer_serial_idx"`
-	Description     map[string]any      `bun:"description,type:jsonb,json_use_number"`
-	FirmwareVersion string              `bun:"firmware_version,nullzero"`
-	RackID          uuid.UUID           `bun:"rack_id,type:uuid,notnull"`
-	SlotID          int                 `bun:"slot_id"`
-	TrayIndex       int                 `bun:"tray_index"`
-	HostID          int                 `bun:"host_id"`
-	IngestedAt      *time.Time          `bun:"ingested_at"`
-	DeletedAt       *time.Time          `bun:"deleted_at,soft_delete"`
-	Rack            *Rack               `bun:"rel:belongs-to,join:rack_id=id"`
-	BMCs            []BMC               `bun:"rel:has-many,join:id=component_id"`
-	ComponentID     *string             `bun:"external_id"`
-	PowerState      *nicoapi.PowerState `bun:"power_state"`
+	ID              uuid.UUID      `bun:"id,pk,type:uuid,default:gen_random_uuid()"`
+	Name            string         `bun:"name"`
+	Type            string         `bun:"type,type:varchar(16),default:'Compute'"`
+	Manufacturer    string         `bun:"manufacturer,notnull,unique:component_manufacturer_serial_idx"`
+	Model           string         `bun:"model"`
+	SerialNumber    string         `bun:"serial_number,notnull,notnull,unique:component_manufacturer_serial_idx"`
+	Description     map[string]any `bun:"description,type:jsonb,json_use_number"`
+	FirmwareVersion string         `bun:"firmware_version,nullzero"`
+	// RackID is uuid.Nil when the component has been ingested but is not yet
+	// assigned to a rack. Stored as NULL in the database thanks to nullzero.
+	RackID      uuid.UUID           `bun:"rack_id,type:uuid,nullzero"`
+	SlotID      int                 `bun:"slot_id"`
+	TrayIndex   int                 `bun:"tray_index"`
+	HostID      int                 `bun:"host_id"`
+	IngestedAt  *time.Time          `bun:"ingested_at"`
+	DeletedAt   *time.Time          `bun:"deleted_at,soft_delete"`
+	Rack        *Rack               `bun:"rel:belongs-to,join:rack_id=id"`
+	BMCs        []BMC               `bun:"rel:has-many,join:id=component_id"`
+	ComponentID *string             `bun:"external_id"`
+	PowerState  *nicoapi.PowerState `bun:"power_state"`
 }
 
 func (cd *Component) Create(ctx context.Context, idb bun.IDB) error {

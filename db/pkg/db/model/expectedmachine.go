@@ -61,30 +61,30 @@ var (
 type ExpectedMachine struct {
 	bun.BaseModel `bun:"table:expected_machine,alias:em"`
 
-	ID                       uuid.UUID         `bun:"id,pk"`
-	SiteID                   uuid.UUID         `bun:"site_id,type:uuid,notnull"`
-	Site                     *Site             `bun:"rel:belongs-to,join:site_id=id"`
-	BmcMacAddress            string            `bun:"bmc_mac_address,notnull"`
-	ChassisSerialNumber      string            `bun:"chassis_serial_number,notnull"`
-	SkuID                    *string           `bun:"sku_id"`
-	Sku                      *SKU              `bun:"rel:belongs-to,join:sku_id=id"`
-	MachineID                *string           `bun:"machine_id"`
-	Machine                  *Machine          `bun:"rel:belongs-to,join:machine_id=id"`
-	FallbackDpuSerialNumbers []string          `bun:"fallback_dpu_serial_numbers,array"`
-	BmcIpAddress             *string           `bun:"bmc_ip_address"`
-	RackID                   *string           `bun:"rack_id"`
-	Name                     *string           `bun:"name"`
-	Manufacturer             *string           `bun:"manufacturer"`
-	Model                    *string           `bun:"model"`
-	Description              *string           `bun:"description"`
-	FirmwareVersion          *string           `bun:"firmware_version"`
-	SlotID                   *int32            `bun:"slot_id"`
-	TrayIdx                  *int32            `bun:"tray_idx"`
-	HostID                   *int32            `bun:"host_id"`
-	Labels                   map[string]string `bun:"labels,type:jsonb"`
-	Created                  time.Time         `bun:"created,nullzero,notnull,default:current_timestamp"`
-	Updated                  time.Time         `bun:"updated,nullzero,notnull,default:current_timestamp"`
-	CreatedBy                uuid.UUID         `bun:"type:uuid,notnull"`
+	ID                       uuid.UUID `bun:"id,pk"`
+	SiteID                   uuid.UUID `bun:"site_id,type:uuid,notnull"`
+	Site                     *Site     `bun:"rel:belongs-to,join:site_id=id"`
+	BmcMacAddress            string    `bun:"bmc_mac_address,notnull"`
+	ChassisSerialNumber      string    `bun:"chassis_serial_number,notnull"`
+	SkuID                    *string   `bun:"sku_id"`
+	Sku                      *SKU      `bun:"rel:belongs-to,join:sku_id=id"`
+	MachineID                *string   `bun:"machine_id"`
+	Machine                  *Machine  `bun:"rel:belongs-to,join:machine_id=id"`
+	FallbackDpuSerialNumbers []string  `bun:"fallback_dpu_serial_numbers,array"`
+	BmcIpAddress             *string   `bun:"bmc_ip_address"`
+	RackID                   *string   `bun:"rack_id"`
+	Name                     *string   `bun:"name"`
+	Manufacturer             *string   `bun:"manufacturer"`
+	Model                    *string   `bun:"model"`
+	Description              *string   `bun:"description"`
+	FirmwareVersion          *string   `bun:"firmware_version"`
+	SlotID                   *int32    `bun:"slot_id"`
+	TrayIdx                  *int32    `bun:"tray_idx"`
+	HostID                   *int32    `bun:"host_id"`
+	Labels                   Labels    `bun:"labels,type:jsonb"`
+	Created                  time.Time `bun:"created,nullzero,notnull,default:current_timestamp"`
+	Updated                  time.Time `bun:"updated,nullzero,notnull,default:current_timestamp"`
+	CreatedBy                uuid.UUID `bun:"type:uuid,notnull"`
 }
 
 // ExpectedMachineCredentials carries the BMC credentials for one
@@ -196,7 +196,7 @@ func (em *ExpectedMachine) FromProto(proto *cwssaws.ExpectedMachine, linkedMachi
 	em.SlotID = proto.SlotId
 	em.TrayIdx = proto.TrayIdx
 	em.HostID = proto.HostId
-	em.Labels = LabelsFromProtoMetadata(proto.Metadata)
+	em.Labels.FromProto(proto.Metadata.GetLabels())
 }
 
 // ExpectedMachineCreateInput input parameters for Create method

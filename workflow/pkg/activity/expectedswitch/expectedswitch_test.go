@@ -431,7 +431,8 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchesInDB(t *testing.T) {
 						fmt.Sprintf("ExpectedSwitch %v should have been updated", es.ID))
 
 					// Verify labels are updated correctly
-					expectedLabels := cdbm.LabelsFromProtoMetadata(ctrlES.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(ctrlES.Metadata.GetLabels())
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(updated.Labels) == 0 {
 						// Both are effectively empty, which is correct
@@ -454,7 +455,8 @@ func TestManageExpectedSwitch_UpdateExpectedSwitchesInDB(t *testing.T) {
 				assert.NoError(t, perr)
 				created := switchesByID[esID]
 				if created != nil {
-					expectedLabels := cdbm.LabelsFromProtoMetadata(ces.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(ces.Metadata.GetLabels())
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(created.Labels) == 0 {
 						// Both are effectively empty, which is correct

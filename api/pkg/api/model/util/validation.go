@@ -52,8 +52,19 @@ var (
 	ErrValidationLabelCount       = fmt.Errorf("up to %v key/value pairs can be specified in labels", LabelCountMax)
 )
 
-// ValidateLabels validates optional API label maps (count, keys, values). Returns nil when labels is nil.
-func ValidateLabels(labels map[string]string) error {
+// ValidateLabels validates optional API label maps (count, keys, values).
+// Signature matches ozzo's `validation.RuleFunc` so it can be used
+// directly inside a `validation.By(...)` call from a struct's `Validate`.
+// Returns nil when labels is nil; ignores values that aren't a
+// `map[string]string`.
+func ValidateLabels(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	labels, ok := value.(map[string]string)
+	if !ok {
+		return nil
+	}
 	if labels == nil {
 		return nil
 	}
