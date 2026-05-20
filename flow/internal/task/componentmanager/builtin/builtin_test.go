@@ -29,6 +29,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
@@ -382,21 +383,21 @@ func TestServiceCatalog(t *testing.T) {
 		componentType     devicetypes.ComponentType
 		implementation    string
 		requiredProviders []string
-		capabilities      cmcatalog.CapabilitySet
+		capabilities      capability.CapabilitySet
 	}{
 		{
 			name:              "compute nico",
 			componentType:     devicetypes.ComponentTypeCompute,
 			implementation:    computenico.ImplementationName,
 			requiredProviders: []string{nicoprovider.ProviderName},
-			capabilities: cmcatalog.CapabilitySet{
-				cmcatalog.CapabilityBringUpControl,
-				cmcatalog.CapabilityBringUpStatus,
-				cmcatalog.CapabilityFirmwareControl,
-				cmcatalog.CapabilityFirmwareStatus,
-				cmcatalog.CapabilityInjectExpectation,
-				cmcatalog.CapabilityPowerControl,
-				cmcatalog.CapabilityPowerStatus,
+			capabilities: capability.CapabilitySet{
+				capability.CapabilityBringUpControl,
+				capability.CapabilityBringUpStatus,
+				capability.CapabilityFirmwareControl,
+				capability.CapabilityFirmwareStatus,
+				capability.CapabilityInjectExpectation,
+				capability.CapabilityPowerControl,
+				capability.CapabilityPowerStatus,
 			},
 		},
 		{
@@ -404,13 +405,13 @@ func TestServiceCatalog(t *testing.T) {
 			componentType:     devicetypes.ComponentTypeNVSwitch,
 			implementation:    nvswitchnico.ImplementationName,
 			requiredProviders: []string{nicoprovider.ProviderName},
-			capabilities: cmcatalog.CapabilitySet{
-				cmcatalog.CapabilityFirmwareConsistencyCheck,
-				cmcatalog.CapabilityFirmwareControl,
-				cmcatalog.CapabilityFirmwareStatus,
-				cmcatalog.CapabilityInjectExpectation,
-				cmcatalog.CapabilityPowerControl,
-				cmcatalog.CapabilityPowerStatus,
+			capabilities: capability.CapabilitySet{
+				capability.CapabilityFirmwareConsistencyCheck,
+				capability.CapabilityFirmwareControl,
+				capability.CapabilityFirmwareStatus,
+				capability.CapabilityInjectExpectation,
+				capability.CapabilityPowerControl,
+				capability.CapabilityPowerStatus,
 			},
 		},
 		{
@@ -418,10 +419,10 @@ func TestServiceCatalog(t *testing.T) {
 			componentType:     devicetypes.ComponentTypeNVSwitch,
 			implementation:    nvswitchnsm.ImplementationName,
 			requiredProviders: []string{nsmprovider.ProviderName},
-			capabilities: cmcatalog.CapabilitySet{
-				cmcatalog.CapabilityFirmwareControl,
-				cmcatalog.CapabilityFirmwareStatus,
-				cmcatalog.CapabilityPowerControl,
+			capabilities: capability.CapabilitySet{
+				capability.CapabilityFirmwareControl,
+				capability.CapabilityFirmwareStatus,
+				capability.CapabilityPowerControl,
 			},
 		},
 		{
@@ -429,12 +430,12 @@ func TestServiceCatalog(t *testing.T) {
 			componentType:     devicetypes.ComponentTypePowerShelf,
 			implementation:    powershelfnico.ImplementationName,
 			requiredProviders: []string{nicoprovider.ProviderName},
-			capabilities: cmcatalog.CapabilitySet{
-				cmcatalog.CapabilityFirmwareControl,
-				cmcatalog.CapabilityFirmwareStatus,
-				cmcatalog.CapabilityInjectExpectation,
-				cmcatalog.CapabilityPowerControl,
-				cmcatalog.CapabilityPowerStatus,
+			capabilities: capability.CapabilitySet{
+				capability.CapabilityFirmwareControl,
+				capability.CapabilityFirmwareStatus,
+				capability.CapabilityInjectExpectation,
+				capability.CapabilityPowerControl,
+				capability.CapabilityPowerStatus,
 			},
 		},
 		{
@@ -442,12 +443,12 @@ func TestServiceCatalog(t *testing.T) {
 			componentType:     devicetypes.ComponentTypePowerShelf,
 			implementation:    powershelfpsm.ImplementationName,
 			requiredProviders: []string{psmprovider.ProviderName},
-			capabilities: cmcatalog.CapabilitySet{
-				cmcatalog.CapabilityFirmwareControl,
-				cmcatalog.CapabilityFirmwareStatus,
-				cmcatalog.CapabilityInjectExpectation,
-				cmcatalog.CapabilityPowerControl,
-				cmcatalog.CapabilityPowerStatus,
+			capabilities: capability.CapabilitySet{
+				capability.CapabilityFirmwareControl,
+				capability.CapabilityFirmwareStatus,
+				capability.CapabilityInjectExpectation,
+				capability.CapabilityPowerControl,
+				capability.CapabilityPowerStatus,
 			},
 		},
 		{
@@ -552,23 +553,23 @@ func requireDescriptor(
 func assertDescriptorCapabilities(
 	t *testing.T,
 	descriptor cmcatalog.Descriptor,
-	capabilities ...cmcatalog.Capability,
+	capabilities ...capability.Capability,
 ) {
 	t.Helper()
 
-	expected, err := cmcatalog.CapabilitySet(capabilities).Normalize()
+	expected, err := capability.CapabilitySet(capabilities).Normalize()
 	require.NoError(t, err)
 	assert.Equal(t, expected, descriptor.Capabilities)
 }
 
-func mockCapabilities() cmcatalog.CapabilitySet {
-	return cmcatalog.CapabilitySet{
-		cmcatalog.CapabilityBringUpControl,
-		cmcatalog.CapabilityBringUpStatus,
-		cmcatalog.CapabilityFirmwareControl,
-		cmcatalog.CapabilityFirmwareStatus,
-		cmcatalog.CapabilityInjectExpectation,
-		cmcatalog.CapabilityPowerControl,
-		cmcatalog.CapabilityPowerStatus,
+func mockCapabilities() capability.CapabilitySet {
+	return capability.CapabilitySet{
+		capability.CapabilityBringUpControl,
+		capability.CapabilityBringUpStatus,
+		capability.CapabilityFirmwareControl,
+		capability.CapabilityFirmwareStatus,
+		capability.CapabilityInjectExpectation,
+		capability.CapabilityPowerControl,
+		capability.CapabilityPowerStatus,
 	}
 }

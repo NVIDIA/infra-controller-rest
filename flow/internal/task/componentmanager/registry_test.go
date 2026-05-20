@@ -21,6 +21,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	"github.com/stretchr/testify/require"
 
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
@@ -60,6 +61,114 @@ func TestRegistryGetManager(t *testing.T) {
 	})
 }
 
+func TestRegistryGetCapableManager(t *testing.T) {
+	t.Run("nil registry", func(t *testing.T) {
+		var registry *Registry
+
+		manager, err := registry.GetCapableManager(
+			devicetypes.ComponentTypeCompute,
+			capability.CapabilityPowerControl,
+		)
+
+		require.Nil(t, manager)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrRegistryNotConfigured))
+	})
+
+	t.Run("missing active manager", func(t *testing.T) {
+		registry, err := NewRegistry(
+			nil,
+			cmconfig.Config{},
+			providerapi.NewProviderRegistry(),
+		)
+		require.NoError(t, err)
+
+		manager, err := registry.GetCapableManager(
+			devicetypes.ComponentTypeCompute,
+			capability.CapabilityPowerControl,
+		)
+
+		require.Nil(t, manager)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrManagerNotConfigured))
+	})
+
+	t.Run("unknown capability", func(t *testing.T) {
+		registry := &Registry{}
+
+		manager, err := registry.GetCapableManager(
+			devicetypes.ComponentTypeCompute,
+			capability.Capability("PowerStatsu"),
+		)
+
+		require.Nil(t, manager)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrUnknownCapability))
+	})
+
+	t.Run("supported capability", func(t *testing.T) {
+		registry := newRegistryWithCapabilities(
+			t,
+			capability.CapabilityPowerControl,
+		)
+
+		manager, err := registry.GetCapableManager(
+			devicetypes.ComponentTypeCompute,
+			capability.CapabilityPowerControl,
+		)
+
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+	})
+
+	t.Run("unsupported capability", func(t *testing.T) {
+		registry := newRegistryWithCapabilities(
+			t,
+			capability.CapabilityPowerControl,
+		)
+
+		manager, err := registry.GetCapableManager(
+			devicetypes.ComponentTypeCompute,
+			capability.CapabilityFirmwareControl,
+		)
+
+		require.Nil(t, manager)
+		require.Error(t, err)
+		require.True(t, errors.Is(err, ErrUnsupportedCapability))
+
+		var capabilityErr UnsupportedCapabilityError
+		require.True(t, errors.As(err, &capabilityErr))
+		require.Equal(t, devicetypes.ComponentTypeCompute, capabilityErr.ComponentType)
+		require.Equal(t, "custom", capabilityErr.Implementation)
+		require.Equal(t, capability.CapabilityFirmwareControl, capabilityErr.Capability)
+		require.Equal(
+			t,
+			capability.CapabilitySet{capability.CapabilityPowerControl},
+			capabilityErr.Available,
+		)
+	})
+}
+
+func TestRegistryCheckCapability(t *testing.T) {
+	registry := newRegistryWithCapabilities(
+		t,
+		capability.CapabilityPowerControl,
+	)
+
+	err := registry.CheckCapability(
+		devicetypes.ComponentTypeCompute,
+		capability.CapabilityPowerControl,
+	)
+	require.NoError(t, err)
+
+	err = registry.CheckCapability(
+		devicetypes.ComponentTypeCompute,
+		capability.CapabilityFirmwareControl,
+	)
+	require.Error(t, err)
+	require.True(t, errors.Is(err, ErrUnsupportedCapability))
+}
+
 func TestRegistryGetDescriptor(t *testing.T) {
 	registry, err := NewRegistry(
 		[]FactorySpec{
@@ -83,6 +192,62 @@ func TestRegistryGetDescriptor(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, devicetypes.ComponentTypeCompute, descriptor.Type)
 	require.Equal(t, "custom", descriptor.Implementation)
+}
+
+func TestRegistryDescriptorResultsDoNotShareSliceStorage(t *testing.T) {
+	descriptor := cmcatalog.Descriptor{
+		Type:              devicetypes.ComponentTypeCompute,
+		Implementation:    "custom",
+		RequiredProviders: []string{"provider"},
+		Capabilities: capability.CapabilitySet{
+			capability.CapabilityPowerControl,
+		},
+	}
+	registry, err := NewRegistry(
+		[]FactorySpec{
+			{
+				Descriptor: descriptor,
+				Factory: func(*providerapi.ProviderRegistry) (ComponentManager, error) {
+					return testManager{descriptor: descriptor}, nil
+				},
+			},
+		},
+		cmconfig.Config{
+			ComponentManagers: map[devicetypes.ComponentType]string{
+				devicetypes.ComponentTypeCompute: "custom",
+			},
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	got, err := registry.GetDescriptor(devicetypes.ComponentTypeCompute)
+	require.NoError(t, err)
+	got.RequiredProviders[0] = "mutated"
+	got.Capabilities[0] = capability.CapabilityFirmwareControl
+
+	got, err = registry.GetDescriptor(devicetypes.ComponentTypeCompute)
+	require.NoError(t, err)
+	require.Equal(t, []string{"provider"}, got.RequiredProviders)
+	require.Equal(
+		t,
+		capability.CapabilitySet{capability.CapabilityPowerControl},
+		got.Capabilities,
+	)
+
+	descriptors, err := registry.Descriptors()
+	require.NoError(t, err)
+	descriptors[0].RequiredProviders[0] = "mutated"
+	descriptors[0].Capabilities[0] = capability.CapabilityFirmwareControl
+
+	descriptors, err = registry.Descriptors()
+	require.NoError(t, err)
+	require.Equal(t, []string{"provider"}, descriptors[0].RequiredProviders)
+	require.Equal(
+		t,
+		capability.CapabilitySet{capability.CapabilityPowerControl},
+		descriptors[0].Capabilities,
+	)
 }
 
 func TestRegistryGetDescriptorErrors(t *testing.T) {
@@ -527,14 +692,12 @@ func TestRegistryDescriptors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []cmcatalog.Descriptor{
 		{
-			Type:              devicetypes.ComponentTypeCompute,
-			Implementation:    "compute",
-			RequiredProviders: []string{},
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "compute",
 		},
 		{
-			Type:              devicetypes.ComponentTypeNVSwitch,
-			Implementation:    "switch",
-			RequiredProviders: []string{},
+			Type:           devicetypes.ComponentTypeNVSwitch,
+			Implementation: "switch",
 		},
 	}, descriptors)
 }

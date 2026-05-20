@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
@@ -76,11 +77,15 @@ var (
 
 	// ErrCapabilityNameEmpty reports that a descriptor declared an empty
 	// capability name.
-	ErrCapabilityNameEmpty = cmcatalog.ErrCapabilityNameEmpty
+	ErrCapabilityNameEmpty = capability.ErrNameEmpty
 
 	// ErrUnknownCapability reports that a descriptor declared an unsupported
 	// capability name.
-	ErrUnknownCapability = cmcatalog.ErrUnknownCapability
+	ErrUnknownCapability = capability.ErrUnknown
+
+	// ErrUnsupportedCapability reports that the active manager for a component
+	// type does not support the requested operation capability.
+	ErrUnsupportedCapability = errors.New("component manager capability is not supported")
 
 	// ErrComponentManagersNotConfigured reports that the service config has no
 	// component manager entries.
@@ -257,10 +262,33 @@ type ComponentManagerImplementationNameEmptyError = cmcatalog.ComponentManagerIm
 
 // CapabilityNameEmptyError reports an empty capability name in descriptor
 // metadata.
-type CapabilityNameEmptyError = cmcatalog.CapabilityNameEmptyError
+type CapabilityNameEmptyError = capability.NameEmptyError
 
 // UnknownCapabilityError includes the unsupported capability name.
-type UnknownCapabilityError = cmcatalog.UnknownCapabilityError
+type UnknownCapabilityError = capability.UnknownError
+
+// UnsupportedCapabilityError includes the requested capability and the active
+// manager that does not support it.
+type UnsupportedCapabilityError struct {
+	ComponentType  devicetypes.ComponentType
+	Implementation string
+	Capability     capability.Capability
+	Available      capability.CapabilitySet
+}
+
+func (e UnsupportedCapabilityError) Error() string {
+	return fmt.Sprintf(
+		"component manager %s/%s does not support capability %q; available: %v",
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+		e.Capability,
+		e.Available.Strings(),
+	)
+}
+
+func (e UnsupportedCapabilityError) Is(target error) bool {
+	return target == ErrUnsupportedCapability
+}
 
 // UnknownProviderError includes the unknown provider name.
 type UnknownProviderError = providerapi.UnknownProviderError

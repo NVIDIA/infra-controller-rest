@@ -31,6 +31,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
@@ -90,14 +91,14 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypeCompute,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nicoprovider.ProviderName},
-		Capabilities: cmcatalog.CapabilitySet{
-			cmcatalog.CapabilityBringUpControl,
-			cmcatalog.CapabilityBringUpStatus,
-			cmcatalog.CapabilityFirmwareControl,
-			cmcatalog.CapabilityFirmwareStatus,
-			cmcatalog.CapabilityInjectExpectation,
-			cmcatalog.CapabilityPowerControl,
-			cmcatalog.CapabilityPowerStatus,
+		Capabilities: capability.CapabilitySet{
+			capability.CapabilityBringUpControl,
+			capability.CapabilityBringUpStatus,
+			capability.CapabilityFirmwareControl,
+			capability.CapabilityFirmwareStatus,
+			capability.CapabilityInjectExpectation,
+			capability.CapabilityPowerControl,
+			capability.CapabilityPowerStatus,
 		},
 	}
 }

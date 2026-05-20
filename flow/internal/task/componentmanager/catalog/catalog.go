@@ -22,6 +22,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
@@ -30,13 +31,13 @@ import (
 // process. The descriptor identity is Type plus Implementation; provider names
 // stay separate because one manager can require multiple providers and one
 // provider can serve multiple component manager implementations. Capabilities
-// describe the operations this manager supports; dispatch does not depend on
-// them yet, but startup and future validation do.
+// describe the operations this manager supports and are used to validate that
+// active managers can execute a task before it is dispatched.
 type Descriptor struct {
 	Type              devicetypes.ComponentType
 	Implementation    string
 	RequiredProviders []string
-	Capabilities      CapabilitySet
+	Capabilities      capability.CapabilitySet
 }
 
 // Catalog contains the component manager implementations supported by a

@@ -25,6 +25,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nsmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nvswitchmanager"
@@ -71,10 +72,10 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypeNVSwitch,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{nsmprovider.ProviderName},
-		Capabilities: cmcatalog.CapabilitySet{
-			cmcatalog.CapabilityFirmwareControl,
-			cmcatalog.CapabilityFirmwareStatus,
-			cmcatalog.CapabilityPowerControl,
+		Capabilities: capability.CapabilitySet{
+			capability.CapabilityFirmwareControl,
+			capability.CapabilityFirmwareStatus,
+			capability.CapabilityPowerControl,
 		},
 	}
 }

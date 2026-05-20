@@ -24,6 +24,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/task"
@@ -51,7 +52,10 @@ func (a *Activities) InjectExpectation(
 	target common.Target,
 	info operations.InjectExpectationTaskInfo,
 ) error {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityInjectExpectation,
+	)
 	if err != nil {
 		return err
 	}
@@ -66,7 +70,10 @@ func (a *Activities) PowerControl(
 	target common.Target,
 	info operations.PowerControlTaskInfo,
 ) error {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityPowerControl,
+	)
 	if err != nil {
 		return err
 	}
@@ -80,7 +87,10 @@ func (a *Activities) GetPowerStatus(
 	ctx context.Context,
 	target common.Target,
 ) (map[string]operations.PowerStatus, error) {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityPowerStatus,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -111,7 +121,10 @@ func (a *Activities) FirmwareControl(
 	target common.Target,
 	info operations.FirmwareControlTaskInfo,
 ) error {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityFirmwareControl,
+	)
 	if err != nil {
 		return err
 	}
@@ -131,7 +144,10 @@ func (a *Activities) GetFirmwareStatus(
 	ctx context.Context,
 	target common.Target,
 ) (*GetFirmwareStatusResult, error) {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityFirmwareStatus,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +165,10 @@ func (a *Activities) BringUpControl(
 	ctx context.Context,
 	target common.Target,
 ) error {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityBringUpControl,
+	)
 	if err != nil {
 		return err
 	}
@@ -173,7 +192,10 @@ func (a *Activities) GetBringUpStatus(
 	ctx context.Context,
 	target common.Target,
 ) (*GetBringUpStatusResult, error) {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityBringUpStatus,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +220,10 @@ func (a *Activities) VerifyFirmwareConsistency(
 	ctx context.Context,
 	target common.Target,
 ) error {
-	cm, err := a.validAndGetComponentManager(target)
+	cm, err := a.validAndGetComponentManager(
+		target,
+		capability.CapabilityFirmwareConsistencyCheck,
+	)
 	if err != nil {
 		return err
 	}
@@ -217,10 +242,11 @@ func (a *Activities) VerifyFirmwareConsistency(
 // or no manager is found.
 func (a *Activities) validAndGetComponentManager(
 	target common.Target,
+	capability capability.Capability,
 ) (componentmanager.ComponentManager, error) {
 	if err := target.Validate(); err != nil {
 		return nil, fmt.Errorf("target is invalid: %w", err)
 	}
 
-	return a.registry.GetManager(target.Type)
+	return a.registry.GetCapableManager(target.Type, capability)
 }

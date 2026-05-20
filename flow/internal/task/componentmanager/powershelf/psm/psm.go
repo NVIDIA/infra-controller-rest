@@ -26,6 +26,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/psmapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	psmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/psm"
@@ -74,12 +75,12 @@ func Descriptor() cmcatalog.Descriptor {
 		Type:              devicetypes.ComponentTypePowerShelf,
 		Implementation:    ImplementationName,
 		RequiredProviders: []string{psmprovider.ProviderName},
-		Capabilities: cmcatalog.CapabilitySet{
-			cmcatalog.CapabilityFirmwareControl,
-			cmcatalog.CapabilityFirmwareStatus,
-			cmcatalog.CapabilityInjectExpectation,
-			cmcatalog.CapabilityPowerControl,
-			cmcatalog.CapabilityPowerStatus,
+		Capabilities: capability.CapabilitySet{
+			capability.CapabilityFirmwareControl,
+			capability.CapabilityFirmwareStatus,
+			capability.CapabilityInjectExpectation,
+			capability.CapabilityPowerControl,
+			capability.CapabilityPowerStatus,
 		},
 	}
 }

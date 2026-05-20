@@ -15,9 +15,11 @@
  * limitations under the License.
  */
 
-package catalog
+package capability
 
 import (
+	"errors"
+	"fmt"
 	"slices"
 	"strings"
 )
@@ -37,19 +39,51 @@ const (
 	CapabilityFirmwareConsistencyCheck Capability = "FirmwareConsistencyCheck"
 )
 
-// ParseCapability trims and validates a component manager capability name.
-func ParseCapability(name string) (Capability, error) {
+var (
+	// ErrNameEmpty reports an empty capability name.
+	ErrNameEmpty = errors.New("component manager capability name is empty")
+
+	// ErrUnknown reports an unsupported capability name.
+	ErrUnknown = errors.New("unknown component manager capability")
+)
+
+// Parse trims and validates a component manager capability name.
+func Parse(name string) (Capability, error) {
 	s := strings.TrimSpace(name)
 	if s == "" {
-		return "", CapabilityNameEmptyError{}
+		return "", NameEmptyError{}
 	}
 
 	c := Capability(s)
 	if !c.Valid() {
-		return "", UnknownCapabilityError{Capability: c}
+		return "", UnknownError{Capability: c}
 	}
 
 	return c, nil
+}
+
+// NameEmptyError reports an empty capability name in descriptor metadata.
+type NameEmptyError struct{}
+
+func (e NameEmptyError) Error() string {
+	return ErrNameEmpty.Error()
+}
+
+func (e NameEmptyError) Is(target error) bool {
+	return target == ErrNameEmpty
+}
+
+// UnknownError includes the unsupported capability name.
+type UnknownError struct {
+	Capability Capability
+}
+
+func (e UnknownError) Error() string {
+	return fmt.Sprintf("%s: %q", ErrUnknown, e.Capability)
+}
+
+func (e UnknownError) Is(target error) bool {
+	return target == ErrUnknown
 }
 
 // String returns the capability name.
@@ -74,14 +108,35 @@ func (c Capability) Valid() bool {
 	}
 }
 
-// Normalize trims and validates a capability name.
-func (c Capability) Normalize() (Capability, error) {
-	return ParseCapability(c.String())
-}
-
 // CapabilitySet is the normalized set of operations supported by a component
 // manager implementation.
 type CapabilitySet []Capability
+
+// NewSet returns capabilities trimmed, deduplicated, and sorted.
+func NewSet(capabilities ...Capability) (CapabilitySet, error) {
+	return CapabilitySet(capabilities).Normalize()
+}
+
+// Contains reports whether s includes capability.
+func (s CapabilitySet) Contains(capability Capability) bool {
+	return slices.Contains(s, capability)
+}
+
+// Add returns a capability set with capability included once. The receiver must
+// already be normalized; use NewSet or Normalize to build a CapabilitySet from
+// arbitrary input.
+func (s CapabilitySet) Add(capability Capability) (CapabilitySet, error) {
+	capability, err := Parse(capability.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if s.Contains(capability) {
+		return s, nil
+	}
+
+	return append(s, capability).Sorted(), nil
+}
 
 // Normalize returns capabilities trimmed, deduplicated, and sorted.
 func (s CapabilitySet) Normalize() (CapabilitySet, error) {
@@ -92,7 +147,7 @@ func (s CapabilitySet) Normalize() (CapabilitySet, error) {
 	capabilities := make(CapabilitySet, 0, len(s))
 	seen := make(map[Capability]struct{}, len(s))
 	for _, capability := range s {
-		capability, err := capability.Normalize()
+		capability, err := Parse(capability.String())
 		if err != nil {
 			return nil, err
 		}
@@ -112,6 +167,13 @@ func (s CapabilitySet) Normalize() (CapabilitySet, error) {
 // source set.
 func (s CapabilitySet) Clone() CapabilitySet {
 	return slices.Clone(s)
+}
+
+// Sorted returns a sorted copy of s.
+func (s CapabilitySet) Sorted() CapabilitySet {
+	sorted := s.Clone()
+	slices.Sort(sorted)
+	return sorted
 }
 
 // Strings returns the capability names as strings.

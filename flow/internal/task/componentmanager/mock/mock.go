@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -74,14 +75,14 @@ func DescriptorFor(componentType devicetypes.ComponentType) cmcatalog.Descriptor
 	return cmcatalog.Descriptor{
 		Type:           componentType,
 		Implementation: ImplementationName,
-		Capabilities: cmcatalog.CapabilitySet{
-			cmcatalog.CapabilityBringUpControl,
-			cmcatalog.CapabilityBringUpStatus,
-			cmcatalog.CapabilityFirmwareControl,
-			cmcatalog.CapabilityFirmwareStatus,
-			cmcatalog.CapabilityInjectExpectation,
-			cmcatalog.CapabilityPowerControl,
-			cmcatalog.CapabilityPowerStatus,
+		Capabilities: capability.CapabilitySet{
+			capability.CapabilityBringUpControl,
+			capability.CapabilityBringUpStatus,
+			capability.CapabilityFirmwareControl,
+			capability.CapabilityFirmwareStatus,
+			capability.CapabilityInjectExpectation,
+			capability.CapabilityPowerControl,
+			capability.CapabilityPowerStatus,
 		},
 	}
 }

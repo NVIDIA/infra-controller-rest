@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 )
 
 // TestActivities_All_ContainsAllActivities verifies that All() returns every
@@ -83,7 +84,10 @@ func TestActivities_Isolation(t *testing.T) {
 // lookup returns a clear configuration error when no registry is configured.
 func TestActivities_ValidAndGetComponentManager_NilRegistry(t *testing.T) {
 	acts := New(nil, nil)
-	_, err := acts.validAndGetComponentManager(newActivityTestTarget())
+	_, err := acts.validAndGetComponentManager(
+		newActivityTestTarget(),
+		capability.CapabilityPowerControl,
+	)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, componentmanager.ErrRegistryNotConfigured))
 }

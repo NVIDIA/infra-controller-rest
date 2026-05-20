@@ -19,8 +19,11 @@ package componentmanager
 
 import (
 	"context"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
+	"testing"
 
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
@@ -115,4 +118,39 @@ func testFactorySpec(
 		),
 		Factory: factory,
 	}
+}
+
+func newRegistryWithCapabilities(
+	t *testing.T,
+	capabilities ...capability.Capability,
+) *Registry {
+	t.Helper()
+
+	descriptor := cmcatalog.Descriptor{
+		Type:           devicetypes.ComponentTypeCompute,
+		Implementation: "custom",
+		Capabilities:   capability.CapabilitySet(capabilities),
+	}
+
+	registry, err := NewRegistry(
+		[]FactorySpec{
+			{
+				Descriptor: descriptor,
+				Factory: func(*providerapi.ProviderRegistry) (ComponentManager, error) {
+					return testManager{descriptor: descriptor}, nil
+				},
+			},
+		},
+		cmconfig.Config{
+			ComponentManagers: map[devicetypes.ComponentType]string{
+				devicetypes.ComponentTypeCompute: "custom",
+			},
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	if err != nil {
+		t.Fatalf("NewRegistry() error = %v", err)
+	}
+
+	return registry
 }
