@@ -13,7 +13,7 @@ import (
 	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
-// GetRackTaskTestSuite tests the GetRackTask workflow
+// GetTaskTestSuite tests the GetTask workflow
 type GetTaskTestSuite struct {
 	suite.Suite
 	testsuite.WorkflowTestSuite
@@ -111,7 +111,7 @@ func TestGetTaskTestSuite(t *testing.T) {
 	suite.Run(t, new(GetTaskTestSuite))
 }
 
-// CancelRackTaskTestSuite tests the CancelRackTask workflow
+// CancelTaskTestSuite tests the CancelTask workflow
 type CancelTaskTestSuite struct {
 	suite.Suite
 	testsuite.WorkflowTestSuite

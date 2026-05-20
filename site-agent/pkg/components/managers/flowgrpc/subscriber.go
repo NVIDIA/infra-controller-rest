@@ -30,7 +30,7 @@ func (flowgrpc *API) RegisterSubscriber() error {
 		return nil
 	}
 
-	// Register rack workflows
+	// Register Rack workflows
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Registering rack workflows")
 
 	// Register GetRack workflow
@@ -64,18 +64,6 @@ func (flowgrpc *API) RegisterSubscriber() error {
 	// Register UpgradeFirmware workflow
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.UpgradeFirmware)
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered UpgradeFirmware workflow")
-
-	// Register GetRackTask workflow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.GetTask)
-	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered GetTask workflow")
-
-	// Register CancelRackTask workflow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CancelTask)
-	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered CancelTask workflow")
-
-	// Register GetAllTasks workflow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.GetTasks)
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Successfully registered GetTasks workflow")
 
 	// Register activities
 	rackManager := swa.NewManageRack(ManagerAccess.Data.EB.Managers.FlowGrpc.Client)
