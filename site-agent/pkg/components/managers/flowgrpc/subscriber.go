@@ -122,8 +122,6 @@ func (flowgrpc *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered GetTrays activity")
 
 	// Register Task workflows
-
-	// Register Task workflows
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.GetTask)
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered GetTask workflow")
 

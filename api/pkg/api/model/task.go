@@ -102,14 +102,14 @@ func (r *APICancelTaskRequest) Validate() error {
 	return nil
 }
 
-// APIGetAllTasksRequest binds query parameters for rack- and tray-scoped
-// task list endpoints. Pagination is bound separately via pagination.PageRequest.
-type APIGetAllTasksRequest struct {
+// APIGetTasksRequest binds query parameters for rack- and tray-scoped task list
+// endpoints. Pagination is bound separately via pagination.PageRequest.
+type APIGetTasksRequest struct {
 	SiteID     string `query:"siteId"`
 	ActiveOnly bool   `query:"activeOnly"`
 }
 
-func (r *APIGetAllTasksRequest) Validate() error {
+func (r *APIGetTasksRequest) Validate() error {
 	if r.SiteID == "" {
 		return fmt.Errorf("siteId query parameter is required")
 	}
@@ -119,7 +119,7 @@ func (r *APIGetAllTasksRequest) Validate() error {
 // QueryValues returns query parameters that participate in deterministic
 // workflow ID hashing, including pagination fields so concurrent requests
 // for different pages do not reuse the same workflow execution.
-func (r *APIGetAllTasksRequest) QueryValues(page pagination.PageRequest) url.Values {
+func (r *APIGetTasksRequest) QueryValues(page pagination.PageRequest) url.Values {
 	v := url.Values{}
 	v.Set("siteId", r.SiteID)
 	if r.ActiveOnly {

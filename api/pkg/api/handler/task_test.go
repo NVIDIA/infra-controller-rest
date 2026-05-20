@@ -213,9 +213,9 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 	}
 }
 
-// runListTasksHandlerCases exercises GetRackTasksHandler and GetTrayTasksHandler
+// ExecuteGetTasksHandlerTestCases exercises GetRackTasksHandler and GetTrayTasksHandler
 // with a shared case matrix. pathFmt and the path parameter differ per handler;
-// both invoke the GetAllTasks workflow and use the same Temporal mock expectation.
+// both invoke the GetTasks workflow and use the same Temporal mock expectation.
 type GetTasksHandlerTestCase struct {
 	name           string
 	reqOrg         string
@@ -243,7 +243,7 @@ func ExecuteGetTasksHandlerTestCases(t *testing.T, pathFmt string, handle func(e
 					resp.Total = int32(len(tt.mockTasks))
 				}).Return(nil)
 			}
-			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "GetAllTasks", mock.Anything).
+			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "GetTasks", mock.Anything).
 				Run(func(args mock.Arguments) {
 					if tt.assertFlowReq != nil {
 						req, ok := args.Get(3).(*flowv1.ListTasksRequest)

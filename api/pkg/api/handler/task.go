@@ -423,7 +423,7 @@ func (h GetRackTasksHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid Rack ID specified in URL", nil)
 	}
 
-	var apiRequest model.APIGetAllTasksRequest
+	var apiRequest model.APIGetTasksRequest
 	if err := common.ValidateKnownQueryParams(c.QueryParams(), apiRequest); err != nil {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
 	}
@@ -606,7 +606,7 @@ func (h GetTrayTasksHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Invalid Tray ID specified in URL", nil)
 	}
 
-	var apiRequest model.APIGetAllTasksRequest
+	var apiRequest model.APIGetTasksRequest
 	if err := common.ValidateKnownQueryParams(c.QueryParams(), apiRequest); err != nil {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, err.Error(), nil)
 	}
