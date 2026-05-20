@@ -350,7 +350,7 @@ be cancelled.
 
 Tasks are site-scoped; `siteId` must be the Site where the task was
 created. Org must have an Infrastructure Provider entity. User must
-have `FORGE_PROVIDER_ADMIN` authorization role.
+have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1298,7 +1298,7 @@ func (r ApiGetRackTasksRequest) Execute() ([]RackTask, *http.Response, error) {
 }
 
 /*
-GetRackTasks List Tasks for a Rack
+GetRackTasks Retrieve all Tasks for a Rack
 
 List Tasks targeting the specified Rack.
 
@@ -1336,7 +1336,7 @@ func (a *RackAPIService) GetRackTasksExecute(r ApiGetRackTasksRequest) ([]RackTa
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}/task"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/rack/{id}/tasks"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 

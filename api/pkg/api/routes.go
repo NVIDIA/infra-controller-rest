@@ -889,8 +889,8 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Handler: apiHandler.NewGetSkuHandler(dbSession, tc, cfg),
 		},
 		// Task endpoints (Flow). /rack/task/* and /task/* share get/cancel
-		// handlers; list operations are exposed under /rack/{id}/task and
-		// /tray/{id}/task.
+		// handlers; list operations are exposed under /rack/{id}/tasks and
+		// /tray/{id}/tasks.
 		{
 			Path:    apiPathPrefix + "/rack/task/:id",
 			Method:  http.MethodGet,
@@ -962,7 +962,7 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Handler: apiHandler.NewBringUpRackHandler(dbSession, tc, scp, cfg),
 		},
 		{
-			Path:    apiPathPrefix + "/rack/:id/task",
+			Path:    apiPathPrefix + "/rack/:id/tasks",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetRackTasksHandler(dbSession, tc, scp, cfg),
 		},
@@ -1008,7 +1008,7 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Handler: apiHandler.NewValidateTrayHandler(dbSession, tc, scp, cfg),
 		},
 		{
-			Path:    apiPathPrefix + "/tray/:id/task",
+			Path:    apiPathPrefix + "/tray/:id/tasks",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetTrayTasksHandler(dbSession, tc, scp, cfg),
 		},

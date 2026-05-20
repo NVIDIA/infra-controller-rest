@@ -722,7 +722,7 @@ func (r ApiGetTrayTasksRequest) Execute() ([]RackTask, *http.Response, error) {
 }
 
 /*
-GetTrayTasks List Tasks for a Tray
+GetTrayTasks Retrieve all Tasks for a Tray
 
 List Tasks targeting the specified Tray.
 
@@ -760,7 +760,7 @@ func (a *TrayAPIService) GetTrayTasksExecute(r ApiGetTrayTasksRequest) ([]RackTa
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/tray/{id}/task"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/tray/{id}/tasks"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"id"+"}", url.PathEscape(parameterValueToString(r.id, "id")), -1)
 

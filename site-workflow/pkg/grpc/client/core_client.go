@@ -64,8 +64,19 @@ const (
 	ServerTLS
 	// MutualTLS for mutual tls
 	MutualTLS
+
 	// defaultCheckCertificateIntervalSeconds is the default interval to check for certificate changes
 	defaultCheckCertificateIntervalSeconds = 15 * 60 // 15 minutes in seconds
+
+	// gRPC client default dial timeout
+	defaultCoreGrpcDialTimeoutSeconds = 5 // 5 seconds
+
+	// CoreGrpcConnectionRetryTimeout is the maximum time to retry establishing a Core gRPC connection.
+	CoreGrpcConnectionRetryTimeout = 15 * time.Minute
+	// CoreGrpcConnectionBackoffInitial is the initial delay between connection retries.
+	CoreGrpcConnectionBackoffInitial = 5 * time.Second
+	// CoreGrpcConnectionBackoffMax is the maximum delay between connection retries.
+	CoreGrpcConnectionBackoffMax = 60 * time.Second
 )
 
 // CoreGrpcClientConfig is the data structure for the client configuration
@@ -86,7 +97,8 @@ type CoreGrpcClientConfig struct {
 	ClientMetrics Metrics
 }
 
-// NewCoreGrpcClient creates a new CoreGrpcClient
+// NewCoreGrpcClient creates a new Core gRPC client, this is called by Site Agent startup code and cert reload routine
+// Caller is responsible for retrying connection failure
 func NewCoreGrpcClient(config *CoreGrpcClientConfig) (client *CoreGrpcClient, err error) {
 	// Validate the config
 	if config.Address == "" {
@@ -207,7 +219,7 @@ func NewCoreGrpcClient(config *CoreGrpcClientConfig) (client *CoreGrpcClient, er
 	log.Info().Msg("CoreGrpcClient: Client created")
 
 	// Check the version of the server
-	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(5000)*time.Millisecond))
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Duration(defaultCoreGrpcDialTimeoutSeconds)*time.Second))
 	defer cancel()
 	_, err = client.grpcServiceClient.Version(ctx, &wflows.VersionRequest{})
 	if err != nil {
@@ -299,6 +311,10 @@ func (cac *CoreGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initi
 	defer ticker.Stop()
 
 	lastClientCertMD5, lastServerCAMD5 := initialClientCertMD5, initialServerCAMD5
+	var (
+		reloadStarted time.Time
+		reloadBackoff time.Duration
+	)
 
 	for range ticker.C {
 		changed, newClientMD5, newServerMD5, err := cac.CheckCertificates(lastClientCertMD5, lastServerCAMD5)
@@ -307,34 +323,58 @@ func (cac *CoreGrpcAtomicClient) CheckAndReloadCerts(initialClientCertMD5, initi
 			continue
 		}
 
-		if changed {
-			newClient, err := NewCoreGrpcClient(cac.Config)
-			if err != nil {
-				logger.Error().Err(err).Msg("Failed to reinitialize gRPC client with new certificates")
-				continue
-			}
-
-			// Atomically update the client instance and get the old one.
-			oldClient := cac.SwapClient(newClient)
-
-			// Delayed closure of the old client.
-			go func(clientToClose *CoreGrpcClient) {
-				// Delay the closure to allow ongoing client requests to complete.
-				time.Sleep(10 * time.Second) // Adjust the delay as needed.
-
-				// Ensure the client exists and has a connection to close.
-				if clientToClose != nil {
-					if err := clientToClose.Close(); err != nil {
-						log.Error().Err(err).Msg("Error closing old CoreGrpcClient connection")
-					}
-				}
-			}(oldClient)
-
-			logger.Info().Msg("gRPC client successfully reinitialized with new certificates")
-
-			// Update the stored MD5 hashes with the new ones for the next comparison.
-			lastClientCertMD5, lastServerCAMD5 = newClientMD5, newServerMD5
+		if !changed && reloadBackoff == 0 {
+			continue
 		}
+
+		if reloadBackoff == 0 {
+			reloadStarted = time.Now()
+			reloadBackoff = CoreGrpcConnectionBackoffInitial
+		} else if time.Since(reloadStarted) >= CoreGrpcConnectionRetryTimeout {
+			panic(fmt.Errorf("Core gRPC: failed to reinitialize gRPC client with new certificates within %s",
+				CoreGrpcConnectionRetryTimeout))
+		}
+
+		newClient, err := NewCoreGrpcClient(cac.Config)
+		if err != nil {
+			if time.Since(reloadStarted) >= CoreGrpcConnectionRetryTimeout {
+				panic(fmt.Errorf("Core gRPC: failed to reinitialize gRPC client with new certificates within %s: %w",
+					CoreGrpcConnectionRetryTimeout, err))
+			}
+			logger.Error().Err(err).Dur("RetryIn", reloadBackoff).Msg("Failed to reinitialize gRPC client with new certificates, retrying")
+			ticker.Reset(reloadBackoff)
+			reloadBackoff *= 2
+			if reloadBackoff > CoreGrpcConnectionBackoffMax {
+				reloadBackoff = CoreGrpcConnectionBackoffMax
+			}
+			continue
+		}
+
+		reloadBackoff = 0
+
+		// Atomically update the client instance and get the old one.
+		oldClient := cac.SwapClient(newClient)
+
+		// Delayed closure of the old client.
+		go func(clientToClose *CoreGrpcClient) {
+			// Delay the closure to allow ongoing client requests to complete.
+			time.Sleep(10 * time.Second) // Adjust the delay as needed.
+
+			// Ensure the client exists and has a connection to close.
+			if clientToClose != nil {
+				if err := clientToClose.Close(); err != nil {
+					log.Error().Err(err).Msg("Error closing old CoreGrpcClient connection")
+				}
+			}
+		}(oldClient)
+
+		logger.Info().Msg("gRPC client successfully reinitialized with new certificates")
+
+		// Update the stored MD5 hashes with the new ones for the next comparison.
+		lastClientCertMD5, lastServerCAMD5 = newClientMD5, newServerMD5
+
+		// Reset the ticker interval to the default
+		ticker.Reset(getCertificateCheckInterval())
 	}
 }
 

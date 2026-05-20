@@ -34,12 +34,15 @@ import (
 )
 
 const (
+	// Core gRPC default address and certificate paths
+	DefaultCoreGrpcAddress        = "core-grpc.nico-system.svc.cluster.local:1079"
 	DefaultCoreGrpcCACertPath     = "/etc/core-grpc/ca.crt"
 	DefaultCoreGrpcClientCertPath = "/etc/core-grpc/tls.crt"
 	DefaultCoreGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
 
 	// Flow uses the same SPIFFE trust domain (core-grpc.local) and vault-core-grpc-issuer as Core gRPC,
 	// so we can reuse the Core gRPC certificates for mTLS with Flow gRPC.
+	DefaultFlowGrpcAddress        = "flow.flow.svc.cluster.local:50051"
 	DefaultFlowGrpcCACertPath     = "/etc/core-grpc/ca.crt"
 	DefaultFlowGrpcClientCertPath = "/etc/core-grpc/tls.crt"
 	DefaultFlowGrpcClientKeyPath  = "/etc/core-grpc/tls.key"
@@ -71,23 +74,23 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	}
 	flag.StringVar(&conf.CoreGrpc.Address, "coreGrpcAddress", coreGrpcAddress, "Core gRPC Server Address")
 	if conf.CoreGrpc.Address == "" {
-		conf.CoreGrpc.Address = "core-grpc.nico-system.svc.cluster.local:1079"
+		conf.CoreGrpc.Address = DefaultCoreGrpcAddress
 	}
-	coreGrpcSecOpt := os.Getenv("CORE_GRPC_SEC_OPT")
-	if coreGrpcSecOpt == "" {
-		coreGrpcSecOpt = os.Getenv("CARBIDE_SEC_OPT") // TODO: remove once deployment config repo is updated
+
+	coreGrpcSecOptStr := os.Getenv("CORE_GRPC_SEC_OPT")
+	if coreGrpcSecOptStr == "" {
+		coreGrpcSecOptStr = os.Getenv("CARBIDE_SEC_OPT") // TODO: remove once deployment config repo is updated
 	}
-	cSecOpt, err := strconv.Atoi(coreGrpcSecOpt)
+	coreGrpcSecOpt, err := strconv.Atoi(coreGrpcSecOptStr)
 	if err != nil {
-		log.Info().Msg(err.Error())
-		cSecOpt = int(client.ServerTLS)
+		log.Info().Err(err).Msg("Invalid Core gRPC security option, using server TLS as default")
+		coreGrpcSecOpt = int(client.ServerTLS)
 	}
-	if cSecOpt < int(client.InsecureGrpc) && cSecOpt > int(client.MutualTLS) {
-		cSecOpt = int(client.ServerTLS)
+	if coreGrpcSecOpt < int(client.InsecureGrpc) || coreGrpcSecOpt > int(client.MutualTLS) {
+		coreGrpcSecOpt = int(client.ServerTLS)
 	}
-	sOpt := 0
-	flag.IntVar(&sOpt, "coreGrpcSecureOptions", cSecOpt, "Core gRPC security option")
-	conf.CoreGrpc.Secure = client.SecureOptions(sOpt)
+	flag.IntVar(&coreGrpcSecOpt, "coreGrpcSecureOptions", coreGrpcSecOpt, "Core gRPC security option")
+	conf.CoreGrpc.Secure = client.SecureOptions(coreGrpcSecOpt)
 
 	coreGrpcCACertPath := os.Getenv("CORE_GRPC_CA_CERT_PATH")
 	if coreGrpcCACertPath == "" {
@@ -121,20 +124,27 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 	log.Info().Msg("Core gRPC client Key Path:" + conf.CoreGrpc.ClientKeyPath)
 
 	// Flow config
-	flag.StringVar(&conf.FlowGrpc.Address, "flowGrpcAddress", os.Getenv("FLOW_GRPC_ADDRESS"), "Flow gRPC Address")
-	if conf.FlowGrpc.Address == "" {
-		conf.FlowGrpc.Address = "flow.flow.svc.cluster.local:50051"
+	flowGrpcAddress := os.Getenv("FLOW_GRPC_ADDRESS")
+	if flowGrpcAddress == "" {
+		flowGrpcAddress = os.Getenv("FLOW_ADDRESS") // TODO: remove once deployment config repo is updated
 	}
-	flowGrpcSecOpt, err := strconv.Atoi(os.Getenv("FLOW_GRPC_SEC_OPT"))
+	flag.StringVar(&conf.FlowGrpc.Address, "flowGrpcAddress", flowGrpcAddress, "Flow gRPC Address")
+	if conf.FlowGrpc.Address == "" {
+		conf.FlowGrpc.Address = DefaultFlowGrpcAddress
+	}
+
+	flowGrpcSecOptStr := os.Getenv("FLOW_GRPC_SEC_OPT")
+	if flowGrpcSecOptStr == "" {
+		flowGrpcSecOptStr = os.Getenv("FLOW_SEC_OPT") // TODO: remove once deployment config repo is updated
+	}
+	flowGrpcSecOpt, err := strconv.Atoi(flowGrpcSecOptStr)
 	if err != nil {
-		log.Info().Msg("Invalid Flow gRPC security option, using default")
+		log.Info().Err(err).Msg("Invalid Flow gRPC security option, using server TLS as default")
 		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
 	if flowGrpcSecOpt < int(client.FlowInsecureGrpc) || flowGrpcSecOpt > int(client.FlowMutualTLS) {
 		flowGrpcSecOpt = int(client.FlowServerTLS)
 	}
-
-	flowGrpcSecOpt = 0
 	flag.IntVar(&flowGrpcSecOpt, "flowGrpcSecureOptions", flowGrpcSecOpt, "Flow gRPC security option")
 	conf.FlowGrpc.Secure = client.FlowGrpcClientSecureOptions(flowGrpcSecOpt)
 
@@ -292,14 +302,14 @@ func NewElektraConfig(utMode bool) *conftypes.Config {
 		temporalCertPath = msf
 	}
 
-	flag.StringVar(&conf.Temporal.TemporalPublishQueue, "TemporalPublishQueue", temporalPublishQueue, "Temporal Publish queue")
-	flag.StringVar(&conf.Temporal.TemporalSubscribeQueue, "TemporalSubscribeQueue", temporalSubscribeQueue, "Temporal Subscribe queue")
-	flag.StringVar(&conf.Temporal.TemporalPublishNamespace, "TemporalPublishNamespace", temporalPublishNamespace, "Temporal Publish Namespace")
-	flag.StringVar(&conf.Temporal.TemporalSubscribeNamespace, "TemporalSubscribeNamespace", temporalSubscribeNamespace, "Temporal Subscribe Namespace")
-	flag.StringVar(&conf.Temporal.ClusterID, "ClusterID", clusterID, "NICo Site Cluster ID")
-	flag.StringVar(&conf.Temporal.TemporalCertPath, "TemporalCertPath", temporalCertPath, "Temporal cert path")
-	flag.StringVar(&conf.Temporal.TemporalServer, "TemporalServer", os.Getenv("TEMPORAL_SERVER"), "Temporal server")
-	flag.StringVar(&conf.Temporal.TemporalInventorySchedule, "TemporalInventorySchedule", os.Getenv("TEMPORAL_INVENTORY_SCHEDULE"), "Temporal Inventory schedule")
+	flag.StringVar(&conf.Temporal.TemporalPublishQueue, "temporalPublishQueue", temporalPublishQueue, "Temporal Publish queue")
+	flag.StringVar(&conf.Temporal.TemporalSubscribeQueue, "temporalSubscribeQueue", temporalSubscribeQueue, "Temporal Subscribe queue")
+	flag.StringVar(&conf.Temporal.TemporalPublishNamespace, "temporalPublishNamespace", temporalPublishNamespace, "Temporal Publish Namespace")
+	flag.StringVar(&conf.Temporal.TemporalSubscribeNamespace, "temporalSubscribeNamespace", temporalSubscribeNamespace, "Temporal Subscribe Namespace")
+	flag.StringVar(&conf.Temporal.ClusterID, "clusterID", clusterID, "NICo Site Cluster ID")
+	flag.StringVar(&conf.Temporal.TemporalCertPath, "temporalCertPath", temporalCertPath, "Temporal cert path")
+	flag.StringVar(&conf.Temporal.TemporalServer, "temporalServer", os.Getenv("TEMPORAL_SERVER"), "Temporal server")
+	flag.StringVar(&conf.Temporal.TemporalInventorySchedule, "temporalInventorySchedule", os.Getenv("TEMPORAL_INVENTORY_SCHEDULE"), "Temporal Inventory schedule")
 
 	if conf.Temporal.TemporalPublishQueue == "" {
 		log.Fatal().Msg("error loading config, Temporal publish queue must be specified")

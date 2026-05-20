@@ -1242,6 +1242,7 @@ func (rs *FlowServerImpl) UpgradeFirmware(
 		Operation:     operations.FirmwareOperationUpgrade,
 		TargetVersion: req.GetTargetVersion(),
 		RuleID:        protobuf.UUIDStringFrom(req.GetRuleId()),
+		SubTargets:    req.GetSubTargets(),
 	}
 
 	// Parse optional time parameters for scheduled upgrade

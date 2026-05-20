@@ -32,6 +32,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/firmwarecomponents"
 )
 
 const (
@@ -294,11 +295,16 @@ func (m *Manager) ListAvailableFirmware(ctx context.Context, pmcMacs []string) (
 
 // FirmwareControl initiates firmware update without waiting for completion.
 // Returns immediately after the update request is accepted.
+//
+// info.SubTargets, when non-empty, restricts the update to the selected
+// firmware sub-parts (e.g. ["pmc", "psu"]). Empty defaults to ["pmc"],
+// which preserves the historical PSM behavior.
 func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, info operations.FirmwareControlTaskInfo) error {
 	log.Debug().
 		Str("components", target.String()).
 		Str("operation", fmt.Sprintf("%v", info.Operation)).
 		Str("target_version", info.TargetVersion).
+		Strs("sub_targets", info.SubTargets).
 		Msg("Starting firmware update")
 
 	if m.psmClient == nil {
@@ -309,21 +315,31 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
+	subComponents, err := firmwarecomponents.ParsePSMPowerShelf(info.SubTargets)
+	if err != nil {
+		return err
+	}
+	if len(subComponents) == 0 {
+		subComponents = []psmapi.PowershelfComponent{psmapi.PowershelfComponentPMC}
+	}
+
 	pmcMacs := target.ComponentIDs
 
-	// Create firmware update request for PMC component
+	componentReqs := make([]psmapi.UpdateComponentFirmwareRequest, 0, len(subComponents))
+	for _, c := range subComponents {
+		componentReqs = append(componentReqs, psmapi.UpdateComponentFirmwareRequest{
+			Component: c,
+			UpgradeTo: psmapi.FirmwareVersion{Version: info.TargetVersion},
+		})
+	}
+
 	updateReqs := make([]psmapi.UpdatePowershelfFirmwareRequest, 0, len(pmcMacs))
 	for _, componentID := range pmcMacs {
 		updateReqs = append(
 			updateReqs,
 			psmapi.UpdatePowershelfFirmwareRequest{
 				PMCMACAddress: componentID,
-				Components: []psmapi.UpdateComponentFirmwareRequest{
-					{
-						Component: psmapi.PowershelfComponentPMC,
-						UpgradeTo: psmapi.FirmwareVersion{Version: info.TargetVersion},
-					},
-				},
+				Components:    componentReqs,
 			},
 		)
 	}

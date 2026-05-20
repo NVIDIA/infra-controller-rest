@@ -102,6 +102,39 @@ func mustMarshal(t *testing.T, v any) json.RawMessage {
 	return data
 }
 
+// TestFirmwareControl_SubTargetsAccepted verifies that the compute/nico
+// FirmwareControl path tolerates info.SubTargets without erroring. This
+// path goes through SetMachineAutoUpdate + SetFirmwareUpdateTimeWindow,
+// which has no per-sub-target selection in NICo, so the manager only logs
+// a warning and proceeds; we exercise that branch here. The actual
+// per-sub-target dispatch will be added when compute moves to NICo's
+// UpdateComponentFirmware (see comment in nico.go).
+func TestFirmwareControl_SubTargetsAccepted(t *testing.T) {
+	tests := map[string]struct {
+		subTargets []string
+	}{
+		"nil sub_targets (legacy path)":     {subTargets: nil},
+		"empty sub_targets (legacy path)":   {subTargets: []string{}},
+		"non-empty sub_targets (warn path)": {subTargets: []string{"bmc", "bios"}},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			m := New(nicoapi.NewMockClient(), 0)
+			target := common.Target{
+				Type:         devicetypes.ComponentTypeCompute,
+				ComponentIDs: []string{"machine-1"},
+			}
+
+			err := m.FirmwareControl(context.Background(), target, operations.FirmwareControlTaskInfo{
+				Operation:  operations.FirmwareOperationUpgrade,
+				SubTargets: tc.subTargets,
+			})
+			require.NoError(t, err)
+		})
+	}
+}
+
 // --- Tests for firmware version helper functions ---
 
 func desiredEntry(versions map[string]string) *pb.DesiredFirmwareVersionEntry {

@@ -305,10 +305,10 @@ func GetRackTask(ctx workflow.Context, request *flowv1.GetTasksByIDsRequest) (*f
 	return &response, nil
 }
 
-// ListTasks is a workflow to list tasks matching the filters in the
+// GetAllTasks is a workflow to list tasks matching the filters in the
 // request (rack_id, component_id, active_only, pagination) via Flow.
-func ListTasks(ctx workflow.Context, request *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
-	logger := log.With().Str("Workflow", "Rack").Str("Action", "ListTasks").Logger()
+func GetAllTasks(ctx workflow.Context, request *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
+	logger := log.With().Str("Workflow", "Rack").Str("Action", "GetAllTasks").Logger()
 
 	logger.Info().Msg("Starting workflow")
 
@@ -328,9 +328,9 @@ func ListTasks(ctx workflow.Context, request *flowv1.ListTasksRequest) (*flowv1.
 	var rackManager activity.ManageRack
 	var response flowv1.ListTasksResponse
 
-	err := workflow.ExecuteActivity(ctx, rackManager.ListTasks, request).Get(ctx, &response)
+	err := workflow.ExecuteActivity(ctx, rackManager.GetAllTasksFromFlow, request).Get(ctx, &response)
 	if err != nil {
-		logger.Error().Err(err).Str("Activity", "ListTasks").Msg("Failed to execute activity from workflow")
+		logger.Error().Err(err).Str("Activity", "GetAllTasksFromFlow").Msg("Failed to execute activity from workflow")
 		return nil, err
 	}
 

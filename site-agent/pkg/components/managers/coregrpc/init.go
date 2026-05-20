@@ -19,19 +19,21 @@ package coregrpc
 
 import (
 	"fmt"
+	"time"
 
 	computils "github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/utils"
+	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 const (
-	// MetricCoreGrpcStatus - Metric Core GRPC Status
-	MetricCoreGrpcStatus = "carbide_health_status"
+	// MetricCoreGrpcStatus - Metric Core gRPC Status
+	MetricCoreGrpcStatus = "carbide_health_status" // TODO: rename to core_grpc_health_status without breaking existing Grafana dashboards
 )
 
-// Init - initialize carbide manager
+// Init initializes the Core gRPC client manager
 func (coregrpc *API) Init() {
-	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Initializing Core gRPC client")
+	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Initializing Core gRPC client manager")
 
 	prometheus.MustRegister(
 		prometheus.NewGaugeFunc(prometheus.GaugeOpts{
@@ -48,18 +50,32 @@ func (coregrpc *API) Init() {
 	ManagerAccess.Data.EB.Managers.CoreGrpc.State.WflowMetrics = newWorkflowMetrics()
 }
 
-// Start - start carbide manager
+// Start starts the Core gRPC client manager
 func (coregrpc *API) Start() {
-	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Starting the core gRPC client")
+	ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: Starting Core gRPC client manager")
 
-	// Create the client here
-	// Each workflow will check and reinitialize the client if needed
-	if err := coregrpc.CreateGrpcClient(); err != nil {
-		ManagerAccess.Data.EB.Log.Error().Msgf("Core gRPC: failed to create gRPC client: %v", err)
+	// Site Agent should not be able to start if the Core gRPC client cannot be created
+	start := time.Now()
+	backoff := client.CoreGrpcConnectionBackoffInitial
+	for {
+		err := coregrpc.CreateGrpcClient()
+		if err == nil {
+			ManagerAccess.Data.EB.Log.Info().Msg("Core gRPC: successfully created gRPC client")
+			break
+		}
+		if time.Since(start) >= client.CoreGrpcConnectionRetryTimeout {
+			panic(fmt.Errorf("Core gRPC: failed to create gRPC client within %s: %w", client.CoreGrpcConnectionRetryTimeout, err))
+		}
+		ManagerAccess.Data.EB.Log.Error().Err(err).Dur("RetryIn", backoff).Msg("Core gRPC: failed to create gRPC client, retrying")
+		time.Sleep(backoff)
+		backoff *= 2
+		if backoff > client.CoreGrpcConnectionBackoffMax {
+			backoff = client.CoreGrpcConnectionBackoffMax
+		}
 	}
 }
 
-// GetState Machine
+// GetState returns the current state of the Core gRPC client manager
 func (coregrpc *API) GetState() []string {
 	state := ManagerAccess.Data.EB.Managers.CoreGrpc.State
 	var strs []string
@@ -71,7 +87,7 @@ func (coregrpc *API) GetState() []string {
 	return strs
 }
 
-// GetGrpcClientVersion returns the current version of the gRPC client
+// GetGrpcClientVersion returns the current version of the Core gRPC client
 func (coregrpc *API) GetGrpcClientVersion() int64 {
 	return ManagerAccess.Data.EB.Managers.CoreGrpc.Client.Version()
 }

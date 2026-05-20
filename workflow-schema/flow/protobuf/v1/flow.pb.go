@@ -3319,6 +3319,15 @@ type UpgradeFirmwareRequest struct {
 	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`                                // optional: task description
 	QueueOptions  *QueueOptions          `protobuf:"bytes,6,opt,name=queue_options,json=queueOptions,proto3,oneof" json:"queue_options,omitempty"`
 	RuleId        *UUID                  `protobuf:"bytes,7,opt,name=rule_id,json=ruleId,proto3,oneof" json:"rule_id,omitempty"` // optional: override rule resolution with a specific rule
+	// Optional subset of firmware sub-parts to update within each tray
+	// selected by target_spec, e.g. ["bmc", "nvos"] for switch trays or
+	// ["psu"] for powershelf trays. Named "sub_targets" (not "components")
+	// to avoid colliding with OperationTargetSpec.components, which selects
+	// tray INSTANCES rather than sub-parts of a tray.
+	// Names are lowercase. Empty or omitted means update everything in the
+	// bundle (current default behavior). Unknown names are rejected by the
+	// downstream component manager.
+	SubTargets    []string `protobuf:"bytes,8,rep,name=sub_targets,json=subTargets,proto3" json:"sub_targets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3398,6 +3407,13 @@ func (x *UpgradeFirmwareRequest) GetQueueOptions() *QueueOptions {
 func (x *UpgradeFirmwareRequest) GetRuleId() *UUID {
 	if x != nil {
 		return x.RuleId
+	}
+	return nil
+}
+
+func (x *UpgradeFirmwareRequest) GetSubTargets() []string {
+	if x != nil {
+		return x.SubTargets
 	}
 	return nil
 }
@@ -7854,7 +7870,7 @@ const file_flow_proto_rawDesc = "" +
 	"\x1bGetRacksForNVLDomainRequest\x12B\n" +
 	"\x15nvl_domain_identifier\x18\x01 \x01(\v2\x0e.v1.IdentifierR\x13nvlDomainIdentifier\">\n" +
 	"\x1cGetRacksForNVLDomainResponse\x12\x1e\n" +
-	"\x05racks\x18\x01 \x03(\v2\b.v1.RackR\x05racks\"\xcd\x03\n" +
+	"\x05racks\x18\x01 \x03(\v2\b.v1.RackR\x05racks\"\xee\x03\n" +
 	"\x16UpgradeFirmwareRequest\x128\n" +
 	"\vtarget_spec\x18\x01 \x01(\v2\x17.v1.OperationTargetSpecR\n" +
 	"targetSpec\x12*\n" +
@@ -7864,7 +7880,9 @@ const file_flow_proto_rawDesc = "" +
 	"\bend_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampH\x02R\aendTime\x88\x01\x01\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12:\n" +
 	"\rqueue_options\x18\x06 \x01(\v2\x10.v1.QueueOptionsH\x03R\fqueueOptions\x88\x01\x01\x12&\n" +
-	"\arule_id\x18\a \x01(\v2\b.v1.UUIDH\x04R\x06ruleId\x88\x01\x01B\x11\n" +
+	"\arule_id\x18\a \x01(\v2\b.v1.UUIDH\x04R\x06ruleId\x88\x01\x01\x12\x1f\n" +
+	"\vsub_targets\x18\b \x03(\tR\n" +
+	"subTargetsB\x11\n" +
 	"\x0f_target_versionB\r\n" +
 	"\v_start_timeB\v\n" +
 	"\t_end_timeB\x10\n" +

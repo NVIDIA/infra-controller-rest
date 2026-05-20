@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
 	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
@@ -101,18 +102,14 @@ func (r *APICancelTaskRequest) Validate() error {
 	return nil
 }
 
-// APIListTasksRequest binds query parameters for rack- and tray-scoped task
-// list endpoints. PageNumber and PageSize are retained as strings (alongside
-// the validated values on pagination.PageRequest) so pagination is included
-// in workflow ID hashing and distinct pages do not reuse the same execution.
-type APIListTasksRequest struct {
+// APIGetAllTasksRequest binds query parameters for rack- and tray-scoped
+// task list endpoints. Pagination is bound separately via pagination.PageRequest.
+type APIGetAllTasksRequest struct {
 	SiteID     string `query:"siteId"`
 	ActiveOnly bool   `query:"activeOnly"`
-	PageNumber string `query:"pageNumber"`
-	PageSize   string `query:"pageSize"`
 }
 
-func (r *APIListTasksRequest) Validate() error {
+func (r *APIGetAllTasksRequest) Validate() error {
 	if r.SiteID == "" {
 		return fmt.Errorf("siteId query parameter is required")
 	}
@@ -122,17 +119,17 @@ func (r *APIListTasksRequest) Validate() error {
 // QueryValues returns query parameters that participate in deterministic
 // workflow ID hashing, including pagination fields so concurrent requests
 // for different pages do not reuse the same workflow execution.
-func (r *APIListTasksRequest) QueryValues() url.Values {
+func (r *APIGetAllTasksRequest) QueryValues(page pagination.PageRequest) url.Values {
 	v := url.Values{}
 	v.Set("siteId", r.SiteID)
 	if r.ActiveOnly {
 		v.Set("activeOnly", strconv.FormatBool(r.ActiveOnly))
 	}
-	if r.PageNumber != "" {
-		v.Set("pageNumber", r.PageNumber)
+	if page.PageNumber != nil && *page.PageNumber != 0 {
+		v.Set("pageNumber", strconv.Itoa(*page.PageNumber))
 	}
-	if r.PageSize != "" {
-		v.Set("pageSize", r.PageSize)
+	if page.PageSize != nil && *page.PageSize != 0 {
+		v.Set("pageSize", strconv.Itoa(*page.PageSize))
 	}
 	return v
 }

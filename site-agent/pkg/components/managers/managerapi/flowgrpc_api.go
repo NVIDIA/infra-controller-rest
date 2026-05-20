@@ -18,8 +18,6 @@
 package managerapi
 
 import (
-	"context"
-
 	"github.com/NVIDIA/infra-controller-rest/site-workflow/pkg/grpc/client"
 )
 
@@ -34,8 +32,6 @@ type FlowGrpcInterface interface {
 	CreateGrpcClient() error
 	GetGrpcClient() *client.FlowGrpcClient
 	UpdateGrpcClientState(err error)
-	CreateGrpcClientActivity(ctx context.Context, ResourceID string) (client *client.FlowGrpcClient, err error)
-	RegisterGrpc()
 	RegisterSubscriber() error
 	GetState() []string
 	GetGrpcClientVersion() int64

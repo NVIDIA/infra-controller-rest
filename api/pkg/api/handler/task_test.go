@@ -215,7 +215,7 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 
 // runListTasksHandlerCases exercises GetRackTasksHandler and GetTrayTasksHandler
 // with a shared case matrix. pathFmt and the path parameter differ per handler;
-// both invoke the ListTasks workflow and use the same Temporal mock expectation.
+// both invoke the GetAllTasks workflow and use the same Temporal mock expectation.
 type listTasksHandlerCase struct {
 	name           string
 	reqOrg         string
@@ -224,6 +224,7 @@ type listTasksHandlerCase struct {
 	queryParams    map[string]string
 	mockTasks      []*flowv1.Task
 	expectedStatus int
+	assertFlowReq  func(t *testing.T, req *flowv1.ListTasksRequest, pathParam string)
 }
 
 func runListTasksHandlerCases(t *testing.T, pathFmt string, handle func(echo.Context) error, scp *sc.ClientPool, siteID string, cases []listTasksHandlerCase) {
@@ -242,7 +243,15 @@ func runListTasksHandlerCases(t *testing.T, pathFmt string, handle func(echo.Con
 					resp.Total = int32(len(tt.mockTasks))
 				}).Return(nil)
 			}
-			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "ListTasks", mock.Anything).Return(mockWorkflowRun, nil)
+			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "GetAllTasks", mock.Anything).
+				Run(func(args mock.Arguments) {
+					if tt.assertFlowReq != nil {
+						req, ok := args.Get(3).(*flowv1.ListTasksRequest)
+						require.True(t, ok, "workflow arg must be *flowv1.ListTasksRequest")
+						tt.assertFlowReq(t, req, tt.pathParam)
+					}
+				}).
+				Return(mockWorkflowRun, nil)
 			scp.IDClientMap[siteID] = mockTemporalClient
 
 			q := url.Values{}
@@ -309,6 +318,13 @@ func TestGetRackTasksHandler_Handle(t *testing.T) {
 			queryParams:    map[string]string{"siteId": site.ID.String()},
 			mockTasks:      listed,
 			expectedStatus: http.StatusOK,
+			assertFlowReq: func(t *testing.T, req *flowv1.ListTasksRequest, pathParam string) {
+				t.Helper()
+				require.NotNil(t, req.GetRackId())
+				assert.Equal(t, pathParam, req.GetRackId().GetId())
+				assert.Nil(t, req.GetComponentId())
+				assert.False(t, req.GetActiveOnly())
+			},
 		},
 		{
 			name:           "success - active-only filter pass-through",
@@ -318,6 +334,12 @@ func TestGetRackTasksHandler_Handle(t *testing.T) {
 			queryParams:    map[string]string{"siteId": site.ID.String(), "activeOnly": "true"},
 			mockTasks:      listed,
 			expectedStatus: http.StatusOK,
+			assertFlowReq: func(t *testing.T, req *flowv1.ListTasksRequest, pathParam string) {
+				t.Helper()
+				require.NotNil(t, req.GetRackId())
+				assert.Equal(t, pathParam, req.GetRackId().GetId())
+				assert.True(t, req.GetActiveOnly())
+			},
 		},
 		{
 			name:           "failure - invalid rack UUID",
@@ -345,7 +367,7 @@ func TestGetRackTasksHandler_Handle(t *testing.T) {
 		},
 	}
 
-	runListTasksHandlerCases(t, "/v2/org/%s/nico/rack/%s/task", handler.Handle, scp, site.ID.String(), cases)
+	runListTasksHandlerCases(t, "/v2/org/%s/nico/rack/%s/tasks", handler.Handle, scp, site.ID.String(), cases)
 }
 
 func TestGetTrayTasksHandler_Handle(t *testing.T) {
@@ -381,6 +403,12 @@ func TestGetTrayTasksHandler_Handle(t *testing.T) {
 			queryParams:    map[string]string{"siteId": site.ID.String()},
 			mockTasks:      listed,
 			expectedStatus: http.StatusOK,
+			assertFlowReq: func(t *testing.T, req *flowv1.ListTasksRequest, pathParam string) {
+				t.Helper()
+				require.NotNil(t, req.GetComponentId())
+				assert.Equal(t, pathParam, req.GetComponentId().GetId())
+				assert.Nil(t, req.GetRackId())
+			},
 		},
 		{
 			name:           "failure - invalid tray UUID",
@@ -408,7 +436,7 @@ func TestGetTrayTasksHandler_Handle(t *testing.T) {
 		},
 	}
 
-	runListTasksHandlerCases(t, "/v2/org/%s/nico/tray/%s/task", handler.Handle, scp, site.ID.String(), cases)
+	runListTasksHandlerCases(t, "/v2/org/%s/nico/tray/%s/tasks", handler.Handle, scp, site.ID.String(), cases)
 }
 
 func TestCancelTaskHandler_Handle(t *testing.T) {

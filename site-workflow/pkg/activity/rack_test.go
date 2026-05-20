@@ -720,7 +720,7 @@ func TestManageRack_GetTaskByID(t *testing.T) {
 	}
 }
 
-func TestManageRack_ListTasks(t *testing.T) {
+func TestManageRack_GetAllTasksFromFlow(t *testing.T) {
 	tests := []struct {
 		name        string
 		request     *flowv1.ListTasksRequest
@@ -748,7 +748,7 @@ func TestManageRack_ListTasks(t *testing.T) {
 			manageRack := NewManageRack(flowGrpcAtomicClient)
 
 			ctx := context.Background()
-			result, err := manageRack.ListTasks(ctx, tt.request)
+			result, err := manageRack.GetAllTasksFromFlow(ctx, tt.request)
 
 			if tt.wantErr {
 				assert.Error(t, err)

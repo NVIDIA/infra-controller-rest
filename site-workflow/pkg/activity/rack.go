@@ -320,11 +320,11 @@ func (mr *ManageRack) GetTaskByID(ctx context.Context, request *flowv1.GetTasksB
 	return response, nil
 }
 
-// ListTasks lists tasks matching the given filters via Flow. The filters
-// in flowv1.ListTasksRequest combine with AND; pagination, ordering, and
-// totals are computed by Flow over the post-filter result set.
-func (mr *ManageRack) ListTasks(ctx context.Context, request *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
-	logger := log.With().Str("Activity", "ListTasks").Logger()
+// GetAllTasksFromFlow lists tasks matching the given filters via Flow. The
+// filters in flowv1.ListTasksRequest combine with AND; pagination, ordering,
+// and totals are computed by Flow over the post-filter result set.
+func (mr *ManageRack) GetAllTasksFromFlow(ctx context.Context, request *flowv1.ListTasksRequest) (*flowv1.ListTasksResponse, error) {
+	logger := log.With().Str("Activity", "GetAllTasksFromFlow").Logger()
 	logger.Info().Msg("Starting activity")
 
 	if request == nil {
@@ -343,6 +343,9 @@ func (mr *ManageRack) ListTasks(ctx context.Context, request *flowv1.ListTasksRe
 	if err != nil {
 		logger.Warn().Err(err).Msg("Failed to list tasks using Flow gRPC API")
 		return nil, swe.WrapErr(err)
+	}
+	if response == nil {
+		return nil, swe.WrapErr(errors.New("Flow ListTasks returned nil response"))
 	}
 
 	logger.Info().

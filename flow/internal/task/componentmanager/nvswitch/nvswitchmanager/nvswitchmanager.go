@@ -31,6 +31,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/firmwarecomponents"
 )
 
 const (
@@ -171,11 +172,16 @@ func mapPowerOperation(op operations.PowerOperation) (nsmapi.PowerAction, error)
 
 // FirmwareControl initiates firmware update without waiting for completion.
 // Returns immediately after the update request is accepted.
+//
+// info.SubTargets, when non-empty, restricts the update to the selected
+// firmware sub-parts (e.g. ["bmc", "nvos"]). Empty means "all components
+// in the bundle" (NSM's historical default).
 func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, info operations.FirmwareControlTaskInfo) error {
 	log.Debug().
 		Str("components", target.String()).
 		Str("operation", fmt.Sprintf("%v", info.Operation)).
 		Str("target_version", info.TargetVersion).
+		Strs("sub_targets", info.SubTargets).
 		Msg("Starting firmware update")
 
 	if m.nsmClient == nil {
@@ -186,7 +192,12 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
-	updates, err := m.nsmClient.QueueUpdates(ctx, target.ComponentIDs, info.TargetVersion, nil)
+	subComponents, err := firmwarecomponents.ParseNSMNVSwitch(info.SubTargets)
+	if err != nil {
+		return err
+	}
+
+	updates, err := m.nsmClient.QueueUpdates(ctx, target.ComponentIDs, info.TargetVersion, subComponents)
 	if err != nil {
 		return fmt.Errorf("firmware update request failed: %w", err)
 	}

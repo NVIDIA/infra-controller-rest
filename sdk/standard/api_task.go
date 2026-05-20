@@ -70,7 +70,7 @@ be cancelled.
 
 Tasks are site-scoped; `siteId` must be the Site where the task was
 created. Org must have an Infrastructure Provider entity. User must
-have `FORGE_PROVIDER_ADMIN` authorization role.
+have authorization role with `PROVIDER_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

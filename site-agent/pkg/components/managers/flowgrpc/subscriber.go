@@ -73,9 +73,9 @@ func (flowgrpc *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.CancelRackTask)
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered CancelRackTask workflow")
 
-	// Register ListTasks workflow
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.ListTasks)
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Successfully registered ListTasks workflow")
+	// Register GetAllTasks workflow
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterWorkflow(sww.GetAllTasks)
+	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Successfully registered GetAllTasks workflow")
 
 	// Register activities
 	rackManager := swa.NewManageRack(ManagerAccess.Data.EB.Managers.FlowGrpc.Client)
@@ -120,9 +120,9 @@ func (flowgrpc *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(rackManager.CancelTask)
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Successfully registered CancelTask activity")
 
-	// Register ListTasks activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(rackManager.ListTasks)
-	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Successfully registered ListTasks activity")
+	// Register GetAllTasksFromFlow activity
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(rackManager.GetAllTasksFromFlow)
+	ManagerAccess.Data.EB.Log.Info().Msg("Flow: Successfully registered GetAllTasksFromFlow activity")
 
 	// Register the tray subscribers here
 	ManagerAccess.Data.EB.Log.Info().Msg("FlowGrpc: Registering tray workflows")

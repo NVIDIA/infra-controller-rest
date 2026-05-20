@@ -139,6 +139,48 @@ func TestManageMachine_UpdateMachineMetadataOnSite(t *testing.T) {
 	}
 }
 
+func TestManageMachine_CreateMachineHealthReportOverrideOnSite(t *testing.T) {
+	mockCoreGrpcClient := cClient.NewMockCoreGrpcClient()
+
+	coreGrpcAtomicClient := cClient.NewCoreGrpcAtomicClient(&cClient.CoreGrpcClientConfig{})
+	coreGrpcAtomicClient.SwapClient(mockCoreGrpcClient)
+
+	mm := NewManageMachine(coreGrpcAtomicClient)
+	req := &cwssaws.InsertHealthReportOverrideRequest{
+		MachineId: &cwssaws.MachineId{Id: "machine-1"},
+		Override: &cwssaws.HealthReportOverride{
+			Report: &cwssaws.HealthReport{
+				Source: "tenant-reported-issue",
+				Alerts: []*cwssaws.HealthProbeAlert{
+					{Id: "OnLineRepair", Message: `{"details":"d","issue_category":"OTHER","summary":"s"}`},
+				},
+			},
+			Mode: cwssaws.OverrideMode_Replace,
+		},
+	}
+	assert.NoError(t, mm.CreateMachineHealthReportOverrideOnSite(context.Background(), req))
+
+	err := mm.CreateMachineHealthReportOverrideOnSite(context.Background(), nil)
+	assert.Error(t, err)
+}
+
+func TestManageMachine_DeleteMachineHealthReportOverrideOnSite(t *testing.T) {
+	mockCoreGrpcClient := cClient.NewMockCoreGrpcClient()
+
+	coreGrpcAtomicClient := cClient.NewCoreGrpcAtomicClient(&cClient.CoreGrpcClientConfig{})
+	coreGrpcAtomicClient.SwapClient(mockCoreGrpcClient)
+
+	mm := NewManageMachine(coreGrpcAtomicClient)
+	req := &cwssaws.RemoveHealthReportOverrideRequest{
+		MachineId: &cwssaws.MachineId{Id: "machine-1"},
+		Source:    "tenant-reported-issue",
+	}
+	assert.NoError(t, mm.DeleteMachineHealthReportOverrideOnSite(context.Background(), req))
+
+	err := mm.DeleteMachineHealthReportOverrideOnSite(context.Background(), nil)
+	assert.Error(t, err)
+}
+
 func Test_getPagedInventory(t *testing.T) {
 	// Generate inventories
 	pageSize := 25
