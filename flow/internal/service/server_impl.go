@@ -201,7 +201,10 @@ func (rs *FlowServerImpl) PatchRack(
 	}, err
 }
 
-// AddComponent creates a single component under an existing rack.
+// AddComponent creates a single component. The component may optionally be
+// attached to an existing rack via component.rack_id; if rack_id is not set
+// the component is ingested without a rack assignment and can be moved into a
+// rack later via PatchComponent.
 func (rs *FlowServerImpl) AddComponent(
 	ctx context.Context,
 	req *pb.AddComponentRequest,
@@ -211,16 +214,16 @@ func (rs *FlowServerImpl) AddComponent(
 		return nil, errors.New("component is required")
 	}
 
-	// Convert proto component to internal; rack_id comes from the component itself
+	// Convert proto component to internal; rack_id comes from the component
+	// itself and is optional.
 	comp := protobuf.ComponentFrom(pbComp)
 	comp.RackID = protobuf.UUIDFrom(pbComp.GetRackId())
-	if comp.RackID == uuid.Nil {
-		return nil, errors.New("component.rack_id is required")
-	}
 
-	// Verify the rack exists
-	if _, err := rs.inventoryManager.GetRackByID(ctx, comp.RackID, false); err != nil {
-		return nil, fmt.Errorf("rack not found: %w", err)
+	// Verify the rack exists only when one has been specified.
+	if comp.RackID != uuid.Nil {
+		if _, err := rs.inventoryManager.GetRackByID(ctx, comp.RackID, false); err != nil {
+			return nil, fmt.Errorf("rack not found: %w", err)
+		}
 	}
 
 	// Ensure the component has an ID
@@ -351,6 +354,9 @@ func (rs *FlowServerImpl) PatchComponent(
 	if req.RackId != nil {
 		rackID := protobuf.UUIDFrom(req.RackId)
 		if rackID != uuid.Nil {
+			if _, err := rs.inventoryManager.GetRackByID(ctx, rackID, false); err != nil {
+				return nil, fmt.Errorf("rack not found: %w", err)
+			}
 			existing.RackID = rackID
 		}
 	}
@@ -402,8 +408,9 @@ func (rs *FlowServerImpl) GetComponentInfoByID(
 
 	var r *rack.Rack
 
-	if req.GetWithRack() {
-		// Get the rack information
+	if req.GetWithRack() && c.RackID != uuid.Nil {
+		// Get the rack information; skip the lookup when the component is
+		// not yet attached to a rack.
 		r, err = rs.inventoryManager.GetRackByID(ctx, c.RackID, false)
 		if err != nil {
 			return nil, err
@@ -445,8 +452,9 @@ func (rs *FlowServerImpl) GetComponentInfoBySerial(
 
 	var r *rack.Rack
 
-	if req.GetWithRack() {
-		// Get the rack information
+	if req.GetWithRack() && c.RackID != uuid.Nil {
+		// Get the rack information; skip the lookup when the component is
+		// not yet attached to a rack.
 		r, err = rs.inventoryManager.GetRackByID(ctx, c.RackID, false)
 		if err != nil {
 			return nil, err
