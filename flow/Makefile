@@ -30,6 +30,9 @@ gen-nicoapi-pb: ## Generate protobuf files for nico-api access, only needed for 
 	git clone https://github.com/NVIDIA/infra-controller-core.git
 	rm -f internal/nicoapi/nicoproto/*.proto
 	cp infra-controller-core/crates/rpc/proto/*.proto internal/nicoapi/nicoproto/
+	@if [ -f internal/nicoapi/nicoproto/forge.proto ] && [ ! -f internal/nicoapi/nicoproto/nico.proto ]; then \
+		mv internal/nicoapi/nicoproto/forge.proto internal/nicoapi/nicoproto/nico.proto; \
+	fi
 	rm -rf infra-controller-core
 # The protodefs are a bit unclean, and we need to make some tweaks to make them usable.
 	cd internal/nicoapi && ./tweak_protodefs.sh
@@ -84,4 +87,4 @@ test-local:
 	DB_ADDR=localhost DB_PORT=30432 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=flow_test go run . db migrate
 	DB_ADDR=localhost DB_PORT=30432 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=flow_test go test -v -p 1 ./...
 
-.PHONY: gen-pb gen-psmapi-pb gen-nsmapi-pb gen-doc flow container releasecontainer runcontainer releasetest test test-local
+.PHONY: gen-pb gen-nicoapi-pb gen-psmapi-pb gen-nsmapi-pb gen-doc flow container releasecontainer runcontainer releasetest test test-local

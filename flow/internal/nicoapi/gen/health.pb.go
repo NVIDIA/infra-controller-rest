@@ -43,7 +43,7 @@ const (
 type HealthReport struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Identifies the source of the health report
-	// This could e.g. be `nico-dpu-agent`, `nico-host-validation`,
+	// This could e.g. be `forge-dpu-agent`, `forge-host-validation`,
 	// or an override (e.g. `overrides.sre-team`)
 	Source string `protobuf:"bytes,1,opt,name=source,proto3" json:"source,omitempty"`
 	// The person or system (service) that triggered this health report.
@@ -151,7 +151,7 @@ type HealthProbeAlert struct {
 	// combination are calculated individually when reports are merged.
 	Target *string `protobuf:"bytes,6,opt,name=target,proto3,oneof" json:"target,omitempty"`
 	// The first time the probe raised an alert
-	// If this field is empty while the HealthReport is sent to nico-core-api
+	// If this field is empty while the HealthReport is sent to carbide-api
 	// the behavior is as follows:
 	// - If an alert of the same `id` was reported before, the timestamp of the
 	// previous alert will be retained.

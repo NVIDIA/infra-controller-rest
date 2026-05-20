@@ -42,7 +42,7 @@ const (
 )
 
 type grpcClient struct {
-	gclient     pb.NICoClient
+	gclient     pb.ForgeClient
 	grpcTimeout time.Duration
 }
 
@@ -76,7 +76,7 @@ func NewClient(grpcTimeout time.Duration) (Client, error) {
 		return nil, fmt.Errorf("Unable to connect to nico-core-api: %w", err)
 	}
 
-	return &grpcClient{gclient: pb.NewNICoClient(conn), grpcTimeout: grpcTimeout}, nil
+	return &grpcClient{gclient: pb.NewForgeClient(conn), grpcTimeout: grpcTimeout}, nil
 }
 
 // GetMachines retrieves all machines known by nico-core-api
@@ -459,9 +459,9 @@ func (c *grpcClient) InsertHealthReportOverride(ctx context.Context, machineID s
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
 	defer cancel()
 
-	req := &pb.InsertHealthReportOverrideRequest{
+	req := &pb.InsertMachineHealthReportRequest{
 		MachineId: &pb.MachineId{Id: machineID},
-		Override: &pb.HealthReportOverride{
+		HealthReportEntry: &pb.HealthReportEntry{
 			Report: &pb.HealthReport{
 				Source: source,
 				Alerts: []*pb.HealthProbeAlert{{
@@ -470,7 +470,7 @@ func (c *grpcClient) InsertHealthReportOverride(ctx context.Context, machineID s
 					Classifications: []string{classificationSuppressExternalAlerting},
 				}},
 			},
-			Mode: pb.OverrideMode_Replace,
+			Mode: pb.HealthReportApplyMode_Replace,
 		},
 	}
 
@@ -485,7 +485,7 @@ func (c *grpcClient) RemoveHealthReportOverride(ctx context.Context, machineID s
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
 	defer cancel()
 
-	req := &pb.RemoveHealthReportOverrideRequest{
+	req := &pb.RemoveMachineHealthReportRequest{
 		MachineId: &pb.MachineId{Id: machineID},
 		Source:    source,
 	}
