@@ -215,6 +215,18 @@ type FirmwareControlTaskInfo struct {
 	StartTime     int64             `json:"start_time,omitempty"` // Unix timestamp
 	EndTime       int64             `json:"end_time,omitempty"`   // Unix timestamp
 	RuleID        string            `json:"rule_id,omitempty"`
+	// SubTargets, when non-empty, restricts the upgrade to a subset of
+	// firmware sub-parts within each targeted tray (e.g. ["bmc", "nvos"]
+	// for switch trays, ["bmc", "bios"] for compute trays, ["psu"] for
+	// powershelf trays). Named "SubTargets" (not "Components") to avoid
+	// colliding with the carbide tray-level Component vocabulary used for
+	// OperationTargetSpec / ExecutionInfo.Components, which select tray
+	// INSTANCES rather than sub-parts of a tray.
+	// Names are lowercase and case-sensitive. Empty or nil means "update
+	// everything in the bundle" (the historical default). Mapping from
+	// these strings to component-manager-specific enums is done in each
+	// FirmwareControl implementation (see pkg/common/firmwarecomponents).
+	SubTargets []string `json:"sub_targets,omitempty"`
 }
 
 func (t *FirmwareControlTaskInfo) Validate() error {

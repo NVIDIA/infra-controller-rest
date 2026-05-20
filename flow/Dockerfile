@@ -16,15 +16,15 @@
 #
 
 
-# This is the old Dockerfile that can be used for quick local builds.  See ../docker/production/Dockerfile.nico-rla for the real one.
+# This is the old Dockerfile that can be used for quick local builds.  See ../docker/production/Dockerfile.nico-flow for the real one.
 
 FROM alpine
 
 # Libraries needed for go binaries
-RUN apk add libc6-compat
+RUN apk add --no-cache libc6-compat
 
-COPY build/rla /opt/rla/rla
+COPY build/flow /opt/flow/flow
 
 EXPOSE 50051
 
-CMD /opt/rla/rla serve
+CMD /opt/flow/flow serve

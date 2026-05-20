@@ -29,7 +29,7 @@ type ComponentType int
 const (
 	ComponentTypeUnknown ComponentType = iota
 	ComponentTypeCompute
-	ComponentTypeNVLSwitch
+	ComponentTypeNVSwitch
 	ComponentTypePowerShelf
 	ComponentTypeToRSwitch
 	ComponentTypeUMS
@@ -40,7 +40,7 @@ var (
 	componentTypeStrings = map[ComponentType]string{
 		ComponentTypeUnknown:    "Unknown",
 		ComponentTypeCompute:    "Compute",
-		ComponentTypeNVLSwitch:  "NVLSwitch",
+		ComponentTypeNVSwitch:   "NVSwitch",
 		ComponentTypePowerShelf: "PowerShelf",
 		ComponentTypeToRSwitch:  "ToRSwitch",
 		ComponentTypeUMS:        "UMS",
@@ -63,7 +63,7 @@ func ComponentTypes() []ComponentType {
 	return []ComponentType{
 		ComponentTypeUnknown,
 		ComponentTypeCompute,
-		ComponentTypeNVLSwitch,
+		ComponentTypeNVSwitch,
 		ComponentTypePowerShelf,
 		ComponentTypeToRSwitch,
 		ComponentTypeUMS,

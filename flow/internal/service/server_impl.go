@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Package service implements the gRPC server for the RLA (Rack Level Asset) management system.
+// Package service implements the gRPC server for NICo Flow, the rack-level asset management system.
 // It provides APIs for managing rack-level assets including creating, retrieving, and updating
 // rack and component information.
 //
@@ -53,20 +53,20 @@ import (
 	pb "github.com/NVIDIA/infra-controller-rest/flow/pkg/proto/v1"
 )
 
-// RLAServerImpl implements the gRPC RLA server interface.
+// FlowServerImpl implements the gRPC Flow server interface.
 // It acts as an adapter between gRPC protobuf messages and the internal managers,
 // handling protobuf conversion and delegating business logic to the InventoryManager.
-type RLAServerImpl struct {
-	inventoryManager          inventorymanager.Manager // Business logic manager for inventory operations
-	taskManager               taskmanager.Manager      // Task manager for orchestrating task lifecycle
-	taskStore                 taskstore.Store          // Task store for task queries
-	taskScheduleStore         taskschedule.Store       // Persistence layer for task schedules
-	taskScheduleDispatcher    *taskschedule.Dispatcher // Background poller that fires due task schedules
-	conflictResolver          *conflict.Resolver       // Reused for inter-schedule conflict detection
-	pb.UnimplementedRLAServer                          // Embedded protobuf server interface for forward compatibility
+type FlowServerImpl struct {
+	inventoryManager           inventorymanager.Manager // Business logic manager for inventory operations
+	taskManager                taskmanager.Manager      // Task manager for orchestrating task lifecycle
+	taskStore                  taskstore.Store          // Task store for task queries
+	taskScheduleStore          taskschedule.Store       // Persistence layer for task schedules
+	taskScheduleDispatcher     *taskschedule.Dispatcher // Background poller that fires due task schedules
+	conflictResolver           *conflict.Resolver       // Reused for inter-schedule conflict detection
+	pb.UnimplementedFlowServer                          // Embedded protobuf server interface for forward compatibility
 }
 
-// newServerImplementation creates a new RLA gRPC server implementation.
+// newServerImplementation creates a new Flow gRPC server implementation.
 // It initializes the server with the provided managers for handling business logic.
 //
 // Parameters:
@@ -75,7 +75,7 @@ type RLAServerImpl struct {
 //   - taskStore: The task store for task queries
 //
 // Returns:
-//   - *RLAServerImpl: A new server implementation instance
+//   - *FlowServerImpl: A new server implementation instance
 //   - error: Always nil in current implementation, reserved for future error handling
 func newServerImplementation(
 	inventoryManager inventorymanager.Manager,
@@ -83,8 +83,8 @@ func newServerImplementation(
 	taskStore taskstore.Store,
 	taskScheduleStore taskschedule.Store,
 	taskScheduleDispatcher *taskschedule.Dispatcher,
-) (*RLAServerImpl, error) {
-	return &RLAServerImpl{
+) (*FlowServerImpl, error) {
+	return &FlowServerImpl{
 		inventoryManager:       inventoryManager,
 		taskManager:            taskManager,
 		taskStore:              taskStore,
@@ -94,9 +94,9 @@ func newServerImplementation(
 	}, nil
 }
 
-// Version returns the build information for this RLA service.
+// Version returns the build information for this Flow service.
 // This includes the version, build time, and git commit hash.
-func (rs *RLAServerImpl) Version(
+func (rs *FlowServerImpl) Version(
 	ctx context.Context,
 	req *pb.VersionRequest,
 ) (*pb.BuildInfo, error) {
@@ -119,7 +119,7 @@ func (rs *RLAServerImpl) Version(
 //   - *pb.CreateExpectedRackResponse: Response containing the generated or
 //     existing or given rack ID
 //   - error: Any error that occurred during rack creation
-func (rs *RLAServerImpl) CreateExpectedRack(
+func (rs *FlowServerImpl) CreateExpectedRack(
 	ctx context.Context,
 	req *pb.CreateExpectedRackRequest,
 ) (*pb.CreateExpectedRackResponse, error) {
@@ -138,7 +138,7 @@ func (rs *RLAServerImpl) CreateExpectedRack(
 // Returns:
 //   - *pb.GetRackInfoResponse: Response containing the rack information
 //   - error: Any error that occurred during rack retrieval
-func (rs *RLAServerImpl) GetRackInfoByID(
+func (rs *FlowServerImpl) GetRackInfoByID(
 	ctx context.Context,
 	req *pb.GetRackInfoByIDRequest,
 ) (*pb.GetRackInfoResponse, error) {
@@ -162,7 +162,7 @@ func (rs *RLAServerImpl) GetRackInfoByID(
 // Returns:
 //   - *pb.GetRackInfoResponse: Response containing the rack information
 //   - error: Any error that occurred during rack retrieval
-func (rs *RLAServerImpl) GetRackInfoBySerial(
+func (rs *FlowServerImpl) GetRackInfoBySerial(
 	ctx context.Context,
 	req *pb.GetRackInfoBySerialRequest,
 ) (*pb.GetRackInfoResponse, error) {
@@ -188,7 +188,7 @@ func (rs *RLAServerImpl) GetRackInfoBySerial(
 // Returns:
 //   - *pb.PatchRackResponse: Response containing a JSON report of patch operations
 //   - error: Any error that occurred during rack patching
-func (rs *RLAServerImpl) PatchRack(
+func (rs *FlowServerImpl) PatchRack(
 	ctx context.Context,
 	req *pb.PatchRackRequest,
 ) (*pb.PatchRackResponse, error) {
@@ -205,7 +205,7 @@ func (rs *RLAServerImpl) PatchRack(
 // attached to an existing rack via component.rack_id; if rack_id is not set
 // the component is ingested without a rack assignment and can be moved into a
 // rack later via PatchComponent.
-func (rs *RLAServerImpl) AddComponent(
+func (rs *FlowServerImpl) AddComponent(
 	ctx context.Context,
 	req *pb.AddComponentRequest,
 ) (*pb.AddComponentResponse, error) {
@@ -248,7 +248,7 @@ func (rs *RLAServerImpl) AddComponent(
 }
 
 // DeleteComponent soft-deletes a component by UUID.
-func (rs *RLAServerImpl) DeleteComponent(
+func (rs *FlowServerImpl) DeleteComponent(
 	ctx context.Context,
 	req *pb.DeleteComponentRequest,
 ) (*pb.DeleteComponentResponse, error) {
@@ -270,7 +270,7 @@ func (rs *RLAServerImpl) DeleteComponent(
 }
 
 // DeleteRack soft-deletes a rack and all its components.
-func (rs *RLAServerImpl) DeleteRack(
+func (rs *FlowServerImpl) DeleteRack(
 	ctx context.Context,
 	req *pb.DeleteRackRequest,
 ) (*pb.DeleteRackResponse, error) {
@@ -287,7 +287,7 @@ func (rs *RLAServerImpl) DeleteRack(
 }
 
 // PurgeRack permanently removes a soft-deleted rack and its components.
-func (rs *RLAServerImpl) PurgeRack(
+func (rs *FlowServerImpl) PurgeRack(
 	ctx context.Context,
 	req *pb.PurgeRackRequest,
 ) (*pb.PurgeRackResponse, error) {
@@ -304,7 +304,7 @@ func (rs *RLAServerImpl) PurgeRack(
 }
 
 // PurgeComponent permanently removes a soft-deleted component.
-func (rs *RLAServerImpl) PurgeComponent(
+func (rs *FlowServerImpl) PurgeComponent(
 	ctx context.Context,
 	req *pb.PurgeComponentRequest,
 ) (*pb.PurgeComponentResponse, error) {
@@ -321,7 +321,7 @@ func (rs *RLAServerImpl) PurgeComponent(
 }
 
 // PatchComponent updates a single component's patchable fields.
-func (rs *RLAServerImpl) PatchComponent(
+func (rs *FlowServerImpl) PatchComponent(
 	ctx context.Context,
 	req *pb.PatchComponentRequest,
 ) (*pb.PatchComponentResponse, error) {
@@ -354,6 +354,9 @@ func (rs *RLAServerImpl) PatchComponent(
 	if req.RackId != nil {
 		rackID := protobuf.UUIDFrom(req.RackId)
 		if rackID != uuid.Nil {
+			if _, err := rs.inventoryManager.GetRackByID(ctx, rackID, false); err != nil {
+				return nil, fmt.Errorf("rack not found: %w", err)
+			}
 			existing.RackID = rackID
 		}
 	}
@@ -390,7 +393,7 @@ func (rs *RLAServerImpl) PatchComponent(
 // Returns:
 //   - *pb.GetComponentInfoResponse: Response containing component and optionally rack information
 //   - error: Any error that occurred during component or rack retrieval
-func (rs *RLAServerImpl) GetComponentInfoByID(
+func (rs *FlowServerImpl) GetComponentInfoByID(
 	ctx context.Context,
 	req *pb.GetComponentInfoByIDRequest,
 ) (*pb.GetComponentInfoResponse, error) {
@@ -432,7 +435,7 @@ func (rs *RLAServerImpl) GetComponentInfoByID(
 // Returns:
 //   - *pb.GetComponentInfoResponse: Response containing component and optionally rack information
 //   - error: Any error that occurred during component or rack retrieval
-func (rs *RLAServerImpl) GetComponentInfoBySerial(
+func (rs *FlowServerImpl) GetComponentInfoBySerial(
 	ctx context.Context,
 	req *pb.GetComponentInfoBySerialRequest,
 ) (*pb.GetComponentInfoResponse, error) {
@@ -464,7 +467,7 @@ func (rs *RLAServerImpl) GetComponentInfoBySerial(
 	}, nil
 }
 
-func (rs *RLAServerImpl) GetListOfRacks(
+func (rs *FlowServerImpl) GetListOfRacks(
 	ctx context.Context,
 	req *pb.GetListOfRacksRequest,
 ) (*pb.GetListOfRacksResponse, error) {
@@ -538,7 +541,7 @@ func (rs *RLAServerImpl) GetListOfRacks(
 	}, err
 }
 
-func (rs *RLAServerImpl) CreateNVLDomain(
+func (rs *FlowServerImpl) CreateNVLDomain(
 	ctx context.Context,
 	req *pb.CreateNVLDomainRequest,
 ) (*pb.CreateNVLDomainResponse, error) {
@@ -550,7 +553,7 @@ func (rs *RLAServerImpl) CreateNVLDomain(
 	return &pb.CreateNVLDomainResponse{Id: protobuf.UUIDTo(id)}, err
 }
 
-func (rs *RLAServerImpl) AttachRacksToNVLDomain(
+func (rs *FlowServerImpl) AttachRacksToNVLDomain(
 	ctx context.Context,
 	req *pb.AttachRacksToNVLDomainRequest,
 ) (*emptypb.Empty, error) {
@@ -577,7 +580,7 @@ func (rs *RLAServerImpl) AttachRacksToNVLDomain(
 	)
 }
 
-func (rs *RLAServerImpl) DetachRacksFromNVLDomain(
+func (rs *FlowServerImpl) DetachRacksFromNVLDomain(
 	ctx context.Context,
 	req *pb.DetachRacksFromNVLDomainRequest,
 ) (*emptypb.Empty, error) {
@@ -597,7 +600,7 @@ func (rs *RLAServerImpl) DetachRacksFromNVLDomain(
 	)
 }
 
-func (rs *RLAServerImpl) GetListOfNVLDomains(
+func (rs *FlowServerImpl) GetListOfNVLDomains(
 	ctx context.Context,
 	req *pb.GetListOfNVLDomainsRequest,
 ) (*pb.GetListOfNVLDomainsResponse, error) {
@@ -627,7 +630,7 @@ func (rs *RLAServerImpl) GetListOfNVLDomains(
 	}, err
 }
 
-func (rs *RLAServerImpl) GetRacksForNVLDomain(
+func (rs *FlowServerImpl) GetRacksForNVLDomain(
 	ctx context.Context,
 	req *pb.GetRacksForNVLDomainRequest,
 ) (*pb.GetRacksForNVLDomainResponse, error) {
@@ -650,7 +653,7 @@ func (rs *RLAServerImpl) GetRacksForNVLDomain(
 	return &pb.GetRacksForNVLDomainResponse{Racks: results}, err
 }
 
-func (rs *RLAServerImpl) PowerOnRack(
+func (rs *FlowServerImpl) PowerOnRack(
 	ctx context.Context,
 	req *pb.PowerOnRackRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -666,7 +669,7 @@ func (rs *RLAServerImpl) PowerOnRack(
 	)
 }
 
-func (rs *RLAServerImpl) PowerOffRack(
+func (rs *FlowServerImpl) PowerOffRack(
 	ctx context.Context,
 	req *pb.PowerOffRackRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -687,7 +690,7 @@ func (rs *RLAServerImpl) PowerOffRack(
 	)
 }
 
-func (rs *RLAServerImpl) PowerResetRack(
+func (rs *FlowServerImpl) PowerResetRack(
 	ctx context.Context,
 	req *pb.PowerResetRackRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -708,7 +711,7 @@ func (rs *RLAServerImpl) PowerResetRack(
 	)
 }
 
-func (rs *RLAServerImpl) BringUpRack(
+func (rs *FlowServerImpl) BringUpRack(
 	ctx context.Context,
 	req *pb.BringUpRackRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -757,7 +760,7 @@ func (rs *RLAServerImpl) BringUpRack(
 // the BringUp workflow with an ingestion-only rule. This registers expected
 // components with their respective component manager services without
 // performing power or firmware operations.
-func (rs *RLAServerImpl) IngestRack(
+func (rs *FlowServerImpl) IngestRack(
 	ctx context.Context,
 	req *pb.IngestRackRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -800,7 +803,7 @@ func (rs *RLAServerImpl) IngestRack(
 	}, nil
 }
 
-func (rs *RLAServerImpl) handlePowerControlTask(
+func (rs *FlowServerImpl) handlePowerControlTask(
 	ctx context.Context,
 	targetSpec *pb.OperationTargetSpec,
 	description string,
@@ -842,7 +845,7 @@ func (rs *RLAServerImpl) handlePowerControlTask(
 
 // convertTargetSpecToOperationRequest converts pb.OperationTargetSpec to internal operation.Request.
 // This is a simple translation without DB queries. Task Manager handles resolve + split.
-func (rs *RLAServerImpl) convertTargetSpecToOperationRequest(
+func (rs *FlowServerImpl) convertTargetSpecToOperationRequest(
 	targetSpec *pb.OperationTargetSpec,
 	description string,
 	info operations.Operation,
@@ -868,14 +871,15 @@ func (rs *RLAServerImpl) convertTargetSpecToOperationRequest(
 	}, nil
 }
 
-func (rs *RLAServerImpl) ListTasks(
+func (rs *FlowServerImpl) ListTasks(
 	ctx context.Context,
 	req *pb.ListTasksRequest,
 ) (*pb.ListTasksResponse, error) {
 	options := &taskcommon.TaskListOptions{
-		TaskType:   taskcommon.TaskTypeUnknown,
-		RackID:     protobuf.UUIDFrom(req.GetRackId()),
-		ActiveOnly: req.GetActiveOnly(),
+		TaskType:    taskcommon.TaskTypeUnknown,
+		RackID:      protobuf.UUIDFrom(req.GetRackId()),
+		ComponentID: protobuf.UUIDFrom(req.GetComponentId()),
+		ActiveOnly:  req.GetActiveOnly(),
 	}
 
 	pagination := protobuf.PaginationFrom(req.GetPagination())
@@ -896,7 +900,7 @@ func (rs *RLAServerImpl) ListTasks(
 	return &pb.ListTasksResponse{Tasks: results, Total: total}, nil
 }
 
-func (rs *RLAServerImpl) GetTasksByIDs(
+func (rs *FlowServerImpl) GetTasksByIDs(
 	ctx context.Context,
 	req *pb.GetTasksByIDsRequest,
 ) (*pb.GetTasksByIDsResponse, error) {
@@ -918,7 +922,7 @@ func (rs *RLAServerImpl) GetTasksByIDs(
 	return &pb.GetTasksByIDsResponse{Tasks: results}, nil
 }
 
-func (rs *RLAServerImpl) CancelTask(
+func (rs *FlowServerImpl) CancelTask(
 	ctx context.Context,
 	req *pb.CancelTaskRequest,
 ) (*pb.CancelTaskResponse, error) {
@@ -947,7 +951,7 @@ func (rs *RLAServerImpl) CancelTask(
 // Operation Rules API
 // ========================================
 
-func (rs *RLAServerImpl) CreateOperationRule(
+func (rs *FlowServerImpl) CreateOperationRule(
 	ctx context.Context,
 	req *pb.CreateOperationRuleRequest,
 ) (*pb.CreateOperationRuleResponse, error) {
@@ -984,7 +988,7 @@ func (rs *RLAServerImpl) CreateOperationRule(
 	}, nil
 }
 
-func (rs *RLAServerImpl) UpdateOperationRule(
+func (rs *FlowServerImpl) UpdateOperationRule(
 	ctx context.Context,
 	req *pb.UpdateOperationRuleRequest,
 ) (*emptypb.Empty, error) {
@@ -1022,7 +1026,7 @@ func (rs *RLAServerImpl) UpdateOperationRule(
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *RLAServerImpl) DeleteOperationRule(
+func (rs *FlowServerImpl) DeleteOperationRule(
 	ctx context.Context,
 	req *pb.DeleteOperationRuleRequest,
 ) (*emptypb.Empty, error) {
@@ -1039,7 +1043,7 @@ func (rs *RLAServerImpl) DeleteOperationRule(
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *RLAServerImpl) SetRuleAsDefault(
+func (rs *FlowServerImpl) SetRuleAsDefault(
 	ctx context.Context,
 	req *pb.SetRuleAsDefaultRequest,
 ) (*emptypb.Empty, error) {
@@ -1056,7 +1060,7 @@ func (rs *RLAServerImpl) SetRuleAsDefault(
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *RLAServerImpl) GetOperationRule(
+func (rs *FlowServerImpl) GetOperationRule(
 	ctx context.Context,
 	req *pb.GetOperationRuleRequest,
 ) (*pb.OperationRule, error) {
@@ -1074,7 +1078,7 @@ func (rs *RLAServerImpl) GetOperationRule(
 	return protobuf.OperationRuleTo(rule)
 }
 
-func (rs *RLAServerImpl) ListOperationRules(
+func (rs *FlowServerImpl) ListOperationRules(
 	ctx context.Context,
 	req *pb.ListOperationRulesRequest,
 ) (*pb.ListOperationRulesResponse, error) {
@@ -1123,7 +1127,7 @@ func (rs *RLAServerImpl) ListOperationRules(
 // Rack-Rule Associations API
 // ========================================
 
-func (rs *RLAServerImpl) AssociateRuleWithRack(
+func (rs *FlowServerImpl) AssociateRuleWithRack(
 	ctx context.Context,
 	req *pb.AssociateRuleWithRackRequest,
 ) (*emptypb.Empty, error) {
@@ -1146,7 +1150,7 @@ func (rs *RLAServerImpl) AssociateRuleWithRack(
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *RLAServerImpl) DisassociateRuleFromRack(
+func (rs *FlowServerImpl) DisassociateRuleFromRack(
 	ctx context.Context,
 	req *pb.DisassociateRuleFromRackRequest,
 ) (*emptypb.Empty, error) {
@@ -1169,7 +1173,7 @@ func (rs *RLAServerImpl) DisassociateRuleFromRack(
 	return &emptypb.Empty{}, nil
 }
 
-func (rs *RLAServerImpl) GetRackRuleAssociation(
+func (rs *FlowServerImpl) GetRackRuleAssociation(
 	ctx context.Context,
 	req *pb.GetRackRuleAssociationRequest,
 ) (*pb.GetRackRuleAssociationResponse, error) {
@@ -1201,7 +1205,7 @@ func (rs *RLAServerImpl) GetRackRuleAssociation(
 	}, nil
 }
 
-func (rs *RLAServerImpl) ListRackRuleAssociations(
+func (rs *FlowServerImpl) ListRackRuleAssociations(
 	ctx context.Context,
 	req *pb.ListRackRuleAssociationsRequest,
 ) (*pb.ListRackRuleAssociationsResponse, error) {
@@ -1228,7 +1232,7 @@ func (rs *RLAServerImpl) ListRackRuleAssociations(
 
 // UpgradeFirmware upgrades firmware for components.
 // It uses OperationTargetSpec to specify targets and creates a task via the Task framework.
-func (rs *RLAServerImpl) UpgradeFirmware(
+func (rs *FlowServerImpl) UpgradeFirmware(
 	ctx context.Context,
 	req *pb.UpgradeFirmwareRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -1246,6 +1250,7 @@ func (rs *RLAServerImpl) UpgradeFirmware(
 		Operation:     operations.FirmwareOperationUpgrade,
 		TargetVersion: req.GetTargetVersion(),
 		RuleID:        protobuf.UUIDStringFrom(req.GetRuleId()),
+		SubTargets:    req.GetSubTargets(),
 	}
 
 	// Parse optional time parameters for scheduled upgrade
@@ -1284,7 +1289,7 @@ func (rs *RLAServerImpl) UpgradeFirmware(
 // If target_spec is provided, it extracts components from the specified racks or components first,
 // then applies additional filters (name, manufacturer, model, component_types), pagination, and ordering.
 // If target_spec is not provided, it queries all components matching the filters.
-func (rs *RLAServerImpl) GetComponents(
+func (rs *FlowServerImpl) GetComponents(
 	ctx context.Context,
 	req *pb.GetComponentsRequest,
 ) (*pb.GetComponentsResponse, error) {
@@ -1328,14 +1333,18 @@ func (rs *RLAServerImpl) GetComponents(
 			case "model":
 				modelFilter = queryInfo
 			case "type":
-				// Convert string patterns to ComponentType enums
+				// Convert string patterns to ComponentType enums. Reject unknown
+				// type names rather than silently dropping them, which would
+				// otherwise turn a typo into "no type filter" and quietly
+				// broaden the result set.
 				if len(queryInfo.Patterns) > 0 {
 					componentTypes = make([]devicetypes.ComponentType, 0, len(queryInfo.Patterns))
 					for _, pattern := range queryInfo.Patterns {
 						ct := devicetypes.ComponentTypeFromString(pattern)
-						if ct != devicetypes.ComponentTypeUnknown {
-							componentTypes = append(componentTypes, ct)
+						if ct == devicetypes.ComponentTypeUnknown {
+							return nil, fmt.Errorf("unsupported component type filter: %s", pattern)
 						}
+						componentTypes = append(componentTypes, ct)
 					}
 				}
 			default:
@@ -1421,7 +1430,7 @@ func (rs *RLAServerImpl) GetComponents(
 //
 // If target_spec is provided, only drifts for the specified components are returned.
 // If target_spec is not provided, all drifts are returned.
-func (rs *RLAServerImpl) ValidateComponents(
+func (rs *FlowServerImpl) ValidateComponents(
 	ctx context.Context,
 	req *pb.ValidateComponentsRequest,
 ) (*pb.ValidateComponentsResponse, error) {
@@ -1465,14 +1474,17 @@ func (rs *RLAServerImpl) ValidateComponents(
 			case "model":
 				modelFilter = queryInfo
 			case "type":
-				// Convert string patterns to ComponentType enums
+				// See note on the matching block in GetComponents: reject
+				// unknown type names so that filtering by a typo doesn't
+				// silently expand the result set.
 				if len(queryInfo.Patterns) > 0 {
 					componentTypes = make([]devicetypes.ComponentType, 0, len(queryInfo.Patterns))
 					for _, pattern := range queryInfo.Patterns {
 						ct := devicetypes.ComponentTypeFromString(pattern)
-						if ct != devicetypes.ComponentTypeUnknown {
-							componentTypes = append(componentTypes, ct)
+						if ct == devicetypes.ComponentTypeUnknown {
+							return nil, fmt.Errorf("unsupported component type filter: %s", pattern)
 						}
+						componentTypes = append(componentTypes, ct)
 					}
 				}
 			default:
@@ -1531,7 +1543,7 @@ func (rs *RLAServerImpl) ValidateComponents(
 
 	// Convert store drifts to proto response
 	var diffs []*pb.ComponentDiff
-	var missingCount, unexpectedCount, driftCount, matchCount int32
+	var missingCount, unexpectedCount, mismatchCount, matchCount int32
 
 	for _, sd := range storeDrifts {
 		var compUUID *pb.UUID
@@ -1567,18 +1579,18 @@ func (rs *RLAServerImpl) ValidateComponents(
 				})
 			}
 			diffs = append(diffs, &pb.ComponentDiff{
-				Type:        pb.DiffType_DIFF_TYPE_DRIFT,
+				Type:        pb.DiffType_DIFF_TYPE_MISMATCH,
 				Id:          compUUID,
 				ComponentId: componentID,
 				FieldDiffs:  fieldDiffs,
 			})
-			driftCount++
+			mismatchCount++
 		}
 	}
 
-	// Calculate match count: if we have targeted components, matches = targeted - drifts
+	// Calculate match count: if we have targeted components, matches = targeted - mismatches
 	if targetSpec != nil {
-		matchCount = filteredComponentCount - missingCount - driftCount
+		matchCount = filteredComponentCount - missingCount - mismatchCount
 		if matchCount < 0 {
 			matchCount = 0
 		}
@@ -1601,14 +1613,14 @@ func (rs *RLAServerImpl) ValidateComponents(
 		TotalDiffs:      totalDiffs,
 		MissingCount:    missingCount,
 		UnexpectedCount: unexpectedCount,
-		DriftCount:      driftCount,
+		MismatchCount:   mismatchCount,
 		MatchCount:      matchCount,
 	}, nil
 }
 
 // applyComponentFilters applies filters to a list of components in memory.
 // It filters by name, manufacturer, model, and component types.
-func (rs *RLAServerImpl) applyComponentFilters(
+func (rs *FlowServerImpl) applyComponentFilters(
 	components []*component.Component,
 	info dbquery.StringQueryInfo,
 	manufacturerFilter *dbquery.StringQueryInfo,
@@ -1658,52 +1670,43 @@ func (rs *RLAServerImpl) applyComponentFilters(
 }
 
 // matchesStringQuery checks if a string matches the StringQueryInfo criteria.
-func (rs *RLAServerImpl) matchesStringQuery(value string, query dbquery.StringQueryInfo) bool {
+// With UseOR == true the value matches if any pattern matches; with UseOR ==
+// false (AND) the value must match every pattern.
+func (rs *FlowServerImpl) matchesStringQuery(value string, query dbquery.StringQueryInfo) bool {
 	if len(query.Patterns) == 0 {
 		return true
 	}
 
-	if query.IsWildcard {
-		// Wildcard matching: check if any pattern matches (using LIKE semantics)
-		for _, pattern := range query.Patterns {
-			normalizedPattern := pattern
-			if len(normalizedPattern) > 0 && normalizedPattern[0] != '%' && normalizedPattern[len(normalizedPattern)-1] != '%' {
-				normalizedPattern = "%" + normalizedPattern + "%"
-			}
-			if rs.matchesWildcard(value, normalizedPattern) {
-				if !query.UseOR {
-					return true
-				}
-			} else {
-				if query.UseOR {
-					continue
-				} else {
-					return false
-				}
-			}
+	matches := func(pattern string) bool {
+		if !query.IsWildcard {
+			return value == pattern
 		}
-		return !query.UseOR
-	} else {
-		// Exact matching: check if value matches any pattern
-		for _, pattern := range query.Patterns {
-			if value == pattern {
-				if !query.UseOR {
-					return true
-				}
-			} else {
-				if query.UseOR {
-					continue
-				} else {
-					return false
-				}
-			}
+		normalizedPattern := pattern
+		if len(normalizedPattern) > 0 && normalizedPattern[0] != '%' && normalizedPattern[len(normalizedPattern)-1] != '%' {
+			normalizedPattern = "%" + normalizedPattern + "%"
 		}
-		return !query.UseOR
+		return rs.matchesWildcard(value, normalizedPattern)
 	}
+
+	if query.UseOR {
+		for _, pattern := range query.Patterns {
+			if matches(pattern) {
+				return true
+			}
+		}
+		return false
+	}
+
+	for _, pattern := range query.Patterns {
+		if !matches(pattern) {
+			return false
+		}
+	}
+	return true
 }
 
 // matchesWildcard checks if a string matches a wildcard pattern (simple % matching).
-func (rs *RLAServerImpl) matchesWildcard(value, pattern string) bool {
+func (rs *FlowServerImpl) matchesWildcard(value, pattern string) bool {
 	// Simple wildcard matching: convert pattern to regex-like matching
 	// For now, use simple contains check for %pattern% or startsWith/endsWith
 	if len(pattern) == 0 {
@@ -1743,7 +1746,7 @@ func (rs *RLAServerImpl) matchesWildcard(value, pattern string) bool {
 }
 
 // sortComponents sorts components according to the OrderBy specification.
-func (rs *RLAServerImpl) sortComponents(components []*component.Component, orderBy *dbquery.OrderBy) error {
+func (rs *FlowServerImpl) sortComponents(components []*component.Component, orderBy *dbquery.OrderBy) error {
 	if orderBy == nil {
 		return nil
 	}
@@ -1820,7 +1823,7 @@ func extractComponentsByTypes(r *rack.Rack, compTypes []devicetypes.ComponentTyp
 // Validation errors (malformed UUIDs, empty names, unknown types) are
 // surfaced identically to the submission path rather than deferring to an
 // inventory-lookup failure.
-func (rs *RLAServerImpl) extractComponentsFromTargetSpec(
+func (rs *FlowServerImpl) extractComponentsFromTargetSpec(
 	ctx context.Context,
 	targetSpec *pb.OperationTargetSpec,
 ) ([]*component.Component, error) {
@@ -1852,7 +1855,7 @@ func (rs *RLAServerImpl) extractComponentsFromTargetSpec(
 
 // resolveRackTarget fetches the rack from inventory and returns its components,
 // filtered by rt.ComponentTypes (empty = all types).
-func (rs *RLAServerImpl) resolveRackTarget(
+func (rs *FlowServerImpl) resolveRackTarget(
 	ctx context.Context,
 	rt operation.RackTarget,
 ) ([]*component.Component, error) {
@@ -1874,7 +1877,7 @@ func (rs *RLAServerImpl) resolveRackTarget(
 // fetchComponentTarget fetches a single component from inventory by its
 // internal UUID or by external ID + type. The type in ct.External is
 // guaranteed non-unknown by protobuf.ComponentTargetFrom.
-func (rs *RLAServerImpl) fetchComponentTarget(
+func (rs *FlowServerImpl) fetchComponentTarget(
 	ctx context.Context,
 	ct operation.ComponentTarget,
 ) ([]*component.Component, error) {

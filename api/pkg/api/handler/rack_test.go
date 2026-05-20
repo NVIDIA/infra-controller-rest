@@ -92,7 +92,7 @@ func testRackSetupTestData(t *testing.T, dbSession *cdb.Session, org string) (*c
 		Org:                      org,
 		InfrastructureProviderID: ip.ID,
 		Status:                   cdbm.SiteStatusRegistered,
-		Config:                   &cdbm.SiteConfig{RackLevelAdministration: true},
+		Config:                   &cdbm.SiteConfig{Flow: true},
 	}
 	_, err = dbSession.DB.NewInsert().Model(site).Exec(ctx)
 	assert.Nil(t, err)
@@ -163,7 +163,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -171,7 +171,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	// Create provider user
@@ -223,7 +223,7 @@ func TestGetRackHandler_Handle(t *testing.T) {
 			user:   providerUser,
 			rackID: rackID,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			expectedStatus: http.StatusPreconditionFailed,
 			wantErr:        true,
@@ -345,7 +345,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -353,7 +353,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	// Create provider user
@@ -512,7 +512,7 @@ func TestGetAllRackHandler_Handle(t *testing.T) {
 			reqOrg: org,
 			user:   providerUser,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			mockResponse:   nil,
 			expectedStatus: http.StatusPreconditionFailed,
@@ -644,7 +644,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -652,7 +652,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	// Create provider user
@@ -691,7 +691,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      5,
 			},
 			expectedStatus: http.StatusOK,
@@ -715,7 +715,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 				TotalDiffs:      1,
 				MissingCount:    1,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      4,
 			},
 			expectedStatus: http.StatusOK,
@@ -727,7 +727,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 			user:   providerUser,
 			rackID: rackID,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			mockResponse:   nil,
 			expectedStatus: http.StatusPreconditionFailed,
@@ -782,7 +782,7 @@ func TestValidateRackHandler_Handle(t *testing.T) {
 					resp.TotalDiffs = tt.mockResponse.TotalDiffs
 					resp.MissingCount = tt.mockResponse.MissingCount
 					resp.UnexpectedCount = tt.mockResponse.UnexpectedCount
-					resp.DriftCount = tt.mockResponse.DriftCount
+					resp.MismatchCount = tt.mockResponse.MismatchCount
 					resp.MatchCount = tt.mockResponse.MatchCount
 				}).Return(nil)
 			} else {
@@ -849,7 +849,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 	_, site, _ := testRackSetupTestData(t, dbSession, org)
 
 	// Create a site without Flow enabled
-	siteNoRLA := &cdbm.Site{
+	siteNoFlow := &cdbm.Site{
 		ID:                       uuid.New(),
 		Name:                     "test-site-no-flow",
 		Org:                      org,
@@ -857,7 +857,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 		Status:                   cdbm.SiteStatusRegistered,
 		Config:                   &cdbm.SiteConfig{},
 	}
-	_, err := dbSession.DB.NewInsert().Model(siteNoRLA).Exec(context.Background())
+	_, err := dbSession.DB.NewInsert().Model(siteNoFlow).Exec(context.Background())
 	assert.Nil(t, err)
 
 	providerUser := testRackBuildUser(t, dbSession, "provider-user-validate-racks", org, []string{authz.ProviderAdminRole})
@@ -888,7 +888,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      10,
 			},
 			expectedStatus: http.StatusOK,
@@ -906,7 +906,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 				TotalDiffs:      0,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      0,
+				MismatchCount:   0,
 				MatchCount:      5,
 			},
 			expectedStatus: http.StatusOK,
@@ -922,7 +922,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 			mockResponse: &flowv1.ValidateComponentsResponse{
 				Diffs: []*flowv1.ComponentDiff{
 					{
-						Type:        flowv1.DiffType_DIFF_TYPE_DRIFT,
+						Type:        flowv1.DiffType_DIFF_TYPE_MISMATCH,
 						ComponentId: "comp-1",
 						FieldDiffs: []*flowv1.FieldDiff{
 							{
@@ -936,7 +936,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 				TotalDiffs:      1,
 				MissingCount:    0,
 				UnexpectedCount: 0,
-				DriftCount:      1,
+				MismatchCount:   1,
 				MatchCount:      7,
 			},
 			expectedStatus: http.StatusOK,
@@ -962,7 +962,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 			reqOrg: org,
 			user:   providerUser,
 			queryParams: map[string]string{
-				"siteId": siteNoRLA.ID.String(),
+				"siteId": siteNoFlow.ID.String(),
 			},
 			expectedStatus: http.StatusPreconditionFailed,
 		},
@@ -1005,7 +1005,7 @@ func TestValidateRacksHandler_Handle(t *testing.T) {
 					resp.TotalDiffs = tt.mockResponse.TotalDiffs
 					resp.MissingCount = tt.mockResponse.MissingCount
 					resp.UnexpectedCount = tt.mockResponse.UnexpectedCount
-					resp.DriftCount = tt.mockResponse.DriftCount
+					resp.MismatchCount = tt.mockResponse.MismatchCount
 					resp.MatchCount = tt.mockResponse.MatchCount
 				}).Return(nil)
 			} else {

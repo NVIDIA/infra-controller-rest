@@ -385,8 +385,8 @@ const file_fmds_proto_rawDesc = "" +
 	"\n" +
 	"\b_ib_guid2Z\n" +
 	"\x11FmdsConfigService\x12E\n" +
-	"\fUpdateConfig\x12\x19.fmds.UpdateConfigRequest\x1a\x1a.fmds.UpdateConfigResponseB\x87\x01\n" +
-	"\bcom.fmdsB\tFmdsProtoP\x01Z@github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03FXX\xaa\x02\x04Fmds\xca\x02\x04Fmds\xe2\x02\x10Fmds\\GPBMetadata\xea\x02\x04Fmdsb\x06proto3"
+	"\fUpdateConfig\x12\x19.fmds.UpdateConfigRequest\x1a\x1a.fmds.UpdateConfigResponseB\x88\x01\n" +
+	"\bcom.fmdsB\tFmdsProtoP\x01ZAgithub.com/NVIDIA/infra-controller-rest/flow/internal/nicoapigrpc\xa2\x02\x03FXX\xaa\x02\x04Fmds\xca\x02\x04Fmds\xe2\x02\x10Fmds\\GPBMetadata\xea\x02\x04Fmdsb\x06proto3"
 
 var (
 	file_fmds_proto_rawDescOnce sync.Once

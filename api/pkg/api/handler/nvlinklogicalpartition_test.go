@@ -1659,6 +1659,23 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 	nvllp4 := testBuildNVLinkLogicalPartition(t, dbSession, "test-nvllp-4", cdb.GetStrPtr("Test NVLink Logical Partition"), tnOrg4, site2, tn4, cdb.GetStrPtr(cdbm.NVLinkLogicalPartitionStatusReady), false)
 	assert.NotNil(t, nvllp4)
 
+	ipuNvDel := testFabricBuildUser(t, dbSession, uuid.NewString(), []string{ipOrg1}, []string{authz.ProviderAdminRole})
+	alNvDel := testInstanceSiteBuildAllocation(t, dbSession, site2, tn4, "test-allocation-nvllp-delete", ipuNvDel)
+	assert.NotNil(t, alNvDel)
+	istNvDel := testInstanceBuildInstanceType(t, dbSession, ip1, "test-inst-type-nvllp-delete", site2, cdbm.InstanceStatusReady)
+	assert.NotNil(t, istNvDel)
+	_ = testInstanceSiteBuildAllocationContraints(t, dbSession, alNvDel, cdbm.AllocationResourceTypeInstanceType, istNvDel.ID, cdbm.AllocationConstraintTypeReserved, 5, ipuNvDel)
+	mcNvDel := testInstanceBuildMachine(t, dbSession, ip1.ID, site2.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcNvDel)
+	_ = testInstanceBuildMachineInstanceType(t, dbSession, mcNvDel, istNvDel)
+	osNvDel := testInstanceBuildOperatingSystem(t, dbSession, "test-os-nvllp-delete", tn4, cdbm.OperatingSystemTypeImage, false, nil, false, cdbm.OperatingSystemStatusReady, tnu4)
+	assert.NotNil(t, osNvDel)
+	vpcNvDel := testInstanceBuildVPC(t, dbSession, "test-vpc-nvllp-delete", ip1, tn4, site2, cdb.GetUUIDPtr(uuid.New()), nil, cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), nil, cdbm.VpcStatusReady, tnu4)
+	assert.NotNil(t, vpcNvDel)
+	instNvDel := testInstanceBuildInstance(t, dbSession, "test-inst-nvllp-delete", tn4.ID, ip1.ID, site2.ID, &istNvDel.ID, vpcNvDel.ID, cdb.GetStrPtr(mcNvDel.ID), &osNvDel.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instNvDel)
+	_ = testInstanceBuildInstanceNVLinkInterface(t, dbSession, site2.ID, instNvDel.ID, nvllp4.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusReady)
+
 	// OTEL Spanner configuration
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
@@ -1725,14 +1742,15 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 		"DeleteNVLinkLogicalPartition", mock.Anything).Return(wrun, nil)
 
 	tests := []struct {
-		fields             fields
-		name               string
-		reqOrgName         string
-		user               *cdbm.User
-		nvllpID            string
-		expectedErr        bool
-		expectedStatus     int
-		verifyChildSpanner bool
+		fields               fields
+		name                 string
+		reqOrgName           string
+		user                 *cdbm.User
+		nvllpID              string
+		expectedErr          bool
+		expectedStatus       int
+		verifyChildSpanner   bool
+		expectedErrorMessage string
 	}{
 		{
 			fields: fields{
@@ -1825,6 +1843,21 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 				scp:       scp,
 				cfg:       cfg,
 			},
+			name:                 "error when active Instances are associated via NVLink Interfaces",
+			reqOrgName:           tnOrg4,
+			user:                 tnu4,
+			nvllpID:              nvllp4.ID.String(),
+			expectedErr:          true,
+			expectedStatus:       http.StatusBadRequest,
+			expectedErrorMessage: "1 active Instances are associated with this NVLink Logical Partition, unable to delete",
+		},
+		{
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
 			name:               "test NVLinkLogical Partition delete API endpoint success case",
 			reqOrgName:         tnOrg1,
 			user:               tnu1,
@@ -1882,6 +1915,15 @@ func TestNVLinkLogicalPartitionHandler_Delete(t *testing.T) {
 
 			assert.Equal(t, tc.expectedStatus, rec.Code)
 			assert.Equal(t, tc.expectedErr, rec.Code != http.StatusAccepted)
+
+			if tc.expectedErrorMessage != "" {
+				require.NotEmpty(t, rec.Body.Bytes())
+				var payload struct {
+					Message string `json:"message"`
+				}
+				require.NoError(t, json.Unmarshal(rec.Body.Bytes(), &payload))
+				require.Equal(t, tc.expectedErrorMessage, payload.Message)
+			}
 
 			if !tc.expectedErr {
 				// Check that NVLinkLogical Partition status is set to deleting

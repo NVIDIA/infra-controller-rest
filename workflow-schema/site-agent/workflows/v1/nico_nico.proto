@@ -17,7 +17,7 @@
 
 syntax = "proto3";
 
-package nico;
+package forge;
 
 // Don't forget to update build.rs to add the Serialize annotation for any new
 // message types!
@@ -37,7 +37,7 @@ import "site_explorer_nico.proto";
 
 option go_package = "github.com/NVIDIA/infra-controller-rest/workflow-schema/proto";
 
-service NICo {
+service Forge {
   // What version of NICo is this service running? Matches `--version` command line.
   rpc Version(VersionRequest) returns (BuildInfo);
 
@@ -1651,6 +1651,11 @@ enum TenantState {
 
   // Something Wrong happened at nico. Check logs for more info.
   INVALID = 9;
+
+  // The instance is currently getting repaired on the machine. 
+  // This is a temporary state that is used to indicate that the instance is being repaired on the machine.
+  // The instance will return to the READY state when the repair is complete.
+  REPAIRING = 10;
 }
 
 // Describe the desired configuration of an IBPartition

@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Package conflict provides data-driven task conflict detection for RLA.
+// Package conflict provides data-driven task conflict detection for Flow.
 //
 // The core abstraction is Rule, a declarative struct that defines which
 // operation pairs cannot coexist and at what scope.
@@ -40,7 +40,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// builtinRule is the code-defined selective conflict policy for RLA.
+// builtinRule is the code-defined selective conflict policy for Flow.
 // Only explicitly listed operation pairs conflict; everything else may coexist.
 //
 // All active tasks passed to Conflicts() are already pre-filtered to the same
@@ -51,7 +51,7 @@ import (
 // ComponentType assignment rationale:
 //   - PowerShelf power ops have RequireComponentOverlap=false (rack-level):
 //     cutting power to a shelf affects all components regardless of UUIDs.
-//   - Compute / NVLSwitch power and firmware ops use
+//   - Compute / NVSwitch power and firmware ops use
 //     RequireComponentOverlap=true: isolated to their targeted components.
 //   - BringUp has RequireComponentOverlap=false (rack-level): comprehensive.
 //   - ComponentTypeUnknown (zero value) acts as a wildcard — matches any
@@ -96,15 +96,15 @@ var builtinRule = &Rule{ //nolint
 			},
 			RequireComponentOverlap: true,
 		},
-		// NVLSwitch power ops block each other on overlapping components.
+		// NVSwitch power ops block each other on overlapping components.
 		{
 			A: OperationSpec{
 				OperationType: string(taskcommon.TaskTypePowerControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			B: OperationSpec{
 				OperationType: string(taskcommon.TaskTypePowerControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			RequireComponentOverlap: true,
 		},
@@ -122,17 +122,17 @@ var builtinRule = &Rule{ //nolint
 			},
 			RequireComponentOverlap: true,
 		},
-		// NVLSwitch power ops block firmware upgrades on overlapping
-		// NVLSwitch components.
+		// NVSwitch power ops block firmware upgrades on overlapping
+		// NVSwitch components.
 		{
 			A: OperationSpec{
 				OperationType: string(taskcommon.TaskTypePowerControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			B: OperationSpec{
 				OperationType: string(
 					taskcommon.TaskTypeFirmwareControl),
-				ComponentType: devicetypes.ComponentTypeNVLSwitch,
+				ComponentType: devicetypes.ComponentTypeNVSwitch,
 			},
 			RequireComponentOverlap: true,
 		},

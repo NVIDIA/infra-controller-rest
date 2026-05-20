@@ -141,9 +141,9 @@ func TestPowerControlWorkflowWithBatching(t *testing.T) {
 			newTestComponent(uuid.New(), "compute-3", "ext-compute-3", devicetypes.ComponentTypeCompute),
 			newTestComponent(uuid.New(), "compute-4", "ext-compute-4", devicetypes.ComponentTypeCompute),
 			// 3 switches
-			newTestComponent(uuid.New(), "switch-1", "ext-switch-1", devicetypes.ComponentTypeNVLSwitch),
-			newTestComponent(uuid.New(), "switch-2", "ext-switch-2", devicetypes.ComponentTypeNVLSwitch),
-			newTestComponent(uuid.New(), "switch-3", "ext-switch-3", devicetypes.ComponentTypeNVLSwitch),
+			newTestComponent(uuid.New(), "switch-1", "ext-switch-1", devicetypes.ComponentTypeNVSwitch),
+			newTestComponent(uuid.New(), "switch-2", "ext-switch-2", devicetypes.ComponentTypeNVSwitch),
+			newTestComponent(uuid.New(), "switch-3", "ext-switch-3", devicetypes.ComponentTypeNVSwitch),
 		}
 
 		// Define rule with different max_parallel for each type, same stage
@@ -157,7 +157,7 @@ func TestPowerControlWorkflowWithBatching(t *testing.T) {
 					MainOperation: operationrules.ActionConfig{Name: operationrules.ActionPowerControl},
 				},
 				{
-					ComponentType: devicetypes.ComponentTypeNVLSwitch,
+					ComponentType: devicetypes.ComponentTypeNVSwitch,
 					Stage:         1,
 					MaxParallel:   3, // Switch: 3 at a time (all at once)
 					MainOperation: operationrules.ActionConfig{Name: operationrules.ActionPowerControl},

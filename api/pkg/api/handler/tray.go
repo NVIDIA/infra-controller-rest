@@ -144,9 +144,9 @@ func (gth GetTrayHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get tray ID from URL param
@@ -243,7 +243,7 @@ func NewGetAllTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param siteId query string true "ID of the Site"
 // @Param rackId query string false "Filter by Rack ID"
 // @Param rackName query string false "Filter by Rack name"
-// @Param type query string false "Filter by tray type (Compute, NVLSwitch, PowerShelf)"
+// @Param type query string false "Filter by tray type (Compute, NVSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by component ID (use repeated params for multiple values)"
 // @Param id query string false "Filter by tray UUID (use repeated params for multiple values)"
 // @Param orderBy query string false "Order by field (e.g. name_ASC, manufacturer_DESC)"
@@ -325,9 +325,9 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Validate pagination request (orderBy, pageNumber, pageSize)
@@ -531,9 +531,9 @@ func (vth ValidateTrayHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get the temporal client for the site
@@ -636,7 +636,7 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param rackName query string false "Scope to a specific Rack by name (mutually exclusive with rackId)"
 // @Param name query string false "Filter trays by name"
 // @Param manufacturer query string false "Filter trays by manufacturer"
-// @Param type query string false "Filter trays by type (Compute, NVLSwitch, PowerShelf)"
+// @Param type query string false "Filter trays by type (Compute, NVSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)"
 // @Success 200 {object} model.APIRackValidationResult
 // @Router /v2/org/{org}/nico/tray/validation [get]
@@ -709,9 +709,9 @@ func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 		siteConfig = site.Config
 	}
 
-	if !siteConfig.RackLevelAdministration {
-		logger.Warn().Msg("site does not have Rack Level Administration enabled")
-		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have Rack Level Administration enabled", nil)
+	if !siteConfig.Flow {
+		logger.Warn().Msg("site does not have NICo Flow enabled")
+		return cutil.NewAPIErrorResponse(c, http.StatusPreconditionFailed, "Site does not have NICo Flow enabled", nil)
 	}
 
 	// Get the temporal client for the site
@@ -1144,7 +1144,7 @@ func (futh UpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	}
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
-		fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
+		apiRequest.Targets, fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
 	if err != nil {
 		return err
 	}
@@ -1259,7 +1259,7 @@ func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	targetSpec := request.Filter.ToTargetSpec()
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
-		fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
+		request.Targets, fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
 	if err != nil {
 		return err
 	}

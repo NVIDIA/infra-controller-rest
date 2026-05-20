@@ -1,6 +1,6 @@
 # Operation Rules Guide
 
-Operation rules define how RLA executes power control, firmware, ingestion, and
+Operation rules define how Flow executes power control, firmware, ingestion, and
 bring-up operations. Each rule specifies a sequence of steps that determine
 component ordering, parallelism, verification, and retry behavior.
 
@@ -21,7 +21,7 @@ component ordering, parallelism, verification, and retry behavior.
 ### Rules and Operations
 
 Each rule is bound to a single **operation** (e.g., `power_on`, `power_off`).
-When an operation is triggered, RLA resolves the applicable rule for the target
+When an operation is triggered, Flow resolves the applicable rule for the target
 rack and executes it.
 
 ### Steps and Stages
@@ -32,9 +32,9 @@ Within a stage, all steps run in parallel.
 
 ```
 Stage 1: [powershelf step]
-Stage 2: [nvlswitch step]
+Stage 2: [nvswitch step]
 Stage 3: [compute step]        ← stages are sequential
-         [nvlswitch step]      ← steps within a stage are parallel
+         [nvswitch step]      ← steps within a stage are parallel
 ```
 
 ### Action Sequences
@@ -74,7 +74,7 @@ batch file.
 
 | Field           | Type     | Required | Description |
 |-----------------|----------|----------|-------------|
-| `component_type`| string   | yes      | Component this step targets: `"compute"`, `"nvlswitch"`, `"powershelf"` |
+| `component_type`| string   | yes      | Component this step targets: `"compute"`, `"nvswitch"`, `"powershelf"` |
 | `stage`         | integer  | yes      | Execution order. Steps with the same stage run in parallel. Must be ≥ 1 |
 | `max_parallel`  | integer  | yes      | Max concurrent components. `0` = unlimited, `1` = sequential |
 | `timeout`       | duration | no       | Timeout for the entire child workflow (pre + main + post). E.g. `"10m"` |
@@ -232,7 +232,7 @@ component IDs).
   timeout: 3m
   poll_interval: 10s
   parameters:
-    component_types: ["compute", "nvlswitch"]
+    component_types: ["compute", "nvswitch"]
 
 # Strict mode (every individual component must respond):
 - name: VerifyReachability
@@ -316,7 +316,7 @@ timeout and the component `Target` to call the `InjectExpectation` activity.
 
 ### Graceful power on
 
-Powers components in dependency order (powershelf → nvlswitch → compute) and
+Powers components in dependency order (powershelf → nvswitch → compute) and
 verifies status at each stage before proceeding.
 
 ```json
@@ -346,7 +346,7 @@ verifies status at each stage before proceeding.
           "name": "VerifyReachability",
           "timeout": "3m",
           "poll_interval": "10s",
-          "parameters": { "component_types": ["compute", "nvlswitch"] }
+          "parameters": { "component_types": ["compute", "nvswitch"] }
         },
         {
           "name": "Sleep",
@@ -355,7 +355,7 @@ verifies status at each stage before proceeding.
       ]
     },
     {
-      "component_type": "nvlswitch",
+      "component_type": "nvswitch",
       "stage": 2,
       "max_parallel": 4,
       "timeout": "15m",
@@ -404,7 +404,7 @@ verifies status at each stage before proceeding.
 
 ### Graceful power off
 
-Reverse dependency order (compute → nvlswitch → powershelf). A `Sleep` in the
+Reverse dependency order (compute → nvswitch → powershelf). A `Sleep` in the
 powershelf `pre_operation` allows downstream components to finish shutting down
 before cutting power.
 
@@ -433,7 +433,7 @@ before cutting power.
       ]
     },
     {
-      "component_type": "nvlswitch",
+      "component_type": "nvswitch",
       "stage": 2,
       "max_parallel": 4,
       "timeout": "15m",
@@ -509,7 +509,7 @@ first; a dedicated final stage (4) verifies all component types simultaneously.
       ]
     },
     {
-      "component_type": "nvlswitch",
+      "component_type": "nvswitch",
       "stage": 2,
       "max_parallel": 0,
       "timeout": "15m",
@@ -556,7 +556,7 @@ first; a dedicated final stage (4) verifies all component types simultaneously.
       }
     },
     {
-      "component_type": "nvlswitch",
+      "component_type": "nvswitch",
       "stage": 4,
       "max_parallel": 0,
       "timeout": "2m",
@@ -618,7 +618,7 @@ The `IngestRack` gRPC API triggers this rule automatically.
       "main_operation": { "name": "InjectExpectation" }
     },
     {
-      "component_type": "nvlswitch",
+      "component_type": "nvswitch",
       "stage": 1,
       "max_parallel": 0,
       "timeout": "10m",
@@ -653,7 +653,7 @@ uses this as its default rule.
       "main_operation": { "name": "InjectExpectation" }
     },
     {
-      "component_type": "nvlswitch",
+      "component_type": "nvswitch",
       "stage": 1,
       "max_parallel": 0,
       "timeout": "10m",
@@ -753,7 +753,7 @@ parent waits for all of them to finish before advancing.
 ```
 Stage N:
   ┌─────────────────────────┐  ┌─────────────────────────┐
-  │ child: powershelf step  │  │ child: nvlswitch step   │  ← in parallel
+  │ child: powershelf step  │  │ child: nvswitch step   │  ← in parallel
   └─────────────────────────┘  └─────────────────────────┘
            both must complete before Stage N+1 begins
 ```
@@ -830,7 +830,7 @@ remembering which types have already become reachable across iterations.
 
 `VerifyReachability` needs to check component types other than the one the
 current step targets (e.g., a powershelf step checking whether compute and
-nvlswitch are reachable). The parent workflow passes the full
+nvswitch are reachable). The parent workflow passes the full
 `map[ComponentType]Target` to every child workflow, which in turn passes it to
 every action executor. `VerifyReachability` uses this map to probe the correct
 targets regardless of the step's own component type.
@@ -849,7 +849,7 @@ PowerControl workflow (parent)
     ├─ Stage 1 ──────────────────────────────────────────┐
     │   ├─ child: GenericComponentStepWorkflow (powershelf)│
     │   │     pre_operation → main_operation → post_op    │ parallel
-    │   └─ child: GenericComponentStepWorkflow (nvlswitch) │
+    │   └─ child: GenericComponentStepWorkflow (nvswitch) │
     │         pre_operation → main_operation → post_op    │
     │                                                    ◄┘ (wait all)
     │
@@ -868,7 +868,7 @@ UpdateTaskStatus (completed / failed)
 ### Create a single rule
 
 ```bash
-rla rule create \
+flow rule create \
   --name "Graceful Power On" \
   --description "Power-on with verification" \
   --operation-type power_control \
@@ -881,26 +881,26 @@ rla rule create \
 
 ```bash
 # Create (skip rules that already exist by name)
-rla rule create --from-yaml examples/operation-rules-example.yaml
+flow rule create --from-yaml examples/operation-rules-example.yaml
 
 # Create or overwrite existing rules
-rla rule create --from-yaml examples/operation-rules-example.yaml --overwrite
+flow rule create --from-yaml examples/operation-rules-example.yaml --overwrite
 
 # Validate without writing to the database
-rla rule create --from-yaml examples/operation-rules-example.yaml --dry-run
+flow rule create --from-yaml examples/operation-rules-example.yaml --dry-run
 ```
 
 ### Manage rules
 
 ```bash
 # List all rules
-rla rule list
+flow rule list
 
 # Set a rule as the default for its operation
-rla rule set-default --id <rule-id>
+flow rule set-default --id <rule-id>
 
 # Associate a rule with a specific rack
-rla rule associate --rack-id R1 --rule-id <rule-id>
+flow rule associate --rack-id R1 --rule-id <rule-id>
 ```
 
 ### YAML batch file format
@@ -936,7 +936,7 @@ The file `examples/operation-rules-example.yaml` is the canonical loadable refer
 covering all built-in rule patterns. Load it with:
 
 ```bash
-rla rule create --from-yaml examples/operation-rules-example.yaml
+flow rule create --from-yaml examples/operation-rules-example.yaml
 ```
 
 ```yaml
@@ -977,14 +977,14 @@ rules:
             timeout: 3m
             poll_interval: 10s
             parameters:
-              component_types: ["compute", "nvlswitch"]
+              component_types: ["compute", "nvswitch"]
 
           - name: Sleep
             parameters:
               duration: 30s
 
       # Stage 2: NVL switches (parallel batches)
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 4
         timeout: 15m
@@ -1057,7 +1057,7 @@ rules:
               duration: 10s
 
       # Stage 2: NVL switches
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 4
         timeout: 15m
@@ -1134,7 +1134,7 @@ rules:
               duration: 30s
 
       # Stage 2: NVL switches (no verification)
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 0
         timeout: 15m
@@ -1186,7 +1186,7 @@ rules:
           parameters:
             expected_status: "on"
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 4
         max_parallel: 0
         timeout: 2m
@@ -1242,7 +1242,7 @@ rules:
               duration: 10s
 
       # Stage 2: NVL switches (no verification)
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 0
         timeout: 15m
@@ -1294,7 +1294,7 @@ rules:
           parameters:
             expected_status: "off"
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 4
         max_parallel: 0
         timeout: 2m
@@ -1356,7 +1356,7 @@ rules:
             parameters:
               expected_status: "off"
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 4
         timeout: 15m
@@ -1424,13 +1424,13 @@ rules:
             timeout: 3m
             poll_interval: 10s
             parameters:
-              component_types: ["compute", "nvlswitch"]
+              component_types: ["compute", "nvswitch"]
 
           - name: Sleep
             parameters:
               duration: 30s
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 5
         max_parallel: 4
         timeout: 15m
@@ -1476,7 +1476,7 @@ rules:
   # Firmware Control Operations
   # ===========================================
   # Stage 1: PowerShelf firmware
-  # Stage 2: NVLSwitch + Compute firmware (parallel)
+  # Stage 2: NVSwitch + Compute firmware (parallel)
   # Stage 3: Compute power recycle to activate new firmware
 
   - name: "Default Firmware Upgrade"
@@ -1498,7 +1498,7 @@ rules:
             poll_interval: 2m
             poll_timeout: 30m
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 0
         timeout: 30m
@@ -1571,7 +1571,7 @@ rules:
           initial_interval: 5s
           backoff_coefficient: 2.0
 
-      - component_type: nvlswitch
+      - component_type: nvswitch
         stage: 2
         max_parallel: 4
         delay_after: 15s

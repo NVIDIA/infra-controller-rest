@@ -39,9 +39,9 @@ func TestProtoToAPIComponentTypeName(t *testing.T) {
 			want: "Compute",
 		},
 		{
-			name: "nvlswitch type",
-			ct:   flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
-			want: "NVLSwitch",
+			name: "nvswitch type",
+			ct:   flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH,
+			want: "NVSwitch",
 		},
 		{
 			name: "powershelf type",
@@ -128,7 +128,7 @@ func TestNewAPITray(t *testing.T) {
 		{
 			name: "switch tray without optional fields",
 			comp: &flowv1.Component{
-				Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+				Type: flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH,
 				Info: &flowv1.DeviceInfo{
 					Id:           &flowv1.UUID{Id: "switch-tray-id"},
 					Name:         "switch-tray-1",
@@ -143,7 +143,7 @@ func TestNewAPITray(t *testing.T) {
 			},
 			want: &APITray{
 				ID:              "switch-tray-id",
-				Type:            "NVLSwitch",
+				Type:            "NVSwitch",
 				Name:            "switch-tray-1",
 				Manufacturer:    "NVIDIA",
 				SerialNumber:    "SSN001",
@@ -223,7 +223,7 @@ func TestNewAPITray(t *testing.T) {
 		{
 			name: "tray without position",
 			comp: &flowv1.Component{
-				Type: flowv1.ComponentType_COMPONENT_TYPE_NVLSWITCH,
+				Type: flowv1.ComponentType_COMPONENT_TYPE_NVSWITCH,
 				Info: &flowv1.DeviceInfo{
 					Id:   &flowv1.UUID{Id: "switch-tray-id"},
 					Name: "switch-1",
@@ -231,7 +231,7 @@ func TestNewAPITray(t *testing.T) {
 			},
 			want: &APITray{
 				ID:       "switch-tray-id",
-				Type:     "NVLSwitch",
+				Type:     "NVSwitch",
 				Name:     "switch-1",
 				Position: nil,
 			},
@@ -366,8 +366,8 @@ func TestAPITrayGetAllRequest_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "valid type - NVLSwitch",
-			req:     APITrayGetAllRequest{Type: strPtr("NVLSwitch")},
+			name:    "valid type - NVSwitch",
+			req:     APITrayGetAllRequest{Type: strPtr("NVSwitch")},
 			wantErr: false,
 		},
 		{

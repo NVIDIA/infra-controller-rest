@@ -87,6 +87,13 @@ func (e *APIError) Error() string {
 }
 
 func NewClient(baseURL, org, token string, log *logrus.Entry, debug bool) *Client {
+	if log == nil {
+		log = logrus.NewEntry(logrus.StandardLogger())
+	}
+	if debug {
+		log.Logger.SetLevel(logrus.DebugLevel)
+	}
+
 	return &Client{
 		BaseURL: strings.TrimRight(baseURL, "/"),
 		Org:     org,
@@ -203,13 +210,6 @@ func (c *Client) do(method, pathTemplate string, pathParams, queryParams map[str
 		bodyReader = bytes.NewReader(body)
 	}
 
-	if c.Debug {
-		c.Log.Debugf("%s %s", method, reqURL)
-		if body != nil {
-			c.Log.Debugf("Body: %s", string(body))
-		}
-	}
-
 	req, err := http.NewRequest(method, reqURL, bodyReader)
 	if err != nil {
 		return nil, nil, fmt.Errorf("creating request: %w", err)
@@ -221,6 +221,12 @@ func (c *Client) do(method, pathTemplate string, pathParams, queryParams map[str
 	req.Header.Set("Accept", "application/json")
 	if c.Token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.Token)
+	}
+
+	if c.Debug {
+		c.Log.Debugf("API request: %s %s", method, reqURL)
+		c.Log.Debugf("Request headers: %s", formatDebugHeaders(req.Header))
+		c.Log.Debugf("Request body: %s", formatDebugBody(body))
 	}
 
 	resp, err := c.HTTPClient.Do(req)
@@ -235,7 +241,9 @@ func (c *Client) do(method, pathTemplate string, pathParams, queryParams map[str
 	}
 
 	if c.Debug {
-		c.Log.Debugf("Response %d: %s", resp.StatusCode, string(respBody))
+		c.Log.Debugf("API response: %s %s -> %s", method, reqURL, resp.Status)
+		c.Log.Debugf("Response headers: %s", formatDebugHeaders(resp.Header))
+		c.Log.Debugf("Response body: %s", formatDebugBody(respBody))
 	}
 
 	if resp.StatusCode >= 400 {
@@ -262,6 +270,52 @@ func (c *Client) do(method, pathTemplate string, pathParams, queryParams map[str
 	}
 
 	return respBody, resp.Header, nil
+}
+
+func formatDebugBody(body []byte) string {
+	if len(body) == 0 {
+		return "<empty>"
+	}
+	return string(body)
+}
+
+func formatDebugHeaders(headers http.Header) string {
+	redacted := make(http.Header, len(headers))
+	for key, values := range headers {
+		copiedValues := append([]string(nil), values...)
+		if isSensitiveHeader(key) {
+			for i, value := range copiedValues {
+				copiedValues[i] = redactHeaderValue(key, value)
+			}
+		}
+		redacted[http.CanonicalHeaderKey(key)] = copiedValues
+	}
+
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(redacted); err != nil {
+		return fmt.Sprintf("%v", redacted)
+	}
+	return strings.TrimSpace(buf.String())
+}
+
+func isSensitiveHeader(key string) bool {
+	switch strings.ToLower(key) {
+	case "authorization", "proxy-authorization", "cookie", "set-cookie", "x-api-key", "x-auth-token":
+		return true
+	default:
+		return false
+	}
+}
+
+func redactHeaderValue(key, value string) string {
+	if strings.EqualFold(key, "authorization") || strings.EqualFold(key, "proxy-authorization") {
+		if scheme, _, ok := strings.Cut(value, " "); ok && scheme != "" {
+			return scheme + " <redacted>"
+		}
+	}
+	return "<redacted>"
 }
 
 func isUnauthorizedError(err error) bool {

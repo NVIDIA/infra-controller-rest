@@ -45,7 +45,7 @@ type ValidateComponentsResult struct {
 	TotalDiffs      int
 	MissingCount    int
 	UnexpectedCount int
-	DriftCount      int
+	MismatchCount   int
 	MatchCount      int
 }
 

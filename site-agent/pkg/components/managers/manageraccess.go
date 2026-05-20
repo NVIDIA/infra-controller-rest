@@ -19,12 +19,13 @@ package managers
 
 import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/bootstrap"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/coregrpc"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/dpuextensionservice"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedmachine"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedpowershelf"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedrack"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/expectedswitch"
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flow"
+	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/flowgrpc"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/infinibandpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instance"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/instancetype"
@@ -32,7 +33,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/machinevalidation"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/managerapi"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/networksecuritygroup"
-	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nico"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/nvlinklogicalpartition"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/operatingsystem"
 	"github.com/NVIDIA/infra-controller-rest/site-agent/pkg/components/managers/sku"
@@ -85,8 +85,8 @@ func (m *Manager) VpcPeering() *vpcpeering.API {
 }
 
 // Carbide manager instance here
-func (m *Manager) NICo() *nico.API {
-	return nico.NewNICoManager(m.Data.EB, m.API, m.Conf)
+func (m *Manager) CoreGrpc() *coregrpc.API {
+	return coregrpc.NewCoreGrpcManager(m.Data.EB, m.API, m.Conf)
 }
 
 // Machine - Add Machine manager instance here
@@ -174,7 +174,7 @@ func (m *Manager) NVLinkLogicalPartition() *nvlinklogicalpartition.API {
 	return nvlinklogicalpartition.NewNVLinkLogicalPartitionManager(m.Data.EB, m.API, m.Conf)
 }
 
-// Flow - Add Flow Manager instance here
-func (m *Manager) Flow() *flow.API {
-	return flow.NewFlowManager(m.Data.EB, m.API, m.Conf)
+// FlowGrpc - Add Flow gRPC Manager instance here
+func (m *Manager) FlowGrpc() *flowgrpc.API {
+	return flowgrpc.NewFlowGrpcManager(m.Data.EB, m.API, m.Conf)
 }

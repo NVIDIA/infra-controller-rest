@@ -44,7 +44,7 @@ import (
 )
 
 // CreateTaskSchedule creates a new task schedule.
-func (rs *RLAServerImpl) CreateTaskSchedule(
+func (rs *FlowServerImpl) CreateTaskSchedule(
 	ctx context.Context,
 	req *pb.CreateTaskScheduleRequest,
 ) (*pb.TaskSchedule, error) {
@@ -175,7 +175,7 @@ func (rs *RLAServerImpl) CreateTaskSchedule(
 }
 
 // GetTaskSchedule retrieves a task schedule by ID.
-func (rs *RLAServerImpl) GetTaskSchedule(
+func (rs *FlowServerImpl) GetTaskSchedule(
 	ctx context.Context,
 	req *pb.GetTaskScheduleRequest,
 ) (*pb.TaskSchedule, error) {
@@ -193,7 +193,7 @@ func (rs *RLAServerImpl) GetTaskSchedule(
 }
 
 // ListTaskSchedules lists task schedules, optionally filtered by rack.
-func (rs *RLAServerImpl) ListTaskSchedules(
+func (rs *FlowServerImpl) ListTaskSchedules(
 	ctx context.Context,
 	req *pb.ListTaskSchedulesRequest,
 ) (*pb.ListTaskSchedulesResponse, error) {
@@ -241,7 +241,7 @@ func (rs *RLAServerImpl) ListTaskSchedules(
 //   - "schedule.overlap_policy" – overlap behaviour
 //   - "schedule.spec"           – full spec block; recomputes next_run_at
 //   - "schedule.spec.timezone"  – timezone only, spec type/string unchanged
-func (rs *RLAServerImpl) UpdateTaskSchedule(
+func (rs *FlowServerImpl) UpdateTaskSchedule(
 	ctx context.Context,
 	req *pb.UpdateTaskScheduleRequest,
 ) (*pb.TaskSchedule, error) {
@@ -322,7 +322,7 @@ func (rs *RLAServerImpl) UpdateTaskSchedule(
 // Returns an error if the schedule is a one-time type that has already fired
 // (enabled=false with spec_type=one-time), since there is nothing left to pause.
 // Returns the existing record unchanged if already paused.
-func (rs *RLAServerImpl) PauseTaskSchedule(
+func (rs *FlowServerImpl) PauseTaskSchedule(
 	ctx context.Context,
 	req *pb.PauseTaskScheduleRequest,
 ) (*pb.TaskSchedule, error) {
@@ -362,7 +362,7 @@ func (rs *RLAServerImpl) PauseTaskSchedule(
 // was paused before firing (next_run_at still set) can be resumed normally.
 // For interval and cron schedules, next_run_at is recomputed from the current
 // time so the schedule does not fire immediately on resume.
-func (rs *RLAServerImpl) ResumeTaskSchedule(
+func (rs *FlowServerImpl) ResumeTaskSchedule(
 	ctx context.Context,
 	req *pb.ResumeTaskScheduleRequest,
 ) (*pb.TaskSchedule, error) {
@@ -424,7 +424,7 @@ func (rs *RLAServerImpl) ResumeTaskSchedule(
 }
 
 // DeleteTaskSchedule hard-deletes a task schedule and its scopes (cascade).
-func (rs *RLAServerImpl) DeleteTaskSchedule(
+func (rs *FlowServerImpl) DeleteTaskSchedule(
 	ctx context.Context,
 	req *pb.DeleteTaskScheduleRequest,
 ) (*emptypb.Empty, error) {
@@ -443,7 +443,7 @@ func (rs *RLAServerImpl) DeleteTaskSchedule(
 // TriggerTaskSchedule fires a task schedule immediately, regardless of next_run_at
 // or enabled state. The overlap policy is not consulted — all scopes are submitted
 // unconditionally. Returns an error if called on a one-time schedule that has already fired.
-func (rs *RLAServerImpl) TriggerTaskSchedule(
+func (rs *FlowServerImpl) TriggerTaskSchedule(
 	ctx context.Context,
 	req *pb.TriggerTaskScheduleRequest,
 ) (*pb.SubmitTaskResponse, error) {
@@ -466,7 +466,7 @@ func (rs *RLAServerImpl) TriggerTaskSchedule(
 //     incoming filter.
 //   - a rack not yet present is added.
 //   - existing racks are never removed.
-func (rs *RLAServerImpl) AddTaskScheduleScope(
+func (rs *FlowServerImpl) AddTaskScheduleScope(
 	ctx context.Context,
 	req *pb.AddTaskScheduleScopeRequest,
 ) (*pb.AddTaskScheduleScopeResponse, error) {
@@ -514,7 +514,7 @@ func (rs *RLAServerImpl) AddTaskScheduleScope(
 // filter replaced if it changed.
 //
 // See AddTaskScheduleScope for the additive variant that merges without removing.
-func (rs *RLAServerImpl) UpdateTaskScheduleScope(
+func (rs *FlowServerImpl) UpdateTaskScheduleScope(
 	ctx context.Context,
 	req *pb.UpdateTaskScheduleScopeRequest,
 ) (*pb.UpdateTaskScheduleScopeResponse, error) {
@@ -553,7 +553,7 @@ func (rs *RLAServerImpl) UpdateTaskScheduleScope(
 }
 
 // RemoveTaskScheduleScope removes a rack scope entry from a task schedule.
-func (rs *RLAServerImpl) RemoveTaskScheduleScope(
+func (rs *FlowServerImpl) RemoveTaskScheduleScope(
 	ctx context.Context,
 	req *pb.RemoveTaskScheduleScopeRequest,
 ) (*emptypb.Empty, error) {
@@ -621,7 +621,7 @@ func (rs *RLAServerImpl) RemoveTaskScheduleScope(
 // on the same rack will still be flagged as conflicting here. Callers should
 // treat a non-empty response as a prompt for human review rather than a
 // definitive statement that tasks will collide at runtime.
-func (rs *RLAServerImpl) CheckScheduleConflicts(
+func (rs *FlowServerImpl) CheckScheduleConflicts(
 	ctx context.Context,
 	req *pb.CheckScheduleConflictsRequest,
 ) (*pb.CheckScheduleConflictsResponse, error) {
@@ -709,7 +709,7 @@ func (rs *RLAServerImpl) CheckScheduleConflicts(
 }
 
 // ListTaskScheduleScopes lists all scope entries for a task schedule.
-func (rs *RLAServerImpl) ListTaskScheduleScopes(
+func (rs *FlowServerImpl) ListTaskScheduleScopes(
 	ctx context.Context,
 	req *pb.ListTaskScheduleScopesRequest,
 ) (*pb.ListTaskScheduleScopesResponse, error) {
@@ -757,7 +757,7 @@ func (rs *RLAServerImpl) ListTaskScheduleScopes(
 //
 // The second return value reports whether next_run_at will change as a result
 // of this update.
-func (rs *RLAServerImpl) buildUpdateFields(
+func (rs *FlowServerImpl) buildUpdateFields(
 	ctx context.Context,
 	id uuid.UUID,
 	sched *pb.ScheduleConfig,
@@ -904,7 +904,7 @@ func (rs *RLAServerImpl) buildUpdateFields(
 // (with optional component-type filter) and component-level targeting (specific
 // components by UUID or external ref). For component-level targets the server
 // resolves rack membership and groups components into per-rack scope entries.
-func (rs *RLAServerImpl) resolveScope(
+func (rs *FlowServerImpl) resolveScope(
 	ctx context.Context,
 	ts operation.TargetSpec,
 ) ([]*dbmodel.TaskScheduleScope, error) {
@@ -922,7 +922,7 @@ func (rs *RLAServerImpl) resolveScope(
 // It does NOT read the current scope list — that read happens inside
 // applyScopeChanges under a row lock to prevent concurrent requests from
 // diffing against a stale snapshot.
-func (rs *RLAServerImpl) resolveScheduleScope(
+func (rs *FlowServerImpl) resolveScheduleScope(
 	ctx context.Context,
 	scheduleID uuid.UUID,
 	targetSpec *pb.OperationTargetSpec,
@@ -959,7 +959,7 @@ type scopeDiffFn func(
 // single transaction. Locking the schedule row serializes concurrent scope
 // mutations and prevents the read-diff-write window that would otherwise allow
 // two concurrent requests to diff against the same stale snapshot.
-func (rs *RLAServerImpl) applyScopeChanges(
+func (rs *FlowServerImpl) applyScopeChanges(
 	ctx context.Context,
 	scheduleID uuid.UUID,
 	incoming []*dbmodel.TaskScheduleScope,
@@ -1038,7 +1038,7 @@ func (rs *RLAServerImpl) applyScopeChanges(
 // resolveRackScope converts rack-level targets into scope rows.
 // Each RackTarget becomes one scope row; an optional ComponentTypes filter is
 // stored as a kind="types" component_filter.
-func (rs *RLAServerImpl) resolveRackScope(
+func (rs *FlowServerImpl) resolveRackScope(
 	ctx context.Context,
 	racks []operation.RackTarget,
 ) ([]*dbmodel.TaskScheduleScope, error) {
@@ -1091,7 +1091,7 @@ func (rs *RLAServerImpl) resolveRackScope(
 
 // resolveComponentTarget resolves a single ComponentTarget to its component
 // UUID and rack UUID via inventory lookup.
-func (rs *RLAServerImpl) resolveComponentTarget(
+func (rs *FlowServerImpl) resolveComponentTarget(
 	ctx context.Context,
 	ct operation.ComponentTarget,
 ) (uuid.UUID, uuid.UUID, error) {
@@ -1174,7 +1174,7 @@ func (rs *RLAServerImpl) resolveComponentTarget(
 // resolveComponentScope resolves component-level targets to their racks, groups
 // components by rack, and returns one scope row per rack with a kind="components"
 // filter.
-func (rs *RLAServerImpl) resolveComponentScope(
+func (rs *FlowServerImpl) resolveComponentScope(
 	ctx context.Context,
 	targets []operation.ComponentTarget,
 ) ([]*dbmodel.TaskScheduleScope, error) {

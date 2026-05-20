@@ -35,11 +35,7 @@ env:
 
 jobs:
   build-binaries:
-    # Display name preserves the old "./rla" path label so existing
-    # branch-protection required-check names ("Build Binaries (rla, ./rla)")
-    # keep matching after the rla -> flow directory rename. Drop this hack
-    # once branch protection is updated.
-    name: Build Binaries (${{ matrix.name }}, ${{ matrix.name == 'rla' && './rla' || matrix.path }})
+    name: Build Binaries (${{ matrix.name }}, ${{ matrix.path }})
     runs-on: ${{ inputs.runner }}
     strategy:
       fail-fast: false
@@ -57,11 +53,11 @@ jobs:
             path: ./site-agent/cmd/site-agent
           - name: mock-core
             path: ./site-agent/cmd/mock-core
-          - name: mock-rla
-            path: ./site-agent/cmd/mock-rla
+          - name: mock-flow
+            path: ./site-agent/cmd/mock-flow
           - name: credsmgr
             path: ./cert-manager/cmd/credsmgr
-          - name: rla
+          - name: flow
             path: ./flow
           - name: psm
             path: ./powershelf-manager

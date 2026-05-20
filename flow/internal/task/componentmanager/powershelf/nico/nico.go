@@ -27,11 +27,13 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
+	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/firmwarecomponents"
 )
 
 const (
@@ -59,13 +61,33 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 	return New(provider.Client()), nil
 }
 
-// Register registers the NICo PowerShelf manager factory with the given registry.
-func Register(registry *componentmanager.Registry) {
-	registry.RegisterFactory(devicetypes.ComponentTypePowerShelf, ImplementationName, Factory)
+// Descriptor returns the NICo PowerShelf manager descriptor.
+func Descriptor() cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
+		Type:              devicetypes.ComponentTypePowerShelf,
+		Implementation:    ImplementationName,
+		RequiredProviders: []string{nicoprovider.ProviderName},
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
+	}
 }
 
-func (m *Manager) Type() devicetypes.ComponentType {
-	return devicetypes.ComponentTypePowerShelf
+// FactorySpec returns the NICo PowerShelf manager runtime factory spec.
+func FactorySpec() componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: Descriptor(),
+		Factory:    Factory,
+	}
+}
+
+// Descriptor returns the NICo PowerShelf manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return Descriptor()
 }
 
 func powerShelfIDsProto(ids []string) *pb.PowerShelfIdList {
@@ -197,19 +219,29 @@ func (m *Manager) FirmwareControl(
 	log.Debug().
 		Str("components", target.String()).
 		Str("target_version", info.TargetVersion).
+		Strs("sub_targets", info.SubTargets).
 		Msg("Starting firmware update for PowerShelf via NICo")
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
+	subComponents, err := firmwarecomponents.ParseNICoPowerShelf(info.SubTargets)
+	if err != nil {
+		return err
+	}
+	if len(subComponents) == 0 {
+		// Preserve historical behavior: when the caller does not specify a
+		// subset, only PMC is updated. Once the component manager supports
+		// "update everything in the bundle" semantics we can drop this.
+		subComponents = []pb.PowerShelfComponent{pb.PowerShelfComponent_POWER_SHELF_COMPONENT_PMC}
+	}
+
 	req := &pb.UpdateComponentFirmwareRequest{
 		Target: &pb.UpdateComponentFirmwareRequest_PowerShelves{
 			PowerShelves: &pb.UpdatePowerShelfFirmwareTarget{
 				PowerShelfIds: powerShelfIDsProto(target.ComponentIDs),
-				Components: []pb.PowerShelfComponent{
-					pb.PowerShelfComponent_POWER_SHELF_COMPONENT_PMC,
-				},
+				Components:    subComponents,
 			},
 		},
 		TargetVersion: info.TargetVersion,

@@ -31,6 +31,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -44,7 +45,7 @@ const (
 
 	// healthOverrideSource is the source tag written into health-report
 	// overrides so they can be matched on removal.
-	healthOverrideSource = "rla-power-control"
+	healthOverrideSource = "flow-power-control"
 )
 
 // Manager manages compute node components via the NICo API.
@@ -64,10 +65,10 @@ func New(nicoClient nicoapi.Client, powerDelay time.Duration) *Manager {
 	}
 }
 
-// Register registers the NICo compute manager factory with the given registry.
-// powerDelay is the inter-component stagger for power control calls.
-func Register(registry *componentmanager.Registry, powerDelay time.Duration) {
-	factory := func(
+// Factory returns a factory for the NICo compute manager. powerDelay is the
+// inter-component stagger for power control calls.
+func Factory(powerDelay time.Duration) componentmanager.ManagerFactory {
+	return func(
 		providerRegistry *providerapi.ProviderRegistry,
 	) (componentmanager.ComponentManager, error) {
 		provider, err := providerapi.GetTyped[*nicoprovider.Provider](
@@ -81,12 +82,37 @@ func Register(registry *componentmanager.Registry, powerDelay time.Duration) {
 		}
 		return New(provider.Client(), powerDelay), nil
 	}
-	registry.RegisterFactory(devicetypes.ComponentTypeCompute, ImplementationName, factory)
 }
 
-// Type returns the component type this manager handles.
-func (m *Manager) Type() devicetypes.ComponentType {
-	return devicetypes.ComponentTypeCompute
+// Descriptor returns the NICo compute manager descriptor.
+func Descriptor() cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
+		Type:              devicetypes.ComponentTypeCompute,
+		Implementation:    ImplementationName,
+		RequiredProviders: []string{nicoprovider.ProviderName},
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityBringUpControl,
+			cmcatalog.CapabilityBringUpStatus,
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
+	}
+}
+
+// FactorySpec returns the NICo compute manager runtime factory spec.
+func FactorySpec(powerDelay time.Duration) componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: Descriptor(),
+		Factory:    Factory(powerDelay),
+	}
+}
+
+// Descriptor returns the NICo compute manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return Descriptor()
 }
 
 // InjectExpectation registers an expected machine with NICo via AddExpectedMachine.
@@ -298,6 +324,7 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	log.Debug().
 		Str("components", target.String()).
 		Str("target_version", info.TargetVersion).
+		Strs("sub_targets", info.SubTargets).
 		Msg("Scheduling firmware update for compute via NICo")
 
 	if m.nicoClient == nil {
@@ -306,6 +333,19 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	if len(info.SubTargets) > 0 {
+		// SetFirmwareUpdateTimeWindow + SetMachineAutoUpdate (the path used
+		// here for compute trays) do not expose per-sub-target selection;
+		// auto-update will install whatever is in the desired bundle. Log
+		// the requested subset so the limitation is visible until we can
+		// route this through UpdateComponentFirmware (planned alongside the
+		// version → FW Object identifier migration).
+		log.Warn().
+			Str("components", target.String()).
+			Strs("sub_targets", info.SubTargets).
+			Msg("compute firmware sub-target selection is not yet honored; whole bundle will be applied")
 	}
 
 	desiredEntries, err := m.nicoClient.GetDesiredFirmwareVersions(ctx)

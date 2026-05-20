@@ -44,7 +44,7 @@ Required:
   --id : Component UUID to delete
 
 Examples:
-  rla component delete --id "component-uuid"
+  flow component delete --id "component-uuid"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doDeleteComponent()

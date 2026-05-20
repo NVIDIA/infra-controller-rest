@@ -48487,8 +48487,8 @@ func (x *AttestationResponse_AttestationMachineData) GetDeviceData() []*Attestat
 
 type DNSMessage_DNSQuestion struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	QName         *string                `protobuf:"bytes,1,opt,name=q_name,json=qName,proto3,oneof" json:"q_name,omitempty"` // FQDN including trailing dot
-	QType         *uint32                `protobuf:"varint,2,opt,name=q_type,json=qType,proto3,oneof" json:"q_type,omitempty"`
+	QName         *string                `protobuf:"bytes,1,opt,name=q_name,json=qName,proto3,oneof" json:"q_name,omitempty"`     // FQDN including trailing dot
+	QType         *uint32                `protobuf:"varint,2,opt,name=q_type,json=qType,proto3,oneof" json:"q_type,omitempty"`    //
 	QClass        *uint32                `protobuf:"varint,3,opt,name=q_class,json=qClass,proto3,oneof" json:"q_class,omitempty"` // Usually 1 (IN)
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -53946,8 +53946,8 @@ const file_nico_proto_rawDesc = "" +
 	"\x15GetComponentInventory\x12\".nico.GetComponentInventoryRequest\x1a#.nico.GetComponentInventoryResponse\x12f\n" +
 	"\x17UpdateComponentFirmware\x12$.nico.UpdateComponentFirmwareRequest\x1a%.nico.UpdateComponentFirmwareResponse\x12o\n" +
 	"\x1aGetComponentFirmwareStatus\x12'.nico.GetComponentFirmwareStatusRequest\x1a(.nico.GetComponentFirmwareStatusResponse\x12x\n" +
-	"\x1dListComponentFirmwareVersions\x12*.nico.ListComponentFirmwareVersionsRequest\x1a+.nico.ListComponentFirmwareVersionsResponseB\x87\x01\n" +
-	"\bcom.nicoB\tNicoProtoP\x01Z@github.com/NVIDIA/infra-controller-rest/rla/internal/nicoapigrpc\xa2\x02\x03NXX\xaa\x02\x04Nico\xca\x02\x04Nico\xe2\x02\x10Nico\\GPBMetadata\xea\x02\x04Nicob\x06proto3"
+	"\x1dListComponentFirmwareVersions\x12*.nico.ListComponentFirmwareVersionsRequest\x1a+.nico.ListComponentFirmwareVersionsResponseB\x88\x01\n" +
+	"\bcom.nicoB\tNicoProtoP\x01ZAgithub.com/NVIDIA/infra-controller-rest/flow/internal/nicoapigrpc\xa2\x02\x03NXX\xaa\x02\x04Nico\xca\x02\x04Nico\xe2\x02\x10Nico\\GPBMetadata\xea\x02\x04Nicob\x06proto3"
 
 var (
 	file_nico_proto_rawDescOnce sync.Once

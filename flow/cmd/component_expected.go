@@ -43,7 +43,7 @@ Specify exactly ONE of the following options:
 
 Component types (required for rack-ids/rack-names):
   --type compute     : Compute nodes
-  --type nvlswitch   : NVL switches  
+  --type nvswitch   : NVSwitches  
   --type powershelf  : Power shelves
   --type torswitch   : ToR switches
   --type ums         : UMS
@@ -55,16 +55,16 @@ Output formats:
 
 Examples:
   # Get all compute components from racks by name
-  rla component expected --rack-names "rack-1,rack-2" --type compute
+  flow component expected --rack-names "rack-1,rack-2" --type compute
 
-  # Get NVL switches from rack by ID
-  rla component expected --rack-ids "uuid-1,uuid-2" --type nvlswitch
+  # Get NVSwitches from rack by ID
+  flow component expected --rack-ids "uuid-1,uuid-2" --type nvswitch
 
   # Get components by component IDs
-  rla component expected --component-ids "machine-1,machine-2"
+  flow component expected --component-ids "machine-1,machine-2"
 
   # Output as table
-  rla component expected --rack-names "rack-1" --type compute --output table
+  flow component expected --rack-names "rack-1" --type compute --output table
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doGetExpectedComponents()
@@ -84,7 +84,7 @@ func init() {
 	expectedCmd.Flags().StringVar(&expectedRackIDs, "rack-ids", "", "Comma-separated list of rack UUIDs")
 	expectedCmd.Flags().StringVar(&expectedRackNames, "rack-names", "", "Comma-separated list of rack names")
 	expectedCmd.Flags().StringVar(&expectedComponentIDs, "component-ids", "", "Comma-separated list of component IDs")
-	expectedCmd.Flags().StringVarP(&expectedComponentType, "type", "t", "", "Component type: compute, nvlswitch, powershelf, torswitch, ums, cdu")
+	expectedCmd.Flags().StringVarP(&expectedComponentType, "type", "t", "", "Component type: compute, nvswitch, powershelf, torswitch, ums, cdu")
 	expectedCmd.Flags().StringVarP(&expectedOutput, "output", "o", "json", "Output format: json, table")
 }
 

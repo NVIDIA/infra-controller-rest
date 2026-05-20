@@ -21,6 +21,8 @@ import (
 	"errors"
 	"fmt"
 
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
@@ -30,11 +32,11 @@ var (
 	ErrConfigNotConfigured = errors.New("component manager config is not configured")
 
 	// ErrUnknownComponentType reports an unrecognized component type in config.
-	ErrUnknownComponentType = errors.New("unknown component type")
+	ErrUnknownComponentType = cmcatalog.ErrUnknownComponentType
 
 	// ErrComponentManagerImplementationNameEmpty reports that a component type
 	// was configured without an implementation name.
-	ErrComponentManagerImplementationNameEmpty = errors.New("component manager implementation name is empty")
+	ErrComponentManagerImplementationNameEmpty = cmcatalog.ErrComponentManagerImplementationNameEmpty
 
 	// ErrComponentManagersNotConfigured reports that the service config has no
 	// component manager entries.
@@ -54,37 +56,11 @@ var (
 )
 
 // UnknownComponentTypeError includes the unrecognized component type string.
-type UnknownComponentTypeError struct {
-	// Name is the component type name read from config.
-	Name string
-}
-
-func (e UnknownComponentTypeError) Error() string {
-	return fmt.Sprintf("%s: %s", ErrUnknownComponentType, e.Name)
-}
-
-func (e UnknownComponentTypeError) Is(target error) bool {
-	return target == ErrUnknownComponentType
-}
+type UnknownComponentTypeError = cmcatalog.UnknownComponentTypeError
 
 // ComponentManagerImplementationNameEmptyError includes the component type
 // whose configured implementation name is empty.
-type ComponentManagerImplementationNameEmptyError struct {
-	// ComponentType is the component type with an empty implementation name.
-	ComponentType devicetypes.ComponentType
-}
-
-func (e ComponentManagerImplementationNameEmptyError) Error() string {
-	return fmt.Sprintf(
-		"%s for component type %s",
-		ErrComponentManagerImplementationNameEmpty,
-		devicetypes.ComponentTypeToString(e.ComponentType),
-	)
-}
-
-func (e ComponentManagerImplementationNameEmptyError) Is(target error) bool {
-	return target == ErrComponentManagerImplementationNameEmpty
-}
+type ComponentManagerImplementationNameEmptyError = cmcatalog.ComponentManagerImplementationNameEmptyError
 
 // DuplicateProviderConfigError includes the normalized duplicate provider name.
 type DuplicateProviderConfigError struct {
@@ -105,12 +81,50 @@ func (e DuplicateProviderConfigError) Is(target error) bool {
 type ProviderConfigDecoderNotRegisteredError struct {
 	// Name is the provider name that has no registered config decoder.
 	Name string
+	// ComponentType is the component manager type requiring the provider.
+	ComponentType devicetypes.ComponentType
+	// Implementation is the component manager implementation requiring the
+	// provider.
+	Implementation string
 }
 
 func (e ProviderConfigDecoderNotRegisteredError) Error() string {
+	if e.ComponentType != devicetypes.ComponentTypeUnknown || e.Implementation != "" {
+		return fmt.Sprintf(
+			"provider config decoder %q required by component manager %s/%s is not registered",
+			e.Name,
+			devicetypes.ComponentTypeToString(e.ComponentType),
+			e.Implementation,
+		)
+	}
 	return fmt.Sprintf("provider config decoder %q is not registered", e.Name)
 }
 
 func (e ProviderConfigDecoderNotRegisteredError) Is(target error) bool {
 	return target == ErrProviderConfigDecoderNotRegistered
+}
+
+// RequiredProviderNotConfiguredError includes the required provider and the
+// component manager identity that requires it.
+type RequiredProviderNotConfiguredError struct {
+	// Provider is the provider name required by the component manager.
+	Provider string
+	// ComponentType is the component manager type requiring the provider.
+	ComponentType devicetypes.ComponentType
+	// Implementation is the component manager implementation requiring the
+	// provider.
+	Implementation string
+}
+
+func (e RequiredProviderNotConfiguredError) Error() string {
+	return fmt.Sprintf(
+		"provider %q required by component manager %s/%s is not configured",
+		e.Provider,
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+	)
+}
+
+func (e RequiredProviderNotConfiguredError) Is(target error) bool {
+	return target == providerapi.ErrProviderNotConfigured
 }

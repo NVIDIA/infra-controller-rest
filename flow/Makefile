@@ -60,7 +60,7 @@ gen-doc: ## Generate gRPC API documentation (Markdown for GitLab, HTML for local
 		-I proto/v1 proto/v1/flow.proto
 	@echo "Generated docs/grpc-api.md (for GitLab) and docs/grpc-api.html (for local)"
 
-rla:
+flow:
 	mkdir -p build
 	VERSION=$$(grep -v -e '^#' -e "^$$" ../VERSION) && \
 	BUILD_TIME=$$(date -u +"%Y-%m-%dT%H:%M:%SZ") && \
@@ -71,8 +71,8 @@ rla:
 		          -X 'github.com/NVIDIA/infra-controller-rest/flow/pkg/metadata.GitCommit=$${GIT_COMMIT}'" \
 		..
 
-container: rla
-	docker build -t nico-rla:$$(grep -v -e '^#' -e "^$$" ../VERSION)-$(CURDATE)-$$(git rev-parse HEAD) -t nico-rla:latest .
+container: flow
+	docker build -t nico-flow:$$(grep -v -e '^#' -e "^$$" ../VERSION)-$(CURDATE)-$$(git rev-parse HEAD) -t nico-flow:latest .
 
 # test-local runs tests locally with a postgres container
 # Requires: ./scripts/start-test-postgres.sh to be running
@@ -81,7 +81,7 @@ test-local:
 	@echo "Make sure postgres is running: ./scripts/start-test-postgres.sh"
 	@bash -c 'go fmt ./... > /tmp/gofmt; if grep -q . /tmp/gofmt; then echo "go fmt was unclean on the following files:"; cat /tmp/gofmt; exit 1; fi; rm -f /tmp/gofmt'
 	go vet ./...
-	DB_ADDR=localhost DB_PORT=30432 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=rla_test go run . db migrate
-	DB_ADDR=localhost DB_PORT=30432 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=rla_test go test -v -p 1 ./...
+	DB_ADDR=localhost DB_PORT=30432 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=flow_test go run . db migrate
+	DB_ADDR=localhost DB_PORT=30432 DB_USER=postgres DB_PASSWORD=postgres DB_DATABASE=flow_test go test -v -p 1 ./...
 
-.PHONY: gen-pb gen-psmapi-pb gen-nsmapi-pb gen-doc rla container releasecontainer runcontainer releasetest test test-local
+.PHONY: gen-pb gen-psmapi-pb gen-nsmapi-pb gen-doc flow container releasecontainer runcontainer releasetest test test-local

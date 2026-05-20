@@ -612,14 +612,14 @@ func executeVerifyFirmwareConsistencyAction(actx actionExecutionContext) error {
 // knownComponentTypeKeys are the JSON keys recognised in a layered
 // TargetVersion object. Used to distinguish the new per-component-type
 // format from the legacy flat format.
-var knownComponentTypeKeys = []string{"compute", "nvlswitch", "powershelf"}
+var knownComponentTypeKeys = []string{"compute", "nvswitch", "powershelf"}
 
 // extractComponentTargetVersion extracts the component-specific section from
 // a layered TargetVersion JSON string. The expected top-level structure is:
 //
 //	{
 //	  "compute":    {"bmc": "7.10.30", "uefi": "2.22.1"},
-//	  "nvlswitch":  "1.3.1",
+//	  "nvswitch":  "1.3.1",
 //	  "powershelf": "r1.3.9"
 //	}
 //

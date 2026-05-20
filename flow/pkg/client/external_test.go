@@ -96,7 +96,7 @@ func TestExternalUsability(t *testing.T) {
 	_ = types.PowerControlOpOn
 	_ = types.PowerControlOpOff
 	_ = types.TaskStatusPending
-	_ = types.DiffTypeDrift
+	_ = types.DiffTypeMismatch
 }
 
 // TestClientCreationFailsWithoutServer verifies client creation behavior.
@@ -173,7 +173,7 @@ func TestTypesInteroperability(t *testing.T) {
 		types.DiffTypeUnknown,
 		types.DiffTypeMissing,
 		types.DiffTypeUnexpected,
-		types.DiffTypeDrift,
+		types.DiffTypeMismatch,
 	}
 	if len(diffTypes) == 0 {
 		t.Error("no diff types")

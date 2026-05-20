@@ -37,13 +37,13 @@ func TestExtractComponentTargetVersion(t *testing.T) {
 			expected:      "",
 		},
 		"layered JSON — compute section extracted": {
-			rawVersion:    `{"compute":{"bmc":"7.10.30","uefi":"2.22.1"},"nvlswitch":{"nvos":"1.2.3"}}`,
+			rawVersion:    `{"compute":{"bmc":"7.10.30","uefi":"2.22.1"},"nvswitch":{"nvos":"1.2.3"}}`,
 			componentType: devicetypes.ComponentTypeCompute,
 			expected:      `{"bmc":"7.10.30","uefi":"2.22.1"}`,
 		},
-		"layered JSON — nvlswitch section extracted": {
-			rawVersion:    `{"compute":{"bmc":"7.10.30"},"nvlswitch":{"nvos":"1.2.3","cpld":"4.5.6"}}`,
-			componentType: devicetypes.ComponentTypeNVLSwitch,
+		"layered JSON — nvswitch section extracted": {
+			rawVersion:    `{"compute":{"bmc":"7.10.30"},"nvswitch":{"nvos":"1.2.3","cpld":"4.5.6"}}`,
+			componentType: devicetypes.ComponentTypeNVSwitch,
 			expected:      `{"nvos":"1.2.3","cpld":"4.5.6"}`,
 		},
 		"layered JSON — powershelf section extracted": {
@@ -52,18 +52,18 @@ func TestExtractComponentTargetVersion(t *testing.T) {
 			expected:      `{"firmware":"1.0.0"}`,
 		},
 		"layered JSON — missing key returns empty (component omitted)": {
-			rawVersion:    `{"compute":{"bmc":"7.10.30"},"nvlswitch":{"nvos":"1.2.3"}}`,
+			rawVersion:    `{"compute":{"bmc":"7.10.30"},"nvswitch":{"nvos":"1.2.3"}}`,
 			componentType: devicetypes.ComponentTypePowerShelf,
 			expected:      "",
 		},
 		"layered JSON — string scalar value is unquoted": {
-			rawVersion:    `{"compute":{"bmc":"7.10.30"},"nvlswitch":"2.0.0"}`,
-			componentType: devicetypes.ComponentTypeNVLSwitch,
+			rawVersion:    `{"compute":{"bmc":"7.10.30"},"nvswitch":"2.0.0"}`,
+			componentType: devicetypes.ComponentTypeNVSwitch,
 			expected:      "2.0.0",
 		},
 		"layered JSON — string scalar with escapes is unquoted": {
-			rawVersion:    `{"nvlswitch":"r1.3.9-alpha"}`,
-			componentType: devicetypes.ComponentTypeNVLSwitch,
+			rawVersion:    `{"nvswitch":"r1.3.9-alpha"}`,
+			componentType: devicetypes.ComponentTypeNVSwitch,
 			expected:      "r1.3.9-alpha",
 		},
 		"old flat JSON — no known keys, returns as-is for backward compat": {
@@ -73,12 +73,12 @@ func TestExtractComponentTargetVersion(t *testing.T) {
 		},
 		"non-JSON string — returns as-is": {
 			rawVersion:    "2.0.0",
-			componentType: devicetypes.ComponentTypeNVLSwitch,
+			componentType: devicetypes.ComponentTypeNVSwitch,
 			expected:      "2.0.0",
 		},
 		"only one component type present — other types get empty": {
 			rawVersion:    `{"compute":{"bmc":"7.10.30"}}`,
-			componentType: devicetypes.ComponentTypeNVLSwitch,
+			componentType: devicetypes.ComponentTypeNVSwitch,
 			expected:      "",
 		},
 	}

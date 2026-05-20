@@ -182,33 +182,205 @@ make kind-down              # tear down cluster
 ### Proto conversion methods
 
 DB and API model types that round-trip with a workflow-schema (`cwssaws`)
-or RLA (`rlav1`) protobuf type carry conversion as receiver methods, not
-free functions. The naming and shape are uniform so call sites are
-predictable:
+or Flow (`flowv1`) protobuf types carry conversion as receiver methods, not
+free functions. The convention layers cleanly so call sites are
+predictable and every entity has the same surface:
 
-1. **One model type ↔ one proto type:** `func (m *T) ToProto(...) *protoT`
-   and `func (m *T) FromProto(p *protoT, ...)`. `FromProto` mutates the
-   receiver, treats a `nil` proto as a no-op, and returns no error —
-   callers pre-validate anything risky like UUID strings, and the method
-   leaves the receiver field unchanged on parse failure.
-2. **Side inputs that are not on the model** (BMC credentials, a linked
-   machine ID resolved by the caller, a fallback timestamp) are passed as
-   additional arguments — preferably grouped into a `XCredentials` struct
-   declared next to the model, with a comment explaining why the field
-   isn't persisted.
-3. **One model type → multiple proto request types:** when the same
-   record produces, for example, both a Create and an Update request, use
-   `ToCreateRequestProto()` / `ToUpdateRequestProto()` (see `Tenant`).
-4. **Sub-messages of a proto request:** when a request DTO produces a
+1. **Primary entity ↔ proto entity** lives on the DB model:
+   `func (m *T) ToProto(...) *protoT` and
+   `func (m *T) FromProto(p *protoT, ...)` — symmetric pair, defined
+   together. `FromProto` mutates the receiver and returns no error.
+   The field-level contract is:
+   - A `nil` proto is a no-op (receiver untouched).
+   - Required ID fields (e.g. `m.ID`) are preserved on a missing or
+     unparseable proto value, because callers pre-validate UUIDs
+     before calling.
+   - Optional pointer fields are cleared when the proto omits them
+     **or** when the proto value is invalid (e.g. an unparseable
+     UUID). For example, `(*Vpc).FromProto` clears
+     `NVLinkLogicalPartitionID` in both cases so the receiver ends
+     up as a clean reset rather than a partial merge.
+2. **Per-API-request → proto request** lives on the corresponding API
+   request type, not on the entity:
+   `func (req *APIXCreateRequest) ToProto(...) *protoXCreateRequest`,
+   `func (req *APIXUpdateRequest) ToProto(...) *protoXUpdateRequest`.
+   These methods commonly read the canonical fields via the entity's
+   `ToProto()` (passed in or fetched) and overlay request-specific
+   fields. Putting them on the API request type keeps the entity
+   surface focused on the canonical representation. When the API
+   request type uses `*T` to distinguish "field not provided" (nil)
+   from "explicitly clear" (non-nil pointer to zero value), the
+   request's `ToProto` is responsible for preserving that distinction
+   on the wire — overriding the entity-derived value when the API
+   request touched the field, even if the post-merge entity has the
+   same zero value.
+
+   **`ToProto` does not return errors.** It trusts that the request
+   has already been validated and that the handler has performed any
+   cross-context checks Validate cannot see. Validation lives in
+   `(req *APIXCreateRequest).Validate() error`, which is the
+   universal pre-`ToProto` step and must be called before the request
+   reaches `ToProto`. Anything `ToProto` would otherwise have to
+   double-check — width casts on bounded request fields, enum-value
+   checks, cross-field structural rules — belongs in `Validate`
+   instead, so the translation step stays a focused mapper.
+
+   **What stays in the handler:** authorization (RBAC, tenant
+   privileges, cross-resource ownership lookups), and validation that
+   depends on context `Validate` cannot see (site config defaults
+   resolved at request time, DAO lookups, etc.). These run before
+   `ToProto` so that by the time it executes the request is safe to
+   trust.
+3. **Entity-level request shapes that don't have an API request body**
+   (e.g. delete by path-param, maintenance / metadata-update flows that
+   carry no client payload) stay on the entity:
+   `func (m *T) ToDeletionRequestProto() *protoXDeletionRequest`,
+   `func (m *T) ToMaintenanceRequestProto(...) *protoXMaintenanceRequest`.
+4. **Side inputs that are not on the model** (BMC credentials, a linked
+   machine ID resolved by the caller, a fallback timestamp, validated /
+   converted enum values) are passed as additional arguments —
+   preferably grouped into a `XCredentials` struct declared next to the
+   model, with a comment explaining why the field isn't persisted.
+5. **Sub-messages of a proto request:** when a request DTO produces a
    reusable piece of a proto request that is shared across multiple
    request types (e.g. `OperationTargetSpec`, `[]*Filter`), name the
    method after the sub-message it returns: `ToTargetSpec()`,
    `ToFilters()` (see `RackFilter`, `APIRackGetAllRequest`).
-5. **Constructor wrappers for `FromProto`:** API model types that are
+6. **Constructor wrappers for `FromProto`:** API model types that are
    constructed from a proto in handlers commonly expose a
    `func NewAPIX(p *protoX) *APIX` wrapper that returns `nil` for a `nil`
    proto and otherwise builds the value and calls `FromProto`. See
    `NewAPITray`, `NewAPIRack`.
+
+`Vpc` is the reference implementation for rules 1–3:
+`(*cdbm.Vpc).ToProto/FromProto` cover the entity↔proto round-trip,
+`(*model.APIVpcCreateRequest).ToProto` / `(*model.APIVpcUpdateRequest).ToProto`
+cover request-shape conversion, and `(*cdbm.Vpc).ToDeletionRequestProto`
+stays on the entity because there's no API request body for delete.
+
+### Database transactions
+
+Handler code that touches the database uses the closure-based transaction
+helpers from `db/pkg/db`, not manual `BeginTx`/`Commit`/`Rollback`. Most of
+the rules below are lessons from the WithTx migration of every primary
+handler — applying them keeps the next handler's diff predictable.
+
+1. **Use `cdb.WithTx` / `cdb.WithTxResult`.** Both run the closure in a
+   transaction and unwind it for you on error. `WithTxResult[T]` returns a
+   single `T` from the closure; `WithTx` returns only `error` and uses
+   outer-scope variables for any outputs.
+2. **Pick one or the other — don't mix.** `WithTxResult` paired with
+   outer-scope partner vars populated inside the closure is the worst of
+   both worlds. Either use `WithTxResult` cleanly (single value out) or use
+   `WithTx` with every output as an outer-scope variable. The Network
+   Security Group, InfiniBand Partition, and VPC Prefix handlers were
+   reworked specifically to settle this.
+3. **Reads belong outside the transaction unless they need to be inside.**
+   Pure input-validation reads (does this site exist, does the tenant own
+   it, is the SSH key on this tenant) hold the tx open and pin a DB
+   connection for no benefit. Move them above the `cdb.WithTx(...)` call
+   and start the tx only when writes begin. Reads that *do* belong inside
+   are: anything done under an advisory lock for race protection,
+   anything whose result drives a write decision that must see the locked
+   state (e.g. existing associations used for sync-state diff), and
+   reads done in the same tx as their dependent writes for read-your-writes
+   consistency.
+4. **Acquire an advisory lock at the top of the closure for TOCTOU-prone
+   flows.** When the closure does read-then-mutate on one entity (or two
+   concurrent writers could both pass a pre-flight check), call
+   `tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(<key>), nil)`
+   first. After the lock, re-read whatever you pre-checked outside the tx
+   so the check and the write happen against the same snapshot. Don't keep
+   the pre-flight check around if the in-tx check covers it — one source
+   of truth is clearer than two.
+5. **Workflow-trigger flows use the `timeoutResp` pattern.** When the
+   closure does `stc.ExecuteWorkflow` + `we.Get(...)`, a timeout has to
+   terminate the workflow *after* the DB tx unwinds so the cleanup call
+   doesn't block holding a connection. Declare `var timeoutResp func() error`
+   in the outer scope, set it inside the timeout branch, return a
+   `cutil.NewAPIError` from the closure to roll back the tx, then call
+   `timeoutResp()` after `WithTx` returns:
+
+   ```go
+   var timeoutResp func() error
+   err = cdb.WithTx(ctx, dbSession, func(tx *cdb.Tx) error {
+       // ... writes ...
+       we, wferr := stc.ExecuteWorkflow(wfCtx, opts, "CreateInstanceV2", req)
+       // ... wferr handling ...
+       wferr = we.Get(wfCtx, nil)
+       if wferr != nil {
+           var timeoutErr *tp.TimeoutError
+           if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+               timeoutCause := wferr // explicit capture; defensive against future refactors
+               timeoutResp = func() error {
+                   return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Instance", "CreateInstanceV2")
+               }
+               return cutil.NewAPIError(http.StatusInternalServerError, "Instance create workflow timed out", nil)
+           }
+           // ... non-timeout error paths ...
+       }
+       return nil
+   })
+   // Surface real tx-helper errors first so they aren't masked by the
+   // timeout response (commit/rollback failures wrap into something other
+   // than the cutil.APIError marker we returned for the timeout case).
+   if err != nil {
+       var apiErr *cutil.APIError
+       if !errors.As(err, &apiErr) {
+           return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
+       }
+   }
+   if timeoutResp != nil {
+       return timeoutResp()
+   }
+   if err != nil {
+       return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
+   }
+   ```
+
+   Notes:
+   - `common.TerminateWorkflowOnTimeOut` replaces ~12 lines of inline
+     `stc.TerminateWorkflow` + manual context boilerplate. Always prefer it.
+   - **Pass the literal workflow name** (the exact string used in
+     `stc.ExecuteWorkflow`), not a shortened action label. The helper uses
+     it in logs and the termination reason, so `"CreateInstanceV2"` —
+     not `"Create"` — is what should be there.
+   - **Capture the timeout error explicitly** (`timeoutCause := wferr`)
+     before the closure literal. The closure-scoped variable usually
+     preserves the right value due to Go's per-iteration scoping, but the
+     explicit capture documents intent and is resilient to future
+     refactors that rename or move things around.
+6. **Error returns inside vs. outside the closure.** Inside, return
+   `cutil.NewAPIError(code, msg, data)` — `common.HandleTxError` translates
+   it to a response after the tx unwinds. Outside (post-`WithTx`), return
+   `cutil.NewAPIErrorResponse(c, code, msg, data)` directly. When moving a
+   read out of the closure, the error path's constructor needs to flip too.
+7. **Don't leak raw DB errors to clients.** Pass `nil` (not the underlying
+   `derr`) as the `data` argument of `cutil.NewAPIError` /
+   `cutil.NewAPIErrorResponse`. Log the underlying error with the contextual
+   `logger` so it lands in server logs without ending up in the response
+   payload.
+8. **Split assign-and-condition into two statements.** Prefer
+
+   ```go
+   derr := someDAO.Action(ctx, tx, ...)
+   if derr != nil {
+       logger.Error().Err(derr).Msg("...")
+       return cutil.NewAPIError(http.StatusInternalServerError, "...", nil)
+   }
+   ```
+
+   over `if derr := someDAO.Action(...); derr != nil { ... }`. This is a
+   reviewer preference applied consistently across the codebase — the
+   wider scope on the error variable is a feature, not a bug, and the two
+   statements read more cleanly than the combined form.
+
+The Instance handlers (`api/pkg/api/handler/instance.go`) cover rules 1–8
+end-to-end across Create/Update/Reboot/Delete and serve as the most
+complete reference. SSH Key Group's Create handler is the cleanest example
+of rule 3 (validation reads hoisted out of the tx). NVLink Logical
+Partition's Delete handler shows the rule 5 `timeoutResp`-gating pattern
+in its simplest form.
 
 ## Git Workflow
 

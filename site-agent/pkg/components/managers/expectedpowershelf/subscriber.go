@@ -41,15 +41,15 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedPowerShelf: Successfully registered DeleteExpectedPowerShelf workflow")
 
 	// Register activities
-	expectedPowerShelfManager := swa.NewManageExpectedPowerShelf(ManagerAccess.Data.EB.Managers.NICo.Client, ManagerAccess.Data.EB.Managers.Flow.Client)
+	expectedPowerShelfManager := swa.NewManageExpectedPowerShelf(ManagerAccess.Data.EB.Managers.CoreGrpc.Client, ManagerAccess.Data.EB.Managers.FlowGrpc.Client)
 
 	// Register CreateExpectedPowerShelfOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedPowerShelfManager.CreateExpectedPowerShelfOnSite)
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedPowerShelf: Successfully registered CreateExpectedPowerShelfOnSite activity")
 
-	// Register CreateExpectedPowerShelfOnRLA activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedPowerShelfManager.CreateExpectedPowerShelfOnRLA)
-	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedPowerShelf: Successfully registered CreateExpectedPowerShelfOnRLA activity")
+	// Register CreateExpectedPowerShelfOnFlow activity
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedPowerShelfManager.CreateExpectedPowerShelfOnFlow)
+	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedPowerShelf: Successfully registered CreateExpectedPowerShelfOnFlow activity")
 
 	// Register UpdateExpectedPowerShelfOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedPowerShelfManager.UpdateExpectedPowerShelfOnSite)

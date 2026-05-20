@@ -8844,7 +8844,7 @@ func TestDeleteInstanceHandler_Handle(t *testing.T) {
 				cfg:       cfg,
 			},
 			args: args{
-				reqData: &model.APIInstanceDeleteRequest{MachineHealthIssue: &model.APIMachineHealthIssueReport{
+				reqData: &model.APIInstanceDeleteRequest{MachineHealthIssue: &model.APIMachineHealthIssue{
 					Category: "Hardware", Summary: cdb.GetStrPtr("Some summary"), Details: cdb.GetStrPtr("Some details"),
 				}},
 				reqInstance: inst1.ID.String(),
@@ -8864,7 +8864,7 @@ func TestDeleteInstanceHandler_Handle(t *testing.T) {
 				cfg:       cfg,
 			},
 			args: args{
-				reqData: &model.APIInstanceDeleteRequest{MachineHealthIssue: &model.APIMachineHealthIssueReport{
+				reqData: &model.APIInstanceDeleteRequest{MachineHealthIssue: &model.APIMachineHealthIssue{
 					Category: "UNSPECIFIED", Summary: cdb.GetStrPtr("Some summary"), Details: cdb.GetStrPtr("Some details"),
 				}},
 				reqInstance: inst1.ID.String(),

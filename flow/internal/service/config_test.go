@@ -53,13 +53,13 @@ func noTLSConfig() pkgcerts.Config {
 func TestConfigValidate(t *testing.T) {
 	tests := []struct {
 		name        string
-		rlaEnv      string // value passed to t.Setenv; empty string sets the var to ""
+		flowEnv     string // value passed to t.Setenv; empty string sets the var to ""
 		devMode     bool
 		certConf    pkgcerts.Config
 		wantErr     bool
 		errContains string
 	}{
-		// ── RLA_ENV empty — always an error; no implicit default ──────────────
+		// ── FLOW_ENV empty — always an error; no implicit default ──────────────
 		// t.Setenv(EnvVarName, "") and os.Unsetenv both cause os.Getenv to
 		// return "", so GetDeploymentEnv treats them identically.
 		{
@@ -90,39 +90,39 @@ func TestConfigValidate(t *testing.T) {
 			wantErr:     true,
 			errContains: EnvVarName,
 		},
-		// ── RLA_ENV=development ───────────────────────────────────────────────
+		// ── FLOW_ENV=development ───────────────────────────────────────────────
 		{
 			name:     "development, dev-mode off, no TLS",
-			rlaEnv:   "development",
+			flowEnv:  "development",
 			devMode:  false,
 			certConf: noTLSConfig(),
 			wantErr:  false,
 		},
 		{
 			name:     "development, dev-mode off, TLS present",
-			rlaEnv:   "development",
+			flowEnv:  "development",
 			devMode:  false,
 			certConf: tlsConfig(t),
 			wantErr:  false,
 		},
 		{
 			name:     "development, dev-mode on, no TLS",
-			rlaEnv:   "development",
+			flowEnv:  "development",
 			devMode:  true,
 			certConf: noTLSConfig(),
 			wantErr:  false,
 		},
 		{
 			name:     "development, dev-mode on, TLS present",
-			rlaEnv:   "development",
+			flowEnv:  "development",
 			devMode:  true,
 			certConf: tlsConfig(t),
 			wantErr:  false,
 		},
-		// ── RLA_ENV=staging ───────────────────────────────────────────────────
+		// ── FLOW_ENV=staging ───────────────────────────────────────────────────
 		{
 			name:        "staging, dev-mode off, no TLS",
-			rlaEnv:      "staging",
+			flowEnv:     "staging",
 			devMode:     false,
 			certConf:    noTLSConfig(),
 			wantErr:     true,
@@ -130,7 +130,7 @@ func TestConfigValidate(t *testing.T) {
 		},
 		{
 			name:     "staging, dev-mode off, TLS present",
-			rlaEnv:   "staging",
+			flowEnv:  "staging",
 			devMode:  false,
 			certConf: tlsConfig(t),
 			wantErr:  false,
@@ -138,7 +138,7 @@ func TestConfigValidate(t *testing.T) {
 		{
 			// Rule 1 (dev-mode blocked) fires before Rule 2 (TLS required).
 			name:        "staging, dev-mode on, no TLS",
-			rlaEnv:      "staging",
+			flowEnv:     "staging",
 			devMode:     true,
 			certConf:    noTLSConfig(),
 			wantErr:     true,
@@ -146,16 +146,16 @@ func TestConfigValidate(t *testing.T) {
 		},
 		{
 			name:        "staging, dev-mode on, TLS present",
-			rlaEnv:      "staging",
+			flowEnv:     "staging",
 			devMode:     true,
 			certConf:    tlsConfig(t),
 			wantErr:     true,
 			errContains: "--dev-mode",
 		},
-		// ── RLA_ENV=production ────────────────────────────────────────────────
+		// ── FLOW_ENV=production ────────────────────────────────────────────────
 		{
 			name:        "production, dev-mode off, no TLS",
-			rlaEnv:      "production",
+			flowEnv:     "production",
 			devMode:     false,
 			certConf:    noTLSConfig(),
 			wantErr:     true,
@@ -163,7 +163,7 @@ func TestConfigValidate(t *testing.T) {
 		},
 		{
 			name:     "production, dev-mode off, TLS present",
-			rlaEnv:   "production",
+			flowEnv:  "production",
 			devMode:  false,
 			certConf: tlsConfig(t),
 			wantErr:  false,
@@ -171,7 +171,7 @@ func TestConfigValidate(t *testing.T) {
 		{
 			// Rule 1 (dev-mode blocked) fires before Rule 2 (TLS required).
 			name:        "production, dev-mode on, no TLS",
-			rlaEnv:      "production",
+			flowEnv:     "production",
 			devMode:     true,
 			certConf:    noTLSConfig(),
 			wantErr:     true,
@@ -179,7 +179,7 @@ func TestConfigValidate(t *testing.T) {
 		},
 		{
 			name:        "production, dev-mode on, TLS present",
-			rlaEnv:      "production",
+			flowEnv:     "production",
 			devMode:     true,
 			certConf:    tlsConfig(t),
 			wantErr:     true,
@@ -189,7 +189,7 @@ func TestConfigValidate(t *testing.T) {
 		{
 			// One path set: rejected in any environment before reaching IsTLSAvailable.
 			name:        "development, one cert path set",
-			rlaEnv:      "development",
+			flowEnv:     "development",
 			devMode:     false,
 			certConf:    pkgcerts.Config{CACert: "ca.crt"},
 			wantErr:     true,
@@ -198,17 +198,17 @@ func TestConfigValidate(t *testing.T) {
 		{
 			// Two paths set: CERTDIR/SPIFFE fallback must not mask the misconfiguration.
 			name:        "staging, two cert paths set",
-			rlaEnv:      "staging",
+			flowEnv:     "staging",
 			devMode:     false,
 			certConf:    pkgcerts.Config{CACert: "ca.crt", TLSCert: "tls.crt"},
 			wantErr:     true,
 			errContains: "must all be provided",
 		},
-		// ── Invalid RLA_ENV value ─────────────────────────────────────────────
+		// ── Invalid FLOW_ENV value ─────────────────────────────────────────────
 		{
 			// Unknown value is rejected regardless of other settings.
 			name:        "invalid env, dev-mode off, no TLS",
-			rlaEnv:      "prod",
+			flowEnv:     "prod",
 			devMode:     false,
 			certConf:    noTLSConfig(),
 			wantErr:     true,
@@ -217,7 +217,7 @@ func TestConfigValidate(t *testing.T) {
 		{
 			// Unknown value is rejected regardless of other settings.
 			name:        "invalid env, dev-mode on, TLS present",
-			rlaEnv:      "prod",
+			flowEnv:     "prod",
 			devMode:     true,
 			certConf:    tlsConfig(t),
 			wantErr:     true,
@@ -230,7 +230,7 @@ func TestConfigValidate(t *testing.T) {
 			// Isolate CERTDIR so IsTLSAvailable cannot resolve certs from the
 			// k8s SPIFFE default path when CertConfig is empty.
 			t.Setenv("CERTDIR", t.TempDir())
-			t.Setenv(EnvVarName, tt.rlaEnv)
+			t.Setenv(EnvVarName, tt.flowEnv)
 
 			c := Config{DevMode: tt.devMode, CertConfig: tt.certConf}
 			err := c.Validate()

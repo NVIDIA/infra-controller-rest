@@ -55,9 +55,9 @@ func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_Success() {
 	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnSite)
 	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnSite, mock.Anything, mock.Anything).Return(nil)
 
-	// Mock CreateExpectedRackOnRLA activity
-	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnRLA)
-	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnRLA, mock.Anything, mock.Anything).Return(nil)
+	// Mock CreateExpectedRackOnFlow activity
+	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnFlow)
+	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnFlow, mock.Anything, mock.Anything).Return(nil)
 
 	// Execute CreateExpectedRack workflow
 	certs.env.ExecuteWorkflow(CreateExpectedRack, request)
@@ -79,8 +79,8 @@ func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_Failure() {
 	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnSite)
 	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnSite, mock.Anything, mock.Anything).Return(errors.New(errMsg))
 
-	// Register CreateExpectedRackOnRLA activity (not called when Core fails)
-	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnRLA)
+	// Register CreateExpectedRackOnFlow activity (not called when Core fails)
+	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnFlow)
 
 	// Execute CreateExpectedRack workflow
 	certs.env.ExecuteWorkflow(CreateExpectedRack, request)
@@ -88,7 +88,7 @@ func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_Failure() {
 	certs.Error(certs.env.GetWorkflowError())
 }
 
-func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_CoreSuccess_RLAFailure() {
+func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_CoreSuccess_FlowFailure() {
 	var expectedRackManager iActivity.ManageExpectedRack
 
 	request := &cwssaws.ExpectedRack{
@@ -100,9 +100,9 @@ func (certs *CreateExpectedRackTestSuite) Test_CreateExpectedRack_CoreSuccess_RL
 	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnSite)
 	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnSite, mock.Anything, mock.Anything).Return(nil)
 
-	// Mock CreateExpectedRackOnRLA activity (failure - workflow should still succeed)
-	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnRLA)
-	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnRLA, mock.Anything, mock.Anything).Return(errors.New("Flow unavailable"))
+	// Mock CreateExpectedRackOnFlow activity (failure - workflow should still succeed)
+	certs.env.RegisterActivity(expectedRackManager.CreateExpectedRackOnFlow)
+	certs.env.OnActivity(expectedRackManager.CreateExpectedRackOnFlow, mock.Anything, mock.Anything).Return(errors.New("Flow unavailable"))
 
 	// Execute CreateExpectedRack workflow
 	certs.env.ExecuteWorkflow(CreateExpectedRack, request)

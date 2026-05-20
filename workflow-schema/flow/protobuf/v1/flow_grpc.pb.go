@@ -36,54 +36,81 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	RLA_Version_FullMethodName                  = "/v1.RLA/Version"
-	RLA_CreateExpectedRack_FullMethodName       = "/v1.RLA/CreateExpectedRack"
-	RLA_GetRackInfoByID_FullMethodName          = "/v1.RLA/GetRackInfoByID"
-	RLA_GetRackInfoBySerial_FullMethodName      = "/v1.RLA/GetRackInfoBySerial"
-	RLA_GetListOfRacks_FullMethodName           = "/v1.RLA/GetListOfRacks"
-	RLA_PatchRack_FullMethodName                = "/v1.RLA/PatchRack"
-	RLA_DeleteRack_FullMethodName               = "/v1.RLA/DeleteRack"
-	RLA_PurgeRack_FullMethodName                = "/v1.RLA/PurgeRack"
-	RLA_UpgradeFirmware_FullMethodName          = "/v1.RLA/UpgradeFirmware"
-	RLA_BringUpRack_FullMethodName              = "/v1.RLA/BringUpRack"
-	RLA_IngestRack_FullMethodName               = "/v1.RLA/IngestRack"
-	RLA_PowerOnRack_FullMethodName              = "/v1.RLA/PowerOnRack"
-	RLA_PowerOffRack_FullMethodName             = "/v1.RLA/PowerOffRack"
-	RLA_PowerResetRack_FullMethodName           = "/v1.RLA/PowerResetRack"
-	RLA_GetComponentInfoByID_FullMethodName     = "/v1.RLA/GetComponentInfoByID"
-	RLA_GetComponentInfoBySerial_FullMethodName = "/v1.RLA/GetComponentInfoBySerial"
-	RLA_GetComponents_FullMethodName            = "/v1.RLA/GetComponents"
-	RLA_ValidateComponents_FullMethodName       = "/v1.RLA/ValidateComponents"
-	RLA_AddComponent_FullMethodName             = "/v1.RLA/AddComponent"
-	RLA_PatchComponent_FullMethodName           = "/v1.RLA/PatchComponent"
-	RLA_DeleteComponent_FullMethodName          = "/v1.RLA/DeleteComponent"
-	RLA_PurgeComponent_FullMethodName           = "/v1.RLA/PurgeComponent"
-	RLA_CreateNVLDomain_FullMethodName          = "/v1.RLA/CreateNVLDomain"
-	RLA_AttachRacksToNVLDomain_FullMethodName   = "/v1.RLA/AttachRacksToNVLDomain"
-	RLA_DetachRacksFromNVLDomain_FullMethodName = "/v1.RLA/DetachRacksFromNVLDomain"
-	RLA_GetListOfNVLDomains_FullMethodName      = "/v1.RLA/GetListOfNVLDomains"
-	RLA_GetRacksForNVLDomain_FullMethodName     = "/v1.RLA/GetRacksForNVLDomain"
-	RLA_ListTasks_FullMethodName                = "/v1.RLA/ListTasks"
-	RLA_GetTasksByIDs_FullMethodName            = "/v1.RLA/GetTasksByIDs"
-	RLA_CancelTask_FullMethodName               = "/v1.RLA/CancelTask"
-	RLA_CreateOperationRule_FullMethodName      = "/v1.RLA/CreateOperationRule"
-	RLA_UpdateOperationRule_FullMethodName      = "/v1.RLA/UpdateOperationRule"
-	RLA_DeleteOperationRule_FullMethodName      = "/v1.RLA/DeleteOperationRule"
-	RLA_GetOperationRule_FullMethodName         = "/v1.RLA/GetOperationRule"
-	RLA_ListOperationRules_FullMethodName       = "/v1.RLA/ListOperationRules"
-	RLA_SetRuleAsDefault_FullMethodName         = "/v1.RLA/SetRuleAsDefault"
-	RLA_AssociateRuleWithRack_FullMethodName    = "/v1.RLA/AssociateRuleWithRack"
-	RLA_DisassociateRuleFromRack_FullMethodName = "/v1.RLA/DisassociateRuleFromRack"
-	RLA_GetRackRuleAssociation_FullMethodName   = "/v1.RLA/GetRackRuleAssociation"
-	RLA_ListRackRuleAssociations_FullMethodName = "/v1.RLA/ListRackRuleAssociations"
+	Flow_Version_FullMethodName                  = "/v1.Flow/Version"
+	Flow_CreateTaskSchedule_FullMethodName       = "/v1.Flow/CreateTaskSchedule"
+	Flow_GetTaskSchedule_FullMethodName          = "/v1.Flow/GetTaskSchedule"
+	Flow_ListTaskSchedules_FullMethodName        = "/v1.Flow/ListTaskSchedules"
+	Flow_UpdateTaskSchedule_FullMethodName       = "/v1.Flow/UpdateTaskSchedule"
+	Flow_PauseTaskSchedule_FullMethodName        = "/v1.Flow/PauseTaskSchedule"
+	Flow_ResumeTaskSchedule_FullMethodName       = "/v1.Flow/ResumeTaskSchedule"
+	Flow_DeleteTaskSchedule_FullMethodName       = "/v1.Flow/DeleteTaskSchedule"
+	Flow_TriggerTaskSchedule_FullMethodName      = "/v1.Flow/TriggerTaskSchedule"
+	Flow_AddTaskScheduleScope_FullMethodName     = "/v1.Flow/AddTaskScheduleScope"
+	Flow_RemoveTaskScheduleScope_FullMethodName  = "/v1.Flow/RemoveTaskScheduleScope"
+	Flow_UpdateTaskScheduleScope_FullMethodName  = "/v1.Flow/UpdateTaskScheduleScope"
+	Flow_ListTaskScheduleScopes_FullMethodName   = "/v1.Flow/ListTaskScheduleScopes"
+	Flow_CheckScheduleConflicts_FullMethodName   = "/v1.Flow/CheckScheduleConflicts"
+	Flow_CreateExpectedRack_FullMethodName       = "/v1.Flow/CreateExpectedRack"
+	Flow_GetRackInfoByID_FullMethodName          = "/v1.Flow/GetRackInfoByID"
+	Flow_GetRackInfoBySerial_FullMethodName      = "/v1.Flow/GetRackInfoBySerial"
+	Flow_GetListOfRacks_FullMethodName           = "/v1.Flow/GetListOfRacks"
+	Flow_PatchRack_FullMethodName                = "/v1.Flow/PatchRack"
+	Flow_DeleteRack_FullMethodName               = "/v1.Flow/DeleteRack"
+	Flow_PurgeRack_FullMethodName                = "/v1.Flow/PurgeRack"
+	Flow_UpgradeFirmware_FullMethodName          = "/v1.Flow/UpgradeFirmware"
+	Flow_BringUpRack_FullMethodName              = "/v1.Flow/BringUpRack"
+	Flow_IngestRack_FullMethodName               = "/v1.Flow/IngestRack"
+	Flow_PowerOnRack_FullMethodName              = "/v1.Flow/PowerOnRack"
+	Flow_PowerOffRack_FullMethodName             = "/v1.Flow/PowerOffRack"
+	Flow_PowerResetRack_FullMethodName           = "/v1.Flow/PowerResetRack"
+	Flow_GetComponentInfoByID_FullMethodName     = "/v1.Flow/GetComponentInfoByID"
+	Flow_GetComponentInfoBySerial_FullMethodName = "/v1.Flow/GetComponentInfoBySerial"
+	Flow_GetComponents_FullMethodName            = "/v1.Flow/GetComponents"
+	Flow_ValidateComponents_FullMethodName       = "/v1.Flow/ValidateComponents"
+	Flow_AddComponent_FullMethodName             = "/v1.Flow/AddComponent"
+	Flow_PatchComponent_FullMethodName           = "/v1.Flow/PatchComponent"
+	Flow_DeleteComponent_FullMethodName          = "/v1.Flow/DeleteComponent"
+	Flow_PurgeComponent_FullMethodName           = "/v1.Flow/PurgeComponent"
+	Flow_CreateNVLDomain_FullMethodName          = "/v1.Flow/CreateNVLDomain"
+	Flow_AttachRacksToNVLDomain_FullMethodName   = "/v1.Flow/AttachRacksToNVLDomain"
+	Flow_DetachRacksFromNVLDomain_FullMethodName = "/v1.Flow/DetachRacksFromNVLDomain"
+	Flow_GetListOfNVLDomains_FullMethodName      = "/v1.Flow/GetListOfNVLDomains"
+	Flow_GetRacksForNVLDomain_FullMethodName     = "/v1.Flow/GetRacksForNVLDomain"
+	Flow_ListTasks_FullMethodName                = "/v1.Flow/ListTasks"
+	Flow_GetTasksByIDs_FullMethodName            = "/v1.Flow/GetTasksByIDs"
+	Flow_CancelTask_FullMethodName               = "/v1.Flow/CancelTask"
+	Flow_CreateOperationRule_FullMethodName      = "/v1.Flow/CreateOperationRule"
+	Flow_UpdateOperationRule_FullMethodName      = "/v1.Flow/UpdateOperationRule"
+	Flow_DeleteOperationRule_FullMethodName      = "/v1.Flow/DeleteOperationRule"
+	Flow_GetOperationRule_FullMethodName         = "/v1.Flow/GetOperationRule"
+	Flow_ListOperationRules_FullMethodName       = "/v1.Flow/ListOperationRules"
+	Flow_SetRuleAsDefault_FullMethodName         = "/v1.Flow/SetRuleAsDefault"
+	Flow_AssociateRuleWithRack_FullMethodName    = "/v1.Flow/AssociateRuleWithRack"
+	Flow_DisassociateRuleFromRack_FullMethodName = "/v1.Flow/DisassociateRuleFromRack"
+	Flow_GetRackRuleAssociation_FullMethodName   = "/v1.Flow/GetRackRuleAssociation"
+	Flow_ListRackRuleAssociations_FullMethodName = "/v1.Flow/ListRackRuleAssociations"
 )
 
-// RLAClient is the client API for RLA service.
+// FlowClient is the client API for Flow service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RLAClient interface {
+type FlowClient interface {
 	// Version
 	Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*BuildInfo, error)
+	// Task schedules
+	CreateTaskSchedule(ctx context.Context, in *CreateTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error)
+	GetTaskSchedule(ctx context.Context, in *GetTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error)
+	ListTaskSchedules(ctx context.Context, in *ListTaskSchedulesRequest, opts ...grpc.CallOption) (*ListTaskSchedulesResponse, error)
+	UpdateTaskSchedule(ctx context.Context, in *UpdateTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error)
+	PauseTaskSchedule(ctx context.Context, in *PauseTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error)
+	ResumeTaskSchedule(ctx context.Context, in *ResumeTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error)
+	DeleteTaskSchedule(ctx context.Context, in *DeleteTaskScheduleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	TriggerTaskSchedule(ctx context.Context, in *TriggerTaskScheduleRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error)
+	AddTaskScheduleScope(ctx context.Context, in *AddTaskScheduleScopeRequest, opts ...grpc.CallOption) (*AddTaskScheduleScopeResponse, error)
+	RemoveTaskScheduleScope(ctx context.Context, in *RemoveTaskScheduleScopeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	UpdateTaskScheduleScope(ctx context.Context, in *UpdateTaskScheduleScopeRequest, opts ...grpc.CallOption) (*UpdateTaskScheduleScopeResponse, error)
+	ListTaskScheduleScopes(ctx context.Context, in *ListTaskScheduleScopesRequest, opts ...grpc.CallOption) (*ListTaskScheduleScopesResponse, error)
+	CheckScheduleConflicts(ctx context.Context, in *CheckScheduleConflictsRequest, opts ...grpc.CallOption) (*CheckScheduleConflictsResponse, error)
 	// Rack CRUD
 	CreateExpectedRack(ctx context.Context, in *CreateExpectedRackRequest, opts ...grpc.CallOption) (*CreateExpectedRackResponse, error)
 	GetRackInfoByID(ctx context.Context, in *GetRackInfoByIDRequest, opts ...grpc.CallOption) (*GetRackInfoResponse, error)
@@ -132,420 +159,564 @@ type RLAClient interface {
 	ListRackRuleAssociations(ctx context.Context, in *ListRackRuleAssociationsRequest, opts ...grpc.CallOption) (*ListRackRuleAssociationsResponse, error)
 }
 
-type rLAClient struct {
+type flowClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRLAClient(cc grpc.ClientConnInterface) RLAClient {
-	return &rLAClient{cc}
+func NewFlowClient(cc grpc.ClientConnInterface) FlowClient {
+	return &flowClient{cc}
 }
 
-func (c *rLAClient) Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*BuildInfo, error) {
+func (c *flowClient) Version(ctx context.Context, in *VersionRequest, opts ...grpc.CallOption) (*BuildInfo, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(BuildInfo)
-	err := c.cc.Invoke(ctx, RLA_Version_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_Version_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) CreateExpectedRack(ctx context.Context, in *CreateExpectedRackRequest, opts ...grpc.CallOption) (*CreateExpectedRackResponse, error) {
+func (c *flowClient) CreateTaskSchedule(ctx context.Context, in *CreateTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskSchedule)
+	err := c.cc.Invoke(ctx, Flow_CreateTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) GetTaskSchedule(ctx context.Context, in *GetTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskSchedule)
+	err := c.cc.Invoke(ctx, Flow_GetTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) ListTaskSchedules(ctx context.Context, in *ListTaskSchedulesRequest, opts ...grpc.CallOption) (*ListTaskSchedulesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTaskSchedulesResponse)
+	err := c.cc.Invoke(ctx, Flow_ListTaskSchedules_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) UpdateTaskSchedule(ctx context.Context, in *UpdateTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskSchedule)
+	err := c.cc.Invoke(ctx, Flow_UpdateTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) PauseTaskSchedule(ctx context.Context, in *PauseTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskSchedule)
+	err := c.cc.Invoke(ctx, Flow_PauseTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) ResumeTaskSchedule(ctx context.Context, in *ResumeTaskScheduleRequest, opts ...grpc.CallOption) (*TaskSchedule, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TaskSchedule)
+	err := c.cc.Invoke(ctx, Flow_ResumeTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) DeleteTaskSchedule(ctx context.Context, in *DeleteTaskScheduleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Flow_DeleteTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) TriggerTaskSchedule(ctx context.Context, in *TriggerTaskScheduleRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(SubmitTaskResponse)
+	err := c.cc.Invoke(ctx, Flow_TriggerTaskSchedule_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) AddTaskScheduleScope(ctx context.Context, in *AddTaskScheduleScopeRequest, opts ...grpc.CallOption) (*AddTaskScheduleScopeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(AddTaskScheduleScopeResponse)
+	err := c.cc.Invoke(ctx, Flow_AddTaskScheduleScope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) RemoveTaskScheduleScope(ctx context.Context, in *RemoveTaskScheduleScopeRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, Flow_RemoveTaskScheduleScope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) UpdateTaskScheduleScope(ctx context.Context, in *UpdateTaskScheduleScopeRequest, opts ...grpc.CallOption) (*UpdateTaskScheduleScopeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateTaskScheduleScopeResponse)
+	err := c.cc.Invoke(ctx, Flow_UpdateTaskScheduleScope_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) ListTaskScheduleScopes(ctx context.Context, in *ListTaskScheduleScopesRequest, opts ...grpc.CallOption) (*ListTaskScheduleScopesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListTaskScheduleScopesResponse)
+	err := c.cc.Invoke(ctx, Flow_ListTaskScheduleScopes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) CheckScheduleConflicts(ctx context.Context, in *CheckScheduleConflictsRequest, opts ...grpc.CallOption) (*CheckScheduleConflictsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CheckScheduleConflictsResponse)
+	err := c.cc.Invoke(ctx, Flow_CheckScheduleConflicts_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *flowClient) CreateExpectedRack(ctx context.Context, in *CreateExpectedRackRequest, opts ...grpc.CallOption) (*CreateExpectedRackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateExpectedRackResponse)
-	err := c.cc.Invoke(ctx, RLA_CreateExpectedRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_CreateExpectedRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetRackInfoByID(ctx context.Context, in *GetRackInfoByIDRequest, opts ...grpc.CallOption) (*GetRackInfoResponse, error) {
+func (c *flowClient) GetRackInfoByID(ctx context.Context, in *GetRackInfoByIDRequest, opts ...grpc.CallOption) (*GetRackInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRackInfoResponse)
-	err := c.cc.Invoke(ctx, RLA_GetRackInfoByID_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetRackInfoByID_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetRackInfoBySerial(ctx context.Context, in *GetRackInfoBySerialRequest, opts ...grpc.CallOption) (*GetRackInfoResponse, error) {
+func (c *flowClient) GetRackInfoBySerial(ctx context.Context, in *GetRackInfoBySerialRequest, opts ...grpc.CallOption) (*GetRackInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRackInfoResponse)
-	err := c.cc.Invoke(ctx, RLA_GetRackInfoBySerial_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetRackInfoBySerial_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetListOfRacks(ctx context.Context, in *GetListOfRacksRequest, opts ...grpc.CallOption) (*GetListOfRacksResponse, error) {
+func (c *flowClient) GetListOfRacks(ctx context.Context, in *GetListOfRacksRequest, opts ...grpc.CallOption) (*GetListOfRacksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetListOfRacksResponse)
-	err := c.cc.Invoke(ctx, RLA_GetListOfRacks_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetListOfRacks_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PatchRack(ctx context.Context, in *PatchRackRequest, opts ...grpc.CallOption) (*PatchRackResponse, error) {
+func (c *flowClient) PatchRack(ctx context.Context, in *PatchRackRequest, opts ...grpc.CallOption) (*PatchRackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PatchRackResponse)
-	err := c.cc.Invoke(ctx, RLA_PatchRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PatchRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) DeleteRack(ctx context.Context, in *DeleteRackRequest, opts ...grpc.CallOption) (*DeleteRackResponse, error) {
+func (c *flowClient) DeleteRack(ctx context.Context, in *DeleteRackRequest, opts ...grpc.CallOption) (*DeleteRackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteRackResponse)
-	err := c.cc.Invoke(ctx, RLA_DeleteRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_DeleteRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PurgeRack(ctx context.Context, in *PurgeRackRequest, opts ...grpc.CallOption) (*PurgeRackResponse, error) {
+func (c *flowClient) PurgeRack(ctx context.Context, in *PurgeRackRequest, opts ...grpc.CallOption) (*PurgeRackResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PurgeRackResponse)
-	err := c.cc.Invoke(ctx, RLA_PurgeRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PurgeRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) UpgradeFirmware(ctx context.Context, in *UpgradeFirmwareRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+func (c *flowClient) UpgradeFirmware(ctx context.Context, in *UpgradeFirmwareRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_UpgradeFirmware_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_UpgradeFirmware_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) BringUpRack(ctx context.Context, in *BringUpRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+func (c *flowClient) BringUpRack(ctx context.Context, in *BringUpRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_BringUpRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_BringUpRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) IngestRack(ctx context.Context, in *IngestRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+func (c *flowClient) IngestRack(ctx context.Context, in *IngestRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_IngestRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_IngestRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PowerOnRack(ctx context.Context, in *PowerOnRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+func (c *flowClient) PowerOnRack(ctx context.Context, in *PowerOnRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_PowerOnRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PowerOnRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PowerOffRack(ctx context.Context, in *PowerOffRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+func (c *flowClient) PowerOffRack(ctx context.Context, in *PowerOffRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_PowerOffRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PowerOffRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PowerResetRack(ctx context.Context, in *PowerResetRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
+func (c *flowClient) PowerResetRack(ctx context.Context, in *PowerResetRackRequest, opts ...grpc.CallOption) (*SubmitTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(SubmitTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_PowerResetRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PowerResetRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetComponentInfoByID(ctx context.Context, in *GetComponentInfoByIDRequest, opts ...grpc.CallOption) (*GetComponentInfoResponse, error) {
+func (c *flowClient) GetComponentInfoByID(ctx context.Context, in *GetComponentInfoByIDRequest, opts ...grpc.CallOption) (*GetComponentInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetComponentInfoResponse)
-	err := c.cc.Invoke(ctx, RLA_GetComponentInfoByID_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetComponentInfoByID_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetComponentInfoBySerial(ctx context.Context, in *GetComponentInfoBySerialRequest, opts ...grpc.CallOption) (*GetComponentInfoResponse, error) {
+func (c *flowClient) GetComponentInfoBySerial(ctx context.Context, in *GetComponentInfoBySerialRequest, opts ...grpc.CallOption) (*GetComponentInfoResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetComponentInfoResponse)
-	err := c.cc.Invoke(ctx, RLA_GetComponentInfoBySerial_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetComponentInfoBySerial_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetComponents(ctx context.Context, in *GetComponentsRequest, opts ...grpc.CallOption) (*GetComponentsResponse, error) {
+func (c *flowClient) GetComponents(ctx context.Context, in *GetComponentsRequest, opts ...grpc.CallOption) (*GetComponentsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetComponentsResponse)
-	err := c.cc.Invoke(ctx, RLA_GetComponents_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetComponents_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) ValidateComponents(ctx context.Context, in *ValidateComponentsRequest, opts ...grpc.CallOption) (*ValidateComponentsResponse, error) {
+func (c *flowClient) ValidateComponents(ctx context.Context, in *ValidateComponentsRequest, opts ...grpc.CallOption) (*ValidateComponentsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ValidateComponentsResponse)
-	err := c.cc.Invoke(ctx, RLA_ValidateComponents_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_ValidateComponents_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) AddComponent(ctx context.Context, in *AddComponentRequest, opts ...grpc.CallOption) (*AddComponentResponse, error) {
+func (c *flowClient) AddComponent(ctx context.Context, in *AddComponentRequest, opts ...grpc.CallOption) (*AddComponentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AddComponentResponse)
-	err := c.cc.Invoke(ctx, RLA_AddComponent_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_AddComponent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PatchComponent(ctx context.Context, in *PatchComponentRequest, opts ...grpc.CallOption) (*PatchComponentResponse, error) {
+func (c *flowClient) PatchComponent(ctx context.Context, in *PatchComponentRequest, opts ...grpc.CallOption) (*PatchComponentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PatchComponentResponse)
-	err := c.cc.Invoke(ctx, RLA_PatchComponent_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PatchComponent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) DeleteComponent(ctx context.Context, in *DeleteComponentRequest, opts ...grpc.CallOption) (*DeleteComponentResponse, error) {
+func (c *flowClient) DeleteComponent(ctx context.Context, in *DeleteComponentRequest, opts ...grpc.CallOption) (*DeleteComponentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(DeleteComponentResponse)
-	err := c.cc.Invoke(ctx, RLA_DeleteComponent_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_DeleteComponent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) PurgeComponent(ctx context.Context, in *PurgeComponentRequest, opts ...grpc.CallOption) (*PurgeComponentResponse, error) {
+func (c *flowClient) PurgeComponent(ctx context.Context, in *PurgeComponentRequest, opts ...grpc.CallOption) (*PurgeComponentResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PurgeComponentResponse)
-	err := c.cc.Invoke(ctx, RLA_PurgeComponent_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_PurgeComponent_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) CreateNVLDomain(ctx context.Context, in *CreateNVLDomainRequest, opts ...grpc.CallOption) (*CreateNVLDomainResponse, error) {
+func (c *flowClient) CreateNVLDomain(ctx context.Context, in *CreateNVLDomainRequest, opts ...grpc.CallOption) (*CreateNVLDomainResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateNVLDomainResponse)
-	err := c.cc.Invoke(ctx, RLA_CreateNVLDomain_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_CreateNVLDomain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) AttachRacksToNVLDomain(ctx context.Context, in *AttachRacksToNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) AttachRacksToNVLDomain(ctx context.Context, in *AttachRacksToNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_AttachRacksToNVLDomain_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_AttachRacksToNVLDomain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) DetachRacksFromNVLDomain(ctx context.Context, in *DetachRacksFromNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) DetachRacksFromNVLDomain(ctx context.Context, in *DetachRacksFromNVLDomainRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_DetachRacksFromNVLDomain_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_DetachRacksFromNVLDomain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetListOfNVLDomains(ctx context.Context, in *GetListOfNVLDomainsRequest, opts ...grpc.CallOption) (*GetListOfNVLDomainsResponse, error) {
+func (c *flowClient) GetListOfNVLDomains(ctx context.Context, in *GetListOfNVLDomainsRequest, opts ...grpc.CallOption) (*GetListOfNVLDomainsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetListOfNVLDomainsResponse)
-	err := c.cc.Invoke(ctx, RLA_GetListOfNVLDomains_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetListOfNVLDomains_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetRacksForNVLDomain(ctx context.Context, in *GetRacksForNVLDomainRequest, opts ...grpc.CallOption) (*GetRacksForNVLDomainResponse, error) {
+func (c *flowClient) GetRacksForNVLDomain(ctx context.Context, in *GetRacksForNVLDomainRequest, opts ...grpc.CallOption) (*GetRacksForNVLDomainResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRacksForNVLDomainResponse)
-	err := c.cc.Invoke(ctx, RLA_GetRacksForNVLDomain_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetRacksForNVLDomain_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error) {
+func (c *flowClient) ListTasks(ctx context.Context, in *ListTasksRequest, opts ...grpc.CallOption) (*ListTasksResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListTasksResponse)
-	err := c.cc.Invoke(ctx, RLA_ListTasks_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_ListTasks_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetTasksByIDs(ctx context.Context, in *GetTasksByIDsRequest, opts ...grpc.CallOption) (*GetTasksByIDsResponse, error) {
+func (c *flowClient) GetTasksByIDs(ctx context.Context, in *GetTasksByIDsRequest, opts ...grpc.CallOption) (*GetTasksByIDsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetTasksByIDsResponse)
-	err := c.cc.Invoke(ctx, RLA_GetTasksByIDs_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetTasksByIDs_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) CancelTask(ctx context.Context, in *CancelTaskRequest, opts ...grpc.CallOption) (*CancelTaskResponse, error) {
+func (c *flowClient) CancelTask(ctx context.Context, in *CancelTaskRequest, opts ...grpc.CallOption) (*CancelTaskResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CancelTaskResponse)
-	err := c.cc.Invoke(ctx, RLA_CancelTask_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_CancelTask_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) CreateOperationRule(ctx context.Context, in *CreateOperationRuleRequest, opts ...grpc.CallOption) (*CreateOperationRuleResponse, error) {
+func (c *flowClient) CreateOperationRule(ctx context.Context, in *CreateOperationRuleRequest, opts ...grpc.CallOption) (*CreateOperationRuleResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateOperationRuleResponse)
-	err := c.cc.Invoke(ctx, RLA_CreateOperationRule_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_CreateOperationRule_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) UpdateOperationRule(ctx context.Context, in *UpdateOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) UpdateOperationRule(ctx context.Context, in *UpdateOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_UpdateOperationRule_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_UpdateOperationRule_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) DeleteOperationRule(ctx context.Context, in *DeleteOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) DeleteOperationRule(ctx context.Context, in *DeleteOperationRuleRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_DeleteOperationRule_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_DeleteOperationRule_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetOperationRule(ctx context.Context, in *GetOperationRuleRequest, opts ...grpc.CallOption) (*OperationRule, error) {
+func (c *flowClient) GetOperationRule(ctx context.Context, in *GetOperationRuleRequest, opts ...grpc.CallOption) (*OperationRule, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(OperationRule)
-	err := c.cc.Invoke(ctx, RLA_GetOperationRule_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetOperationRule_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) ListOperationRules(ctx context.Context, in *ListOperationRulesRequest, opts ...grpc.CallOption) (*ListOperationRulesResponse, error) {
+func (c *flowClient) ListOperationRules(ctx context.Context, in *ListOperationRulesRequest, opts ...grpc.CallOption) (*ListOperationRulesResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListOperationRulesResponse)
-	err := c.cc.Invoke(ctx, RLA_ListOperationRules_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_ListOperationRules_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) SetRuleAsDefault(ctx context.Context, in *SetRuleAsDefaultRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) SetRuleAsDefault(ctx context.Context, in *SetRuleAsDefaultRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_SetRuleAsDefault_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_SetRuleAsDefault_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) AssociateRuleWithRack(ctx context.Context, in *AssociateRuleWithRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) AssociateRuleWithRack(ctx context.Context, in *AssociateRuleWithRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_AssociateRuleWithRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_AssociateRuleWithRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) DisassociateRuleFromRack(ctx context.Context, in *DisassociateRuleFromRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *flowClient) DisassociateRuleFromRack(ctx context.Context, in *DisassociateRuleFromRackRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, RLA_DisassociateRuleFromRack_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_DisassociateRuleFromRack_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) GetRackRuleAssociation(ctx context.Context, in *GetRackRuleAssociationRequest, opts ...grpc.CallOption) (*GetRackRuleAssociationResponse, error) {
+func (c *flowClient) GetRackRuleAssociation(ctx context.Context, in *GetRackRuleAssociationRequest, opts ...grpc.CallOption) (*GetRackRuleAssociationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(GetRackRuleAssociationResponse)
-	err := c.cc.Invoke(ctx, RLA_GetRackRuleAssociation_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_GetRackRuleAssociation_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *rLAClient) ListRackRuleAssociations(ctx context.Context, in *ListRackRuleAssociationsRequest, opts ...grpc.CallOption) (*ListRackRuleAssociationsResponse, error) {
+func (c *flowClient) ListRackRuleAssociations(ctx context.Context, in *ListRackRuleAssociationsRequest, opts ...grpc.CallOption) (*ListRackRuleAssociationsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ListRackRuleAssociationsResponse)
-	err := c.cc.Invoke(ctx, RLA_ListRackRuleAssociations_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, Flow_ListRackRuleAssociations_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RLAServer is the server API for RLA service.
-// All implementations should embed UnimplementedRLAServer
+// FlowServer is the server API for Flow service.
+// All implementations should embed UnimplementedFlowServer
 // for forward compatibility.
-type RLAServer interface {
+type FlowServer interface {
 	// Version
 	Version(context.Context, *VersionRequest) (*BuildInfo, error)
+	// Task schedules
+	CreateTaskSchedule(context.Context, *CreateTaskScheduleRequest) (*TaskSchedule, error)
+	GetTaskSchedule(context.Context, *GetTaskScheduleRequest) (*TaskSchedule, error)
+	ListTaskSchedules(context.Context, *ListTaskSchedulesRequest) (*ListTaskSchedulesResponse, error)
+	UpdateTaskSchedule(context.Context, *UpdateTaskScheduleRequest) (*TaskSchedule, error)
+	PauseTaskSchedule(context.Context, *PauseTaskScheduleRequest) (*TaskSchedule, error)
+	ResumeTaskSchedule(context.Context, *ResumeTaskScheduleRequest) (*TaskSchedule, error)
+	DeleteTaskSchedule(context.Context, *DeleteTaskScheduleRequest) (*emptypb.Empty, error)
+	TriggerTaskSchedule(context.Context, *TriggerTaskScheduleRequest) (*SubmitTaskResponse, error)
+	AddTaskScheduleScope(context.Context, *AddTaskScheduleScopeRequest) (*AddTaskScheduleScopeResponse, error)
+	RemoveTaskScheduleScope(context.Context, *RemoveTaskScheduleScopeRequest) (*emptypb.Empty, error)
+	UpdateTaskScheduleScope(context.Context, *UpdateTaskScheduleScopeRequest) (*UpdateTaskScheduleScopeResponse, error)
+	ListTaskScheduleScopes(context.Context, *ListTaskScheduleScopesRequest) (*ListTaskScheduleScopesResponse, error)
+	CheckScheduleConflicts(context.Context, *CheckScheduleConflictsRequest) (*CheckScheduleConflictsResponse, error)
 	// Rack CRUD
 	CreateExpectedRack(context.Context, *CreateExpectedRackRequest) (*CreateExpectedRackResponse, error)
 	GetRackInfoByID(context.Context, *GetRackInfoByIDRequest) (*GetRackInfoResponse, error)
@@ -594,1039 +765,1364 @@ type RLAServer interface {
 	ListRackRuleAssociations(context.Context, *ListRackRuleAssociationsRequest) (*ListRackRuleAssociationsResponse, error)
 }
 
-// UnimplementedRLAServer should be embedded to have
+// UnimplementedFlowServer should be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedRLAServer struct{}
+type UnimplementedFlowServer struct{}
 
-func (UnimplementedRLAServer) Version(context.Context, *VersionRequest) (*BuildInfo, error) {
+func (UnimplementedFlowServer) Version(context.Context, *VersionRequest) (*BuildInfo, error) {
 	return nil, status.Error(codes.Unimplemented, "method Version not implemented")
 }
-func (UnimplementedRLAServer) CreateExpectedRack(context.Context, *CreateExpectedRackRequest) (*CreateExpectedRackResponse, error) {
+func (UnimplementedFlowServer) CreateTaskSchedule(context.Context, *CreateTaskScheduleRequest) (*TaskSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) GetTaskSchedule(context.Context, *GetTaskScheduleRequest) (*TaskSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) ListTaskSchedules(context.Context, *ListTaskSchedulesRequest) (*ListTaskSchedulesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTaskSchedules not implemented")
+}
+func (UnimplementedFlowServer) UpdateTaskSchedule(context.Context, *UpdateTaskScheduleRequest) (*TaskSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) PauseTaskSchedule(context.Context, *PauseTaskScheduleRequest) (*TaskSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method PauseTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) ResumeTaskSchedule(context.Context, *ResumeTaskScheduleRequest) (*TaskSchedule, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResumeTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) DeleteTaskSchedule(context.Context, *DeleteTaskScheduleRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) TriggerTaskSchedule(context.Context, *TriggerTaskScheduleRequest) (*SubmitTaskResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TriggerTaskSchedule not implemented")
+}
+func (UnimplementedFlowServer) AddTaskScheduleScope(context.Context, *AddTaskScheduleScopeRequest) (*AddTaskScheduleScopeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AddTaskScheduleScope not implemented")
+}
+func (UnimplementedFlowServer) RemoveTaskScheduleScope(context.Context, *RemoveTaskScheduleScopeRequest) (*emptypb.Empty, error) {
+	return nil, status.Error(codes.Unimplemented, "method RemoveTaskScheduleScope not implemented")
+}
+func (UnimplementedFlowServer) UpdateTaskScheduleScope(context.Context, *UpdateTaskScheduleScopeRequest) (*UpdateTaskScheduleScopeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method UpdateTaskScheduleScope not implemented")
+}
+func (UnimplementedFlowServer) ListTaskScheduleScopes(context.Context, *ListTaskScheduleScopesRequest) (*ListTaskScheduleScopesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListTaskScheduleScopes not implemented")
+}
+func (UnimplementedFlowServer) CheckScheduleConflicts(context.Context, *CheckScheduleConflictsRequest) (*CheckScheduleConflictsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CheckScheduleConflicts not implemented")
+}
+func (UnimplementedFlowServer) CreateExpectedRack(context.Context, *CreateExpectedRackRequest) (*CreateExpectedRackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateExpectedRack not implemented")
 }
-func (UnimplementedRLAServer) GetRackInfoByID(context.Context, *GetRackInfoByIDRequest) (*GetRackInfoResponse, error) {
+func (UnimplementedFlowServer) GetRackInfoByID(context.Context, *GetRackInfoByIDRequest) (*GetRackInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRackInfoByID not implemented")
 }
-func (UnimplementedRLAServer) GetRackInfoBySerial(context.Context, *GetRackInfoBySerialRequest) (*GetRackInfoResponse, error) {
+func (UnimplementedFlowServer) GetRackInfoBySerial(context.Context, *GetRackInfoBySerialRequest) (*GetRackInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRackInfoBySerial not implemented")
 }
-func (UnimplementedRLAServer) GetListOfRacks(context.Context, *GetListOfRacksRequest) (*GetListOfRacksResponse, error) {
+func (UnimplementedFlowServer) GetListOfRacks(context.Context, *GetListOfRacksRequest) (*GetListOfRacksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetListOfRacks not implemented")
 }
-func (UnimplementedRLAServer) PatchRack(context.Context, *PatchRackRequest) (*PatchRackResponse, error) {
+func (UnimplementedFlowServer) PatchRack(context.Context, *PatchRackRequest) (*PatchRackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PatchRack not implemented")
 }
-func (UnimplementedRLAServer) DeleteRack(context.Context, *DeleteRackRequest) (*DeleteRackResponse, error) {
+func (UnimplementedFlowServer) DeleteRack(context.Context, *DeleteRackRequest) (*DeleteRackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteRack not implemented")
 }
-func (UnimplementedRLAServer) PurgeRack(context.Context, *PurgeRackRequest) (*PurgeRackResponse, error) {
+func (UnimplementedFlowServer) PurgeRack(context.Context, *PurgeRackRequest) (*PurgeRackResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PurgeRack not implemented")
 }
-func (UnimplementedRLAServer) UpgradeFirmware(context.Context, *UpgradeFirmwareRequest) (*SubmitTaskResponse, error) {
+func (UnimplementedFlowServer) UpgradeFirmware(context.Context, *UpgradeFirmwareRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpgradeFirmware not implemented")
 }
-func (UnimplementedRLAServer) BringUpRack(context.Context, *BringUpRackRequest) (*SubmitTaskResponse, error) {
+func (UnimplementedFlowServer) BringUpRack(context.Context, *BringUpRackRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method BringUpRack not implemented")
 }
-func (UnimplementedRLAServer) IngestRack(context.Context, *IngestRackRequest) (*SubmitTaskResponse, error) {
+func (UnimplementedFlowServer) IngestRack(context.Context, *IngestRackRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method IngestRack not implemented")
 }
-func (UnimplementedRLAServer) PowerOnRack(context.Context, *PowerOnRackRequest) (*SubmitTaskResponse, error) {
+func (UnimplementedFlowServer) PowerOnRack(context.Context, *PowerOnRackRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PowerOnRack not implemented")
 }
-func (UnimplementedRLAServer) PowerOffRack(context.Context, *PowerOffRackRequest) (*SubmitTaskResponse, error) {
+func (UnimplementedFlowServer) PowerOffRack(context.Context, *PowerOffRackRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PowerOffRack not implemented")
 }
-func (UnimplementedRLAServer) PowerResetRack(context.Context, *PowerResetRackRequest) (*SubmitTaskResponse, error) {
+func (UnimplementedFlowServer) PowerResetRack(context.Context, *PowerResetRackRequest) (*SubmitTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PowerResetRack not implemented")
 }
-func (UnimplementedRLAServer) GetComponentInfoByID(context.Context, *GetComponentInfoByIDRequest) (*GetComponentInfoResponse, error) {
+func (UnimplementedFlowServer) GetComponentInfoByID(context.Context, *GetComponentInfoByIDRequest) (*GetComponentInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetComponentInfoByID not implemented")
 }
-func (UnimplementedRLAServer) GetComponentInfoBySerial(context.Context, *GetComponentInfoBySerialRequest) (*GetComponentInfoResponse, error) {
+func (UnimplementedFlowServer) GetComponentInfoBySerial(context.Context, *GetComponentInfoBySerialRequest) (*GetComponentInfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetComponentInfoBySerial not implemented")
 }
-func (UnimplementedRLAServer) GetComponents(context.Context, *GetComponentsRequest) (*GetComponentsResponse, error) {
+func (UnimplementedFlowServer) GetComponents(context.Context, *GetComponentsRequest) (*GetComponentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetComponents not implemented")
 }
-func (UnimplementedRLAServer) ValidateComponents(context.Context, *ValidateComponentsRequest) (*ValidateComponentsResponse, error) {
+func (UnimplementedFlowServer) ValidateComponents(context.Context, *ValidateComponentsRequest) (*ValidateComponentsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ValidateComponents not implemented")
 }
-func (UnimplementedRLAServer) AddComponent(context.Context, *AddComponentRequest) (*AddComponentResponse, error) {
+func (UnimplementedFlowServer) AddComponent(context.Context, *AddComponentRequest) (*AddComponentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AddComponent not implemented")
 }
-func (UnimplementedRLAServer) PatchComponent(context.Context, *PatchComponentRequest) (*PatchComponentResponse, error) {
+func (UnimplementedFlowServer) PatchComponent(context.Context, *PatchComponentRequest) (*PatchComponentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PatchComponent not implemented")
 }
-func (UnimplementedRLAServer) DeleteComponent(context.Context, *DeleteComponentRequest) (*DeleteComponentResponse, error) {
+func (UnimplementedFlowServer) DeleteComponent(context.Context, *DeleteComponentRequest) (*DeleteComponentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteComponent not implemented")
 }
-func (UnimplementedRLAServer) PurgeComponent(context.Context, *PurgeComponentRequest) (*PurgeComponentResponse, error) {
+func (UnimplementedFlowServer) PurgeComponent(context.Context, *PurgeComponentRequest) (*PurgeComponentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method PurgeComponent not implemented")
 }
-func (UnimplementedRLAServer) CreateNVLDomain(context.Context, *CreateNVLDomainRequest) (*CreateNVLDomainResponse, error) {
+func (UnimplementedFlowServer) CreateNVLDomain(context.Context, *CreateNVLDomainRequest) (*CreateNVLDomainResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateNVLDomain not implemented")
 }
-func (UnimplementedRLAServer) AttachRacksToNVLDomain(context.Context, *AttachRacksToNVLDomainRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) AttachRacksToNVLDomain(context.Context, *AttachRacksToNVLDomainRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method AttachRacksToNVLDomain not implemented")
 }
-func (UnimplementedRLAServer) DetachRacksFromNVLDomain(context.Context, *DetachRacksFromNVLDomainRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) DetachRacksFromNVLDomain(context.Context, *DetachRacksFromNVLDomainRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DetachRacksFromNVLDomain not implemented")
 }
-func (UnimplementedRLAServer) GetListOfNVLDomains(context.Context, *GetListOfNVLDomainsRequest) (*GetListOfNVLDomainsResponse, error) {
+func (UnimplementedFlowServer) GetListOfNVLDomains(context.Context, *GetListOfNVLDomainsRequest) (*GetListOfNVLDomainsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetListOfNVLDomains not implemented")
 }
-func (UnimplementedRLAServer) GetRacksForNVLDomain(context.Context, *GetRacksForNVLDomainRequest) (*GetRacksForNVLDomainResponse, error) {
+func (UnimplementedFlowServer) GetRacksForNVLDomain(context.Context, *GetRacksForNVLDomainRequest) (*GetRacksForNVLDomainResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRacksForNVLDomain not implemented")
 }
-func (UnimplementedRLAServer) ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error) {
+func (UnimplementedFlowServer) ListTasks(context.Context, *ListTasksRequest) (*ListTasksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListTasks not implemented")
 }
-func (UnimplementedRLAServer) GetTasksByIDs(context.Context, *GetTasksByIDsRequest) (*GetTasksByIDsResponse, error) {
+func (UnimplementedFlowServer) GetTasksByIDs(context.Context, *GetTasksByIDsRequest) (*GetTasksByIDsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTasksByIDs not implemented")
 }
-func (UnimplementedRLAServer) CancelTask(context.Context, *CancelTaskRequest) (*CancelTaskResponse, error) {
+func (UnimplementedFlowServer) CancelTask(context.Context, *CancelTaskRequest) (*CancelTaskResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CancelTask not implemented")
 }
-func (UnimplementedRLAServer) CreateOperationRule(context.Context, *CreateOperationRuleRequest) (*CreateOperationRuleResponse, error) {
+func (UnimplementedFlowServer) CreateOperationRule(context.Context, *CreateOperationRuleRequest) (*CreateOperationRuleResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateOperationRule not implemented")
 }
-func (UnimplementedRLAServer) UpdateOperationRule(context.Context, *UpdateOperationRuleRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) UpdateOperationRule(context.Context, *UpdateOperationRuleRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateOperationRule not implemented")
 }
-func (UnimplementedRLAServer) DeleteOperationRule(context.Context, *DeleteOperationRuleRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) DeleteOperationRule(context.Context, *DeleteOperationRuleRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DeleteOperationRule not implemented")
 }
-func (UnimplementedRLAServer) GetOperationRule(context.Context, *GetOperationRuleRequest) (*OperationRule, error) {
+func (UnimplementedFlowServer) GetOperationRule(context.Context, *GetOperationRuleRequest) (*OperationRule, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOperationRule not implemented")
 }
-func (UnimplementedRLAServer) ListOperationRules(context.Context, *ListOperationRulesRequest) (*ListOperationRulesResponse, error) {
+func (UnimplementedFlowServer) ListOperationRules(context.Context, *ListOperationRulesRequest) (*ListOperationRulesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListOperationRules not implemented")
 }
-func (UnimplementedRLAServer) SetRuleAsDefault(context.Context, *SetRuleAsDefaultRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) SetRuleAsDefault(context.Context, *SetRuleAsDefaultRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetRuleAsDefault not implemented")
 }
-func (UnimplementedRLAServer) AssociateRuleWithRack(context.Context, *AssociateRuleWithRackRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) AssociateRuleWithRack(context.Context, *AssociateRuleWithRackRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method AssociateRuleWithRack not implemented")
 }
-func (UnimplementedRLAServer) DisassociateRuleFromRack(context.Context, *DisassociateRuleFromRackRequest) (*emptypb.Empty, error) {
+func (UnimplementedFlowServer) DisassociateRuleFromRack(context.Context, *DisassociateRuleFromRackRequest) (*emptypb.Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method DisassociateRuleFromRack not implemented")
 }
-func (UnimplementedRLAServer) GetRackRuleAssociation(context.Context, *GetRackRuleAssociationRequest) (*GetRackRuleAssociationResponse, error) {
+func (UnimplementedFlowServer) GetRackRuleAssociation(context.Context, *GetRackRuleAssociationRequest) (*GetRackRuleAssociationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetRackRuleAssociation not implemented")
 }
-func (UnimplementedRLAServer) ListRackRuleAssociations(context.Context, *ListRackRuleAssociationsRequest) (*ListRackRuleAssociationsResponse, error) {
+func (UnimplementedFlowServer) ListRackRuleAssociations(context.Context, *ListRackRuleAssociationsRequest) (*ListRackRuleAssociationsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListRackRuleAssociations not implemented")
 }
-func (UnimplementedRLAServer) testEmbeddedByValue() {}
+func (UnimplementedFlowServer) testEmbeddedByValue() {}
 
-// UnsafeRLAServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RLAServer will
+// UnsafeFlowServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to FlowServer will
 // result in compilation errors.
-type UnsafeRLAServer interface {
-	mustEmbedUnimplementedRLAServer()
+type UnsafeFlowServer interface {
+	mustEmbedUnimplementedFlowServer()
 }
 
-func RegisterRLAServer(s grpc.ServiceRegistrar, srv RLAServer) {
-	// If the following call panics, it indicates UnimplementedRLAServer was
+func RegisterFlowServer(s grpc.ServiceRegistrar, srv FlowServer) {
+	// If the following call panics, it indicates UnimplementedFlowServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&RLA_ServiceDesc, srv)
+	s.RegisterService(&Flow_ServiceDesc, srv)
 }
 
-func _RLA_Version_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_Version_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(VersionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).Version(ctx, in)
+		return srv.(FlowServer).Version(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_Version_FullMethodName,
+		FullMethod: Flow_Version_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).Version(ctx, req.(*VersionRequest))
+		return srv.(FlowServer).Version(ctx, req.(*VersionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_CreateExpectedRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_CreateTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).CreateTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_CreateTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).CreateTaskSchedule(ctx, req.(*CreateTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_GetTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).GetTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_GetTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).GetTaskSchedule(ctx, req.(*GetTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_ListTaskSchedules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTaskSchedulesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).ListTaskSchedules(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_ListTaskSchedules_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).ListTaskSchedules(ctx, req.(*ListTaskSchedulesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_UpdateTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).UpdateTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_UpdateTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).UpdateTaskSchedule(ctx, req.(*UpdateTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_PauseTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PauseTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).PauseTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_PauseTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).PauseTaskSchedule(ctx, req.(*PauseTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_ResumeTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResumeTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).ResumeTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_ResumeTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).ResumeTaskSchedule(ctx, req.(*ResumeTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_DeleteTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).DeleteTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_DeleteTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).DeleteTaskSchedule(ctx, req.(*DeleteTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_TriggerTaskSchedule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TriggerTaskScheduleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).TriggerTaskSchedule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_TriggerTaskSchedule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).TriggerTaskSchedule(ctx, req.(*TriggerTaskScheduleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_AddTaskScheduleScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddTaskScheduleScopeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).AddTaskScheduleScope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_AddTaskScheduleScope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).AddTaskScheduleScope(ctx, req.(*AddTaskScheduleScopeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_RemoveTaskScheduleScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RemoveTaskScheduleScopeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).RemoveTaskScheduleScope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_RemoveTaskScheduleScope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).RemoveTaskScheduleScope(ctx, req.(*RemoveTaskScheduleScopeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_UpdateTaskScheduleScope_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateTaskScheduleScopeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).UpdateTaskScheduleScope(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_UpdateTaskScheduleScope_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).UpdateTaskScheduleScope(ctx, req.(*UpdateTaskScheduleScopeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_ListTaskScheduleScopes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListTaskScheduleScopesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).ListTaskScheduleScopes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_ListTaskScheduleScopes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).ListTaskScheduleScopes(ctx, req.(*ListTaskScheduleScopesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_CheckScheduleConflicts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckScheduleConflictsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FlowServer).CheckScheduleConflicts(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Flow_CheckScheduleConflicts_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FlowServer).CheckScheduleConflicts(ctx, req.(*CheckScheduleConflictsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Flow_CreateExpectedRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateExpectedRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).CreateExpectedRack(ctx, in)
+		return srv.(FlowServer).CreateExpectedRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_CreateExpectedRack_FullMethodName,
+		FullMethod: Flow_CreateExpectedRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).CreateExpectedRack(ctx, req.(*CreateExpectedRackRequest))
+		return srv.(FlowServer).CreateExpectedRack(ctx, req.(*CreateExpectedRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetRackInfoByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetRackInfoByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRackInfoByIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetRackInfoByID(ctx, in)
+		return srv.(FlowServer).GetRackInfoByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetRackInfoByID_FullMethodName,
+		FullMethod: Flow_GetRackInfoByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetRackInfoByID(ctx, req.(*GetRackInfoByIDRequest))
+		return srv.(FlowServer).GetRackInfoByID(ctx, req.(*GetRackInfoByIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetRackInfoBySerial_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetRackInfoBySerial_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRackInfoBySerialRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetRackInfoBySerial(ctx, in)
+		return srv.(FlowServer).GetRackInfoBySerial(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetRackInfoBySerial_FullMethodName,
+		FullMethod: Flow_GetRackInfoBySerial_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetRackInfoBySerial(ctx, req.(*GetRackInfoBySerialRequest))
+		return srv.(FlowServer).GetRackInfoBySerial(ctx, req.(*GetRackInfoBySerialRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetListOfRacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetListOfRacks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetListOfRacksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetListOfRacks(ctx, in)
+		return srv.(FlowServer).GetListOfRacks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetListOfRacks_FullMethodName,
+		FullMethod: Flow_GetListOfRacks_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetListOfRacks(ctx, req.(*GetListOfRacksRequest))
+		return srv.(FlowServer).GetListOfRacks(ctx, req.(*GetListOfRacksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PatchRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PatchRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PatchRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PatchRack(ctx, in)
+		return srv.(FlowServer).PatchRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PatchRack_FullMethodName,
+		FullMethod: Flow_PatchRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PatchRack(ctx, req.(*PatchRackRequest))
+		return srv.(FlowServer).PatchRack(ctx, req.(*PatchRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_DeleteRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_DeleteRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).DeleteRack(ctx, in)
+		return srv.(FlowServer).DeleteRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_DeleteRack_FullMethodName,
+		FullMethod: Flow_DeleteRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).DeleteRack(ctx, req.(*DeleteRackRequest))
+		return srv.(FlowServer).DeleteRack(ctx, req.(*DeleteRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PurgeRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PurgeRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PurgeRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PurgeRack(ctx, in)
+		return srv.(FlowServer).PurgeRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PurgeRack_FullMethodName,
+		FullMethod: Flow_PurgeRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PurgeRack(ctx, req.(*PurgeRackRequest))
+		return srv.(FlowServer).PurgeRack(ctx, req.(*PurgeRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_UpgradeFirmware_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_UpgradeFirmware_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpgradeFirmwareRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).UpgradeFirmware(ctx, in)
+		return srv.(FlowServer).UpgradeFirmware(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_UpgradeFirmware_FullMethodName,
+		FullMethod: Flow_UpgradeFirmware_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).UpgradeFirmware(ctx, req.(*UpgradeFirmwareRequest))
+		return srv.(FlowServer).UpgradeFirmware(ctx, req.(*UpgradeFirmwareRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_BringUpRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_BringUpRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BringUpRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).BringUpRack(ctx, in)
+		return srv.(FlowServer).BringUpRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_BringUpRack_FullMethodName,
+		FullMethod: Flow_BringUpRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).BringUpRack(ctx, req.(*BringUpRackRequest))
+		return srv.(FlowServer).BringUpRack(ctx, req.(*BringUpRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_IngestRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_IngestRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(IngestRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).IngestRack(ctx, in)
+		return srv.(FlowServer).IngestRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_IngestRack_FullMethodName,
+		FullMethod: Flow_IngestRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).IngestRack(ctx, req.(*IngestRackRequest))
+		return srv.(FlowServer).IngestRack(ctx, req.(*IngestRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PowerOnRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PowerOnRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PowerOnRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PowerOnRack(ctx, in)
+		return srv.(FlowServer).PowerOnRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PowerOnRack_FullMethodName,
+		FullMethod: Flow_PowerOnRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PowerOnRack(ctx, req.(*PowerOnRackRequest))
+		return srv.(FlowServer).PowerOnRack(ctx, req.(*PowerOnRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PowerOffRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PowerOffRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PowerOffRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PowerOffRack(ctx, in)
+		return srv.(FlowServer).PowerOffRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PowerOffRack_FullMethodName,
+		FullMethod: Flow_PowerOffRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PowerOffRack(ctx, req.(*PowerOffRackRequest))
+		return srv.(FlowServer).PowerOffRack(ctx, req.(*PowerOffRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PowerResetRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PowerResetRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PowerResetRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PowerResetRack(ctx, in)
+		return srv.(FlowServer).PowerResetRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PowerResetRack_FullMethodName,
+		FullMethod: Flow_PowerResetRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PowerResetRack(ctx, req.(*PowerResetRackRequest))
+		return srv.(FlowServer).PowerResetRack(ctx, req.(*PowerResetRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetComponentInfoByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetComponentInfoByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetComponentInfoByIDRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetComponentInfoByID(ctx, in)
+		return srv.(FlowServer).GetComponentInfoByID(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetComponentInfoByID_FullMethodName,
+		FullMethod: Flow_GetComponentInfoByID_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetComponentInfoByID(ctx, req.(*GetComponentInfoByIDRequest))
+		return srv.(FlowServer).GetComponentInfoByID(ctx, req.(*GetComponentInfoByIDRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetComponentInfoBySerial_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetComponentInfoBySerial_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetComponentInfoBySerialRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetComponentInfoBySerial(ctx, in)
+		return srv.(FlowServer).GetComponentInfoBySerial(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetComponentInfoBySerial_FullMethodName,
+		FullMethod: Flow_GetComponentInfoBySerial_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetComponentInfoBySerial(ctx, req.(*GetComponentInfoBySerialRequest))
+		return srv.(FlowServer).GetComponentInfoBySerial(ctx, req.(*GetComponentInfoBySerialRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetComponentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetComponents(ctx, in)
+		return srv.(FlowServer).GetComponents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetComponents_FullMethodName,
+		FullMethod: Flow_GetComponents_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetComponents(ctx, req.(*GetComponentsRequest))
+		return srv.(FlowServer).GetComponents(ctx, req.(*GetComponentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_ValidateComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_ValidateComponents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValidateComponentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).ValidateComponents(ctx, in)
+		return srv.(FlowServer).ValidateComponents(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_ValidateComponents_FullMethodName,
+		FullMethod: Flow_ValidateComponents_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).ValidateComponents(ctx, req.(*ValidateComponentsRequest))
+		return srv.(FlowServer).ValidateComponents(ctx, req.(*ValidateComponentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_AddComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_AddComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddComponentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).AddComponent(ctx, in)
+		return srv.(FlowServer).AddComponent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_AddComponent_FullMethodName,
+		FullMethod: Flow_AddComponent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).AddComponent(ctx, req.(*AddComponentRequest))
+		return srv.(FlowServer).AddComponent(ctx, req.(*AddComponentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PatchComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PatchComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PatchComponentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PatchComponent(ctx, in)
+		return srv.(FlowServer).PatchComponent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PatchComponent_FullMethodName,
+		FullMethod: Flow_PatchComponent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PatchComponent(ctx, req.(*PatchComponentRequest))
+		return srv.(FlowServer).PatchComponent(ctx, req.(*PatchComponentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_DeleteComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_DeleteComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteComponentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).DeleteComponent(ctx, in)
+		return srv.(FlowServer).DeleteComponent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_DeleteComponent_FullMethodName,
+		FullMethod: Flow_DeleteComponent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).DeleteComponent(ctx, req.(*DeleteComponentRequest))
+		return srv.(FlowServer).DeleteComponent(ctx, req.(*DeleteComponentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_PurgeComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_PurgeComponent_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PurgeComponentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).PurgeComponent(ctx, in)
+		return srv.(FlowServer).PurgeComponent(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_PurgeComponent_FullMethodName,
+		FullMethod: Flow_PurgeComponent_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).PurgeComponent(ctx, req.(*PurgeComponentRequest))
+		return srv.(FlowServer).PurgeComponent(ctx, req.(*PurgeComponentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_CreateNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_CreateNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateNVLDomainRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).CreateNVLDomain(ctx, in)
+		return srv.(FlowServer).CreateNVLDomain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_CreateNVLDomain_FullMethodName,
+		FullMethod: Flow_CreateNVLDomain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).CreateNVLDomain(ctx, req.(*CreateNVLDomainRequest))
+		return srv.(FlowServer).CreateNVLDomain(ctx, req.(*CreateNVLDomainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_AttachRacksToNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_AttachRacksToNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AttachRacksToNVLDomainRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).AttachRacksToNVLDomain(ctx, in)
+		return srv.(FlowServer).AttachRacksToNVLDomain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_AttachRacksToNVLDomain_FullMethodName,
+		FullMethod: Flow_AttachRacksToNVLDomain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).AttachRacksToNVLDomain(ctx, req.(*AttachRacksToNVLDomainRequest))
+		return srv.(FlowServer).AttachRacksToNVLDomain(ctx, req.(*AttachRacksToNVLDomainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_DetachRacksFromNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_DetachRacksFromNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DetachRacksFromNVLDomainRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).DetachRacksFromNVLDomain(ctx, in)
+		return srv.(FlowServer).DetachRacksFromNVLDomain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_DetachRacksFromNVLDomain_FullMethodName,
+		FullMethod: Flow_DetachRacksFromNVLDomain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).DetachRacksFromNVLDomain(ctx, req.(*DetachRacksFromNVLDomainRequest))
+		return srv.(FlowServer).DetachRacksFromNVLDomain(ctx, req.(*DetachRacksFromNVLDomainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetListOfNVLDomains_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetListOfNVLDomains_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetListOfNVLDomainsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetListOfNVLDomains(ctx, in)
+		return srv.(FlowServer).GetListOfNVLDomains(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetListOfNVLDomains_FullMethodName,
+		FullMethod: Flow_GetListOfNVLDomains_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetListOfNVLDomains(ctx, req.(*GetListOfNVLDomainsRequest))
+		return srv.(FlowServer).GetListOfNVLDomains(ctx, req.(*GetListOfNVLDomainsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetRacksForNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetRacksForNVLDomain_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRacksForNVLDomainRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetRacksForNVLDomain(ctx, in)
+		return srv.(FlowServer).GetRacksForNVLDomain(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetRacksForNVLDomain_FullMethodName,
+		FullMethod: Flow_GetRacksForNVLDomain_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetRacksForNVLDomain(ctx, req.(*GetRacksForNVLDomainRequest))
+		return srv.(FlowServer).GetRacksForNVLDomain(ctx, req.(*GetRacksForNVLDomainRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_ListTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_ListTasks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListTasksRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).ListTasks(ctx, in)
+		return srv.(FlowServer).ListTasks(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_ListTasks_FullMethodName,
+		FullMethod: Flow_ListTasks_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).ListTasks(ctx, req.(*ListTasksRequest))
+		return srv.(FlowServer).ListTasks(ctx, req.(*ListTasksRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetTasksByIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetTasksByIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetTasksByIDsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetTasksByIDs(ctx, in)
+		return srv.(FlowServer).GetTasksByIDs(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetTasksByIDs_FullMethodName,
+		FullMethod: Flow_GetTasksByIDs_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetTasksByIDs(ctx, req.(*GetTasksByIDsRequest))
+		return srv.(FlowServer).GetTasksByIDs(ctx, req.(*GetTasksByIDsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_CancelTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_CancelTask_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CancelTaskRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).CancelTask(ctx, in)
+		return srv.(FlowServer).CancelTask(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_CancelTask_FullMethodName,
+		FullMethod: Flow_CancelTask_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).CancelTask(ctx, req.(*CancelTaskRequest))
+		return srv.(FlowServer).CancelTask(ctx, req.(*CancelTaskRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_CreateOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_CreateOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateOperationRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).CreateOperationRule(ctx, in)
+		return srv.(FlowServer).CreateOperationRule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_CreateOperationRule_FullMethodName,
+		FullMethod: Flow_CreateOperationRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).CreateOperationRule(ctx, req.(*CreateOperationRuleRequest))
+		return srv.(FlowServer).CreateOperationRule(ctx, req.(*CreateOperationRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_UpdateOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_UpdateOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(UpdateOperationRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).UpdateOperationRule(ctx, in)
+		return srv.(FlowServer).UpdateOperationRule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_UpdateOperationRule_FullMethodName,
+		FullMethod: Flow_UpdateOperationRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).UpdateOperationRule(ctx, req.(*UpdateOperationRuleRequest))
+		return srv.(FlowServer).UpdateOperationRule(ctx, req.(*UpdateOperationRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_DeleteOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_DeleteOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DeleteOperationRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).DeleteOperationRule(ctx, in)
+		return srv.(FlowServer).DeleteOperationRule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_DeleteOperationRule_FullMethodName,
+		FullMethod: Flow_DeleteOperationRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).DeleteOperationRule(ctx, req.(*DeleteOperationRuleRequest))
+		return srv.(FlowServer).DeleteOperationRule(ctx, req.(*DeleteOperationRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetOperationRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetOperationRuleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetOperationRule(ctx, in)
+		return srv.(FlowServer).GetOperationRule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetOperationRule_FullMethodName,
+		FullMethod: Flow_GetOperationRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetOperationRule(ctx, req.(*GetOperationRuleRequest))
+		return srv.(FlowServer).GetOperationRule(ctx, req.(*GetOperationRuleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_ListOperationRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_ListOperationRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListOperationRulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).ListOperationRules(ctx, in)
+		return srv.(FlowServer).ListOperationRules(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_ListOperationRules_FullMethodName,
+		FullMethod: Flow_ListOperationRules_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).ListOperationRules(ctx, req.(*ListOperationRulesRequest))
+		return srv.(FlowServer).ListOperationRules(ctx, req.(*ListOperationRulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_SetRuleAsDefault_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_SetRuleAsDefault_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SetRuleAsDefaultRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).SetRuleAsDefault(ctx, in)
+		return srv.(FlowServer).SetRuleAsDefault(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_SetRuleAsDefault_FullMethodName,
+		FullMethod: Flow_SetRuleAsDefault_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).SetRuleAsDefault(ctx, req.(*SetRuleAsDefaultRequest))
+		return srv.(FlowServer).SetRuleAsDefault(ctx, req.(*SetRuleAsDefaultRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_AssociateRuleWithRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_AssociateRuleWithRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AssociateRuleWithRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).AssociateRuleWithRack(ctx, in)
+		return srv.(FlowServer).AssociateRuleWithRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_AssociateRuleWithRack_FullMethodName,
+		FullMethod: Flow_AssociateRuleWithRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).AssociateRuleWithRack(ctx, req.(*AssociateRuleWithRackRequest))
+		return srv.(FlowServer).AssociateRuleWithRack(ctx, req.(*AssociateRuleWithRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_DisassociateRuleFromRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_DisassociateRuleFromRack_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DisassociateRuleFromRackRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).DisassociateRuleFromRack(ctx, in)
+		return srv.(FlowServer).DisassociateRuleFromRack(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_DisassociateRuleFromRack_FullMethodName,
+		FullMethod: Flow_DisassociateRuleFromRack_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).DisassociateRuleFromRack(ctx, req.(*DisassociateRuleFromRackRequest))
+		return srv.(FlowServer).DisassociateRuleFromRack(ctx, req.(*DisassociateRuleFromRackRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_GetRackRuleAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_GetRackRuleAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetRackRuleAssociationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).GetRackRuleAssociation(ctx, in)
+		return srv.(FlowServer).GetRackRuleAssociation(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_GetRackRuleAssociation_FullMethodName,
+		FullMethod: Flow_GetRackRuleAssociation_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).GetRackRuleAssociation(ctx, req.(*GetRackRuleAssociationRequest))
+		return srv.(FlowServer).GetRackRuleAssociation(ctx, req.(*GetRackRuleAssociationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _RLA_ListRackRuleAssociations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Flow_ListRackRuleAssociations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListRackRuleAssociationsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RLAServer).ListRackRuleAssociations(ctx, in)
+		return srv.(FlowServer).ListRackRuleAssociations(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: RLA_ListRackRuleAssociations_FullMethodName,
+		FullMethod: Flow_ListRackRuleAssociations_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RLAServer).ListRackRuleAssociations(ctx, req.(*ListRackRuleAssociationsRequest))
+		return srv.(FlowServer).ListRackRuleAssociations(ctx, req.(*ListRackRuleAssociationsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RLA_ServiceDesc is the grpc.ServiceDesc for RLA service.
+// Flow_ServiceDesc is the grpc.ServiceDesc for Flow service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RLA_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "v1.RLA",
-	HandlerType: (*RLAServer)(nil),
+var Flow_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "v1.Flow",
+	HandlerType: (*FlowServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Version",
-			Handler:    _RLA_Version_Handler,
+			Handler:    _Flow_Version_Handler,
+		},
+		{
+			MethodName: "CreateTaskSchedule",
+			Handler:    _Flow_CreateTaskSchedule_Handler,
+		},
+		{
+			MethodName: "GetTaskSchedule",
+			Handler:    _Flow_GetTaskSchedule_Handler,
+		},
+		{
+			MethodName: "ListTaskSchedules",
+			Handler:    _Flow_ListTaskSchedules_Handler,
+		},
+		{
+			MethodName: "UpdateTaskSchedule",
+			Handler:    _Flow_UpdateTaskSchedule_Handler,
+		},
+		{
+			MethodName: "PauseTaskSchedule",
+			Handler:    _Flow_PauseTaskSchedule_Handler,
+		},
+		{
+			MethodName: "ResumeTaskSchedule",
+			Handler:    _Flow_ResumeTaskSchedule_Handler,
+		},
+		{
+			MethodName: "DeleteTaskSchedule",
+			Handler:    _Flow_DeleteTaskSchedule_Handler,
+		},
+		{
+			MethodName: "TriggerTaskSchedule",
+			Handler:    _Flow_TriggerTaskSchedule_Handler,
+		},
+		{
+			MethodName: "AddTaskScheduleScope",
+			Handler:    _Flow_AddTaskScheduleScope_Handler,
+		},
+		{
+			MethodName: "RemoveTaskScheduleScope",
+			Handler:    _Flow_RemoveTaskScheduleScope_Handler,
+		},
+		{
+			MethodName: "UpdateTaskScheduleScope",
+			Handler:    _Flow_UpdateTaskScheduleScope_Handler,
+		},
+		{
+			MethodName: "ListTaskScheduleScopes",
+			Handler:    _Flow_ListTaskScheduleScopes_Handler,
+		},
+		{
+			MethodName: "CheckScheduleConflicts",
+			Handler:    _Flow_CheckScheduleConflicts_Handler,
 		},
 		{
 			MethodName: "CreateExpectedRack",
-			Handler:    _RLA_CreateExpectedRack_Handler,
+			Handler:    _Flow_CreateExpectedRack_Handler,
 		},
 		{
 			MethodName: "GetRackInfoByID",
-			Handler:    _RLA_GetRackInfoByID_Handler,
+			Handler:    _Flow_GetRackInfoByID_Handler,
 		},
 		{
 			MethodName: "GetRackInfoBySerial",
-			Handler:    _RLA_GetRackInfoBySerial_Handler,
+			Handler:    _Flow_GetRackInfoBySerial_Handler,
 		},
 		{
 			MethodName: "GetListOfRacks",
-			Handler:    _RLA_GetListOfRacks_Handler,
+			Handler:    _Flow_GetListOfRacks_Handler,
 		},
 		{
 			MethodName: "PatchRack",
-			Handler:    _RLA_PatchRack_Handler,
+			Handler:    _Flow_PatchRack_Handler,
 		},
 		{
 			MethodName: "DeleteRack",
-			Handler:    _RLA_DeleteRack_Handler,
+			Handler:    _Flow_DeleteRack_Handler,
 		},
 		{
 			MethodName: "PurgeRack",
-			Handler:    _RLA_PurgeRack_Handler,
+			Handler:    _Flow_PurgeRack_Handler,
 		},
 		{
 			MethodName: "UpgradeFirmware",
-			Handler:    _RLA_UpgradeFirmware_Handler,
+			Handler:    _Flow_UpgradeFirmware_Handler,
 		},
 		{
 			MethodName: "BringUpRack",
-			Handler:    _RLA_BringUpRack_Handler,
+			Handler:    _Flow_BringUpRack_Handler,
 		},
 		{
 			MethodName: "IngestRack",
-			Handler:    _RLA_IngestRack_Handler,
+			Handler:    _Flow_IngestRack_Handler,
 		},
 		{
 			MethodName: "PowerOnRack",
-			Handler:    _RLA_PowerOnRack_Handler,
+			Handler:    _Flow_PowerOnRack_Handler,
 		},
 		{
 			MethodName: "PowerOffRack",
-			Handler:    _RLA_PowerOffRack_Handler,
+			Handler:    _Flow_PowerOffRack_Handler,
 		},
 		{
 			MethodName: "PowerResetRack",
-			Handler:    _RLA_PowerResetRack_Handler,
+			Handler:    _Flow_PowerResetRack_Handler,
 		},
 		{
 			MethodName: "GetComponentInfoByID",
-			Handler:    _RLA_GetComponentInfoByID_Handler,
+			Handler:    _Flow_GetComponentInfoByID_Handler,
 		},
 		{
 			MethodName: "GetComponentInfoBySerial",
-			Handler:    _RLA_GetComponentInfoBySerial_Handler,
+			Handler:    _Flow_GetComponentInfoBySerial_Handler,
 		},
 		{
 			MethodName: "GetComponents",
-			Handler:    _RLA_GetComponents_Handler,
+			Handler:    _Flow_GetComponents_Handler,
 		},
 		{
 			MethodName: "ValidateComponents",
-			Handler:    _RLA_ValidateComponents_Handler,
+			Handler:    _Flow_ValidateComponents_Handler,
 		},
 		{
 			MethodName: "AddComponent",
-			Handler:    _RLA_AddComponent_Handler,
+			Handler:    _Flow_AddComponent_Handler,
 		},
 		{
 			MethodName: "PatchComponent",
-			Handler:    _RLA_PatchComponent_Handler,
+			Handler:    _Flow_PatchComponent_Handler,
 		},
 		{
 			MethodName: "DeleteComponent",
-			Handler:    _RLA_DeleteComponent_Handler,
+			Handler:    _Flow_DeleteComponent_Handler,
 		},
 		{
 			MethodName: "PurgeComponent",
-			Handler:    _RLA_PurgeComponent_Handler,
+			Handler:    _Flow_PurgeComponent_Handler,
 		},
 		{
 			MethodName: "CreateNVLDomain",
-			Handler:    _RLA_CreateNVLDomain_Handler,
+			Handler:    _Flow_CreateNVLDomain_Handler,
 		},
 		{
 			MethodName: "AttachRacksToNVLDomain",
-			Handler:    _RLA_AttachRacksToNVLDomain_Handler,
+			Handler:    _Flow_AttachRacksToNVLDomain_Handler,
 		},
 		{
 			MethodName: "DetachRacksFromNVLDomain",
-			Handler:    _RLA_DetachRacksFromNVLDomain_Handler,
+			Handler:    _Flow_DetachRacksFromNVLDomain_Handler,
 		},
 		{
 			MethodName: "GetListOfNVLDomains",
-			Handler:    _RLA_GetListOfNVLDomains_Handler,
+			Handler:    _Flow_GetListOfNVLDomains_Handler,
 		},
 		{
 			MethodName: "GetRacksForNVLDomain",
-			Handler:    _RLA_GetRacksForNVLDomain_Handler,
+			Handler:    _Flow_GetRacksForNVLDomain_Handler,
 		},
 		{
 			MethodName: "ListTasks",
-			Handler:    _RLA_ListTasks_Handler,
+			Handler:    _Flow_ListTasks_Handler,
 		},
 		{
 			MethodName: "GetTasksByIDs",
-			Handler:    _RLA_GetTasksByIDs_Handler,
+			Handler:    _Flow_GetTasksByIDs_Handler,
 		},
 		{
 			MethodName: "CancelTask",
-			Handler:    _RLA_CancelTask_Handler,
+			Handler:    _Flow_CancelTask_Handler,
 		},
 		{
 			MethodName: "CreateOperationRule",
-			Handler:    _RLA_CreateOperationRule_Handler,
+			Handler:    _Flow_CreateOperationRule_Handler,
 		},
 		{
 			MethodName: "UpdateOperationRule",
-			Handler:    _RLA_UpdateOperationRule_Handler,
+			Handler:    _Flow_UpdateOperationRule_Handler,
 		},
 		{
 			MethodName: "DeleteOperationRule",
-			Handler:    _RLA_DeleteOperationRule_Handler,
+			Handler:    _Flow_DeleteOperationRule_Handler,
 		},
 		{
 			MethodName: "GetOperationRule",
-			Handler:    _RLA_GetOperationRule_Handler,
+			Handler:    _Flow_GetOperationRule_Handler,
 		},
 		{
 			MethodName: "ListOperationRules",
-			Handler:    _RLA_ListOperationRules_Handler,
+			Handler:    _Flow_ListOperationRules_Handler,
 		},
 		{
 			MethodName: "SetRuleAsDefault",
-			Handler:    _RLA_SetRuleAsDefault_Handler,
+			Handler:    _Flow_SetRuleAsDefault_Handler,
 		},
 		{
 			MethodName: "AssociateRuleWithRack",
-			Handler:    _RLA_AssociateRuleWithRack_Handler,
+			Handler:    _Flow_AssociateRuleWithRack_Handler,
 		},
 		{
 			MethodName: "DisassociateRuleFromRack",
-			Handler:    _RLA_DisassociateRuleFromRack_Handler,
+			Handler:    _Flow_DisassociateRuleFromRack_Handler,
 		},
 		{
 			MethodName: "GetRackRuleAssociation",
-			Handler:    _RLA_GetRackRuleAssociation_Handler,
+			Handler:    _Flow_GetRackRuleAssociation_Handler,
 		},
 		{
 			MethodName: "ListRackRuleAssociations",
-			Handler:    _RLA_ListRackRuleAssociations_Handler,
+			Handler:    _Flow_ListRackRuleAssociations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

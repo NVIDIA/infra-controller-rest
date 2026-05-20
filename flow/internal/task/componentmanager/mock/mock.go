@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
@@ -67,20 +68,64 @@ func FactoryFor(componentType devicetypes.ComponentType) componentmanager.Manage
 	}
 }
 
-// RegisterAll registers mock factories for all component types.
-func RegisterAll(registry *componentmanager.Registry) {
-	for _, ct := range []devicetypes.ComponentType{
-		devicetypes.ComponentTypeCompute,
-		devicetypes.ComponentTypeNVLSwitch,
-		devicetypes.ComponentTypePowerShelf,
-	} {
-		registry.RegisterFactory(ct, ImplementationName, FactoryFor(ct))
+// DescriptorFor returns a mock manager descriptor for the specified component
+// type.
+func DescriptorFor(componentType devicetypes.ComponentType) cmcatalog.Descriptor {
+	return cmcatalog.Descriptor{
+		Type:           componentType,
+		Implementation: ImplementationName,
+		Capabilities: cmcatalog.CapabilitySet{
+			cmcatalog.CapabilityBringUpControl,
+			cmcatalog.CapabilityBringUpStatus,
+			cmcatalog.CapabilityFirmwareControl,
+			cmcatalog.CapabilityFirmwareStatus,
+			cmcatalog.CapabilityInjectExpectation,
+			cmcatalog.CapabilityPowerControl,
+			cmcatalog.CapabilityPowerStatus,
+		},
 	}
 }
 
-// Type returns the component type this manager handles.
-func (m *Manager) Type() devicetypes.ComponentType {
-	return m.componentType
+// FactorySpecFor returns a mock manager runtime factory spec for the specified
+// component type.
+func FactorySpecFor(componentType devicetypes.ComponentType) componentmanager.FactorySpec {
+	return componentmanager.FactorySpec{
+		Descriptor: DescriptorFor(componentType),
+		Factory:    FactoryFor(componentType),
+	}
+}
+
+// Descriptors returns mock descriptors for all component types currently
+// supported by the Flow service.
+func Descriptors() []cmcatalog.Descriptor {
+	descriptors := make([]cmcatalog.Descriptor, 0, 3)
+	for _, ct := range []devicetypes.ComponentType{
+		devicetypes.ComponentTypeCompute,
+		devicetypes.ComponentTypeNVSwitch,
+		devicetypes.ComponentTypePowerShelf,
+	} {
+		descriptors = append(descriptors, DescriptorFor(ct))
+	}
+	return descriptors
+}
+
+// FactorySpecs returns mock runtime factory specs for all component types
+// currently supported by the Flow service.
+func FactorySpecs() []componentmanager.FactorySpec {
+	factorySpecs := make([]componentmanager.FactorySpec, 0, 3)
+	for _, ct := range []devicetypes.ComponentType{
+		devicetypes.ComponentTypeCompute,
+		devicetypes.ComponentTypeNVSwitch,
+		devicetypes.ComponentTypePowerShelf,
+	} {
+		factorySpecs = append(factorySpecs, FactorySpecFor(ct))
+	}
+	return factorySpecs
+}
+
+// Descriptor returns the mock manager descriptor.
+func (m *Manager) Descriptor() cmcatalog.Descriptor {
+	return DescriptorFor(m.componentType)
 }
 
 // InjectExpectation simulates injecting expected configuration.

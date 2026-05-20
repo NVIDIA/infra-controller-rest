@@ -54,16 +54,16 @@ Output formats:
 
 Examples:
   # Compare compute components from racks by name
-  rla component diff --rack-names "rack-1,rack-2" --type compute
+  flow component diff --rack-names "rack-1,rack-2" --type compute
 
   # Compare components from rack by ID
-  rla component diff --rack-ids "uuid-1,uuid-2" --type compute
+  flow component diff --rack-ids "uuid-1,uuid-2" --type compute
 
   # Compare by component IDs
-  rla component diff --component-ids "machine-1,machine-2" --type compute
+  flow component diff --component-ids "machine-1,machine-2" --type compute
 
   # Output as table
-  rla component diff --rack-names "rack-1" --type compute --output table
+  flow component diff --rack-names "rack-1" --type compute --output table
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doDiffComponents()
@@ -178,14 +178,14 @@ func outputDiffJSON(result *client.ValidateComponentsResult) {
 		TotalDiffs      int                    `json:"total_diffs"`
 		MissingCount    int                    `json:"missing_count"`
 		UnexpectedCount int                    `json:"unexpected_count"`
-		DriftCount      int                    `json:"drift_count"`
+		MismatchCount   int                    `json:"mismatch_count"`
 		MatchCount      int                    `json:"match_count"`
 		Diffs           []*types.ComponentDiff `json:"diffs"`
 	}{
 		TotalDiffs:      result.TotalDiffs,
 		MissingCount:    result.MissingCount,
 		UnexpectedCount: result.UnexpectedCount,
-		DriftCount:      result.DriftCount,
+		MismatchCount:   result.MismatchCount,
 		MatchCount:      result.MatchCount,
 		Diffs:           result.Diffs,
 	}
@@ -206,7 +206,7 @@ func outputDiffTable(result *client.ValidateComponentsResult) {
 	fmt.Printf("  - Match: %d\n", result.MatchCount)
 	fmt.Printf("  - Missing (expected but not in source): %d\n", result.MissingCount)
 	fmt.Printf("  - Unexpected (in source but not expected): %d\n", result.UnexpectedCount)
-	fmt.Printf("  - Drift (field differences): %d\n", result.DriftCount)
+	fmt.Printf("  - Mismatch (field differences): %d\n", result.MismatchCount)
 	fmt.Println()
 
 	if len(result.Diffs) == 0 {
@@ -231,8 +231,8 @@ func outputDiffTable(result *client.ValidateComponentsResult) {
 		case types.DiffTypeUnexpected:
 			diffType = "Unexpected"
 			details = "Found in source system but not expected"
-		case types.DiffTypeDrift:
-			diffType = "Drift"
+		case types.DiffTypeMismatch:
+			diffType = "Mismatch"
 			var fieldStrs []string
 			for _, fd := range diff.FieldDiffs {
 				fieldStrs = append(fieldStrs, fmt.Sprintf("%s: %s → %s",

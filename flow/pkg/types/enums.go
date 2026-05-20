@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-// Package types provides public domain types for the RLA client.
+// Package types provides public domain types for the Flow client.
 // This package has minimal dependencies (only uuid) and can be imported
 // by external modules for interface definitions and mocking without
 // pulling in gRPC dependencies.
@@ -83,7 +83,7 @@ const (
 	DiffTypeUnknown    DiffType = "Unknown"
 	DiffTypeMissing    DiffType = "Missing"
 	DiffTypeUnexpected DiffType = "Unexpected"
-	DiffTypeDrift      DiffType = "Drift"
+	DiffTypeMismatch   DiffType = "Mismatch"
 )
 
 // OperationType represents the type of operation (power control, firmware, etc.).

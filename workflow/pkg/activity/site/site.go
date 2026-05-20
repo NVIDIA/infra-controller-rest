@@ -60,7 +60,11 @@ type ManageSite struct {
 
 // Activity functions
 
-// DeleteSiteComponentsFromDB is a Temporal activity that initiate delete for instancetype/machine/operatingsystem/instance/subnet/vpc
+// DeleteSiteComponentsFromDB is a Temporal activity that initiates delete for instance type, machine,
+// machine interface, machine capability, operating system site association, instance, subnet, vpc, vpc peering, vpc prefix,
+// infiniband partition, nvlink logical partition, dpu extension service deployment, interface,
+// nvlink interface, infiniband interface, ssh key group associations to site and instance, sku, expected machine,
+// expected switch and expected power shelf.
 func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uuid.UUID, infrastructureProviderID uuid.UUID, purgeMachines bool) error {
 	logger := log.With().Str("Activity", "DeleteSiteComponentsFromDB").Str("Site ID", siteID.String()).
 		Str("InfrastructureProvider ID", infrastructureProviderID.String()).Bool("Purge Machines", purgeMachines).Logger()
@@ -80,13 +84,28 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 	itDAO := cdbm.NewInstanceTypeDAO(mst.dbSession)
 	ipbDAO := cdbm.NewIPBlockDAO(mst.dbSession)
 	vpcDAO := cdbm.NewVpcDAO(mst.dbSession)
+	vpDAO := cdbm.NewVpcPeeringDAO(mst.dbSession)
 	subnetDAO := cdbm.NewSubnetDAO(mst.dbSession)
+	vpfxDAO := cdbm.NewVpcPrefixDAO(mst.dbSession)
 	ibpDAO := cdbm.NewInfiniBandPartitionDAO(mst.dbSession)
+	nvllpDAO := cdbm.NewNVLinkLogicalPartitionDAO(mst.dbSession)
 	mitDAO := cdbm.NewMachineInstanceTypeDAO(mst.dbSession)
 	mDAO := cdbm.NewMachineDAO(mst.dbSession)
 	mcDAO := cdbm.NewMachineCapabilityDAO(mst.dbSession)
 	miDAO := cdbm.NewMachineInterfaceDAO(mst.dbSession)
 	instanceDAO := cdbm.NewInstanceDAO(mst.dbSession)
+	ifcDAO := cdbm.NewInterfaceDAO(mst.dbSession)
+	nvliDAO := cdbm.NewNVLinkInterfaceDAO(mst.dbSession)
+	ibiDAO := cdbm.NewInfiniBandInterfaceDAO(mst.dbSession)
+	skgsaDAO := cdbm.NewSSHKeyGroupSiteAssociationDAO(mst.dbSession)
+	skgiaDAO := cdbm.NewSSHKeyGroupInstanceAssociationDAO(mst.dbSession)
+	nsgDAO := cdbm.NewNetworkSecurityGroupDAO(mst.dbSession)
+	ossaDAO := cdbm.NewOperatingSystemSiteAssociationDAO(mst.dbSession)
+	desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(mst.dbSession)
+	skuDAO := cdbm.NewSkuDAO(mst.dbSession)
+	esDAO := cdbm.NewExpectedSwitchDAO(mst.dbSession)
+	epsDAO := cdbm.NewExpectedPowerShelfDAO(mst.dbSession)
+	emDAO := cdbm.NewExpectedMachineDAO(mst.dbSession)
 
 	// Delete Instance Types
 	// Check for Instance Types associated with Site
@@ -146,7 +165,10 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		return err
 	}
 
+	instanceIDs := make([]uuid.UUID, 0, len(instances))
 	for _, instance := range instances {
+		instanceIDs = append(instanceIDs, instance.ID)
+
 		// Remove Machine reference if purgeMachines is true
 		if purgeMachines {
 			_, serr := instanceDAO.Clear(ctx, nil, cdbm.InstanceClearInput{InstanceID: instance.ID, MachineID: true})
@@ -162,6 +184,30 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 			logger.Error().Err(err).Str("Instance ID", instance.ID.String()).Msg("error deleting Instance record in DB")
 			return err
 		}
+	}
+
+	// Delete ethernet interfaces based on instances
+	// since they are not directly associated with the site
+	if len(instanceIDs) > 0 {
+		err = ifcDAO.DeleteAllByInstanceIDs(ctx, nil, instanceIDs)
+		if err != nil {
+			logger.Error().Err(err).Msg("error deleting Interfaces for Instances from DB")
+			return err
+		}
+	}
+
+	// Delete InfiniBand interfaces
+	err = ibiDAO.DeleteAllBySiteID(ctx, nil, siteID)
+	if err != nil {
+		logger.Error().Err(err).Msg("error deleting InfiniBand Interfaces for Site from DB")
+		return err
+	}
+
+	// Delete NVLink interfaces for site
+	err = nvliDAO.DeleteAllBySiteID(ctx, nil, siteID)
+	if err != nil {
+		logger.Error().Err(err).Msg("error deleting NVLink Interfaces for Site from DB")
+		return err
 	}
 
 	// Delete Machines
@@ -237,6 +283,37 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		}
 	}
 
+	// Delete VPC Prefixes
+	vpcPrefixes, _, err := vpfxDAO.GetAll(ctx, nil, cdbm.VpcPrefixFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve VPC Prefixes from DB by Site ID")
+		return err
+	}
+
+	for _, vpfx := range vpcPrefixes {
+		// Delete VPC Prefix
+		serr := vpfxDAO.Delete(ctx, nil, vpfx.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("VPC Prefix ID", vpfx.ID.String()).Msg("error deleting VPC Prefix record in DB")
+			return serr
+		}
+	}
+
+	// Delete VPC Peerings
+	vpps, _, err := vpDAO.GetAll(ctx, nil, cdbm.VpcPeeringFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve VPC Peerings from DB by Site ID")
+		return err
+	}
+
+	for _, vpp := range vpps {
+		serr := vpDAO.Delete(ctx, nil, vpp.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("VPC Peering ID", vpp.ID.String()).Msg("error deleting VPC Peering record in DB")
+			return serr
+		}
+	}
+
 	// Delete VPCs
 	// Check if VPCs exist
 	vpcs, _, err := vpcDAO.GetAll(ctx, nil, cdbm.VpcFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
@@ -274,6 +351,158 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 		serr := ibpDAO.Delete(ctx, nil, ibp.ID)
 		if serr != nil && serr != cdb.ErrDoesNotExist {
 			logger.Error().Err(serr).Str("IB Partition ID", ibp.ID.String()).Msg("error deleting IB Partition record in DB")
+			return serr
+		}
+	}
+
+	// Delete NVLink Logical Partitions
+	nvllps, _, err := nvllpDAO.GetAll(ctx, nil, cdbm.NVLinkLogicalPartitionFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve NVLink Logical Partitions from DB by Site ID")
+		return err
+	}
+
+	for _, nvllp := range nvllps {
+		serr := nvllpDAO.Delete(ctx, nil, nvllp.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("NVLink Logical Partition ID", nvllp.ID.String()).Msg("error deleting NVLink Logical Partition record in DB")
+			return serr
+		}
+	}
+
+	// Delete SSH Key Group Site Associations
+	skgsas, _, err := skgsaDAO.GetAll(ctx, nil, nil, &siteID, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve SSH Key Group Site Associations from DB")
+		return err
+	}
+
+	for _, skgsa := range skgsas {
+		serr := skgsaDAO.DeleteByID(ctx, nil, skgsa.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("SSH Key Group Site Association ID", skgsa.ID.String()).Msg("error deleting SSH Key Group Site Association record in DB")
+			return serr
+		}
+	}
+
+	// Delete SSH Key Group Instance Associations
+	skgias, _, err := skgiaDAO.GetAll(ctx, nil, nil, []uuid.UUID{siteID}, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve SSH Key Group Instance Associations from DB")
+		return err
+	}
+
+	for _, skgia := range skgias {
+		serr := skgiaDAO.DeleteByID(ctx, nil, skgia.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("SSH Key Group Instance Association ID", skgia.ID.String()).Msg("error deleting SSH Key Group Instance Association record in DB")
+			return serr
+		}
+	}
+
+	// Delete Network Security Groups
+	nsgs, _, err := nsgDAO.GetAll(ctx, nil, cdbm.NetworkSecurityGroupFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Network Security Groups from DB by Site ID")
+		return err
+	}
+
+	for _, nsg := range nsgs {
+		// Delete Network Security Group
+		serr := nsgDAO.Delete(ctx, nil, cdbm.NetworkSecurityGroupDeleteInput{
+			NetworkSecurityGroupID: nsg.ID,
+		})
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("Network Security Group ID", nsg.ID).Msg("error deleting Network Security Group record in DB")
+			return serr
+		}
+	}
+
+	// Delete operating system site associations.
+	ossas, _, err := ossaDAO.GetAll(ctx, nil, cdbm.OperatingSystemSiteAssociationFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Operating System Site Associations from DB by Site ID")
+		return err
+	}
+
+	for _, ossa := range ossas {
+		serr := ossaDAO.Delete(ctx, nil, ossa.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("Operating System Site Association ID", ossa.ID.String()).Msg("error deleting Operating System Site Association record in DB")
+			return serr
+		}
+	}
+
+	// Delete DPU Extension Service Deployments
+	desds, _, err := desdDAO.GetAll(ctx, nil, cdbm.DpuExtensionServiceDeploymentFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve DPU Extension Service Deployments from DB by Site ID")
+		return err
+	}
+
+	for _, desd := range desds {
+		serr := desdDAO.Delete(ctx, nil, desd.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("DPU Extension Service Deployment ID", desd.ID.String()).Msg("error deleting DPU Extension Service Deployment record in DB")
+			return serr
+		}
+	}
+
+	// Delete Skus
+	skus, _, err := skuDAO.GetAll(ctx, nil, cdbm.SkuFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)})
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Skus from DB by Site ID")
+		return err
+	}
+
+	for _, sku := range skus {
+		serr := skuDAO.Delete(ctx, nil, sku.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("SKU ID", sku.ID).Msg("error deleting SKU record in DB")
+			return serr
+		}
+	}
+
+	// Delete Expected Switches
+	ess, _, err := esDAO.GetAll(ctx, nil, cdbm.ExpectedSwitchFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Expected Switches from DB by Site ID")
+		return err
+	}
+
+	for _, es := range ess {
+		serr := esDAO.Delete(ctx, nil, es.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("Expected Switch ID", es.ID.String()).Msg("error deleting Expected Switch record in DB")
+			return serr
+		}
+	}
+
+	// Delete Expected Power Shelves
+	epss, _, err := epsDAO.GetAll(ctx, nil, cdbm.ExpectedPowerShelfFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Expected Power Shelves from DB by Site ID")
+		return err
+	}
+
+	for _, eps := range epss {
+		serr := epsDAO.Delete(ctx, nil, eps.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("Expected Power Shelf ID", eps.ID.String()).Msg("error deleting Expected Power Shelf record in DB")
+			return serr
+		}
+	}
+
+	// Delete Expected Machines
+	ems, _, err := emDAO.GetAll(ctx, nil, cdbm.ExpectedMachineFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve Expected Machines from DB by Site ID")
+		return err
+	}
+	for _, em := range ems {
+		serr := emDAO.Delete(ctx, nil, em.ID)
+		if serr != nil && serr != cdb.ErrDoesNotExist {
+			logger.Error().Err(serr).Str("Expected Machine ID", em.ID.String()).Msg("error deleting Expected Machine record in DB")
 			return serr
 		}
 	}

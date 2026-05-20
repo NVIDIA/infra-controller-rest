@@ -335,8 +335,8 @@ func TestGetComponentsByType(t *testing.T) {
 	assert.Equal(t, 1, len(powershelves[0].BMCs))
 	assert.Equal(t, "aa:bb:cc:dd:ee:01", powershelves[0].BMCs[0].MacAddress)
 
-	// Test: Get NVLSwitch components (should be empty)
-	switches, err := GetComponentsByType(ctx, pool.DB, devicetypes.ComponentTypeNVLSwitch)
+	// Test: Get NVSwitch components (should be empty)
+	switches, err := GetComponentsByType(ctx, pool.DB, devicetypes.ComponentTypeNVSwitch)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(switches))
 }

@@ -44,7 +44,7 @@ import (
 	pb "github.com/NVIDIA/infra-controller-rest/flow/pkg/proto/v1"
 )
 
-// Service is the top-level RLA service. It owns the gRPC server, database
+// Service is the top-level Flow service. It owns the gRPC server, database
 // session, inventory manager, and task manager and coordinates their lifecycles.
 type Service struct {
 	conf                   Config
@@ -215,7 +215,7 @@ func (s *Service) Start(ctx context.Context) (retErr error) {
 	log.Info().Msg("gRPC server is running")
 
 	// Block the main runtime loop for accepting and processing gRPC requests.
-	pb.RegisterRLAServer(s.grpcServer, serverImpl)
+	pb.RegisterFlowServer(s.grpcServer, serverImpl)
 	if s.conf.DevMode {
 		reflection.Register(s.grpcServer)
 		log.Debug().Msg("Dev mode: gRPC reflection enabled")
@@ -313,7 +313,7 @@ func (s *Service) startScheduler(ctx context.Context) error {
 		ctx,
 		&s.conf.DBConf,
 		s.conf.ProviderRegistry,
-		s.conf.RLAConfig,
+		s.conf.FlowConfig,
 		s.conf.CMConfig,
 	)
 	if err != nil {
@@ -321,7 +321,7 @@ func (s *Service) startScheduler(ctx context.Context) error {
 	}
 
 	if invJob != nil {
-		invTrigger, err := schedtypes.NewIntervalTrigger(s.conf.RLAConfig.InventoryRunFrequency)
+		invTrigger, err := schedtypes.NewIntervalTrigger(s.conf.FlowConfig.InventoryRunFrequency)
 		if err != nil {
 			return fmt.Errorf("invalid inventory sync interval: %w", err)
 		}
@@ -334,14 +334,14 @@ func (s *Service) startScheduler(ctx context.Context) error {
 	leakJob, err := leakdetection.New(
 		s.taskManager,
 		s.conf.ProviderRegistry,
-		s.conf.RLAConfig,
+		s.conf.FlowConfig,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to create leak detection job: %w", err)
 	}
 
 	if leakJob != nil {
-		leakTrigger, err := schedtypes.NewIntervalTrigger(s.conf.RLAConfig.LeakDetectionInterval)
+		leakTrigger, err := schedtypes.NewIntervalTrigger(s.conf.FlowConfig.LeakDetectionInterval)
 		if err != nil {
 			return fmt.Errorf("invalid leak detection interval: %w", err)
 		}

@@ -49,15 +49,15 @@ func (api *API) RegisterSubscriber() error {
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedRack: Successfully registered DeleteAllExpectedRacks workflow")
 
 	// Register activities
-	expectedRackManager := swa.NewManageExpectedRack(ManagerAccess.Data.EB.Managers.NICo.Client, ManagerAccess.Data.EB.Managers.Flow.Client)
+	expectedRackManager := swa.NewManageExpectedRack(ManagerAccess.Data.EB.Managers.CoreGrpc.Client, ManagerAccess.Data.EB.Managers.FlowGrpc.Client)
 
 	// Register CreateExpectedRackOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedRackManager.CreateExpectedRackOnSite)
 	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedRack: Successfully registered CreateExpectedRackOnSite activity")
 
-	// Register CreateExpectedRackOnRLA activity
-	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedRackManager.CreateExpectedRackOnRLA)
-	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedRack: Successfully registered CreateExpectedRackOnRLA activity")
+	// Register CreateExpectedRackOnFlow activity
+	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedRackManager.CreateExpectedRackOnFlow)
+	ManagerAccess.Data.EB.Log.Info().Msg("ExpectedRack: Successfully registered CreateExpectedRackOnFlow activity")
 
 	// Register UpdateExpectedRackOnSite activity
 	ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker.RegisterActivity(expectedRackManager.UpdateExpectedRackOnSite)

@@ -232,7 +232,7 @@ Add a command to check rule versions in the database:
 
 ```bash
 # Check rule versions
-rla rule versions
+flow rule versions
 
 # Output:
 # v1: 45 rules

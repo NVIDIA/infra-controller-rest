@@ -35,13 +35,13 @@ func newRackPurgeCmd() *cobra.Command {
 		Use:   "purge",
 		Short: "Permanently remove a soft-deleted rack",
 		Long: `Permanently remove a soft-deleted rack and all its components from the database.
-The rack must have been soft-deleted first via "rla rack delete".
+The rack must have been soft-deleted first via "flow rack delete".
 
 Required:
   --id : Rack UUID to purge
 
 Examples:
-  rla rack purge --id "rack-uuid"
+  flow rack purge --id "rack-uuid"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doPurgeRack()

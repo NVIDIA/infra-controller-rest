@@ -65,7 +65,7 @@ func DiscoverExpectedMachineInventory(ctx workflow.Context) error {
 }
 
 // CreateExpectedMachine is a workflow to create new Expected Machines using the CreateExpectedMachineOnSite activity,
-// then also creates the component in Flow via CreateExpectedMachineOnRLA.
+// then also creates the component in Flow via CreateExpectedMachineOnFlow.
 func CreateExpectedMachine(ctx workflow.Context, request *cwssaws.ExpectedMachine) error {
 	logger := log.With().Str("Workflow", "ExpectedMachine").Str("Action", "Create").Str("ID", request.GetId().GetValue()).Str("Expected MAC address", request.BmcMacAddress).Str("Serial", request.ChassisSerialNumber).Logger()
 
@@ -97,9 +97,9 @@ func CreateExpectedMachine(ctx workflow.Context, request *cwssaws.ExpectedMachin
 	}
 
 	// Then write to Flow (best-effort: log warning but don't fail the workflow)
-	err = workflow.ExecuteActivity(ctx, expectedMachineManager.CreateExpectedMachineOnRLA, request).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, expectedMachineManager.CreateExpectedMachineOnFlow, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedMachineOnRLA").Msg("Failed to create component on Flow, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedMachineOnFlow").Msg("Failed to create component on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")
@@ -144,7 +144,7 @@ func UpdateExpectedMachine(ctx workflow.Context, request *cwssaws.ExpectedMachin
 }
 
 // CreateExpectedMachines is a workflow to create multiple Expected Machines using the CreateExpectedMachinesOnSite activity,
-// then also creates the components in Flow via CreateExpectedMachinesOnRLA.
+// then also creates the components in Flow via CreateExpectedMachinesOnFlow.
 func CreateExpectedMachines(ctx workflow.Context, request *cwssaws.BatchExpectedMachineOperationRequest) (*cwssaws.BatchExpectedMachineOperationResponse, error) {
 	logger := log.With().Str("Workflow", "ExpectedMachines").Str("Action", "Create").Int("Count", len(request.GetExpectedMachines().GetExpectedMachines())).Logger()
 
@@ -178,9 +178,9 @@ func CreateExpectedMachines(ctx workflow.Context, request *cwssaws.BatchExpected
 	}
 
 	// Then write to Flow (best-effort: log warning but don't fail the workflow)
-	err = workflow.ExecuteActivity(ctx, expectedMachineManager.CreateExpectedMachinesOnRLA, request).Get(ctx, nil)
+	err = workflow.ExecuteActivity(ctx, expectedMachineManager.CreateExpectedMachinesOnFlow, request).Get(ctx, nil)
 	if err != nil {
-		logger.Warn().Err(err).Str("Activity", "CreateExpectedMachinesOnRLA").Msg("Failed to create components on Flow, Core write succeeded")
+		logger.Warn().Err(err).Str("Activity", "CreateExpectedMachinesOnFlow").Msg("Failed to create components on Flow, Core write succeeded")
 	}
 
 	logger.Info().Msg("completing workflow")

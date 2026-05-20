@@ -2450,7 +2450,7 @@ const file_nvswitch_manager_proto_rawDesc = "" +
 	"\x13GetUpdatesForSwitch\x12\".nsm.v1.GetUpdatesForSwitchRequest\x1a#.nsm.v1.GetUpdatesForSwitchResponse\x12F\n" +
 	"\rGetAllUpdates\x12\x16.google.protobuf.Empty\x1a\x1d.nsm.v1.GetAllUpdatesResponse\x12I\n" +
 	"\fCancelUpdate\x12\x1b.nsm.v1.CancelUpdateRequest\x1a\x1c.nsm.v1.CancelUpdateResponse\x12I\n" +
-	"\fPowerControl\x12\x1b.nsm.v1.PowerControlRequest\x1a\x1c.nsm.v1.PowerControlResponseBAZ?github.com/NVIDIA/infra-controller-rest/rla/internal/nsmapi/genb\x06proto3"
+	"\fPowerControl\x12\x1b.nsm.v1.PowerControlRequest\x1a\x1c.nsm.v1.PowerControlResponseBBZ@github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi/genb\x06proto3"
 
 var (
 	file_nvswitch_manager_proto_rawDescOnce sync.Once

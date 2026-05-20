@@ -1762,6 +1762,13 @@ func ExecuteBringUpRackWorkflow(
 
 // ExecuteFirmwareUpdateWorkflow builds an UpgradeFirmwareRequest, executes the UpgradeFirmware
 // workflow via Temporal, and returns the raw SubmitTaskResponse.
+//
+// targets, when non-empty, restricts the upgrade to the listed firmware
+// sub-parts within each targeted tray (e.g. ["bmc", "nvos"] for switch
+// trays). An empty/nil slice keeps the historical "update everything in
+// the bundle" behavior. Names are passed through verbatim to Flow as
+// `sub_targets`, which resolves them against the tray-type-specific
+// component-manager enums (see flow/pkg/common/firmwarecomponents).
 func ExecuteFirmwareUpdateWorkflow(
 	ctx context.Context,
 	c echo.Context,
@@ -1769,12 +1776,14 @@ func ExecuteFirmwareUpdateWorkflow(
 	stc tclient.Client,
 	targetSpec *flowv1.OperationTargetSpec,
 	version *string,
+	targets []string,
 	workflowID string,
 	entityName string,
 ) (*flowv1.SubmitTaskResponse, error) {
 	flowRequest := &flowv1.UpgradeFirmwareRequest{
 		TargetSpec:    targetSpec,
 		TargetVersion: version,
+		SubTargets:    targets,
 		Description:   fmt.Sprintf("API firmware update %s", entityName),
 	}
 

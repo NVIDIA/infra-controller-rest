@@ -1051,7 +1051,24 @@ func (mi ManageInstance) deleteInstanceFromDB(ctx context.Context, tx *cdb.Tx, i
 		}
 	}
 
-	// clear isAssigned on the machine
+	// Delete DPU Extension Service Deployments of the Instance
+	desdDAO := cdbm.NewDpuExtensionServiceDeploymentDAO(mi.dbSession)
+	desds, _, err := desdDAO.GetAll(ctx, tx, cdbm.DpuExtensionServiceDeploymentFilterInput{
+		InstanceIDs: []uuid.UUID{instance.ID},
+	}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	if err != nil {
+		logger.Error().Err(err).Msg("failed to retrieve DPU Extension Service Deployments from DB")
+		return err
+	}
+	for _, desd := range desds {
+		serr := desdDAO.Delete(ctx, tx, desd.ID)
+		if serr != nil {
+			logger.Error().Err(serr).Msg("failed to delete DPU Extension Service Deployment from DB")
+			return serr
+		}
+	}
+
+	// Clear isAssigned on the machine
 	if instance.MachineID != nil {
 		serr := mi.clearMachineIsAssigned(ctx, tx, logger, *instance.MachineID)
 		if serr != nil {
@@ -1132,6 +1149,8 @@ func getNICoInstanceStatus(controllerInstanceTenantState cwsv1.TenantState) (str
 		return cdbm.InstanceStatusReady, "Instance is ready for use"
 	case cwsv1.TenantState_CONFIGURING:
 		return cdbm.InstanceStatusConfiguring, "Instance is being configured on Site"
+	case cwsv1.TenantState_REPAIRING:
+		return cdbm.InstanceStatusRepairing, "Instance is undergoing online-repair"
 	case cwsv1.TenantState_TERMINATING:
 		return cdbm.InstanceStatusTerminating, "Instance is terminating on Site"
 	case cwsv1.TenantState_TERMINATED:

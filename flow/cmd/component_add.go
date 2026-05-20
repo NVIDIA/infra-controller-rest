@@ -61,7 +61,7 @@ ingested without a rack assignment and can be moved into a rack later via
 
 Required:
   --name             : Component name
-  --type             : Component type (compute, nvlswitch, powershelf, torswitch, ums, cdu)
+  --type             : Component type (compute, nvswitch, powershelf, torswitch, ums, cdu)
   --manufacturer     : Manufacturer
   --serial-number    : Serial number
 
@@ -79,15 +79,15 @@ Optional:
 
 Examples:
   # Add a compute node attached to a rack
-  rla component add --rack-id "uuid" --name "node-01" --type compute \
+  flow component add --rack-id "uuid" --name "node-01" --type compute \
     --manufacturer "NVIDIA" --serial-number "SN123" --slot-id 1 --tray-index 0 --host-id 1
 
   # Ingest an unattached component (no rack)
-  rla component add --name "node-01" --type compute \
+  flow component add --name "node-01" --type compute \
     --manufacturer "NVIDIA" --serial-number "SN123"
 
   # Add a powershelf with BMC
-  rla component add --rack-id "uuid" --name "ps-01" --type powershelf \
+  flow component add --rack-id "uuid" --name "ps-01" --type powershelf \
     --manufacturer "NVIDIA" --serial-number "PS123" --bmc-mac "aa:bb:cc:dd:ee:ff" --bmc-ip "10.0.0.1"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
@@ -97,7 +97,7 @@ Examples:
 
 	cmd.Flags().StringVar(&addRackID, "rack-id", "", "Rack UUID (optional; leave empty to ingest without a rack assignment)")
 	cmd.Flags().StringVar(&addName, "name", "", "Component name (required)")
-	cmd.Flags().StringVarP(&addType, "type", "t", "", "Component type: compute, nvlswitch, powershelf, torswitch, ums, cdu (required)")
+	cmd.Flags().StringVarP(&addType, "type", "t", "", "Component type: compute, nvswitch, powershelf, torswitch, ums, cdu (required)")
 	cmd.Flags().StringVar(&addManufacturer, "manufacturer", "", "Manufacturer (required)")
 	cmd.Flags().StringVar(&addSerialNumber, "serial-number", "", "Serial number (required)")
 	cmd.Flags().StringVar(&addModel, "model", "", "Model name")

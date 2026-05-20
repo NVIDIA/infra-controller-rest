@@ -35,13 +35,13 @@ import (
 )
 
 const (
-	// DefaultPort is the default port the RLA gRPC server listens on.
+	// DefaultPort is the default port the Flow gRPC server listens on.
 	DefaultPort = 50051
 
 	// EnvVarName is the environment variable operators set to declare the
 	// deployment environment. Valid values: "development", "staging", "production".
 	// Must be set explicitly; there is no implicit default.
-	EnvVarName = "RLA_ENV"
+	EnvVarName = "FLOW_ENV"
 )
 
 // deploymentEnv identifies the deployment environment, controlling which
@@ -54,7 +54,7 @@ const (
 	envProduction  deploymentEnv = "production"
 )
 
-// GetDeploymentEnv reads RLA_ENV and returns the resolved environment name.
+// GetDeploymentEnv reads FLOW_ENV and returns the resolved environment name.
 // An unset or empty value is an error; callers that want a development default
 // (e.g. a local CLI entrypoint) must set the variable before calling this.
 func GetDeploymentEnv() (string, error) {
@@ -78,7 +78,7 @@ type Config struct {
 	Port             int
 	DBConf           cdb.Config
 	ExecutorConf     executor.ExecutorConfig
-	RLAConfig        config.Config
+	FlowConfig       config.Config
 	CMConfig         cmconfig.Config
 	ProviderRegistry *providerapi.ProviderRegistry
 
@@ -95,7 +95,7 @@ type Config struct {
 // Validate checks the Config for unsafe combinations and returns an error for
 // the first violation found, in priority order:
 //
-//  1. Unknown or unset RLA_ENV — always rejected regardless of other settings.
+//  1. Unknown or unset FLOW_ENV — always rejected regardless of other settings.
 //  2. DevMode in a non-development environment — staging and production block it.
 //  3. Partial CertConfig — all three cert paths must be set together or not at all.
 //  4. Missing TLS in staging or production — those environments require mTLS.

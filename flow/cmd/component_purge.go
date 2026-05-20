@@ -35,13 +35,13 @@ func newComponentPurgeCmd() *cobra.Command {
 		Use:   "purge",
 		Short: "Permanently remove a soft-deleted component",
 		Long: `Permanently remove a soft-deleted component from the database.
-The component must have been soft-deleted first via "rla component delete".
+The component must have been soft-deleted first via "flow component delete".
 
 Required:
   --id : Component UUID to purge
 
 Examples:
-  rla component purge --id "component-uuid"
+  flow component purge --id "component-uuid"
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			doPurgeComponent()

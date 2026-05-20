@@ -24,6 +24,7 @@ import (
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 var (
@@ -47,13 +48,28 @@ type APIMachineInstanceTypeCreateRequest struct {
 }
 
 // Validate ensure the values passed in request are acceptable
-func (mitcr APIMachineInstanceTypeCreateRequest) Validate() error {
-	err := validation.ValidateStruct(&mitcr,
+func (mitcr *APIMachineInstanceTypeCreateRequest) Validate() error {
+	err := validation.ValidateStruct(mitcr,
 		validation.Field(&mitcr.MachineIDs,
 			validation.Required.Error("at least one machine ID is required"),
 		),
 	)
 	return err
+}
+
+// ToProto builds the workflow request that asks a Site to associate the
+// supplied Machines with `it`. The InstanceType ID is sourced from the
+// just-fetched DB record; the request-body Machine IDs pass through.
+//
+// The method trusts that the request has already been Validated and
+// that the handler has performed any cross-context checks Validate
+// cannot see (RBAC, ownership, capability match against the
+// InstanceType, etc.).
+func (mitcr *APIMachineInstanceTypeCreateRequest) ToProto(it *cdbm.InstanceType) *cwssaws.AssociateMachinesWithInstanceTypeRequest {
+	return &cwssaws.AssociateMachinesWithInstanceTypeRequest{
+		InstanceTypeId: it.ID.String(),
+		MachineIds:     mitcr.MachineIDs,
+	}
 }
 
 // APIMachineInstanceType is the data structure to capture Machine Instance Type

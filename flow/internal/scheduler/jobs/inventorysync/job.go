@@ -90,7 +90,7 @@ func New(
 		psmClient = psmProvider.Client()
 	}
 
-	// NVSwitch Manager provider is optional: only needed when the nvlswitch
+	// NVSwitch Manager provider is optional: only needed when the nvswitch
 	// component manager is configured to use the nvswitchmanager implementation.
 	var nsmClient nsmapi.Client
 	nsmProvider, err := providerapi.GetTyped[*nvswitchmanagerprovider.Provider](

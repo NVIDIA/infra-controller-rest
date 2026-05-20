@@ -147,6 +147,7 @@ func TestAppendScopeFlags_SiteOnly(t *testing.T) {
 	siteOnlyResources := []string{
 		"vpc", "allocation", "ip-block", "operating-system", "ssh-key-group",
 		"network-security-group", "sku", "rack", "expected-machine",
+		"expected-rack", "expected-switch", "expected-power-shelf",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -228,6 +229,7 @@ func TestAppendScopeFlags_CoversAllRegisteredFetchers(t *testing.T) {
 		"allocation", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
 		"sku", "rack", "expected-machine", "vpc-prefix",
+		"expected-rack", "expected-switch", "expected-power-shelf",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -246,7 +248,8 @@ func TestInvalidateFiltered_MatchesScopeFilteredFetchers(t *testing.T) {
 		"vpc", "subnet", "instance",
 		"allocation", "machine", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"vpc-prefix", "rack", "expected-machine", "sku",
+		"vpc-prefix", "rack", "expected-machine",
+		"expected-rack", "expected-switch", "expected-power-shelf", "sku",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -284,6 +287,7 @@ func TestAppendScopeFlags_ScopeFlagCategories_Consistent(t *testing.T) {
 		"allocation", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
 		"sku", "rack", "expected-machine", "vpc-prefix",
+		"expected-rack", "expected-switch", "expected-power-shelf",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 	}
 
@@ -316,7 +320,8 @@ func TestInvalidateFiltered_ListMatchesAppendScopeFlags(t *testing.T) {
 		"vpc", "subnet", "instance",
 		"allocation", "machine", "ip-block", "operating-system",
 		"ssh-key-group", "network-security-group",
-		"vpc-prefix", "rack", "expected-machine", "sku",
+		"vpc-prefix", "rack", "expected-machine",
+		"expected-rack", "expected-switch", "expected-power-shelf", "sku",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition",
 		"site", "audit", "ssh-key", "tenant-account",
 	}
@@ -361,6 +366,170 @@ func TestReadyMachineItemsForSite_FiltersByStatusAndSite(t *testing.T) {
 	require.Len(t, got, 2)
 	assert.Equal(t, "1", got[0].ID)
 	assert.Equal(t, "2", got[1].ID)
+	// Labels must surface BOTH the display name (which often falls back to
+	// serial number when no friendly machine label is set) AND the full
+	// machine ID, so users have something stable to copy/paste even when
+	// every machine in the list shares an opaque serial-number prefix.
+	assert.Contains(t, got[0].Label, "m1", "label must include display name")
+	assert.Contains(t, got[0].Label, "1", "label must include machine ID")
+}
+
+func TestMachineSelectLabel(t *testing.T) {
+	cases := []struct {
+		name       string
+		item       NamedItem
+		wantSubstr []string
+		wantExact  string
+	}{
+		{
+			name:       "name and id present",
+			item:       NamedItem{Name: "host-01", ID: "id-abc-123"},
+			wantSubstr: []string{"host-01", "id-abc-123"},
+		},
+		{
+			name:      "only id present (no display name resolved)",
+			item:      NamedItem{Name: "", ID: "id-abc-123"},
+			wantExact: "id-abc-123",
+		},
+		{
+			name:      "only name present (defensive: should not happen in practice)",
+			item:      NamedItem{Name: "host-01", ID: ""},
+			wantExact: "host-01",
+		},
+		{
+			name:       "whitespace name and id",
+			item:       NamedItem{Name: "  host-01  ", ID: "  id-abc  "},
+			wantSubstr: []string{"host-01", "id-abc"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := machineSelectLabel(tc.item)
+			if tc.wantExact != "" {
+				assert.Equal(t, tc.wantExact, got)
+				return
+			}
+			for _, s := range tc.wantSubstr {
+				assert.Contains(t, got, s, "label must contain %q", s)
+			}
+		})
+	}
+}
+
+func TestInstanceUpdateInputs_ToBody(t *testing.T) {
+	cases := []struct {
+		name   string
+		inputs instanceUpdateInputs
+		want   map[string]interface{}
+	}{
+		{
+			name:   "empty inputs produce empty body",
+			inputs: instanceUpdateInputs{},
+			want:   map[string]interface{}{},
+		},
+		{
+			name:   "name and description trimmed",
+			inputs: instanceUpdateInputs{name: "  new-name  ", description: " new description "},
+			want: map[string]interface{}{
+				"name":        "new-name",
+				"description": "new description",
+			},
+		},
+		{
+			name:   "blank name and description omitted",
+			inputs: instanceUpdateInputs{name: "   ", description: ""},
+			want:   map[string]interface{}{},
+		},
+		{
+			name:   "ssh key group ids included only when non-empty",
+			inputs: instanceUpdateInputs{sshKeyGroupIDs: []string{"g1", "g2"}},
+			want:   map[string]interface{}{"sshKeyGroupIds": []string{"g1", "g2"}},
+		},
+		{
+			name:   "trigger reboot alone",
+			inputs: instanceUpdateInputs{triggerReboot: true},
+			want:   map[string]interface{}{"triggerReboot": true},
+		},
+		{
+			name: "trigger reboot with custom ipxe and apply updates",
+			inputs: instanceUpdateInputs{
+				triggerReboot:        true,
+				rebootWithCustomIpxe: true,
+				applyUpdatesOnReboot: true,
+			},
+			want: map[string]interface{}{
+				"triggerReboot":        true,
+				"rebootWithCustomIpxe": true,
+				"applyUpdatesOnReboot": true,
+			},
+		},
+		{
+			name: "reboot modifiers ignored when triggerReboot is false (server would reject them anyway)",
+			inputs: instanceUpdateInputs{
+				rebootWithCustomIpxe: true,
+				applyUpdatesOnReboot: true,
+			},
+			want: map[string]interface{}{},
+		},
+		{
+			name: "everything together marshals to a clean JSON body",
+			inputs: instanceUpdateInputs{
+				name:                 "new-name",
+				description:          "new desc",
+				osID:                 "os-1",
+				sshKeyGroupIDs:       []string{"g1"},
+				triggerReboot:        true,
+				rebootWithCustomIpxe: true,
+				applyUpdatesOnReboot: true,
+			},
+			want: map[string]interface{}{
+				"name":                 "new-name",
+				"description":          "new desc",
+				"operatingSystemId":    "os-1",
+				"sshKeyGroupIds":       []string{"g1"},
+				"triggerReboot":        true,
+				"rebootWithCustomIpxe": true,
+				"applyUpdatesOnReboot": true,
+			},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.inputs.toBody()
+			// Compare via JSON round-trip so []string and []interface{} are
+			// treated as equal when their contents match -- keeps the table
+			// readable without forcing every test row to use interface{} slices.
+			gotJSON, err := json.Marshal(got)
+			require.NoError(t, err)
+			wantJSON, err := json.Marshal(tc.want)
+			require.NoError(t, err)
+			assert.JSONEq(t, string(wantJSON), string(gotJSON))
+		})
+	}
+}
+
+func TestInstanceReboot_Body_AlwaysSetsTriggerReboot(t *testing.T) {
+	// Documents the cmdInstanceReboot contract: the body MUST include
+	// triggerReboot=true even when the user declines both modifiers, so a
+	// future refactor that switches to a different body builder cannot
+	// silently produce a no-op PATCH.
+	body := instanceUpdateInputs{triggerReboot: true}.toBody()
+	assert.Equal(t, true, body["triggerReboot"])
+	assert.NotContains(t, body, "rebootWithCustomIpxe")
+	assert.NotContains(t, body, "applyUpdatesOnReboot")
+}
+
+func TestAllCommands_HasInstanceUpdateAndReboot(t *testing.T) {
+	// Regression guard: the TUI command registry must expose
+	// `instance update` (so users can rename, swap OS, rotate ssh key
+	// groups, or trigger a reboot) and `instance reboot` (the dedicated
+	// reboot abstraction).
+	names := make(map[string]bool)
+	for _, c := range AllCommands() {
+		names[c.Name] = true
+	}
+	assert.True(t, names["instance update"], "TUI must expose `instance update`")
+	assert.True(t, names["instance reboot"], "TUI must expose `instance reboot`")
 }
 
 func TestSetSiteScopeFromID_UpdatesScopeAndInvalidatesFiltered(t *testing.T) {
@@ -792,6 +961,190 @@ func withStdin(t *testing.T, input string, f func() (string, error)) (string, er
 	_ = sw.Close()
 	_, _ = io.Copy(io.Discard, sr)
 	return result, rerr
+}
+
+// --- Machine health alert tests ---
+
+func TestExtractBlockingAlerts_FiltersByPreventAllocations(t *testing.T) {
+	raw := map[string]interface{}{
+		"health": map[string]interface{}{
+			"alerts": []interface{}{
+				map[string]interface{}{
+					"id":              "BmcExplorationFailure",
+					"target":          "10.91.54.118",
+					"message":         "Redfish endpoint refused connection",
+					"classifications": []interface{}{"PreventAllocations"},
+				},
+				map[string]interface{}{
+					"id":              "FanSpeed",
+					"target":          "Fan1A",
+					"message":         "Fan running slow",
+					"classifications": []interface{}{"Informational"},
+				},
+				map[string]interface{}{
+					"id":              "FailedValidationTest",
+					"target":          "DcgmFullShort",
+					"message":         "Failed validation",
+					"classifications": []interface{}{"PreventAllocations", "ValidationFailure"},
+				},
+			},
+		},
+	}
+	alerts := extractBlockingAlerts(raw)
+	require.Len(t, alerts, 2)
+	assert.Equal(t, "BmcExplorationFailure", alerts[0].ID)
+	assert.Equal(t, "10.91.54.118", alerts[0].Target)
+	assert.Equal(t, "FailedValidationTest", alerts[1].ID)
+}
+
+func TestExtractBlockingAlerts_EmptyHealth(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  interface{}
+	}{
+		{"nil", nil},
+		{"non-map", "not a map"},
+		{"missing health", map[string]interface{}{"id": "machine-1"}},
+		{"non-map health", map[string]interface{}{"health": "broken"}},
+		{"missing alerts", map[string]interface{}{"health": map[string]interface{}{}}},
+		{"non-array alerts", map[string]interface{}{"health": map[string]interface{}{"alerts": "x"}}},
+		{"empty alerts", map[string]interface{}{"health": map[string]interface{}{"alerts": []interface{}{}}}},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Empty(t, extractBlockingAlerts(tc.raw))
+		})
+	}
+}
+
+func TestSummarizeBlockingAlert(t *testing.T) {
+	cases := []struct {
+		name string
+		raw  interface{}
+		want string
+	}{
+		{
+			name: "no alerts",
+			raw:  map[string]interface{}{},
+			want: "",
+		},
+		{
+			name: "id and concise target",
+			raw: map[string]interface{}{
+				"health": map[string]interface{}{
+					"alerts": []interface{}{
+						map[string]interface{}{
+							"id":              "BmcExplorationFailure",
+							"target":          "10.91.54.118",
+							"classifications": []interface{}{"PreventAllocations"},
+						},
+					},
+				},
+			},
+			want: "BmcExplorationFailure 10.91.54.118",
+		},
+		{
+			name: "id only when target empty",
+			raw: map[string]interface{}{
+				"health": map[string]interface{}{
+					"alerts": []interface{}{
+						map[string]interface{}{
+							"id":              "FailedValidationTest",
+							"classifications": []interface{}{"PreventAllocations"},
+						},
+					},
+				},
+			},
+			want: "FailedValidationTest",
+		},
+		{
+			name: "long target gets truncated",
+			raw: map[string]interface{}{
+				"health": map[string]interface{}{
+					"alerts": []interface{}{
+						map[string]interface{}{
+							"id":              "X",
+							"target":          strings.Repeat("a", 50),
+							"classifications": []interface{}{"PreventAllocations"},
+						},
+					},
+				},
+			},
+			want: "X " + strings.Repeat("a", 21) + "...",
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, summarizeBlockingAlert(tc.raw))
+		})
+	}
+}
+
+func TestPrintMachineHealthSummary_PrintsBlockingAlerts(t *testing.T) {
+	body := []byte(`{
+		"id": "machine-1",
+		"status": "Error",
+		"isUsableByTenant": false,
+		"health": {
+			"alerts": [
+				{
+					"id": "BmcExplorationFailure",
+					"target": "10.91.54.118",
+					"message": "Failed to connect to Redfish endpoint at 10.91.54.118\nadditional context",
+					"classifications": ["PreventAllocations"]
+				}
+			]
+		}
+	}`)
+	var buf bytes.Buffer
+	printMachineHealthSummary(&buf, body)
+	out := buf.String()
+	assert.Contains(t, out, "Blocking health alerts:")
+	assert.Contains(t, out, "BmcExplorationFailure")
+	assert.Contains(t, out, "10.91.54.118")
+	assert.Contains(t, out, "PreventAllocations")
+	assert.Contains(t, out, "Status: Error")
+	assert.Contains(t, out, "Usable by tenant: false")
+	assert.Contains(t, out, "Failed to connect")
+	assert.Contains(t, out, "(...)")
+}
+
+func TestPrintMachineHealthSummary_SuppressedForHealthyMachine(t *testing.T) {
+	body := []byte(`{"id": "machine-1", "status": "Ready", "health": {"alerts": []}}`)
+	var buf bytes.Buffer
+	printMachineHealthSummary(&buf, body)
+	assert.Empty(t, buf.String())
+}
+
+func TestPrintMachineHealthSummary_SuppressedForNonPreventAllocations(t *testing.T) {
+	body := []byte(`{
+		"status": "Ready",
+		"health": {"alerts": [
+			{"id": "FanSpeed", "target": "Fan1A", "classifications": ["Informational"]}
+		]}
+	}`)
+	var buf bytes.Buffer
+	printMachineHealthSummary(&buf, body)
+	assert.Empty(t, buf.String())
+}
+
+func TestShortMessage(t *testing.T) {
+	cases := []struct {
+		in   string
+		want string
+	}{
+		{"", ""},
+		{"single line", "single line"},
+		{"  trimmed  ", "trimmed"},
+		{"first\nsecond\nthird", "first (...)"},
+		{"\nfirst non-empty\nsecond", "first non-empty (...)"},
+		{strings.Repeat("a", 250), strings.Repeat("a", 197) + "..."},
+	}
+	for _, tc := range cases {
+		t.Run(tc.in, func(t *testing.T) {
+			assert.Equal(t, tc.want, shortMessage(tc.in))
+		})
+	}
 }
 
 // --- Helpers ---

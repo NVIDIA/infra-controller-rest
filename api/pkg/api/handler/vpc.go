@@ -43,7 +43,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	common "github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
-	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
 	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 	auth "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
@@ -259,6 +258,12 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant does not have sufficient privileges to set `routingProfile`", nil)
 		}
 
+		// The request-struct-only case (both RoutingProfile and
+		// NetworkVirtualizationType supplied) is caught by Validate.
+		// The implicit case below covers callers that supplied
+		// `routingProfile` only and let the handler default
+		// `networkVirtualizationType` from site config; Validate
+		// cannot see that default, so the check lives here.
 		if *networkVirtualizationType != cdbm.VpcFNN {
 			logger.Warn().Str("routingProfile", *apiRequest.RoutingProfile).Msg("`routingProfile` can only be specified if network virtualization type is set to `FNN`, or Site has native networking enabled and no network virtualization type is specified")
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`routingProfile` can only be specified if network virtualization type is set to `FNN`, or Site has native networking enabled and no network virtualization type is specified", nil)
@@ -384,54 +389,13 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		// Get network virtulization type
-		nwvt := cwssaws.VpcVirtualizationType_ETHERNET_VIRTUALIZER
-		if *vpc.NetworkVirtualizationType == cwssaws.VpcVirtualizationType_FNN.String() {
-			nwvt = cwssaws.VpcVirtualizationType_FNN
-		}
-
-		vni, derr := wutil.GetIntPtrToUint32Ptr(apiRequest.Vni)
-		// We already validate the VNI value in the model validate call, so no err
-		// is ever expected by this point, but we still need to handle it.
-		if derr != nil {
-			logger.Error().Err(derr).Msg("failed to convert vni to uint32 pointer after validated passed")
-			return cutil.NewAPIError(http.StatusInternalServerError, "VNI value conversion failed despite passed validation", nil)
-		}
-
-		createVpcRequest := &cwssaws.VpcCreationRequest{
-			Id:                        &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
-			Name:                      vpc.Name,
-			TenantOrganizationId:      tenant.Org,
-			NetworkVirtualizationType: &nwvt,
-			RoutingProfileType:        routingProfile,
-			NetworkSecurityGroupId:    vpc.NetworkSecurityGroupID,
-			Vni:                       vni,
-		}
-
-		// Add default NVLinkLogicalPartition ID if it is present
-		if vpc.NVLinkLogicalPartitionID != nil {
-			createVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
-		}
+		createVpcRequest := apiRequest.ToProto(vpc)
 
 		workflowOptions := temporalClient.StartWorkflowOptions{
 			ID:                       "vpc-create-" + vpc.ID.String(),
 			TaskQueue:                queue.SiteTaskQueue,
 			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		}
-
-		// Vpc metadata info
-		metadata := &cwssaws.Metadata{
-			Name:        vpc.Name,
-			Description: "",
-		}
-
-		// Include descripotion if it is present
-		if vpc.Description != nil {
-			metadata.Description = *vpc.Description
-		}
-
-		metadata.Labels = util.ProtobufLabelsFromAPILabels(vpc.Labels)
-		createVpcRequest.Metadata = metadata
 
 		logger.Info().Msg("triggering VPC create workflow")
 
@@ -847,16 +811,7 @@ func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 		}
 
-		updateVpcRequest := vpc.ToUpdateRequestProto()
-
-		// Propagate the NVLink Logical Partition ID change to the site controller
-		if apiRequest.NVLinkLogicalPartitionID != nil {
-			if *apiRequest.NVLinkLogicalPartitionID != "" {
-				updateVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: vpc.NVLinkLogicalPartitionID.String()}
-			} else {
-				updateVpcRequest.DefaultNvlinkLogicalPartitionId = &cwssaws.NVLinkLogicalPartitionId{Value: ""}
-			}
-		}
+		updateVpcRequest := apiRequest.ToProto(vpc)
 
 		workflowOptions := temporalClient.StartWorkflowOptions{
 			ID:                       "vpc-update-" + vpc.ID.String(),

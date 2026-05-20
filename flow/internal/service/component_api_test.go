@@ -145,7 +145,7 @@ func TestAddComponent_Success(t *testing.T) {
 	rackID := uuid.New()
 	mgr.racks[rackID] = &rack.Rack{Info: deviceinfo.DeviceInfo{ID: rackID, Name: "test-rack"}}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	req := &pb.AddComponentRequest{
 		Component: &pb.Component{
@@ -181,7 +181,7 @@ func TestAddComponent_Success(t *testing.T) {
 // no rack existence check is performed.
 func TestAddComponent_NoRackID(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	compID := uuid.New()
 	req := &pb.AddComponentRequest{
@@ -211,7 +211,7 @@ func TestAddComponent_NoRackID(t *testing.T) {
 
 func TestAddComponent_MissingComponent(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	req := &pb.AddComponentRequest{
 		// component not set
@@ -224,7 +224,7 @@ func TestAddComponent_MissingComponent(t *testing.T) {
 
 func TestAddComponent_RackNotFound(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	req := &pb.AddComponentRequest{
 		Component: &pb.Component{
@@ -247,7 +247,7 @@ func TestDeleteComponent_Success(t *testing.T) {
 		Info: deviceinfo.DeviceInfo{ID: compID, Name: "node-01"},
 	}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.DeleteComponent(context.Background(), &pb.DeleteComponentRequest{
 		Id: &pb.UUID{Id: compID.String()},
@@ -262,7 +262,7 @@ func TestDeleteComponent_Success(t *testing.T) {
 
 func TestDeleteComponent_MissingID(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.DeleteComponent(context.Background(), &pb.DeleteComponentRequest{})
 	require.Error(t, err)
@@ -271,7 +271,7 @@ func TestDeleteComponent_MissingID(t *testing.T) {
 
 func TestDeleteComponent_NotFound(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.DeleteComponent(context.Background(), &pb.DeleteComponentRequest{
 		Id: &pb.UUID{Id: uuid.New().String()},
@@ -296,7 +296,7 @@ func TestPatchComponent_Success(t *testing.T) {
 		RackID:          rackID,
 	}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	newFW := "2.0.0"
 	req := &pb.PatchComponentRequest{
@@ -324,7 +324,7 @@ func TestPatchComponent_Success(t *testing.T) {
 
 func TestPatchComponent_MissingID(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	newFW := "2.0.0"
 	_, err := server.PatchComponent(context.Background(), &pb.PatchComponentRequest{
@@ -336,7 +336,7 @@ func TestPatchComponent_MissingID(t *testing.T) {
 
 func TestPatchComponent_ComponentNotFound(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	newFW := "2.0.0"
 	_, err := server.PatchComponent(context.Background(), &pb.PatchComponentRequest{
@@ -352,13 +352,15 @@ func TestPatchComponent_RackReassign(t *testing.T) {
 	compID := uuid.New()
 	oldRackID := uuid.New()
 	newRackID := uuid.New()
+	mgr.racks[oldRackID] = &rack.Rack{Info: deviceinfo.DeviceInfo{ID: oldRackID, Name: "old-rack"}}
+	mgr.racks[newRackID] = &rack.Rack{Info: deviceinfo.DeviceInfo{ID: newRackID, Name: "new-rack"}}
 	mgr.components[compID] = &component.Component{
 		Type:   devicetypes.ComponentTypeCompute,
 		Info:   deviceinfo.DeviceInfo{ID: compID, Name: "node-01"},
 		RackID: oldRackID,
 	}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	req := &pb.PatchComponentRequest{
 		Id:     &pb.UUID{Id: compID.String()},
@@ -371,6 +373,26 @@ func TestPatchComponent_RackReassign(t *testing.T) {
 
 	updated := mgr.components[compID]
 	assert.Equal(t, newRackID, updated.RackID)
+}
+
+func TestPatchComponent_RackNotFound(t *testing.T) {
+	mgr := newMockManager()
+	compID := uuid.New()
+	rackID := uuid.New()
+	mgr.components[compID] = &component.Component{
+		Type:   devicetypes.ComponentTypeCompute,
+		Info:   deviceinfo.DeviceInfo{ID: compID, Name: "node-01"},
+		RackID: rackID,
+	}
+
+	server := &FlowServerImpl{inventoryManager: mgr}
+
+	_, err := server.PatchComponent(context.Background(), &pb.PatchComponentRequest{
+		Id:     &pb.UUID{Id: compID.String()},
+		RackId: &pb.UUID{Id: uuid.New().String()},
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "rack not found")
 }
 
 func TestPatchComponent_WithBMCs(t *testing.T) {
@@ -387,7 +409,7 @@ func TestPatchComponent_WithBMCs(t *testing.T) {
 		},
 	}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	ip := "10.0.0.99"
 	req := &pb.PatchComponentRequest{
@@ -425,7 +447,7 @@ func TestPatchComponent_BMCsNotProvidedPreservesExisting(t *testing.T) {
 		},
 	}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	newFW := "2.0.0"
 	req := &pb.PatchComponentRequest{
@@ -448,7 +470,7 @@ func TestPatchComponent_BMCsNotProvidedPreservesExisting(t *testing.T) {
 func TestGetComponents_TargetSpecNoPagination(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.GetComponents(context.Background(), &pb.GetComponentsRequest{
 		TargetSpec: &pb.OperationTargetSpec{
@@ -471,7 +493,7 @@ func TestGetComponents_TargetSpecNoPagination(t *testing.T) {
 func TestGetComponents_TargetSpecWithPagination(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.GetComponents(context.Background(), &pb.GetComponentsRequest{
 		TargetSpec: &pb.OperationTargetSpec{
@@ -518,8 +540,8 @@ func setupValidateTestData(mgr *mockManager) (uuid.UUID, []uuid.UUID) {
 				RackID:          rackID,
 			},
 			{
-				Type:            devicetypes.ComponentTypeNVLSwitch,
-				Info:            deviceinfo.DeviceInfo{ID: comp3ID, Name: "nvlswitch-01", Manufacturer: "Mellanox"},
+				Type:            devicetypes.ComponentTypeNVSwitch,
+				Info:            deviceinfo.DeviceInfo{ID: comp3ID, Name: "nvswitch-01", Manufacturer: "Mellanox"},
 				FirmwareVersion: "2.0.0",
 				RackID:          rackID,
 			},
@@ -557,7 +579,7 @@ func setupValidateTestData(mgr *mockManager) (uuid.UUID, []uuid.UUID) {
 func TestValidateComponents_NoFilters(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{
 		TargetSpec: &pb.OperationTargetSpec{
@@ -576,14 +598,14 @@ func TestValidateComponents_NoFilters(t *testing.T) {
 	// 3 drifts: comp1 mismatch, comp2 missing_in_actual, comp3 mismatch
 	assert.Equal(t, int32(3), resp.TotalDiffs)
 	assert.Equal(t, 3, len(resp.Diffs))
-	assert.Equal(t, int32(2), resp.DriftCount)
+	assert.Equal(t, int32(2), resp.MismatchCount)
 	assert.Equal(t, int32(1), resp.MissingCount)
 }
 
 func TestValidateComponents_WithTypeFilter(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{
 		TargetSpec: &pb.OperationTargetSpec{
@@ -605,17 +627,17 @@ func TestValidateComponents_WithTypeFilter(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	// Only comp1 (mismatch) and comp2 (missing_in_actual) are compute; comp3 (nvlswitch) is filtered out
+	// Only comp1 (mismatch) and comp2 (missing_in_actual) are compute; comp3 (nvswitch) is filtered out
 	assert.Equal(t, int32(2), resp.TotalDiffs)
 	assert.Equal(t, 2, len(resp.Diffs))
-	assert.Equal(t, int32(1), resp.DriftCount)
+	assert.Equal(t, int32(1), resp.MismatchCount)
 	assert.Equal(t, int32(1), resp.MissingCount)
 }
 
 func TestValidateComponents_WithNameFilter(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{
 		TargetSpec: &pb.OperationTargetSpec{
@@ -640,14 +662,14 @@ func TestValidateComponents_WithNameFilter(t *testing.T) {
 	// Only comp1 (compute-01) matches the name filter
 	assert.Equal(t, int32(1), resp.TotalDiffs)
 	assert.Equal(t, 1, len(resp.Diffs))
-	assert.Equal(t, int32(1), resp.DriftCount) // comp1 is mismatch
+	assert.Equal(t, int32(1), resp.MismatchCount) // comp1 is a mismatch
 	assert.Equal(t, int32(0), resp.UnexpectedCount)
 }
 
 func TestValidateComponents_WithManufacturerFilter(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{
 		TargetSpec: &pb.OperationTargetSpec{
@@ -669,15 +691,15 @@ func TestValidateComponents_WithManufacturerFilter(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	// Only comp3 (nvlswitch-01, Mellanox) matches
+	// Only comp3 (nvswitch-01, Mellanox) matches
 	assert.Equal(t, int32(1), resp.TotalDiffs)
-	assert.Equal(t, int32(1), resp.DriftCount) // comp3 is mismatch
+	assert.Equal(t, int32(1), resp.MismatchCount) // comp3 is a mismatch
 }
 
 func TestValidateComponents_WithPagination(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	// Get first page (limit 2)
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{
@@ -721,7 +743,7 @@ func TestValidateComponents_WithPagination(t *testing.T) {
 func TestValidateComponents_NoTargetSpec_GetAllDrifts(t *testing.T) {
 	mgr := newMockManager()
 	_, _ = setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	// No target_spec => GetAllDrifts
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{})
@@ -735,7 +757,7 @@ func TestValidateComponents_NoTargetSpec_GetAllDrifts(t *testing.T) {
 func TestValidateComponents_FilterAndPaginationCombined(t *testing.T) {
 	mgr := newMockManager()
 	rackID, _ := setupValidateTestData(mgr)
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	// Filter to compute only (2 drifts), then paginate (limit 1)
 	resp, err := server.ValidateComponents(context.Background(), &pb.ValidateComponentsRequest{
@@ -770,7 +792,7 @@ func TestDeleteRack_Success(t *testing.T) {
 	rackID := uuid.New()
 	mgr.racks[rackID] = &rack.Rack{Info: deviceinfo.DeviceInfo{ID: rackID, Name: "test-rack"}}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.DeleteRack(context.Background(), &pb.DeleteRackRequest{
 		Id: &pb.UUID{Id: rackID.String()},
@@ -784,7 +806,7 @@ func TestDeleteRack_Success(t *testing.T) {
 
 func TestDeleteRack_MissingID(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.DeleteRack(context.Background(), &pb.DeleteRackRequest{})
 	require.Error(t, err)
@@ -793,7 +815,7 @@ func TestDeleteRack_MissingID(t *testing.T) {
 
 func TestDeleteRack_NotFound(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.DeleteRack(context.Background(), &pb.DeleteRackRequest{
 		Id: &pb.UUID{Id: uuid.New().String()},
@@ -809,7 +831,7 @@ func TestPurgeRack_Success(t *testing.T) {
 	rackID := uuid.New()
 	mgr.racks[rackID] = &rack.Rack{Info: deviceinfo.DeviceInfo{ID: rackID, Name: "test-rack"}}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.PurgeRack(context.Background(), &pb.PurgeRackRequest{
 		Id: &pb.UUID{Id: rackID.String()},
@@ -823,7 +845,7 @@ func TestPurgeRack_Success(t *testing.T) {
 
 func TestPurgeRack_MissingID(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.PurgeRack(context.Background(), &pb.PurgeRackRequest{})
 	require.Error(t, err)
@@ -832,7 +854,7 @@ func TestPurgeRack_MissingID(t *testing.T) {
 
 func TestPurgeRack_NotFound(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.PurgeRack(context.Background(), &pb.PurgeRackRequest{
 		Id: &pb.UUID{Id: uuid.New().String()},
@@ -851,7 +873,7 @@ func TestPurgeComponent_Success(t *testing.T) {
 		Info: deviceinfo.DeviceInfo{ID: compID, Name: "node-01"},
 	}
 
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	resp, err := server.PurgeComponent(context.Background(), &pb.PurgeComponentRequest{
 		Id: &pb.UUID{Id: compID.String()},
@@ -865,7 +887,7 @@ func TestPurgeComponent_Success(t *testing.T) {
 
 func TestPurgeComponent_MissingID(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.PurgeComponent(context.Background(), &pb.PurgeComponentRequest{})
 	require.Error(t, err)
@@ -874,7 +896,7 @@ func TestPurgeComponent_MissingID(t *testing.T) {
 
 func TestPurgeComponent_NotFound(t *testing.T) {
 	mgr := newMockManager()
-	server := &RLAServerImpl{inventoryManager: mgr}
+	server := &FlowServerImpl{inventoryManager: mgr}
 
 	_, err := server.PurgeComponent(context.Background(), &pb.PurgeComponentRequest{
 		Id: &pb.UUID{Id: uuid.New().String()},
