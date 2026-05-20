@@ -174,9 +174,9 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetRackTask", flowRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "GetTask", flowRequest)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to schedule GetRackTask workflow")
+		logger.Error().Err(err).Msg("failed to schedule GetTask workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to schedule Task retrieval workflow", nil)
 	}
 
@@ -185,10 +185,10 @@ func (gth GetTaskHandler) Handle(c echo.Context) error {
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, fmt.Sprintf("task-get-%s", taskID), err, "Task", "GetRackTask")
+			return common.TerminateWorkflowOnTimeOut(c, logger, stc, fmt.Sprintf("task-get-%s", taskID), err, "Task", "GetTask")
 		}
 		code, unwrapErr := common.UnwrapWorkflowError(err)
-		logger.Error().Err(unwrapErr).Msg("failed to get result from GetRackTask workflow")
+		logger.Error().Err(unwrapErr).Msg("failed to get result from GetTask workflow")
 		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute Task retrieval workflow on Site: %s", unwrapErr), nil)
 	}
 
@@ -350,9 +350,9 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CancelRackTask", flowRequest)
+	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CancelTask", flowRequest)
 	if err != nil {
-		logger.Error().Err(err).Msg("failed to schedule CancelRackTask workflow")
+		logger.Error().Err(err).Msg("failed to schedule CancelTask workflow")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to schedule Task cancellation workflow", nil)
 	}
 
@@ -361,10 +361,10 @@ func (cth CancelTaskHandler) Handle(c echo.Context) error {
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, workflowID, err, "Task", "CancelRackTask")
+			return common.TerminateWorkflowOnTimeOut(c, logger, stc, workflowID, err, "Task", "CancelTask")
 		}
 		code, unwrapErr := common.UnwrapWorkflowError(err)
-		logger.Error().Err(unwrapErr).Msg("failed to get result from CancelRackTask workflow")
+		logger.Error().Err(unwrapErr).Msg("failed to get result from CancelTask workflow")
 		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute Task cancellation workflow on Site: %s", unwrapErr), nil)
 	}
 
@@ -512,7 +512,7 @@ func (h GetRackTasksHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	workflowID := fmt.Sprintf("task-list-rack-%s-%s", rackID, common.QueryParamHash(apiRequest.QueryValues(pageRequest)))
+	workflowID := fmt.Sprintf("tasks-rack-get-%s-%s", rackID, common.QueryParamHash(apiRequest.QueryValues(pageRequest)))
 	workflowOptions := tClient.StartWorkflowOptions{
 		ID:                       workflowID,
 		WorkflowIDReusePolicy:    temporalEnums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
@@ -524,7 +524,7 @@ func (h GetRackTasksHandler) Handle(c echo.Context) error {
 	wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(wfCtx, workflowOptions, "GetAllTasks", flowRequest)
+	we, err := stc.ExecuteWorkflow(wfCtx, workflowOptions, "GetTasks", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to schedule workflow to retrieve all Rack Tasks")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to schedule workflow to retrieve all Rack Tasks", nil)
@@ -534,11 +534,11 @@ func (h GetRackTasksHandler) Handle(c echo.Context) error {
 	if err := we.Get(wfCtx, &flowResponse); err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, workflowID, err, "Task", "GetAllTasks")
+			return common.TerminateWorkflowOnTimeOut(c, logger, stc, workflowID, err, "Task", "GetTasks")
 		}
 		code, unwrapErr := common.UnwrapWorkflowError(err)
-		logger.Error().Err(unwrapErr).Msg("failed to get result from GetAllTasks workflow for Rack")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute workflow to retrieve all Rack Tasks on Site: %s", unwrapErr), nil)
+		logger.Error().Err(unwrapErr).Msg("failed to get result from GetTasks workflow for Rack")
+		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute workflow to retrieve all Rack Tasks: %s", unwrapErr), nil)
 	}
 
 	apiTasks := make([]*model.APIRackTask, 0, len(flowResponse.GetTasks()))
@@ -695,7 +695,7 @@ func (h GetTrayTasksHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	workflowID := fmt.Sprintf("task-list-tray-%s-%s", trayID, common.QueryParamHash(apiRequest.QueryValues(pageRequest)))
+	workflowID := fmt.Sprintf("tasks-tray-get-%s-%s", trayID, common.QueryParamHash(apiRequest.QueryValues(pageRequest)))
 	workflowOptions := tClient.StartWorkflowOptions{
 		ID:                       workflowID,
 		WorkflowIDReusePolicy:    temporalEnums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
@@ -707,7 +707,7 @@ func (h GetTrayTasksHandler) Handle(c echo.Context) error {
 	wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := stc.ExecuteWorkflow(wfCtx, workflowOptions, "GetAllTasks", flowRequest)
+	we, err := stc.ExecuteWorkflow(wfCtx, workflowOptions, "GetTasks", flowRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to schedule workflow to retrieve all Tray Tasks")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to schedule workflow to retrieve all Tray Tasks", nil)
@@ -717,11 +717,11 @@ func (h GetTrayTasksHandler) Handle(c echo.Context) error {
 	if err := we.Get(wfCtx, &flowResponse); err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, stc, workflowID, err, "Task", "GetAllTasks")
+			return common.TerminateWorkflowOnTimeOut(c, logger, stc, workflowID, err, "Task", "GetTasks")
 		}
 		code, unwrapErr := common.UnwrapWorkflowError(err)
-		logger.Error().Err(unwrapErr).Msg("failed to get result from GetAllTasks workflow for Tray")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute workflow to retrieve all Tray Tasks on Site: %s", unwrapErr), nil)
+		logger.Error().Err(unwrapErr).Msg("failed to get result from GetTasks workflow for Tray")
+		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute workflow to retrieve all Tray Tasks: %s", unwrapErr), nil)
 	}
 
 	apiTasks := make([]*model.APIRackTask, 0, len(flowResponse.GetTasks()))

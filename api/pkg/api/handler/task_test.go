@@ -170,7 +170,7 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 					resp.Tasks = tt.mockTasks
 				}).Return(nil)
 			}
-			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "GetRackTask", mock.Anything).Return(mockWorkflowRun, nil)
+			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "GetTask", mock.Anything).Return(mockWorkflowRun, nil)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
 			q := url.Values{}
@@ -216,7 +216,7 @@ func TestGetTaskHandler_Handle(t *testing.T) {
 // runListTasksHandlerCases exercises GetRackTasksHandler and GetTrayTasksHandler
 // with a shared case matrix. pathFmt and the path parameter differ per handler;
 // both invoke the GetAllTasks workflow and use the same Temporal mock expectation.
-type listTasksHandlerCase struct {
+type GetTasksHandlerTestCase struct {
 	name           string
 	reqOrg         string
 	user           *cdbm.User
@@ -227,11 +227,11 @@ type listTasksHandlerCase struct {
 	assertFlowReq  func(t *testing.T, req *flowv1.ListTasksRequest, pathParam string)
 }
 
-func runListTasksHandlerCases(t *testing.T, pathFmt string, handle func(echo.Context) error, scp *sc.ClientPool, siteID string, cases []listTasksHandlerCase) {
+func ExecuteGetTasksHandlerTestCases(t *testing.T, pathFmt string, handle func(echo.Context) error, scp *sc.ClientPool, siteID string, testCases []GetTasksHandlerTestCase) {
 	t.Helper()
 	e := echo.New()
 	tracer := oteltrace.NewNoopTracerProvider().Tracer("test")
-	for _, tt := range cases {
+	for _, tt := range testCases {
 		t.Run(tt.name, func(t *testing.T) {
 			mockTemporalClient := &tmocks.Client{}
 			mockWorkflowRun := &tmocks.WorkflowRun{}
@@ -309,7 +309,7 @@ func TestGetRackTasksHandler_Handle(t *testing.T) {
 		Status:      flowv1.TaskStatus_TASK_STATUS_RUNNING,
 	}}
 
-	cases := []listTasksHandlerCase{
+	cases := []GetTasksHandlerTestCase{
 		{
 			name:           "success - list rack tasks",
 			reqOrg:         org,
@@ -367,7 +367,7 @@ func TestGetRackTasksHandler_Handle(t *testing.T) {
 		},
 	}
 
-	runListTasksHandlerCases(t, "/v2/org/%s/nico/rack/%s/task", handler.Handle, scp, site.ID.String(), cases)
+	ExecuteGetTasksHandlerTestCases(t, "/v2/org/%s/nico/rack/%s/task", handler.Handle, scp, site.ID.String(), cases)
 }
 
 func TestGetTrayTasksHandler_Handle(t *testing.T) {
@@ -394,7 +394,7 @@ func TestGetTrayTasksHandler_Handle(t *testing.T) {
 		Status:      flowv1.TaskStatus_TASK_STATUS_PENDING,
 	}}
 
-	cases := []listTasksHandlerCase{
+	cases := []GetTasksHandlerTestCase{
 		{
 			name:           "success - list tray tasks",
 			reqOrg:         org,
@@ -436,7 +436,7 @@ func TestGetTrayTasksHandler_Handle(t *testing.T) {
 		},
 	}
 
-	runListTasksHandlerCases(t, "/v2/org/%s/nico/tray/%s/task", handler.Handle, scp, site.ID.String(), cases)
+	ExecuteGetTasksHandlerTestCases(t, "/v2/org/%s/nico/tray/%s/task", handler.Handle, scp, site.ID.String(), cases)
 }
 
 func TestCancelTaskHandler_Handle(t *testing.T) {
@@ -562,7 +562,7 @@ func TestCancelTaskHandler_Handle(t *testing.T) {
 					resp.Task = tt.mockTask
 				}).Return(nil)
 			}
-			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "CancelRackTask", mock.Anything).Return(mockWorkflowRun, tt.mockExecErr)
+			mockTemporalClient.Mock.On("ExecuteWorkflow", mock.Anything, mock.Anything, "CancelTask", mock.Anything).Return(mockWorkflowRun, tt.mockExecErr)
 			scp.IDClientMap[site.ID.String()] = mockTemporalClient
 
 			path := fmt.Sprintf("/v2/org/%s/nico/rack/task/%s/cancel", tt.reqOrg, tt.taskUUID)
