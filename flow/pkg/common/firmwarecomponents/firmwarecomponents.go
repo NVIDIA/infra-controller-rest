@@ -63,8 +63,16 @@ var (
 	nicoPowerShelfNames = sortedKeys(nicoPowerShelfByName)
 
 	nicoComputeTrayByName = map[string]nicopb.ComputeTrayComponent{
-		"bmc":  nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_BMC,
-		"bios": nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_BIOS,
+		"bmc":               nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_BMC,
+		"bios":              nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_BIOS,
+		"cec":               nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_CEC,
+		"nic":               nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_NIC,
+		"cpld_mb":           nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_CPLD_MB,
+		"cpld_pdb":          nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_CPLD_PDB,
+		"hgx_bmc":           nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_HGX_BMC,
+		"combined_bmc_uefi": nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_COMBINED_BMC_UEFI,
+		"gpu":               nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_GPU,
+		"cx7":               nicopb.ComputeTrayComponent_COMPUTE_TRAY_COMPONENT_CX7,
 	}
 	nicoComputeTrayNames = sortedKeys(nicoComputeTrayByName)
 )
