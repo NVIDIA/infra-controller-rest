@@ -779,7 +779,7 @@ func (ssd SubnetSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, sn *Subne
 		AcquiredIPs:               acquiredIPs,
 		AvailableSmallestPrefixes: usage.AvailableSmallestPrefixes,
 		AvailablePrefixes:         usage.AvailablePrefixes,
-		AcquiredPrefixes:          uint64(ifcCount),
+		AcquiredPrefixes:          usage.AcquiredPrefixes,
 	}, nil
 }
 

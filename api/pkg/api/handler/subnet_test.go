@@ -1168,7 +1168,7 @@ func TestSubnetHandler_Get(t *testing.T) {
 	require.NoError(t, err)
 	subnetWithIfaceWorkload := testCreateSubnet(t, dbSession, scp, ipamStorage, tnu, tnOrg1, string(ifaceSubnetBody))
 	var wantUsageAcquiredPrefixes0 uint64
-	wantUsageAcquiredPrefixes1 := uint64(1)
+	wantUsageAcquiredPrefixes1 := uint64(0)
 
 	alWorkload := common.TestBuildAllocation(t, dbSession, site, tenant1, "get-subnet-usage-iface-alloc", ipu)
 	itWorkload := common.TestBuildInstanceType(t, dbSession, "get-subnet-iface-it", cdb.GetUUIDPtr(uuid.New()), site, nil, ipu)

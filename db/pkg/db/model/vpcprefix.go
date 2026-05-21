@@ -559,7 +559,7 @@ func (vpsd VpcPrefixSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, vp *V
 		AcquiredIPs:               acquiredIPs,
 		AvailableSmallestPrefixes: usage.AvailableSmallestPrefixes,
 		AvailablePrefixes:         usage.AvailablePrefixes,
-		AcquiredPrefixes:          uint64(ifcCount),
+		AcquiredPrefixes:          usage.AcquiredPrefixes,
 	}, nil
 }
 
