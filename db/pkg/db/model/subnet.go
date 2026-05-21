@@ -715,71 +715,71 @@ func queryEthernetInterfaceIPsForSubnet(ctx context.Context, idb bun.IDB, subnet
 // GetPrefixUsage derives IPv4 interface usage stats for this Subnet via an in-memory IPAM simulation.
 func (ssd SubnetSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, sn *Subnet) (*cipam.Usage, error) {
 	if sn == nil {
-		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet: nil Subnet")
+		return nil, fmt.Errorf("Failed to calculate usage stats for Subnet: nil argument specified")
 	}
 
 	if sn.IPv4Prefix == nil || *sn.IPv4Prefix == "" {
-		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for Subnet %q: %w", sn.ID.String(), errSubnetNoIPv4Prefix)
+		return nil, fmt.Errorf("Failed to calculate usage stats for Subnet %q: %w", sn.ID.String(), errSubnetNoIPv4Prefix)
 	}
-	p := *sn.IPv4Prefix
 
 	var cidr string
-	if strings.Contains(p, "/") {
-		cidr = p
+	if strings.Contains(*sn.IPv4Prefix, "/") {
+		cidr = *sn.IPv4Prefix
 	} else {
-		cidr = fmt.Sprintf("%s/%d", p, sn.PrefixLength)
+		cidr = fmt.Sprintf("%s/%d", *sn.IPv4Prefix, sn.PrefixLength)
 	}
 
 	idb := db.GetIDB(tx, ssd.dbSession)
-	ifcount, ips, err := queryEthernetInterfaceIPsForSubnet(ctx, idb, sn.ID)
+	ifcCount, ips, err := queryEthernetInterfaceIPsForSubnet(ctx, idb, sn.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	ipmer := cipam.New(ctx)
-	parent, err := ipmer.NewPrefix(ctx, cidr)
+	ipamer := cipam.New(ctx)
+	ipamPrefix, err := ipamer.NewPrefix(ctx, cidr)
 	if err != nil {
 		return nil, err
 	}
 
-	parentCidr := parent.Cidr
-	pp, err := netip.ParsePrefix(parentCidr)
+	validatedCidr := ipamPrefix.Cidr
+	netIpPrefix, err := netip.ParsePrefix(validatedCidr)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, ipAddresses := range ips {
 		for _, ipStr := range ipAddresses {
-			a, ierr := netip.ParseAddr(strings.TrimSpace(ipStr))
-			if ierr != nil || !a.Is4() {
+			netIpAddr, ierr := netip.ParseAddr(strings.TrimSpace(ipStr))
+			if ierr != nil || !netIpAddr.Is4() {
 				continue
 			}
-			if !pp.Contains(a) {
+			if !netIpPrefix.Contains(netIpAddr) {
 				continue
 			}
-			if _, ierr := ipmer.AcquireSpecificIP(ctx, parentCidr, a.String()); ierr != nil {
+			_, ierr = ipamer.AcquireSpecificIP(ctx, validatedCidr, netIpAddr.String())
+			if ierr != nil {
 				continue
 			}
 		}
 	}
 
-	root := ipmer.PrefixFrom(ctx, parentCidr)
-	if root == nil {
-		return nil, fmt.Errorf("subnet usage: prefix %q disappeared from in-memory IPAM", parentCidr)
+	ipamPrefix = ipamer.PrefixFrom(ctx, validatedCidr)
+	if ipamPrefix == nil {
+		return nil, fmt.Errorf("Prefix %q was not found in IPAM after loading IPs", validatedCidr)
 	}
 
-	u := root.Usage()
+	usage := ipamPrefix.Usage()
 
-	acquiredIPs := uint64(ifcount) + 2
-	if acquiredIPs > u.AvailableIPs {
-		acquiredIPs = u.AvailableIPs
+	acquiredIPs := uint64(ifcCount) + 2
+	if acquiredIPs > usage.AvailableIPs {
+		acquiredIPs = usage.AvailableIPs
 	}
 	return &cipam.Usage{
-		AvailableIPs:              u.AvailableIPs,
+		AvailableIPs:              usage.AvailableIPs,
 		AcquiredIPs:               acquiredIPs,
-		AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
-		AvailablePrefixes:         u.AvailablePrefixes,
-		AcquiredPrefixes:          uint64(ifcount),
+		AvailableSmallestPrefixes: usage.AvailableSmallestPrefixes,
+		AvailablePrefixes:         usage.AvailablePrefixes,
+		AcquiredPrefixes:          uint64(ifcCount),
 	}, nil
 }
 

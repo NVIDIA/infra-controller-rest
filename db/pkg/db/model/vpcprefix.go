@@ -481,7 +481,7 @@ func queryEthernetInterfaceIPsForVPCPrefix(ctx context.Context, idb bun.IDB, vpc
 // GetPrefixUsage derives IPv4 interface usage stats for this VpcPrefix via an in-memory IPAM simulation.
 func (vpsd VpcPrefixSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, vp *VpcPrefix) (*cipam.Usage, error) {
 	if vp == nil {
-		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for VPCPrefix: nil VPCPrefix")
+		return nil, fmt.Errorf("Failed to calculate usage stats for VPC Prefix: nil argument")
 	}
 
 	var cidr string
@@ -491,25 +491,25 @@ func (vpsd VpcPrefixSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, vp *V
 		cidr = fmt.Sprintf("%s/%d", vp.Prefix, vp.PrefixLength)
 	}
 	if cidr == "" {
-		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for VPCPrefix %q: no IPv4 CIDR", vp.ID.String())
+		return nil, fmt.Errorf("Failed to calculate usage stats for VPC Prefix %q: CIDR could not be populated", vp.ID.String())
 	}
 
-	// query the IP addresses for each interface
+	// Query the IP addresses for each Interface associated with this VPC Prefix
 	idb := db.GetIDB(tx, vpsd.dbSession)
-	ifcount, ips, err := queryEthernetInterfaceIPsForVPCPrefix(ctx, idb, vp.ID)
+	ifcCount, ips, err := queryEthernetInterfaceIPsForVPCPrefix(ctx, idb, vp.ID)
 	if err != nil {
 		return nil, err
 	}
 
 	// derive the usage stats via an in-memory IPAM simulation
-	ipmer := cipam.New(ctx)
-	parent, err := ipmer.NewPrefix(ctx, cidr)
+	ipamer := cipam.New(ctx)
+	ipamPrefix, err := ipamer.NewPrefix(ctx, cidr)
 	if err != nil {
 		return nil, err
 	}
 
-	parentCidr := parent.Cidr
-	pp, err := netip.ParsePrefix(parentCidr)
+	validatedCidr := ipamPrefix.Cidr
+	netIpPrefix, err := netip.ParsePrefix(validatedCidr)
 	if err != nil {
 		return nil, err
 	}
@@ -519,47 +519,47 @@ func (vpsd VpcPrefixSQLDAO) GetPrefixUsage(ctx context.Context, tx *db.Tx, vp *V
 	acquiredPrefixes := make(map[string]struct{})
 	for _, ipAddresses := range ips {
 		for _, ipStr := range ipAddresses {
-			a, ierr := netip.ParseAddr(strings.TrimSpace(ipStr))
-			if ierr != nil || !a.Is4() {
+			netIpAddr, ierr := netip.ParseAddr(strings.TrimSpace(ipStr))
+			if ierr != nil || !netIpAddr.Is4() {
 				continue
 			}
-			if !pp.Contains(a) {
+			if !netIpPrefix.Contains(netIpAddr) {
 				continue
 			}
 			// derive the /31 prefix for the IP address
-			p31, perr := a.Prefix(31)
+			contained31Prefix, perr := netIpAddr.Prefix(31)
 			if perr != nil {
 				continue
 			}
-			k := p31.Masked().String()
+			k := contained31Prefix.Masked().String()
 			if _, dup := acquiredPrefixes[k]; dup {
 				continue
 			}
-			if _, ierr := ipmer.AcquireSpecificChildPrefix(ctx, parentCidr, k); ierr != nil {
+			if _, ierr := ipamer.AcquireSpecificChildPrefix(ctx, validatedCidr, k); ierr != nil {
 				continue
 			}
 			acquiredPrefixes[k] = struct{}{}
 		}
 	}
 
-	root := ipmer.PrefixFrom(ctx, parentCidr)
-	if root == nil {
-		return nil, fmt.Errorf("usageStats: Failed to calculate usage stats for VPCPrefix %q: from in-memory IPAM", parentCidr)
+	ipamPrefix = ipamer.PrefixFrom(ctx, validatedCidr)
+	if ipamPrefix == nil {
+		return nil, fmt.Errorf("Prefix %q was not found in IPAM after loading IPs", validatedCidr)
 	}
 
-	u := root.Usage()
+	usage := ipamPrefix.Usage()
 
-	acquiredIPs := uint64(ifcount) * 2
-	if acquiredIPs > u.AvailableIPs {
-		acquiredIPs = u.AvailableIPs
+	acquiredIPs := uint64(ifcCount) * 2
+	if acquiredIPs > usage.AvailableIPs {
+		acquiredIPs = usage.AvailableIPs
 	}
 
 	return &cipam.Usage{
-		AvailableIPs:              u.AvailableIPs,
+		AvailableIPs:              usage.AvailableIPs,
 		AcquiredIPs:               acquiredIPs,
-		AvailableSmallestPrefixes: u.AvailableSmallestPrefixes,
-		AvailablePrefixes:         u.AvailablePrefixes,
-		AcquiredPrefixes:          uint64(ifcount),
+		AvailableSmallestPrefixes: usage.AvailableSmallestPrefixes,
+		AvailablePrefixes:         usage.AvailablePrefixes,
+		AcquiredPrefixes:          uint64(ifcCount),
 	}, nil
 }
 
