@@ -57,7 +57,7 @@ type Subnet struct {
 	PrefixLength *int32         `json:"prefixLength,omitempty"`
 	RoutingType  NullableString `json:"routingType,omitempty"`
 	Status       *SubnetStatus  `json:"status,omitempty"`
-	// Present when query param `includeUsageStats=true`. IPv4 counters treat each Ethernet interface as one assigned host plus reserves for gateway and subnet bookkeeping.
+	// Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnet consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
 	UsageStats    *IpBlockUsageStats `json:"usageStats,omitempty"`
 	StatusHistory []StatusDetail     `json:"statusHistory,omitempty"`
 	Created       *time.Time         `json:"created,omitempty"`

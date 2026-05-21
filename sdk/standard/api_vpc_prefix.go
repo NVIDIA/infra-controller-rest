@@ -327,7 +327,7 @@ func (r ApiGetAllVpcPrefixRequest) IncludeRelation(includeRelation string) ApiGe
 	return r
 }
 
-// When true, each VPC Prefix includes IPv4 &#x60;usageStats&#x60; using the same JSON shape as IP Block usage counters. Values are projected from ethernet interface addresses on Instances in this prefix (&#x60;/31&#x60;-paired consumption; counts include two host addresses per interface slot). The parent IP Block relation may be loaded internally when resolving allocation context.
+// When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a &#x60;/31&#x60; prefix.
 func (r ApiGetAllVpcPrefixRequest) IncludeUsageStats(includeUsageStats bool) ApiGetAllVpcPrefixRequest {
 	r.includeUsageStats = &includeUsageStats
 	return r
@@ -507,7 +507,7 @@ func (r ApiGetVpcPrefixRequest) IncludeRelation(includeRelation string) ApiGetVp
 	return r
 }
 
-// When true, each VPC Prefix includes IPv4 &#x60;usageStats&#x60; using the same JSON shape as IP Block usage counters. Values are projected from ethernet interface addresses on Instances in this prefix (&#x60;/31&#x60;-paired consumption; counts include two host addresses per interface slot). The parent IP Block relation may be loaded internally when resolving allocation context.
+// When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a &#x60;/31&#x60; prefix.
 func (r ApiGetVpcPrefixRequest) IncludeUsageStats(includeUsageStats bool) ApiGetVpcPrefixRequest {
 	r.includeUsageStats = &includeUsageStats
 	return r

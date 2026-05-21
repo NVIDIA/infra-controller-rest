@@ -40,9 +40,9 @@ type IpBlockUsageStats struct {
 	AvailableIPs *int64 `json:"availableIPs,omitempty"`
 	// Number of individual IP addresses acquired from the block
 	AcquiredIPs *int64 `json:"acquiredIPs,omitempty"`
-	// Example prefixes available to acquire. For IPBlocks this comes from IPAM. For Subnets and VPC Prefixes with interface-derived usage, at most 10 sample prefixes are returned (/32 host prefixes for Subnets; /31 prefixes for VPC Prefixes).
+	// Example prefixes available to acquire
 	AvailablePrefixes []string `json:"availablePrefixes,omitempty"`
-	// Number of smallest prefixes available to acquire. For VPC Prefix interface-derived usage this is the count of remaining /31 interface slots (half of remaining IPs). Subnet interface-derived usage leaves this as zero; IPBlocks use IPAM semantics.
+	// Number of smallest prefixes available to acquire
 	AvailableSmallestPrefixes *int64 `json:"availableSmallestPrefixes,omitempty"`
 	// Number of prefixes acquired from this block
 	AcquiredPrefixes *int64 `json:"acquiredPrefixes,omitempty"`

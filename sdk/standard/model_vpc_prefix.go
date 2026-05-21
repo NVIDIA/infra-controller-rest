@@ -54,7 +54,7 @@ type VpcPrefix struct {
 	PrefixLength *int32 `json:"prefixLength,omitempty"`
 	// Status of the VPC Prefix
 	Status *VpcPrefixStatus `json:"status,omitempty"`
-	// Present when query param `includeUsageStats=true`. IPv4 usage applies interface-based rules (including 2 IPs per Ethernet interface slot); `availablePrefixes` reflects `/31`-sized subdivisions inferred from assigned interface IP addresses.
+	// Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
 	UsageStats *IpBlockUsageStats `json:"usageStats,omitempty"`
 	// Details of 20 most recent status changes
 	StatusHistory []StatusDetail `json:"statusHistory,omitempty"`
