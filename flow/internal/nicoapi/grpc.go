@@ -136,6 +136,27 @@ func (c *grpcClient) GetLeakingMachineIds(ctx context.Context) ([]string, error)
 	return ids, nil
 }
 
+func (c *grpcClient) GetLeakingSwitchIds(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
+	defer cancel()
+
+	alert := "hardware-health.tray-leak-detection"
+	searchConfig := pb.SwitchSearchFilter{
+		OnlyWithHealthAlert: &alert,
+	}
+
+	switchIDs, err := c.gclient.FindSwitchIds(ctx, &searchConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(switchIDs.GetIds()))
+	for _, switchID := range switchIDs.GetIds() {
+		ids = append(ids, switchID.GetId())
+	}
+	return ids, nil
+}
+
 // Version returns the version string of nico-core-api, mainly as a "ping"
 func (c *grpcClient) Version(ctx context.Context) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)

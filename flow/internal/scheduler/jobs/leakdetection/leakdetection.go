@@ -53,6 +53,23 @@ func runLeakDetectionOne(
 				Msg("Failed to submit power-off task for leaking machine")
 		}
 	}
+
+	leakingSwitchIds, err := nicoClient.GetLeakingSwitchIds(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("Unable to retrieve leaking switch IDs from NICo")
+		return
+	}
+
+	log.Info().Msgf("Found %d leaking switch IDs", len(leakingSwitchIds))
+
+	for _, switchID := range leakingSwitchIds {
+		log.Info().Msgf("Leaking switch ID: %s, submitting force power-off task", switchID)
+
+		if err := submitPowerOffTask(ctx, taskMgr, switchID); err != nil {
+			log.Error().Err(err).Str("switch_id", switchID).
+				Msg("Failed to submit power-off task for leaking switch")
+		}
+	}
 }
 
 func submitPowerOffTask(
