@@ -34,7 +34,7 @@ import (
 // checks if the TrayFilter type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &TrayFilter{}
 
-// TrayFilter Filter criteria for selecting trays in batch operations. If omitted or empty, all trays in the site are targeted.  Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slot` and `trayIdx` are independent position filters that compose with the rest of the filter via AND; an incompatible combination simply yields an empty result.
+// TrayFilter Filter criteria for selecting trays in batch operations. If omitted or empty, all trays in the site are targeted.  Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slotId` composes with the rest of the filter via AND; an incompatible combination simply yields an empty result.
 type TrayFilter struct {
 	// Filter by Rack ID
 	RackId *string `json:"rackId,omitempty"`
@@ -46,10 +46,8 @@ type TrayFilter struct {
 	ComponentIds []string `json:"componentIds,omitempty"`
 	// Filter by tray UUID
 	Ids []string `json:"ids,omitempty"`
-	// Restrict to trays at this rack slot. Composes with the rest of the filter via AND.
-	Slot *int32 `json:"slot,omitempty"`
-	// Restrict to trays with this index within their slot (used to disambiguate NVLSwitch trays sharing one slot). Composes with the rest of the filter via AND.
-	TrayIdx *int32 `json:"trayIdx,omitempty"`
+	// Restrict to trays at this rack slot (matches `position.slotId`). Composes with the rest of the filter via AND.
+	SlotId *int32 `json:"slotId,omitempty"`
 }
 
 // NewTrayFilter instantiates a new TrayFilter object
@@ -229,68 +227,36 @@ func (o *TrayFilter) SetIds(v []string) {
 	o.Ids = v
 }
 
-// GetSlot returns the Slot field value if set, zero value otherwise.
-func (o *TrayFilter) GetSlot() int32 {
-	if o == nil || IsNil(o.Slot) {
+// GetSlotId returns the SlotId field value if set, zero value otherwise.
+func (o *TrayFilter) GetSlotId() int32 {
+	if o == nil || IsNil(o.SlotId) {
 		var ret int32
 		return ret
 	}
-	return *o.Slot
+	return *o.SlotId
 }
 
-// GetSlotOk returns a tuple with the Slot field value if set, nil otherwise
+// GetSlotIdOk returns a tuple with the SlotId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *TrayFilter) GetSlotOk() (*int32, bool) {
-	if o == nil || IsNil(o.Slot) {
+func (o *TrayFilter) GetSlotIdOk() (*int32, bool) {
+	if o == nil || IsNil(o.SlotId) {
 		return nil, false
 	}
-	return o.Slot, true
+	return o.SlotId, true
 }
 
-// HasSlot returns a boolean if a field has been set.
-func (o *TrayFilter) HasSlot() bool {
-	if o != nil && !IsNil(o.Slot) {
+// HasSlotId returns a boolean if a field has been set.
+func (o *TrayFilter) HasSlotId() bool {
+	if o != nil && !IsNil(o.SlotId) {
 		return true
 	}
 
 	return false
 }
 
-// SetSlot gets a reference to the given int32 and assigns it to the Slot field.
-func (o *TrayFilter) SetSlot(v int32) {
-	o.Slot = &v
-}
-
-// GetTrayIdx returns the TrayIdx field value if set, zero value otherwise.
-func (o *TrayFilter) GetTrayIdx() int32 {
-	if o == nil || IsNil(o.TrayIdx) {
-		var ret int32
-		return ret
-	}
-	return *o.TrayIdx
-}
-
-// GetTrayIdxOk returns a tuple with the TrayIdx field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *TrayFilter) GetTrayIdxOk() (*int32, bool) {
-	if o == nil || IsNil(o.TrayIdx) {
-		return nil, false
-	}
-	return o.TrayIdx, true
-}
-
-// HasTrayIdx returns a boolean if a field has been set.
-func (o *TrayFilter) HasTrayIdx() bool {
-	if o != nil && !IsNil(o.TrayIdx) {
-		return true
-	}
-
-	return false
-}
-
-// SetTrayIdx gets a reference to the given int32 and assigns it to the TrayIdx field.
-func (o *TrayFilter) SetTrayIdx(v int32) {
-	o.TrayIdx = &v
+// SetSlotId gets a reference to the given int32 and assigns it to the SlotId field.
+func (o *TrayFilter) SetSlotId(v int32) {
+	o.SlotId = &v
 }
 
 func (o TrayFilter) MarshalJSON() ([]byte, error) {
@@ -318,11 +284,8 @@ func (o TrayFilter) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Ids) {
 		toSerialize["ids"] = o.Ids
 	}
-	if !IsNil(o.Slot) {
-		toSerialize["slot"] = o.Slot
-	}
-	if !IsNil(o.TrayIdx) {
-		toSerialize["trayIdx"] = o.TrayIdx
+	if !IsNil(o.SlotId) {
+		toSerialize["slotId"] = o.SlotId
 	}
 	return toSerialize, nil
 }

@@ -334,8 +334,7 @@ type ApiGetAllTrayRequest struct {
 	type_       *string
 	componentId *string
 	id          *string
-	slot        *int32
-	trayIdx     *int32
+	slotId      *int32
 	pageNumber  *int32
 	pageSize    *int32
 	orderBy     *string
@@ -377,15 +376,9 @@ func (r ApiGetAllTrayRequest) Id(id string) ApiGetAllTrayRequest {
 	return r
 }
 
-// Restrict to trays at this rack slot. Composes with the rest of the filter via AND.
-func (r ApiGetAllTrayRequest) Slot(slot int32) ApiGetAllTrayRequest {
-	r.slot = &slot
-	return r
-}
-
-// Restrict to trays with this index within their slot (used to disambiguate NVLSwitch trays sharing one slot). Composes with the rest of the filter via AND.
-func (r ApiGetAllTrayRequest) TrayIdx(trayIdx int32) ApiGetAllTrayRequest {
-	r.trayIdx = &trayIdx
+// Restrict to trays at this rack slot (matches &#x60;position.slotId&#x60;). Composes with the rest of the filter via AND.
+func (r ApiGetAllTrayRequest) SlotId(slotId int32) ApiGetAllTrayRequest {
+	r.slotId = &slotId
 	return r
 }
 
@@ -422,7 +415,7 @@ Org must have an Infrastructure Provider entity. User must have authorization ro
 - `rackId` and `rackName` are mutually exclusive
 - `rackId`/`rackName` cannot be combined with `id`/`componentId` (rack-level vs component-level targeting)
 - `componentId` requires `type` to be specified
-- `slot` and `trayIdx` are independent position filters that compose with the rest of the query via AND; an incompatible combination simply returns an empty result
+- `slotId` restricts to trays at that rack slot and composes with the rest of the query via AND; an incompatible combination simply returns an empty result
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -478,11 +471,8 @@ func (a *TrayAPIService) GetAllTrayExecute(r ApiGetAllTrayRequest) ([]Tray, *htt
 	if r.id != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "id", r.id, "form", "")
 	}
-	if r.slot != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "slot", r.slot, "form", "")
-	}
-	if r.trayIdx != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "trayIdx", r.trayIdx, "form", "")
+	if r.slotId != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "slotId", r.slotId, "form", "")
 	}
 	if r.pageNumber != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
@@ -1147,8 +1137,7 @@ type ApiValidateTraysRequest struct {
 	manufacturer *string
 	type_        *string
 	componentId  *string
-	slot         *int32
-	trayIdx      *int32
+	slotId       *int32
 }
 
 // ID of the Site
@@ -1193,15 +1182,9 @@ func (r ApiValidateTraysRequest) ComponentId(componentId string) ApiValidateTray
 	return r
 }
 
-// Restrict validation to trays at this rack slot. Composes with the rest of the filter via AND.
-func (r ApiValidateTraysRequest) Slot(slot int32) ApiValidateTraysRequest {
-	r.slot = &slot
-	return r
-}
-
-// Restrict validation to trays with this index within their slot (used to disambiguate NVLSwitch trays sharing one slot). Composes with the rest of the filter via AND.
-func (r ApiValidateTraysRequest) TrayIdx(trayIdx int32) ApiValidateTraysRequest {
-	r.trayIdx = &trayIdx
+// Restrict validation to trays at this rack slot (matches &#x60;position.slotId&#x60;). Composes with the rest of the filter via AND.
+func (r ApiValidateTraysRequest) SlotId(slotId int32) ApiValidateTraysRequest {
+	r.slotId = &slotId
 	return r
 }
 
@@ -1277,11 +1260,8 @@ func (a *TrayAPIService) ValidateTraysExecute(r ApiValidateTraysRequest) (*RackV
 	if r.componentId != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "componentId", r.componentId, "form", "")
 	}
-	if r.slot != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "slot", r.slot, "form", "")
-	}
-	if r.trayIdx != nil {
-		parameterAddToHeaderOrQuery(localVarQueryParams, "trayIdx", r.trayIdx, "form", "")
+	if r.slotId != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "slotId", r.slotId, "form", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

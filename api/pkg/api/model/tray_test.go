@@ -447,43 +447,28 @@ func TestAPITrayGetAllRequest_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "slot with rackName is valid",
-			req:     APITrayGetAllRequest{RackName: strPtr("Rack-001"), Slot: int32Ptr(3)},
+			name:    "slotId with rackName is valid",
+			req:     APITrayGetAllRequest{RackName: strPtr("Rack-001"), SlotID: int32Ptr(3)},
 			wantErr: false,
 		},
 		{
-			name:    "slot with rackId is valid",
-			req:     APITrayGetAllRequest{RackID: strPtr(validUUID), Slot: int32Ptr(3)},
+			name:    "slotId with rackId is valid",
+			req:     APITrayGetAllRequest{RackID: strPtr(validUUID), SlotID: int32Ptr(3)},
 			wantErr: false,
 		},
 		{
-			name:    "slot alone is valid (site-wide post-filter)",
-			req:     APITrayGetAllRequest{Slot: int32Ptr(3)},
+			name:    "slotId alone is valid (site-wide post-filter)",
+			req:     APITrayGetAllRequest{SlotID: int32Ptr(3)},
 			wantErr: false,
 		},
 		{
-			name:    "trayIdx alone is valid",
-			req:     APITrayGetAllRequest{TrayIdx: int32Ptr(0)},
+			name:    "slotId composes with IDs (intersection may be empty)",
+			req:     APITrayGetAllRequest{SlotID: int32Ptr(3), IDs: []string{validUUID}},
 			wantErr: false,
 		},
 		{
-			name:    "trayIdx with rackName but no slot is valid",
-			req:     APITrayGetAllRequest{RackName: strPtr("Rack-001"), TrayIdx: int32Ptr(0)},
-			wantErr: false,
-		},
-		{
-			name:    "slot with trayIdx and rackName is valid",
-			req:     APITrayGetAllRequest{RackName: strPtr("Rack-001"), Slot: int32Ptr(12), TrayIdx: int32Ptr(1)},
-			wantErr: false,
-		},
-		{
-			name:    "slot composes with IDs (intersection may be empty)",
-			req:     APITrayGetAllRequest{Slot: int32Ptr(3), IDs: []string{validUUID}},
-			wantErr: false,
-		},
-		{
-			name:    "slot composes with componentIds (intersection may be empty)",
-			req:     APITrayGetAllRequest{Slot: int32Ptr(3), ComponentIDs: []string{"comp-1"}, Type: strPtr("Compute")},
+			name:    "slotId composes with componentIds (intersection may be empty)",
+			req:     APITrayGetAllRequest{SlotID: int32Ptr(3), ComponentIDs: []string{"comp-1"}, Type: strPtr("Compute")},
 			wantErr: false,
 		},
 	}
@@ -657,8 +642,8 @@ func TestTrayFilter_PositionFilter(t *testing.T) {
 		}))
 	})
 
-	t.Run("slot only matches by slot_id", func(t *testing.T) {
-		f := &TrayFilter{RackName: &rackName, Slot: int32Ptr(3)}
+	t.Run("slotId matches position.slotId", func(t *testing.T) {
+		f := &TrayFilter{RackName: &rackName, SlotID: int32Ptr(3)}
 		assert.True(t, f.HasPositionFilter())
 		assert.True(t, f.MatchesPosition(&flowv1.Component{
 			Position: &flowv1.RackPosition{SlotId: 3, TrayIdx: 7},
@@ -668,29 +653,8 @@ func TestTrayFilter_PositionFilter(t *testing.T) {
 		}))
 	})
 
-	t.Run("trayIdx only is an independent position filter", func(t *testing.T) {
-		f := &TrayFilter{TrayIdx: int32Ptr(0)}
-		assert.True(t, f.HasPositionFilter())
-		assert.True(t, f.MatchesPosition(&flowv1.Component{
-			Position: &flowv1.RackPosition{SlotId: 7, TrayIdx: 0},
-		}))
-		assert.False(t, f.MatchesPosition(&flowv1.Component{
-			Position: &flowv1.RackPosition{SlotId: 7, TrayIdx: 1},
-		}))
-	})
-
-	t.Run("slot+trayIdx matches both", func(t *testing.T) {
-		f := &TrayFilter{RackName: &rackName, Slot: int32Ptr(12), TrayIdx: int32Ptr(1)}
-		assert.True(t, f.MatchesPosition(&flowv1.Component{
-			Position: &flowv1.RackPosition{SlotId: 12, TrayIdx: 1},
-		}))
-		assert.False(t, f.MatchesPosition(&flowv1.Component{
-			Position: &flowv1.RackPosition{SlotId: 12, TrayIdx: 0},
-		}))
-	})
-
 	t.Run("position filter rejects component with no position", func(t *testing.T) {
-		f := &TrayFilter{RackName: &rackName, Slot: int32Ptr(3)}
+		f := &TrayFilter{RackName: &rackName, SlotID: int32Ptr(3)}
 		assert.False(t, f.MatchesPosition(&flowv1.Component{}))
 	})
 }
@@ -705,28 +669,18 @@ func TestTrayFilter_Validate_PositionConstraints(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "slot with rackName valid",
-			filter:  &TrayFilter{RackName: &rackName, Slot: int32Ptr(3)},
+			name:    "slotId with rackName valid",
+			filter:  &TrayFilter{RackName: &rackName, SlotID: int32Ptr(3)},
 			wantErr: false,
 		},
 		{
-			name:    "slot alone valid (site-wide post-filter)",
-			filter:  &TrayFilter{Slot: int32Ptr(3)},
+			name:    "slotId alone valid (site-wide post-filter)",
+			filter:  &TrayFilter{SlotID: int32Ptr(3)},
 			wantErr: false,
 		},
 		{
-			name:    "trayIdx alone valid (independent of slot)",
-			filter:  &TrayFilter{TrayIdx: int32Ptr(0)},
-			wantErr: false,
-		},
-		{
-			name:    "trayIdx with rackName but no slot valid",
-			filter:  &TrayFilter{RackName: &rackName, TrayIdx: int32Ptr(0)},
-			wantErr: false,
-		},
-		{
-			name:    "slot composes with ids (intersection may be empty)",
-			filter:  &TrayFilter{Slot: int32Ptr(3), IDs: []string{uuid.New().String()}},
+			name:    "slotId composes with ids (intersection may be empty)",
+			filter:  &TrayFilter{SlotID: int32Ptr(3), IDs: []string{uuid.New().String()}},
 			wantErr: false,
 		},
 		{

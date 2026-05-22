@@ -49,18 +49,13 @@ import (
 
 // ~~~~~ Position resolution helpers ~~~~~ //
 
-// positionMatcher tests whether a component's position satisfies the
-// independent slot / trayIdx filters. A nil filter on either dimension
-// is "don't care"; a component without a position cannot match a set
-// constraint. Slot and TrayIdx compose via AND.
+// positionMatcher tests whether a component sits at the requested rack slot.
 type positionMatcher struct {
-	Slot    *int32
-	TrayIdx *int32
+	SlotID *int32
 }
 
-// active reports whether at least one position dimension is filtered.
 func (p positionMatcher) active() bool {
-	return p.Slot != nil || p.TrayIdx != nil
+	return p.SlotID != nil
 }
 
 func (p positionMatcher) matches(comp *flowv1.Component) bool {
@@ -71,13 +66,7 @@ func (p positionMatcher) matches(comp *flowv1.Component) bool {
 	if pos == nil {
 		return false
 	}
-	if p.Slot != nil && pos.GetSlotId() != *p.Slot {
-		return false
-	}
-	if p.TrayIdx != nil && pos.GetTrayIdx() != *p.TrayIdx {
-		return false
-	}
-	return true
+	return pos.GetSlotId() == *p.SlotID
 }
 
 // resolveTrayUUIDsByPosition enumerates trays for the given baseSpec via
@@ -360,8 +349,7 @@ func NewGetAllTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param type query string false "Filter by tray type (Compute, NVLSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by component ID (use repeated params for multiple values)"
 // @Param id query string false "Filter by tray UUID (use repeated params for multiple values)"
-// @Param slot query int false "Filter by rack slot ID. Requires rackId or rackName; mutually exclusive with id/componentId."
-// @Param trayIdx query int false "Disambiguates trays sharing the same slot. Requires slot."
+// @Param slotId query int false "Filter by rack slot ID (position.slotId). Composes with other filters via AND."
 // @Param orderBy query string false "Order by field (e.g. name_ASC, manufacturer_DESC)"
 // @Param pageNumber query int false "Page number (1-based)"
 // @Param pageSize query int false "Page size"
@@ -474,9 +462,9 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 		orderBy = model.GetProtoTrayOrderByFromQueryParam(pageRequest.OrderBy.Field, strings.ToUpper(pageRequest.OrderBy.Order))
 	}
 	flowRequest.OrderBy = orderBy
-	// Position filtering (slot/trayIdx) is applied REST-side because Flow
-	// has no slot filter. Push-down pagination would prune the result set
-	// before slot filtering and produce a wrong total, so disable it here
+	// Position filtering (slotId) is applied REST-side because Flow has no
+	// slot filter. Push-down pagination would prune before post-filtering
+	// and produce a wrong total, so disable it here when slotId is set.
 	// and paginate the post-filtered slice below.
 	if pageRequest.Offset != nil && pageRequest.Limit != nil && !apiRequest.HasPositionFilter() {
 		flowRequest.Pagination = &flowv1.Pagination{
@@ -527,12 +515,12 @@ func (gath GetAllTrayHandler) Handle(c echo.Context) error {
 	components := flowResponse.GetComponents()
 	total := int(flowResponse.GetTotal())
 
-	// Apply REST-side slot/trayIdx filter and re-paginate the filtered slice.
+	// Apply REST-side slotId filter and re-paginate the filtered slice.
 	// When position filter is set, Flow returned the full rack scope (see
 	// pagination handling above); slice off the requested page after
 	// filtering so the response respects pageNumber/pageSize.
 	if apiRequest.HasPositionFilter() {
-		filtered := components[:0:0]
+		filtered := make([]*flowv1.Component, 0, len(components))
 		for _, comp := range components {
 			if apiRequest.MatchesPosition(comp) {
 				filtered = append(filtered, comp)
@@ -786,8 +774,7 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param manufacturer query string false "Filter trays by manufacturer"
 // @Param type query string false "Filter trays by type (Compute, NVLSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)"
-// @Param slot query int false "Validate only the tray at this rack slot. Requires rackId or rackName."
-// @Param trayIdx query int false "Disambiguates trays sharing the same slot. Requires slot."
+// @Param slotId query int false "Validate only trays at this rack slot (position.slotId). Composes via AND."
 // @Success 200 {object} model.APIRackValidationResult
 // @Router /v2/org/{org}/nico/tray/validation [get]
 func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
@@ -871,12 +858,12 @@ func (vtsh ValidateTraysHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
 	}
 
-	// Resolve slot/trayIdx (when set) to component UUIDs before building
+	// Resolve slotId (when set) to component UUIDs before building
 	// the flow request: Flow has no by-position target shape.
 	targetSpec := apiRequest.ToTargetSpec()
 	if apiRequest.HasPositionFilter() {
 		uuids, resolveErr := resolveTrayUUIDsByPosition(ctx, stc, targetSpec,
-			positionMatcher{Slot: apiRequest.Slot, TrayIdx: apiRequest.TrayIdx})
+			positionMatcher{SlotID: apiRequest.SlotID})
 		if resolveErr != nil {
 			logger.Error().Err(resolveErr).Msg("failed to resolve trays by position")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to resolve trays by position", nil)
@@ -1173,12 +1160,12 @@ func (pctbh BatchUpdateTrayPowerStateHandler) Handle(c echo.Context) error {
 	}
 
 	// Build TargetSpec from filter (nil filter = all trays). When the
-	// filter pins a rack position (slot/trayIdx), Flow has no by-position
+	// filter pins a rack slot, Flow has no by-position
 	// target shape, so we resolve to component UUIDs first.
 	targetSpec := request.Filter.ToTargetSpec()
 	if request.Filter.HasPositionFilter() {
 		uuids, resolveErr := resolveTrayUUIDsByPosition(ctx, stc, targetSpec,
-			positionMatcher{Slot: request.Filter.Slot, TrayIdx: request.Filter.TrayIdx})
+			positionMatcher{SlotID: request.Filter.SlotID})
 		if resolveErr != nil {
 			logger.Error().Err(resolveErr).Msg("failed to resolve trays by position")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to resolve trays by position", nil)
@@ -1437,12 +1424,12 @@ func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	}
 
 	// Build TargetSpec from filter (nil filter = all trays). When the
-	// filter pins a rack position (slot/trayIdx), resolve to component
+	// filter pins a rack slot, resolve to component
 	// UUIDs first; Flow has no by-position target shape.
 	targetSpec := request.Filter.ToTargetSpec()
 	if request.Filter.HasPositionFilter() {
 		uuids, resolveErr := resolveTrayUUIDsByPosition(ctx, stc, targetSpec,
-			positionMatcher{Slot: request.Filter.Slot, TrayIdx: request.Filter.TrayIdx})
+			positionMatcher{SlotID: request.Filter.SlotID})
 		if resolveErr != nil {
 			logger.Error().Err(resolveErr).Msg("failed to resolve trays by position")
 			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to resolve trays by position", nil)
