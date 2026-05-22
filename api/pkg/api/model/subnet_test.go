@@ -254,7 +254,7 @@ func TestAPISubnetNew(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			got := NewAPISubnet(tc.dbObj, tc.sdObj)
+			got := NewAPISubnet(tc.dbObj, tc.sdObj, nil)
 			assert.Equal(t, tc.dbObj.ID.String(), got.ID)
 			assert.NotNil(t, tc.dbObj.SiteID)
 			if tc.dbObj.ControllerNetworkSegmentID != nil {
