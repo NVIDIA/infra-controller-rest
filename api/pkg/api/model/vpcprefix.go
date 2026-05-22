@@ -26,6 +26,7 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model/util"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	ipam "github.com/NVIDIA/infra-controller-rest/ipam"
 )
 
 const (
@@ -134,6 +135,8 @@ type APIVpcPrefix struct {
 	Status string `json:"status"`
 	// StatusHistory is the history of statuses for the VpcPrefix
 	StatusHistory []APIStatusDetail `json:"statusHistory"`
+	// UsageStats reports IPv4 usage from VpcPrefixDAO.GetPrefixUsage (in-memory IPAM over /31s from interface IPs) when requested via includeUsageStats
+	UsageStats *APIIPBlockUsageStats `json:"usageStats,omitempty"`
 	// CreatedAt indicates the ISO datetime string for when the entity was created
 	Created time.Time `json:"created"`
 	// UpdatedAt indicates the ISO datetime string for when the entity was last updated
@@ -141,7 +144,7 @@ type APIVpcPrefix struct {
 }
 
 // NewAPIVpcPrefix accepts a DB layer objects and returns an API layer object
-func NewAPIVpcPrefix(dbvp *cdbm.VpcPrefix, dbsds []cdbm.StatusDetail) *APIVpcPrefix {
+func NewAPIVpcPrefix(dbvp *cdbm.VpcPrefix, dbsds []cdbm.StatusDetail, dbpu *ipam.Usage) *APIVpcPrefix {
 	apiVpcPrefix := APIVpcPrefix{
 		ID:           dbvp.ID.String(),
 		Name:         dbvp.Name,
@@ -153,6 +156,16 @@ func NewAPIVpcPrefix(dbvp *cdbm.VpcPrefix, dbsds []cdbm.StatusDetail) *APIVpcPre
 		Status:       dbvp.Status,
 		Created:      dbvp.Created,
 		Updated:      dbvp.Updated,
+	}
+
+	if dbpu != nil {
+		apiVpcPrefix.UsageStats = &APIIPBlockUsageStats{
+			AvailableIPs:              dbpu.AvailableIPs,
+			AcquiredIPs:               dbpu.AcquiredIPs,
+			AvailablePrefixes:         dbpu.AvailablePrefixes,
+			AcquiredPrefixes:          dbpu.AcquiredPrefixes,
+			AvailableSmallestPrefixes: dbpu.AvailableSmallestPrefixes,
+		}
 	}
 
 	apiVpcPrefix.StatusHistory = []APIStatusDetail{}
