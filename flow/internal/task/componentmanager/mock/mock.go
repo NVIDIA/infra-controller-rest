@@ -24,6 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
@@ -74,6 +75,15 @@ func DescriptorFor(componentType devicetypes.ComponentType) cmcatalog.Descriptor
 	return cmcatalog.Descriptor{
 		Type:           componentType,
 		Implementation: ImplementationName,
+		Capabilities: capability.CapabilitySet{
+			capability.CapabilityBringUpControl,
+			capability.CapabilityBringUpStatus,
+			capability.CapabilityFirmwareControl,
+			capability.CapabilityFirmwareStatus,
+			capability.CapabilityInjectExpectation,
+			capability.CapabilityPowerControl,
+			capability.CapabilityPowerStatus,
+		},
 	}
 }
 
@@ -87,12 +97,12 @@ func FactorySpecFor(componentType devicetypes.ComponentType) componentmanager.Fa
 }
 
 // Descriptors returns mock descriptors for all component types currently
-// supported by the RLA service.
+// supported by the Flow service.
 func Descriptors() []cmcatalog.Descriptor {
 	descriptors := make([]cmcatalog.Descriptor, 0, 3)
 	for _, ct := range []devicetypes.ComponentType{
 		devicetypes.ComponentTypeCompute,
-		devicetypes.ComponentTypeNVLSwitch,
+		devicetypes.ComponentTypeNVSwitch,
 		devicetypes.ComponentTypePowerShelf,
 	} {
 		descriptors = append(descriptors, DescriptorFor(ct))
@@ -101,12 +111,12 @@ func Descriptors() []cmcatalog.Descriptor {
 }
 
 // FactorySpecs returns mock runtime factory specs for all component types
-// currently supported by the RLA service.
+// currently supported by the Flow service.
 func FactorySpecs() []componentmanager.FactorySpec {
 	factorySpecs := make([]componentmanager.FactorySpec, 0, 3)
 	for _, ct := range []devicetypes.ComponentType{
 		devicetypes.ComponentTypeCompute,
-		devicetypes.ComponentTypeNVLSwitch,
+		devicetypes.ComponentTypeNVSwitch,
 		devicetypes.ComponentTypePowerShelf,
 	} {
 		factorySpecs = append(factorySpecs, FactorySpecFor(ct))

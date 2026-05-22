@@ -19,8 +19,11 @@ package model
 
 import (
 	"fmt"
+	"net/url"
+	"strconv"
 	"time"
 
+	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/pagination"
 	flowv1 "github.com/NVIDIA/infra-controller-rest/workflow-schema/flow/protobuf/v1"
 )
 
@@ -97,4 +100,36 @@ func (r *APICancelTaskRequest) Validate() error {
 		return fmt.Errorf("siteId is required")
 	}
 	return nil
+}
+
+// APIGetTasksRequest binds query parameters for rack- and tray-scoped task list
+// endpoints. Pagination is bound separately via pagination.PageRequest.
+type APIGetTasksRequest struct {
+	SiteID     string `query:"siteId"`
+	ActiveOnly bool   `query:"activeOnly"`
+}
+
+func (r *APIGetTasksRequest) Validate() error {
+	if r.SiteID == "" {
+		return fmt.Errorf("siteId query parameter is required")
+	}
+	return nil
+}
+
+// QueryValues returns query parameters that participate in deterministic
+// workflow ID hashing, including pagination fields so concurrent requests
+// for different pages do not reuse the same workflow execution.
+func (r *APIGetTasksRequest) QueryValues(page pagination.PageRequest) url.Values {
+	v := url.Values{}
+	v.Set("siteId", r.SiteID)
+	if r.ActiveOnly {
+		v.Set("activeOnly", strconv.FormatBool(r.ActiveOnly))
+	}
+	if page.PageNumber != nil && *page.PageNumber != 0 {
+		v.Set("pageNumber", strconv.Itoa(*page.PageNumber))
+	}
+	if page.PageSize != nil && *page.PageSize != 0 {
+		v.Set("pageSize", strconv.Itoa(*page.PageSize))
+	}
+	return v
 }

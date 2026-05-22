@@ -18,14 +18,17 @@
 package model
 
 import (
+	"math"
 	"reflect"
 	"testing"
 	"time"
 
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAPIInstanceType(t *testing.T) {
@@ -303,6 +306,141 @@ func TestAPIInstanceTypeCreateRequest_Validate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "test invalid Instance Type create request - GPU capability requires NVLink device type",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:       cdbm.MachineCapabilityTypeGPU,
+						Name:       "gpu-0",
+						DeviceType: cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeDPU),
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test valid Instance Type create request - GPU + NVLink device type",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:       cdbm.MachineCapabilityTypeGPU,
+						Name:       "gpu-0",
+						DeviceType: cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeNVLink),
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test invalid Instance Type create request - device type on capability that does not allow one",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:       cdbm.MachineCapabilityTypeCPU,
+						Name:       "cpu-0",
+						DeviceType: cdb.GetStrPtr(cdbm.MachineCapabilityDeviceTypeDPU),
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test invalid Instance Type create request - InactiveDevices on non-InfiniBand capability",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:            cdbm.MachineCapabilityTypeStorage,
+						Name:            "storage-0",
+						InactiveDevices: []int{1, 2},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test valid Instance Type create request - InactiveDevices on InfiniBand capability",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:            cdbm.MachineCapabilityTypeInfiniBand,
+						Name:            "ib-0",
+						InactiveDevices: []int{1, 2},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "test invalid Instance Type create request - InactiveDevices contains negative entry",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:            cdbm.MachineCapabilityTypeInfiniBand,
+						Name:            "ib-0",
+						InactiveDevices: []int{1, -1, 2},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test invalid Instance Type create request - InactiveDevices entry exceeds uint32",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:            cdbm.MachineCapabilityTypeInfiniBand,
+						Name:            "ib-0",
+						InactiveDevices: []int{math.MaxUint32 + 1},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test invalid Instance Type create request - Count exceeds uint32",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:  cdbm.MachineCapabilityTypeCPU,
+						Name:  "cpu-0",
+						Count: cdb.GetIntPtr(math.MaxUint32 + 1),
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "test invalid Instance Type create request - Count is negative",
+			fields: fields{
+				Name:   "test-name",
+				SiteID: uuid.New().String(),
+				MachineCapabilities: []APIMachineCapability{
+					{
+						Type:  cdbm.MachineCapabilityTypeCPU,
+						Name:  "cpu-0",
+						Count: cdb.GetIntPtr(-1),
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -364,4 +502,86 @@ func TestAPIInstanceTypeUpdateRequest_Validate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAPIInstanceTypeCreateRequest_ToProto(t *testing.T) {
+	id := uuid.New()
+	desc := "primary"
+
+	t.Run("derives id metadata and capabilities from the entity", func(t *testing.T) {
+		it := &cdbm.InstanceType{
+			ID:          id,
+			Name:        "small",
+			Description: &desc,
+			Labels:      map[string]string{"env": "prod"},
+			Capabilities: []*cdbm.MachineCapability{
+				{Type: cdbm.MachineCapabilityTypeCPU, Name: "cpu-0"},
+			},
+		}
+		itcr := APIInstanceTypeCreateRequest{}
+		req := itcr.ToProto(it)
+		require.NotNil(t, req)
+		require.NotNil(t, req.Id)
+		assert.Equal(t, id.String(), *req.Id)
+		require.NotNil(t, req.Metadata)
+		assert.Equal(t, "small", req.Metadata.Name)
+		assert.Equal(t, "primary", req.Metadata.Description)
+		require.Len(t, req.Metadata.Labels, 1)
+		assert.Equal(t, "env", req.Metadata.Labels[0].Key)
+		require.NotNil(t, req.Metadata.Labels[0].Value)
+		assert.Equal(t, "prod", *req.Metadata.Labels[0].Value)
+		require.NotNil(t, req.InstanceTypeAttributes)
+		require.Len(t, req.InstanceTypeAttributes.DesiredCapabilities, 1)
+		assert.Equal(t, cwssaws.MachineCapabilityType_CAP_TYPE_CPU,
+			req.InstanceTypeAttributes.DesiredCapabilities[0].CapabilityType)
+	})
+
+	t.Run("nil description, labels, and capabilities yield empty metadata + nil filter", func(t *testing.T) {
+		it := &cdbm.InstanceType{ID: id, Name: "small"}
+		itcr := APIInstanceTypeCreateRequest{}
+		req := itcr.ToProto(it)
+		require.NotNil(t, req)
+		assert.Equal(t, "", req.Metadata.Description)
+		assert.Nil(t, req.Metadata.Labels)
+		require.NotNil(t, req.InstanceTypeAttributes)
+		assert.Nil(t, req.InstanceTypeAttributes.DesiredCapabilities)
+	})
+}
+
+func TestAPIInstanceTypeUpdateRequest_ToProto(t *testing.T) {
+	id := uuid.New()
+	desc := "primary"
+
+	t.Run("derives id metadata from the post-merge entity, no caps yields nil filter", func(t *testing.T) {
+		it := &cdbm.InstanceType{
+			ID:          id,
+			Name:        "small",
+			Description: &desc,
+		}
+		itur := APIInstanceTypeUpdateRequest{}
+		req := itur.ToProto(it)
+		require.NotNil(t, req)
+		assert.Equal(t, id.String(), req.Id)
+		require.NotNil(t, req.Metadata)
+		assert.Equal(t, "small", req.Metadata.Name)
+		assert.Equal(t, "primary", req.Metadata.Description)
+		require.NotNil(t, req.InstanceTypeAttributes)
+		assert.Nil(t, req.InstanceTypeAttributes.DesiredCapabilities)
+	})
+
+	t.Run("populates capabilities from the entity when provided", func(t *testing.T) {
+		it := &cdbm.InstanceType{
+			ID:   id,
+			Name: "small",
+			Capabilities: []*cdbm.MachineCapability{
+				{Type: cdbm.MachineCapabilityTypeCPU, Name: "cpu-0"},
+			},
+		}
+		itur := APIInstanceTypeUpdateRequest{}
+		req := itur.ToProto(it)
+		require.NotNil(t, req.InstanceTypeAttributes)
+		require.Len(t, req.InstanceTypeAttributes.DesiredCapabilities, 1)
+		assert.Equal(t, cwssaws.MachineCapabilityType_CAP_TYPE_CPU,
+			req.InstanceTypeAttributes.DesiredCapabilities[0].CapabilityType)
+	})
 }

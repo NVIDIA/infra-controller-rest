@@ -101,7 +101,7 @@ func TestExpectedPowerShelf_FromProto(t *testing.T) {
 		assert.Equal(t, &slot, eps.SlotID)
 		assert.Equal(t, &trayIdx, eps.TrayIdx)
 		assert.Equal(t, &host, eps.HostID)
-		assert.Equal(t, map[string]string{"env": "prod"}, eps.Labels)
+		assert.Equal(t, Labels{"env": "prod"}, eps.Labels)
 	})
 
 	t.Run("empty BmcIpAddress yields nil pointer", func(t *testing.T) {
@@ -242,7 +242,7 @@ func TestExpectedPowerShelfSQLDAO_Create(t *testing.T) {
 					assert.Equal(t, input.BmcMacAddress, eps.BmcMacAddress)
 					assert.Equal(t, input.ShelfSerialNumber, eps.ShelfSerialNumber)
 					assert.Equal(t, input.BmcIpAddress, eps.BmcIpAddress)
-					assert.Equal(t, input.Labels, eps.Labels)
+					assert.Equal(t, Labels(input.Labels), eps.Labels)
 				}
 
 				if tc.verifyChildSpanner {
@@ -626,7 +626,7 @@ func TestExpectedPowerShelfSQLDAO_Update(t *testing.T) {
 					assert.Equal(t, tc.input.BmcIpAddress, got.BmcIpAddress)
 				}
 				if tc.input.Labels != nil {
-					assert.Equal(t, tc.input.Labels, got.Labels)
+					assert.Equal(t, Labels(tc.input.Labels), got.Labels)
 				}
 
 				if tc.verifyChildSpanner {

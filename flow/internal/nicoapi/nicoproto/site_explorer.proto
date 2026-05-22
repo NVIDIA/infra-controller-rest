@@ -170,6 +170,7 @@ enum ComputerSystemPowerState {
   PoweringOff = 2;
   PoweringOn = 3;
   Paused = 4;
+  Unknown = 5;
 }
 
 // `Manager` definition. Matches redfish definition

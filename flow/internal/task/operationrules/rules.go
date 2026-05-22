@@ -647,6 +647,19 @@ func (step *SequenceStep) DoPostOperations() (bool, []ActionConfig) {
 	return true, step.PostOperation
 }
 
+// OrderedActions returns all actions in the order a sequence step executes
+// them: pre-operation actions, main operation, then post-operation actions.
+func (step SequenceStep) OrderedActions() []ActionConfig {
+	actions := make([]ActionConfig, 0,
+		len(step.PreOperation)+1+len(step.PostOperation))
+	actions = append(actions, step.PreOperation...)
+	if step.MainOperation.Name != "" {
+		actions = append(actions, step.MainOperation)
+	}
+	actions = append(actions, step.PostOperation...)
+	return actions
+}
+
 // Validate validates a retry policy
 func (rp *RetryPolicy) Validate() error {
 	if rp.MaxAttempts < 1 {

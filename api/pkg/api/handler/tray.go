@@ -346,7 +346,7 @@ func NewGetAllTrayHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.Cli
 // @Param siteId query string true "ID of the Site"
 // @Param rackId query string false "Filter by Rack ID"
 // @Param rackName query string false "Filter by Rack name"
-// @Param type query string false "Filter by tray type (Compute, NVLSwitch, PowerShelf)"
+// @Param type query string false "Filter by tray type (Compute, NVSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by component ID (use repeated params for multiple values)"
 // @Param id query string false "Filter by tray UUID (use repeated params for multiple values)"
 // @Param slotId query int false "Filter by rack slot ID (position.slotId). Composes with other filters via AND."
@@ -772,7 +772,7 @@ func NewValidateTraysHandler(dbSession *cdb.Session, tc tClient.Client, scp *sc.
 // @Param rackName query string false "Scope to a specific Rack by name (mutually exclusive with rackId)"
 // @Param name query string false "Filter trays by name"
 // @Param manufacturer query string false "Filter trays by manufacturer"
-// @Param type query string false "Filter trays by type (Compute, NVLSwitch, PowerShelf)"
+// @Param type query string false "Filter trays by type (Compute, NVSwitch, PowerShelf)"
 // @Param componentId query string false "Filter by external component ID (requires type; mutually exclusive with rackId/rackName; use repeated params for multiple values)"
 // @Param slotId query int false "Validate only trays at this rack slot (position.slotId). Composes via AND."
 // @Success 200 {object} model.APIRackValidationResult
@@ -1312,7 +1312,7 @@ func (futh UpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	}
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, apiRequest.Version,
-		fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
+		apiRequest.Targets, fmt.Sprintf("tray-firmware-update-%s", trayStrID), "Tray")
 	if err != nil {
 		return err
 	}
@@ -1442,7 +1442,7 @@ func (futbh BatchUpdateTrayFirmwareHandler) Handle(c echo.Context) error {
 	}
 
 	flowResp, err := common.ExecuteFirmwareUpdateWorkflow(ctx, c, logger, stc, targetSpec, request.Version,
-		fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
+		request.Targets, fmt.Sprintf("tray-firmware-batch-update-%s", common.RequestHash(request.Filter)), "Tray")
 	if err != nil {
 		return err
 	}

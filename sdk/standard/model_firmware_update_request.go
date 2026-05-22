@@ -42,6 +42,8 @@ type FirmwareUpdateRequest struct {
 	SiteId string `json:"siteId"`
 	// Target firmware version.
 	Version NullableString `json:"version,omitempty"`
+	// Optional subset of firmware targets to update within the targeted tray. Names are lowercase and select sub-parts of the tray (BMC, BIOS, etc.). The accepted set per tray type comes from the Flow service's NICo proto bindings (which mirror Core's per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`), so the supported values track Core as new sub-parts are added:   - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos   - powershelf trays (PowerShelfComponent): currently pmc, psu   - compute trays (ComputeTrayComponent): currently bmc, bios     (currently NOT honored end-to-end: the NICo compute-firmware     path goes through SetFirmwareUpdateTimeWindow + auto-update,     which has no per-target selection; the request is logged     and the whole bundle is applied. Will be honored once     compute moves to UpdateComponentFirmware.) Omitted or empty means \"update everything in the bundle\" (the historical default). Unknown names are rejected. Requires `version` to be set.
+	Targets []string `json:"targets,omitempty"`
 }
 
 type _FirmwareUpdateRequest FirmwareUpdateRequest
@@ -131,6 +133,38 @@ func (o *FirmwareUpdateRequest) UnsetVersion() {
 	o.Version.Unset()
 }
 
+// GetTargets returns the Targets field value if set, zero value otherwise.
+func (o *FirmwareUpdateRequest) GetTargets() []string {
+	if o == nil || IsNil(o.Targets) {
+		var ret []string
+		return ret
+	}
+	return o.Targets
+}
+
+// GetTargetsOk returns a tuple with the Targets field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *FirmwareUpdateRequest) GetTargetsOk() ([]string, bool) {
+	if o == nil || IsNil(o.Targets) {
+		return nil, false
+	}
+	return o.Targets, true
+}
+
+// HasTargets returns a boolean if a field has been set.
+func (o *FirmwareUpdateRequest) HasTargets() bool {
+	if o != nil && !IsNil(o.Targets) {
+		return true
+	}
+
+	return false
+}
+
+// SetTargets gets a reference to the given []string and assigns it to the Targets field.
+func (o *FirmwareUpdateRequest) SetTargets(v []string) {
+	o.Targets = v
+}
+
 func (o FirmwareUpdateRequest) MarshalJSON() ([]byte, error) {
 	toSerialize, err := o.ToMap()
 	if err != nil {
@@ -144,6 +178,9 @@ func (o FirmwareUpdateRequest) ToMap() (map[string]interface{}, error) {
 	toSerialize["siteId"] = o.SiteId
 	if o.Version.IsSet() {
 		toSerialize["version"] = o.Version.Get()
+	}
+	if !IsNil(o.Targets) {
+		toSerialize["targets"] = o.Targets
 	}
 	return toSerialize, nil
 }

@@ -26,13 +26,16 @@ import (
 	"strings"
 	"time"
 
+	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 
 	"github.com/uptrace/bun"
 
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 )
 
 // MachineCapabilityType
@@ -147,6 +150,80 @@ type MachineCapability struct {
 	ValueStr    *string `bun:"value_str"`
 	ValueInt    *int    `bun:"value_int"`
 	Description *string `bun:"description"`
+}
+
+// ToProto converts this MachineCapability to its workflow proto
+// representation used in InstanceType filter attributes.
+//
+// Per the proto-conversion convention, this is a pure mapper and does
+// not return errors. An unknown Type leaves the proto's CapabilityType
+// as the zero enum value with a warning logged; an unknown DeviceType is
+// dropped to nil. Numeric width casts are inline and rely on request-side
+// `Validate` having bounded the values to uint32 before they ever reach
+// the DB.
+//
+// The string-to-enum mappings are inlined as switches because the
+// underlying DB columns are plain strings — there is no
+// `MachineCapabilityType` Go type to hang a method on. If those columns
+// ever become typed-string enums, this is the natural place to swap to
+// `mc.Type.ToProto()`.
+func (mc *MachineCapability) ToProto() *cwssaws.InstanceTypeMachineCapabilityFilterAttributes {
+	var capType cwssaws.MachineCapabilityType
+	switch mc.Type {
+	case MachineCapabilityTypeCPU:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_CPU
+	case MachineCapabilityTypeMemory:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_MEMORY
+	case MachineCapabilityTypeGPU:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_GPU
+	case MachineCapabilityTypeStorage:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_STORAGE
+	case MachineCapabilityTypeNetwork:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_NETWORK
+	case MachineCapabilityTypeInfiniBand:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_INFINIBAND
+	case MachineCapabilityTypeDPU:
+		capType = cwssaws.MachineCapabilityType_CAP_TYPE_DPU
+	default:
+		log.Warn().Str("Type", mc.Type).Msg("unsupported MachineCapabilityType requested")
+	}
+
+	var inactiveDevices *cwssaws.Uint32List
+	if mc.InactiveDevices != nil {
+		inactiveDevices = &cwssaws.Uint32List{}
+		for _, d := range mc.InactiveDevices {
+			u := cutil.IntPtrToUint32Ptr(&d)
+			inactiveDevices.Items = append(inactiveDevices.Items, *u)
+		}
+	}
+
+	var deviceType *cwssaws.MachineCapabilityDeviceType
+	if mc.DeviceType != nil {
+		switch *mc.DeviceType {
+		case MachineCapabilityDeviceTypeDPU:
+			dt := cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_DPU
+			deviceType = &dt
+		case MachineCapabilityDeviceTypeNVLink:
+			dt := cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_NVLINK
+			deviceType = &dt
+		default:
+			log.Warn().Str("DeviceType", *mc.DeviceType).Msg("unsupported MachineCapabilityDeviceType requested")
+		}
+	}
+
+	return &cwssaws.InstanceTypeMachineCapabilityFilterAttributes{
+		CapabilityType:   capType,
+		Name:             &mc.Name,
+		Frequency:        mc.Frequency,
+		Capacity:         mc.Capacity,
+		Vendor:           mc.Vendor,
+		Count:            cutil.IntPtrToUint32Ptr(mc.Count),
+		DeviceType:       deviceType,
+		HardwareRevision: mc.HardwareRevision,
+		InactiveDevices:  inactiveDevices,
+		Cores:            cutil.IntPtrToUint32Ptr(mc.Cores),
+		Threads:          cutil.IntPtrToUint32Ptr(mc.Threads),
+	}
 }
 
 // GetStrInfo returns the string value of the given key in the Info map

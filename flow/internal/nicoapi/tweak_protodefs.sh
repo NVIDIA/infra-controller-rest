@@ -28,6 +28,15 @@ sedi() {
     fi
 }
 
+# Upstream Core renamed nico.proto -> forge.proto. Flow keeps the nico.proto filename.
+if [[ -f nicoproto/forge.proto ]]; then
+    if [[ -f nicoproto/nico.proto ]]; then
+        rm -f nicoproto/forge.proto
+    else
+        mv nicoproto/forge.proto nicoproto/nico.proto
+    fi
+fi
+
 # dpa_rpc.proto has a duplicate message "Metadata", we don't need any of it so just remove it
 rm -f nicoproto/dpa_rpc.proto
 sedi -e '/^import.*dpa_rpc/d' nicoproto/nico.proto

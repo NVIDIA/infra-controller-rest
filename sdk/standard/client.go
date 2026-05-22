@@ -113,6 +113,8 @@ type APIClient struct {
 
 	SubnetAPI *SubnetAPIService
 
+	TaskAPI *TaskAPIService
+
 	TenantAPI *TenantAPIService
 
 	TenantAccountAPI *TenantAccountAPIService
@@ -168,6 +170,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.ServiceAccountAPI = (*ServiceAccountAPIService)(&c.common)
 	c.SiteAPI = (*SiteAPIService)(&c.common)
 	c.SubnetAPI = (*SubnetAPIService)(&c.common)
+	c.TaskAPI = (*TaskAPIService)(&c.common)
 	c.TenantAPI = (*TenantAPIService)(&c.common)
 	c.TenantAccountAPI = (*TenantAccountAPIService)(&c.common)
 	c.TrayAPI = (*TrayAPIService)(&c.common)

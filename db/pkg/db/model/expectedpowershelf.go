@@ -58,25 +58,25 @@ var (
 type ExpectedPowerShelf struct {
 	bun.BaseModel `bun:"table:expected_power_shelf,alias:eps"`
 
-	ID                uuid.UUID         `bun:"id,pk"`
-	SiteID            uuid.UUID         `bun:"site_id,type:uuid,notnull"`
-	Site              *Site             `bun:"rel:belongs-to,join:site_id=id"`
-	BmcMacAddress     string            `bun:"bmc_mac_address,notnull"`
-	ShelfSerialNumber string            `bun:"shelf_serial_number,notnull"`
-	BmcIpAddress      *string           `bun:"bmc_ip_address"`
-	RackID            *string           `bun:"rack_id"`
-	Name              *string           `bun:"name"`
-	Manufacturer      *string           `bun:"manufacturer"`
-	Model             *string           `bun:"model"`
-	Description       *string           `bun:"description"`
-	FirmwareVersion   *string           `bun:"firmware_version"`
-	SlotID            *int32            `bun:"slot_id"`
-	TrayIdx           *int32            `bun:"tray_idx"`
-	HostID            *int32            `bun:"host_id"`
-	Labels            map[string]string `bun:"labels,type:jsonb"`
-	Created           time.Time         `bun:"created,nullzero,notnull,default:current_timestamp"`
-	Updated           time.Time         `bun:"updated,nullzero,notnull,default:current_timestamp"`
-	CreatedBy         uuid.UUID         `bun:"type:uuid,notnull"`
+	ID                uuid.UUID `bun:"id,pk"`
+	SiteID            uuid.UUID `bun:"site_id,type:uuid,notnull"`
+	Site              *Site     `bun:"rel:belongs-to,join:site_id=id"`
+	BmcMacAddress     string    `bun:"bmc_mac_address,notnull"`
+	ShelfSerialNumber string    `bun:"shelf_serial_number,notnull"`
+	BmcIpAddress      *string   `bun:"bmc_ip_address"`
+	RackID            *string   `bun:"rack_id"`
+	Name              *string   `bun:"name"`
+	Manufacturer      *string   `bun:"manufacturer"`
+	Model             *string   `bun:"model"`
+	Description       *string   `bun:"description"`
+	FirmwareVersion   *string   `bun:"firmware_version"`
+	SlotID            *int32    `bun:"slot_id"`
+	TrayIdx           *int32    `bun:"tray_idx"`
+	HostID            *int32    `bun:"host_id"`
+	Labels            Labels    `bun:"labels,type:jsonb"`
+	Created           time.Time `bun:"created,nullzero,notnull,default:current_timestamp"`
+	Updated           time.Time `bun:"updated,nullzero,notnull,default:current_timestamp"`
+	CreatedBy         uuid.UUID `bun:"type:uuid,notnull"`
 }
 
 // ExpectedPowerShelfCredentials carries the BMC credentials for one
@@ -187,7 +187,7 @@ func (eps *ExpectedPowerShelf) FromProto(proto *cwssaws.ExpectedPowerShelf) {
 	eps.SlotID = proto.SlotId
 	eps.TrayIdx = proto.TrayIdx
 	eps.HostID = proto.HostId
-	eps.Labels = LabelsFromProtoMetadata(proto.Metadata)
+	eps.Labels.FromProto(proto.Metadata.GetLabels())
 }
 
 // ExpectedPowerShelfCreateInput input parameters for Create method

@@ -1831,7 +1831,7 @@ func (x *ProfileTargetConstraints) GetFwVersions() []string {
 }
 
 // PublishMlxDeviceReportRequest is sent by scout or the agent
-// into nico-core-api so that we can both observe the current
+// into carbide-api so that we can both observe the current
 // state of the Mellanox devices (DPAs and DPUs), and potentially
 // decide to take action on them (instruct scout to update
 // firmware, configuration, etc).
@@ -1879,7 +1879,7 @@ func (x *PublishMlxDeviceReportRequest) GetReport() *MlxDeviceReport {
 	return nil
 }
 
-// PublishMlxDeviceReportResponse is returned by nico-core-api
+// PublishMlxDeviceReportResponse is returned by carbide-api
 // in response to a PublishMlxDeviceReportRequest. It currently
 // is actually just a placeholder response, but there's a good
 // chance it will soon contain actions to take based on the
@@ -1926,7 +1926,7 @@ func (*PublishMlxDeviceReportResponse) Descriptor() ([]byte, []int) {
 // This is used for sending down a profile configuration from
 // the API to scout (or the agent) for applying mlxconfig
 // based configuration to a device. The profile itself can
-// be defined as TOML in the nico-core-api config, or it
+// be defined as TOML in the carbide-api config, or it
 // can be stored in the database. The profiles themselves
 // are ultimately deserialized to MlxConfigProfile instances
 // within their respective components, but we then convert
@@ -2950,7 +2950,7 @@ func (x *MlxObservation) GetFirmwareReport() *FirmwareFlashReport {
 }
 
 // PublishMlxObservationReportRequest is sent by scout or the agent
-// into nico-core-api so that we can both observe the current
+// into carbide-api so that we can both observe the current
 // state of the Mellanox devices (DPAs and DPUs), and potentially
 // decide to take action on them (instruct scout to update
 // firmware, configuration, etc).
@@ -2998,7 +2998,7 @@ func (x *PublishMlxObservationReportRequest) GetReport() *MlxObservationReport {
 	return nil
 }
 
-// PublishMlxObservationReportResponse is returned by nico-core-api
+// PublishMlxObservationReportResponse is returned by carbide-api
 // in response to a PublishMlxDeviceReportRequest. It currently
 // is actually just a placeholder response, but there's a good
 // chance it will soon contain actions to take based on the
@@ -3040,7 +3040,7 @@ func (*PublishMlxObservationReportResponse) Descriptor() ([]byte, []int) {
 }
 
 // MlxAdminProfileSyncRequest is sent by an administrative
-// caller to sync a given profile (as loaded into nico-core-api)
+// caller to sync a given profile (as loaded into carbide-api)
 // to the target machine and device, via an active ScoutStream
 // connection.
 type MlxAdminProfileSyncRequest struct {
@@ -3051,7 +3051,7 @@ type MlxAdminProfileSyncRequest struct {
 	// the target device to work with on the target machine.
 	DeviceId string `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty"`
 	// profile_name is the name of the profile, which is loaded
-	// into nico-core-api, to sync to the target machine device.
+	// into carbide-api, to sync to the target machine device.
 	ProfileName   string `protobuf:"bytes,3,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -3153,7 +3153,7 @@ func (x *MlxAdminProfileSyncResponse) GetSyncResult() *SyncResult {
 	return nil
 }
 
-// MlxDeviceProfileSyncRequest is sent by nico-core-api internally to
+// MlxDeviceProfileSyncRequest is sent by carbide-api internally to
 // the agent to sync a profile to the device.
 type MlxDeviceProfileSyncRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -3225,7 +3225,7 @@ func (x *MlxDeviceProfileSyncRequest) GetSerializableProfile() *SerializableMlxC
 }
 
 // MlxDeviceProfileSyncResponse is sent by the scout agent back to
-// nico-core-api in response to processing an MlxDeviceProfileSyncRequest.
+// carbide-api in response to processing an MlxDeviceProfileSyncRequest.
 type MlxDeviceProfileSyncResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Reply:
@@ -3559,7 +3559,7 @@ func (*MlxDeviceProfileCompareResponse_ComparisonResult) isMlxDeviceProfileCompa
 func (*MlxDeviceProfileCompareResponse_Error) isMlxDeviceProfileCompareResponse_Reply() {}
 
 // MlxAdminLockdownLockRequest is the administrative message sent to
-// nico-core-api requesting a machine lock down a given device.
+// carbide-api requesting a machine lock down a given device.
 type MlxAdminLockdownLockRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MachineId     *MachineId             `protobuf:"bytes,1,opt,name=machine_id,json=machineId,proto3" json:"machine_id,omitempty"`
@@ -3612,7 +3612,7 @@ func (x *MlxAdminLockdownLockRequest) GetDeviceId() string {
 	return ""
 }
 
-// MlxAdminLockdownLockResponse is the response from nico-core-api back
+// MlxAdminLockdownLockResponse is the response from carbide-api back
 // to an administrative caller about the result of an internal attempt
 // to lock down a device on a given machine.
 type MlxAdminLockdownLockResponse struct {
@@ -3660,7 +3660,7 @@ func (x *MlxAdminLockdownLockResponse) GetStatusReport() *StatusReport {
 }
 
 // MlxAdminLockdownUnlockRequest is the administrative message sent to
-// nico-core-api requesting a machine unlock a given device.
+// carbide-api requesting a machine unlock a given device.
 type MlxAdminLockdownUnlockRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MachineId     *MachineId             `protobuf:"bytes,1,opt,name=machine_id,json=machineId,proto3" json:"machine_id,omitempty"`
@@ -3713,7 +3713,7 @@ func (x *MlxAdminLockdownUnlockRequest) GetDeviceId() string {
 	return ""
 }
 
-// MlxAdminLockdownUnlockResponse is the response from nico-core-api back
+// MlxAdminLockdownUnlockResponse is the response from carbide-api back
 // to an administrative caller about the result of an internal attempt
 // to unlock a device on a given machine.
 type MlxAdminLockdownUnlockResponse struct {
@@ -3761,7 +3761,7 @@ func (x *MlxAdminLockdownUnlockResponse) GetStatusReport() *StatusReport {
 }
 
 // MlxAdminLockdownStatusRequest is the administrative message sent to
-// nico-core-api requesting a machine lock status for a given device.
+// carbide-api requesting a machine lock status for a given device.
 type MlxAdminLockdownStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	MachineId     *MachineId             `protobuf:"bytes,1,opt,name=machine_id,json=machineId,proto3" json:"machine_id,omitempty"`
@@ -3814,7 +3814,7 @@ func (x *MlxAdminLockdownStatusRequest) GetDeviceId() string {
 	return ""
 }
 
-// MlxAdminLockdownStatusResponse is the response from nico-core-api back
+// MlxAdminLockdownStatusResponse is the response from carbide-api back
 // to an administrative caller about the result of an internal attempt
 // to get the lock status of a device on a given machine.
 type MlxAdminLockdownStatusResponse struct {
@@ -3861,7 +3861,7 @@ func (x *MlxAdminLockdownStatusResponse) GetStatusReport() *StatusReport {
 	return nil
 }
 
-// MlxDeviceLockdownLockRequest is sent internally by nico-core-api to
+// MlxDeviceLockdownLockRequest is sent internally by carbide-api to
 // the scout agent to lock a device on the target machine.
 type MlxDeviceLockdownLockRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -3919,7 +3919,7 @@ func (x *MlxDeviceLockdownLockRequest) GetKey() string {
 	return ""
 }
 
-// MlxDeviceLockdownUnlockRequest is sent internally by nico-core-api to
+// MlxDeviceLockdownUnlockRequest is sent internally by carbide-api to
 // the scout agent to unlock a device on the target machine.
 type MlxDeviceLockdownUnlockRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -3977,7 +3977,7 @@ func (x *MlxDeviceLockdownUnlockRequest) GetKey() string {
 	return ""
 }
 
-// MlxDeviceLockdownStatusRequest is sent internally by nico-core-api to
+// MlxDeviceLockdownStatusRequest is sent internally by carbide-api to
 // the scout agent to get the lock status of a device on the target machine.
 type MlxDeviceLockdownStatusRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -4026,7 +4026,7 @@ func (x *MlxDeviceLockdownStatusRequest) GetDeviceId() string {
 	return ""
 }
 
-// MlxDeviceLockdownResponse is sent by the scout agent back to nico-core-api
+// MlxDeviceLockdownResponse is sent by the scout agent back to carbide-api
 // in response to any lockdown requests. It's generic enough that it seemso
 // to work for now.
 type MlxDeviceLockdownResponse struct {
@@ -4111,7 +4111,7 @@ func (*MlxDeviceLockdownResponse_StatusReport) isMlxDeviceLockdownResponse_Reply
 
 func (*MlxDeviceLockdownResponse_Error) isMlxDeviceLockdownResponse_Reply() {}
 
-// MlxDeviceInfoDeviceRequest is an internal message sent from nico-core-api
+// MlxDeviceInfoDeviceRequest is an internal message sent from carbide-api
 // to the scout agent to get an MlxDeviceInfo update for the given device.
 type MlxDeviceInfoDeviceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -4161,7 +4161,7 @@ func (x *MlxDeviceInfoDeviceRequest) GetDeviceId() string {
 }
 
 // MlxDeviceInfoDeviceResponse is a reply sent from scout back to
-// nico-core-api with the MlxDeviceInfo data for the device.
+// carbide-api with the MlxDeviceInfo data for the device.
 type MlxDeviceInfoDeviceResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Reply:
@@ -4244,7 +4244,7 @@ func (*MlxDeviceInfoDeviceResponse_DeviceInfo) isMlxDeviceInfoDeviceResponse_Rep
 
 func (*MlxDeviceInfoDeviceResponse_Error) isMlxDeviceInfoDeviceResponse_Reply() {}
 
-// MlxDeviceInfoReportRequest is an internal message sent from nico-core-api
+// MlxDeviceInfoReportRequest is an internal message sent from carbide-api
 // to the scout agent to get an MlxDeviceReport update containing all devices
 // for the given machine.
 type MlxDeviceInfoReportRequest struct {
@@ -4292,7 +4292,7 @@ func (x *MlxDeviceInfoReportRequest) GetFilters() *DeviceFilterSet {
 }
 
 // MlxDeviceInfoReportResponse is a reply sent from scout back to
-// nico-core-api with the MlxDeviceReport of all devices on the machine.
+// carbide-api with the MlxDeviceReport of all devices on the machine.
 type MlxDeviceInfoReportResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Types that are valid to be assigned to Reply:
@@ -4465,7 +4465,7 @@ func (x *MlxAdminRegistryListResponse) GetRegistryListing() *RegistryListing {
 	return nil
 }
 
-// MlxDeviceRegistryListRequest is sent internally from nico-core-api to
+// MlxDeviceRegistryListRequest is sent internally from carbide-api to
 // the scout agent to request its MlxVariableRegistry information.
 type MlxDeviceRegistryListRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -4503,7 +4503,7 @@ func (*MlxDeviceRegistryListRequest) Descriptor() ([]byte, []int) {
 	return file_mlx_device_proto_rawDescGZIP(), []int{59}
 }
 
-// MlxDeviceRegistryListResponse is sent by scout back to nico-core-api
+// MlxDeviceRegistryListResponse is sent by scout back to carbide-api
 // with the names of the MlxVariableRegistry entries it knows about.
 type MlxDeviceRegistryListResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -4729,7 +4729,7 @@ func (x *MlxAdminRegistryShowResponse) GetVariableRegistry() *MlxVariableRegistr
 	return nil
 }
 
-// MlxDeviceRegistryShowRequest is sent by nico-core-api to scout to
+// MlxDeviceRegistryShowRequest is sent by carbide-api to scout to
 // get the complete MlxVariableRegistry as known by scout on the host.
 type MlxDeviceRegistryShowRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -4775,7 +4775,7 @@ func (x *MlxDeviceRegistryShowRequest) GetRegistryName() string {
 	return ""
 }
 
-// MlxDeviceRegistryShowResponse is sent by the agent back to nico-core-api
+// MlxDeviceRegistryShowResponse is sent by the agent back to carbide-api
 // with the serialized registry data.
 type MlxDeviceRegistryShowResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -5894,9 +5894,9 @@ func (*MlxDeviceConfigCompareResponse_ComparisonResult) isMlxDeviceConfigCompare
 func (*MlxDeviceConfigCompareResponse_Error) isMlxDeviceConfigCompareResponse_Reply() {}
 
 // MlxAdminProfileShowRequest is sent by the CLI to show a specific profile
-// loaded into nico-core-api. Note that this is only between the CLI and API,
+// loaded into carbide-api. Note that this is only between the CLI and API,
 // there's no ScoutStream integration with this, since the profile is something
-// that is specifically configured within nico-core-api.
+// that is specifically configured within carbide-api.
 type MlxAdminProfileShowRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProfileName   string                 `protobuf:"bytes,1,opt,name=profile_name,json=profileName,proto3" json:"profile_name,omitempty"`
@@ -5944,7 +5944,7 @@ func (x *MlxAdminProfileShowRequest) GetProfileName() string {
 // MlxAdminProfileShowResponse is the response with profile details.
 // Note that this is only between the CLI and API,
 // there's no ScoutStream integration with this, since the profile is something
-// that is specifically configured within nico-core-api.
+// that is specifically configured within carbide-api.
 type MlxAdminProfileShowResponse struct {
 	state               protoimpl.MessageState        `protogen:"open.v1"`
 	SerializableProfile *SerializableMlxConfigProfile `protobuf:"bytes,1,opt,name=serializable_profile,json=serializableProfile,proto3" json:"serializable_profile,omitempty"`

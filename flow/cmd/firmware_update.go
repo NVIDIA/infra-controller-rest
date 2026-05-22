@@ -51,6 +51,6 @@ func init() {
 	firmwareUpdateCmd.Flags().String("rack-ids", "", "Comma-separated list of rack UUIDs")
 	firmwareUpdateCmd.Flags().String("rack-names", "", "Comma-separated list of rack names")
 	firmwareUpdateCmd.Flags().String("component-ids", "", "Comma-separated list of component IDs")
-	firmwareUpdateCmd.Flags().StringP("type", "t", "", "Component type: compute, nvlswitch, powershelf")
+	firmwareUpdateCmd.Flags().StringP("type", "t", "", "Component type: compute, nvswitch, powershelf")
 	firmwareUpdateCmd.Flags().StringP("version", "v", "", "Target firmware version")
 }

@@ -101,7 +101,7 @@ func TestExpectedSwitch_FromProto(t *testing.T) {
 		assert.Equal(t, &slot, es.SlotID)
 		assert.Equal(t, &trayIdx, es.TrayIdx)
 		assert.Equal(t, &host, es.HostID)
-		assert.Equal(t, map[string]string{"env": "prod"}, es.Labels)
+		assert.Equal(t, Labels{"env": "prod"}, es.Labels)
 	})
 
 	t.Run("empty BmcIpAddress yields nil pointer", func(t *testing.T) {
@@ -240,7 +240,7 @@ func TestExpectedSwitchSQLDAO_Create(t *testing.T) {
 					assert.Equal(t, input.BmcMacAddress, es.BmcMacAddress)
 					assert.Equal(t, input.SwitchSerialNumber, es.SwitchSerialNumber)
 					assert.Equal(t, input.BmcIpAddress, es.BmcIpAddress)
-					assert.Equal(t, input.Labels, es.Labels)
+					assert.Equal(t, Labels(input.Labels), es.Labels)
 				}
 
 				if tc.verifyChildSpanner {
@@ -608,7 +608,7 @@ func TestExpectedSwitchSQLDAO_Update(t *testing.T) {
 					assert.Equal(t, *tc.input.SwitchSerialNumber, got.SwitchSerialNumber)
 				}
 				if tc.input.Labels != nil {
-					assert.Equal(t, tc.input.Labels, got.Labels)
+					assert.Equal(t, Labels(tc.input.Labels), got.Labels)
 				}
 
 				if tc.verifyChildSpanner {

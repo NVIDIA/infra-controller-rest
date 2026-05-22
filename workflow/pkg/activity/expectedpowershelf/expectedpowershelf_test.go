@@ -464,7 +464,8 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 					}
 
 					// Verify labels are updated correctly
-					expectedLabels := cdbm.LabelsFromProtoMetadata(ctrlEPS.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(ctrlEPS.Metadata.GetLabels())
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(updated.Labels) == 0 {
 						// Both are effectively empty, which is correct
@@ -487,7 +488,8 @@ func TestManageExpectedPowerShelf_UpdateExpectedPowerShelvesInDB(t *testing.T) {
 				assert.NoError(t, perr)
 				created := powerShelvesByID[epsID]
 				if created != nil {
-					expectedLabels := cdbm.LabelsFromProtoMetadata(ceps.Metadata)
+					var expectedLabels cdbm.Labels
+					expectedLabels.FromProto(ceps.Metadata.GetLabels())
 					// Both nil and empty maps should be treated as equivalent (no labels)
 					if len(expectedLabels) == 0 && len(created.Labels) == 0 {
 						// Both are effectively empty, which is correct

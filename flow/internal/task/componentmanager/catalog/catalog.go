@@ -22,6 +22,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
@@ -29,11 +30,14 @@ import (
 // Descriptor describes a component manager implementation registered in this
 // process. The descriptor identity is Type plus Implementation; provider names
 // stay separate because one manager can require multiple providers and one
-// provider can serve multiple component manager implementations.
+// provider can serve multiple component manager implementations. Capabilities
+// describe the operations this manager supports and are used to validate that
+// active managers can execute a task before it is dispatched.
 type Descriptor struct {
 	Type              devicetypes.ComponentType
 	Implementation    string
 	RequiredProviders []string
+	Capabilities      capability.CapabilitySet
 }
 
 // Catalog contains the component manager implementations supported by a
@@ -183,6 +187,12 @@ func (d Descriptor) Normalize() (Descriptor, error) {
 	slices.Sort(requiredProviders)
 	d.RequiredProviders = requiredProviders
 
+	capabilities, err := d.Capabilities.Normalize()
+	if err != nil {
+		return Descriptor{}, err
+	}
+	d.Capabilities = capabilities
+
 	return d, nil
 }
 
@@ -190,15 +200,17 @@ func (d Descriptor) Normalize() (Descriptor, error) {
 // with the source descriptor.
 func (d Descriptor) Clone() Descriptor {
 	d.RequiredProviders = slices.Clone(d.RequiredProviders)
+	d.Capabilities = d.Capabilities.Clone()
 	return d
 }
 
 // Equal reports whether two normalized descriptors describe the same component
-// manager implementation and provider requirements.
+// manager implementation, provider requirements, and capabilities.
 func (d Descriptor) Equal(other Descriptor) bool {
 	return d.Type == other.Type &&
 		d.Implementation == other.Implementation &&
-		slices.Equal(d.RequiredProviders, other.RequiredProviders)
+		slices.Equal(d.RequiredProviders, other.RequiredProviders) &&
+		slices.Equal(d.Capabilities, other.Capabilities)
 }
 
 func sortDescriptors(descriptors []Descriptor) {

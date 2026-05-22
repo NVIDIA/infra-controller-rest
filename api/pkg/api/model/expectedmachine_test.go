@@ -318,7 +318,7 @@ func TestNewAPIExpectedMachine(t *testing.T) {
 			assert.Equal(t, tc.dbObj.BmcMacAddress, got.BmcMacAddress)
 			assert.Equal(t, tc.dbObj.ChassisSerialNumber, got.ChassisSerialNumber)
 			assert.Equal(t, tc.dbObj.FallbackDpuSerialNumbers, got.FallbackDPUSerialNumbers)
-			assert.Equal(t, tc.dbObj.Labels, got.Labels)
+			assert.Equal(t, map[string]string(tc.dbObj.Labels), got.Labels)
 			assert.Equal(t, tc.dbObj.Created, got.Created)
 			assert.Equal(t, tc.dbObj.Updated, got.Updated)
 		})
@@ -650,7 +650,7 @@ func TestNewAPIExpectedMachineEdgeCases(t *testing.T) {
 
 		got := NewAPIExpectedMachine(dbEM)
 		assert.NotNil(t, got)
-		assert.Equal(t, dbEM.Labels, got.Labels)
+		assert.Equal(t, map[string]string(dbEM.Labels), got.Labels)
 		assert.Equal(t, "nico-rest-api", got.Labels["app.kubernetes.io/name"])
 	})
 

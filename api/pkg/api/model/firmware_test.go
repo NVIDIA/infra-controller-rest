@@ -45,6 +45,97 @@ func TestAPIUpdateFirmwareRequest_Validate(t *testing.T) {
 			request: APIUpdateFirmwareRequest{Version: strPtr("24.11.0")},
 			wantErr: true,
 		},
+		{
+			name: "valid - targets with version",
+			request: APIUpdateFirmwareRequest{
+				SiteID:  "site-1",
+				Version: strPtr("24.11.0"),
+				Targets: []string{"bmc", "nvos"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid - targets without version",
+			request: APIUpdateFirmwareRequest{
+				SiteID:  "site-1",
+				Targets: []string{"bmc"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid - targets with empty version string",
+			request: APIUpdateFirmwareRequest{
+				SiteID:  "site-1",
+				Version: strPtr(""),
+				Targets: []string{"bmc"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid - targets contains empty string",
+			request: APIUpdateFirmwareRequest{
+				SiteID:  "site-1",
+				Version: strPtr("24.11.0"),
+				Targets: []string{"bmc", ""},
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.request.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestAPIBatchTrayFirmwareUpdateRequest_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		request APIBatchTrayFirmwareUpdateRequest
+		wantErr bool
+	}{
+		{
+			name:    "valid - siteId only",
+			request: APIBatchTrayFirmwareUpdateRequest{SiteID: "site-1"},
+			wantErr: false,
+		},
+		{
+			name: "valid - with filter and version",
+			request: APIBatchTrayFirmwareUpdateRequest{
+				SiteID:  "site-1",
+				Filter:  &TrayFilter{IDs: []string{"550e8400-e29b-41d4-a716-446655440000"}},
+				Version: strPtr("24.11.0"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid - targets with version",
+			request: APIBatchTrayFirmwareUpdateRequest{
+				SiteID:  "site-1",
+				Version: strPtr("24.11.0"),
+				Targets: []string{"bmc"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid - targets without version",
+			request: APIBatchTrayFirmwareUpdateRequest{
+				SiteID:  "site-1",
+				Targets: []string{"bmc"},
+			},
+			wantErr: true,
+		},
+		{
+			name:    "invalid - missing siteId",
+			request: APIBatchTrayFirmwareUpdateRequest{},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

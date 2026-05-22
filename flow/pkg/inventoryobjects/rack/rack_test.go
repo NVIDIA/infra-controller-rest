@@ -62,7 +62,7 @@ func TestAddComponents(t *testing.T) {
 	}{
 		{devicetypes.ComponentTypeCompute, 11, 18},
 		{devicetypes.ComponentTypePowerShelf, 6, 9},
-		{devicetypes.ComponentTypeNVLSwitch, 19, 27},
+		{devicetypes.ComponentTypeNVSwitch, 19, 27},
 		{devicetypes.ComponentTypePowerShelf, 39, 42},
 		{devicetypes.ComponentTypeCompute, 28, 37},
 	}

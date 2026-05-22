@@ -112,6 +112,18 @@ func AllCommands() []Command {
 
 		{Name: "rack list", Description: "List racks", Run: cmdRackList},
 		{Name: "rack get", Description: "Get rack details", Run: cmdRackGet},
+		{Name: "rack bringup", Description: "Bring up a rack", Run: cmdRackBringup},
+		{Name: "rack power", Description: "Power control a rack", Run: cmdRackPower},
+		{Name: "rack firmware", Description: "Firmware update a rack", Run: cmdRackFirmware},
+		{Name: "rack validate", Description: "Validate a rack against expected inventory", Run: cmdRackValidate},
+		{Name: "rack task get", Description: "Get rack/tray task status", Run: cmdRackTaskGet},
+		{Name: "rack task cancel", Description: "Cancel a rack/tray task", Run: cmdRackTaskCancel},
+
+		{Name: "tray list", Description: "List trays", Run: cmdTrayList},
+		{Name: "tray get", Description: "Get tray details", Run: cmdTrayGet},
+		{Name: "tray power", Description: "Power control a tray", Run: cmdTrayPower},
+		{Name: "tray firmware", Description: "Firmware update a tray", Run: cmdTrayFirmware},
+		{Name: "tray validate", Description: "Validate a tray against expected inventory", Run: cmdTrayValidate},
 
 		{Name: "vpc-prefix list", Description: "List VPC prefixes", Run: cmdVPCPrefixList},
 		{Name: "vpc-prefix get", Description: "Get VPC prefix details", Run: cmdVPCPrefixGet},
@@ -127,6 +139,15 @@ func AllCommands() []Command {
 
 		{Name: "expected-machine list", Description: "List expected machines", Run: cmdExpectedMachineList},
 		{Name: "expected-machine get", Description: "Get expected machine details", Run: cmdExpectedMachineGet},
+
+		{Name: "expected-rack list", Description: "List expected racks", Run: cmdExpectedRackList},
+		{Name: "expected-rack get", Description: "Get expected rack details", Run: cmdExpectedRackGet},
+
+		{Name: "expected-switch list", Description: "List expected switches", Run: cmdExpectedSwitchList},
+		{Name: "expected-switch get", Description: "Get expected switch details", Run: cmdExpectedSwitchGet},
+
+		{Name: "expected-power-shelf list", Description: "List expected power shelves", Run: cmdExpectedPowerShelfList},
+		{Name: "expected-power-shelf get", Description: "Get expected power shelf details", Run: cmdExpectedPowerShelfGet},
 
 		{Name: "infiniband-partition list", Description: "List InfiniBand partitions", Run: cmdInfiniBandPartitionList},
 		{Name: "infiniband-partition get", Description: "Get InfiniBand partition details", Run: cmdInfiniBandPartitionGet},
@@ -146,6 +167,8 @@ func AllCommands() []Command {
 		{Name: "tenant stats", Description: "Get tenant stats", Run: cmdTenantStats},
 		{Name: "infrastructure-provider current", Description: "Get current infrastructure provider", Run: cmdInfraProviderCurrent},
 		{Name: "infrastructure-provider stats", Description: "Get infrastructure provider stats", Run: cmdInfraProviderStats},
+
+		{Name: "service-account current", Description: "Get current service account status", Run: cmdServiceAccountCurrent},
 
 		{Name: "login", Description: "Login / refresh auth token", Run: cmdLogin},
 		{Name: "help", Description: "Show available commands", Run: cmdHelp},
@@ -177,6 +200,7 @@ func appendScopeFlags(s *Session, parts []string) []string {
 	switch resource {
 	case "vpc", "allocation", "ip-block", "operating-system", "ssh-key-group",
 		"network-security-group", "sku", "rack", "expected-machine", "instance-type",
+		"expected-rack", "expected-switch", "expected-power-shelf", "tray",
 		"dpu-extension-service", "infiniband-partition", "nvlink-logical-partition":
 		if scopeSiteID != "" {
 			out = append(out, "--site-id", scopeSiteID)
@@ -235,6 +259,24 @@ func setSiteScopeFromID(s *Session, siteID string) {
 	s.Scope.VpcID = ""
 	s.Scope.VpcName = ""
 	s.Cache.InvalidateFiltered()
+}
+
+// requireSiteScope returns the current site scope ID. If unset, prompts the
+// user to pick a site and persists that as the active scope, mirroring how
+// fetchMachinesWithSiteFallback handles missing site context. Used by the
+// rack and tray lifecycle commands, where every endpoint requires a siteId
+// query/body parameter.
+func requireSiteScope(s *Session, missingSitePrompt string) (string, error) {
+	if id := strings.TrimSpace(s.Scope.SiteID); id != "" {
+		return id, nil
+	}
+	fmt.Printf("%s %s\n", Dim("Note:"), missingSitePrompt)
+	site, err := s.Resolver.Resolve(context.Background(), "site", "Site")
+	if err != nil {
+		return "", err
+	}
+	setSiteScopeFromID(s, site.ID)
+	return site.ID, nil
 }
 
 func readyMachineItemsForSite(machines []NamedItem, siteID string) []SelectItem {
@@ -907,16 +949,121 @@ func cmdMachineList(s *Session, args []string) error {
 	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
 	defer printLabelHint(os.Stderr, items, merged)
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
-	fmt.Fprintln(tw, "NAME\tSTATUS\tSITE\tVPC\tLABELS\tID")
+	fmt.Fprintln(tw, "NAME\tSTATUS\tBLOCKED BY\tSITE\tVPC\tLABELS\tID")
 	for _, item := range items {
 		siteName := s.Resolver.ResolveID("site", item.Extra["siteId"])
 		vpcNames := strings.TrimSpace(vpcNamesByMachineID[item.ID])
 		if vpcNames == "" {
 			vpcNames = "-"
 		}
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n", item.Name, item.Status, siteName, vpcNames, formatLabels(item.Labels, 60), item.ID)
+		blockedBy := summarizeBlockingAlert(item.Raw)
+		if blockedBy == "" {
+			blockedBy = "-"
+		}
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n", item.Name, item.Status, blockedBy, siteName, vpcNames, formatLabels(item.Labels, 60), item.ID)
 	}
 	return tw.Flush()
+}
+
+// blockingHealthAlert captures the fields from MachineHealthProbeAlert that we
+// surface in machine list/get to explain why a machine is blocked. Populated
+// from raw[health][alerts][n] when alerts[n].classifications contains
+// "PreventAllocations".
+type blockingHealthAlert struct {
+	ID              string
+	Target          string
+	Message         string
+	Classifications []string
+}
+
+// extractBlockingAlerts walks raw["health"]["alerts"] and returns the alerts
+// whose classifications include "PreventAllocations". These are the alerts
+// that prevent the machine from being allocated to a tenant, which is what
+// operators care about when triaging Error-state machines. Other alert types
+// are intentionally skipped to keep the table column actionable instead of
+// noisy.
+func extractBlockingAlerts(raw interface{}) []blockingHealthAlert {
+	m, ok := raw.(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	health, ok := m["health"].(map[string]interface{})
+	if !ok {
+		return nil
+	}
+	rawAlerts, ok := health["alerts"].([]interface{})
+	if !ok {
+		return nil
+	}
+	out := make([]blockingHealthAlert, 0, len(rawAlerts))
+	for _, ra := range rawAlerts {
+		alert, ok := ra.(map[string]interface{})
+		if !ok {
+			continue
+		}
+		classifications := stringSliceField(alert, "classifications")
+		if !containsCaseInsensitive(classifications, "PreventAllocations") {
+			continue
+		}
+		out = append(out, blockingHealthAlert{
+			ID:              str(alert, "id"),
+			Target:          str(alert, "target"),
+			Message:         str(alert, "message"),
+			Classifications: classifications,
+		})
+	}
+	return out
+}
+
+// summarizeBlockingAlert returns a short one-line summary for the machine list
+// table column. Returns "" when the machine has no blocking alerts. Format is
+// "<id>" or "<id> <target>" when target is concise enough to fit -- target is
+// truncated at 24 chars to keep table rows readable on standard terminals.
+func summarizeBlockingAlert(raw interface{}) string {
+	alerts := extractBlockingAlerts(raw)
+	if len(alerts) == 0 {
+		return ""
+	}
+	a := alerts[0]
+	id := strings.TrimSpace(a.ID)
+	target := strings.TrimSpace(a.Target)
+	if id == "" && target == "" {
+		return ""
+	}
+	if target == "" {
+		return id
+	}
+	const maxTarget = 24
+	if len(target) > maxTarget {
+		target = target[:maxTarget-3] + "..."
+	}
+	if id == "" {
+		return target
+	}
+	return id + " " + target
+}
+
+func stringSliceField(m map[string]interface{}, key string) []string {
+	raw, ok := m[key].([]interface{})
+	if !ok {
+		return nil
+	}
+	out := make([]string, 0, len(raw))
+	for _, v := range raw {
+		if s, ok := v.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func containsCaseInsensitive(haystack []string, needle string) bool {
+	for _, h := range haystack {
+		if strings.EqualFold(strings.TrimSpace(h), needle) {
+			return true
+		}
+	}
+	return false
 }
 
 func cmdOSList(s *Session, _ []string) error {
@@ -2011,6 +2158,29 @@ func cmdRackList(s *Session, _ []string) error {
 	return tw.Flush()
 }
 
+func cmdTrayList(s *Session, _ []string) error {
+	siteID, err := requireSiteScope(s, "Tray listing requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	_ = siteID
+	LogCmd(s, "tray", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "tray")
+	if err != nil {
+		return err
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tTYPE\tPOWER\tFW\tMANUFACTURER\tMODEL\tRACK\tID")
+	for _, item := range items {
+		rackName := s.Resolver.ResolveID("rack", item.Extra["rackId"])
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["type"], item.Status, item.Extra["firmwareVersion"],
+			item.Extra["manufacturer"], item.Extra["model"], rackName, item.ID)
+	}
+	return tw.Flush()
+}
+
 func cmdVPCPrefixList(s *Session, _ []string) error {
 	LogCmd(s, "vpc-prefix", "list")
 	items, err := s.Resolver.Fetch(context.Background(), "vpc-prefix")
@@ -2232,6 +2402,99 @@ func cmdExpectedMachineList(s *Session, args []string) error {
 	fmt.Fprintln(tw, "SITE ID\tBMC MAC\tCHASSIS SN\tLABELS\tID")
 	for _, item := range items {
 		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\n", item.Extra["siteId"], item.Extra["bmcMacAddress"], item.Extra["chassisSerialNumber"], formatLabels(item.Labels, 60), item.ID)
+	}
+	return tw.Flush()
+}
+
+func cmdExpectedRackList(s *Session, args []string) error {
+	LogCmd(s, "expected-rack", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "expected-rack")
+	if err != nil {
+		return err
+	}
+	_, cmdLabels, sortKey, err := parseLabelArgs(args)
+	if err != nil {
+		return err
+	}
+	merged, mergeErr := mergeLabels(s.Scope.LabelFilters, cmdLabels)
+	if mergeErr != nil {
+		return mergeErr
+	}
+	items = filterByLabels(items, merged)
+	if sortKey != "" {
+		items = sortByLabelKey(items, sortKey)
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	defer printLabelHint(os.Stderr, items, merged)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tRACK ID\tPROFILE\tSITE\tLABELS\tID")
+	for _, item := range items {
+		siteName := s.Resolver.ResolveID("site", item.Extra["siteId"])
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["rackId"], item.Extra["rackProfileId"], siteName,
+			formatLabels(item.Labels, 60), item.ID)
+	}
+	return tw.Flush()
+}
+
+func cmdExpectedSwitchList(s *Session, args []string) error {
+	LogCmd(s, "expected-switch", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "expected-switch")
+	if err != nil {
+		return err
+	}
+	_, cmdLabels, sortKey, err := parseLabelArgs(args)
+	if err != nil {
+		return err
+	}
+	merged, mergeErr := mergeLabels(s.Scope.LabelFilters, cmdLabels)
+	if mergeErr != nil {
+		return mergeErr
+	}
+	items = filterByLabels(items, merged)
+	if sortKey != "" {
+		items = sortByLabelKey(items, sortKey)
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	defer printLabelHint(os.Stderr, items, merged)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tSWITCH SN\tBMC MAC\tRACK\tMANUFACTURER\tLABELS\tID")
+	for _, item := range items {
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["switchSerialNumber"], item.Extra["bmcMacAddress"],
+			item.Extra["rackId"], item.Extra["manufacturer"],
+			formatLabels(item.Labels, 60), item.ID)
+	}
+	return tw.Flush()
+}
+
+func cmdExpectedPowerShelfList(s *Session, args []string) error {
+	LogCmd(s, "expected-power-shelf", "list")
+	items, err := s.Resolver.Fetch(context.Background(), "expected-power-shelf")
+	if err != nil {
+		return err
+	}
+	_, cmdLabels, sortKey, err := parseLabelArgs(args)
+	if err != nil {
+		return err
+	}
+	merged, mergeErr := mergeLabels(s.Scope.LabelFilters, cmdLabels)
+	if mergeErr != nil {
+		return mergeErr
+	}
+	items = filterByLabels(items, merged)
+	if sortKey != "" {
+		items = sortByLabelKey(items, sortKey)
+	}
+	fmt.Fprintf(os.Stderr, "%d items\n", len(items))
+	defer printLabelHint(os.Stderr, items, merged)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintln(tw, "NAME\tSHELF SN\tBMC MAC\tRACK\tMANUFACTURER\tLABELS\tID")
+	for _, item := range items {
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			item.Name, item.Extra["shelfSerialNumber"], item.Extra["bmcMacAddress"],
+			item.Extra["rackId"], item.Extra["manufacturer"],
+			formatLabels(item.Labels, 60), item.ID)
 	}
 	return tw.Flush()
 }
@@ -2715,7 +2978,82 @@ func cmdMachineGet(s *Session, args []string) error {
 		return err
 	}
 	LogCmd(s, "machine", "get", item.ID)
-	return getAndPrint(s, apiPath(s, "machine/{id}"), item.ID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "machine/{id}"), map[string]string{"id": item.ID}, nil, nil)
+	if err != nil {
+		return err
+	}
+	printMachineHealthSummary(os.Stdout, body)
+	return printDetailJSON(os.Stdout, body)
+}
+
+// printMachineHealthSummary prints a human-readable summary of blocking
+// health alerts and tenant-usability state above the verbose JSON. Operators
+// triaging an Error-state machine should not have to scan multi-page JSON to
+// find the blocker -- the summary surfaces the most actionable signals (id,
+// target, classifications, short message, isUsableByTenant) up front. When
+// there are no blocking alerts the summary block is suppressed entirely so
+// healthy-machine output stays unchanged.
+func printMachineHealthSummary(w io.Writer, body []byte) {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return
+	}
+	alerts := extractBlockingAlerts(raw)
+	if len(alerts) == 0 {
+		return
+	}
+	status := strings.TrimSpace(str(raw, "status"))
+	usable, hasUsable := raw["isUsableByTenant"].(bool)
+
+	fmt.Fprintln(w, Bold("Blocking health alerts:"))
+	if status != "" {
+		fmt.Fprintf(w, "  Status: %s\n", status)
+	}
+	if hasUsable {
+		fmt.Fprintf(w, "  Usable by tenant: %t\n", usable)
+	}
+	for i, a := range alerts {
+		fmt.Fprintf(w, "  [%d] %s\n", i+1, a.ID)
+		if t := strings.TrimSpace(a.Target); t != "" {
+			fmt.Fprintf(w, "      Target: %s\n", t)
+		}
+		if len(a.Classifications) > 0 {
+			fmt.Fprintf(w, "      Classifications: %s\n", strings.Join(a.Classifications, ", "))
+		}
+		if msg := shortMessage(a.Message); msg != "" {
+			fmt.Fprintf(w, "      Message: %s\n", msg)
+		}
+	}
+	fmt.Fprintln(w)
+}
+
+// shortMessage trims an alert message to a single readable line. Health
+// alerts often include multi-line probe output; the first non-empty line is
+// usually the actionable summary, so we surface that and indicate truncation
+// when more lines follow.
+func shortMessage(msg string) string {
+	msg = strings.TrimSpace(msg)
+	if msg == "" {
+		return ""
+	}
+	lines := strings.Split(msg, "\n")
+	first := strings.TrimSpace(lines[0])
+	if first == "" {
+		for _, l := range lines[1:] {
+			if t := strings.TrimSpace(l); t != "" {
+				first = t
+				break
+			}
+		}
+	}
+	const maxLen = 200
+	if len(first) > maxLen {
+		first = first[:maxLen-3] + "..."
+	}
+	if len(lines) > 1 && strings.TrimSpace(strings.Join(lines[1:], "")) != "" {
+		first += " (...)"
+	}
+	return first
 }
 
 func cmdOSGet(s *Session, args []string) error {
@@ -2809,6 +3147,313 @@ func cmdRackGet(s *Session, args []string) error {
 	return getAndPrint(s, apiPath(s, "rack/{id}"), item.ID)
 }
 
+func cmdTrayGet(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray get requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tray", "get", item.ID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "tray/{id}"),
+		map[string]string{"id": item.ID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return err
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+// powerStateChoices is the canonical list accepted by every power-control
+// endpoint (see UpdatePowerStateRequest in OpenAPI). Kept in one place so
+// rack and tray commands cannot drift from each other.
+var powerStateChoices = []string{"on", "off", "cycle", "forceoff", "forcecycle"}
+
+// printTaskIDs renders the standard taskIds-bearing response from a
+// lifecycle action. Action endpoints return one task ID per affected
+// component, which operators feed into rack task get to track progress.
+// The full JSON response is also printed so operators can see any extra
+// fields the server may add.
+func printTaskIDs(body []byte, action string) error {
+	var resp struct {
+		TaskIDs []string `json:"taskIds"`
+	}
+	if err := json.Unmarshal(body, &resp); err == nil && len(resp.TaskIDs) > 0 {
+		fmt.Printf("%s %s started; %d task(s):\n", Green("OK"), action, len(resp.TaskIDs))
+		for _, id := range resp.TaskIDs {
+			fmt.Printf("  %s\n", id)
+		}
+		fmt.Println()
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdRackBringup(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack bringup requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to bring up", args)
+	if err != nil {
+		return err
+	}
+	desc, err := PromptText("Description (optional)", false)
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Bring up rack %s (%s)?", item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	body := map[string]interface{}{"siteId": siteID}
+	if d := strings.TrimSpace(desc); d != "" {
+		body["description"] = d
+	}
+	LogCmd(s, "rack", "bringup", item.ID, "--site-id", siteID)
+	bodyJSON, _ := json.Marshal(body)
+	resp, _, err := s.Client.Do("POST", apiPath(s, "rack/{id}/bringup"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("bringing up rack: %w", err)
+	}
+	return printTaskIDs(resp, "Rack bringup")
+}
+
+func cmdRackPower(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack power control requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to power-control", args)
+	if err != nil {
+		return err
+	}
+	state, err := PromptChoice("Power state", powerStateChoices, "")
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Apply power state %q to rack %s (%s)?", state, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	bodyJSON, _ := json.Marshal(map[string]interface{}{"siteId": siteID, "state": state})
+	LogCmd(s, "rack", "power", item.ID, "--state", state, "--site-id", siteID)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "rack/{id}/power"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("powering rack: %w", err)
+	}
+	return printTaskIDs(resp, "Rack power")
+}
+
+func cmdRackFirmware(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack firmware update requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to update firmware on", args)
+	if err != nil {
+		return err
+	}
+	version, err := PromptText("Target firmware version (blank for default/latest)", false)
+	if err != nil {
+		return err
+	}
+	versionDisplay := strings.TrimSpace(version)
+	if versionDisplay == "" {
+		versionDisplay = "<default>"
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Update firmware to %s on rack %s (%s)?", versionDisplay, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	body := map[string]interface{}{"siteId": siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		body["version"] = v
+	}
+	bodyJSON, _ := json.Marshal(body)
+	logArgs := []string{"rack", "firmware", item.ID, "--site-id", siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		logArgs = append(logArgs, "--version", v)
+	}
+	LogCmd(s, logArgs...)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "rack/{id}/firmware"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("updating rack firmware: %w", err)
+	}
+	return printTaskIDs(resp, "Rack firmware update")
+}
+
+func cmdRackValidate(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Rack validation requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "rack", "Rack to validate", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "rack", "validate", item.ID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "rack/{id}/validation"),
+		map[string]string{"id": item.ID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return fmt.Errorf("validating rack: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdTrayPower(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray power control requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray to power-control", args)
+	if err != nil {
+		return err
+	}
+	state, err := PromptChoice("Power state", powerStateChoices, "")
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Apply power state %q to tray %s (%s)?", state, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	bodyJSON, _ := json.Marshal(map[string]interface{}{"siteId": siteID, "state": state})
+	LogCmd(s, "tray", "power", item.ID, "--state", state, "--site-id", siteID)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "tray/{id}/power"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("powering tray: %w", err)
+	}
+	return printTaskIDs(resp, "Tray power")
+}
+
+func cmdTrayFirmware(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray firmware update requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray to update firmware on", args)
+	if err != nil {
+		return err
+	}
+	version, err := PromptText("Target firmware version (blank for default/latest)", false)
+	if err != nil {
+		return err
+	}
+	versionDisplay := strings.TrimSpace(version)
+	if versionDisplay == "" {
+		versionDisplay = "<default>"
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Update firmware to %s on tray %s (%s)?", versionDisplay, item.Name, item.ID))
+	if err != nil || !ok {
+		return err
+	}
+	body := map[string]interface{}{"siteId": siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		body["version"] = v
+	}
+	bodyJSON, _ := json.Marshal(body)
+	logArgs := []string{"tray", "firmware", item.ID, "--site-id", siteID}
+	if v := strings.TrimSpace(version); v != "" {
+		logArgs = append(logArgs, "--version", v)
+	}
+	LogCmd(s, logArgs...)
+	resp, _, err := s.Client.Do("PATCH", apiPath(s, "tray/{id}/firmware"),
+		map[string]string{"id": item.ID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("updating tray firmware: %w", err)
+	}
+	return printTaskIDs(resp, "Tray firmware update")
+}
+
+func cmdTrayValidate(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Tray validation requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "tray", "Tray to validate", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "tray", "validate", item.ID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "tray/{id}/validation"),
+		map[string]string{"id": item.ID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return fmt.Errorf("validating tray: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdRackTaskGet(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Task get requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	taskID, err := taskIDFromArgsOrPrompt(args, "Task ID")
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "rack", "task", "get", taskID, "--site-id", siteID)
+	body, _, err := s.Client.Do("GET", apiPath(s, "rack/task/{id}"),
+		map[string]string{"id": taskID},
+		map[string]string{"siteId": siteID}, nil)
+	if err != nil {
+		return fmt.Errorf("getting task: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdRackTaskCancel(s *Session, args []string) error {
+	siteID, err := requireSiteScope(s, "Task cancel requires a site filter. Select a site.")
+	if err != nil {
+		return err
+	}
+	taskID, err := taskIDFromArgsOrPrompt(args, "Task ID to cancel")
+	if err != nil {
+		return err
+	}
+	ok, err := PromptConfirm(fmt.Sprintf("Cancel task %s?", taskID))
+	if err != nil || !ok {
+		return err
+	}
+	bodyJSON, _ := json.Marshal(map[string]interface{}{"siteId": siteID})
+	LogCmd(s, "rack", "task", "cancel", taskID, "--site-id", siteID)
+	resp, _, err := s.Client.Do("POST", apiPath(s, "rack/task/{id}/cancel"),
+		map[string]string{"id": taskID}, nil, bodyJSON)
+	if err != nil {
+		return fmt.Errorf("cancelling task: %w", err)
+	}
+	fmt.Printf("%s Cancellation requested for task %s\n", Green("OK"), taskID)
+	return printDetailJSON(os.Stdout, resp)
+}
+
+// taskIDFromArgsOrPrompt accepts a task ID from a positional argument when
+// supplied (e.g. `rack task get <task-id>`) or interactively prompts the
+// operator when not. Tasks are not pre-listed by the TUI -- IDs come from the
+// taskIds output of preceding lifecycle actions, so resolver-style picking
+// does not apply.
+func taskIDFromArgsOrPrompt(args []string, label string) (string, error) {
+	if len(args) > 0 && strings.TrimSpace(args[0]) != "" {
+		return strings.TrimSpace(args[0]), nil
+	}
+	id, err := PromptText(label, true)
+	if err != nil {
+		return "", err
+	}
+	id = strings.TrimSpace(id)
+	if id == "" {
+		return "", fmt.Errorf("task ID is required")
+	}
+	return id, nil
+}
+
 func cmdVPCPrefixGet(s *Session, args []string) error {
 	item, err := s.Resolver.ResolveWithArgs(context.Background(), "vpc-prefix", "VPC Prefix", args)
 	if err != nil {
@@ -2834,6 +3479,33 @@ func cmdExpectedMachineGet(s *Session, args []string) error {
 	}
 	LogCmd(s, "expected-machine", "get", item.ID)
 	return getAndPrint(s, apiPath(s, "expected-machine/{id}"), item.ID)
+}
+
+func cmdExpectedRackGet(s *Session, args []string) error {
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "expected-rack", "Expected Rack", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "expected-rack", "get", item.ID)
+	return getAndPrint(s, apiPath(s, "expected-rack/{id}"), item.ID)
+}
+
+func cmdExpectedSwitchGet(s *Session, args []string) error {
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "expected-switch", "Expected Switch", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "expected-switch", "get", item.ID)
+	return getAndPrint(s, apiPath(s, "expected-switch/{id}"), item.ID)
+}
+
+func cmdExpectedPowerShelfGet(s *Session, args []string) error {
+	item, err := s.Resolver.ResolveWithArgs(context.Background(), "expected-power-shelf", "Expected Power Shelf", args)
+	if err != nil {
+		return err
+	}
+	LogCmd(s, "expected-power-shelf", "get", item.ID)
+	return getAndPrint(s, apiPath(s, "expected-power-shelf/{id}"), item.ID)
 }
 
 func cmdInfiniBandPartitionGet(s *Session, args []string) error {
@@ -2924,6 +3596,15 @@ func cmdInfraProviderStats(s *Session, _ []string) error {
 	body, _, err := s.Client.Do("GET", apiPath(s, "infrastructure-provider/current/stats"), nil, nil, nil)
 	if err != nil {
 		return fmt.Errorf("getting infrastructure provider stats: %w", err)
+	}
+	return printDetailJSON(os.Stdout, body)
+}
+
+func cmdServiceAccountCurrent(s *Session, _ []string) error {
+	LogCmd(s, "service-account", "current")
+	body, _, err := s.Client.Do("GET", apiPath(s, "service-account/current"), nil, nil, nil)
+	if err != nil {
+		return fmt.Errorf("getting service account: %w", err)
 	}
 	return printDetailJSON(os.Stdout, body)
 }
@@ -3086,6 +3767,9 @@ var labelCapableListCommands = []string{
 	"machine list",
 	"network-security-group list",
 	"expected-machine list",
+	"expected-rack list",
+	"expected-switch list",
+	"expected-power-shelf list",
 	"infiniband-partition list",
 }
 

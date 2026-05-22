@@ -2316,7 +2316,7 @@ func Test_getAggregatedInstanceStatus(t *testing.T) {
 
 func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 	type fields struct {
-		MachineHealthIssue *APIMachineHealthIssueReport
+		MachineHealthIssue *APIMachineHealthIssue
 		IsRepairTenant     *bool
 	}
 	tests := []struct {
@@ -2327,7 +2327,7 @@ func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 		{
 			name: "test valid Instance delete request",
 			fields: fields{
-				MachineHealthIssue: &APIMachineHealthIssueReport{
+				MachineHealthIssue: &APIMachineHealthIssue{
 					Category: "Hardware",
 					Summary:  cdb.GetStrPtr("Test summary"),
 					Details:  cdb.GetStrPtr("Test details"),
@@ -2339,7 +2339,7 @@ func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 		{
 			name: "test invalid Instance delete request - invalid machine health issue category",
 			fields: fields{
-				MachineHealthIssue: &APIMachineHealthIssueReport{
+				MachineHealthIssue: &APIMachineHealthIssue{
 					Category: "Invalid",
 				},
 				IsRepairTenant: cdb.GetBoolPtr(true),
@@ -2349,7 +2349,7 @@ func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 		{
 			name: "test invalid Instance delete request - required machine health issue summary",
 			fields: fields{
-				MachineHealthIssue: &APIMachineHealthIssueReport{
+				MachineHealthIssue: &APIMachineHealthIssue{
 					Category: "Hardware",
 				},
 				IsRepairTenant: cdb.GetBoolPtr(true),
@@ -2359,7 +2359,7 @@ func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 		{
 			name: "test invalid Instance delete request - invalid category",
 			fields: fields{
-				MachineHealthIssue: &APIMachineHealthIssueReport{
+				MachineHealthIssue: &APIMachineHealthIssue{
 					Category: "Storage",
 					Summary:  cdb.GetStrPtr("Test summary"),
 					Details:  cdb.GetStrPtr(""),

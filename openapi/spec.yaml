@@ -222,6 +222,9 @@ tags:
   - name: Tray
     description: |-
       Tray represents a component within a Rack.
+  - name: Task
+    description: |-
+      Task represents an asynchronous, site-scoped operation (for example firmware update, power state change, or rack bring-up). Tasks are created when operations run against Racks, Trays, or other components. Endpoints in this tag retrieve or cancel a Task by ID; list Tasks for a Rack or Tray under the Rack and Tray tags.
   - name: Network Security Group
     description: |-
       Network Security Group is a security policy that controls the traffic flowing between Instances.
@@ -2007,12 +2010,13 @@ paths:
                     prefixLength: 20
                     protocolVersion: IPv4
                     usageStats:
-                      availableIPs: 256
+                      availableIPs: 4094
                       acquiredIPs: 2
                       availablePrefixes:
-                        - 192.168.201.0/24
-                      availableSmallestPrefixes: 64
-                      acquiredPrefixes: 0
+                        - 204.168.16.2/20
+                        - 204.168.16.4/20
+                      availableSmallestPrefixes: 2047
+                      acquiredPrefixes: 1
                     status: Pending
                     statusHistory:
                       - status: Pending
@@ -2927,6 +2931,13 @@ paths:
           name: includeRelation
           description: Related entity to expand
         - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: >-
+            When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
+        - schema:
             type: integer
             example: 1
             default: 1
@@ -3024,6 +3035,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: |-
+            When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
     delete:
       summary: Delete VPC Prefix
       operationId: delete-vpc-prefix
@@ -3159,6 +3177,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: |-
+            When true, each Subnet object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnets consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
         - schema:
             type: integer
             example: 1
@@ -3321,6 +3346,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: |-
+            When true, each Subnet object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnets consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
     delete:
       summary: Delete Subnet
       operationId: delete-subnet
@@ -7059,6 +7091,7 @@ paths:
                   machineHealthIssue:
                     category: Network
                     summary: Machine has DPU connectivity error
+                    details: Tenant observed repeated link flaps on the DPU uplink.
                   isRepairTenant: false
         description: Optional request data to report health issues with the underlying Machine
     patch:
@@ -9741,7 +9774,7 @@ paths:
 
         If no filter is specified, validates all racks in the Site. Filters can narrow the scope to specific racks by name or manufacturer.
 
-        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -9778,7 +9811,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 10
                 example-with-diffs:
                   value:
@@ -9802,7 +9835,7 @@ paths:
                               macAddress: 'AA:BB:CC:DD:EE:01'
                               ipAddress: 10.0.0.101
                           powerState: 'on'
-                      - type: Drift
+                      - type: Mismatch
                         id: 770e8400-e29b-41d4-a716-446655440002
                         componentId: comp-2
                         fieldDiffs:
@@ -9812,7 +9845,7 @@ paths:
                     totalDiffs: 2
                     missingCount: 1
                     unexpectedCount: 0
-                    driftCount: 1
+                    mismatchCount: 1
                     matchCount: 8
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -9841,7 +9874,7 @@ paths:
       description: |-
         Validate a Rack's components by comparing expected vs actual state.
 
-        Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the rack's expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -9866,7 +9899,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 5
                 example-with-diffs:
                   value:
@@ -9890,7 +9923,7 @@ paths:
                               macAddress: 'AA:BB:CC:DD:EE:01'
                               ipAddress: 10.0.0.101
                           powerState: 'on'
-                      - type: Drift
+                      - type: Mismatch
                         id: 770e8400-e29b-41d4-a716-446655440002
                         componentId: comp-2
                         fieldDiffs:
@@ -9900,7 +9933,7 @@ paths:
                     totalDiffs: 2
                     missingCount: 1
                     unexpectedCount: 0
-                    driftCount: 1
+                    mismatchCount: 1
                     matchCount: 3
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -10234,7 +10267,7 @@ paths:
           $ref: '#/components/responses/ForbiddenError'
       tags:
         - Rack
-  '/v2/org/{org}/nico/rack/task/{id}':
+  '/v2/org/{org}/nico/task/{id}':
     parameters:
       - schema:
           type: string
@@ -10251,9 +10284,12 @@ paths:
         description: UUID of the Task
     get:
       summary: Retrieve a Task
-      operationId: get-rack-task
+      operationId: get-task
       description: |-
         Get a Task by UUID.
+
+        The same handler is also mounted at `/v2/org/{org}/nico/rack/task/{id}` for
+        backward compatibility; prefer this path for new clients.
 
         Tasks are site-scoped; `siteId` must be the Site where the task was created.
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
@@ -10286,8 +10322,8 @@ paths:
         '404':
           $ref: '#/components/responses/NotFoundError'
       tags:
-        - Rack
-  '/v2/org/{org}/nico/rack/task/{id}/cancel':
+        - Task
+  '/v2/org/{org}/nico/task/{id}/cancel':
     parameters:
       - schema:
           type: string
@@ -10304,9 +10340,12 @@ paths:
         description: UUID of the Task
     post:
       summary: Cancel a Task
-      operationId: cancel-rack-task
+      operationId: cancel-task
       description: |-
         Cancel a Task.
+
+        The same handler is also mounted at `/v2/org/{org}/nico/rack/task/{id}/cancel`
+        for backward compatibility; prefer this path for new clients.
 
         Cancellation is best-effort and idempotent: tasks in non-terminal
         states (`Pending`, `Running`, `Waiting`) are marked `Terminated`
@@ -10317,7 +10356,7 @@ paths:
 
         Tasks are site-scoped; `siteId` must be the Site where the task was
         created. Org must have an Infrastructure Provider entity. User must
-        have `FORGE_PROVIDER_ADMIN` authorization role.
+        have authorization role with `PROVIDER_ADMIN` suffix.
       requestBody:
         required: true
         content:
@@ -10338,10 +10377,10 @@ paths:
       responses:
         '202':
           description: |-
-            Accepted. The cancellation request was accepted and the task as
-            last reported by Flow is returned. Clients should `GET` the task
-            to observe the final state, since cancellation is best-effort
-            and the underlying workflow may still be terminating.
+            Accepted. The cancellation request was accepted and the Task's
+            last known state is returned. Clients should `GET` the task to
+            observe the final state, since cancellation is best-effort and
+            the operation may still be terminating.
           content:
             application/json:
               schema:
@@ -10353,6 +10392,83 @@ paths:
                     status: Terminated
                     description: Power on rack components
                     message: Cancelled by user
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+      tags:
+        - Task
+  '/v2/org/{org}/nico/rack/{id}/task':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Rack
+    get:
+      summary: Retrieve all Tasks for a Rack
+      operationId: get-rack-tasks
+      description: |-
+        List Tasks targeting the specified Rack.
+
+        Tasks are site-scoped; `siteId` must be the Site that owns the Rack. Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        Filters compose with AND: setting `activeOnly=true` restricts the result to tasks that are still in a non-terminal state (`Pending`, `Running`, `Waiting`). Results are paginated; the `X-Pagination` response header reports the total count over the post-filter set.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the Rack.
+        - schema:
+            type: boolean
+            default: false
+          name: activeOnly
+          in: query
+          description: Restrict results to non-terminal Tasks.
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RackTask'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":2}'
+              description: Pagination result in JSON format
         '400':
           $ref: '#/components/responses/ValidationError'
         '403':
@@ -10572,7 +10688,7 @@ paths:
 
         If no filter is specified, validates all trays in the Site. Use rackId/rackName to scope to a specific rack, and name/manufacturer/type to filter by tray attributes.
 
-        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -10646,7 +10762,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 10
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -10675,7 +10791,7 @@ paths:
       description: |-
         Validate a Tray by comparing expected vs actual state.
 
-        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and drifted components.
+        Compares the expected component configuration against the actual state. Returns a detailed diff report showing missing, extra, and mismatched components.
 
         Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
       parameters:
@@ -10700,7 +10816,7 @@ paths:
                     totalDiffs: 0
                     missingCount: 0
                     unexpectedCount: 0
-                    driftCount: 0
+                    mismatchCount: 0
                     matchCount: 5
         '400':
           $ref: '#/components/responses/ValidationError'
@@ -10932,6 +11048,83 @@ paths:
           $ref: '#/components/responses/ValidationError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+      tags:
+        - Tray
+  '/v2/org/{org}/nico/tray/{id}/task':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: id
+        in: path
+        required: true
+        description: UUID of the Tray
+    get:
+      summary: Retrieve all Tasks for a Tray
+      operationId: get-tray-tasks
+      description: |-
+        List Tasks targeting the specified Tray.
+
+        Tasks are site-scoped; `siteId` must be the Site that owns the Tray. Org must have an Infrastructure Provider entity. User must have authorization role with `PROVIDER_ADMIN` suffix.
+
+        Filters compose with AND: setting `activeOnly=true` restricts the result to tasks that are still in a non-terminal state (`Pending`, `Running`, `Waiting`). Results are paginated; the `X-Pagination` response header reports the total count over the post-filter set.
+      parameters:
+        - schema:
+            type: string
+            format: uuid
+          name: siteId
+          in: query
+          required: true
+          description: ID of the Site that owns the Tray.
+        - schema:
+            type: boolean
+            default: false
+          name: activeOnly
+          in: query
+          description: Restrict results to non-terminal Tasks.
+        - schema:
+            type: integer
+            example: 1
+            default: 1
+            minimum: 1
+          in: query
+          name: pageNumber
+          description: Page number for pagination query
+        - schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            example: 20
+          in: query
+          name: pageSize
+          description: Page size for pagination query
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RackTask'
+          headers:
+            X-Pagination:
+              schema:
+                type: string
+                example: '{"pageNumber":1,"pageSize":20,"total":2}'
+              description: Pagination result in JSON format
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
       tags:
         - Tray
   '/v2/org/{org}/nico/network-security-group':
@@ -13792,10 +13985,18 @@ components:
           siteId: ea144def-d68f-44c3-9485-4b103fa2686f
           vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
           tenantId: f97df110-f4de-492e-8849-4a6af68026b0
-          prefix: 192.168.1.0/24
+          prefix: 192.168.1.0/26
           ipBlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
-          prefixLength: 20
+          prefixLength: 26
           status: Ready
+          usageStats:
+            availableIPs: 58
+            acquiredIPs: 6
+            availablePrefixes:
+              - 192.168.1.4/31
+              - 192.168.1.8/31
+            availableSmallestPrefixes: 29
+            acquiredPrefixes: 3
           statusHistory:
             - status: Ready
               message: 'Received VPC prefix creation request, ready'
@@ -13846,6 +14047,11 @@ components:
           $ref: '#/components/schemas/VpcPrefixStatus'
           readOnly: true
           description: Status of the VPC Prefix
+        usageStats:
+          $ref: '#/components/schemas/IpBlockUsageStats'
+          readOnly: true
+          description: |-
+            Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
         statusHistory:
           type: array
           items:
@@ -13944,6 +14150,41 @@ components:
               updated: '2019-08-24T14:15:22Z'
           created: '2019-08-24T14:15:22Z'
           updated: '2019-08-24T14:15:22Z'
+        - id: 82e4c3a7-5b4d-4c8e-a2f1-1c09d06e9120
+          name: inference-training-net
+          description: Provisioned subnet with IPv4 usage (includeUsageStats=true)
+          siteId: ea144def-d68f-44c3-9485-4b103fa2686f
+          vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
+          tenantId: f97df110-f4de-492e-8849-4a6af68026b0
+          controllerNetworkSegmentId: abe7b0e8-67db-4e89-903e-fc4f2bd7f034
+          ipv4Prefix: 204.168.16.0
+          ipv4BlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
+          ipv4Gateway: 204.168.16.1
+          ipv6Prefix: null
+          ipv6BlockId: null
+          ipv6Gateway: null
+          prefixLength: 20
+          routingType: Public
+          status: Ready
+          usageStats:
+            availableIPs: 4088
+            acquiredIPs: 6
+            availablePrefixes:
+              - 204.168.16.6/31
+              - 204.168.16.8/31
+            availableSmallestPrefixes: 2044
+            acquiredPrefixes: 0
+          statusHistory:
+            - status: Ready
+              message: Subnet has been successfully provisioned on Site
+              created: '2019-08-24T16:02:38Z'
+              updated: '2019-08-24T16:02:38Z'
+            - status: Pending
+              message: 'Request received, pending processing'
+              created: '2019-08-24T14:15:22Z'
+              updated: '2019-08-24T14:15:22Z'
+          created: '2019-08-24T14:15:22Z'
+          updated: '2019-08-24T16:02:38Z'
       properties:
         id:
           type: string
@@ -14020,6 +14261,11 @@ components:
         status:
           $ref: '#/components/schemas/SubnetStatus'
           readOnly: true
+        usageStats:
+          $ref: '#/components/schemas/IpBlockUsageStats'
+          readOnly: true
+          description: |-
+            Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnet consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
         statusHistory:
           type: array
           items:
@@ -15621,6 +15867,7 @@ components:
         - Configuring
         - Ready
         - Updating
+        - Repairing
         - Rebooting
         - Terminating
         - Error
@@ -16171,6 +16418,7 @@ components:
         - machineHealthIssue:
             category: Network
             summary: Machine has DPU connectivity error
+            details: Tenant observed repeated link flaps on the DPU uplink.
           isRepairTenant: false
       description: Request data to delete Instance
       properties:
@@ -16182,32 +16430,6 @@ components:
             - boolean
             - 'null'
           description: Should be set to true for Tenants who are performing investigation/repairing the Machine. Otherwise omit or set to false
-    MachineHealthIssue:
-      title: MachineHealthIssue
-      type: object
-      examples:
-        - category: Network
-          summary: Machine has DPU connectivity error
-      description: Data describing health issue with a Machine
-      properties:
-        category:
-          type: string
-          enum:
-            - Hardware
-            - Network
-            - Performance
-            - Other
-          description: Category of the issue
-        summary:
-          type:
-            - string
-            - 'null'
-          description: Short summary describing the issue
-        details:
-          type:
-            - string
-            - 'null'
-          description: Details about the issue helpful for diagnosis
     Interface:
       title: Interface
       type: object
@@ -16745,7 +16967,7 @@ components:
         unexpectedCount:
           type: integer
           description: Number of components found in the source system but not expected
-        driftCount:
+        mismatchCount:
           type: integer
           description: Number of components present in both but with field differences
         matchCount:
@@ -16758,12 +16980,12 @@ components:
       properties:
         type:
           type: string
-          description: 'Type of difference: Unknown, Missing, Unexpected, or Drift'
+          description: 'Type of difference: Unknown, Missing, Unexpected, or Mismatch'
           enum:
             - Unknown
             - Missing
             - Unexpected
-            - Drift
+            - Mismatch
         id:
           type: string
           format: uuid
@@ -16777,7 +16999,7 @@ components:
           $ref: '#/components/schemas/RackComponent'
         fieldDiffs:
           type: array
-          description: List of field differences (populated when type is DiffTypeDrift)
+          description: List of field differences (populated when type is Mismatch)
           items:
             $ref: '#/components/schemas/FieldDiff'
     FieldDiff:
@@ -16812,7 +17034,7 @@ components:
           description: ID of the rack this component belongs to
         type:
           type: string
-          description: Type of the component (e.g. ComponentTypeCompute, ComponentTypeNvlswitch)
+          description: Type of the component (e.g. ComponentTypeCompute, ComponentTypeNVSwitch)
         name:
           type: string
           description: Name of the component
@@ -16865,7 +17087,7 @@ components:
     Tray:
       title: Tray
       type: object
-      description: 'Tray represents a component within a rack (e.g. compute node, NVL switch, power shelf)'
+      description: 'Tray represents a component within a rack (e.g. compute node, NVSwitch, power shelf)'
       examples:
         - id: 660e8400-e29b-41d4-a716-446655440001
           componentId: fm100ht4v4mce2qstjnl8970nnj3ie6ecek4mtjn27pea4kre5gsa49jg0g
@@ -17172,6 +17394,42 @@ components:
             - string
             - 'null'
           description: Target firmware version.
+        targets:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            enum:
+              - bmc
+              - cpld
+              - bios
+              - nvos
+              - pmc
+              - psu
+          description: |-
+            Optional subset of firmware targets to update within each matched tray.
+            Names are lowercase and select sub-parts of the tray
+            (BMC, BIOS, etc.). The accepted set per tray type comes from
+            the Flow service's NICo proto bindings (which mirror Core's
+            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            so the supported values track Core as new sub-parts are added:
+              - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
+              - powershelf trays (PowerShelfComponent): currently pmc, psu
+              - compute trays (ComputeTrayComponent): currently bmc, bios
+                (currently NOT honored end-to-end: the NICo compute-firmware
+                path goes through SetFirmwareUpdateTimeWindow + auto-update,
+                which has no per-target selection; the request is logged
+                and the whole bundle is applied. Will be honored once
+                compute moves to UpdateComponentFirmware.)
+            Omitted or empty means "update everything in the bundle"
+            (the historical default). Unknown names are rejected.
+            Requires `version` to be set.
+      examples:
+        - siteId: 550e8400-e29b-41d4-a716-446655440000
+          filter:
+            type: switch
+          version: '24.11.0'
+          targets: [bmc, nvos]
     UpdatePowerStateRequest:
       title: UpdatePowerStateRequest
       type: object
@@ -17236,9 +17494,42 @@ components:
             - string
             - 'null'
           description: Target firmware version.
+        targets:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            enum:
+              - bmc
+              - cpld
+              - bios
+              - nvos
+              - pmc
+              - psu
+          description: |-
+            Optional subset of firmware targets to update within the targeted tray.
+            Names are lowercase and select sub-parts of the tray
+            (BMC, BIOS, etc.). The accepted set per tray type comes from
+            the Flow service's NICo proto bindings (which mirror Core's
+            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            so the supported values track Core as new sub-parts are added:
+              - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
+              - powershelf trays (PowerShelfComponent): currently pmc, psu
+              - compute trays (ComputeTrayComponent): currently bmc, bios
+                (currently NOT honored end-to-end: the NICo compute-firmware
+                path goes through SetFirmwareUpdateTimeWindow + auto-update,
+                which has no per-target selection; the request is logged
+                and the whole bundle is applied. Will be honored once
+                compute moves to UpdateComponentFirmware.)
+            Omitted or empty means "update everything in the bundle"
+            (the historical default). Unknown names are rejected.
+            Requires `version` to be set.
       examples:
         - siteId: 550e8400-e29b-41d4-a716-446655440000
           version: '24.11.0'
+        - siteId: 550e8400-e29b-41d4-a716-446655440000
+          version: '24.11.0'
+          targets: [bmc, nvos]
         - siteId: 550e8400-e29b-41d4-a716-446655440000
     FirmwareUpdateResponse:
       title: FirmwareUpdateResponse
@@ -17504,6 +17795,83 @@ components:
         status:
           $ref: '#/components/schemas/MachineStatus'
           readOnly: true
+    MachineHealthIssue:
+      title: MachineHealthIssue
+      type: object
+      required:
+        - category
+        - summary
+        - details
+      properties:
+        category:
+          type: string
+          enum:
+            - Hardware
+            - Network
+            - Performance
+            - Storage
+            - Software
+            - Other
+          description: High-level category for the tenant-reported issue.
+        summary:
+          type:
+            - string
+            - 'null'
+          maxLength: 512
+          description: Brief description of the issue for operators.
+        details:
+          type:
+            - string
+            - 'null'
+          maxLength: 8192
+          description: Diagnostic information, logs, ticket numbers, etc.
+    MachineOnlineRepairPolicy:
+      title: MachineOnlineRepairPolicy
+      type: object
+      required:
+        - allowAutoInstanceDeletionOnFailure
+      properties:
+        allowAutoInstanceDeletionOnFailure:
+          type: boolean
+          description: When true, escalation to offline breakfix (permanent delete / deallocate) is allowed if online repair cannot be completed.
+    MachineOnlineRepairAcknowledgments:
+      title: MachineOnlineRepairAcknowledgments
+      type: object
+      required:
+        - acceptDataCorruptionRisk
+        - acceptRepairTeamAccess
+        - acceptInstanceDeletionRisk
+      properties:
+        acceptDataCorruptionRisk:
+          type: boolean
+          enum: [true]
+          description: Tenant confirms data may be corrupted during repair.
+        acceptRepairTeamAccess:
+          type: boolean
+          enum: [true]
+          description: Tenant confirms the dedicated repair team will have access to the instance.
+        acceptInstanceDeletionRisk:
+          type: boolean
+          enum: [true]
+          description: Tenant confirms risk of instance deletion if escalation to offline breakfix occurs.
+    MachineOnlineRepair:
+      title: MachineOnlineRepair
+      type: object
+      required:
+        - enabled
+      description: |-
+        Enable or disable online repair of a Machine. Online repair facilitates repairing a Machine without the Tenant having to release the Machine by deleting the Instance. When `enabled` is true, `policy` and `acknowledgments` are required inside this object,
+        and `healthIssue` is required at the top level of the MachineUpdateRequest. When `enabled` is false, none of those fields may be set.
+      properties:
+        enabled:
+          type: boolean
+          description: |-
+            When true, initiates the online repair process: applies the tenant-reported OnlineRepair health override on the Machine and sets the associated Instance status to Repairing.
+            When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
+        policy:
+          $ref: '#/components/schemas/MachineOnlineRepairPolicy'
+        acknowledgments:
+          $ref: '#/components/schemas/MachineOnlineRepairAcknowledgments'
     MachineUpdateRequest:
       title: MachineUpdateRequest
       type: object
@@ -17517,7 +17885,19 @@ components:
             RackIdentifier: GVX11F01C02
             ServerName: SITE1-C03-Server-02
             RepairStatus: InProgress
-      description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates and labels updates must be specified in separate requests. They cannot be proceessed at the same time.'
+        - onlineRepair:
+            enabled: true
+            policy:
+              allowAutoInstanceDeletionOnFailure: false
+            acknowledgments:
+              acceptDataCorruptionRisk: true
+              acceptRepairTeamAccess: true
+              acceptInstanceDeletionRisk: true
+        - healthIssue:
+            category: Storage
+            summary: Disk errors on OSD
+            details: 'Ticket FORGE-12345; smartctl logs attached'
+      description: 'Request data to update Machine. Instance Type attribute updates, maintenance attribute updates, labels updates, and in-pool online repair (enter or exit) must be specified in separate requests. They cannot be processed at the same time.'
       properties:
         instanceTypeId:
           type:
@@ -17547,6 +17927,11 @@ components:
         labels:
           description: 'Machine labels will be overwritten, include existing labels to preserve them. Can be updated by Provider or Privileged Tenant.'
           $ref: '#/components/schemas/Labels'
+        onlineRepair:
+          $ref: '#/components/schemas/MachineOnlineRepair'
+        healthIssue:
+          description: Required when `onlineRepair.enabled` is true. Must not be set when exiting online repair (`onlineRepair.enabled` false).
+          $ref: '#/components/schemas/MachineHealthIssue'
     MachineInterface:
       title: MachineInterface
       type: object
@@ -19685,13 +20070,15 @@ components:
         availablePrefixes:
           type: array
           format: uuid
-          description: Example prefixes available to acquire
+          description: |
+            Example prefixes available to acquire
           items:
             type: string
             readOnly: true
         availableSmallestPrefixes:
           type: integer
-          description: Number of smallest prefixes available to acquire
+          description: |
+            Number of smallest prefixes available to acquire
           format: int64
           readOnly: true
         acquiredPrefixes:
