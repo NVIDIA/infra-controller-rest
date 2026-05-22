@@ -48,7 +48,8 @@ func runLeakDetectionOne(
 	for _, machineID := range leakingMachineIds {
 		log.Info().Msgf("Leaking machine ID: %s, submitting force power-off task", machineID)
 
-		if err := submitPowerOffTask(ctx, taskMgr, machineID, devicetypes.ComponentTypeCompute); err != nil {
+		err := submitPowerOffTask(ctx, taskMgr, machineID, devicetypes.ComponentTypeCompute)
+		if err != nil {
 			log.Error().Err(err).Str("machine_id", machineID).
 				Msg("Failed to submit power-off task for leaking machine")
 		}
@@ -65,7 +66,8 @@ func runLeakDetectionOne(
 	for _, switchID := range leakingSwitchIds {
 		log.Info().Msgf("Leaking switch ID: %s, submitting force power-off task", switchID)
 
-		if err := submitPowerOffTask(ctx, taskMgr, switchID, devicetypes.ComponentTypeNVSwitch); err != nil {
+		err := submitPowerOffTask(ctx, taskMgr, switchID, devicetypes.ComponentTypeNVSwitch)
+		if err != nil {
 			log.Error().Err(err).Str("switch_id", switchID).
 				Msg("Failed to submit power-off task for leaking switch")
 		}
