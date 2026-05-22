@@ -2311,17 +2311,12 @@ func cmdTenantAccountList(s *Session, _ []string) error {
 }
 
 func cmdTenantAccountCreate(s *Session, _ []string) error {
-	infrastructureProviderID, err := PromptText("Infrastructure provider ID", true)
-	if err != nil {
-		return err
-	}
 	tenantOrg, err := PromptText("Tenant org", true)
 	if err != nil {
 		return err
 	}
 	body := map[string]interface{}{
-		"infrastructureProviderId": strings.TrimSpace(infrastructureProviderID),
-		"tenantOrg":                strings.TrimSpace(tenantOrg),
+		"tenantOrg": strings.TrimSpace(tenantOrg),
 	}
 	LogCmd(s, "tenant-account", "create", "--tenant-org", strings.TrimSpace(tenantOrg))
 	bodyJSON, _ := json.Marshal(body)

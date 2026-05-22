@@ -32,8 +32,7 @@ type APITenantAccountCreateRequest struct {
 func (tacr APITenantAccountCreateRequest) Validate() error {
 	return validation.ValidateStruct(&tacr,
 		validation.Field(&tacr.InfrastructureProviderID,
-			validation.Required.Error(validationErrorValueRequired),
-			validationis.UUID.Error(validationErrorInvalidUUID)),
+			validation.When(tacr.InfrastructureProviderID != "", validationis.UUID.Error(validationErrorInvalidUUID))),
 		validation.Field(&tacr.TenantID,
 			validation.When(tacr.TenantOrg == nil, validation.Required.Error(validationErrorTenantIDOrOrgRequired)),
 			validationis.UUID.Error(validationErrorInvalidUUID)),
