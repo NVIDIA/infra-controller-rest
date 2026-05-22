@@ -1829,6 +1829,17 @@ func TestMachineHandler_Update(t *testing.T) {
 		require.NoError(t, uerr)
 	}
 
+	assertOnlineRepairLatestStatusDetail := func(t *testing.T, wantStatus, wantMessage string) {
+		t.Helper()
+		sdDAO := cdbm.NewStatusDetailDAO(dbSession)
+		recent, rerr := sdDAO.GetRecentByEntityIDs(context.Background(), nil, []string{iOnlineRepairReady.ID.String()}, 1)
+		require.NoError(t, rerr)
+		require.Len(t, recent, 1)
+		assert.Equal(t, wantStatus, recent[0].Status)
+		require.NotNil(t, recent[0].Message)
+		assert.Equal(t, wantMessage, *recent[0].Message)
+	}
+
 	mit1 := common.TestBuildMachineInstanceType(t, dbSession, m, instanceType1)
 	assert.NotNil(t, mit1)
 
@@ -2485,6 +2496,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
 					assert.Equal(t, "false", inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion])
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is being repaired on Site")
 				},
 			},
 		},
@@ -2510,6 +2522,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
 					assert.Equal(t, "true", inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion])
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is being repaired on Site")
 				},
 			},
 		},
@@ -2536,6 +2549,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
 					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
 					assert.False(t, has)
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
 				},
 			},
 		},
@@ -2560,6 +2574,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is being repaired on Site")
 				},
 			},
 		},
