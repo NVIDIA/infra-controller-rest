@@ -396,7 +396,6 @@ func (a *IPBlockAPIService) GetAllDerivedIpblockExecute(r ApiGetAllDerivedIpbloc
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
 		var defaultValue int32 = 1
-		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", defaultValue, "form", "")
 		r.pageNumber = &defaultValue
 	}
 	if r.pageSize != nil {
@@ -485,13 +484,15 @@ type ApiGetAllIpblockRequest struct {
 	orderBy                  *string
 }
 
-// Filter IP Blocks by Infrastructure Provider ID
+// Filter IP Blocks by Infrastructure Provider ID. Deprecated: Infrastructure Provider is now inferred from the org&#39;s membership.
+// Deprecated
 func (r ApiGetAllIpblockRequest) InfrastructureProviderId(infrastructureProviderId string) ApiGetAllIpblockRequest {
 	r.infrastructureProviderId = &infrastructureProviderId
 	return r
 }
 
-// Filter IP Blocks by Tenant ID
+// Filter IP Blocks by Tenant ID. Deprecated: Tenant is now inferred from the org&#39;s membership.
+// Deprecated
 func (r ApiGetAllIpblockRequest) TenantId(tenantId string) ApiGetAllIpblockRequest {
 	r.tenantId = &tenantId
 	return r
@@ -554,7 +555,7 @@ GetAllIpblock Retrieve all IP Blocks
 
 Retrieve all IP blocks for the org.
 
-User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix. `infrastructureProviderId` or `tenantId` query param may be required for older API versions.
+Provider and Tenant roles are inferred from the org's membership. User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -616,7 +617,6 @@ func (a *IPBlockAPIService) GetAllIpblockExecute(r ApiGetAllIpblockRequest) ([]I
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
 		var defaultValue int32 = 1
-		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", defaultValue, "form", "")
 		r.pageNumber = &defaultValue
 	}
 	if r.pageSize != nil {
@@ -700,13 +700,15 @@ type ApiGetIpblockRequest struct {
 	includeRelation          *string
 }
 
-// Filter IP Blocks by Infrastructure Provider ID
+// Filter IP Blocks by Infrastructure Provider ID. Deprecated: Infrastructure Provider is now inferred from the org&#39;s membership.
+// Deprecated
 func (r ApiGetIpblockRequest) InfrastructureProviderId(infrastructureProviderId string) ApiGetIpblockRequest {
 	r.infrastructureProviderId = &infrastructureProviderId
 	return r
 }
 
-// Filter IP Blocks by Tenant ID
+// Filter IP Blocks by Tenant ID. Deprecated: Tenant is now inferred from the org&#39;s membership.
+// Deprecated
 func (r ApiGetIpblockRequest) TenantId(tenantId string) ApiGetIpblockRequest {
 	r.tenantId = &tenantId
 	return r
@@ -733,7 +735,7 @@ GetIpblock Retrieve IP Block
 
 Retrieve an IP Block by ID.
 
-User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
+Provider and Tenant roles are inferred from the org's membership. User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix.
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org

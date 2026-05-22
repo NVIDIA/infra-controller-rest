@@ -293,7 +293,7 @@ type ApiGetAllAllocationRequest struct {
 	orderBy                  *string
 }
 
-// Filter Allocations by Infrastructure Provider ID.
+// Filter Allocations by Infrastructure Provider ID. Deprecated: Infrastructure Provider is now inferred from the org&#39;s membership.
 // Deprecated
 func (r ApiGetAllAllocationRequest) InfrastructureProviderId(infrastructureProviderId string) ApiGetAllAllocationRequest {
 	r.infrastructureProviderId = &infrastructureProviderId
@@ -463,7 +463,6 @@ func (a *AllocationAPIService) GetAllAllocationExecute(r ApiGetAllAllocationRequ
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
 		var defaultValue int32 = 1
-		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", defaultValue, "form", "")
 		r.pageNumber = &defaultValue
 	}
 	if r.pageSize != nil {
@@ -546,14 +545,14 @@ type ApiGetAllocationRequest struct {
 	includeRelation          *string
 }
 
-// Filter Allocations by Infrastructure Provider ID.
+// Filter Allocations by Infrastructure Provider ID. Deprecated: Infrastructure Provider is now inferred from the org&#39;s membership.
 // Deprecated
 func (r ApiGetAllocationRequest) InfrastructureProviderId(infrastructureProviderId string) ApiGetAllocationRequest {
 	r.infrastructureProviderId = &infrastructureProviderId
 	return r
 }
 
-// Filter Allocations by Tenant ID.
+// Filter Allocations by Tenant ID. Deprecated: Tenant is now inferred from the org&#39;s membership.
 // Deprecated
 func (r ApiGetAllocationRequest) TenantId(tenantId string) ApiGetAllocationRequest {
 	r.tenantId = &tenantId

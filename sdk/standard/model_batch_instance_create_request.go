@@ -30,8 +30,9 @@ type BatchInstanceCreateRequest struct {
 	Count int32 `json:"count"`
 	// Description applied to all instances in the batch, optional
 	Description NullableString `json:"description,omitempty"`
-	// ID of the Tenant creating the Instances
-	TenantId string `json:"tenantId"`
+	// Deprecated; inferred from the caller's org Tenant when omitted. When provided, the value must match the org's Tenant — mismatched values are rejected with 400.
+	// Deprecated
+	TenantId *string `json:"tenantId,omitempty"`
 	// ID of the Instance Type to use for all Instances in the batch
 	InstanceTypeId string `json:"instanceTypeId"`
 	// ID of the VPC the Instances should belong to
@@ -73,11 +74,10 @@ type _BatchInstanceCreateRequest BatchInstanceCreateRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewBatchInstanceCreateRequest(namePrefix string, count int32, tenantId string, instanceTypeId string, vpcId string) *BatchInstanceCreateRequest {
+func NewBatchInstanceCreateRequest(namePrefix string, count int32, instanceTypeId string, vpcId string) *BatchInstanceCreateRequest {
 	this := BatchInstanceCreateRequest{}
 	this.NamePrefix = namePrefix
 	this.Count = count
-	this.TenantId = tenantId
 	this.InstanceTypeId = instanceTypeId
 	this.VpcId = vpcId
 	var topologyOptimized bool = true
@@ -186,28 +186,39 @@ func (o *BatchInstanceCreateRequest) UnsetDescription() {
 	o.Description.Unset()
 }
 
-// GetTenantId returns the TenantId field value
+// GetTenantId returns the TenantId field value if set, zero value otherwise.
+// Deprecated
 func (o *BatchInstanceCreateRequest) GetTenantId() string {
-	if o == nil {
+	if o == nil || IsNil(o.TenantId) {
 		var ret string
 		return ret
 	}
-
-	return o.TenantId
+	return *o.TenantId
 }
 
-// GetTenantIdOk returns a tuple with the TenantId field value
+// GetTenantIdOk returns a tuple with the TenantId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// Deprecated
 func (o *BatchInstanceCreateRequest) GetTenantIdOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.TenantId) {
 		return nil, false
 	}
-	return &o.TenantId, true
+	return o.TenantId, true
 }
 
-// SetTenantId sets field value
+// HasTenantId returns a boolean if a field has been set.
+func (o *BatchInstanceCreateRequest) HasTenantId() bool {
+	if o != nil && !IsNil(o.TenantId) {
+		return true
+	}
+
+	return false
+}
+
+// SetTenantId gets a reference to the given string and assigns it to the TenantId field.
+// Deprecated
 func (o *BatchInstanceCreateRequest) SetTenantId(v string) {
-	o.TenantId = v
+	o.TenantId = &v
 }
 
 // GetInstanceTypeId returns the InstanceTypeId field value
@@ -797,7 +808,9 @@ func (o BatchInstanceCreateRequest) ToMap() (map[string]interface{}, error) {
 	if o.Description.IsSet() {
 		toSerialize["description"] = o.Description.Get()
 	}
-	toSerialize["tenantId"] = o.TenantId
+	if !IsNil(o.TenantId) {
+		toSerialize["tenantId"] = o.TenantId
+	}
 	toSerialize["instanceTypeId"] = o.InstanceTypeId
 	toSerialize["vpcId"] = o.VpcId
 	if !IsNil(o.SecondaryVpcIds) {
@@ -855,7 +868,6 @@ func (o *BatchInstanceCreateRequest) UnmarshalJSON(data []byte) (err error) {
 	requiredProperties := []string{
 		"namePrefix",
 		"count",
-		"tenantId",
 		"instanceTypeId",
 		"vpcId",
 	}

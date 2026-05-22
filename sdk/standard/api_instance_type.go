@@ -547,14 +547,14 @@ func (r ApiGetAllInstanceTypeRequest) SiteId(siteId string) ApiGetAllInstanceTyp
 	return r
 }
 
-// Filter Instance Types by Infrastructure Provider ID.
+// Filter Instance Types by Infrastructure Provider ID. Deprecated: Infrastructure Provider is now inferred from the org&#39;s membership.
 // Deprecated
 func (r ApiGetAllInstanceTypeRequest) InfrastructureProviderId(infrastructureProviderId string) ApiGetAllInstanceTypeRequest {
 	r.infrastructureProviderId = &infrastructureProviderId
 	return r
 }
 
-// Filter Instance Types by Tenant ID.
+// Filter Instance Types by Tenant ID. Deprecated: Tenant is now inferred from the org&#39;s membership.
 // Deprecated
 func (r ApiGetAllInstanceTypeRequest) TenantId(tenantId string) ApiGetAllInstanceTypeRequest {
 	r.tenantId = &tenantId
@@ -694,7 +694,6 @@ func (a *InstanceTypeAPIService) GetAllInstanceTypeExecute(r ApiGetAllInstanceTy
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
 		var defaultValue int32 = 1
-		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", defaultValue, "form", "")
 		r.pageNumber = &defaultValue
 	}
 	if r.pageSize != nil {
@@ -803,6 +802,8 @@ func (r ApiGetInstanceTypeRequest) Execute() (*InstanceType, *http.Response, err
 GetInstanceType Retrieve an Instance Type
 
 Get an Instance Type by ID.
+
+Provider and Tenant roles are inferred from the org's membership.
 
 If the org has an Infrastructure Provider entity that owns the Instance Type, then the Instance Type detail is returned. User must have authorization role with `PROVIDER_ADMIN` suffix.
 
@@ -1000,7 +1001,6 @@ func (a *InstanceTypeAPIService) GetInstanceTypeMachineAssociationExecute(r ApiG
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
 		var defaultValue int32 = 1
-		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", defaultValue, "form", "")
 		r.pageNumber = &defaultValue
 	}
 	if r.pageSize != nil {

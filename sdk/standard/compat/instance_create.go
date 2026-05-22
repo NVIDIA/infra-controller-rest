@@ -17,28 +17,35 @@ package compat
 import standard "github.com/NVIDIA/infra-controller-rest/sdk/standard"
 
 // NewInstanceCreateRequestWithInterfaces preserves the pre-`auto`
-// `NewInstanceCreateRequest` signature, which took an explicit
-// `interfaces` argument before that field became optional on the
+// `NewInstanceCreateRequest` signature, which took explicit `tenantId`
+// and `interfaces` arguments before those fields became optional on the
 // REST API. Callers should migrate to
-// `standard.NewInstanceCreateRequest(name, tenantId, vpcId)` followed
-// by `SetInterfaces` (or `SetAutoNetwork` for zero-DPU instances).
+// `standard.NewInstanceCreateRequest(name, vpcId)`, optionally
+// `SetTenantId`, then `SetInterfaces` (or `SetAutoNetwork` for zero-DPU
+// instances).
 //
 // Deprecated: use `standard.NewInstanceCreateRequest` + `SetInterfaces`.
 func NewInstanceCreateRequestWithInterfaces(name, tenantID, vpcID string, interfaces []standard.InterfaceCreateRequest) *standard.InstanceCreateRequest {
-	req := standard.NewInstanceCreateRequest(name, tenantID, vpcID)
+	req := standard.NewInstanceCreateRequest(name, vpcID)
+	if tenantID != "" {
+		req.SetTenantId(tenantID)
+	}
 	req.SetInterfaces(interfaces)
 	return req
 }
 
 // NewBatchInstanceCreateRequestWithInterfaces preserves the pre-`auto`
-// `NewBatchInstanceCreateRequest` signature, which took an explicit
-// `interfaces` argument before that field became optional. Callers
-// should migrate to `standard.NewBatchInstanceCreateRequest(...)`
-// followed by `SetInterfaces` (or `SetAutoNetwork` for zero-DPU batches).
+// `NewBatchInstanceCreateRequest` signature, which took explicit `tenantId`
+// and `interfaces` arguments before those fields became optional. Callers
+// should migrate to `standard.NewBatchInstanceCreateRequest(...)`, optionally
+// `SetTenantId`, then `SetInterfaces` (or `SetAutoNetwork` for zero-DPU batches).
 //
 // Deprecated: use `standard.NewBatchInstanceCreateRequest` + `SetInterfaces`.
 func NewBatchInstanceCreateRequestWithInterfaces(namePrefix string, count int32, tenantID, instanceTypeID, vpcID string, interfaces []standard.InterfaceCreateRequest) *standard.BatchInstanceCreateRequest {
-	req := standard.NewBatchInstanceCreateRequest(namePrefix, count, tenantID, instanceTypeID, vpcID)
+	req := standard.NewBatchInstanceCreateRequest(namePrefix, count, instanceTypeID, vpcID)
+	if tenantID != "" {
+		req.SetTenantId(tenantID)
+	}
 	req.SetInterfaces(interfaces)
 	return req
 }

@@ -28,8 +28,9 @@ type InstanceCreateRequest struct {
 	Name string `json:"name"`
 	// Description of the Instance, optional
 	Description NullableString `json:"description,omitempty"`
-	// ID of the Tenant creating the Instance
-	TenantId string `json:"tenantId"`
+	// Deprecated; inferred from the caller's org Tenant when omitted. When provided, the value must match the org's Tenant — mismatched values are rejected with 400.
+	// Deprecated
+	TenantId *string `json:"tenantId,omitempty"`
 	// ID of the Instance Type to use for Instance
 	InstanceTypeId NullableString `json:"instanceTypeId,omitempty"`
 	// ID of of specific Machine to use for Instance. Requires Targeted Instance Creation capability enabled for Tenant
@@ -72,10 +73,9 @@ type _InstanceCreateRequest InstanceCreateRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewInstanceCreateRequest(name string, tenantId string, vpcId string) *InstanceCreateRequest {
+func NewInstanceCreateRequest(name string, vpcId string) *InstanceCreateRequest {
 	this := InstanceCreateRequest{}
 	this.Name = name
-	this.TenantId = tenantId
 	this.VpcId = vpcId
 	return &this
 }
@@ -155,28 +155,39 @@ func (o *InstanceCreateRequest) UnsetDescription() {
 	o.Description.Unset()
 }
 
-// GetTenantId returns the TenantId field value
+// GetTenantId returns the TenantId field value if set, zero value otherwise.
+// Deprecated
 func (o *InstanceCreateRequest) GetTenantId() string {
-	if o == nil {
+	if o == nil || IsNil(o.TenantId) {
 		var ret string
 		return ret
 	}
-
-	return o.TenantId
+	return *o.TenantId
 }
 
-// GetTenantIdOk returns a tuple with the TenantId field value
+// GetTenantIdOk returns a tuple with the TenantId field value if set, nil otherwise
 // and a boolean to check if the value has been set.
+// Deprecated
 func (o *InstanceCreateRequest) GetTenantIdOk() (*string, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.TenantId) {
 		return nil, false
 	}
-	return &o.TenantId, true
+	return o.TenantId, true
 }
 
-// SetTenantId sets field value
+// HasTenantId returns a boolean if a field has been set.
+func (o *InstanceCreateRequest) HasTenantId() bool {
+	if o != nil && !IsNil(o.TenantId) {
+		return true
+	}
+
+	return false
+}
+
+// SetTenantId gets a reference to the given string and assigns it to the TenantId field.
+// Deprecated
 func (o *InstanceCreateRequest) SetTenantId(v string) {
-	o.TenantId = v
+	o.TenantId = &v
 }
 
 // GetInstanceTypeId returns the InstanceTypeId field value if set, zero value otherwise (both if not set or set to explicit null).
@@ -827,7 +838,9 @@ func (o InstanceCreateRequest) ToMap() (map[string]interface{}, error) {
 	if o.Description.IsSet() {
 		toSerialize["description"] = o.Description.Get()
 	}
-	toSerialize["tenantId"] = o.TenantId
+	if !IsNil(o.TenantId) {
+		toSerialize["tenantId"] = o.TenantId
+	}
 	if o.InstanceTypeId.IsSet() {
 		toSerialize["instanceTypeId"] = o.InstanceTypeId.Get()
 	}
@@ -889,7 +902,6 @@ func (o *InstanceCreateRequest) UnmarshalJSON(data []byte) (err error) {
 	// that every required field exists as a key in the generic map.
 	requiredProperties := []string{
 		"name",
-		"tenantId",
 		"vpcId",
 	}
 
