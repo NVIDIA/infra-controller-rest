@@ -621,6 +621,8 @@ func testInstanceBuildIBInterface(t *testing.T, dbSession *cdb.Session, instance
 		InstanceID:            instance.ID,
 		SiteID:                site.ID,
 		InfiniBandPartitionID: ibPartition.ID,
+		Device:                "MT28908 Family [ConnectX-6]",
+		Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
 		DeviceInstance:        deviceInstance,
 		IsPhysical:            isPhysical,
 		VirtualFunctionID:     vfID,
@@ -4051,7 +4053,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp1)
 
-	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, false, cdb.GetIntPtr(1), cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
 	assert.NotNil(t, ibi1)
 
 	// Extra InfiniBand Partitions for updating instance with InfiniBand Interfaces
@@ -4068,9 +4070,42 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	ibp4 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp4)
 
+	ibp6 := testBuildIBPartition(t, dbSession, "test-ibp-ibdup-4slot", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	assert.NotNil(t, ibp6)
+
 	// Extra InfiniBand Partitions for updating instance with InfiniBand Interfaces
 	ibp5 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st2, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp5)
+
+	// Instance with four READY InfiniBand interfaces — distinct (partition ID, device, device instance) per row;
+	// used for READY multi-interface no-op tests without sharing state with IB replace tests on inst1.
+	mcIbDup := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbDup)
+
+	instIbReadyDup := testInstanceBuildInstance(t, dbSession, "test-instance-ib-ready-four", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbDup.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbReadyDup)
+
+	ibiIbDup0 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp2, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup0)
+
+	ibiIbDup1 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp3, 1, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup1)
+
+	ibiIbDup2 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp4, 2, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup2)
+
+	ibiIbDup3 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp6, 3, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup3)
+
+	// Instance with one READY InfiniBand — used only for partition-in-map-key behavior (same device/instance, different partition is not a no-op).
+	mcIbPartitionSwap := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbPartitionSwap)
+
+	instIbPartitionSwap := testInstanceBuildInstance(t, dbSession, "test-instance-ib-partition-key", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbPartitionSwap.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbPartitionSwap)
+
+	ibiIbPartitionSwap := testInstanceBuildIBInterface(t, dbSession, instIbPartitionSwap, st1, ibp1, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbPartitionSwap)
 
 	// Instance for DPU Extension Service Deployment update
 	mc15 := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
@@ -4181,15 +4216,18 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	}
 
 	type args struct {
-		reqData                               *model.APIInstanceUpdateRequest
-		reqOrg                                string
-		reqUser                               *cdbm.User
-		reqInstance                           string
-		cleanInstanceToStatus                 string
-		respNoOfInterfaces                    *int
-		respNoOfNVLinkInterfaces              *int
-		ethInterfacesToDelete                 []cdbm.Interface
-		ibInterfaceToDelete                   []cdbm.InfiniBandInterface
+		reqData                  *model.APIInstanceUpdateRequest
+		reqOrg                   string
+		reqUser                  *cdbm.User
+		reqInstance              string
+		cleanInstanceToStatus    string
+		respNoOfInterfaces       *int
+		respNoOfNVLinkInterfaces *int
+		ethInterfacesToDelete    []cdbm.Interface
+		ibInterfaceToDelete      []cdbm.InfiniBandInterface
+		// Expect these InfiniBand interface rows to stay Ready with no Pending rows created on the Instance
+		// when the request matches on (partition ID, device, device instance) — READY no-op IB update path.
+		expectInfiniBandInterfacesRemainReady []uuid.UUID
 		nvlinkInterfacesToDelete              []cdbm.NVLinkInterface
 		respCode                              int
 		respUserDataContains                  *string
@@ -4215,6 +4253,134 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 		verifySiteControllerRequest bool
 		verifyChildSpanner          bool
 	}{
+		{
+			name: "test Instance update API endpoint success with InfiniBand Interfaces no-op when request matches READY rows on partition, device and device instance",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:        cdb.GetStrPtr("Test Instance IB no-op"),
+					Description: cdb.GetStrPtr("Test Instance Description"),
+					IpxeScript:  os2.IpxeScript,
+					Labels: map[string]string{
+						"new_key": "new_value",
+					},
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp1.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:                           inst1.ID.String(),
+				cleanInstanceToStatus:                 inst1.Status,
+				reqOrg:                                tnOrg1,
+				reqUser:                               tnu1,
+				respCode:                              http.StatusOK,
+				expectInfiniBandInterfacesRemainReady: []uuid.UUID{ibi1.ID},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update API endpoint success with four InfiniBand Interfaces no-op when request matches READY rows on partition, device and device instance",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance IB no-op four"),
+					IpxeScript: os2.IpxeScript,
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+						{
+							InfiniBandPartitionID: ibp3.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        1,
+							IsPhysical:            true,
+						},
+						{
+							InfiniBandPartitionID: ibp4.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        2,
+							IsPhysical:            true,
+						},
+						{
+							InfiniBandPartitionID: ibp6.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        3,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:                           instIbReadyDup.ID.String(),
+				cleanInstanceToStatus:                 instIbReadyDup.Status,
+				reqOrg:                                tnOrg1,
+				reqUser:                               tnu1,
+				respCode:                              http.StatusOK,
+				expectInfiniBandInterfacesRemainReady: []uuid.UUID{ibiIbDup0.ID, ibiIbDup1.ID, ibiIbDup2.ID, ibiIbDup3.ID},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update API endpoint success with InfiniBand Interface when partition differs on same device instance (not a no-op; keyed by partition+device+instance)",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:        cdb.GetStrPtr("Test Instance IB partition swap same slot"),
+					Description: cdb.GetStrPtr("Test Instance Description"),
+					IpxeScript:  os2.IpxeScript,
+					Labels: map[string]string{
+						"new_key": "new_value",
+					},
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:           instIbPartitionSwap.ID.String(),
+				cleanInstanceToStatus: instIbPartitionSwap.Status,
+				reqOrg:                tnOrg1,
+				reqUser:               tnu1,
+				respCode:              http.StatusOK,
+				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbPartitionSwap},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
 		{
 			name: "test Instance update API endpoint success with InfiniBand Interfaces",
 			fields: fields{
@@ -6273,6 +6439,35 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				for i, _ := range ibifcs {
 					assert.Equal(t, tt.args.reqData.InfiniBandInterfaces[i].InfiniBandPartitionID, ibifcs[i].InfiniBandPartitionID.String())
 					assert.Equal(t, cdbm.InfiniBandInterfaceStatusPending, ibifcs[i].Status)
+				}
+			}
+
+			if len(tt.args.expectInfiniBandInterfacesRemainReady) > 0 {
+				ibiDAO := cdbm.NewInfiniBandInterfaceDAO(tt.fields.dbSession)
+
+				pendingIb, _, ierr := ibiDAO.GetAll(ec.Request().Context(), nil,
+					cdbm.InfiniBandInterfaceFilterInput{InstanceIDs: []uuid.UUID{reqIns.ID},
+						Statuses: []string{cdbm.InfiniBandInterfaceStatusPending}},
+					cdbp.PageInput{}, nil)
+				require.NoError(t, ierr)
+				assert.Len(t, pendingIb, 0, "READY InfiniBand no-op must not insert Pending rows when partition+device+deviceInstance matches existing READY interfaces")
+
+				for _, wantID := range tt.args.expectInfiniBandInterfacesRemainReady {
+					ibRow, ierr := ibiDAO.GetByID(ec.Request().Context(), nil, wantID, nil)
+					require.NoError(t, ierr)
+					assert.Equal(t, cdbm.InfiniBandInterfaceStatusReady, ibRow.Status,
+						"InfiniBand interface %s must stay Ready after no-op request (matching partition/device/instance)", wantID)
+				}
+
+				gotReadyInAPI := map[string]bool{}
+				for _, apiIb := range rst.InfiniBandInterfaces {
+					if apiIb.Status == cdbm.InfiniBandInterfaceStatusReady {
+						gotReadyInAPI[apiIb.ID] = true
+					}
+				}
+				for _, wantID := range tt.args.expectInfiniBandInterfacesRemainReady {
+					require.True(t, gotReadyInAPI[wantID.String()],
+						"expected READY InfiniBand interface %s in update response matching DB row", wantID)
 				}
 			}
 

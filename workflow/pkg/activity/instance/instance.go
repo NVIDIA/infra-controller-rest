@@ -486,15 +486,13 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 		}
 
 		infiniBandInterfaceMap := map[string]*cdbm.InfiniBandInterface{}
-
+		deletingInfiniBandInterfaces := []*cdbm.InfiniBandInterface{}
 		for _, ibifc := range infiniBandInterfaces {
 			curIbIfc := ibifc
-			// If the InfiniBand Interface is in Deleting state, add it into list of InfiniBand Interfaces to be deleted
+			// Add the InfiniBand Interface to the list of InfiniBand Interfaces to be deleted if it is in Deleting state
 			if ibifc.Status == cdbm.InfiniBandInterfaceStatusDeleting {
-				if updatedInstanceStatus != nil && *updatedInstanceStatus == cdbm.InstanceStatusReady {
-					infiniBandInterfacesToDelete = append(infiniBandInterfacesToDelete, &curIbIfc)
-					continue
-				}
+				deletingInfiniBandInterfaces = append(deletingInfiniBandInterfaces, &curIbIfc)
+				continue
 			}
 
 			if ibifc.InfiniBandPartition.ControllerIBPartitionID == nil {
@@ -520,9 +518,17 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 
 		if controllerInstance.Config.Infiniband != nil && controllerInstance.Status.Infiniband != nil {
 			for idx, interfaceConfig := range controllerInstance.Config.Infiniband.IbInterfaces {
+				// Skip if the InfiniBand Interface Config is nil
+				if interfaceConfig == nil {
+					logger.Warn().Int("Index", idx).Msg("InfiniBand Interface Config is nil, skipping update")
+					continue
+				}
+
+				// Get the InfiniBand Interface from the map
 				ibifcKey := fmt.Sprintf("%s-%s-%d", interfaceConfig.IbPartitionId.Value, interfaceConfig.Device, interfaceConfig.DeviceInstance)
 				ibifc, ok := infiniBandInterfaceMap[ibifcKey]
 				if !ok {
+					logger.Warn().Str("InfiniBand Interface Key", ibifcKey).Msg("InfiniBand Interface does not exist in DB, possibly created directly on Site")
 					continue
 				}
 
@@ -539,7 +545,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 					}
 
 					var status *string
-					if controllerInstance.Status.Infiniband.ConfigsSynced == cwsv1.SyncState_SYNCED {
+					if controllerInstance.Status.Infiniband.ConfigsSynced == cwsv1.SyncState_SYNCED && ibifc.Status != cdbm.InfiniBandInterfaceStatusReady {
 						status = cdb.GetStrPtr(cdbm.InterfaceStatusReady)
 					}
 
@@ -561,6 +567,23 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 						slogger.Error().Err(serr).Str("InfiniBand Interface ID", ibifc.ID.String()).Msg("failed to update InfiniBand Interface in DB")
 					}
 				}
+			}
+		}
+
+		// Determine which InfiniBand Interfaces in Deleting state can be deleted
+		// If the InfiniBand Config and Status are empty, we can delete all InfiniBand Interfaces currently in Deleting state
+		isInfiniBandConfigStatusEmpty := len(controllerInstance.Config.GetInfiniband().GetIbInterfaces()) == 0 && len(controllerInstance.Status.GetInfiniband().GetIbInterfaces()) == 0
+		// If the InfiniBand Config and Status are synced, we can delete all eligible InfiniBand Interfaces currently in Deleting state
+		isInfiniBandConfigSynced := controllerInstance.Status.Infiniband != nil && controllerInstance.Status.Infiniband.ConfigsSynced == cwsv1.SyncState_SYNCED
+
+		if isInfiniBandConfigStatusEmpty || isInfiniBandConfigSynced {
+			for _, ibifc := range deletingInfiniBandInterfaces {
+				if util.IsTimeWithinStaleInventoryThreshold(ibifc.Updated) {
+					// If the InfiniBand Interface was modified within stale inventory threshold, defer to next inventory update
+					continue
+				}
+				// Continue with deletion
+				infiniBandInterfacesToDelete = append(infiniBandInterfacesToDelete, ibifc)
 			}
 		}
 
