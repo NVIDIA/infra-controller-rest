@@ -307,8 +307,8 @@ func AcquireInstanceTypeQuotaLock(ctx context.Context, tx *cdb.Tx, tenantID uuid
 }
 
 // GetUnallocatedMachineForInstanceType provides unallocatd machine based on instancetype
-func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, instancetype *cdbm.InstanceType) (*cdbm.Machine, error) {
-	if instancetype == nil {
+func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, instanceType *cdbm.InstanceType) (*cdbm.Machine, error) {
+	if instanceType == nil {
 		return nil, ErrInvalidFunctionParams
 	}
 
@@ -322,8 +322,7 @@ func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSes
 	// Get all available Machines for the Instance Type
 	// Since this query is occurring outside of a lock, we will have to double check availability of Machines
 	filterInput := cdbm.MachineFilterInput{
-		SiteID:          instancetype.SiteID,
-		InstanceTypeIDs: []uuid.UUID{instancetype.ID},
+		InstanceTypeIDs: []uuid.UUID{instanceType.ID},
 		IsAssigned:      cdb.GetBoolPtr(false),
 		Statuses:        []string{cdbm.MachineStatusReady},
 	}
@@ -401,8 +400,16 @@ func GetCountOfMachinesForInstanceType(ctx context.Context, tx *cdb.Tx, dbSessio
 // machines broken down by site and machine status.
 func GetSiteMachineCountStats(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, logger zerolog.Logger, infrastructureProviderID *uuid.UUID, siteID *uuid.UUID) (map[uuid.UUID]*cam.APISiteMachineStats, error) {
 	mDAO := cdbm.NewMachineDAO(dbSession)
-	machines, _, err := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InfrastructureProviderID: infrastructureProviderID, SiteID: siteID}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 
+	filterInput := cdbm.MachineFilterInput{}
+	if infrastructureProviderID != nil {
+		filterInput.InfrastructureProviderIDs = []uuid.UUID{*infrastructureProviderID}
+	}
+	if siteID != nil {
+		filterInput.SiteIDs = []uuid.UUID{*siteID}
+	}
+
+	machines, _, err := mDAO.GetAll(ctx, tx, filterInput, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
 		return nil, err
 	}

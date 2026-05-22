@@ -246,21 +246,21 @@ type MachineClearInput struct {
 
 // MachineFilterInput filtering options for GetAll method
 type MachineFilterInput struct {
-	InfrastructureProviderID *uuid.UUID
-	SiteID                   *uuid.UUID
-	HasInstanceType          *bool
-	InstanceTypeIDs          []uuid.UUID
-	ControllerMachineID      *string
-	HwSkuDeviceTypes         []string
-	IsAssigned               *bool
-	Hostname                 *string
-	CapabilityType           *string
-	CapabilityNames          []string
-	Statuses                 []string
-	SearchQuery              *string
-	MachineIDs               []string
-	IsMissingOnSite          *bool
-	ExcludeMetadata          bool // When true, excludes the metadata JSONB column from SELECT to improve performance on bulk queries
+	InfrastructureProviderIDs []uuid.UUID
+	SiteIDs                   []uuid.UUID
+	HasInstanceType           *bool
+	InstanceTypeIDs           []uuid.UUID
+	ControllerMachineID       *string
+	HwSkuDeviceTypes          []string
+	IsAssigned                *bool
+	Hostname                  *string
+	CapabilityType            *string
+	CapabilityNames           []string
+	Statuses                  []string
+	SearchQuery               *string
+	MachineIDs                []string
+	IsMissingOnSite           *bool
+	ExcludeMetadata           bool // When true, excludes the metadata JSONB column from SELECT to improve performance on bulk queries
 }
 
 type MachineHealth struct {
@@ -504,19 +504,19 @@ func (msd MachineSQLDAO) GetCountByStatus(ctx context.Context, tx *db.Tx, infras
 }
 
 func (msd MachineSQLDAO) setQueryWithFilter(filter MachineFilterInput, query *bun.SelectQuery, machineDAOSpan *stracer.CurrentContextSpan) (*bun.SelectQuery, error) {
-	if filter.InfrastructureProviderID != nil {
-		query = query.Where("m.infrastructure_provider_id = ?", *filter.InfrastructureProviderID)
+	if filter.InfrastructureProviderIDs != nil {
+		query = query.Where("m.infrastructure_provider_id IN (?)", bun.In(filter.InfrastructureProviderIDs))
 
 		if machineDAOSpan != nil {
-			msd.tracerSpan.SetAttribute(machineDAOSpan, "infrastructure_provider_id", filter.InfrastructureProviderID.String())
+			msd.tracerSpan.SetAttribute(machineDAOSpan, "infrastructure_provider_ids", filter.InfrastructureProviderIDs)
 		}
 	}
 
-	if filter.SiteID != nil {
-		query = query.Where("m.site_id = ?", *filter.SiteID)
+	if filter.SiteIDs != nil {
+		query = query.Where("m.site_id IN (?)", bun.In(filter.SiteIDs))
 
 		if machineDAOSpan != nil {
-			msd.tracerSpan.SetAttribute(machineDAOSpan, "site_id", filter.SiteID.String())
+			msd.tracerSpan.SetAttribute(machineDAOSpan, "site_ids", filter.SiteIDs)
 		}
 	}
 
