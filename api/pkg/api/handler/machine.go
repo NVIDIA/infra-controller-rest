@@ -19,6 +19,7 @@ package handler
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -1361,6 +1362,8 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 	// Enter or exit in-pool online repair (Site health override + Instance status / labels in Cloud DB)
 	if apiRequest.IsOnlineRepair() {
+		statusDetailDAO := cdbm.NewStatusDetailDAO(umh.dbSession)
+
 		// Validate if user has permission to enter/exit online repair mode for this Machine
 		if !isOwnerProvider && !isPrivilegedTenant {
 			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have permission to enter/exit online repair mode for this Machine", nil)
@@ -1374,167 +1377,167 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
 		}
 
-		// timeoutResp lets the closure signal a post-rollback handler — the
-		// TerminateWorkflow call has to run after the closure returns so that
-		// the DB tx unwinds before we make the second remote call. nil means
-		// no timeout occurred and the normal flow continues.
-		var timeoutResp func() error
+		orTx, err := cdb.BeginTx(ctx, umh.dbSession, &sql.TxOptions{})
+		if err != nil {
+			logger.Error().Err(err).Msg("unable to start transaction")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error updating machine", nil)
+		}
+		orTxCommitted := false
+		defer common.RollbackTx(ctx, orTx, &orTxCommitted)
 
-		err := cdb.WithTx(ctx, umh.dbSession, func(orTx *cdb.Tx) error {
-			iDAO := cdbm.NewInstanceDAO(umh.dbSession)
-			instances, _, derr := iDAO.GetAll(ctx, orTx, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(1)}, nil)
-			if derr != nil {
-				logger.Error().Err(derr).Msg("error retrieving Instance for Machine")
-				return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve Instance for Machine", nil)
+		iDAO := cdbm.NewInstanceDAO(umh.dbSession)
+		instances, _, ierr := iDAO.GetAll(ctx, orTx, cdbm.InstanceFilterInput{MachineIDs: []string{machine.ID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(1)}, nil)
+		if ierr != nil {
+			logger.Error().Err(ierr).Msg("error retrieving Instance for Machine")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance for Machine", nil)
+		}
+		if len(instances) == 0 {
+			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
+		}
+		inst := instances[0]
+
+		if apiRequest.OnlineRepairEnabled() {
+			if inst.Status != cdbm.InstanceStatusReady {
+				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Instance must be in Ready state to enter online repair (current state: %s)", inst.Status), nil)
 			}
-			if len(instances) == 0 {
-				return cutil.NewAPIError(http.StatusBadRequest, "Machine must have an assigned Instance for online repair", nil)
+
+			insReq, ierr := apiRequest.ToInsertHealthReportOverrideProto(machine.ID)
+			if ierr != nil {
+				logger.Error().Err(ierr).Msg("failed to build online repair health override request")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to build online repair request", nil)
 			}
-			inst := instances[0]
 
-			if apiRequest.OnlineRepairEnabled() {
-				if inst.Status != cdbm.InstanceStatusReady {
-					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Instance must be in Ready state to enter online repair (current state: %s)", inst.Status), nil)
-				}
+			instanceLabels := maps.Clone(inst.Labels)
+			if instanceLabels == nil {
+				instanceLabels = map[string]string{}
+			}
 
-				insReq, perr := apiRequest.ToInsertHealthReportOverrideProto(machine.ID)
-				if perr != nil {
-					logger.Error().Err(perr).Msg("failed to build online repair health override request")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to build online repair request", nil)
-				}
-
-				instanceLabels := maps.Clone(inst.Labels)
-				if instanceLabels == nil {
-					instanceLabels = map[string]string{}
-				}
-
-				if *apiRequest.OnlineRepair.Policy.AllowAutoInstanceDeletionOnFailure {
-					instanceLabels[model.InstanceLabelOnlineRepairAllowAutoDeletion] = "true"
-				} else {
-					instanceLabels[model.InstanceLabelOnlineRepairAllowAutoDeletion] = "false"
-				}
-
-				_, derr = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
-					InstanceID: inst.ID,
-					Status:     cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
-					Labels:     instanceLabels,
-				})
-				if derr != nil {
-					logger.Error().Err(derr).Msg("error updating Instance for online repair in DB")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Instance for online repair", nil)
-				}
-
-				wfOpts := temporalClient.StartWorkflowOptions{
-					ID:                       "site-machine-online-repair-" + machine.ID,
-					WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-					TaskQueue:                queue.SiteTaskQueue,
-				}
-
-				wfCtx, wfCancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-				defer wfCancel()
-
-				we, wferr := stc.ExecuteWorkflow(wfCtx, wfOpts, "CreateMachineHealthReportOverride", insReq)
-				if wferr != nil {
-					logger.Error().Err(wferr).Msg("failed to start Temporal workflow for applying online repair health override")
-					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to start applying online repair health override workflow on Site: %s", wferr), nil)
-				}
-				wid := we.GetID()
-				logger.Info().Str("Workflow ID", wid).Msg("executed synchronous applying online repair health override workflow")
-				wferr = we.Get(wfCtx, nil)
-				if wferr != nil {
-					var timeoutErr *tp.TimeoutError
-					if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
-						logger.Error().Err(wferr).Msg("failed to apply online repair health override, timeout occurred executing workflow on Site.")
-						timeoutCause := wferr // explicit capture; defensive against future refactors
-						timeoutResp = func() error {
-							return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Machine", "CreateMachineHealthReportOverride")
-						}
-						return cutil.NewAPIError(http.StatusInternalServerError, "Applying online repair health override workflow timed out", nil)
-					}
-					code, werr := common.UnwrapWorkflowError(wferr)
-					logger.Error().Err(werr).Msg("applying online repair health override workflow failed")
-					return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute applying online repair health override workflow on Site: %s", werr), nil)
-				}
-				logger.Info().Str("Workflow ID", wid).Msg("completed synchronous applying online repair health override workflow")
+			if *apiRequest.OnlineRepair.Policy.AllowAutoInstanceDeletionOnFailure {
+				instanceLabels[model.InstanceLabelOnlineRepairAllowAutoDeletion] = "true"
 			} else {
-				if inst.Status != cdbm.InstanceStatusRepairing {
-					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Instance must be in Repairing state to exit online repair (current state: %s)", inst.Status), nil)
-				}
-
-				instanceLabels := maps.Clone(inst.Labels)
-				if instanceLabels == nil {
-					instanceLabels = map[string]string{}
-				}
-
-				delete(instanceLabels, model.InstanceLabelOnlineRepairAllowAutoDeletion)
-
-				_, derr = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
-					InstanceID: inst.ID,
-					Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
-					Labels:     instanceLabels,
-				})
-				if derr != nil {
-					logger.Error().Err(derr).Msg("error updating Instance after clearing online repair in DB")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Instance after clearing online repair", nil)
-				}
-
-				rmReq, perr := apiRequest.ToRemoveHealthReportOverrideProto(machine.ID)
-				if perr != nil {
-					logger.Error().Err(perr).Msg("failed to build remove online repair health override request")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to build remove online repair request", nil)
-				}
-
-				wfOpts := temporalClient.StartWorkflowOptions{
-					ID:                       "site-clear-machine-online-repair-" + machine.ID,
-					WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-					TaskQueue:                queue.SiteTaskQueue,
-				}
-
-				wfCtx, wfCancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-				defer wfCancel()
-
-				we, wferr := stc.ExecuteWorkflow(wfCtx, wfOpts, "DeleteMachineHealthReportOverride", rmReq)
-				if wferr != nil {
-					logger.Error().Err(wferr).Msg("failed to start Temporal workflow to clear online repair health override")
-					return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to start clear online repair workflow on Site: %s", wferr), nil)
-				}
-				wid := we.GetID()
-				logger.Info().Str("Workflow ID", wid).Msg("executed synchronous DeleteMachineHealthReportOverride workflow")
-				wferr = we.Get(wfCtx, nil)
-				if wferr != nil {
-					var timeoutErr *tp.TimeoutError
-					if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
-						logger.Error().Err(wferr).Msg("failed to clear online repair health override, timeout occurred executing workflow on Site.")
-						timeoutCause := wferr // explicit capture; defensive against future refactors
-						timeoutResp = func() error {
-							return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Machine", "DeleteMachineHealthReportOverride")
-						}
-						return cutil.NewAPIError(http.StatusInternalServerError, "Clear online repair workflow timed out", nil)
-					}
-					code, werr := common.UnwrapWorkflowError(wferr)
-					logger.Error().Err(werr).Msg("clear online repair health override workflow failed")
-					return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute clear online repair workflow on Site: %s", werr), nil)
-				}
-				logger.Info().Str("Workflow ID", wid).Msg("completed synchronous DeleteMachineHealthReportOverride workflow")
+				instanceLabels[model.InstanceLabelOnlineRepairAllowAutoDeletion] = "false"
 			}
 
-			return nil
-		})
-		// Surface real tx-helper errors first so they aren't masked by the
-		// timeout response (commit/rollback failures wrap into something other
-		// than the cutil.APIError marker we returned for the timeout case).
-		if err != nil {
-			var apiErr *cutil.APIError
-			if !errors.As(err, &apiErr) {
-				return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
+			_, err = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
+				InstanceID: inst.ID,
+				Status:     cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
+				Labels:     instanceLabels,
+			})
+			if err != nil {
+				logger.Error().Err(err).Msg("error updating Instance for online repair in DB")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance for online repair", nil)
 			}
+
+			// Update Instance status in StatusDetail
+			_, err = statusDetailDAO.CreateFromParams(ctx, orTx, inst.ID.String(), cdbm.InstanceStatusRepairing, cdb.GetStrPtr("Instance is currently being repaired"))
+			if err != nil {
+				logger.Error().Err(err).Msg("error updating Instance status in StatusDetail in DB")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance status in StatusDetail", nil)
+			}
+
+			wfOpts := temporalClient.StartWorkflowOptions{
+				ID:                       "site-machine-online-repair-" + machine.ID,
+				WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+				TaskQueue:                queue.SiteTaskQueue,
+			}
+
+			wfCtx, wfCancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+			defer wfCancel()
+
+			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "CreateMachineHealthReportOverride", insReq)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to start Temporal workflow for applying online repair health override")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start applying online repair health override workflow on Site: %s", err), nil)
+			}
+			wid := we.GetID()
+			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous applying online repair health override workflow")
+			err = we.Get(wfCtx, nil)
+			if err != nil {
+				var timeoutErr *tp.TimeoutError
+				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "CreateMachineHealthReportOverride")
+				}
+				code, werr := common.UnwrapWorkflowError(err)
+				logger.Error().Err(werr).Msg("applying online repair health override workflow failed")
+				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute applying online repair health override workflow on Site: %s", werr), nil)
+			}
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous applying online repair health override workflow")
+		} else {
+			_, hasOnlineRepairMarker := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
+			hasOnlineRepairHealthAlert := common.MachineReportsOnlineRepairHealthAlert(machine)
+			if inst.Status != cdbm.InstanceStatusRepairing && !hasOnlineRepairMarker && !hasOnlineRepairHealthAlert {
+				return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf(
+					"Instance must be in Repairing state, retain the online repair marker label (%s), or the Machine health must include the %s alert (synced from Site) to exit online repair (current instance state: %s)",
+					model.InstanceLabelOnlineRepairAllowAutoDeletion, model.MachineHealthAlertIDOnlineRepair, inst.Status), nil)
+			}
+
+			instanceLabels := maps.Clone(inst.Labels)
+			if instanceLabels == nil {
+				instanceLabels = map[string]string{}
+			}
+
+			delete(instanceLabels, model.InstanceLabelOnlineRepairAllowAutoDeletion)
+
+			_, err = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
+				InstanceID: inst.ID,
+				Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
+				Labels:     instanceLabels,
+			})
+			if err != nil {
+				logger.Error().Err(err).Msg("error updating Instance after clearing online repair in DB")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance after clearing online repair", nil)
+			}
+
+			// Update Instance status in StatusDetail
+			_, err = statusDetailDAO.CreateFromParams(ctx, orTx, inst.ID.String(), cdbm.InstanceStatusReady, cdb.GetStrPtr("Instance repair has been completed, ready for use"))
+			if err != nil {
+				logger.Error().Err(err).Msg("error updating Instance status in StatusDetail in DB")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Instance status in StatusDetail", nil)
+			}
+
+			// Remove health report override on Site
+			rmReq, err := apiRequest.ToRemoveHealthReportOverrideProto(machine.ID)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to build remove online repair health override request")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to build remove online repair request", nil)
+			}
+
+			wfOpts := temporalClient.StartWorkflowOptions{
+				ID:                       "site-clear-machine-online-repair-" + machine.ID,
+				WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+				TaskQueue:                queue.SiteTaskQueue,
+			}
+
+			wfCtx, wfCancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+			defer wfCancel()
+
+			we, err := stc.ExecuteWorkflow(wfCtx, wfOpts, "DeleteMachineHealthReportOverride", rmReq)
+			if err != nil {
+				logger.Error().Err(err).Msg("failed to start Temporal workflow to clear online repair health override")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start clear online repair workflow on Site: %s", err), nil)
+			}
+			wid := we.GetID()
+			logger.Info().Str("Workflow ID", wid).Msg("executed synchronous DeleteMachineHealthReportOverride workflow")
+			err = we.Get(wfCtx, nil)
+			if err != nil {
+				var timeoutErr *tp.TimeoutError
+				if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || wfCtx.Err() != nil || ctx.Err() != nil {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, err, "Machine", "DeleteMachineHealthReportOverride")
+				}
+				code, werr := common.UnwrapWorkflowError(err)
+				logger.Error().Err(werr).Msg("clear online repair health override workflow failed")
+				return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute clear online repair workflow on Site: %s", werr), nil)
+			}
+			logger.Info().Str("Workflow ID", wid).Msg("completed synchronous DeleteMachineHealthReportOverride workflow")
 		}
-		if timeoutResp != nil {
-			return timeoutResp()
-		}
+
+		err = orTx.Commit()
 		if err != nil {
-			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
+			logger.Error().Err(err).Msg("error committing transaction")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Machine, DB transaction error", nil)
 		}
+		orTxCommitted = true
+		um = machine
 	}
 
 	// Create response
