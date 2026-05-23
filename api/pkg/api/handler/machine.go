@@ -1418,8 +1418,10 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 				_, derr = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
 					InstanceID: inst.ID,
-					Status:     cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
-					Labels:     instanceLabels,
+					InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+						Status: cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
+						Labels: instanceLabels,
+					},
 				})
 				if derr != nil {
 					logger.Error().Err(derr).Msg("error updating Instance for online repair in DB")
@@ -1492,8 +1494,10 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 				_, derr = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
 					InstanceID: inst.ID,
-					Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
-					Labels:     instanceLabels,
+					InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+						Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
+						Labels: instanceLabels,
+					},
 				})
 				if derr != nil {
 					logger.Error().Err(derr).Msg("error updating Instance after clearing online repair in DB")

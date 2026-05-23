@@ -647,6 +647,57 @@ func TestCreateVPCHandler_Handle(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
+			name: "test VPC create API endpoint Flat virtualization success",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIVpcCreateRequest{
+					Name:                      "Test Flat VPC",
+					Description:               cdb.GetStrPtr("Flat VPC for zero-DPU instances"),
+					SiteID:                    st1.ID.String(),
+					NetworkVirtualizationType: cdb.GetStrPtr(cdbm.VpcFlat),
+				},
+				reqOrg:         tnOrg,
+				reqUser:        tnu,
+				respCode:       http.StatusCreated,
+				expectedStatus: cdbm.VpcStatusProvisioning,
+				expectedStatusDetails: []expectedStatusDetail{
+					{
+						status:  cdbm.VpcStatusProvisioning,
+						message: "VPC provisioning has been initiated on Site",
+					},
+				},
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
+		{
+			name: "test VPC create API endpoint rejects routing profile for Flat virtualization",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIVpcCreateRequest{
+					Name:                      "Test Flat VPC with routing profile",
+					Description:               cdb.GetStrPtr("Flat VPC with disallowed routing profile"),
+					SiteID:                    st1.ID.String(),
+					NetworkVirtualizationType: cdb.GetStrPtr(cdbm.VpcFlat),
+					RoutingProfile:            cdb.GetStrPtr(model.APIVpcRoutingProfileInternal),
+				},
+				reqOrg:      tnOrg,
+				reqUser:     tnu,
+				respCode:    http.StatusBadRequest,
+				respMessage: "`routingProfile` is only supported when `networkVirtualizationType` is FNN",
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
+		{
 			name: "test VPC create API endpoint original success payload fails with routing profile on ethernet virtualization",
 			fields: fields{
 				dbSession: dbSession,

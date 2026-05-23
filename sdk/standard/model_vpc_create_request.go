@@ -46,7 +46,7 @@ type VpcCreateRequest struct {
 	Description NullableString `json:"description,omitempty"`
 	// ID of the Site where the VPC should be created
 	SiteId string `json:"siteId"`
-	// Network virtualization type of the VPC. If no value is specified, then defaults to `FNN` if Site has native networking enabled, or ETHERNET_VIRTUALIZER if native networking is disabled
+	// Network virtualization type of the VPC. If no value is specified, then defaults to `FNN` if Site has native networking enabled, or `ETHERNET_VIRTUALIZER` if native networking is disabled. Flat VPCs hold instances on zero-DPU hosts (or hosts with their DPU in NIC mode) and are never auto-selected -- `FLAT` must be specified explicitly.
 	NetworkVirtualizationType NullableString `json:"networkVirtualizationType,omitempty"`
 	// Specify routing profile for the VPC. Only supported when `networkVirtualizationType` is set to `FNN`, or when `networkVirtualizationType` is omitted and Site has Native Networking enabled. Requires Tenant to have elevated privilege. Current accepted values are `privileged-internal`, `internal`, and `external`.
 	RoutingProfile NullableString `json:"routingProfile,omitempty"`

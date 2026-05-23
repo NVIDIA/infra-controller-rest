@@ -2383,3 +2383,204 @@ func TestAPIInstanceDeleteRequest_Validate(t *testing.T) {
 		})
 	}
 }
+
+// TestAPIInstanceCreateRequest_Validate_Auto exercises the `auto` /
+// `interfaces` exclusivity rules introduced for zero-DPU instances.
+func TestAPIInstanceCreateRequest_Validate_Auto(t *testing.T) {
+	tests := []struct {
+		name             string
+		req              APIInstanceCreateRequest
+		wantErr          bool
+		wantErrorMessage string
+	}{
+		{
+			name: "auto=true with empty interfaces succeeds",
+			req: APIInstanceCreateRequest{
+				Name:              "auto-instance",
+				TenantID:          uuid.NewString(),
+				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
+				VpcID:             uuid.NewString(),
+				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
+				Auto:              true,
+				Interfaces:        nil,
+			},
+			wantErr: false,
+		},
+		{
+			name: "auto=true with interfaces is rejected",
+			req: APIInstanceCreateRequest{
+				Name:              "auto-instance",
+				TenantID:          uuid.NewString(),
+				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
+				VpcID:             uuid.NewString(),
+				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
+				Auto:              true,
+				Interfaces: []APIInterfaceCreateOrUpdateRequest{
+					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
+				},
+			},
+			wantErr:          true,
+			wantErrorMessage: "`interfaces` must be empty when `auto` is true",
+		},
+		{
+			name: "auto=false with empty interfaces is rejected",
+			req: APIInstanceCreateRequest{
+				Name:              "manual-instance",
+				TenantID:          uuid.NewString(),
+				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
+				VpcID:             uuid.NewString(),
+				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
+				Auto:              false,
+				Interfaces:        nil,
+			},
+			wantErr:          true,
+			wantErrorMessage: "at least one Interface must be specified",
+		},
+		{
+			name: "auto=true with secondaryVpcIds is rejected",
+			req: APIInstanceCreateRequest{
+				Name:              "auto-instance",
+				TenantID:          uuid.NewString(),
+				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
+				VpcID:             uuid.NewString(),
+				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
+				Auto:              true,
+				SecondaryVpcIDs:   []string{uuid.NewString()},
+			},
+			wantErr:          true,
+			wantErrorMessage: "`secondaryVpcIds` is not supported when `auto` is true",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.req.Validate()
+			if (err != nil) != tt.wantErr {
+				marshalledErr, _ := json.Marshal(err)
+				t.Errorf("Validate() error = %v, wantErr %v", string(marshalledErr), tt.wantErr)
+			}
+			if tt.wantErrorMessage != "" && err != nil {
+				assert.Contains(t, err.Error(), tt.wantErrorMessage)
+			}
+		})
+	}
+}
+
+// TestAPIBatchInstanceCreateRequest_Validate_Auto mirrors the create-side
+// exclusivity rules for the batch endpoint.
+func TestAPIBatchInstanceCreateRequest_Validate_Auto(t *testing.T) {
+	tests := []struct {
+		name             string
+		req              APIBatchInstanceCreateRequest
+		wantErr          bool
+		wantErrorMessage string
+	}{
+		{
+			name: "auto=true with empty interfaces succeeds",
+			req: APIBatchInstanceCreateRequest{
+				NamePrefix:     "auto-batch",
+				Count:          2,
+				TenantID:       uuid.NewString(),
+				InstanceTypeID: uuid.NewString(),
+				VpcID:          uuid.NewString(),
+				IpxeScript:     cdb.GetStrPtr("test ipxe"),
+				Auto:           true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "auto=true with interfaces is rejected",
+			req: APIBatchInstanceCreateRequest{
+				NamePrefix:     "auto-batch",
+				Count:          2,
+				TenantID:       uuid.NewString(),
+				InstanceTypeID: uuid.NewString(),
+				VpcID:          uuid.NewString(),
+				IpxeScript:     cdb.GetStrPtr("test ipxe"),
+				Auto:           true,
+				Interfaces: []APIInterfaceCreateOrUpdateRequest{
+					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
+				},
+			},
+			wantErr:          true,
+			wantErrorMessage: "`interfaces` must be empty when `auto` is true",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.req.Validate()
+			if (err != nil) != tt.wantErr {
+				marshalledErr, _ := json.Marshal(err)
+				t.Errorf("Validate() error = %v, wantErr %v", string(marshalledErr), tt.wantErr)
+			}
+			if tt.wantErrorMessage != "" && err != nil {
+				assert.Contains(t, err.Error(), tt.wantErrorMessage)
+			}
+		})
+	}
+}
+
+// TestAPIInstanceUpdateRequest_Validate_Auto covers the auto/interfaces
+// exclusivity rule when toggling auto via the update endpoint.
+func TestAPIInstanceUpdateRequest_Validate_Auto(t *testing.T) {
+	autoTrue := true
+	autoFalse := false
+	tests := []struct {
+		name             string
+		req              APIInstanceUpdateRequest
+		wantErr          bool
+		wantErrorMessage string
+	}{
+		{
+			name:    "auto unset leaves validation untouched",
+			req:     APIInstanceUpdateRequest{Auto: nil},
+			wantErr: false,
+		},
+		{
+			name:    "auto=true with no interfaces succeeds",
+			req:     APIInstanceUpdateRequest{Auto: &autoTrue},
+			wantErr: false,
+		},
+		{
+			name: "auto=true with interfaces is rejected",
+			req: APIInstanceUpdateRequest{
+				Auto: &autoTrue,
+				Interfaces: []APIInterfaceCreateOrUpdateRequest{
+					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
+				},
+			},
+			wantErr:          true,
+			wantErrorMessage: "`interfaces` must be empty when `auto` is true",
+		},
+		{
+			name: "auto=false with interfaces succeeds",
+			req: APIInstanceUpdateRequest{
+				Auto: &autoFalse,
+				Interfaces: []APIInterfaceCreateOrUpdateRequest{
+					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "auto=true with secondaryVpcIds is rejected",
+			req: APIInstanceUpdateRequest{
+				Auto:            &autoTrue,
+				SecondaryVpcIDs: []string{uuid.NewString()},
+			},
+			wantErr:          true,
+			wantErrorMessage: "`secondaryVpcIds` is not supported when `auto` is true",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.req.Validate()
+			if (err != nil) != tt.wantErr {
+				marshalledErr, _ := json.Marshal(err)
+				t.Errorf("Validate() error = %v, wantErr %v", string(marshalledErr), tt.wantErr)
+			}
+			if tt.wantErrorMessage != "" && err != nil {
+				assert.Contains(t, err.Error(), tt.wantErrorMessage)
+			}
+		})
+	}
+}

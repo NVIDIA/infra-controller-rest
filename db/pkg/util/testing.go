@@ -62,6 +62,11 @@ func getTestDBParams() TestDBConfig {
 		tdbcfg.User = user
 	}
 
+	password, ok := os.LookupEnv("PGPASSWORD")
+	if ok {
+		tdbcfg.Password = password
+	}
+
 	if os.Getenv("CI") == "true" {
 		tdbcfg.Host = "postgres"
 		tdbcfg.Port = 5432

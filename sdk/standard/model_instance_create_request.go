@@ -64,8 +64,10 @@ type InstanceCreateRequest struct {
 	// When set to true, the Instance will be enabled with the Phone Home service.
 	PhoneHomeEnabled *bool             `json:"phoneHomeEnabled,omitempty"`
 	Labels           map[string]string `json:"labels,omitempty"`
-	// At least one interface must be specified. Either Subnet or VPC Prefix interfaces allowed. Only one of the Subnets or VPC Prefixes can be attached over Physical interface. If only one Subnet is specified, then it will be attached over physical interface regardless of the value of isPhysical. In case of VPC Prefix, isPhysical will always be true
-	Interfaces []InterfaceCreateRequest `json:"interfaces"`
+	// At least one interface must be specified unless `auto` is true. Either Subnet or VPC Prefix interfaces allowed. Only one of the Subnets or VPC Prefixes can be attached over Physical interface. If only one Subnet is specified, then it will be attached over physical interface regardless of the value of isPhysical. In case of VPC Prefix, isPhysical will always be true. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.
+	Interfaces []InterfaceCreateRequest `json:"interfaces,omitempty"`
+	// When true, asks NICo to auto-resolve the Instance's network interfaces from the host's underlay (HostInband) network segments. Intended for instances on zero-DPU hosts (or hosts with their DPU in NIC mode). When true: (1) the target VPC's `networkVirtualizationType` MUST be `FLAT`, (2) `interfaces` MUST be empty or omitted, and (3) `secondaryVpcIds` MUST be empty or omitted. Resolved interfaces surface on the Instance's read response.
+	Auto *bool `json:"auto,omitempty"`
 	// Associate one or more Partitions with this Instance
 	InfinibandInterfaces []InfiniBandInterfaceCreateRequest `json:"infinibandInterfaces,omitempty"`
 	// DPU Extension Services to deploy to the DPUs of this Instance
@@ -84,12 +86,11 @@ type _InstanceCreateRequest InstanceCreateRequest
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewInstanceCreateRequest(name string, tenantId string, vpcId string, interfaces []InterfaceCreateRequest) *InstanceCreateRequest {
+func NewInstanceCreateRequest(name string, tenantId string, vpcId string) *InstanceCreateRequest {
 	this := InstanceCreateRequest{}
 	this.Name = name
 	this.TenantId = tenantId
 	this.VpcId = vpcId
-	this.Interfaces = interfaces
 	return &this
 }
 
@@ -602,28 +603,68 @@ func (o *InstanceCreateRequest) SetLabels(v map[string]string) {
 	o.Labels = v
 }
 
-// GetInterfaces returns the Interfaces field value
+// GetInterfaces returns the Interfaces field value if set, zero value otherwise.
 func (o *InstanceCreateRequest) GetInterfaces() []InterfaceCreateRequest {
-	if o == nil {
+	if o == nil || IsNil(o.Interfaces) {
 		var ret []InterfaceCreateRequest
 		return ret
 	}
-
 	return o.Interfaces
 }
 
-// GetInterfacesOk returns a tuple with the Interfaces field value
+// GetInterfacesOk returns a tuple with the Interfaces field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 func (o *InstanceCreateRequest) GetInterfacesOk() ([]InterfaceCreateRequest, bool) {
-	if o == nil {
+	if o == nil || IsNil(o.Interfaces) {
 		return nil, false
 	}
 	return o.Interfaces, true
 }
 
-// SetInterfaces sets field value
+// HasInterfaces returns a boolean if a field has been set.
+func (o *InstanceCreateRequest) HasInterfaces() bool {
+	if o != nil && !IsNil(o.Interfaces) {
+		return true
+	}
+
+	return false
+}
+
+// SetInterfaces gets a reference to the given []InterfaceCreateRequest and assigns it to the Interfaces field.
 func (o *InstanceCreateRequest) SetInterfaces(v []InterfaceCreateRequest) {
 	o.Interfaces = v
+}
+
+// GetAuto returns the Auto field value if set, zero value otherwise.
+func (o *InstanceCreateRequest) GetAuto() bool {
+	if o == nil || IsNil(o.Auto) {
+		var ret bool
+		return ret
+	}
+	return *o.Auto
+}
+
+// GetAutoOk returns a tuple with the Auto field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *InstanceCreateRequest) GetAutoOk() (*bool, bool) {
+	if o == nil || IsNil(o.Auto) {
+		return nil, false
+	}
+	return o.Auto, true
+}
+
+// HasAuto returns a boolean if a field has been set.
+func (o *InstanceCreateRequest) HasAuto() bool {
+	if o != nil && !IsNil(o.Auto) {
+		return true
+	}
+
+	return false
+}
+
+// SetAuto gets a reference to the given bool and assigns it to the Auto field.
+func (o *InstanceCreateRequest) SetAuto(v bool) {
+	o.Auto = &v
 }
 
 // GetInfinibandInterfaces returns the InfinibandInterfaces field value if set, zero value otherwise.
@@ -832,7 +873,12 @@ func (o InstanceCreateRequest) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Labels) {
 		toSerialize["labels"] = o.Labels
 	}
-	toSerialize["interfaces"] = o.Interfaces
+	if !IsNil(o.Interfaces) {
+		toSerialize["interfaces"] = o.Interfaces
+	}
+	if !IsNil(o.Auto) {
+		toSerialize["auto"] = o.Auto
+	}
 	if !IsNil(o.InfinibandInterfaces) {
 		toSerialize["infinibandInterfaces"] = o.InfinibandInterfaces
 	}
@@ -859,7 +905,6 @@ func (o *InstanceCreateRequest) UnmarshalJSON(data []byte) (err error) {
 		"name",
 		"tenantId",
 		"vpcId",
-		"interfaces",
 	}
 
 	allProperties := make(map[string]interface{})

@@ -115,6 +115,25 @@ func TestAPIVpcCreateRequest_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "test valid VPC create request - Flat virtualization type",
+			fields: fields{
+				Name:                      "test-name",
+				SiteID:                    uuid.NewString(),
+				NetworkVirtualizationType: cdb.GetStrPtr(cdbm.VpcFlat),
+			},
+			wantErr: false,
+		},
+		{
+			name: "test invalid VPC create request - routing profile on Flat VPC",
+			fields: fields{
+				Name:                      "test-name",
+				SiteID:                    uuid.NewString(),
+				NetworkVirtualizationType: cdb.GetStrPtr(cdbm.VpcFlat),
+				RoutingProfile:            cdb.GetStrPtr(APIVpcRoutingProfileInternal),
+			},
+			wantErr: true,
+		},
+		{
 			name: "test valid VPC create request - routing profile when network virtualization type is omitted",
 			fields: fields{
 				Name:           "test-name",

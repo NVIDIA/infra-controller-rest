@@ -13699,7 +13699,8 @@ components:
           enum:
             - ETHERNET_VIRTUALIZER
             - FNN
-          description: Network virtualization type of the VPC
+            - FLAT
+          description: 'Network virtualization type of the VPC. Flat VPCs hold instances on zero-DPU hosts (or hosts with their DPU in NIC mode); their interfaces are bound to underlay (HostInband) network segments and NICo does not drive their data plane.'
         routingProfile:
           type:
             - string
@@ -13824,7 +13825,8 @@ components:
           enum:
             - ETHERNET_VIRTUALIZER
             - FNN
-          description: 'Network virtualization type of the VPC. If no value is specified, then defaults to `FNN` if Site has native networking enabled, or ETHERNET_VIRTUALIZER if native networking is disabled'
+            - FLAT
+          description: 'Network virtualization type of the VPC. If no value is specified, then defaults to `FNN` if Site has native networking enabled, or `ETHERNET_VIRTUALIZER` if native networking is disabled. Flat VPCs hold instances on zero-DPU hosts (or hosts with their DPU in NIC mode) and are never auto-selected -- `FLAT` must be specified explicitly.'
         routingProfile:
           type:
             - string
@@ -15807,6 +15809,9 @@ components:
             - string
             - 'null'
           description: 'Serial Console URL for the Instance. Format: ssh://<id>@siteSerialConsoleHostname'
+        auto:
+          type: boolean
+          description: 'True when this Instance uses NICo auto-resolved networking from the host''s underlay (HostInband) network segments. When true, the caller''s request `interfaces` list was empty, this `interfaces` field remains empty on readback, and the resolved per-interface details surface under `status.network.interfaces`.'
         interfaces:
           type: array
           items:
@@ -16069,9 +16074,12 @@ components:
           $ref: '#/components/schemas/Labels'
         interfaces:
           type: array
-          description: 'At least one interface must be specified. Either Subnet or VPC Prefix interfaces allowed. Only one of the Subnets or VPC Prefixes can be attached over Physical interface. If only one Subnet is specified, then it will be attached over physical interface regardless of the value of isPhysical. In case of VPC Prefix, isPhysical will always be true'
+          description: 'At least one interface must be specified unless `auto` is true. Either Subnet or VPC Prefix interfaces allowed. Only one of the Subnets or VPC Prefixes can be attached over Physical interface. If only one Subnet is specified, then it will be attached over physical interface regardless of the value of isPhysical. In case of VPC Prefix, isPhysical will always be true. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.'
           items:
             $ref: '#/components/schemas/InterfaceCreateRequest'
+        auto:
+          type: boolean
+          description: 'When true, asks NICo to auto-resolve the Instance''s network interfaces from the host''s underlay (HostInband) network segments. Intended for instances on zero-DPU hosts (or hosts with their DPU in NIC mode). When true: (1) the target VPC''s `networkVirtualizationType` MUST be `FLAT`, (2) `interfaces` MUST be empty or omitted, and (3) `secondaryVpcIds` MUST be empty or omitted. Resolved interfaces surface on the Instance''s read response.'
         infinibandInterfaces:
           type: array
           description: Associate one or more Partitions with this Instance
@@ -16100,7 +16108,6 @@ components:
         - name
         - tenantId
         - vpcId
-        - interfaces
     BatchInstanceCreateRequest:
       title: BatchInstanceCreateRequest
       type: object
@@ -16216,9 +16223,12 @@ components:
           $ref: '#/components/schemas/Labels'
         interfaces:
           type: array
-          description: 'Interface configuration shared across all instances. At least one interface must be specified. Either Subnet or VPC Prefix interfaces allowed, only one of the Subnets or VPC Prefixes can be attached over Physical interface. Interface `ipAddress` is not supported for batch instance creation requests.'
+          description: 'Interface configuration shared across all instances. At least one interface must be specified unless `auto` is true. Either Subnet or VPC Prefix interfaces allowed, only one of the Subnets or VPC Prefixes can be attached over Physical interface. Interface `ipAddress` is not supported for batch instance creation requests. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.'
           items:
             $ref: '#/components/schemas/InterfaceCreateRequest'
+        auto:
+          type: boolean
+          description: 'When true, asks NICo to auto-resolve each Instance''s network interfaces from the host''s underlay (HostInband) network segments. Intended for instances on zero-DPU hosts (or hosts with their DPU in NIC mode). When true: (1) the target VPC''s `networkVirtualizationType` MUST be `FLAT`, (2) `interfaces` MUST be empty or omitted, and (3) `secondaryVpcIds` MUST be empty or omitted.'
         infinibandInterfaces:
           type: array
           description: InfiniBand interface configuration shared across all instances
@@ -16250,7 +16260,6 @@ components:
         - tenantId
         - instanceTypeId
         - vpcId
-        - interfaces
     InstanceUpdateRequest:
       title: InstanceUpdateRequest
       type: object
@@ -16395,9 +16404,14 @@ components:
             format: uuid
         interfaces:
           type: array
-          description: Update Interfaces of the Instance
+          description: 'Update Interfaces of the Instance. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.'
           items:
             $ref: '#/components/schemas/InterfaceCreateRequest'
+        auto:
+          type:
+            - boolean
+            - 'null'
+          description: 'When set, asks NICo to auto-resolve the Instance''s network interfaces from the host''s underlay (HostInband) segments. `null` leaves the value unchanged; `true` (re-)resolves; `false` returns to explicit interface configuration. When `true`, the Instance''s VPC MUST already have `networkVirtualizationType: FLAT`, `interfaces` MUST be empty or omitted, and `secondaryVpcIds` MUST be empty or omitted.'
         infinibandInterfaces:
           type: array
           description: Update InfiniBand Interfaces of the Instance

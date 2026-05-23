@@ -51,7 +51,7 @@ type VPC struct {
 	SiteId *string `json:"siteId,omitempty"`
 	// Legacy attribute, contains the same value as ID
 	ControllerVpcId NullableString `json:"controllerVpcId,omitempty"`
-	// Network virtualization type of the VPC
+	// Network virtualization type of the VPC. Flat VPCs hold instances on zero-DPU hosts (or hosts with their DPU in NIC mode); their interfaces are bound to underlay (HostInband) network segments and NICo does not drive their data plane.
 	NetworkVirtualizationType NullableString `json:"networkVirtualizationType,omitempty"`
 	// Routing profile type for the VPC. Populated when Site has Native Networking enabled and network virtualization type is `FNN`.
 	RoutingProfile NullableString `json:"routingProfile,omitempty"`

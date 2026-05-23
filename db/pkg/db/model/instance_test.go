@@ -1584,6 +1584,7 @@ type InstanceWithAllocation struct {
 	AlwaysBootWithCustomIpxe               bool                                    `bun:"always_boot_with_custom_ipxe,notnull"`
 	PhoneHomeEnabled                       bool                                    `bun:"phone_home_enabled,notnull"`
 	UserData                               *string                                 `bun:"user_data"`
+	NetworkAuto                            bool                                    `bun:"network_auto,notnull"`
 	Labels                                 map[string]string                       `bun:"labels,type:jsonb"`
 	IsUpdatePending                        bool                                    `bun:"is_update_pending,notnull"`
 	InfinityRCRStatus                      *string                                 `bun:"infinity_rcr_status"`
@@ -2502,31 +2503,33 @@ func TestInstanceSQLDAO_Update(t *testing.T) {
 		t.Run(tc.desc, func(t *testing.T) {
 			got, err := isd.Update(ctx, nil,
 				InstanceUpdateInput{
-					InstanceID:                             tc.id,
-					Name:                                   tc.paramName,
-					Description:                            tc.paramDescription,
-					TenantID:                               tc.paramTenantID,
-					InfrastructureProviderID:               tc.paramInfrastructureProviderID,
-					SiteID:                                 tc.paramSiteID,
-					InstanceTypeID:                         tc.paramInstanceTypeID,
-					NetworkSecurityGroupID:                 tc.paramNetworkSecurityGroupID,
-					NetworkSecurityGroupPropagationDetails: tc.paramNetworkSecurityGroupPropagationDetails,
-					VpcID:                                  tc.paramVpcID,
-					MachineID:                              tc.paramMachineID,
-					ControllerInstanceID:                   tc.paramControlledInstanceID,
-					Hostname:                               tc.paramHostname,
-					OperatingSystemID:                      tc.paramOperatingSystemID,
-					IpxeScript:                             tc.paramIpxeScript,
-					AlwaysBootWithCustomIpxe:               tc.paramAlwaysBootWithCustomIpxe,
-					PhoneHomeEnabled:                       tc.paramEnablePhoneHome,
-					UserData:                               tc.paramUserData,
-					Labels:                                 tc.paramLabels,
-					IsUpdatePending:                        tc.paramIsUpdatePending,
-					InfinityRCRStatus:                      tc.paramInfinityRCRStatus,
-					Status:                                 tc.paramStatus,
-					PowerStatus:                            tc.paramPowerStatus,
-					IsMissingOnSite:                        tc.paramIsMissingOnSite,
-					TpmEkCertificate:                       tc.paramTpmEkCertificate,
+					InstanceID: tc.id,
+					InstanceUpdateCommon: InstanceUpdateCommon{
+						Name:                                   tc.paramName,
+						Description:                            tc.paramDescription,
+						TenantID:                               tc.paramTenantID,
+						InfrastructureProviderID:               tc.paramInfrastructureProviderID,
+						SiteID:                                 tc.paramSiteID,
+						InstanceTypeID:                         tc.paramInstanceTypeID,
+						NetworkSecurityGroupID:                 tc.paramNetworkSecurityGroupID,
+						NetworkSecurityGroupPropagationDetails: tc.paramNetworkSecurityGroupPropagationDetails,
+						VpcID:                                  tc.paramVpcID,
+						MachineID:                              tc.paramMachineID,
+						ControllerInstanceID:                   tc.paramControlledInstanceID,
+						Hostname:                               tc.paramHostname,
+						OperatingSystemID:                      tc.paramOperatingSystemID,
+						IpxeScript:                             tc.paramIpxeScript,
+						AlwaysBootWithCustomIpxe:               tc.paramAlwaysBootWithCustomIpxe,
+						PhoneHomeEnabled:                       tc.paramEnablePhoneHome,
+						UserData:                               tc.paramUserData,
+						Labels:                                 tc.paramLabels,
+						IsUpdatePending:                        tc.paramIsUpdatePending,
+						InfinityRCRStatus:                      tc.paramInfinityRCRStatus,
+						Status:                                 tc.paramStatus,
+						PowerStatus:                            tc.paramPowerStatus,
+						IsMissingOnSite:                        tc.paramIsMissingOnSite,
+						TpmEkCertificate:                       tc.paramTpmEkCertificate,
+					},
 				},
 			)
 			assert.Equal(t, tc.expectedError, err != nil)
@@ -3181,75 +3184,70 @@ func TestInstanceSQLDAO_UpdateMultiple(t *testing.T) {
 	// OTEL Spanner configuration
 	_, _, ctx = testCommonTraceProviderSetup(t, ctx)
 
+	// UpdateMultiple applies a single shared update mask to N instance
+	// IDs. Each subtest sets the same fields on every targeted row;
+	// heterogeneous per-row updates require separate calls.
 	tests := []struct {
 		desc               string
-		inputs             []InstanceUpdateInput
+		input              InstanceUpdateMultipleInput
 		expectError        bool
 		expectedCount      int
+		expectStatus       *string
+		expectName         *string
 		verifyChildSpanner bool
 	}{
 		{
-			desc: "batch update three instances",
-			inputs: []InstanceUpdateInput{
-				{
-					InstanceID:        i1.ID,
-					Name:              db.GetStrPtr("test-update-1-modified"),
+			desc: "batch update three instances with shared patch",
+			input: InstanceUpdateMultipleInput{
+				InstanceIDs: []uuid.UUID{i1.ID, i2.ID, i3.ID},
+				InstanceUpdateCommon: InstanceUpdateCommon{
 					Status:            db.GetStrPtr(InstanceStatusReady),
 					MachineID:         &machine.ID,
 					OperatingSystemID: db.GetUUIDPtr(operatingSystem.ID),
 					Labels:            map[string]string{"updated": "true"},
 				},
-				{
-					InstanceID:     i2.ID,
-					Name:           db.GetStrPtr("test-update-2-modified"),
-					Status:         db.GetStrPtr(InstanceStatusConfiguring),
-					InstanceTypeID: &instanceType.ID,
-				},
-				{
-					InstanceID: i3.ID,
-					Name:       db.GetStrPtr("test-update-3-modified"),
-					Status:     db.GetStrPtr(InstanceStatusError),
-				},
 			},
 			expectError:        false,
 			expectedCount:      3,
+			expectStatus:       db.GetStrPtr(InstanceStatusReady),
 			verifyChildSpanner: true,
 		},
 		{
-			desc:               "batch update with empty input",
-			inputs:             []InstanceUpdateInput{},
-			expectError:        false,
-			expectedCount:      0,
-			verifyChildSpanner: false,
+			desc:          "batch update with empty input",
+			input:         InstanceUpdateMultipleInput{},
+			expectError:   false,
+			expectedCount: 0,
 		},
 		{
-			desc: "batch update single instance",
-			inputs: []InstanceUpdateInput{
-				{
-					InstanceID: i1.ID,
-					Status:     db.GetStrPtr(InstanceStatusUpdating),
+			desc: "batch update single instance via slice of one",
+			input: InstanceUpdateMultipleInput{
+				InstanceIDs: []uuid.UUID{i1.ID},
+				InstanceUpdateCommon: InstanceUpdateCommon{
+					Status: db.GetStrPtr(InstanceStatusUpdating),
 				},
 			},
 			expectError:   false,
 			expectedCount: 1,
+			expectStatus:  db.GetStrPtr(InstanceStatusUpdating),
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.desc, func(t *testing.T) {
-			got, err := isd.UpdateMultiple(ctx, nil, tc.inputs)
+			got, err := isd.UpdateMultiple(ctx, nil, tc.input)
 			assert.Equal(t, tc.expectError, err != nil)
 			if !tc.expectError {
 				assert.NotNil(t, got)
 				assert.Equal(t, tc.expectedCount, len(got))
-				// Verify updates and that results are returned in the same order as inputs
+				// Result order must match input order; every row should
+				// reflect the shared mask values.
 				for i, instance := range got {
-					assert.Equal(t, tc.inputs[i].InstanceID, instance.ID, "result order should match input order")
-					if tc.inputs[i].Name != nil {
-						assert.Equal(t, *tc.inputs[i].Name, instance.Name)
+					assert.Equal(t, tc.input.InstanceIDs[i], instance.ID, "result order should match input order")
+					if tc.expectStatus != nil {
+						assert.Equal(t, *tc.expectStatus, instance.Status)
 					}
-					if tc.inputs[i].Status != nil {
-						assert.Equal(t, *tc.inputs[i].Status, instance.Status)
+					if tc.expectName != nil {
+						assert.Equal(t, *tc.expectName, instance.Name)
 					}
 				}
 			}
@@ -3270,19 +3268,43 @@ func TestInstanceSQLDAO_UpdateMultiple_ExceedsMaxBatchItems(t *testing.T) {
 	defer dbSession.Close()
 	isd := NewInstanceDAO(dbSession)
 
-	// Create inputs exceeding MaxBatchItems
-	inputs := make([]InstanceUpdateInput, db.MaxBatchItems+1)
-	for i := range inputs {
-		inputs[i] = InstanceUpdateInput{
-			InstanceID: uuid.New(),
-			Name:       db.GetStrPtr(fmt.Sprintf("test-%d", i)),
-		}
+	// Create IDs exceeding MaxBatchItems
+	ids := make([]uuid.UUID, db.MaxBatchItems+1)
+	for i := range ids {
+		ids[i] = uuid.New()
+	}
+	input := InstanceUpdateMultipleInput{
+		InstanceIDs:          ids,
+		InstanceUpdateCommon: InstanceUpdateCommon{Name: db.GetStrPtr("test")},
 	}
 
-	_, err := isd.UpdateMultiple(ctx, nil, inputs)
+	_, err := isd.UpdateMultiple(ctx, nil, input)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "batch size")
 	assert.Contains(t, err.Error(), "exceeds maximum allowed")
+}
+
+// TestInstanceSQLDAO_UpdateMultiple_RejectsDuplicateIDs covers the
+// pre-write guard against duplicate InstanceIDs in a single call.
+// Without it, the post-fetch SELECT returns one row per unique ID
+// while the input slice still counts duplicates, surfacing as a
+// post-write count-mismatch with a partially applied batch.
+func TestInstanceSQLDAO_UpdateMultiple_RejectsDuplicateIDs(t *testing.T) {
+	ctx := context.Background()
+	dbSession := testInstanceInitDB(t)
+	defer dbSession.Close()
+	isd := NewInstanceDAO(dbSession)
+
+	dupID := uuid.New()
+	input := InstanceUpdateMultipleInput{
+		InstanceIDs:          []uuid.UUID{dupID, uuid.New(), dupID},
+		InstanceUpdateCommon: InstanceUpdateCommon{Status: db.GetStrPtr(InstanceStatusReady)},
+	}
+
+	_, err := isd.UpdateMultiple(ctx, nil, input)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "duplicate instance id")
+	assert.Contains(t, err.Error(), dupID.String())
 }
 
 func TestInstanceSQLDAO_GetAll_WithNames(t *testing.T) {
@@ -3426,38 +3448,41 @@ func TestInstanceSQLDAO_UpdateMultiple_AllFields(t *testing.T) {
 	// Prepare new values for update
 	newControllerInstanceID := uuid.New()
 
-	// Update with ALL fields set to new values
-	input := InstanceUpdateInput{
-		InstanceID:               instance.ID,
-		Name:                     db.GetStrPtr("updated-instance-name"),
-		Description:              db.GetStrPtr("updated description"),
-		TenantID:                 &tenant.ID,
-		InfrastructureProviderID: &ip.ID,
-		SiteID:                   &site.ID,
-		InstanceTypeID:           &instanceType.ID,
-		// NetworkSecurityGroupID is a FK, skip it
-		NetworkSecurityGroupPropagationDetails: &NetworkSecurityGroupPropagationDetails{
-			FriendlyStatus: "propagated",
+	// Update with ALL fields set to new values, applied as a shared
+	// mask to a single-ID slice.
+	input := InstanceUpdateMultipleInput{
+		InstanceIDs: []uuid.UUID{instance.ID},
+		InstanceUpdateCommon: InstanceUpdateCommon{
+			Name:                     db.GetStrPtr("updated-instance-name"),
+			Description:              db.GetStrPtr("updated description"),
+			TenantID:                 &tenant.ID,
+			InfrastructureProviderID: &ip.ID,
+			SiteID:                   &site.ID,
+			InstanceTypeID:           &instanceType.ID,
+			// NetworkSecurityGroupID is a FK, skip it
+			NetworkSecurityGroupPropagationDetails: &NetworkSecurityGroupPropagationDetails{
+				FriendlyStatus: "propagated",
+			},
+			VpcID:                    &vpc.ID,
+			MachineID:                &machine.ID,
+			ControllerInstanceID:     &newControllerInstanceID,
+			Hostname:                 db.GetStrPtr("new-hostname.example.com"),
+			OperatingSystemID:        &operatingSystem.ID,
+			IpxeScript:               db.GetStrPtr("new-ipxe-script"),
+			AlwaysBootWithCustomIpxe: db.GetBoolPtr(true),
+			PhoneHomeEnabled:         db.GetBoolPtr(true),
+			UserData:                 db.GetStrPtr("new-userdata"),
+			Labels:                   map[string]string{"env": "prod", "team": "platform"},
+			IsUpdatePending:          db.GetBoolPtr(true),
+			InfinityRCRStatus:        db.GetStrPtr("RESOURCE_GRANTED"),
+			TpmEkCertificate:         db.GetStrPtr("tpm-cert-data"),
+			Status:                   db.GetStrPtr(InstanceStatusReady),
+			PowerStatus:              db.GetStrPtr("on"),
+			IsMissingOnSite:          db.GetBoolPtr(true),
 		},
-		VpcID:                    &vpc.ID,
-		MachineID:                &machine.ID,
-		ControllerInstanceID:     &newControllerInstanceID,
-		Hostname:                 db.GetStrPtr("new-hostname.example.com"),
-		OperatingSystemID:        &operatingSystem.ID,
-		IpxeScript:               db.GetStrPtr("new-ipxe-script"),
-		AlwaysBootWithCustomIpxe: db.GetBoolPtr(true),
-		PhoneHomeEnabled:         db.GetBoolPtr(true),
-		UserData:                 db.GetStrPtr("new-userdata"),
-		Labels:                   map[string]string{"env": "prod", "team": "platform"},
-		IsUpdatePending:          db.GetBoolPtr(true),
-		InfinityRCRStatus:        db.GetStrPtr("RESOURCE_GRANTED"),
-		TpmEkCertificate:         db.GetStrPtr("tpm-cert-data"),
-		Status:                   db.GetStrPtr(InstanceStatusReady),
-		PowerStatus:              db.GetStrPtr("on"),
-		IsMissingOnSite:          db.GetBoolPtr(true),
 	}
 
-	results, err := isd.UpdateMultiple(ctx, nil, []InstanceUpdateInput{input})
+	results, err := isd.UpdateMultiple(ctx, nil, input)
 	assert.NoError(t, err)
 	assert.Len(t, results, 1)
 

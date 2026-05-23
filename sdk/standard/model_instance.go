@@ -71,7 +71,9 @@ type Instance struct {
 	// Indicates whether an update is available for the Instance. Updates can be applied on reboot
 	IsUpdatePending *bool `json:"isUpdatePending,omitempty"`
 	// Serial Console URL for the Instance. Format: ssh://<id>@siteSerialConsoleHostname
-	SerialConsoleUrl     NullableString        `json:"serialConsoleUrl,omitempty"`
+	SerialConsoleUrl NullableString `json:"serialConsoleUrl,omitempty"`
+	// True when this Instance uses NICo auto-resolved networking from the host's underlay (HostInband) network segments. When true, the caller's request `interfaces` list was empty, this `interfaces` field remains empty on readback, and the resolved per-interface details surface under `status.network.interfaces`.
+	Auto                 *bool                 `json:"auto,omitempty"`
 	Interfaces           []Interface           `json:"interfaces,omitempty"`
 	InfinibandInterfaces []InfiniBandInterface `json:"infinibandInterfaces,omitempty"`
 	NvLinkInterfaces     []NVLinkInterface     `json:"nvLinkInterfaces,omitempty"`
@@ -910,6 +912,38 @@ func (o *Instance) UnsetSerialConsoleUrl() {
 	o.SerialConsoleUrl.Unset()
 }
 
+// GetAuto returns the Auto field value if set, zero value otherwise.
+func (o *Instance) GetAuto() bool {
+	if o == nil || IsNil(o.Auto) {
+		var ret bool
+		return ret
+	}
+	return *o.Auto
+}
+
+// GetAutoOk returns a tuple with the Auto field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Instance) GetAutoOk() (*bool, bool) {
+	if o == nil || IsNil(o.Auto) {
+		return nil, false
+	}
+	return o.Auto, true
+}
+
+// HasAuto returns a boolean if a field has been set.
+func (o *Instance) HasAuto() bool {
+	if o != nil && !IsNil(o.Auto) {
+		return true
+	}
+
+	return false
+}
+
+// SetAuto gets a reference to the given bool and assigns it to the Auto field.
+func (o *Instance) SetAuto(v bool) {
+	o.Auto = &v
+}
+
 // GetInterfaces returns the Interfaces field value if set, zero value otherwise.
 func (o *Instance) GetInterfaces() []Interface {
 	if o == nil || IsNil(o.Interfaces) {
@@ -1380,6 +1414,9 @@ func (o Instance) ToMap() (map[string]interface{}, error) {
 	}
 	if o.SerialConsoleUrl.IsSet() {
 		toSerialize["serialConsoleUrl"] = o.SerialConsoleUrl.Get()
+	}
+	if !IsNil(o.Auto) {
+		toSerialize["auto"] = o.Auto
 	}
 	if !IsNil(o.Interfaces) {
 		toSerialize["interfaces"] = o.Interfaces

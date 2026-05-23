@@ -137,9 +137,9 @@ func (ascr APIVpcCreateRequest) Validate() error {
 
 	// NetworkVirtualizationType validation
 	if ascr.NetworkVirtualizationType != nil {
-		if (*ascr.NetworkVirtualizationType != cdbm.VpcEthernetVirtualizer) && (*ascr.NetworkVirtualizationType != cdbm.VpcFNN) {
+		if !cdbm.VpcNetworkVirtualzationTypeMap[*ascr.NetworkVirtualizationType] {
 			return validation.Errors{
-				"networkVirtualizationType": errors.New("either ETHERNET_VIRTUALIZER or FNN are currently supported"),
+				"networkVirtualizationType": errors.New("ETHERNET_VIRTUALIZER, FNN, and FLAT are currently supported"),
 			}
 		}
 	}
@@ -151,7 +151,7 @@ func (ascr APIVpcCreateRequest) Validate() error {
 			}
 		}
 
-		if ascr.NetworkVirtualizationType != nil && *ascr.NetworkVirtualizationType != cdbm.VpcFNN {
+		if ascr.NetworkVirtualizationType != nil && !cdbm.VpcTypeSupportsRoutingProfile(ascr.NetworkVirtualizationType) {
 			return validation.Errors{
 				"routingProfile": errors.New("`routingProfile` is only supported when `networkVirtualizationType` is FNN"),
 			}

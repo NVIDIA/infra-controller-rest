@@ -264,7 +264,7 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		// `routingProfile` only and let the handler default
 		// `networkVirtualizationType` from site config; Validate
 		// cannot see that default, so the check lives here.
-		if *networkVirtualizationType != cdbm.VpcFNN {
+		if !cdbm.VpcTypeSupportsRoutingProfile(networkVirtualizationType) {
 			logger.Warn().Str("routingProfile", *apiRequest.RoutingProfile).Msg("`routingProfile` can only be specified if network virtualization type is set to `FNN`, or Site has native networking enabled and no network virtualization type is specified")
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`routingProfile` can only be specified if network virtualization type is set to `FNN`, or Site has native networking enabled and no network virtualization type is specified", nil)
 		}

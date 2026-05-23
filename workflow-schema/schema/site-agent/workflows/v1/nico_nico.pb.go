@@ -238,6 +238,14 @@ const (
 	VpcVirtualizationType_FNN_CLASSIC VpcVirtualizationType = 3
 	VpcVirtualizationType_FNN_L3      VpcVirtualizationType = 4
 	VpcVirtualizationType_FNN         VpcVirtualizationType = 5
+	// FLAT is for VPCs whose tenant instances live directly on the underlay
+	// (zero-DPU hosts, or hosts with their DPU in NIC mode). Their interfaces
+	// are bound to `HostInband` network segments rather than a Carbide-managed
+	// overlay. Flat VPCs are still real tenant VPCs with a VNI and NSGs, but
+	// Carbide doesn't drive their data plane -- routing and ACL enforcement
+	// between Flat VPCs and other VPCs is the network operator's
+	// responsibility.
+	VpcVirtualizationType_FLAT VpcVirtualizationType = 6
 )
 
 // Enum value maps for VpcVirtualizationType.
@@ -248,6 +256,7 @@ var (
 		3: "FNN_CLASSIC",
 		4: "FNN_L3",
 		5: "FNN",
+		6: "FLAT",
 	}
 	VpcVirtualizationType_value = map[string]int32{
 		"ETHERNET_VIRTUALIZER":           0,
@@ -255,6 +264,7 @@ var (
 		"FNN_CLASSIC":                    3,
 		"FNN_L3":                         4,
 		"FNN":                            5,
+		"FLAT":                           6,
 	}
 )
 
@@ -13707,8 +13717,22 @@ func (x *InstanceConfig) GetNvlink() *InstanceNVLinkConfig {
 // Desired network configuration for an instance
 type InstanceNetworkConfig struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Configures how instance network interfaces are set up
-	Interfaces    []*InstanceInterfaceConfig `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	// Configures how instance network interfaces are set up.
+	// Mutually exclusive with `auto`: when `auto` is true, this
+	// MUST be empty. When `auto` is false, this lists the explicit
+	// interface configuration the caller wants applied.
+	Interfaces []*InstanceInterfaceConfig `protobuf:"bytes,1,rep,name=interfaces,proto3" json:"interfaces,omitempty"`
+	// When true, NICO (or potentially some pluggable SDN backend) will
+	// auto-resolve the instance's network interfaces from the host's
+	// HostInband network segments. Only valid for instances on zero-DPU
+	// hosts (no DPU, or DPU in NIC mode). When set, `interfaces` MUST be
+	// empty on the request.
+	//
+	// Callers reading the instance back also see `auto = true` with an
+	// empty `interfaces` list (what they sent is preserved verbatim).
+	// The resolved per-interface details surface in
+	// `Instance.status.network.interfaces` instead.
+	Auto          bool `protobuf:"varint,2,opt,name=auto,proto3" json:"auto,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -13748,6 +13772,13 @@ func (x *InstanceNetworkConfig) GetInterfaces() []*InstanceInterfaceConfig {
 		return x.Interfaces
 	}
 	return nil
+}
+
+func (x *InstanceNetworkConfig) GetAuto() bool {
+	if x != nil {
+		return x.Auto
+	}
+	return false
 }
 
 // Desired infiniband configuration for an instance
@@ -50169,11 +50200,12 @@ const file_nico_nico_proto_rawDesc = "" +
 	"\x16dpu_extension_services\x18\x17 \x01(\v2).forge.InstanceDpuExtensionServicesConfigH\x01R\x14dpuExtensionServices\x88\x01\x01\x123\n" +
 	"\x06nvlink\x18\x18 \x01(\v2\x1b.forge.InstanceNVLinkConfigR\x06nvlinkB\x1c\n" +
 	"\x1a_network_security_group_idB\x19\n" +
-	"\x17_dpu_extension_servicesJ\x04\b\x15\x10\x16\"W\n" +
+	"\x17_dpu_extension_servicesJ\x04\b\x15\x10\x16\"k\n" +
 	"\x15InstanceNetworkConfig\x12>\n" +
 	"\n" +
 	"interfaces\x18\x01 \x03(\v2\x1e.forge.InstanceInterfaceConfigR\n" +
-	"interfaces\"a\n" +
+	"interfaces\x12\x12\n" +
+	"\x04auto\x18\x02 \x01(\bR\x04auto\"a\n" +
 	"\x18InstanceInfinibandConfig\x12E\n" +
 	"\rib_interfaces\x18\x01 \x03(\v2 .forge.InstanceIBInterfaceConfigR\fibInterfaces\"\\\n" +
 	"!InstanceDpuExtensionServiceConfig\x12\x1d\n" +
@@ -53288,14 +53320,15 @@ const file_nico_nico_proto_rawDesc = "" +
 	"\x13RootBmcByMacAddress\x10\b\x12\x1c\n" +
 	"\x18BmcNICoAdminByMacAddress\x10\t\x12\b\n" +
 	"\x04NmxM\x10\n" +
-	"*\x7f\n" +
+	"*\x89\x01\n" +
 	"\x15VpcVirtualizationType\x12\x18\n" +
 	"\x14ETHERNET_VIRTUALIZER\x10\x00\x12&\n" +
 	"\x1eETHERNET_VIRTUALIZER_WITH_NVUE\x10\x02\x1a\x02\b\x01\x12\x0f\n" +
 	"\vFNN_CLASSIC\x10\x03\x12\n" +
 	"\n" +
 	"\x06FNN_L3\x10\x04\x12\a\n" +
-	"\x03FNN\x10\x05*Q\n" +
+	"\x03FNN\x10\x05\x12\b\n" +
+	"\x04FLAT\x10\x06*Q\n" +
 	"\x0fPrefixMatchType\x12\x10\n" +
 	"\fPREFIX_EXACT\x10\x00\x12\x13\n" +
 	"\x0fPREFIX_CONTAINS\x10\x01\x12\x17\n" +

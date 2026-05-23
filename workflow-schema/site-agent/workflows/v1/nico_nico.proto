@@ -1422,6 +1422,14 @@ enum VpcVirtualizationType {
   FNN_CLASSIC = 3;
   FNN_L3 = 4;
   FNN = 5;
+  // FLAT is for VPCs whose tenant instances live directly on the underlay
+  // (zero-DPU hosts, or hosts with their DPU in NIC mode). Their interfaces
+  // are bound to `HostInband` network segments rather than a Carbide-managed
+  // overlay. Flat VPCs are still real tenant VPCs with a VNI and NSGs, but
+  // Carbide doesn't drive their data plane -- routing and ACL enforcement
+  // between Flat VPCs and other VPCs is the network operator's
+  // responsibility.
+  FLAT = 6;
 }
 
 message VpcUpdateRequest {
@@ -2423,8 +2431,23 @@ message InstanceConfig {
 
 // Desired network configuration for an instance
 message InstanceNetworkConfig {
-  // Configures how instance network interfaces are set up
+  // Configures how instance network interfaces are set up.
+  // Mutually exclusive with `auto`: when `auto` is true, this
+  // MUST be empty. When `auto` is false, this lists the explicit
+  // interface configuration the caller wants applied.
   repeated InstanceInterfaceConfig interfaces = 1;
+
+  // When true, NICO (or potentially some pluggable SDN backend) will
+  // auto-resolve the instance's network interfaces from the host's
+  // HostInband network segments. Only valid for instances on zero-DPU
+  // hosts (no DPU, or DPU in NIC mode). When set, `interfaces` MUST be
+  // empty on the request.
+  //
+  // Callers reading the instance back also see `auto = true` with an
+  // empty `interfaces` list (what they sent is preserved verbatim).
+  // The resolved per-interface details surface in
+  // `Instance.status.network.interfaces` instead.
+  bool auto = 2;
 }
 
 // Desired infiniband configuration for an instance

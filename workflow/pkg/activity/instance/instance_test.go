@@ -488,7 +488,7 @@ func TestManageInstance_UpdateInstancesInDB(t *testing.T) {
 		},
 	)
 	assert.Nil(t, err)
-	_, err = instanceDAO.Update(ctx, nil, cdbm.InstanceUpdateInput{InstanceID: instance6.ID, IsMissingOnSite: cdb.GetBoolPtr(true)})
+	_, err = instanceDAO.Update(ctx, nil, cdbm.InstanceUpdateInput{InstanceID: instance6.ID, InstanceUpdateCommon: cdbm.InstanceUpdateCommon{IsMissingOnSite: cdb.GetBoolPtr(true)}})
 	assert.Nil(t, err)
 
 	// Set updated earlier than the inventory receipt interval
