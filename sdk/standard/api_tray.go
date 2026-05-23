@@ -376,7 +376,7 @@ func (r ApiGetAllTrayRequest) Id(id string) ApiGetAllTrayRequest {
 	return r
 }
 
-// Restrict to trays at this rack slot (matches &#x60;position.slotId&#x60;). Composes with the rest of the filter via AND.
+// Restrict to trays at this rack slot (matches &#x60;position.slotId&#x60;). Requires &#x60;rackId&#x60; or &#x60;rackName&#x60;. Composes with the rest of the filter via AND.
 func (r ApiGetAllTrayRequest) SlotId(slotId int32) ApiGetAllTrayRequest {
 	r.slotId = &slotId
 	return r
@@ -415,7 +415,7 @@ Org must have an Infrastructure Provider entity. User must have authorization ro
 - `rackId` and `rackName` are mutually exclusive
 - `rackId`/`rackName` cannot be combined with `id`/`componentId` (rack-level vs component-level targeting)
 - `componentId` requires `type` to be specified
-- `slotId` restricts to trays at that rack slot and composes with the rest of the query via AND; an incompatible combination simply returns an empty result
+- `slotId` restricts to trays at that rack slot, requires `rackId` or `rackName`, and composes with the rest of the query via AND
 
 	@param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
 	@param org Name of the Org
@@ -1375,7 +1375,7 @@ func (r ApiValidateTraysRequest) ComponentId(componentId string) ApiValidateTray
 	return r
 }
 
-// Restrict validation to trays at this rack slot (matches &#x60;position.slotId&#x60;). Composes with the rest of the filter via AND.
+// Restrict validation to trays at this rack slot (matches &#x60;position.slotId&#x60;). Requires &#x60;rackId&#x60; or &#x60;rackName&#x60;. Composes with the rest of the filter via AND.
 func (r ApiValidateTraysRequest) SlotId(slotId int32) ApiValidateTraysRequest {
 	r.slotId = &slotId
 	return r

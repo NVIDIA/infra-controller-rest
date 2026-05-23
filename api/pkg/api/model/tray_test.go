@@ -457,19 +457,24 @@ func TestAPITrayGetAllRequest_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "slotId alone is valid (site-wide post-filter)",
+			name:    "slotId without rack invalid",
 			req:     APITrayGetAllRequest{SlotID: int32Ptr(3)},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
-			name:    "slotId composes with IDs (intersection may be empty)",
+			name:    "slotId with IDs without rack invalid",
 			req:     APITrayGetAllRequest{SlotID: int32Ptr(3), IDs: []string{validUUID}},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
-			name:    "slotId composes with componentIds (intersection may be empty)",
+			name:    "slotId with componentIds without rack invalid",
 			req:     APITrayGetAllRequest{SlotID: int32Ptr(3), ComponentIDs: []string{"comp-1"}, Type: strPtr("Compute")},
-			wantErr: false,
+			wantErr: true,
+		},
+		{
+			name:    "negative slotId invalid",
+			req:     APITrayGetAllRequest{RackName: strPtr("Rack-001"), SlotID: int32Ptr(-1)},
+			wantErr: true,
 		},
 	}
 
@@ -624,42 +629,64 @@ func TestAPITrayGetAllRequest_ToProto(t *testing.T) {
 	}
 }
 
-func TestTrayFilter_PositionFilter(t *testing.T) {
+func TestTrayFilter_SlotFilter(t *testing.T) {
 	rackName := "Rack-001"
 	int32Ptr := func(v int32) *int32 { return &v }
 
-	t.Run("nil filter has no position filter and matches everything", func(t *testing.T) {
+	t.Run("nil filter has no slot filter and matches everything", func(t *testing.T) {
 		var f *TrayFilter
-		assert.False(t, f.HasPositionFilter())
-		assert.True(t, f.MatchesPosition(&flowv1.Component{}))
+		assert.False(t, f.HasSlotFilter())
+		assert.True(t, f.MatchesSlot(&flowv1.Component{}))
 	})
 
-	t.Run("filter without slot has no position filter", func(t *testing.T) {
+	t.Run("filter without slot has no slot filter", func(t *testing.T) {
 		f := &TrayFilter{RackName: &rackName}
-		assert.False(t, f.HasPositionFilter())
-		assert.True(t, f.MatchesPosition(&flowv1.Component{
+		assert.False(t, f.HasSlotFilter())
+		assert.True(t, f.MatchesSlot(&flowv1.Component{
 			Position: &flowv1.RackPosition{SlotId: 99},
 		}))
 	})
 
 	t.Run("slotId matches position.slotId", func(t *testing.T) {
 		f := &TrayFilter{RackName: &rackName, SlotID: int32Ptr(3)}
-		assert.True(t, f.HasPositionFilter())
-		assert.True(t, f.MatchesPosition(&flowv1.Component{
+		assert.True(t, f.HasSlotFilter())
+		assert.True(t, f.MatchesSlot(&flowv1.Component{
 			Position: &flowv1.RackPosition{SlotId: 3, TrayIdx: 7},
 		}))
-		assert.False(t, f.MatchesPosition(&flowv1.Component{
+		assert.False(t, f.MatchesSlot(&flowv1.Component{
 			Position: &flowv1.RackPosition{SlotId: 4},
 		}))
 	})
 
-	t.Run("position filter rejects component with no position", func(t *testing.T) {
+	t.Run("slot filter rejects component with no position", func(t *testing.T) {
 		f := &TrayFilter{RackName: &rackName, SlotID: int32Ptr(3)}
-		assert.False(t, f.MatchesPosition(&flowv1.Component{}))
+		assert.False(t, f.MatchesSlot(&flowv1.Component{}))
 	})
 }
 
-func TestTrayFilter_Validate_PositionConstraints(t *testing.T) {
+func TestRackComponentSlotMatcher(t *testing.T) {
+	int32Ptr := func(v int32) *int32 { return &v }
+
+	t.Run("inactive matcher matches everything", func(t *testing.T) {
+		m := RackComponentSlotMatcher{}
+		assert.False(t, m.Active())
+		assert.True(t, m.Matches(nil))
+	})
+
+	t.Run("active matcher checks slot", func(t *testing.T) {
+		m := RackComponentSlotMatcher{SlotID: int32Ptr(3)}
+		assert.True(t, m.Active())
+		assert.True(t, m.Matches(&flowv1.Component{
+			Position: &flowv1.RackPosition{SlotId: 3},
+		}))
+		assert.False(t, m.Matches(&flowv1.Component{
+			Position: &flowv1.RackPosition{SlotId: 4},
+		}))
+		assert.False(t, m.Matches(nil))
+	})
+}
+
+func TestTrayFilter_Validate_SlotConstraints(t *testing.T) {
 	rackName := "Rack-001"
 	int32Ptr := func(v int32) *int32 { return &v }
 
@@ -674,18 +701,23 @@ func TestTrayFilter_Validate_PositionConstraints(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:    "slotId alone valid (site-wide post-filter)",
+			name:    "slotId without rack invalid",
 			filter:  &TrayFilter{SlotID: int32Ptr(3)},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
-			name:    "slotId composes with ids (intersection may be empty)",
+			name:    "slotId with ids without rack invalid",
 			filter:  &TrayFilter{SlotID: int32Ptr(3), IDs: []string{uuid.New().String()}},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:    "rackName with ids still invalid (pre-existing rule)",
 			filter:  &TrayFilter{RackName: &rackName, IDs: []string{uuid.New().String()}},
+			wantErr: true,
+		},
+		{
+			name:    "negative slotId invalid",
+			filter:  &TrayFilter{RackName: &rackName, SlotID: int32Ptr(-1)},
 			wantErr: true,
 		},
 	}
@@ -699,6 +731,83 @@ func TestTrayFilter_Validate_PositionConstraints(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
+}
+
+func TestAPITrayValidateAllRequest_Validate_SlotConstraints(t *testing.T) {
+	validUUID := uuid.New().String()
+	rackName := "Rack-001"
+	int32Ptr := func(v int32) *int32 { return &v }
+
+	tests := []struct {
+		name    string
+		req     APITrayValidateAllRequest
+		wantErr bool
+	}{
+		{
+			name:    "slotId with rackName valid",
+			req:     APITrayValidateAllRequest{SiteID: validUUID, RackName: &rackName, SlotID: int32Ptr(3)},
+			wantErr: false,
+		},
+		{
+			name:    "slotId without rack invalid",
+			req:     APITrayValidateAllRequest{SiteID: validUUID, SlotID: int32Ptr(3)},
+			wantErr: true,
+		},
+		{
+			name:    "negative slotId invalid",
+			req:     APITrayValidateAllRequest{SiteID: validUUID, RackName: &rackName, SlotID: int32Ptr(-1)},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.req.Validate()
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+		})
+	}
+}
+
+func TestAPITrayValidateAllRequest_SlotFilter(t *testing.T) {
+	rackName := "Rack-001"
+	siteID := uuid.New().String()
+	int32Ptr := func(v int32) *int32 { return &v }
+
+	t.Run("nil request has no slot filter and matches everything", func(t *testing.T) {
+		var r *APITrayValidateAllRequest
+		assert.False(t, r.HasSlotFilter())
+		assert.True(t, r.MatchesSlot(&flowv1.Component{}))
+	})
+
+	t.Run("request without slot has no slot filter", func(t *testing.T) {
+		r := &APITrayValidateAllRequest{SiteID: siteID, RackName: &rackName}
+		assert.False(t, r.HasSlotFilter())
+		assert.True(t, r.MatchesSlot(&flowv1.Component{
+			Position: &flowv1.RackPosition{SlotId: 99},
+		}))
+	})
+
+	t.Run("slotId matches position.slotId", func(t *testing.T) {
+		r := &APITrayValidateAllRequest{SiteID: siteID, RackName: &rackName, SlotID: int32Ptr(3)}
+		assert.True(t, r.HasSlotFilter())
+		assert.True(t, r.MatchesSlot(&flowv1.Component{
+			Position: &flowv1.RackPosition{SlotId: 3, TrayIdx: 7},
+		}))
+		assert.False(t, r.MatchesSlot(&flowv1.Component{
+			Position: &flowv1.RackPosition{SlotId: 4},
+		}))
+	})
+
+	t.Run("QueryValues includes slotId when set", func(t *testing.T) {
+		r := &APITrayValidateAllRequest{SiteID: siteID, RackName: &rackName, SlotID: int32Ptr(3)}
+		v := r.QueryValues()
+		assert.Equal(t, siteID, v.Get("siteId"))
+		assert.Equal(t, rackName, v.Get("rackName"))
+		assert.Equal(t, "3", v.Get("slotId"))
+	})
 }
 
 func TestGetProtoTrayOrderByFromQueryParam(t *testing.T) {

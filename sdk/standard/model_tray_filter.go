@@ -34,7 +34,7 @@ import (
 // checks if the TrayFilter type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &TrayFilter{}
 
-// TrayFilter Filter criteria for selecting trays in batch operations. If omitted or empty, all trays in the site are targeted.  Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slotId` composes with the rest of the filter via AND; an incompatible combination simply yields an empty result.
+// TrayFilter Filter criteria for selecting trays in batch operations. If omitted or empty, all trays in the site are targeted.  Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slotId` requires `rackId` or `rackName`, must be >= 0, and composes with the rest of the filter via AND.
 type TrayFilter struct {
 	// Filter by Rack ID
 	RackId *string `json:"rackId,omitempty"`
@@ -46,7 +46,7 @@ type TrayFilter struct {
 	ComponentIds []string `json:"componentIds,omitempty"`
 	// Filter by tray UUID
 	Ids []string `json:"ids,omitempty"`
-	// Restrict to trays at this rack slot (matches `position.slotId`). Composes with the rest of the filter via AND.
+	// Restrict to trays at this rack slot (matches `position.slotId`). Requires `rackId` or `rackName`. Composes with the rest of the filter via AND.
 	SlotId *int32 `json:"slotId,omitempty"`
 }
 

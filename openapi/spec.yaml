@@ -10497,7 +10497,7 @@ paths:
         - `rackId` and `rackName` are mutually exclusive
         - `rackId`/`rackName` cannot be combined with `id`/`componentId` (rack-level vs component-level targeting)
         - `componentId` requires `type` to be specified
-        - `slotId` restricts to trays at that rack slot and composes with the rest of the query via AND; an incompatible combination simply returns an empty result
+        - `slotId` restricts to trays at that rack slot, requires `rackId` or `rackName`, and composes with the rest of the query via AND
       parameters:
         - schema:
             type: string
@@ -10540,10 +10540,11 @@ paths:
         - schema:
             type: integer
             format: int32
+            minimum: 0
           name: slotId
           in: query
           description: |-
-            Restrict to trays at this rack slot (matches `position.slotId`). Composes with the rest of the filter via AND.
+            Restrict to trays at this rack slot (matches `position.slotId`). Requires `rackId` or `rackName`. Composes with the rest of the filter via AND.
         - schema:
             type: integer
             example: 1
@@ -10743,11 +10744,12 @@ paths:
         - schema:
             type: integer
             format: int32
+            minimum: 0
           name: slotId
           in: query
           required: false
           description: |-
-            Restrict validation to trays at this rack slot (matches `position.slotId`). Composes with the rest of the filter via AND.
+            Restrict validation to trays at this rack slot (matches `position.slotId`). Requires `rackId` or `rackName`. Composes with the rest of the filter via AND.
       responses:
         '200':
           description: OK
@@ -17185,7 +17187,7 @@ components:
       description: |-
         Filter criteria for selecting trays in batch operations. If omitted or empty, all trays in the site are targeted.
 
-        Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slotId` composes with the rest of the filter via AND; an incompatible combination simply yields an empty result.
+        Constraints: `rackId` and `rackName` are mutually exclusive. `rackId`/`rackName` cannot be combined with `ids`/`componentIds`. `componentIds` requires `type`. `slotId` requires `rackId` or `rackName`, must be >= 0, and composes with the rest of the filter via AND.
       properties:
         rackId:
           type: string
@@ -17215,8 +17217,9 @@ components:
         slotId:
           type: integer
           format: int32
+          minimum: 0
           description: |-
-            Restrict to trays at this rack slot (matches `position.slotId`). Composes with the rest of the filter via AND.
+            Restrict to trays at this rack slot (matches `position.slotId`). Requires `rackId` or `rackName`. Composes with the rest of the filter via AND.
     BatchUpdateRackPowerStateRequest:
       title: BatchUpdateRackPowerStateRequest
       type: object

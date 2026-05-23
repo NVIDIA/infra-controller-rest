@@ -106,16 +106,45 @@ func GetProtoTrayOrderByFromQueryParam(fieldName, direction string) *flowv1.Orde
 	}
 }
 
-// matchesRackSlot reports whether comp sits at slotID when slotID is set.
-func matchesRackSlot(comp *flowv1.Component, slotID *int32) bool {
-	if slotID == nil {
+// RackComponentSlotMatcher tests whether a component sits at the requested rack slot.
+type RackComponentSlotMatcher struct {
+	SlotID *int32
+}
+
+func (m RackComponentSlotMatcher) Active() bool {
+	return m.SlotID != nil
+}
+
+// Matches reports whether comp sits at the matcher's slot when Active.
+func (m RackComponentSlotMatcher) Matches(comp *flowv1.Component) bool {
+	if !m.Active() {
 		return true
+	}
+	if comp == nil {
+		return false
 	}
 	pos := comp.GetPosition()
 	if pos == nil {
 		return false
 	}
-	return pos.GetSlotId() == *slotID
+	return pos.GetSlotId() == *m.SlotID
+}
+
+func validateSlotRequiresRack(slotID *int32, rackID, rackName *string) error {
+	if slotID != nil && rackID == nil && rackName == nil {
+		return validation.Errors{"slotId": fmt.Errorf("rackId or rackName is required when slotId is set")}
+	}
+	return nil
+}
+
+func validateSlotConstraints(slotID *int32, rackID, rackName *string) error {
+	if slotID == nil {
+		return nil
+	}
+	if err := validation.Validate(*slotID, validation.Min(int32(0)).Error("must be >= 0")); err != nil {
+		return validation.Errors{"slotId": err}
+	}
+	return validateSlotRequiresRack(slotID, rackID, rackName)
 }
 
 // ========== Tray Filter (for batch operations) ==========
@@ -128,7 +157,7 @@ type TrayFilter struct {
 	Type         *string  `json:"type,omitempty"`
 	ComponentIDs []string `json:"componentIds,omitempty"`
 	IDs          []string `json:"ids,omitempty"`
-	SlotID       *int32   `json:"slotId,omitempty"` // Restrict to trays at this rack slot; composes via AND.
+	SlotID       *int32   `json:"slotId,omitempty"` // Restrict to trays at this rack slot; requires rackId or rackName.
 }
 
 // Validate checks the tray filter fields.
@@ -168,24 +197,28 @@ func (f *TrayFilter) Validate() error {
 		return validation.Errors{"componentIds": fmt.Errorf("type is required when componentIds is provided")}
 	}
 
+	if err := validateSlotConstraints(f.SlotID, f.RackID, f.RackName); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// HasPositionFilter reports whether the filter constrains rack slot.
+// HasSlotFilter reports whether the filter constrains rack slot.
 // When true, callers cannot use ToTargetSpec directly: Flow has no
-// by-position target shape, so slotId is resolved to component UUIDs
+// by-slot component target shape, so slotId is resolved to component UUIDs
 // via lookup first. ToTargetSpec ignores SlotID.
-func (f *TrayFilter) HasPositionFilter() bool {
+func (f *TrayFilter) HasSlotFilter() bool {
 	return f != nil && f.SlotID != nil
 }
 
-// MatchesPosition reports whether comp satisfies the filter's slotId.
+// MatchesSlot reports whether comp satisfies the filter's slotId.
 // Safe to call when no slot filter is set.
-func (f *TrayFilter) MatchesPosition(comp *flowv1.Component) bool {
+func (f *TrayFilter) MatchesSlot(comp *flowv1.Component) bool {
 	if f == nil {
 		return true
 	}
-	return matchesRackSlot(comp, f.SlotID)
+	return RackComponentSlotMatcher{SlotID: f.SlotID}.Matches(comp)
 }
 
 // ToTargetSpec converts the filter to an Flow OperationTargetSpec.
@@ -281,7 +314,7 @@ type APITrayGetAllRequest struct {
 	Type         *string  `query:"type"`
 	ComponentIDs []string `query:"componentId"`
 	IDs          []string `query:"id"`
-	SlotID       *int32   `query:"slotId"` // Restrict to trays at this rack slot; composes via AND.
+	SlotID       *int32   `query:"slotId"` // Restrict to trays at this rack slot; requires rackId or rackName.
 }
 
 // Validate checks field formats and enforces the Flow protobuf oneof constraints:
@@ -291,6 +324,7 @@ type APITrayGetAllRequest struct {
 //   - componentId requires type (ExternalRef needs type)
 //   - type must be one of the supported tray types
 //   - each entry in IDs must be a valid UUID
+//   - slotId requires rackId or rackName and must be >= 0
 func (r *APITrayGetAllRequest) Validate() error {
 	err := validation.ValidateStruct(r,
 		validation.Field(&r.RackID,
@@ -323,20 +357,24 @@ func (r *APITrayGetAllRequest) Validate() error {
 		return validation.Errors{"componentId": fmt.Errorf("type is required when componentId is provided")}
 	}
 
+	if err := validateSlotConstraints(r.SlotID, r.RackID, r.RackName); err != nil {
+		return err
+	}
+
 	return nil
 }
 
-// HasPositionFilter reports whether the request constrains rack slot.
-func (r *APITrayGetAllRequest) HasPositionFilter() bool {
+// HasSlotFilter reports whether the request constrains rack slot.
+func (r *APITrayGetAllRequest) HasSlotFilter() bool {
 	return r != nil && r.SlotID != nil
 }
 
-// MatchesPosition reports whether comp satisfies the request's slotId.
-func (r *APITrayGetAllRequest) MatchesPosition(comp *flowv1.Component) bool {
+// MatchesSlot reports whether comp satisfies the request's slotId.
+func (r *APITrayGetAllRequest) MatchesSlot(comp *flowv1.Component) bool {
 	if r == nil {
 		return true
 	}
-	return matchesRackSlot(comp, r.SlotID)
+	return RackComponentSlotMatcher{SlotID: r.SlotID}.Matches(comp)
 }
 
 // ToProto converts a validated APITrayGetAllRequest to an Flow GetComponentsRequest.
@@ -463,7 +501,7 @@ type APITrayValidateAllRequest struct {
 	Manufacturer []string `query:"manufacturer"`
 	Type         *string  `query:"type"`
 	ComponentIDs []string `query:"componentId"`
-	SlotID       *int32   `query:"slotId"` // Restrict to trays at this rack slot; composes via AND.
+	SlotID       *int32   `query:"slotId"` // Restrict to trays at this rack slot; requires rackId or rackName.
 }
 
 // Validate checks constraints on the request parameters.
@@ -490,20 +528,23 @@ func (r *APITrayValidateAllRequest) Validate() error {
 	if len(r.ComponentIDs) > 0 && r.Type == nil {
 		return validation.Errors{"componentId": fmt.Errorf("type is required when componentId is provided")}
 	}
+	if err := validateSlotConstraints(r.SlotID, r.RackID, r.RackName); err != nil {
+		return err
+	}
 	return nil
 }
 
-// HasPositionFilter reports whether the request constrains rack slot.
-func (r *APITrayValidateAllRequest) HasPositionFilter() bool {
+// HasSlotFilter reports whether the request constrains rack slot.
+func (r *APITrayValidateAllRequest) HasSlotFilter() bool {
 	return r != nil && r.SlotID != nil
 }
 
-// MatchesPosition reports whether comp satisfies the request's slotId.
-func (r *APITrayValidateAllRequest) MatchesPosition(comp *flowv1.Component) bool {
+// MatchesSlot reports whether comp satisfies the request's slotId.
+func (r *APITrayValidateAllRequest) MatchesSlot(comp *flowv1.Component) bool {
 	if r == nil {
 		return true
 	}
-	return matchesRackSlot(comp, r.SlotID)
+	return RackComponentSlotMatcher{SlotID: r.SlotID}.Matches(comp)
 }
 
 // ToTargetSpec converts the request's targeting fields to an Flow OperationTargetSpec.
