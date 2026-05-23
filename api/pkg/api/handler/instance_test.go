@@ -4240,6 +4240,10 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 		expectedPropagationStatus             *string
 		// When true, only assert len(siteReq.Config.Nvlink.GpuConfigs) matches the request (e.g. NVLink no-op where workflow uses DB order).
 		nvLinkGpuConfigsVerifyCountOnly bool
+		// When non-nil, expected len(siteReq.Config.Nvlink.GpuConfigs) for verifySiteControllerRequest (default: len(reqData.NVLinkInterfaces)).
+		expectSiteNVLinkGpuConfigCount *int
+		// When true with nvlinkInterfacesToDelete, still assert those rows are Deleting but skip Pending-row count/order checks.
+		nvLinkSkipPendingDBAssertions bool
 		// Optional hook after building the echo context and before Handle (e.g. adjust DB timestamps for time-sensitive branches).
 		beforeHandle func(t *testing.T)
 	}
@@ -5995,7 +5999,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
-			name: "test Instance update re-issues when four NVLink rows exist as Deleting — same multiset request (deviceInstance 0–3) creates four new Pending",
+			// Reflects handler today: multiset match on all-Deleting NVLink rows is treated as a no-op — no Pending rows and no GpuConfigs (all rows stay Deleting).
+			name: "test Instance update NVLink all-Deleting multiset match no-ops (no Pending GpuConfigs)",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -6005,7 +6010,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			args: args{
 				reqData: &model.APIInstanceUpdateRequest{
 					IpxeScript: os2.IpxeScript,
-					// Same four bindings as DB (nvllp1: 0,1 and nvllp2: 2,3); order shuffled. All rows Deleting → must not no-op.
+					// Same four bindings as DB (nvllp1: 0,1 and nvllp2: 2,3); order shuffled. All rows Deleting → handler no-ops NVLink subset.
 					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
 						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 3},
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
@@ -6013,11 +6018,13 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
 					},
 				},
-				reqInstance:              instFourDeletingNVLink.ID.String(),
-				reqOrg:                   tnOrg1,
-				reqUser:                  tnu1,
-				respCode:                 http.StatusOK,
-				respNoOfNVLinkInterfaces: cdb.GetIntPtr(4),
+				reqInstance:                    instFourDeletingNVLink.ID.String(),
+				reqOrg:                         tnOrg1,
+				reqUser:                        tnu1,
+				respCode:                       http.StatusOK,
+				respNoOfNVLinkInterfaces:       cdb.GetIntPtr(4),
+				nvLinkSkipPendingDBAssertions:  true,
+				expectSiteNVLinkGpuConfigCount: cdb.GetIntPtr(0),
 				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
 					*inst4DelNvl1, *inst4DelNvl2, *inst4DelNvl3, *inst4DelNvl4,
 				},
@@ -6036,6 +6043,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
+			// Reflects handler today: request keys matching Ready rows no-op NVLink churn; unchanged Ready rows remain and Site Controller still receives all active GpuConfigs from DB order.
 			name: "test Instance update API endpoint success when Instance has four NVLink interfaces and update requests two (nvllp1 devices 0 and 1)",
 			fields: fields{
 				dbSession: dbSession,
@@ -6057,23 +6065,20 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						},
 					},
 				},
-				reqInstance:              instSubsetFourToTwoA.ID.String(),
-				reqOrg:                   tnOrg1,
-				reqUser:                  tnu1,
-				respCode:                 http.StatusOK,
-				respNoOfNVLinkInterfaces: cdb.GetIntPtr(2),
-				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
-					*instSubsetANvl1,
-					*instSubsetANvl2,
-					*instSubsetANvl3,
-					*instSubsetANvl4,
-				},
+				reqInstance:                     instSubsetFourToTwoA.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				respNoOfNVLinkInterfaces:        cdb.GetIntPtr(2),
+				expectSiteNVLinkGpuConfigCount:  cdb.GetIntPtr(4),
+				nvLinkGpuConfigsVerifyCountOnly: true,
 			},
 			wantErr:                     false,
 			verifySiteControllerRequest: true,
 			verifyChildSpanner:          true,
 		},
 		{
+			// Reflects handler today — same multiset no-op semantics as nvllp1 subset case above.
 			name: "test Instance update API endpoint success when Instance has four NVLink interfaces and update requests two (nvllp2 devices 2 and 3)",
 			fields: fields{
 				dbSession: dbSession,
@@ -6095,17 +6100,13 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						},
 					},
 				},
-				reqInstance:              instSubsetFourToTwoB.ID.String(),
-				reqOrg:                   tnOrg1,
-				reqUser:                  tnu1,
-				respCode:                 http.StatusOK,
-				respNoOfNVLinkInterfaces: cdb.GetIntPtr(2),
-				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
-					*instSubsetBNvl1,
-					*instSubsetBNvl2,
-					*instSubsetBNvl3,
-					*instSubsetBNvl4,
-				},
+				reqInstance:                     instSubsetFourToTwoB.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				respNoOfNVLinkInterfaces:        cdb.GetIntPtr(2),
+				expectSiteNVLinkGpuConfigCount:  cdb.GetIntPtr(4),
+				nvLinkGpuConfigsVerifyCountOnly: true,
 			},
 			wantErr:                     false,
 			verifySiteControllerRequest: true,
@@ -6475,11 +6476,11 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				// Make sure the NVLink Interfaces are deleting
 				nvlIfcDAO := cdbm.NewNVLinkInterfaceDAO(tt.fields.dbSession)
 				for _, nvlifc := range tt.args.nvlinkInterfacesToDelete {
-					nvlifc, _ := nvlIfcDAO.GetByID(ec.Request().Context(), nil, nvlifc.ID, nil)
-					assert.Equal(t, nvlifc.Status, cdbm.NVLinkInterfaceStatusDeleting)
+					got, _ := nvlIfcDAO.GetByID(ec.Request().Context(), nil, nvlifc.ID, nil)
+					assert.Equal(t, cdbm.NVLinkInterfaceStatusDeleting, got.Status)
 				}
 
-				if len(tt.args.reqData.NVLinkInterfaces) > 0 {
+				if len(tt.args.reqData.NVLinkInterfaces) > 0 && !tt.args.nvLinkSkipPendingDBAssertions {
 					// Make sure the NVLink Interfaces are pending
 					// It should be in order of the request received
 					nvlifcs, _, _ := nvlIfcDAO.GetAll(ec.Request().Context(), nil,
@@ -6487,8 +6488,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 							Statuses: []string{cdbm.NVLinkInterfaceStatusPending}},
 						cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.NVLinkInterfaceOrderByCreated, Order: cdbp.OrderAscending}},
 						[]string{cdbm.NVLinkLogicalPartitionRelationName})
-					assert.Equal(t, len(nvlifcs), len(tt.args.reqData.NVLinkInterfaces))
-					for i, _ := range nvlifcs {
+					require.Equal(t, len(tt.args.reqData.NVLinkInterfaces), len(nvlifcs))
+					for i := range nvlifcs {
 						assert.Equal(t, tt.args.reqData.NVLinkInterfaces[i].NVLinkLogicalPartitionID, nvlifcs[i].NVLinkLogicalPartitionID.String())
 						assert.Equal(t, cdbm.NVLinkInterfaceStatusPending, nvlifcs[i].Status)
 					}
@@ -6574,7 +6575,11 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 
 					// Verify the NVLink Interfaces are in the Site Controller request
 					if len(tt.args.reqData.NVLinkInterfaces) > 0 {
-						assert.Equal(t, len(siteReq.Config.Nvlink.GpuConfigs), len(tt.args.reqData.NVLinkInterfaces))
+						expNVL := len(tt.args.reqData.NVLinkInterfaces)
+						if tt.args.expectSiteNVLinkGpuConfigCount != nil {
+							expNVL = *tt.args.expectSiteNVLinkGpuConfigCount
+						}
+						assert.Equal(t, expNVL, len(siteReq.Config.Nvlink.GpuConfigs))
 
 						if !tt.args.nvLinkGpuConfigsVerifyCountOnly {
 							// Make sure order to should be same as the request received

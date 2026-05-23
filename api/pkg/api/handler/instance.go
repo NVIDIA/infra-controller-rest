@@ -2716,6 +2716,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	var existingIfcs []cdbm.Interface
 	var existingIbIfcs []cdbm.InfiniBandInterface
 	var existingNvlIfcs []cdbm.NVLinkInterface
+	var newOrExistingIbIfcs []cdbm.InfiniBandInterface
+	var newOrExistingNvlIfcs []cdbm.NVLinkInterface
 	var dbskgs []cdbm.SSHKeyGroup
 	var ssds []cdbm.StatusDetail
 	reqCtx := ctx
@@ -3033,10 +3035,21 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				}
 			}
 
-			// Each requested (partition ID, device, deviceInstance) slot should have matched exactly once in the Ready / in-grace Pending / in-grace Deleting buckets; otherwise we need another sync pass.
-			syncedIbIfcSlots := existingReadyIbIfcsCount + existingPendingIbIfcsCount + existingDeletingIbIfcsCount
-			if !reIssueInfiniBandInterfaces && syncedIbIfcSlots != len(apiRequest.InfiniBandInterfaces) {
-				reIssueInfiniBandInterfaces = true
+			// If we're here and we're not re-issuing InfiniBand interfaces, we need to check if the number of existing InfiniBand interfaces in transition is different from the number of InfiniBand interfaces in the request
+			// Assumptions:
+			// - There can be no more than 4 InfiniBand Interfaces in Ready state
+			// - There can be no more than 4 InfiniBand Interfaces in Pending state
+			// - There can more than 4 InfiniBand Interfaces in Deleting state, in multiples of 4
+			// - There cannot be Ready and Pending InfiniBand Interfaces at the same time
+			// - There cannot be Ready and Deleting InfiniBand Interfaces at the same time
+			if !reIssueInfiniBandInterfaces {
+				if existingReadyIbIfcsCount > 0 && existingReadyIbIfcsCount != len(apiRequest.InfiniBandInterfaces) {
+					reIssueInfiniBandInterfaces = true
+				} else if existingPendingIbIfcsCount > 0 && existingPendingIbIfcsCount != len(apiRequest.InfiniBandInterfaces) {
+					reIssueInfiniBandInterfaces = true
+				} else if existingDeletingIbIfcsCount > 0 && existingDeletingIbIfcsCount != len(apiRequest.InfiniBandInterfaces) {
+					reIssueInfiniBandInterfaces = true
+				}
 			}
 
 			if reIssueInfiniBandInterfaces {
@@ -3081,11 +3094,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Infiniband Interface for Instance, DB error", nil)
 					}
 				}
-			} else {
-				newIbIfcs = existingIbIfcs
 			}
-		} else {
-			newIbIfcs = existingIbIfcs
 		}
 
 		// Fetch existing DPU Extension Service Deployments for the Instance
@@ -3227,8 +3236,21 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				}
 			}
 
-			if !reIssueNVLinkInterfaces && (existingReadyNvlIfcsCount != len(apiRequest.NVLinkInterfaces) || (existingPendingNvlIfcsCount != len(apiRequest.NVLinkInterfaces)) || (existingDeletingNvlIfcsCount != 0)) {
-				reIssueNVLinkInterfaces = true
+			// If we're here and we're not re-issuing NVLink interfaces, we need to check if the number of existing NVLink interfaces in transition is different from the number of NVLink interfaces in the request
+			// Assumptions:
+			// - There can be no more than 4 NVLink Interfaces in Ready state
+			// - There can be no more than 4 NVLink Interfaces in Pending state
+			// - There can more than 4 NVLink Interfaces in Deleting state, in multiples of 4
+			// - There cannot be Ready and Pending NVLink Interfaces at the same time
+			// - There cannot be Ready and Deleting NVLink Interfaces at the same time
+			if !reIssueNVLinkInterfaces {
+				if existingReadyNvlIfcsCount > 0 && existingReadyNvlIfcsCount != len(apiRequest.NVLinkInterfaces) {
+					reIssueNVLinkInterfaces = true
+				} else if existingPendingNvlIfcsCount > 0 && existingPendingNvlIfcsCount != len(apiRequest.NVLinkInterfaces) {
+					reIssueNVLinkInterfaces = true
+				} else if existingDeletingNvlIfcsCount > 0 && existingDeletingNvlIfcsCount != len(apiRequest.NVLinkInterfaces) {
+					reIssueNVLinkInterfaces = true
+				}
 			}
 
 			if reIssueNVLinkInterfaces {
@@ -3280,11 +3302,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update NVLink Interfaces for Instance, DB error", nil)
 					}
 				}
-			} else {
-				newNvlIfcs = existingNvlIfcs
 			}
-		} else {
-			newNvlIfcs = existingNvlIfcs
 		}
 
 		// Get Status Details
@@ -3357,9 +3375,11 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// Populate InfiniBand Interface details for Site Controller request
+		// This loop accommodates both cases where InfiniBand Interfaces for updated or no update was requested
+		// IF there are any new InfiniBand Interfaces, that means all existing InfiniBand Interfaces will be in Deleting state
 		ibInterfaceConfigs := []*cwssaws.InstanceIBInterfaceConfig{}
-
-		for _, newIbIfc := range newIbIfcs {
+		newOrExistingIbIfcs = append(newIbIfcs, existingIbIfcs...)
+		for _, newIbIfc := range newOrExistingIbIfcs {
 			if newIbIfc.Status == cdbm.InfiniBandInterfaceStatusDeleting {
 				// NOTE: Don't send any InfiniBand Interfaces that are being deleted
 				continue
@@ -3403,8 +3423,11 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// Populate NVLink Interface details for Site Controller request
+		// IF there are any new NVLink Interfaces, that means all existing NVLink Interfaces will be in Deleting state
+		// This loop accommodates both cases where NVLink Interfaces for updated or no update was requested
 		nvlInterfaceConfigs := []*cwssaws.InstanceNVLinkGpuConfig{}
-		for _, newNvlIfc := range newNvlIfcs {
+		newOrExistingNvlIfcs = append(newNvlIfcs, existingNvlIfcs...)
+		for _, newNvlIfc := range newOrExistingNvlIfcs {
 			if newNvlIfc.Status == cdbm.NVLinkInterfaceStatusDeleting {
 				// NOTE: Don't send any NVLink interfaces that are being deleted
 				continue
@@ -3504,20 +3527,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		newdbIfcs = append(newdbIfcs, existingIfcs...)
 	}
 
-	// If existing InfiniBand Interfaces were updated, add them to the response
-	if len(existingIbIfcs) > 0 && !reIssueInfiniBandInterfaces {
-		// Add the existing InfiniBand Interfaces to the response
-		newIbIfcs = append(newIbIfcs, existingIbIfcs...)
-	}
-
-	// If existing NVLink Interfaces were updated, add them to the response
-	if len(existingNvlIfcs) > 0 && !reIssueNVLinkInterfaces {
-		// Add the existing NVLink Interfaces to the response
-		newNvlIfcs = append(newNvlIfcs, existingNvlIfcs...)
-	}
-
 	// Create response
-	apiInstance := model.NewAPIInstance(ui, site, newdbIfcs, newIbIfcs, updateDesds, newNvlIfcs, dbskgs, ssds)
+	apiInstance := model.NewAPIInstance(ui, site, newdbIfcs, newOrExistingIbIfcs, updateDesds, newOrExistingNvlIfcs, dbskgs, ssds)
 
 	// If the instance has no NSG ID, then we need to check if its parent VPC does.
 	// We'll need to pull that separately because the user might not have asked for
@@ -3749,12 +3760,20 @@ func (gih GetInstanceHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Site for Instance", nil)
 	}
 
-	// Get the instance subnets record from the db
+	// Get the instance Interfaces record from the db
 	ifcDAO := cdbm.NewInterfaceDAO(gih.dbSession)
-	ifcs, _, err := ifcDAO.GetAll(ctx, nil, cdbm.InterfaceFilterInput{InstanceIDs: []uuid.UUID{instance.ID}}, cdbp.PageInput{}, []string{cdbm.SubnetRelationName, cdbm.VpcPrefixRelationName})
+	ifcs, _, err := ifcDAO.GetAll(
+		ctx,
+		nil,
+		cdbm.InterfaceFilterInput{
+			InstanceIDs: []uuid.UUID{instance.ID},
+		},
+		cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InterfaceOrderByCreated, Order: cdbp.OrderAscending}, Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
+		[]string{cdbm.SubnetRelationName, cdbm.VpcPrefixRelationName},
+	)
 	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving instance Subnet Details from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance Subnets for Instance", nil)
+		logger.Error().Err(err).Msg("error retrieving instance Interfaces Details from DB")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance Interfaces for Instance", nil)
 	}
 
 	// Get the instance infiniband interface record from the db
@@ -3765,12 +3784,26 @@ func (gih GetInstanceHandler) Handle(c echo.Context) error {
 		cdbm.InfiniBandInterfaceFilterInput{
 			InstanceIDs: []uuid.UUID{instanceID},
 		},
-		cdbp.PageInput{},
+		cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InfiniBandInterfaceOrderByCreated, Order: cdbp.OrderAscending}, Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
 		[]string{cdbm.InfiniBandPartitionRelationName},
 	)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving instance InfiniBand Interfaces Details from DB")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance InfiniBand Interfaces for Instance", nil)
+	}
+
+	// Get the instance NVLink Interface record from the db
+	nvlDAO := cdbm.NewNVLinkInterfaceDAO(gih.dbSession)
+	nvlIfcs, _, err := nvlDAO.GetAll(
+		ctx,
+		nil,
+		cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}},
+		cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.NVLinkInterfaceOrderByCreated, Order: cdbp.OrderAscending}, Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
+		nil,
+	)
+	if err != nil {
+		logger.Error().Err(err).Msg("error retrieving instance NVLink interfaces Details from DB")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance NVLink interfaces for Instance", nil)
 	}
 
 	// Get DPU Extension Service Deployments for the instance
@@ -3790,14 +3823,6 @@ func (gih GetInstanceHandler) Handle(c echo.Context) error {
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving DPU Extension Service Deployments for instance from DB")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve DPU Extension Service Deployments for instance", nil)
-	}
-
-	// Get the instance NVLink Interface record from the db
-	nvlDAO := cdbm.NewNVLinkInterfaceDAO(gih.dbSession)
-	nvlIfcs, _, err := nvlDAO.GetAll(ctx, nil, cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}}, cdbp.PageInput{}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving instance NVLink interfaces Details from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance NVLink interfaces for Instance", nil)
 	}
 
 	// Get the ssh key group instance associations record from the db
