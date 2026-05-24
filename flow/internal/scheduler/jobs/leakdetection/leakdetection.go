@@ -30,12 +30,13 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
-func runLeakDetectionOne(
+// Query core to get IDs of leaking machines and submit power-off tasks for each
+func runLeakDetectionOneMachine(
 	ctx context.Context,
 	nicoClient nicoapi.Client,
 	taskMgr taskmanager.Manager,
 ) {
-	log.Info().Msg("Running leak detection")
+	log.Info().Msg("Running leak detection for machines")
 
 	leakingMachineIds, err := nicoClient.GetLeakingMachineIds(ctx)
 	if err != nil {
@@ -54,6 +55,15 @@ func runLeakDetectionOne(
 				Msg("Failed to submit power-off task for leaking machine")
 		}
 	}
+}
+
+// Query core to get IDs of leaking switches and submit power-off tasks for each
+func runLeakDetectionOneSwitch(
+	ctx context.Context,
+	nicoClient nicoapi.Client,
+	taskMgr taskmanager.Manager,
+) {
+	log.Info().Msg("Running leak detection for switches")
 
 	leakingSwitchIds, err := nicoClient.GetLeakingSwitchIds(ctx)
 	if err != nil {
@@ -74,10 +84,21 @@ func runLeakDetectionOne(
 	}
 }
 
+func runLeakDetectionOne(
+	ctx context.Context,
+	nicoClient nicoapi.Client,
+	taskMgr taskmanager.Manager,
+) {
+	log.Info().Msg("Running leak detection")
+
+	runLeakDetectionOneMachine(ctx, nicoClient, taskMgr)
+	runLeakDetectionOneSwitch(ctx, nicoClient, taskMgr)
+}
+
 func submitPowerOffTask(
 	ctx context.Context,
 	taskMgr taskmanager.Manager,
-	machineID string,
+	componentExternalId string,
 	componentType devicetypes.ComponentType,
 ) error {
 	info := &operations.PowerControlTaskInfo{
@@ -101,12 +122,12 @@ func submitPowerOffTask(
 				{
 					External: &operation.ExternalRef{
 						Type: componentType,
-						ID:   machineID,
+						ID:   componentExternalId,
 					},
 				},
 			},
 		},
-		Description:      fmt.Sprintf("Leak detection: force power-off machine %s", machineID),
+		Description:      fmt.Sprintf("Leak detection: force power-off component %s of type %s", componentExternalId, componentType.String()),
 		ConflictStrategy: operation.ConflictStrategyQueue,
 	}
 
@@ -116,13 +137,14 @@ func submitPowerOffTask(
 	}
 
 	if len(taskIDs) == 0 {
-		return fmt.Errorf("failed to create any power-off tasks for leaking machine %s", machineID)
+		return fmt.Errorf("failed to create any power-off tasks for leaking component %s of type %s", componentExternalId, componentType.String())
 	}
 
 	log.Info().
-		Str("machine_id", machineID).
+		Str("component_external_id", componentExternalId).
+		Str("component_type", componentType.String()).
 		Int("task_count", len(taskIDs)).
-		Msg("Power-off task submitted for leaking machine")
+		Msg("Power-off task submitted for leaking component")
 
 	return nil
 }

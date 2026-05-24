@@ -127,4 +127,5 @@ type Client interface {
 	AddMachineInterface(iface MachineInterface)
 	AddExpectedSwitchInfo(info ExpectedSwitchInfo)
 	SetLeakingMachineIds(ids []string)
+	SetLeakingSwitchIds([]string)
 }

@@ -143,3 +143,19 @@ func TestRunLeakDetectionOne_ContinuesOnSubmitError(t *testing.T) {
 	// Verify all machines were attempted despite errors
 	require.Len(t, mgr.requests, 2)
 }
+
+func TestRunLeakDetectionOne_SubmitsTaskPerSwitch(t *testing.T) {
+	ctx := context.Background()
+	mgr := &mockManager{}
+
+	switches := []string{"switch-1", "switch-2", "switch-3"}
+	nicoClient := nicoapi.NewMockClient()
+	nicoClient.SetLeakingSwitchIds(switches)
+
+	runLeakDetectionOne(ctx, nicoClient, mgr)
+
+	require.Len(t, mgr.requests, 3)
+	for i, s := range switches {
+		assert.Equal(t, s, mgr.requests[i].TargetSpec.Components[0].External.ID)
+	}
+}

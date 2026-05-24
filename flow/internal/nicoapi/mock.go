@@ -71,6 +71,10 @@ func (c *mockClient) SetLeakingMachineIds(ids []string) {
 	c.leakingMachineIds = ids
 }
 
+func (c *mockClient) SetLeakingSwitchIds(ids []string) {
+	c.leakingSwitchIds = ids
+}
+
 func (c *mockClient) GetPowerStates(ctx context.Context, machineIds []string) (ret []MachinePowerState, err error) {
 	for _, cur := range machineIds {
 		if state, ok := c.powerStates[cur]; ok {
