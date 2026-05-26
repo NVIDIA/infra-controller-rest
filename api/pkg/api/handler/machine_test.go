@@ -923,6 +923,11 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	_ = testMachineUpdateTenantCapability(t, dbSession, tenant7)
 	_ = common.TestBuildTenantAccount(t, dbSession, ip, &tenant7.ID, tnOrg7, cdbm.TenantAccountStatusReady, tnu7)
 
+	tnOrg8 := "test-tn-org-8"
+	tnu8 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg8}, tnRoles)
+	tenant8 := testMachineBuildTenant(t, dbSession, tnOrg8, "test-tenant8")
+	_ = testMachineUpdateTenantCapability(t, dbSession, tenant8)
+
 	cfg := common.GetTestConfig()
 	tempClient := &tmocks.Client{}
 
@@ -1076,6 +1081,15 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedCnt:    totalCount / 2,
 			expectedTotal:  cdb.GetIntPtr(totalCount / 2),
+		},
+		{
+			name:           "empty result when Tenant has TargetedInstanceCreation capability but no Tenant Account",
+			reqOrgName:     tnOrg8,
+			user:           tnu8,
+			expectedErr:    false,
+			expectedStatus: http.StatusOK,
+			expectedCnt:    0,
+			expectedTotal:  cdb.GetIntPtr(0),
 		},
 		{
 			name:                "success case when Instance Type ID specified in query",
