@@ -54,6 +54,8 @@ type VpcPrefix struct {
 	PrefixLength *int32 `json:"prefixLength,omitempty"`
 	// Status of the VPC Prefix
 	Status *VpcPrefixStatus `json:"status,omitempty"`
+	// Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
+	UsageStats *IpBlockUsageStats `json:"usageStats,omitempty"`
 	// Details of 20 most recent status changes
 	StatusHistory []StatusDetail `json:"statusHistory,omitempty"`
 	// Date and time when the VPC Prefix was created
@@ -389,6 +391,38 @@ func (o *VpcPrefix) SetStatus(v VpcPrefixStatus) {
 	o.Status = &v
 }
 
+// GetUsageStats returns the UsageStats field value if set, zero value otherwise.
+func (o *VpcPrefix) GetUsageStats() IpBlockUsageStats {
+	if o == nil || IsNil(o.UsageStats) {
+		var ret IpBlockUsageStats
+		return ret
+	}
+	return *o.UsageStats
+}
+
+// GetUsageStatsOk returns a tuple with the UsageStats field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *VpcPrefix) GetUsageStatsOk() (*IpBlockUsageStats, bool) {
+	if o == nil || IsNil(o.UsageStats) {
+		return nil, false
+	}
+	return o.UsageStats, true
+}
+
+// HasUsageStats returns a boolean if a field has been set.
+func (o *VpcPrefix) HasUsageStats() bool {
+	if o != nil && !IsNil(o.UsageStats) {
+		return true
+	}
+
+	return false
+}
+
+// SetUsageStats gets a reference to the given IpBlockUsageStats and assigns it to the UsageStats field.
+func (o *VpcPrefix) SetUsageStats(v IpBlockUsageStats) {
+	o.UsageStats = &v
+}
+
 // GetStatusHistory returns the StatusHistory field value if set, zero value otherwise.
 func (o *VpcPrefix) GetStatusHistory() []StatusDetail {
 	if o == nil || IsNil(o.StatusHistory) {
@@ -521,6 +555,9 @@ func (o VpcPrefix) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Status) {
 		toSerialize["status"] = o.Status
+	}
+	if !IsNil(o.UsageStats) {
+		toSerialize["usageStats"] = o.UsageStats
 	}
 	if !IsNil(o.StatusHistory) {
 		toSerialize["statusHistory"] = o.StatusHistory

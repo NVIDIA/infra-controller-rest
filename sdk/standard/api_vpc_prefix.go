@@ -283,17 +283,18 @@ func (a *VPCPrefixAPIService) DeleteVpcPrefixExecute(r ApiDeleteVpcPrefixRequest
 }
 
 type ApiGetAllVpcPrefixRequest struct {
-	ctx             context.Context
-	ApiService      *VPCPrefixAPIService
-	org             string
-	siteId          *string
-	vpcId           *string
-	status          *string
-	query           *string
-	includeRelation *string
-	pageNumber      *int32
-	pageSize        *int32
-	orderBy         *string
+	ctx               context.Context
+	ApiService        *VPCPrefixAPIService
+	org               string
+	siteId            *string
+	vpcId             *string
+	status            *string
+	query             *string
+	includeRelation   *string
+	includeUsageStats *bool
+	pageNumber        *int32
+	pageSize          *int32
+	orderBy           *string
 }
 
 // Filter VPC Prefixes by Site, required if vpcId query param is not specified
@@ -323,6 +324,12 @@ func (r ApiGetAllVpcPrefixRequest) Query(query string) ApiGetAllVpcPrefixRequest
 // Related entity to expand
 func (r ApiGetAllVpcPrefixRequest) IncludeRelation(includeRelation string) ApiGetAllVpcPrefixRequest {
 	r.includeRelation = &includeRelation
+	return r
+}
+
+// When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a &#x60;/31&#x60; prefix.
+func (r ApiGetAllVpcPrefixRequest) IncludeUsageStats(includeUsageStats bool) ApiGetAllVpcPrefixRequest {
+	r.includeUsageStats = &includeUsageStats
 	return r
 }
 
@@ -405,6 +412,9 @@ func (a *VPCPrefixAPIService) GetAllVpcPrefixExecute(r ApiGetAllVpcPrefixRequest
 	if r.includeRelation != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "includeRelation", r.includeRelation, "form", "")
 	}
+	if r.includeUsageStats != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "includeUsageStats", r.includeUsageStats, "form", "")
+	}
 	if r.pageNumber != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
@@ -483,16 +493,23 @@ func (a *VPCPrefixAPIService) GetAllVpcPrefixExecute(r ApiGetAllVpcPrefixRequest
 }
 
 type ApiGetVpcPrefixRequest struct {
-	ctx             context.Context
-	ApiService      *VPCPrefixAPIService
-	org             string
-	vpcPrefixId     string
-	includeRelation *string
+	ctx               context.Context
+	ApiService        *VPCPrefixAPIService
+	org               string
+	vpcPrefixId       string
+	includeRelation   *string
+	includeUsageStats *bool
 }
 
 // Related entity to expand
 func (r ApiGetVpcPrefixRequest) IncludeRelation(includeRelation string) ApiGetVpcPrefixRequest {
 	r.includeRelation = &includeRelation
+	return r
+}
+
+// When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a &#x60;/31&#x60; prefix.
+func (r ApiGetVpcPrefixRequest) IncludeUsageStats(includeUsageStats bool) ApiGetVpcPrefixRequest {
+	r.includeUsageStats = &includeUsageStats
 	return r
 }
 
@@ -547,6 +564,9 @@ func (a *VPCPrefixAPIService) GetVpcPrefixExecute(r ApiGetVpcPrefixRequest) (*Vp
 
 	if r.includeRelation != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "includeRelation", r.includeRelation, "form", "")
+	}
+	if r.includeUsageStats != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "includeUsageStats", r.includeUsageStats, "form", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}

@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 )
 
 // TestActivities_All_ContainsAllActivities verifies that All() returns every
@@ -80,13 +79,12 @@ func TestActivities_Isolation(t *testing.T) {
 	assert.NotContains(t, m2, "isolation-sentinel", "mutations to one instance's map must not bleed into another instance's map")
 }
 
-// TestActivities_ValidAndGetComponentManager_NilRegistry verifies that manager
-// lookup returns a clear configuration error when no registry is configured.
-func TestActivities_ValidAndGetComponentManager_NilRegistry(t *testing.T) {
-	acts := New(nil, nil)
-	_, err := acts.validAndGetComponentManager(
+// TestRequireCapableManager_NilRegistry verifies that manager lookup returns a
+// clear configuration error when no registry is configured.
+func TestRequireCapableManager_NilRegistry(t *testing.T) {
+	_, err := requirePowerController(
+		nil,
 		newActivityTestTarget(),
-		capability.CapabilityPowerControl,
 	)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, componentmanager.ErrRegistryNotConfigured))
