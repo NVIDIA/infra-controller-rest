@@ -259,7 +259,7 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 			taDAO := cdbm.NewTenantAccountDAO(gamh.dbSession)
 			tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
 				TenantIDs: []uuid.UUID{tenant.ID},
-			}, cdbp.PageInput{}, []string{})
+			}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, []string{})
 			if serr != nil {
 				logger.Error().Err(serr).Msg("error retrieving Tenant Accounts for privileged Tenant")
 				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error retrieving Tenant Accounts for privileged Tenant", nil)
