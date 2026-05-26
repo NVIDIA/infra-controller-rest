@@ -97,6 +97,27 @@ func TestActivityCallsManagerWhenCapabilityIsSupported(t *testing.T) {
 	require.True(t, manager.called)
 }
 
+func TestActivityRequiresOperationInterfaceAfterCapabilityValidation(t *testing.T) {
+	acts := newDescriptorOnlyActivities(
+		t,
+		capability.CapabilityPowerStatus,
+	)
+
+	_, err := acts.GetPowerStatus(
+		context.Background(),
+		newActivityTestTarget(),
+	)
+
+	require.Error(t, err)
+	require.False(t, errors.Is(err, componentmanager.ErrUnsupportedCapability))
+	require.True(t, errors.Is(err, componentmanager.ErrCapabilityInterfaceNotImplemented))
+	require.ErrorContains(
+		t,
+		err,
+		`declares capability "PowerStatus" but does not implement its operation interface`,
+	)
+}
+
 func activityCallsForMissingManagerTest(
 	t *testing.T,
 	acts *Activities,
@@ -293,6 +314,48 @@ func newCapabilityTestActivities(
 	require.NoError(t, err)
 
 	return New(nil, registry), manager
+}
+
+type descriptorOnlyManager struct {
+	descriptor cmcatalog.Descriptor
+}
+
+func (m descriptorOnlyManager) Descriptor() cmcatalog.Descriptor {
+	return m.descriptor
+}
+
+func newDescriptorOnlyActivities(
+	t *testing.T,
+	capabilities ...capability.Capability,
+) *Activities {
+	t.Helper()
+
+	descriptor := cmcatalog.Descriptor{
+		Type:           devicetypes.ComponentTypeCompute,
+		Implementation: "descriptor-only",
+		Capabilities:   capability.CapabilitySet(capabilities),
+	}
+	registry, err := componentmanager.NewRegistry(
+		[]componentmanager.FactorySpec{
+			{
+				Descriptor: descriptor,
+				Factory: func(
+					*providerapi.ProviderRegistry,
+				) (componentmanager.ComponentManager, error) {
+					return descriptorOnlyManager{descriptor: descriptor}, nil
+				},
+			},
+		},
+		cmconfig.Config{
+			ComponentManagers: map[devicetypes.ComponentType]string{
+				devicetypes.ComponentTypeCompute: "descriptor-only",
+			},
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	return New(nil, registry)
 }
 
 func newActivityTestTarget() common.Target {

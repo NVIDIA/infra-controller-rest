@@ -32,7 +32,6 @@ import (
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operationrules"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/task"
@@ -137,44 +136,6 @@ type preflightCapabilityManager struct {
 
 func (m preflightCapabilityManager) Descriptor() cmcatalog.Descriptor {
 	return m.descriptor
-}
-
-func (m preflightCapabilityManager) InjectExpectation(
-	context.Context,
-	common.Target,
-	operations.InjectExpectationTaskInfo,
-) error {
-	return nil
-}
-
-func (m preflightCapabilityManager) PowerControl(
-	context.Context,
-	common.Target,
-	operations.PowerControlTaskInfo,
-) error {
-	return nil
-}
-
-func (m preflightCapabilityManager) GetPowerStatus(
-	context.Context,
-	common.Target,
-) (map[string]operations.PowerStatus, error) {
-	return nil, nil
-}
-
-func (m preflightCapabilityManager) FirmwareControl(
-	context.Context,
-	common.Target,
-	operations.FirmwareControlTaskInfo,
-) error {
-	return nil
-}
-
-func (m preflightCapabilityManager) GetFirmwareStatus(
-	context.Context,
-	common.Target,
-) (map[string]operations.FirmwareUpdateStatus, error) {
-	return nil, nil
 }
 
 func newPreflightCapabilityRegistry(

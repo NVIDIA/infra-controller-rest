@@ -18,62 +18,24 @@
 package componentmanager
 
 import (
-	"context"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	"testing"
 
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
+// testManager intentionally implements only ComponentManager descriptor
+// metadata. Tests that need operation interfaces should use focused helpers,
+// such as capabilityTestManager or descriptorOnlyManager in activity tests.
 type testManager struct {
 	descriptor cmcatalog.Descriptor
 }
 
 func (m testManager) Descriptor() cmcatalog.Descriptor {
 	return m.descriptor
-}
-
-func (m testManager) InjectExpectation(
-	context.Context,
-	common.Target,
-	operations.InjectExpectationTaskInfo,
-) error {
-	return nil
-}
-
-func (m testManager) PowerControl(
-	context.Context,
-	common.Target,
-	operations.PowerControlTaskInfo,
-) error {
-	return nil
-}
-
-func (m testManager) GetPowerStatus(
-	context.Context,
-	common.Target,
-) (map[string]operations.PowerStatus, error) {
-	return nil, nil
-}
-
-func (m testManager) FirmwareControl(
-	context.Context,
-	common.Target,
-	operations.FirmwareControlTaskInfo,
-) error {
-	return nil
-}
-
-func (m testManager) GetFirmwareStatus(
-	context.Context,
-	common.Target,
-) (map[string]operations.FirmwareUpdateStatus, error) {
-	return nil, nil
 }
 
 func managerFactory(

@@ -300,17 +300,3 @@ func (m *Manager) GetFirmwareStatus(
 
 	return result, nil
 }
-
-func (m *Manager) BringUpControl(
-	ctx context.Context,
-	target common.Target,
-) error {
-	return fmt.Errorf("BringUpControl not supported for PowerShelf")
-}
-
-func (m *Manager) GetBringUpStatus(
-	ctx context.Context,
-	target common.Target,
-) (map[string]operations.MachineBringUpState, error) {
-	return nil, fmt.Errorf("GetBringUpStatus not supported for PowerShelf")
-}

@@ -87,6 +87,10 @@ var (
 	// type does not support the requested operation capability.
 	ErrUnsupportedCapability = errors.New("component manager capability is not supported")
 
+	// ErrCapabilityInterfaceNotImplemented reports that a manager declares a
+	// capability but does not implement the matching operation interface.
+	ErrCapabilityInterfaceNotImplemented = errors.New("component manager capability interface is not implemented")
+
 	// ErrComponentManagersNotConfigured reports that the service config has no
 	// component manager entries.
 	ErrComponentManagersNotConfigured = cmconfig.ErrComponentManagersNotConfigured
@@ -288,6 +292,27 @@ func (e UnsupportedCapabilityError) Error() string {
 
 func (e UnsupportedCapabilityError) Is(target error) bool {
 	return target == ErrUnsupportedCapability
+}
+
+// CapabilityInterfaceNotImplementedError includes the manager and capability
+// whose descriptor metadata does not match the manager's operation interfaces.
+type CapabilityInterfaceNotImplementedError struct {
+	ComponentType  devicetypes.ComponentType
+	Implementation string
+	Capability     capability.Capability
+}
+
+func (e CapabilityInterfaceNotImplementedError) Error() string {
+	return fmt.Sprintf(
+		"component manager %s/%s declares capability %q but does not implement its operation interface",
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+		e.Capability,
+	)
+}
+
+func (e CapabilityInterfaceNotImplementedError) Is(target error) bool {
+	return target == ErrCapabilityInterfaceNotImplemented
 }
 
 // UnknownProviderError includes the unknown provider name.
