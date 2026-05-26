@@ -245,11 +245,13 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, errMsg, nil)
 	}
 
-	filterInput := cdbm.MachineFilterInput{}
+	filterInput := cdbm.MachineFilterInput{
+		InfrastructureProviderIDs: []uuid.UUID{},
+	}
 
 	// Validate other query params
 	if infrastructureProvider != nil {
-		filterInput.InfrastructureProviderIDs = []uuid.UUID{infrastructureProvider.ID}
+		filterInput.InfrastructureProviderIDs = append(filterInput.InfrastructureProviderIDs, infrastructureProvider.ID)
 	}
 
 	if tenant != nil {

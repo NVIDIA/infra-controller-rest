@@ -153,10 +153,13 @@ func (gamch GetAllMachineCapabilityHandler) Handle(c echo.Context) error {
 	// Get Machines
 	filterInput := cdbm.MachineFilterInput{
 		InfrastructureProviderIDs: []uuid.UUID{orgInfrastructureProvider.ID},
-		SiteIDs:                   []uuid.UUID{site.ID},
 		HasInstanceType:           hasInstanceType,
 		ExcludeMetadata:           true, // Exclude metadata since we're only retrieving Machines for the IDs
 	}
+	if site != nil {
+		filterInput.SiteIDs = []uuid.UUID{site.ID}
+	}
+
 	ms, _, err := mDAO.GetAll(ctx, nil, filterInput, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting Machines from DB")
