@@ -2496,7 +2496,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
 					assert.Equal(t, "false", inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion])
-					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is being repaired on Site")
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is currently being repaired")
 				},
 			},
 		},
@@ -2522,7 +2522,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
 					assert.Equal(t, "true", inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion])
-					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is being repaired on Site")
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is currently being repaired")
 				},
 			},
 		},
@@ -2549,7 +2549,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
 					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
 					assert.False(t, has)
-					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance repair has been completed, ready for use")
 				},
 			},
 		},
@@ -2582,7 +2582,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
 					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
 					assert.False(t, has)
-					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance repair has been completed, ready for use")
 				},
 			},
 		},
@@ -2624,7 +2624,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
 					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
 					assert.False(t, has)
-					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance repair has been completed, ready for use")
 					_, cerr := machineDAO.Clear(context.Background(), nil, cdbm.MachineClearInput{
 						MachineID: mOnlineRepairReady.ID,
 						Health:    true,
@@ -2654,7 +2654,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
-					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is being repaired on Site")
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusRepairing, "Instance is currently being repaired")
 				},
 			},
 		},
