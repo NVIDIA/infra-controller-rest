@@ -556,7 +556,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 						isInfiniBandConfigSynced = true
 						if ibifc.Status != cdbm.InfiniBandInterfaceStatusReady {
 							// If the InfiniBand Interface is not in Ready state, set the status to Ready
-							status = cdb.GetStrPtr(cdbm.InterfaceStatusReady)
+							status = cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady)
 						}
 					}
 
