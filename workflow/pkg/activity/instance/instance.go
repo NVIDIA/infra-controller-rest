@@ -486,15 +486,13 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 		}
 
 		infiniBandInterfaceMap := map[string]*cdbm.InfiniBandInterface{}
-
+		deletingInfiniBandInterfaces := []*cdbm.InfiniBandInterface{}
 		for _, ibifc := range infiniBandInterfaces {
 			curIbIfc := ibifc
-			// If the InfiniBand Interface is in Deleting state, add it into list of InfiniBand Interfaces to be deleted
+			// Add the InfiniBand Interface to the list of InfiniBand Interfaces to be deleted if it is in Deleting state
 			if ibifc.Status == cdbm.InfiniBandInterfaceStatusDeleting {
-				if updatedInstanceStatus != nil && *updatedInstanceStatus == cdbm.InstanceStatusReady {
-					infiniBandInterfacesToDelete = append(infiniBandInterfacesToDelete, &curIbIfc)
-					continue
-				}
+				deletingInfiniBandInterfaces = append(deletingInfiniBandInterfaces, &curIbIfc)
+				continue
 			}
 
 			if ibifc.InfiniBandPartition.ControllerIBPartitionID == nil {
@@ -518,8 +516,21 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 			}
 		}
 
+		isInfiniBandConfigStatusEmpty := true
+		isInfiniBandConfigSynced := false
 		if controllerInstance.Config.Infiniband != nil && controllerInstance.Status.Infiniband != nil {
 			for idx, interfaceConfig := range controllerInstance.Config.Infiniband.IbInterfaces {
+
+				// If the InfiniBand Config as well as Status is not empty, set the flag to false
+				isInfiniBandConfigStatusEmpty = false
+
+				// Skip if the InfiniBand Interface Config is nil
+				if interfaceConfig == nil {
+					logger.Warn().Int("Index", idx).Msg("InfiniBand Interface Config is nil, skipping update")
+					continue
+				}
+
+				// Get the InfiniBand Interface from the map
 				ibifcKey := fmt.Sprintf("%s-%s-%d", interfaceConfig.IbPartitionId.Value, interfaceConfig.Device, interfaceConfig.DeviceInstance)
 				ibifc, ok := infiniBandInterfaceMap[ibifcKey]
 				if !ok {
@@ -528,6 +539,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 
 				interfaceStatus := controllerInstance.Status.Infiniband.IbInterfaces[idx]
 				if interfaceStatus != nil {
+
 					var physicalGUID *string
 					if interfaceStatus.PfGuid != nil && (ibifc.PhysicalGUID == nil || *ibifc.PhysicalGUID != *interfaceStatus.PfGuid) {
 						physicalGUID = interfaceStatus.PfGuid
@@ -540,7 +552,12 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 
 					var status *string
 					if controllerInstance.Status.Infiniband.ConfigsSynced == cwsv1.SyncState_SYNCED {
-						status = cdb.GetStrPtr(cdbm.InterfaceStatusReady)
+						// If the InfiniBand Config is synced
+						isInfiniBandConfigSynced = true
+						if ibifc.Status != cdbm.InfiniBandInterfaceStatusReady {
+							// If the InfiniBand Interface is not in Ready state, set the status to Ready
+							status = cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady)
+						}
 					}
 
 					if guid == nil && status == nil {
@@ -561,6 +578,18 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 						slogger.Error().Err(serr).Str("InfiniBand Interface ID", ibifc.ID.String()).Msg("failed to update InfiniBand Interface in DB")
 					}
 				}
+			}
+		}
+
+		// Determine which InfiniBand Interfaces in Deleting state can be deleted
+		if isInfiniBandConfigStatusEmpty || isInfiniBandConfigSynced {
+			for _, ibifc := range deletingInfiniBandInterfaces {
+				if util.IsTimeWithinStaleInventoryThreshold(ibifc.Updated) {
+					// If the InfiniBand Interface was modified within stale inventory threshold, defer to next inventory update
+					continue
+				}
+				// Continue with deletion
+				infiniBandInterfacesToDelete = append(infiniBandInterfacesToDelete, ibifc)
 			}
 		}
 
@@ -673,10 +702,15 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 			nvLinkInterfaceMap[nvlifcKey] = &curNvlifc
 		}
 
+		isNVLinkConfigStatusEmpty := true
+		isNVLinkConfigSynced := false
 		if controllerInstance.Config.Nvlink != nil {
 			// Check an update DB cache for each NVLink Interface based on the GPU Config and Status
 			configStatusMismatch := false
 			for idx, nvLinkGpuConfig := range controllerInstance.Config.Nvlink.GpuConfigs {
+
+				isNVLinkConfigStatusEmpty = false
+
 				if nvLinkGpuConfig == nil {
 					logger.Warn().Int("Index", idx).Msg("NVLink GPU Config is nil, skipping update")
 					continue
@@ -685,7 +719,6 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 				nvlifcKey := fmt.Sprintf("%s-%d", nvLinkGpuConfig.LogicalPartitionId.Value, nvLinkGpuConfig.DeviceInstance)
 				nvlifc, ok := nvLinkInterfaceMap[nvlifcKey]
 				if !ok {
-					logger.Warn().Str("NVLink Interface Key", nvlifcKey).Msg("NVLink Interface does not exist in DB, possibly created directly on Site")
 					continue
 				}
 
@@ -733,9 +766,15 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 				}
 
 				var status *string
-				if controllerInstance.Status.Nvlink.ConfigsSynced == cwsv1.SyncState_SYNCED && nvlifc.Status != cdbm.NVLinkInterfaceStatusReady {
-					status = cdb.GetStrPtr(cdbm.NVLinkInterfaceStatusReady)
-					needsUpdate = true
+				if controllerInstance.Status.Nvlink.ConfigsSynced == cwsv1.SyncState_SYNCED {
+					isNVLinkConfigSynced = true
+
+					// If the NVLink Interface is not in Ready state, set the status to Ready
+					if nvlifc.Status != cdbm.NVLinkInterfaceStatusReady {
+						status = cdb.GetStrPtr(cdbm.NVLinkInterfaceStatusReady)
+						needsUpdate = true
+					}
+
 				}
 
 				if !needsUpdate {
@@ -755,12 +794,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 			}
 		}
 
-		// Determine which NVLink Interfaces in Deleting state can be deleted
-		// If the NVLink Config and Status are empty, we can delete all NVLink Interfaces currently in Deleting state
-		isNVLinkConfigStatusEmpty := len(controllerInstance.Config.GetNvlink().GetGpuConfigs()) == 0 && len(controllerInstance.Status.GetNvlink().GetGpuStatuses()) == 0
-		// If the NVLink Config and Status are synced, we can delete all eligible NVLink Interfaces currently in Deleting state
-		isNVLinkConfigSynced := controllerInstance.Status.Nvlink != nil && controllerInstance.Status.Nvlink.ConfigsSynced == cwsv1.SyncState_SYNCED
-
+		// Delete NVLink Interfaces that are not present in the controller Instance
 		if isNVLinkConfigStatusEmpty || isNVLinkConfigSynced {
 			for _, nvlifc := range deletingNVLinkInterfaces {
 				if util.IsTimeWithinStaleInventoryThreshold(nvlifc.Updated) {
