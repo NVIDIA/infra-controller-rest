@@ -250,31 +250,26 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 	// Validate other query params
 	if infrastructureProvider != nil {
 		filterInput.InfrastructureProviderIDs = []uuid.UUID{infrastructureProvider.ID}
-	} else if tenant != nil {
-		// Check if Tenant is privileged
-		if !tenant.Config.TargetedInstanceCreation {
-			logger.Warn().Msg("Tenant doesn't have targeted Instance creation capability, access denied")
-			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant must have targeted Instance creation capability in order to retrieve Machines", nil)
-		}
-
-		// Get IDs for all Providers the privileged Tenant has an account with
-		taDAO := cdbm.NewTenantAccountDAO(gamh.dbSession)
-		tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
-			TenantIDs: []uuid.UUID{tenant.ID},
-		}, cdbp.PageInput{}, []string{})
-		if serr != nil {
-			logger.Error().Err(serr).Msg("error retrieving Tenant Accounts for privileged Tenant")
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error retrieving Tenant Accounts for privileged Tenant", nil)
-		}
-
-		providerIDs := make([]uuid.UUID, 0, len(tas))
-		for _, ta := range tas {
-			providerIDs = append(providerIDs, ta.InfrastructureProviderID)
-		}
-		filterInput.InfrastructureProviderIDs = providerIDs
 	}
 
-	mDAO := cdbm.NewMachineDAO(gamh.dbSession)
+	if tenant != nil {
+		// Check if Tenant is privileged
+		if tenant.Config.TargetedInstanceCreation {
+			// Get IDs for all Providers the privileged Tenant has an account with
+			taDAO := cdbm.NewTenantAccountDAO(gamh.dbSession)
+			tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
+				TenantIDs: []uuid.UUID{tenant.ID},
+			}, cdbp.PageInput{}, []string{})
+			if serr != nil {
+				logger.Error().Err(serr).Msg("error retrieving Tenant Accounts for privileged Tenant")
+				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error retrieving Tenant Accounts for privileged Tenant", nil)
+			}
+
+			for _, ta := range tas {
+				filterInput.InfrastructureProviderIDs = append(filterInput.InfrastructureProviderIDs, ta.InfrastructureProviderID)
+			}
+		}
+	}
 
 	// Validate site id if provided
 	qSiteID := c.QueryParam("siteId")
@@ -499,6 +494,9 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 		Limit:   pageRequest.Limit,
 		OrderBy: pageRequest.OrderBy,
 	}
+
+	mDAO := cdbm.NewMachineDAO(gamh.dbSession)
+
 	ms, total, err := mDAO.GetAll(ctx, nil, filterInput, pageInput, qIncludeRelations)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting Machines from DB")
