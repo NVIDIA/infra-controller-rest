@@ -4439,10 +4439,10 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				},
 				reqInstance:           instIbIfcErrorGrace.ID.String(),
 				cleanInstanceToStatus: instIbIfcErrorGrace.Status,
-				reqOrg:                  tnOrg1,
-				reqUser:                 tnu1,
-				respCode:                http.StatusOK,
-				ibInterfaceToDelete:     []cdbm.InfiniBandInterface{*ibiIbErrorGrace},
+				reqOrg:                tnOrg1,
+				reqUser:               tnu1,
+				respCode:              http.StatusOK,
+				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbErrorGrace},
 				beforeHandle: func(t *testing.T) {
 					recent := time.Now().UTC().Add(-45 * time.Second)
 					_, err := dbSession.DB.Exec(
@@ -4481,10 +4481,10 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				},
 				reqInstance:           instIbIfcErrorStale.ID.String(),
 				cleanInstanceToStatus: instIbIfcErrorStale.Status,
-				reqOrg:                  tnOrg1,
-				reqUser:                 tnu1,
-				respCode:                http.StatusOK,
-				ibInterfaceToDelete:     []cdbm.InfiniBandInterface{*ibiIbErrorStale},
+				reqOrg:                tnOrg1,
+				reqUser:               tnu1,
+				respCode:              http.StatusOK,
+				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbErrorStale},
 				beforeHandle: func(t *testing.T) {
 					stale := time.Now().UTC().Add(-2 * time.Minute)
 					_, err := dbSession.DB.Exec(
