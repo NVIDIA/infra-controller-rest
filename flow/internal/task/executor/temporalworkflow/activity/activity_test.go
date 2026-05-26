@@ -35,7 +35,7 @@ import (
 )
 
 func TestActivitiesReturnErrorWhenComponentManagerRegistryIsMissing(t *testing.T) {
-	acts := New(nil, nil)
+	acts := New(nil, nil, nil)
 
 	for name, call := range activityCallsForMissingManagerTest(t, acts) {
 		t.Run(name, func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestActivitiesReturnErrorWhenComponentManagerIsMissing(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	acts := New(nil, registry)
+	acts := New(nil, nil, registry)
 
 	for name, call := range activityCallsForMissingManagerTest(t, acts) {
 		t.Run(name, func(t *testing.T) {
@@ -292,7 +292,7 @@ func newCapabilityTestActivities(
 	)
 	require.NoError(t, err)
 
-	return New(nil, registry), manager
+	return New(nil, nil, registry), manager
 }
 
 func newActivityTestTarget() common.Target {

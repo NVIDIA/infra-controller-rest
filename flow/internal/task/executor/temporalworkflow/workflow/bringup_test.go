@@ -38,10 +38,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
-func mockUpdateTaskStatusForBringUp(ctx context.Context, arg *task.TaskStatusUpdate) error {
-	return nil
-}
-
 func mockBringUpControl(ctx context.Context, target common.Target) error {
 	return nil
 }
@@ -125,8 +121,7 @@ func createBringUpTestComponents() []task.WorkflowComponent {
 func registerBringUpActivities(env *testsuite.TestWorkflowEnvironment) {
 	env.RegisterWorkflowWithOptions(bringUp, temporalworkflow.RegisterOptions{Name: "BringUp"})
 	env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
-	env.RegisterActivityWithOptions(mockUpdateTaskStatusForBringUp,
-		activity.RegisterOptions{Name: activitypkg.NameUpdateTaskStatus})
+	registerTaskUpdateActivities(env)
 	env.RegisterActivityWithOptions(mockPowerControl,
 		activity.RegisterOptions{Name: activitypkg.NamePowerControl})
 	env.RegisterActivityWithOptions(mockGetPowerStatus,
@@ -135,6 +130,7 @@ func registerBringUpActivities(env *testsuite.TestWorkflowEnvironment) {
 		activity.RegisterOptions{Name: activitypkg.NameBringUpControl})
 	env.RegisterActivityWithOptions(mockGetBringUpStatus,
 		activity.RegisterOptions{Name: activitypkg.NameGetBringUpStatus})
+	expectTaskUpdateActivities(env)
 }
 
 func TestBringUpWorkflow(t *testing.T) {
@@ -144,7 +140,6 @@ func TestBringUpWorkflow(t *testing.T) {
 	}{
 		"success": {
 			setupMocks: func(env *testsuite.TestWorkflowEnvironment) {
-				env.OnActivity(activitypkg.NameUpdateTaskStatus, mock.Anything, mock.Anything).Return(nil)
 				env.OnActivity(activitypkg.NamePowerControl, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				env.OnActivity(activitypkg.NameGetPowerStatus, mock.Anything, mock.Anything).Return(
 					map[string]operations.PowerStatus{
@@ -162,7 +157,6 @@ func TestBringUpWorkflow(t *testing.T) {
 		},
 		"power control failure": {
 			setupMocks: func(env *testsuite.TestWorkflowEnvironment) {
-				env.OnActivity(activitypkg.NameUpdateTaskStatus, mock.Anything, mock.Anything).Return(nil)
 				env.OnActivity(activitypkg.NameGetPowerStatus, mock.Anything, mock.Anything).Return(
 					map[string]operations.PowerStatus{
 						"ps-1": operations.PowerStatusOff,
@@ -217,12 +211,10 @@ func TestBringUpWorkflowWithIngestion(t *testing.T) {
 
 	env.RegisterWorkflowWithOptions(bringUp, temporalworkflow.RegisterOptions{Name: "BringUp"})
 	env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
-	env.RegisterActivityWithOptions(mockUpdateTaskStatusForBringUp,
-		activity.RegisterOptions{Name: activitypkg.NameUpdateTaskStatus})
+	registerTaskUpdateActivities(env)
 	env.RegisterActivityWithOptions(mockInjectExpectation,
 		activity.RegisterOptions{Name: activitypkg.NameInjectExpectation})
-
-	env.OnActivity(activitypkg.NameUpdateTaskStatus, mock.Anything, mock.Anything).Return(nil)
+	expectTaskUpdateActivities(env)
 	env.OnActivity(activitypkg.NameInjectExpectation, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	testComponents := []task.WorkflowComponent{

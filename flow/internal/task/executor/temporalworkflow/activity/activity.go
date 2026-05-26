@@ -38,6 +38,7 @@ const (
 	NamePowerControl              = "PowerControl"
 	NameGetPowerStatus            = "GetPowerStatus"
 	NameUpdateTaskStatus          = "UpdateTaskStatus"
+	NameUpdateTaskReport          = "UpdateTaskReport"
 	NameFirmwareControl           = "FirmwareControl"
 	NameGetFirmwareStatus         = "GetFirmwareStatus"
 	NameBringUpControl            = "BringUpControl"
@@ -112,6 +113,23 @@ func (a *Activities) UpdateTaskStatus(
 	}
 
 	return a.updater.UpdateTaskStatus(ctx, arg)
+}
+
+// UpdateTaskReport is a Temporal activity that merges a structured report
+// snapshot without changing status or message.
+func (a *Activities) UpdateTaskReport(
+	ctx context.Context,
+	arg *task.TaskReportUpdate,
+) error {
+	if a.reportUpdater == nil {
+		return fmt.Errorf("task report updater is not configured")
+	}
+
+	if arg == nil || arg.ID == uuid.Nil {
+		return fmt.Errorf("invalid task identifier")
+	}
+
+	return a.reportUpdater.UpdateTaskReport(ctx, arg)
 }
 
 // FirmwareControl initiates firmware update without waiting for completion.

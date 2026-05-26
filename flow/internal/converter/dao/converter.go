@@ -191,6 +191,7 @@ func TaskFrom(dao *model.Task) *taskdef.Task {
 		ExecutionID:    dao.ExecutionID,
 		Status:         dao.Status,
 		Message:        dao.Message,
+		Report:         dao.Report,
 		AppliedRuleID:  dao.AppliedRuleID,
 		CreatedAt:      dao.CreatedAt,
 		UpdatedAt:      dao.UpdatedAt,
@@ -326,6 +327,7 @@ func TaskTo(task *taskdef.Task) *model.Task {
 		ExecutionID:    task.ExecutionID,
 		Status:         task.Status,
 		Message:        task.Message,
+		Report:         task.Report,
 		AppliedRuleID:  task.AppliedRuleID,
 		QueueExpiresAt: task.QueueExpiresAt,
 	}

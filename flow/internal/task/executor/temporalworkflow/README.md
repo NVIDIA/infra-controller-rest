@@ -50,7 +50,7 @@ ExecutionRequest{OperationType, OperationInfo}
 
 **Workflow registry** (`workflow/registry.go`): uses `init()` self-registration. Task-dispatched workflow files call `registerTaskWorkflow[T, *T](taskType, name, fn)`, which derives the timeout and builds the `Unmarshal` closure automatically. Internal workflows (those without a `TaskType`) call `register(WorkflowDescriptor{...})` directly. Nothing needs to be added to a central list — the registry is populated automatically at startup.
 
-**Activity registry** (`activity/registry.go`): uses per-instance dependency injection. `Build()` creates an `*Activities` value via `activity.New(updater, registry)` and calls `acts.All()` to obtain the name → bound-method map, then registers each entry with the Temporal worker via `RegisterActivityWithOptions(fn, {Name: name})`. Because activities are methods on `*Activities`, each manager instance holds its own isolated copy of the dependencies — no shared mutable globals.
+**Activity registry** (`activity/registry.go`): uses per-instance dependency injection. `Build()` creates an `*Activities` value via `activity.New(updater, reportUpdater, registry)` and calls `acts.All()` to obtain the name → bound-method map, then registers each entry with the Temporal worker via `RegisterActivityWithOptions(fn, {Name: name})`. Status and report updaters are wired as separate parameters so each role is explicit at the call site. Because activities are methods on `*Activities`, each manager instance holds its own isolated copy of the dependencies — no shared mutable globals.
 
 ## Adding a New Operation
 

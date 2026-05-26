@@ -64,12 +64,13 @@ func bringUp(
 
 	typeToTargets := buildTargets(&reqInfo)
 
-	err := executeRuleBasedOperation(
+	report, err := executeRuleBasedOperation(
 		ctx,
+		reqInfo.TaskID,
 		typeToTargets,
 		info,
 		reqInfo.RuleDefinition,
 	)
 
-	return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err)
+	return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err, report)
 }
