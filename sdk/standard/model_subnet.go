@@ -54,13 +54,15 @@ type Subnet struct {
 	// Maximum Transmission Unit size in bytes. This property is system-determined and read-only.
 	Mtu *int32 `json:"mtu,omitempty"`
 	// Max value depends on prefix length of parent IP Block
-	PrefixLength  *int32         `json:"prefixLength,omitempty"`
-	RoutingType   NullableString `json:"routingType,omitempty"`
-	Status        *SubnetStatus  `json:"status,omitempty"`
-	StatusHistory []StatusDetail `json:"statusHistory,omitempty"`
-	Created       *time.Time     `json:"created,omitempty"`
-	Updated       *time.Time     `json:"updated,omitempty"`
-	Deprecations  []Deprecation  `json:"deprecations,omitempty"`
+	PrefixLength *int32         `json:"prefixLength,omitempty"`
+	RoutingType  NullableString `json:"routingType,omitempty"`
+	Status       *SubnetStatus  `json:"status,omitempty"`
+	// Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnet consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
+	UsageStats    *IpBlockUsageStats `json:"usageStats,omitempty"`
+	StatusHistory []StatusDetail     `json:"statusHistory,omitempty"`
+	Created       *time.Time         `json:"created,omitempty"`
+	Updated       *time.Time         `json:"updated,omitempty"`
+	Deprecations  []Deprecation      `json:"deprecations,omitempty"`
 }
 
 // NewSubnet instantiates a new Subnet object
@@ -723,6 +725,38 @@ func (o *Subnet) SetStatus(v SubnetStatus) {
 	o.Status = &v
 }
 
+// GetUsageStats returns the UsageStats field value if set, zero value otherwise.
+func (o *Subnet) GetUsageStats() IpBlockUsageStats {
+	if o == nil || IsNil(o.UsageStats) {
+		var ret IpBlockUsageStats
+		return ret
+	}
+	return *o.UsageStats
+}
+
+// GetUsageStatsOk returns a tuple with the UsageStats field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *Subnet) GetUsageStatsOk() (*IpBlockUsageStats, bool) {
+	if o == nil || IsNil(o.UsageStats) {
+		return nil, false
+	}
+	return o.UsageStats, true
+}
+
+// HasUsageStats returns a boolean if a field has been set.
+func (o *Subnet) HasUsageStats() bool {
+	if o != nil && !IsNil(o.UsageStats) {
+		return true
+	}
+
+	return false
+}
+
+// SetUsageStats gets a reference to the given IpBlockUsageStats and assigns it to the UsageStats field.
+func (o *Subnet) SetUsageStats(v IpBlockUsageStats) {
+	o.UsageStats = &v
+}
+
 // GetStatusHistory returns the StatusHistory field value if set, zero value otherwise.
 func (o *Subnet) GetStatusHistory() []StatusDetail {
 	if o == nil || IsNil(o.StatusHistory) {
@@ -911,6 +945,9 @@ func (o Subnet) ToMap() (map[string]interface{}, error) {
 	}
 	if !IsNil(o.Status) {
 		toSerialize["status"] = o.Status
+	}
+	if !IsNil(o.UsageStats) {
+		toSerialize["usageStats"] = o.UsageStats
 	}
 	if !IsNil(o.StatusHistory) {
 		toSerialize["statusHistory"] = o.StatusHistory

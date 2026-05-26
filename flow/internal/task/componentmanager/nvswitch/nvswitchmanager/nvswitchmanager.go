@@ -94,15 +94,6 @@ func (m *Manager) Descriptor() cmcatalog.Descriptor {
 	return Descriptor()
 }
 
-// InjectExpectation injects expected configuration or state information for an NVLink switch.
-func (m *Manager) InjectExpectation(
-	_ context.Context,
-	_ common.Target,
-	_ operations.InjectExpectationTaskInfo,
-) error {
-	return fmt.Errorf("InjectExpectation not yet implemented for NVSwitch (nvswitchmanager)")
-}
-
 // PowerControl performs power operations on NVLink switches via the NV-Switch Manager API.
 func (m *Manager) PowerControl(
 	ctx context.Context,
@@ -215,16 +206,6 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	}
 
 	return nil
-}
-
-// GetPowerStatus is not currently supported by NV-Switch Manager.
-func (m *Manager) GetPowerStatus(
-	_ context.Context,
-	_ common.Target,
-) (map[string]operations.PowerStatus, error) {
-	return nil, fmt.Errorf(
-		"GetPowerStatus not supported for NV-Switch Manager",
-	)
 }
 
 // GetFirmwareStatus returns the current status of firmware updates for the target components.
