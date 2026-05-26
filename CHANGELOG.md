@@ -10,6 +10,9 @@ Each release lists pull requests grouped by category, with the most recent versi
 > [!NOTE]
 > This release is compatible with Core **v0.9.x**.
 
+> [!IMPORTANT]
+> In our effort to unify the product name, starting from `v1.5.0` the image names are now prefixed with `nico-` instead of `carbide-`. Docker images produced by the make commands will now have the `nico-` prefix.
+
 ### Features
 - **Rename carbide/forge to NVIDIA Infrastructure Controller (NICo)** ([#432](https://github.com/NVIDIA/infra-controller-rest/pull/432))
   Comprehensive rebranding of the project from Carbide/Forge to NVIDIA Infrastructure Controller (NICo). All API path segments, CLI binary names, Helm chart names, configuration keys, and documentation are updated. The OpenAPI schema now uses the NICo naming throughout — see the updated [API reference](https://nvidia.github.io/infra-controller-rest/).

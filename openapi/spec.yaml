@@ -2010,12 +2010,13 @@ paths:
                     prefixLength: 20
                     protocolVersion: IPv4
                     usageStats:
-                      availableIPs: 256
+                      availableIPs: 4094
                       acquiredIPs: 2
                       availablePrefixes:
-                        - 192.168.201.0/24
-                      availableSmallestPrefixes: 64
-                      acquiredPrefixes: 0
+                        - 204.168.16.2/20
+                        - 204.168.16.4/20
+                      availableSmallestPrefixes: 2047
+                      acquiredPrefixes: 1
                     status: Pending
                     statusHistory:
                       - status: Pending
@@ -2930,6 +2931,13 @@ paths:
           name: includeRelation
           description: Related entity to expand
         - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: >-
+            When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
+        - schema:
             type: integer
             example: 1
             default: 1
@@ -3027,6 +3035,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: |-
+            When true, each VPC Prefix object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
     delete:
       summary: Delete VPC Prefix
       operationId: delete-vpc-prefix
@@ -3162,6 +3177,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: |-
+            When true, each Subnet object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnets consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
         - schema:
             type: integer
             example: 1
@@ -3324,6 +3346,13 @@ paths:
           in: query
           name: includeRelation
           description: Related entity to expand
+        - schema:
+            type: boolean
+          in: query
+          name: includeUsageStats
+          description: |-
+            When true, each Subnet object includes usage statistic using the same structure as IP Block usage.
+            Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnets consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
     delete:
       summary: Delete Subnet
       operationId: delete-subnet
@@ -13940,10 +13969,18 @@ components:
           siteId: ea144def-d68f-44c3-9485-4b103fa2686f
           vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
           tenantId: f97df110-f4de-492e-8849-4a6af68026b0
-          prefix: 192.168.1.0/24
+          prefix: 192.168.1.0/26
           ipBlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
-          prefixLength: 20
+          prefixLength: 26
           status: Ready
+          usageStats:
+            availableIPs: 58
+            acquiredIPs: 6
+            availablePrefixes:
+              - 192.168.1.4/31
+              - 192.168.1.8/31
+            availableSmallestPrefixes: 29
+            acquiredPrefixes: 3
           statusHistory:
             - status: Ready
               message: 'Received VPC prefix creation request, ready'
@@ -13994,6 +14031,11 @@ components:
           $ref: '#/components/schemas/VpcPrefixStatus'
           readOnly: true
           description: Status of the VPC Prefix
+        usageStats:
+          $ref: '#/components/schemas/IpBlockUsageStats'
+          readOnly: true
+          description: |-
+            Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a VPC Prefix consumes a `/31` prefix.
         statusHistory:
           type: array
           items:
@@ -14092,6 +14134,41 @@ components:
               updated: '2019-08-24T14:15:22Z'
           created: '2019-08-24T14:15:22Z'
           updated: '2019-08-24T14:15:22Z'
+        - id: 82e4c3a7-5b4d-4c8e-a2f1-1c09d06e9120
+          name: inference-training-net
+          description: Provisioned subnet with IPv4 usage (includeUsageStats=true)
+          siteId: ea144def-d68f-44c3-9485-4b103fa2686f
+          vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
+          tenantId: f97df110-f4de-492e-8849-4a6af68026b0
+          controllerNetworkSegmentId: abe7b0e8-67db-4e89-903e-fc4f2bd7f034
+          ipv4Prefix: 204.168.16.0
+          ipv4BlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
+          ipv4Gateway: 204.168.16.1
+          ipv6Prefix: null
+          ipv6BlockId: null
+          ipv6Gateway: null
+          prefixLength: 20
+          routingType: Public
+          status: Ready
+          usageStats:
+            availableIPs: 4088
+            acquiredIPs: 6
+            availablePrefixes:
+              - 204.168.16.6/31
+              - 204.168.16.8/31
+            availableSmallestPrefixes: 2044
+            acquiredPrefixes: 0
+          statusHistory:
+            - status: Ready
+              message: Subnet has been successfully provisioned on Site
+              created: '2019-08-24T16:02:38Z'
+              updated: '2019-08-24T16:02:38Z'
+            - status: Pending
+              message: 'Request received, pending processing'
+              created: '2019-08-24T14:15:22Z'
+              updated: '2019-08-24T14:15:22Z'
+          created: '2019-08-24T14:15:22Z'
+          updated: '2019-08-24T16:02:38Z'
       properties:
         id:
           type: string
@@ -14168,6 +14245,11 @@ components:
         status:
           $ref: '#/components/schemas/SubnetStatus'
           readOnly: true
+        usageStats:
+          $ref: '#/components/schemas/IpBlockUsageStats'
+          readOnly: true
+          description: |-
+            Present when query param `includeUsageStats=true`. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnet consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
         statusHistory:
           type: array
           items:
@@ -17711,13 +17793,13 @@ components:
             - Other
           description: High-level category for the tenant-reported issue.
         summary:
-          type: 
+          type:
             - string
             - 'null'
           maxLength: 512
           description: Brief description of the issue for operators.
         details:
-          type: 
+          type:
             - string
             - 'null'
           maxLength: 8192
@@ -19967,13 +20049,15 @@ components:
         availablePrefixes:
           type: array
           format: uuid
-          description: Example prefixes available to acquire
+          description: |
+            Example prefixes available to acquire
           items:
             type: string
             readOnly: true
         availableSmallestPrefixes:
           type: integer
-          description: Number of smallest prefixes available to acquire
+          description: |
+            Number of smallest prefixes available to acquire
           format: int64
           readOnly: true
         acquiredPrefixes:

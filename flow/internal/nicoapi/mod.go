@@ -32,6 +32,7 @@ type Client interface {
 	Version(ctx context.Context) (string, error)
 	GetMachines(ctx context.Context) ([]MachineDetail, error)
 	GetLeakingMachineIds(ctx context.Context) ([]string, error)
+	GetLeakingSwitchIds(ctx context.Context) ([]string, error)
 	GetPowerStates(ctx context.Context, machineIds []string) (ret []MachinePowerState, err error)
 	SetFirmwareUpdateTimeWindow(ctx context.Context, machineIds []string, startTime, endTime time.Time) error
 	// FindInterfaces returns all machine interfaces known by nico-core-api, keyed by MAC address
@@ -126,4 +127,5 @@ type Client interface {
 	AddMachineInterface(iface MachineInterface)
 	AddExpectedSwitchInfo(info ExpectedSwitchInfo)
 	SetLeakingMachineIds(ids []string)
+	SetLeakingSwitchIds([]string)
 }
