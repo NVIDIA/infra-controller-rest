@@ -4007,6 +4007,17 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	assert.NotNil(t, inst4DelNvl3)
 	assert.NotNil(t, inst4DelNvl4)
 
+	// Dedicated instances for NVLink Error → re-issue (within grace vs stale Updated).
+	instNvlinkErrorGrace := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-error-grace", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instNvlinkErrorGrace)
+	nvlinkErrGraceIfc := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instNvlinkErrorGrace.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusError)
+	assert.NotNil(t, nvlinkErrGraceIfc)
+
+	instNvlinkErrorStale := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-error-stale", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instNvlinkErrorStale)
+	nvlinkErrStaleIfc := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instNvlinkErrorStale.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusError)
+	assert.NotNil(t, nvlinkErrStaleIfc)
+
 	mc6 := testInstanceBuildMachine(t, dbSession, ip.ID, st2.ID, cdb.GetBoolPtr(false), nil)
 	assert.NotNil(t, mc6)
 
@@ -4106,6 +4117,25 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 
 	ibiIbPartitionSwap := testInstanceBuildIBInterface(t, dbSession, instIbPartitionSwap, st1, ibp1, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
 	assert.NotNil(t, ibiIbPartitionSwap)
+
+	// Instances with InfiniBand interface in Error — re-issue paths: Error within InfiniBandInterfaceStatusSyncGraceWindow (explicit branch) vs stale Updated (grace else branch).
+	mcIbIfcErrGrace := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbIfcErrGrace)
+	assert.NotNil(t, testInstanceBuildMachineInstanceType(t, dbSession, mcIbIfcErrGrace, ist1))
+	instIbIfcErrorGrace := testInstanceBuildInstance(t, dbSession, "test-instance-ib-ifc-error-grace", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbIfcErrGrace.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbIfcErrorGrace)
+	assert.NotNil(t, testInstanceBuildInstanceInterface(t, dbSession, instIbIfcErrorGrace.ID, &subnet1.ID, nil, nil, cdbm.InterfaceStatusReady))
+	ibiIbErrorGrace := testInstanceBuildIBInterface(t, dbSession, instIbIfcErrorGrace, st1, ibp2, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusError), false)
+	assert.NotNil(t, ibiIbErrorGrace)
+
+	mcIbIfcErrStale := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbIfcErrStale)
+	assert.NotNil(t, testInstanceBuildMachineInstanceType(t, dbSession, mcIbIfcErrStale, ist1))
+	instIbIfcErrorStale := testInstanceBuildInstance(t, dbSession, "test-instance-ib-ifc-error-stale", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbIfcErrStale.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbIfcErrorStale)
+	assert.NotNil(t, testInstanceBuildInstanceInterface(t, dbSession, instIbIfcErrorStale.ID, &subnet1.ID, nil, nil, cdbm.InterfaceStatusReady))
+	ibiIbErrorStale := testInstanceBuildIBInterface(t, dbSession, instIbIfcErrorStale, st1, ibp2, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusError), false)
+	assert.NotNil(t, ibiIbErrorStale)
 
 	// Instance for DPU Extension Service Deployment update
 	mc15 := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
@@ -4380,6 +4410,90 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				reqUser:               tnu1,
 				respCode:              http.StatusOK,
 				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbPartitionSwap},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues InfiniBand when most recent row is Error and Updated within sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance IB error re-issue grace"),
+					IpxeScript: os2.IpxeScript,
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:           instIbIfcErrorGrace.ID.String(),
+				cleanInstanceToStatus: instIbIfcErrorGrace.Status,
+				reqOrg:                  tnOrg1,
+				reqUser:                 tnu1,
+				respCode:                http.StatusOK,
+				ibInterfaceToDelete:     []cdbm.InfiniBandInterface{*ibiIbErrorGrace},
+				beforeHandle: func(t *testing.T) {
+					recent := time.Now().UTC().Add(-45 * time.Second)
+					_, err := dbSession.DB.Exec(
+						"UPDATE infiniband_interface SET updated = ? WHERE id = ?",
+						recent,
+						ibiIbErrorGrace.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues InfiniBand when most recent row is Error but Updated older than sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance IB error re-issue stale"),
+					IpxeScript: os2.IpxeScript,
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:           instIbIfcErrorStale.ID.String(),
+				cleanInstanceToStatus: instIbIfcErrorStale.Status,
+				reqOrg:                  tnOrg1,
+				reqUser:                 tnu1,
+				respCode:                http.StatusOK,
+				ibInterfaceToDelete:     []cdbm.InfiniBandInterface{*ibiIbErrorStale},
+				beforeHandle: func(t *testing.T) {
+					stale := time.Now().UTC().Add(-2 * time.Minute)
+					_, err := dbSession.DB.Exec(
+						"UPDATE infiniband_interface SET updated = ? WHERE id = ?",
+						stale,
+						ibiIbErrorStale.ID,
+					)
+					require.NoError(t, err)
+				},
 			},
 			wantErr:                     false,
 			verifySiteControllerRequest: true,
@@ -5990,6 +6104,78 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						"UPDATE nvlink_interface SET updated = ? WHERE instance_id = ?",
 						recent,
 						inst13PendingFresh.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues NVLink when most recent row is Error and Updated within sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance NVLink error re-issue grace"),
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+					},
+				},
+				reqInstance:              instNvlinkErrorGrace.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(1),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{*nvlinkErrGraceIfc},
+				beforeHandle: func(t *testing.T) {
+					recent := time.Now().UTC().Add(-45 * time.Second)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE id = ?",
+						recent,
+						nvlinkErrGraceIfc.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues NVLink when most recent row is Error but Updated older than sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance NVLink error re-issue stale"),
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+					},
+				},
+				reqInstance:              instNvlinkErrorStale.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(1),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{*nvlinkErrStaleIfc},
+				beforeHandle: func(t *testing.T) {
+					stale := time.Now().UTC().Add(-2 * time.Minute)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE id = ?",
+						stale,
+						nvlinkErrStaleIfc.ID,
 					)
 					require.NoError(t, err)
 				},

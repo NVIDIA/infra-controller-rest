@@ -56,7 +56,7 @@ import (
 
 const (
 	NVLinkInterfaceStatusSyncGraceWindow     = 90 * time.Second
-	InfiniBandInterfaceStatusSyncGraceWindow = 30 * time.Second
+	InfiniBandInterfaceStatusSyncGraceWindow = 90 * time.Second
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -3024,6 +3024,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 								existingPendingIbIfcsCount++
 							} else if mostRecentIbIfc.Status == cdbm.InfiniBandInterfaceStatusDeleting {
 								existingDeletingIbIfcsCount++
+							} else if mostRecentIbIfc.Status == cdbm.InfiniBandInterfaceStatusError {
+								reIssueInfiniBandInterfaces = true
 							}
 						} else {
 							reIssueInfiniBandInterfaces = true
@@ -3224,6 +3226,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 								existingPendingNvlIfcsCount++
 							} else if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusDeleting {
 								existingDeletingNvlIfcsCount++
+							} else if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusError {
+								reIssueNVLinkInterfaces = true
 							}
 						} else {
 							reIssueNVLinkInterfaces = true
