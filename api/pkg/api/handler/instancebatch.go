@@ -1770,7 +1770,6 @@ func allocateMachinesForBatch(
 
 	// Get all available Machines for the Instance Type
 	filterInput := cdbm.MachineFilterInput{
-		SiteID:          instancetype.SiteID,
 		InstanceTypeIDs: []uuid.UUID{instancetype.ID},
 		IsAssigned:      cdb.GetBoolPtr(false),
 		Statuses:        []string{cdbm.MachineStatusReady},

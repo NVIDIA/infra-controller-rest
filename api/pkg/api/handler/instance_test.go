@@ -621,6 +621,8 @@ func testInstanceBuildIBInterface(t *testing.T, dbSession *cdb.Session, instance
 		InstanceID:            instance.ID,
 		SiteID:                site.ID,
 		InfiniBandPartitionID: ibPartition.ID,
+		Device:                "MT28908 Family [ConnectX-6]",
+		Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
 		DeviceInstance:        deviceInstance,
 		IsPhysical:            isPhysical,
 		VirtualFunctionID:     vfID,
@@ -4005,6 +4007,17 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	assert.NotNil(t, inst4DelNvl3)
 	assert.NotNil(t, inst4DelNvl4)
 
+	// Dedicated instances for NVLink Error → re-issue (within grace vs stale Updated).
+	instNvlinkErrorGrace := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-error-grace", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instNvlinkErrorGrace)
+	nvlinkErrGraceIfc := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instNvlinkErrorGrace.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusError)
+	assert.NotNil(t, nvlinkErrGraceIfc)
+
+	instNvlinkErrorStale := testInstanceBuildInstance(t, dbSession, "test-instance-nvlink-error-stale", tn1.ID, ip.ID, st3.ID, &ist4.ID, vpc4.ID, cdb.GetStrPtr(mc5.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instNvlinkErrorStale)
+	nvlinkErrStaleIfc := testInstanceBuildInstanceNVLinkInterface(t, dbSession, st3.ID, instNvlinkErrorStale.ID, nvllp1.ID, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr("NVIDIA GB200"), 0, cdbm.NVLinkInterfaceStatusError)
+	assert.NotNil(t, nvlinkErrStaleIfc)
+
 	mc6 := testInstanceBuildMachine(t, dbSession, ip.ID, st2.ID, cdb.GetBoolPtr(false), nil)
 	assert.NotNil(t, mc6)
 
@@ -4051,7 +4064,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	ibp1 := testBuildIBPartition(t, dbSession, "test-ibp-1", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp1)
 
-	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, false, cdb.GetIntPtr(1), cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	ibi1 := testInstanceBuildIBInterface(t, dbSession, inst1, st1, ibp1, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
 	assert.NotNil(t, ibi1)
 
 	// Extra InfiniBand Partitions for updating instance with InfiniBand Interfaces
@@ -4068,9 +4081,61 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	ibp4 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp4)
 
+	ibp6 := testBuildIBPartition(t, dbSession, "test-ibp-ibdup-4slot", tnOrg1, st1, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
+	assert.NotNil(t, ibp6)
+
 	// Extra InfiniBand Partitions for updating instance with InfiniBand Interfaces
 	ibp5 := testBuildIBPartition(t, dbSession, "test-ibp-2", tnOrg1, st2, tn1, cdb.GetUUIDPtr(uuid.New()), cdb.GetStrPtr(cdbm.InfiniBandPartitionStatusReady), false)
 	assert.NotNil(t, ibp5)
+
+	// Instance with four READY InfiniBand interfaces — distinct (partition ID, device, device instance) per row;
+	// used for READY multi-interface no-op tests without sharing state with IB replace tests on inst1.
+	mcIbDup := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbDup)
+
+	instIbReadyDup := testInstanceBuildInstance(t, dbSession, "test-instance-ib-ready-four", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbDup.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbReadyDup)
+
+	ibiIbDup0 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp2, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup0)
+
+	ibiIbDup1 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp3, 1, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup1)
+
+	ibiIbDup2 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp4, 2, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup2)
+
+	ibiIbDup3 := testInstanceBuildIBInterface(t, dbSession, instIbReadyDup, st1, ibp6, 3, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbDup3)
+
+	// Instance with one READY InfiniBand — used only for partition-in-map-key behavior (same device/instance, different partition is not a no-op).
+	mcIbPartitionSwap := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbPartitionSwap)
+
+	instIbPartitionSwap := testInstanceBuildInstance(t, dbSession, "test-instance-ib-partition-key", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbPartitionSwap.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbPartitionSwap)
+
+	ibiIbPartitionSwap := testInstanceBuildIBInterface(t, dbSession, instIbPartitionSwap, st1, ibp1, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusReady), false)
+	assert.NotNil(t, ibiIbPartitionSwap)
+
+	// Instances with InfiniBand interface in Error — re-issue paths: Error within InfiniBandInterfaceStatusSyncGraceWindow (explicit branch) vs stale Updated (grace else branch).
+	mcIbIfcErrGrace := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbIfcErrGrace)
+	assert.NotNil(t, testInstanceBuildMachineInstanceType(t, dbSession, mcIbIfcErrGrace, ist1))
+	instIbIfcErrorGrace := testInstanceBuildInstance(t, dbSession, "test-instance-ib-ifc-error-grace", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbIfcErrGrace.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbIfcErrorGrace)
+	assert.NotNil(t, testInstanceBuildInstanceInterface(t, dbSession, instIbIfcErrorGrace.ID, &subnet1.ID, nil, nil, cdbm.InterfaceStatusReady))
+	ibiIbErrorGrace := testInstanceBuildIBInterface(t, dbSession, instIbIfcErrorGrace, st1, ibp2, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusError), false)
+	assert.NotNil(t, ibiIbErrorGrace)
+
+	mcIbIfcErrStale := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
+	assert.NotNil(t, mcIbIfcErrStale)
+	assert.NotNil(t, testInstanceBuildMachineInstanceType(t, dbSession, mcIbIfcErrStale, ist1))
+	instIbIfcErrorStale := testInstanceBuildInstance(t, dbSession, "test-instance-ib-ifc-error-stale", tn1.ID, ip.ID, st1.ID, &ist1.ID, vpc1.ID, cdb.GetStrPtr(mcIbIfcErrStale.ID), &os2.ID, nil, cdbm.InstanceStatusReady)
+	assert.NotNil(t, instIbIfcErrorStale)
+	assert.NotNil(t, testInstanceBuildInstanceInterface(t, dbSession, instIbIfcErrorStale.ID, &subnet1.ID, nil, nil, cdbm.InterfaceStatusReady))
+	ibiIbErrorStale := testInstanceBuildIBInterface(t, dbSession, instIbIfcErrorStale, st1, ibp2, 0, true, nil, cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusError), false)
+	assert.NotNil(t, ibiIbErrorStale)
 
 	// Instance for DPU Extension Service Deployment update
 	mc15 := testInstanceBuildMachine(t, dbSession, ip.ID, st1.ID, cdb.GetBoolPtr(false), nil)
@@ -4181,15 +4246,18 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 	}
 
 	type args struct {
-		reqData                               *model.APIInstanceUpdateRequest
-		reqOrg                                string
-		reqUser                               *cdbm.User
-		reqInstance                           string
-		cleanInstanceToStatus                 string
-		respNoOfInterfaces                    *int
-		respNoOfNVLinkInterfaces              *int
-		ethInterfacesToDelete                 []cdbm.Interface
-		ibInterfaceToDelete                   []cdbm.InfiniBandInterface
+		reqData                  *model.APIInstanceUpdateRequest
+		reqOrg                   string
+		reqUser                  *cdbm.User
+		reqInstance              string
+		cleanInstanceToStatus    string
+		respNoOfInterfaces       *int
+		respNoOfNVLinkInterfaces *int
+		ethInterfacesToDelete    []cdbm.Interface
+		ibInterfaceToDelete      []cdbm.InfiniBandInterface
+		// Expect these InfiniBand interface rows to stay Ready with no Pending rows created on the Instance
+		// when the request matches on (partition ID, device, device instance) — READY no-op IB update path.
+		expectInfiniBandInterfacesRemainReady []uuid.UUID
 		nvlinkInterfacesToDelete              []cdbm.NVLinkInterface
 		respCode                              int
 		respUserDataContains                  *string
@@ -4202,6 +4270,10 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 		expectedPropagationStatus             *string
 		// When true, only assert len(siteReq.Config.Nvlink.GpuConfigs) matches the request (e.g. NVLink no-op where workflow uses DB order).
 		nvLinkGpuConfigsVerifyCountOnly bool
+		// When non-nil, expected len(siteReq.Config.Nvlink.GpuConfigs) for verifySiteControllerRequest (default: len(reqData.NVLinkInterfaces)).
+		expectSiteNVLinkGpuConfigCount *int
+		// When true with nvlinkInterfacesToDelete, still assert those rows are Deleting but skip Pending-row count/order checks.
+		nvLinkSkipPendingDBAssertions bool
 		// Optional hook after building the echo context and before Handle (e.g. adjust DB timestamps for time-sensitive branches).
 		beforeHandle func(t *testing.T)
 	}
@@ -4215,6 +4287,218 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 		verifySiteControllerRequest bool
 		verifyChildSpanner          bool
 	}{
+		{
+			name: "test Instance update API endpoint success with InfiniBand Interfaces no-op when request matches READY rows on partition, device and device instance",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:        cdb.GetStrPtr("Test Instance IB no-op"),
+					Description: cdb.GetStrPtr("Test Instance Description"),
+					IpxeScript:  os2.IpxeScript,
+					Labels: map[string]string{
+						"new_key": "new_value",
+					},
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp1.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:                           inst1.ID.String(),
+				cleanInstanceToStatus:                 inst1.Status,
+				reqOrg:                                tnOrg1,
+				reqUser:                               tnu1,
+				respCode:                              http.StatusOK,
+				expectInfiniBandInterfacesRemainReady: []uuid.UUID{ibi1.ID},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update API endpoint success with four InfiniBand Interfaces no-op when request matches READY rows on partition, device and device instance",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance IB no-op four"),
+					IpxeScript: os2.IpxeScript,
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+						{
+							InfiniBandPartitionID: ibp3.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        1,
+							IsPhysical:            true,
+						},
+						{
+							InfiniBandPartitionID: ibp4.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        2,
+							IsPhysical:            true,
+						},
+						{
+							InfiniBandPartitionID: ibp6.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        3,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:                           instIbReadyDup.ID.String(),
+				cleanInstanceToStatus:                 instIbReadyDup.Status,
+				reqOrg:                                tnOrg1,
+				reqUser:                               tnu1,
+				respCode:                              http.StatusOK,
+				expectInfiniBandInterfacesRemainReady: []uuid.UUID{ibiIbDup0.ID, ibiIbDup1.ID, ibiIbDup2.ID, ibiIbDup3.ID},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update API endpoint success with InfiniBand Interface when partition differs on same device instance (not a no-op; keyed by partition+device+instance)",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:        cdb.GetStrPtr("Test Instance IB partition swap same slot"),
+					Description: cdb.GetStrPtr("Test Instance Description"),
+					IpxeScript:  os2.IpxeScript,
+					Labels: map[string]string{
+						"new_key": "new_value",
+					},
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:           instIbPartitionSwap.ID.String(),
+				cleanInstanceToStatus: instIbPartitionSwap.Status,
+				reqOrg:                tnOrg1,
+				reqUser:               tnu1,
+				respCode:              http.StatusOK,
+				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbPartitionSwap},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues InfiniBand when most recent row is Error and Updated within sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance IB error re-issue grace"),
+					IpxeScript: os2.IpxeScript,
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:           instIbIfcErrorGrace.ID.String(),
+				cleanInstanceToStatus: instIbIfcErrorGrace.Status,
+				reqOrg:                tnOrg1,
+				reqUser:               tnu1,
+				respCode:              http.StatusOK,
+				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbErrorGrace},
+				beforeHandle: func(t *testing.T) {
+					recent := time.Now().UTC().Add(-45 * time.Second)
+					_, err := dbSession.DB.Exec(
+						"UPDATE infiniband_interface SET updated = ? WHERE id = ?",
+						recent,
+						ibiIbErrorGrace.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues InfiniBand when most recent row is Error but Updated older than sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance IB error re-issue stale"),
+					IpxeScript: os2.IpxeScript,
+					InfiniBandInterfaces: []model.APIInfiniBandInterfaceCreateOrUpdateRequest{
+						{
+							InfiniBandPartitionID: ibp2.ID.String(),
+							Device:                "MT28908 Family [ConnectX-6]",
+							Vendor:                cdb.GetStrPtr("Mellanox Technologies"),
+							DeviceInstance:        0,
+							IsPhysical:            true,
+						},
+					},
+				},
+				reqInstance:           instIbIfcErrorStale.ID.String(),
+				cleanInstanceToStatus: instIbIfcErrorStale.Status,
+				reqOrg:                tnOrg1,
+				reqUser:               tnu1,
+				respCode:              http.StatusOK,
+				ibInterfaceToDelete:   []cdbm.InfiniBandInterface{*ibiIbErrorStale},
+				beforeHandle: func(t *testing.T) {
+					stale := time.Now().UTC().Add(-2 * time.Minute)
+					_, err := dbSession.DB.Exec(
+						"UPDATE infiniband_interface SET updated = ? WHERE id = ?",
+						stale,
+						ibiIbErrorStale.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
 		{
 			name: "test Instance update API endpoint success with InfiniBand Interfaces",
 			fields: fields{
@@ -5829,7 +6113,80 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
-			name: "test Instance update re-issues when four NVLink rows exist as Deleting — same multiset request (deviceInstance 0–3) creates four new Pending",
+			name: "test Instance update re-issues NVLink when most recent row is Error and Updated within sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance NVLink error re-issue grace"),
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+					},
+				},
+				reqInstance:              instNvlinkErrorGrace.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(1),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{*nvlinkErrGraceIfc},
+				beforeHandle: func(t *testing.T) {
+					recent := time.Now().UTC().Add(-45 * time.Second)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE id = ?",
+						recent,
+						nvlinkErrGraceIfc.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			name: "test Instance update re-issues NVLink when most recent row is Error but Updated older than sync grace window",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					Name:       cdb.GetStrPtr("Test Instance NVLink error re-issue stale"),
+					IpxeScript: os2.IpxeScript,
+					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
+						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
+					},
+				},
+				reqInstance:              instNvlinkErrorStale.ID.String(),
+				reqOrg:                   tnOrg1,
+				reqUser:                  tnu1,
+				respCode:                 http.StatusOK,
+				respNoOfNVLinkInterfaces: cdb.GetIntPtr(1),
+				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{*nvlinkErrStaleIfc},
+				beforeHandle: func(t *testing.T) {
+					stale := time.Now().UTC().Add(-2 * time.Minute)
+					_, err := dbSession.DB.Exec(
+						"UPDATE nvlink_interface SET updated = ? WHERE id = ?",
+						stale,
+						nvlinkErrStaleIfc.ID,
+					)
+					require.NoError(t, err)
+				},
+			},
+			wantErr:                     false,
+			verifySiteControllerRequest: true,
+			verifyChildSpanner:          true,
+		},
+		{
+			// Reflects handler today: multiset match on all-Deleting NVLink rows is treated as a no-op — no Pending rows and no GpuConfigs (all rows stay Deleting).
+			name: "test Instance update NVLink all-Deleting multiset match no-ops (no Pending GpuConfigs)",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -5839,7 +6196,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			args: args{
 				reqData: &model.APIInstanceUpdateRequest{
 					IpxeScript: os2.IpxeScript,
-					// Same four bindings as DB (nvllp1: 0,1 and nvllp2: 2,3); order shuffled. All rows Deleting → must not no-op.
+					// Same four bindings as DB (nvllp1: 0,1 and nvllp2: 2,3); order shuffled. All rows Deleting → handler no-ops NVLink subset.
 					NVLinkInterfaces: []model.APINVLinkInterfaceCreateOrUpdateRequest{
 						{NVLinkLogicalPartitionID: nvllp2.ID.String(), DeviceInstance: 3},
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 0},
@@ -5847,11 +6204,13 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						{NVLinkLogicalPartitionID: nvllp1.ID.String(), DeviceInstance: 1},
 					},
 				},
-				reqInstance:              instFourDeletingNVLink.ID.String(),
-				reqOrg:                   tnOrg1,
-				reqUser:                  tnu1,
-				respCode:                 http.StatusOK,
-				respNoOfNVLinkInterfaces: cdb.GetIntPtr(4),
+				reqInstance:                    instFourDeletingNVLink.ID.String(),
+				reqOrg:                         tnOrg1,
+				reqUser:                        tnu1,
+				respCode:                       http.StatusOK,
+				respNoOfNVLinkInterfaces:       cdb.GetIntPtr(4),
+				nvLinkSkipPendingDBAssertions:  true,
+				expectSiteNVLinkGpuConfigCount: cdb.GetIntPtr(0),
 				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
 					*inst4DelNvl1, *inst4DelNvl2, *inst4DelNvl3, *inst4DelNvl4,
 				},
@@ -5870,6 +6229,7 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			verifyChildSpanner:          true,
 		},
 		{
+			// Reflects handler today: request keys matching Ready rows no-op NVLink churn; unchanged Ready rows remain and Site Controller still receives all active GpuConfigs from DB order.
 			name: "test Instance update API endpoint success when Instance has four NVLink interfaces and update requests two (nvllp1 devices 0 and 1)",
 			fields: fields{
 				dbSession: dbSession,
@@ -5891,23 +6251,20 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						},
 					},
 				},
-				reqInstance:              instSubsetFourToTwoA.ID.String(),
-				reqOrg:                   tnOrg1,
-				reqUser:                  tnu1,
-				respCode:                 http.StatusOK,
-				respNoOfNVLinkInterfaces: cdb.GetIntPtr(2),
-				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
-					*instSubsetANvl1,
-					*instSubsetANvl2,
-					*instSubsetANvl3,
-					*instSubsetANvl4,
-				},
+				reqInstance:                     instSubsetFourToTwoA.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				respNoOfNVLinkInterfaces:        cdb.GetIntPtr(2),
+				expectSiteNVLinkGpuConfigCount:  cdb.GetIntPtr(4),
+				nvLinkGpuConfigsVerifyCountOnly: true,
 			},
 			wantErr:                     false,
 			verifySiteControllerRequest: true,
 			verifyChildSpanner:          true,
 		},
 		{
+			// Reflects handler today — same multiset no-op semantics as nvllp1 subset case above.
 			name: "test Instance update API endpoint success when Instance has four NVLink interfaces and update requests two (nvllp2 devices 2 and 3)",
 			fields: fields{
 				dbSession: dbSession,
@@ -5929,17 +6286,13 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 						},
 					},
 				},
-				reqInstance:              instSubsetFourToTwoB.ID.String(),
-				reqOrg:                   tnOrg1,
-				reqUser:                  tnu1,
-				respCode:                 http.StatusOK,
-				respNoOfNVLinkInterfaces: cdb.GetIntPtr(2),
-				nvlinkInterfacesToDelete: []cdbm.NVLinkInterface{
-					*instSubsetBNvl1,
-					*instSubsetBNvl2,
-					*instSubsetBNvl3,
-					*instSubsetBNvl4,
-				},
+				reqInstance:                     instSubsetFourToTwoB.ID.String(),
+				reqOrg:                          tnOrg1,
+				reqUser:                         tnu1,
+				respCode:                        http.StatusOK,
+				respNoOfNVLinkInterfaces:        cdb.GetIntPtr(2),
+				expectSiteNVLinkGpuConfigCount:  cdb.GetIntPtr(4),
+				nvLinkGpuConfigsVerifyCountOnly: true,
 			},
 			wantErr:                     false,
 			verifySiteControllerRequest: true,
@@ -6276,15 +6629,44 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				}
 			}
 
+			if len(tt.args.expectInfiniBandInterfacesRemainReady) > 0 {
+				ibiDAO := cdbm.NewInfiniBandInterfaceDAO(tt.fields.dbSession)
+
+				pendingIb, _, ierr := ibiDAO.GetAll(ec.Request().Context(), nil,
+					cdbm.InfiniBandInterfaceFilterInput{InstanceIDs: []uuid.UUID{reqIns.ID},
+						Statuses: []string{cdbm.InfiniBandInterfaceStatusPending}},
+					cdbp.PageInput{}, nil)
+				require.NoError(t, ierr)
+				assert.Len(t, pendingIb, 0, "READY InfiniBand no-op must not insert Pending rows when partition+device+deviceInstance matches existing READY interfaces")
+
+				for _, wantID := range tt.args.expectInfiniBandInterfacesRemainReady {
+					ibRow, ierr := ibiDAO.GetByID(ec.Request().Context(), nil, wantID, nil)
+					require.NoError(t, ierr)
+					assert.Equal(t, cdbm.InfiniBandInterfaceStatusReady, ibRow.Status,
+						"InfiniBand interface %s must stay Ready after no-op request (matching partition/device/instance)", wantID)
+				}
+
+				gotReadyInAPI := map[string]bool{}
+				for _, apiIb := range rst.InfiniBandInterfaces {
+					if apiIb.Status == cdbm.InfiniBandInterfaceStatusReady {
+						gotReadyInAPI[apiIb.ID] = true
+					}
+				}
+				for _, wantID := range tt.args.expectInfiniBandInterfacesRemainReady {
+					require.True(t, gotReadyInAPI[wantID.String()],
+						"expected READY InfiniBand interface %s in update response matching DB row", wantID)
+				}
+			}
+
 			if len(tt.args.nvlinkInterfacesToDelete) > 0 && tt.args.reqData.NVLinkInterfaces != nil {
 				// Make sure the NVLink Interfaces are deleting
 				nvlIfcDAO := cdbm.NewNVLinkInterfaceDAO(tt.fields.dbSession)
 				for _, nvlifc := range tt.args.nvlinkInterfacesToDelete {
-					nvlifc, _ := nvlIfcDAO.GetByID(ec.Request().Context(), nil, nvlifc.ID, nil)
-					assert.Equal(t, nvlifc.Status, cdbm.NVLinkInterfaceStatusDeleting)
+					got, _ := nvlIfcDAO.GetByID(ec.Request().Context(), nil, nvlifc.ID, nil)
+					assert.Equal(t, cdbm.NVLinkInterfaceStatusDeleting, got.Status)
 				}
 
-				if len(tt.args.reqData.NVLinkInterfaces) > 0 {
+				if len(tt.args.reqData.NVLinkInterfaces) > 0 && !tt.args.nvLinkSkipPendingDBAssertions {
 					// Make sure the NVLink Interfaces are pending
 					// It should be in order of the request received
 					nvlifcs, _, _ := nvlIfcDAO.GetAll(ec.Request().Context(), nil,
@@ -6292,8 +6674,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 							Statuses: []string{cdbm.NVLinkInterfaceStatusPending}},
 						cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.NVLinkInterfaceOrderByCreated, Order: cdbp.OrderAscending}},
 						[]string{cdbm.NVLinkLogicalPartitionRelationName})
-					assert.Equal(t, len(nvlifcs), len(tt.args.reqData.NVLinkInterfaces))
-					for i, _ := range nvlifcs {
+					require.Equal(t, len(tt.args.reqData.NVLinkInterfaces), len(nvlifcs))
+					for i := range nvlifcs {
 						assert.Equal(t, tt.args.reqData.NVLinkInterfaces[i].NVLinkLogicalPartitionID, nvlifcs[i].NVLinkLogicalPartitionID.String())
 						assert.Equal(t, cdbm.NVLinkInterfaceStatusPending, nvlifcs[i].Status)
 					}
@@ -6379,7 +6761,11 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 
 					// Verify the NVLink Interfaces are in the Site Controller request
 					if len(tt.args.reqData.NVLinkInterfaces) > 0 {
-						assert.Equal(t, len(siteReq.Config.Nvlink.GpuConfigs), len(tt.args.reqData.NVLinkInterfaces))
+						expNVL := len(tt.args.reqData.NVLinkInterfaces)
+						if tt.args.expectSiteNVLinkGpuConfigCount != nil {
+							expNVL = *tt.args.expectSiteNVLinkGpuConfigCount
+						}
+						assert.Equal(t, expNVL, len(siteReq.Config.Nvlink.GpuConfigs))
 
 						if !tt.args.nvLinkGpuConfigsVerifyCountOnly {
 							// Make sure order to should be same as the request received

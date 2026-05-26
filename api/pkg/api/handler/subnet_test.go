@@ -77,6 +77,18 @@ func testSubnetBuildInterface(t *testing.T, dbSession *cdb.Session, instanceID, 
 	return is
 }
 
+func testSubnetCIDREntity(t *testing.T, sn *cdbm.Subnet) string {
+	t.Helper()
+	require.NotNil(t, sn)
+	require.NotNil(t, sn.IPv4Prefix)
+	p := strings.TrimSpace(*sn.IPv4Prefix)
+	require.NotEmpty(t, p)
+	if strings.Contains(p, "/") {
+		return p
+	}
+	return fmt.Sprintf("%s/%d", p, sn.PrefixLength)
+}
+
 func testSubnetBuildVpc(t *testing.T, dbSession *cdb.Session, ip *cdbm.InfrastructureProvider, tenant *cdbm.Tenant, site *cdbm.Site, org, name string, networkVtType *string, status string, controllerVpcID *uuid.UUID) *cdbm.Vpc {
 	vpc := &cdbm.Vpc{
 		ID:                        uuid.New(),
@@ -1124,6 +1136,8 @@ func TestSubnetHandler_Get(t *testing.T) {
 	assert.NotNil(t, tenant2)
 	vpc1 := testSubnetBuildVpc(t, dbSession, ip, tenant1, site, tnOrg1, "testVPC", cdb.GetStrPtr(cdbm.VpcEthernetVirtualizer), cdbm.VpcStatusReady, cdb.GetUUIDPtr(uuid.New()))
 
+	_ = common.TestBuildTenantSite(t, dbSession, tenant1, site, tnu)
+
 	cfg := common.GetTestConfig()
 	tempClient := &tmocks.Client{}
 	ipamStorage := ipam.NewIpamStorage(dbSession.DB, nil)
@@ -1148,6 +1162,35 @@ func TestSubnetHandler_Get(t *testing.T) {
 
 	subnet := testCreateSubnet(t, dbSession, scp, ipamStorage, tnu, tnOrg1, string(parentIpbBody))
 
+	ifaceSubnetBody, err := json.Marshal(model.APISubnetCreateRequest{
+		Name: "iface-subnet-usage", Description: cdb.GetStrPtr(""), VpcID: vpc1.ID.String(),
+		IPv4BlockID: cdb.GetStrPtr(ipb1.ID.String()), PrefixLength: prefixLen})
+	require.NoError(t, err)
+	subnetWithIfaceWorkload := testCreateSubnet(t, dbSession, scp, ipamStorage, tnu, tnOrg1, string(ifaceSubnetBody))
+	var wantUsageAcquiredPrefixes0 uint64
+	wantUsageAcquiredPrefixes1 := uint64(0)
+
+	alWorkload := common.TestBuildAllocation(t, dbSession, site, tenant1, "get-subnet-usage-iface-alloc", ipu)
+	itWorkload := common.TestBuildInstanceType(t, dbSession, "get-subnet-iface-it", cdb.GetUUIDPtr(uuid.New()), site, nil, ipu)
+	common.TestBuildAllocationConstraint(t, dbSession, alWorkload, itWorkload, nil, 5, ipu)
+	mWorkload := common.TestBuildMachine(t, dbSession, ip, site, &itWorkload.ID, cdb.GetStrPtr("get-subnet-iface-mt"), cdbm.MachineStatusReady)
+	_ = common.TestBuildMachineInstanceType(t, dbSession, mWorkload, itWorkload)
+	osWorkload := common.TestBuildOperatingSystem(t, dbSession, "get-subnet-iface-os", tenant1, cdbm.OperatingSystemStatusReady, tnu)
+
+	snWorkloadUUID := uuid.MustParse(subnetWithIfaceWorkload.ID)
+	snEnt, err := cdbm.NewSubnetDAO(dbSession).GetByID(ctx, nil, snWorkloadUUID, nil)
+	require.NoError(t, err)
+	cidrWorkload := testSubnetCIDREntity(t, snEnt)
+	chosenIfaceIPv4 := testIPv4NthUsableInCIDR(t, cidrWorkload, 20)
+
+	instWorkload := common.TestBuildInstance(t, dbSession, "get-subnet-iface-inst", tenant1.ID, ip.ID, site.ID, itWorkload.ID, vpc1.ID, cdb.GetStrPtr(mWorkload.ID), osWorkload.ID)
+	ifWorkload := common.TestBuildInterface(t, dbSession, instWorkload.ID, &snWorkloadUUID, nil, true, nil, nil, nil, cdb.GetStrPtr(cdbm.InterfaceStatusReady), tnu)
+	_, err = cdbm.NewInterfaceDAO(dbSession).Update(ctx, nil, cdbm.InterfaceUpdateInput{
+		InterfaceID: ifWorkload.ID,
+		IpAddresses: []string{chosenIfaceIPv4},
+	})
+	require.NoError(t, err)
+
 	// OTEL Spanner configuration
 	tracer, _, ctx := common.TestCommonTraceProviderSetup(t, ctx)
 
@@ -1161,9 +1204,12 @@ func TestSubnetHandler_Get(t *testing.T) {
 		queryIncludeRelations1 *string
 		queryIncludeRelations2 *string
 		queryIncludeRelations3 *string
+		queryIncludeUsageStats *string
 		expectedVpcName        *string
 		expectetIPv4Name       *string
 		expectedIPv6Name       *string
+		expectUsageStatsNonNil bool
+		wantAcquiredPrefixes   *uint64
 		verifyChildSpanner     bool
 	}{
 		{
@@ -1243,6 +1289,37 @@ func TestSubnetHandler_Get(t *testing.T) {
 			queryIncludeRelations1: cdb.GetStrPtr(cdbm.IPv4BlockRelationName),
 			expectetIPv4Name:       &ipb1.Name,
 		},
+		{
+			name:                   "error when includeUsageStats query invalid",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     subnet.ID,
+			expectedErr:            true,
+			expectedStatus:         http.StatusBadRequest,
+			queryIncludeUsageStats: cdb.GetStrPtr("not-a-bool"),
+		},
+		{
+			name:                   "success when includeUsageStats true and no ethernet interfaces",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     subnet.ID,
+			expectedErr:            false,
+			expectedStatus:         http.StatusOK,
+			queryIncludeUsageStats: cdb.GetStrPtr("true"),
+			expectUsageStatsNonNil: true,
+			wantAcquiredPrefixes:   &wantUsageAcquiredPrefixes0,
+		},
+		{
+			name:                   "success when includeUsageStats true with ethernet interface and IPv4 IPs",
+			reqOrgName:             tnOrg1,
+			user:                   tnu,
+			id:                     subnetWithIfaceWorkload.ID,
+			expectedErr:            false,
+			expectedStatus:         http.StatusOK,
+			queryIncludeUsageStats: cdb.GetStrPtr("true"),
+			expectUsageStatsNonNil: true,
+			wantAcquiredPrefixes:   &wantUsageAcquiredPrefixes1,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -1251,6 +1328,9 @@ func TestSubnetHandler_Get(t *testing.T) {
 			e := echo.New()
 
 			q := url.Values{}
+			if tc.queryIncludeUsageStats != nil {
+				q.Set("includeUsageStats", *tc.queryIncludeUsageStats)
+			}
 			if tc.queryIncludeRelations1 != nil {
 				q.Add("includeRelation", *tc.queryIncludeRelations1)
 			}
@@ -1294,7 +1374,9 @@ func TestSubnetHandler_Get(t *testing.T) {
 
 				assert.Equal(t, cdbm.IPBlockRoutingTypeDatacenterOnly, *rsp.RoutingType)
 
-				if tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil {
+				hasRelations := tc.queryIncludeRelations1 != nil || tc.queryIncludeRelations2 != nil || tc.queryIncludeRelations3 != nil
+				hasUsageStats := tc.expectUsageStatsNonNil
+				if hasRelations || hasUsageStats {
 					if tc.expectedVpcName != nil {
 						assert.Equal(t, *tc.expectedVpcName, rsp.Vpc.Name)
 					}
@@ -1304,10 +1386,22 @@ func TestSubnetHandler_Get(t *testing.T) {
 					if tc.expectedIPv6Name != nil {
 						assert.Equal(t, *tc.expectedIPv6Name, rsp.IPv6Block.Name)
 					}
+					if hasUsageStats {
+						require.NotNil(t, rsp.IPv4Block)
+					}
 				} else {
 					assert.Nil(t, rsp.Vpc)
 					assert.Nil(t, rsp.IPv4Block)
 					assert.Nil(t, rsp.IPv6Block)
+				}
+				if tc.expectUsageStatsNonNil {
+					require.NotNil(t, rsp.UsageStats)
+				} else {
+					assert.Nil(t, rsp.UsageStats)
+				}
+				if tc.wantAcquiredPrefixes != nil {
+					require.NotNil(t, rsp.UsageStats)
+					assert.Equal(t, *tc.wantAcquiredPrefixes, rsp.UsageStats.AcquiredPrefixes)
 				}
 			}
 
