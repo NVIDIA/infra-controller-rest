@@ -808,7 +808,6 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	}
 
 	// Build Targeted Instance
-
 	tnOrg4 := "test-tn-org-4"
 	tnu4 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg4}, tnRoles)
 
@@ -917,6 +916,17 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	)
 	assert.Nil(t, err)
 	assert.NotNil(t, ins34)
+
+	tnOrg7 := "test-tn-org-7"
+	tnu7 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg7}, tnRoles)
+	tenant7 := testMachineBuildTenant(t, dbSession, tnOrg7, "test-tenant7")
+	_ = testMachineUpdateTenantCapability(t, dbSession, tenant7)
+	_ = common.TestBuildTenantAccount(t, dbSession, ip, &tenant7.ID, tnOrg7, cdbm.TenantAccountStatusReady, tnu7)
+
+	tnOrg8 := "test-tn-org-8"
+	tnu8 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg8}, tnRoles)
+	tenant8 := testMachineBuildTenant(t, dbSession, tnOrg8, "test-tenant8")
+	_ = testMachineUpdateTenantCapability(t, dbSession, tenant8)
 
 	cfg := common.GetTestConfig()
 	tempClient := &tmocks.Client{}
@@ -1052,7 +1062,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name:               "success case when tenant has TenantAdmin role and has TargetedInstanceCreation capability",
+			name:               "success case when Tenant has TargetedInstanceCreation capability and filters by Site ID",
 			reqOrgName:         tnOrg2,
 			user:               tnu2,
 			querySiteID:        cdb.GetStrPtr(siteT2.ID.String()),
@@ -1062,6 +1072,24 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			expectedTotal:      cdb.GetIntPtr(0),
 			expectInstance:     false,
 			verifyChildSpanner: true,
+		},
+		{
+			name:           "success case when Tenant has TargetedInstanceCreation capability",
+			reqOrgName:     tnOrg7,
+			user:           tnu7,
+			expectedErr:    false,
+			expectedStatus: http.StatusOK,
+			expectedCnt:    totalCount / 2,
+			expectedTotal:  cdb.GetIntPtr(totalCount / 2),
+		},
+		{
+			name:           "empty result when Tenant has TargetedInstanceCreation capability but no Tenant Account",
+			reqOrgName:     tnOrg8,
+			user:           tnu8,
+			expectedErr:    false,
+			expectedStatus: http.StatusOK,
+			expectedCnt:    0,
+			expectedTotal:  cdb.GetIntPtr(0),
 		},
 		{
 			name:                "success case when Instance Type ID specified in query",
@@ -1338,7 +1366,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			expectedCnt:    0,
 		},
 		{
-			name:           "failure case when Tenant ID specified in query does not belong to the current infrastructure provider",
+			name:           "failure case when Tenant ID specified in query does have an account with current org's Provider",
 			reqOrgName:     ipOrg4,
 			user:           ipu,
 			queryTenantID:  []string{tenant2.ID.String()},

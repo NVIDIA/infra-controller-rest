@@ -1179,7 +1179,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 
 			if tt.args.newControllerMachineID != nil {
 				// Check if a new Machine got created in DB based on machineInfo2
-				sms, _, serr := mDAO.GetAll(tt.args.ctx, nil, cdbm.MachineFilterInput{SiteID: &tt.args.siteID}, cdbp.PageInput{}, nil)
+				sms, _, serr := mDAO.GetAll(tt.args.ctx, nil, cdbm.MachineFilterInput{SiteIDs: []uuid.UUID{tt.args.siteID}}, cdbp.PageInput{}, nil)
 				assert.Nil(t, serr)
 
 				var m4 *cdbm.Machine
@@ -1327,7 +1327,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 				if tt.args.machineInventory.InventoryPage.CurrentPage == 1 {
 					// Check that the first 10 Machines now have status `Ready`
 					filterInput := cdbm.MachineFilterInput{
-						SiteID:     &tt.args.siteID,
+						SiteIDs:    []uuid.UUID{tt.args.siteID},
 						MachineIDs: pagedInvIds[0:10],
 					}
 					tms, _, serr := mDAO.GetAll(tt.args.ctx, nil, filterInput, cdbp.PageInput{}, nil)
@@ -1338,7 +1338,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 
 					// Check that no Machine status is Error due to being missing
 					filterInput = cdbm.MachineFilterInput{
-						SiteID:   &tt.args.siteID,
+						SiteIDs:  []uuid.UUID{tt.args.siteID},
 						Statuses: []string{cdbm.MachineStatusError},
 					}
 					_, missingCount, serr := mDAO.GetAll(tt.args.ctx, nil, filterInput, cdbp.PageInput{}, nil)
@@ -1349,7 +1349,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 				if tt.args.machineInventory.InventoryPage.CurrentPage == tt.args.machineInventory.InventoryPage.TotalPages {
 					// Check that the last 4 Machines now have status `Ready`
 					filterInput := cdbm.MachineFilterInput{
-						SiteID:     &tt.args.siteID,
+						SiteIDs:    []uuid.UUID{tt.args.siteID},
 						MachineIDs: pagedInvIds[30:34],
 					}
 					tms, _, serr := mDAO.GetAll(tt.args.ctx, nil, filterInput, cdbp.PageInput{}, nil)
@@ -1360,7 +1360,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 
 					// Check that no Machine status is Error due to being missing
 					filterInput = cdbm.MachineFilterInput{
-						SiteID:   &tt.args.siteID,
+						SiteIDs:  []uuid.UUID{tt.args.siteID},
 						Statuses: []string{cdbm.MachineStatusError},
 					}
 					_, missingCount, serr := mDAO.GetAll(tt.args.ctx, nil, filterInput, cdbp.PageInput{}, nil)

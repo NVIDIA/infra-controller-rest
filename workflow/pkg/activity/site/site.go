@@ -212,7 +212,7 @@ func (mst ManageSite) DeleteSiteComponentsFromDB(ctx context.Context, siteID uui
 
 	// Delete Machines
 	// Check if Machines exist
-	mcs, _, err := mDAO.GetAll(ctx, nil, cdbm.MachineFilterInput{SiteID: &siteID}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
+	mcs, _, err := mDAO.GetAll(ctx, nil, cdbm.MachineFilterInput{SiteIDs: []uuid.UUID{siteID}}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving Machine for Site from DB")
 		return err

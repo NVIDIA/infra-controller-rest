@@ -19,7 +19,6 @@ package handler
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -211,195 +210,190 @@ func (csh CreateSubnetHandler) Handle(c echo.Context) error {
 		})
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, csh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating subnet", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
+	sdDAO := cdbm.NewStatusDetailDAO(csh.dbSession)
 
-	// acquire an advisory lock on the parent IP block ID on which there could be contention
-	// this lock is released when the transaction commits or rollsback
-	err = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(fmt.Sprintf("%s-%s", tenant.ID.String(), ipv4Block.ID.String())), nil)
-	if err != nil {
-		// TODO add a retry here
-		logger.Error().Err(err).Msg("Failed to acquire advisory lock on ipblock")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Error creating Subnet, detected multiple parallel request on IP Block by Tenant", nil)
-	}
+	var subnet *cdbm.Subnet
+	var ssd *cdbm.StatusDetail
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-	// create an IPAM allocation for the subnet
-	// allocate a child prefix in ipam
-	ipamStorage := ipam.NewIpamStorage(csh.dbSession.DB, tx.GetBunTx())
-	childPrefix, err := ipam.CreateChildIpamEntryForIPBlock(ctx, tx, csh.dbSession, ipamStorage, ipv4Block, apiRequest.PrefixLength)
-
-	if err != nil {
-		// printing parent prefix usage to debug the child prefix failure
-		parentPrefix, serr := ipamStorage.ReadPrefix(ctx, ipv4Block.Prefix, ipam.GetIpamNamespaceForIPBlock(ctx, ipv4Block.RoutingType, ipv4Block.InfrastructureProviderID.String(), ipv4Block.SiteID.String()))
-		if serr == nil {
-			logger.Info().Str("IP Block ID", ipv4Block.ID.String()).Str("IP Block Prefix", ipv4Block.Prefix).Msgf("%+v\n", parentPrefix.Usage())
+	err = cdb.WithTx(ctx, csh.dbSession, func(tx *cdb.Tx) error {
+		// acquire an advisory lock on the parent IP block ID on which there could be contention
+		// this lock is released when the transaction commits or rollsback
+		derr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(fmt.Sprintf("%s-%s", tenant.ID.String(), ipv4Block.ID.String())), nil)
+		if derr != nil {
+			// TODO add a retry here
+			logger.Error().Err(derr).Msg("Failed to acquire advisory lock on ipblock")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Error creating Subnet, detected multiple parallel request on IP Block by Tenant", nil)
 		}
 
-		logger.Warn().Err(err).Msg("failed to create IPAM entry for subnet")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for Subnet. Details: %s", err.Error()), nil)
-	}
-	logger.Info().Str("childCidr", childPrefix.Cidr).Msg("created child cidr for subnet")
-
-	// get the prefix and gateway IP addresses
-	ipv4Prefix, _, err := ipam.ParseCidrIntoPrefixAndBlockSize(childPrefix.Cidr)
-	if err != nil {
-		logger.Warn().Err(err).Msg("unable to parse cidr")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for Subnet. Details: %s", err.Error()), nil)
-	}
-
-	ipv4Gateway, err := ipam.GetFirstIPFromCidr(childPrefix.Cidr)
-	if err != nil {
-		logger.Warn().Err(err).Msg("unable to get first ip in cidr")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for Subnet. Details: %s", err.Error()), nil)
-	}
-
-	// Create Subnet in DB
-	subnet, err := sDAO.Create(
-		ctx, tx, cdbm.SubnetCreateInput{
-			Name:         apiRequest.Name,
-			Description:  apiRequest.Description,
-			Org:          org,
-			SiteID:       site.ID,
-			VpcID:        vpc.ID,
-			TenantID:     tenant.ID,
-			RoutingType:  &routingType,
-			IPv4Prefix:   &ipv4Prefix,
-			IPv4Gateway:  &ipv4Gateway,
-			IPv4BlockID:  &ipv4Block.ID,
-			PrefixLength: apiRequest.PrefixLength,
-			Status:       cdbm.SubnetStatusPending,
-			CreatedBy:    dbUser.ID,
-		})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to create Subnet record in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed creating subnet record", nil)
-	}
-
-	// Update the controller ID for the subnet.
-	// We need this to match the subnet ID.  This was previously handled
-	// by the async cloud workflow after successful creation on site.
-	subnet, err = sDAO.Update(ctx, tx, cdbm.SubnetUpdateInput{SubnetId: subnet.ID, ControllerNetworkSegmentID: cdb.GetUUIDPtr(subnet.ID)})
-
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to update Subnet record controllerNetworkSegmentId")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed updating new subnet record", nil)
-	}
-	// create the status detail record
-	sdDAO := cdbm.NewStatusDetailDAO(csh.dbSession)
-	ssd, serr := sdDAO.CreateFromParams(ctx, tx, subnet.ID.String(), *cdb.GetStrPtr(cdbm.SubnetStatusPending),
-		cdb.GetStrPtr("received subnet creation request, pending"))
-	if serr != nil {
-		logger.Error().Err(serr).Msg("error creating Status Detail DB entry")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Status Detail for Subnet", nil)
-	}
-	if ssd == nil {
-		logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to get new Status Detail for Subnet", nil)
-	}
-
-	// Get the temporal client for the site we are working with.
-	stc, err := csh.scp.GetClientByID(subnet.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
-
-	var subnetMTU *int32 = nil
-	if subnet.MTU != nil {
-		mtu := int32(*subnet.MTU)
-		subnetMTU = &mtu
-	}
-
-	var subnetDomainID *cwssaws.DomainId
-	if subnet.DomainID != nil {
-		subnetDomainID = &cwssaws.DomainId{Value: subnet.DomainID.String()}
-	}
-	prefixes := []*cwssaws.NetworkPrefix{
-		{
-			Gateway:      subnet.IPv4Gateway,
-			ReserveFirst: DefaultReservedIPCount,
-			Prefix:       fmt.Sprintf("%s/%d", *subnet.IPv4Prefix, subnet.PrefixLength),
-		},
-	}
-
-	createSubnetRequest := &cwssaws.NetworkSegmentCreationRequest{
-		Id:          &cwssaws.NetworkSegmentId{Value: common.GetSiteNetworkSegmentID(subnet).String()},
-		Name:        subnet.Name,
-		SubdomainId: subnetDomainID,
-		VpcId:       &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
-		Mtu:         subnetMTU,
-		Prefixes:    prefixes,
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:                       "subnet-create-" + subnet.ID.String(),
-		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
-		TaskQueue:                queue.SiteTaskQueue,
-	}
-
-	logger.Info().Msg("triggering Subnet create workflow")
-
-	// Add context deadlines
-	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
-	defer cancel()
-
-	// Trigger Site workflow
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "CreateSubnetV2", createSubnetRequest)
-
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create Subnet")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create Subnet on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create Subnet workflow")
-
-	// Block until the workflow has completed and returned success/error.
-	err = we.Get(ctx, nil)
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-
-			logger.Error().Err(err).Msg("failed to create Subnet, timeout occurred executing workflow on Site.")
-
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
-
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing create Subnet workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to execute terminate Temporal workflow for creating Subnet")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous Subnet creation workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		// create an IPAM allocation for the subnet
+		// allocate a child prefix in ipam
+		ipamStorage := ipam.NewIpamStorage(csh.dbSession.DB, tx.GetBunTx())
+		childPrefix, derr := ipam.CreateChildIpamEntryForIPBlock(ctx, tx, csh.dbSession, ipamStorage, ipv4Block, apiRequest.PrefixLength)
+		if derr != nil {
+			// printing parent prefix usage to debug the child prefix failure
+			parentPrefix, serr := ipamStorage.ReadPrefix(ctx, ipv4Block.Prefix, ipam.GetIpamNamespaceForIPBlock(ctx, ipv4Block.RoutingType, ipv4Block.InfrastructureProviderID.String(), ipv4Block.SiteID.String()))
+			if serr == nil {
+				logger.Info().Str("IP Block ID", ipv4Block.ID.String()).Str("IP Block Prefix", ipv4Block.Prefix).Msgf("%+v\n", parentPrefix.Usage())
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous create Subnet workflow successfully")
+			logger.Warn().Err(derr).Msg("failed to create IPAM entry for subnet")
+			return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for Subnet. Details: %s", derr.Error()), nil)
+		}
+		logger.Info().Str("childCidr", childPrefix.Cidr).Msg("created child cidr for subnet")
 
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to create Subnet, timeout occurred executing workflow on Site: %s", err), nil)
+		// get the prefix and gateway IP addresses
+		ipv4Prefix, _, derr := ipam.ParseCidrIntoPrefixAndBlockSize(childPrefix.Cidr)
+		if derr != nil {
+			logger.Warn().Err(derr).Msg("unable to parse cidr")
+			return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for Subnet. Details: %s", derr.Error()), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to create Subnet")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to create Subnet on Site: %s", err), nil)
-	}
+		ipv4Gateway, derr := ipam.GetFirstIPFromCidr(childPrefix.Cidr)
+		if derr != nil {
+			logger.Warn().Err(derr).Msg("unable to get first ip in cidr")
+			return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Could not create IPAM entry for Subnet. Details: %s", derr.Error()), nil)
+		}
 
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create Subnet workflow")
+		// Create Subnet in DB
+		subnet, derr = sDAO.Create(
+			ctx, tx, cdbm.SubnetCreateInput{
+				Name:         apiRequest.Name,
+				Description:  apiRequest.Description,
+				Org:          org,
+				SiteID:       site.ID,
+				VpcID:        vpc.ID,
+				TenantID:     tenant.ID,
+				RoutingType:  &routingType,
+				IPv4Prefix:   &ipv4Prefix,
+				IPv4Gateway:  &ipv4Gateway,
+				IPv4BlockID:  &ipv4Block.ID,
+				PrefixLength: apiRequest.PrefixLength,
+				Status:       cdbm.SubnetStatusPending,
+				CreatedBy:    dbUser.ID,
+			})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to create Subnet record in DB")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed creating subnet record", nil)
+		}
 
-	// commit transaction
-	err = tx.Commit()
+		// Update the controller ID for the subnet.
+		// We need this to match the subnet ID.  This was previously handled
+		// by the async cloud workflow after successful creation on site.
+		subnet, derr = sDAO.Update(ctx, tx, cdbm.SubnetUpdateInput{SubnetId: subnet.ID, ControllerNetworkSegmentID: cdb.GetUUIDPtr(subnet.ID)})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("unable to update Subnet record controllerNetworkSegmentId")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed updating new subnet record", nil)
+		}
+
+		// create the status detail record
+		ssd, derr = sdDAO.CreateFromParams(ctx, tx, subnet.ID.String(), *cdb.GetStrPtr(cdbm.SubnetStatusPending),
+			cdb.GetStrPtr("received subnet creation request, pending"))
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail DB entry")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Status Detail for Subnet", nil)
+		}
+		if ssd == nil {
+			logger.Error().Msg("Status Detail DB entry not returned from CreateFromParams")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to get new Status Detail for Subnet", nil)
+		}
+
+		// Get the temporal client for the site we are working with.
+		stc, derr := csh.scp.GetClientByID(subnet.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
+
+		var subnetMTU *int32 = nil
+		if subnet.MTU != nil {
+			mtu := int32(*subnet.MTU)
+			subnetMTU = &mtu
+		}
+
+		var subnetDomainID *cwssaws.DomainId
+		if subnet.DomainID != nil {
+			subnetDomainID = &cwssaws.DomainId{Value: subnet.DomainID.String()}
+		}
+		prefixes := []*cwssaws.NetworkPrefix{
+			{
+				Gateway:      subnet.IPv4Gateway,
+				ReserveFirst: DefaultReservedIPCount,
+				Prefix:       fmt.Sprintf("%s/%d", *subnet.IPv4Prefix, subnet.PrefixLength),
+			},
+		}
+
+		createSubnetRequest := &cwssaws.NetworkSegmentCreationRequest{
+			Id:          &cwssaws.NetworkSegmentId{Value: common.GetSiteNetworkSegmentID(subnet).String()},
+			Name:        subnet.Name,
+			SubdomainId: subnetDomainID,
+			VpcId:       &cwssaws.VpcId{Value: vpc.GetSiteID().String()},
+			Mtu:         subnetMTU,
+			Prefixes:    prefixes,
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:                       "subnet-create-" + subnet.ID.String(),
+			WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
+			TaskQueue:                queue.SiteTaskQueue,
+		}
+
+		logger.Info().Msg("triggering Subnet create workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "CreateSubnetV2", createSubnetRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to create Subnet")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed start sync workflow to create Subnet on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous create Subnet workflow")
+
+		// Block until the workflow has completed and returned success/error.
+		wferr = we.Get(wfCtx, nil)
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to create Subnet, timeout occurred executing workflow on Site.")
+				timeoutCause := wferr
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Subnet", "CreateSubnetV2")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "Subnet create workflow timed out", nil)
+			}
+
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to create Subnet")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to create Subnet on Site: %s", uwerr), nil)
+		}
+
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create Subnet workflow")
+		return nil
+	})
+	// Surface real tx-helper errors first so they aren't masked by the
+	// timeout response (commit/rollback failures wrap into something other
+	// than the cutil.APIError marker we returned for the timeout case).
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Subnet, DB transaction error", nil)
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) {
+			return common.HandleTxError(c, logger, err, "Failed to create Subnet, DB transaction error")
+		}
 	}
-	// set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
+	if err != nil {
+		return common.HandleTxError(c, logger, err, "Failed to create Subnet, DB transaction error")
+	}
 
 	// create response
 	apiInstance := model.NewAPISubnet(subnet, []cdbm.StatusDetail{*ssd}, nil)
@@ -922,35 +916,30 @@ func (ush UpdateSubnetHandler) Handle(c echo.Context) error {
 		}
 	}
 
-	// start a database transaction
-	tx, err := cdb.BeginTx(ctx, ush.dbSession, &sql.TxOptions{})
+	// The Update is the sole write — perform it via WithTxResult so the
+	// updated Subnet drops out cleanly. Status detail fetch is a pure read
+	// that doesn't depend on the Update's mutations (Update doesn't touch
+	// status detail rows), so it stays outside the tx per AGENTS.md rule 3.
+	subnet, err = cdb.WithTxResult(ctx, ush.dbSession, func(tx *cdb.Tx) (*cdbm.Subnet, error) {
+		usubnet, derr := sDAO.Update(ctx, tx, cdbm.SubnetUpdateInput{SubnetId: sID, Name: apiRequest.Name, Description: apiRequest.Description})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error updating Subnet in DB")
+			return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Subnet", nil)
+		}
+		return usubnet, nil
+	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error updating subnet in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Subnet", nil)
+		return common.HandleTxError(c, logger, err, "Failed to update Subnet, DB transaction error")
 	}
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
 
-	subnet, err = sDAO.Update(ctx, tx, cdbm.SubnetUpdateInput{SubnetId: sID, Name: apiRequest.Name, Description: apiRequest.Description})
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating Subnet in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Subnet", nil)
-	}
-	// get status details for the response
+	// get status details for the response — best-effort, the PATCH has already
+	// committed so a transient read failure here must not surface as 500.
 	sdDAO := cdbm.NewStatusDetailDAO(ush.dbSession)
-	ssds, _, err := sdDAO.GetAllByEntityID(ctx, tx, subnet.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
+	ssds, _, err := sdDAO.GetAllByEntityID(ctx, nil, subnet.ID.String(), nil, cdb.GetIntPtr(pagination.MaxPageSize), nil)
 	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving Status Details for subnet from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Status Details for subnet", nil)
+		logger.Warn().Err(err).Msg("error retrieving Status Details for subnet after update commit")
+		ssds = nil
 	}
-
-	// commit transaction
-	err = tx.Commit()
-	if err != nil {
-		logger.Error().Err(err).Msg("error updating Subnet in DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Subnet", nil)
-	}
-	txCommitted = true
 
 	// Send response
 	apiInstance := model.NewAPISubnet(subnet, ssds, nil)
@@ -1088,123 +1077,121 @@ func (dsh DeleteSubnetHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Subnet is being used by one or more Instances and cannot be deleted", nil)
 	}
 
-	// Start a db tx
-	tx, err := cdb.BeginTx(ctx, dsh.dbSession, &sql.TxOptions{})
-	if err != nil {
-		logger.Error().Err(err).Msg("unable to start transaction")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Subnet, DB transaction error", nil)
-	}
-	// this variable is used in cleanup actions to indicate if this transaction committed
-	txCommitted := false
-	defer common.RollbackTx(ctx, tx, &txCommitted)
-
-	// acquire an advisory lock on the parent IP block ID on which there could be contention
-	// this lock is released when the transaction commits or rollsback
-	err = tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(subnet.IPv4BlockID.String()), nil)
-	if err != nil {
-		// TODO: Add a retry here
-		logger.Error().Err(err).Msg("Failed to acquire advisory lock on ipblock")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Subnet, DB lock error", nil)
-	}
-
-	// Set Subnet status to Deleting
-	status := cdbm.SubnetStatusDeleting
-	statusMsg := "Subnet deletion successfully initiated on Site"
-	_, err = sDAO.Update(ctx, tx, cdbm.SubnetUpdateInput{SubnetId: subnet.ID, Status: &status})
-	if err != nil {
-		logger.Error().Err(err).Msg("error setting Subnet status to deleting")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to update Subnet status, DB error", nil)
-	}
-
 	sdDAO := cdbm.NewStatusDetailDAO(dsh.dbSession)
-	_, err = sdDAO.CreateFromParams(ctx, tx, subnet.ID.String(), status, &statusMsg)
-	if err != nil {
-		logger.Error().Err(err).Msg("error creating Status Detail for Subnet")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to create Subnet status detail, DB error", nil)
-	}
 
-	// Get the temporal client for the site we are working with.
-	stc, err := dsh.scp.GetClientByID(subnet.SiteID)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to retrieve Temporal client for Site")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
-	}
+	// timeoutResp lets the closure signal a post-rollback handler — the
+	// TerminateWorkflow call has to run after the closure returns so that
+	// the DB tx unwinds before we make the second remote call. nil means
+	// no timeout occurred and the normal flow continues.
+	var timeoutResp func() error
 
-	// Prepare the delete/release request workflow object
-	deleteSubnetRequest := &cwssaws.NetworkSegmentDeletionRequest{
-		Id: &cwssaws.NetworkSegmentId{Value: common.GetSiteNetworkSegmentID(subnet).String()},
-	}
-
-	workflowOptions := temporalClient.StartWorkflowOptions{
-		ID:        "subnet-delete-" + subnet.ID.String(),
-		TaskQueue: queue.SiteTaskQueue,
-	}
-
-	logger.Info().Msg("triggering Subnet delete workflow")
-
-	// Trigger Site workflow to delete subnet Subnet
-	// TODO: Once Site Agent offers DeleteSubnetV2 re-registered as SubnetSubnet then update workflow name here
-	we, err := stc.ExecuteWorkflow(ctx, workflowOptions, "DeleteSubnetV2", deleteSubnetRequest)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to delete Subnet")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to start sync workflow to delete Subnet on Site: %s", err), nil)
-	}
-
-	wid := we.GetID()
-	logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete Subnet workflow")
-
-	// Execute the workflow synchronously
-	err = we.Get(ctx, nil)
-	// Handle skippable errors
-	if err != nil {
-		// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
-		var applicationErr *tp.ApplicationError
-		if errors.As(err, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
-			logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
-			// Reset error to nil
-			err = nil
+	err = cdb.WithTx(ctx, dsh.dbSession, func(tx *cdb.Tx) error {
+		// acquire an advisory lock on the parent IP block ID on which there could be contention
+		// this lock is released when the transaction commits or rollsback
+		derr := tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(fmt.Sprintf("%s-%s", subnet.TenantID.String(), subnet.IPv4BlockID.String())), nil)
+		if derr != nil {
+			// TODO: Add a retry here
+			logger.Error().Err(derr).Msg("Failed to acquire advisory lock on ipblock")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Subnet, DB lock error", nil)
 		}
-	}
 
-	// Check if err is still nil now that we've handled any skippable errors.
-	if err != nil {
-		var timeoutErr *tp.TimeoutError
-		if errors.As(err, &timeoutErr) || ctx.Err() != nil {
+		// Set Subnet status to Deleting
+		status := cdbm.SubnetStatusDeleting
+		statusMsg := "Subnet deletion successfully initiated on Site"
+		_, derr = sDAO.Update(ctx, tx, cdbm.SubnetUpdateInput{SubnetId: subnet.ID, Status: &status})
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error setting Subnet status to deleting")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Subnet status, DB error", nil)
+		}
 
-			logger.Error().Err(err).Msg("failed to delete Subnet, timeout occurred executing workflow on Site.")
+		_, derr = sdDAO.CreateFromParams(ctx, tx, subnet.ID.String(), status, &statusMsg)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("error creating Status Detail for Subnet")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Subnet status detail, DB error", nil)
+		}
 
-			// Create a new context deadlines
-			newctx, newcancel := context.WithTimeout(context.Background(), cutil.WorkflowContextNewAfterTimeout)
-			defer newcancel()
+		// Get the temporal client for the site we are working with.
+		stc, derr := dsh.scp.GetClientByID(subnet.SiteID)
+		if derr != nil {
+			logger.Error().Err(derr).Msg("failed to retrieve Temporal client for Site")
+			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve client for Site", nil)
+		}
 
-			// Initiate termination workflow
-			serr := stc.TerminateWorkflow(newctx, wid, "", "timeout occurred executing delete Subnet workflow")
-			if serr != nil {
-				logger.Error().Err(serr).Msg("failed to terminate Temporal workflow for deleting Subnet")
-				return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to terminate synchronous Subnet deletion workflow after timeout, Cloud and Site data may be de-synced: %s", serr), nil)
+		// Prepare the delete/release request workflow object
+		deleteSubnetRequest := &cwssaws.NetworkSegmentDeletionRequest{
+			Id: &cwssaws.NetworkSegmentId{Value: common.GetSiteNetworkSegmentID(subnet).String()},
+		}
+
+		workflowOptions := temporalClient.StartWorkflowOptions{
+			ID:        "subnet-delete-" + subnet.ID.String(),
+			TaskQueue: queue.SiteTaskQueue,
+		}
+
+		logger.Info().Msg("triggering Subnet delete workflow")
+
+		// Add context deadlines
+		wfCtx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
+		defer cancel()
+
+		// Trigger Site workflow to delete subnet Subnet
+		// TODO: Once Site Agent offers DeleteSubnetV2 re-registered as SubnetSubnet then update workflow name here
+		we, wferr := stc.ExecuteWorkflow(wfCtx, workflowOptions, "DeleteSubnetV2", deleteSubnetRequest)
+		if wferr != nil {
+			logger.Error().Err(wferr).Msg("failed to synchronously start Temporal workflow to delete Subnet")
+			return cutil.NewAPIError(http.StatusInternalServerError, fmt.Sprintf("Failed to start sync workflow to delete Subnet on Site: %s", wferr), nil)
+		}
+
+		wid := we.GetID()
+		logger.Info().Str("Workflow ID", wid).Msg("executed synchronous delete Subnet workflow")
+
+		// Execute the workflow synchronously
+		wferr = we.Get(wfCtx, nil)
+		// Handle skippable errors
+		if wferr != nil {
+			// If this was a 404 back from NICo, we can treat the object as already having been deleted and allow things to proceed.
+			var applicationErr *tp.ApplicationError
+			if errors.As(wferr, &applicationErr) && slices.Contains(swe.ObjectNotFoundErrTypes(), applicationErr.Type()) {
+				logger.Warn().Msg(swe.ErrTypeNICoObjectNotFound + " received from Site")
+				// Reset error to nil
+				wferr = nil
+			}
+		}
+
+		// Check if err is still nil now that we've handled any skippable errors.
+		if wferr != nil {
+			var timeoutErr *tp.TimeoutError
+			if errors.As(wferr, &timeoutErr) || wferr == context.DeadlineExceeded || wfCtx.Err() != nil {
+				logger.Error().Err(wferr).Msg("failed to delete Subnet, timeout occurred executing workflow on Site.")
+				timeoutCause := wferr
+				timeoutResp = func() error {
+					return common.TerminateWorkflowOnTimeOut(c, logger, stc, wid, timeoutCause, "Subnet", "DeleteSubnetV2")
+				}
+				return cutil.NewAPIError(http.StatusInternalServerError, "Subnet delete workflow timed out", nil)
 			}
 
-			logger.Info().Str("Workflow ID", wid).Msg("initiated terminate synchronous delete Subnet workflow successfully")
-
-			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, fmt.Sprintf("Failed to delete Subnet, timeout occurred executing workflow on Site: %s", err), nil)
+			code, uwerr := common.UnwrapWorkflowError(wferr)
+			logger.Error().Err(uwerr).Msg("failed to synchronously execute Temporal workflow to delete Subnet")
+			return cutil.NewAPIError(code, fmt.Sprintf("Failed to execute sync workflow to delete Subnet on Site: %s", uwerr), nil)
 		}
 
-		code, err := common.UnwrapWorkflowError(err)
-		logger.Error().Err(err).Msg("failed to synchronously execute Temporal workflow to delete Subnet")
-		return cutil.NewAPIErrorResponse(c, code, fmt.Sprintf("Failed to execute sync workflow to delete Subnet on Site: %s", err), nil)
-	}
-
-	logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete Subnet workflow")
-
-	// Commit the DB transaction after the synchronous workflow has completed without error
-	err = tx.Commit()
+		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete Subnet workflow")
+		return nil
+	})
+	// Surface real tx-helper errors first so they aren't masked by the
+	// timeout response (commit/rollback failures wrap into something other
+	// than the cutil.APIError marker we returned for the timeout case).
 	if err != nil {
-		logger.Error().Err(err).Msg("error committing Subnet transaction to DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to delete Subnet, DB transaction error", nil)
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) {
+			return common.HandleTxError(c, logger, err, "Failed to delete Subnet, DB transaction error")
+		}
 	}
-
-	// Set committed so, deferred cleanup functions will do nothing
-	txCommitted = true
+	if timeoutResp != nil {
+		return timeoutResp()
+	}
+	if err != nil {
+		return common.HandleTxError(c, logger, err, "Failed to delete Subnet, DB transaction error")
+	}
 
 	// Create response
 	logger.Info().Msg("finishing API handler")

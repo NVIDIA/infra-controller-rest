@@ -89,12 +89,10 @@ func (gmgsh GetMachineGPUStatsHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have access to the specified site", nil)
 	}
 
-	siteID := &site.ID
-
 	// Fetch all machines for the site (exclude metadata for performance)
 	machineDAO := cdbm.NewMachineDAO(gmgsh.dbSession)
 	machines, _, err := machineDAO.GetAll(ctx, nil, cdbm.MachineFilterInput{
-		SiteID:          siteID,
+		SiteIDs:         []uuid.UUID{site.ID},
 		ExcludeMetadata: true,
 	}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
@@ -229,7 +227,7 @@ func (gtitsh GetTenantInstanceTypeStatsHandler) Handle(c echo.Context) error {
 	// 5. Fetch all machines with instance types for the site (exclude metadata)
 	machineDAO := cdbm.NewMachineDAO(gtitsh.dbSession)
 	machines, _, err := machineDAO.GetAll(ctx, nil, cdbm.MachineFilterInput{
-		SiteID:          siteID,
+		SiteIDs:         []uuid.UUID{site.ID},
 		InstanceTypeIDs: instanceTypeIDs,
 		ExcludeMetadata: true,
 	}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
@@ -411,12 +409,10 @@ func (gmitsh GetMachineInstanceTypeSummaryHandler) Handle(c echo.Context) error 
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have access to the specified site", nil)
 	}
 
-	siteID := &site.ID
-
 	// Fetch all machines for the site (exclude metadata for performance)
 	machineDAO := cdbm.NewMachineDAO(gmitsh.dbSession)
 	machines, _, err := machineDAO.GetAll(ctx, nil, cdbm.MachineFilterInput{
-		SiteID:          siteID,
+		SiteIDs:         []uuid.UUID{site.ID},
 		ExcludeMetadata: true,
 	}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
@@ -497,8 +493,7 @@ func (gmitsh GetMachineInstanceTypeStatsHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "User does not have access to the specified site", nil)
 	}
 
-	siteID := &site.ID
-	siteIDs := []uuid.UUID{*siteID}
+	siteIDs := []uuid.UUID{site.ID}
 
 	// 1. Fetch all instance types for the site
 	itDAO := cdbm.NewInstanceTypeDAO(gmitsh.dbSession)
@@ -518,7 +513,7 @@ func (gmitsh GetMachineInstanceTypeStatsHandler) Handle(c echo.Context) error {
 	// 2. Fetch all machines for the site (exclude metadata)
 	machineDAO := cdbm.NewMachineDAO(gmitsh.dbSession)
 	machines, _, err := machineDAO.GetAll(ctx, nil, cdbm.MachineFilterInput{
-		SiteID:          siteID,
+		SiteIDs:         siteIDs,
 		ExcludeMetadata: true,
 	}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {

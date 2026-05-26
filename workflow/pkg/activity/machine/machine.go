@@ -190,7 +190,8 @@ func (mm *ManageMachine) UpdateMachinesInDB(ctx context.Context, siteIDStr strin
 
 	// Get all machines for Site to allow faster lookups
 	mDAO := cdbm.NewMachineDAO(mm.dbSession)
-	filterInput := cdbm.MachineFilterInput{SiteID: &siteID}
+
+	filterInput := cdbm.MachineFilterInput{SiteIDs: []uuid.UUID{site.ID}}
 
 	existingMachines, _, err := mDAO.GetAll(ctx, nil, filterInput, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
