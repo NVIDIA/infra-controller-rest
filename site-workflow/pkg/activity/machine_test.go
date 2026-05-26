@@ -150,12 +150,12 @@ func TestManageMachine_CreateMachineHealthReportOverrideOnSite(t *testing.T) {
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
 		Override: &cwssaws.HealthReportOverride{
 			Report: &cwssaws.HealthReport{
-				Source: "tenant-reported-issue",
+				Source: "request-online-repair",
 				Alerts: []*cwssaws.HealthProbeAlert{
 					{Id: "OnLineRepair", Message: `{"details":"d","issue_category":"OTHER","summary":"s"}`},
 				},
 			},
-			Mode: cwssaws.OverrideMode_Replace,
+			Mode: cwssaws.OverrideMode_Merge,
 		},
 	}
 	assert.NoError(t, mm.CreateMachineHealthReportOverrideOnSite(context.Background(), req))
@@ -173,7 +173,7 @@ func TestManageMachine_DeleteMachineHealthReportOverrideOnSite(t *testing.T) {
 	mm := NewManageMachine(coreGrpcAtomicClient)
 	req := &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: "machine-1"},
-		Source:    "tenant-reported-issue",
+		Source:    "request-online-repair",
 	}
 	assert.NoError(t, mm.DeleteMachineHealthReportOverrideOnSite(context.Background(), req))
 

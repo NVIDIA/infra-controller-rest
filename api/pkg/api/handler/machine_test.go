@@ -2456,7 +2456,7 @@ func TestMachineHandler_Update(t *testing.T) {
 			},
 		},
 		{
-			name: "test Machine update API online repair failure, Instance must be Repairing to exit",
+			name: "test Machine update API online repair failure, exit without Repairing status, marker label, or machine OnLineRepair health alert",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -2550,6 +2550,86 @@ func TestMachineHandler_Update(t *testing.T) {
 					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
 					assert.False(t, has)
 					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
+				},
+			},
+		},
+		{
+			name: "test Machine update API online repair success, exit when instance Ready but online repair marker label remains",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData:    buildOnlineRepairExitRequest(),
+				reqMachine: mOnlineRepairReady,
+				reqOrg:     ipOrg1,
+				reqUser:    ipu,
+				respCode:   http.StatusOK,
+				beforeHandle: func(t *testing.T) {
+					t.Helper()
+					_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
+						InstanceID: iOnlineRepairReady.ID,
+						Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
+						Labels:     map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+					})
+					require.NoError(t, uerr)
+				},
+				verifyOnlineRepair: func(t *testing.T) {
+					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
+					require.NoError(t, gerr)
+					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
+					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
+					assert.False(t, has)
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
+				},
+			},
+		},
+		{
+			name: "test Machine update API online repair success, exit when Ready without marker but Machine health lists OnLineRepair alert",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData:    buildOnlineRepairExitRequest(),
+				reqMachine: mOnlineRepairReady,
+				reqOrg:     ipOrg1,
+				reqUser:    ipu,
+				respCode:   http.StatusOK,
+				beforeHandle: func(t *testing.T) {
+					t.Helper()
+					machineRepairResetReady(t)
+					health := map[string]interface{}{
+						"alerts": []map[string]interface{}{
+							{
+								"id":      model.MachineHealthAlertIDOnlineRepair,
+								"message": `{}`,
+							},
+						},
+					}
+					_, uerr := machineDAO.Update(ctx, nil, cdbm.MachineUpdateInput{
+						MachineID: mOnlineRepairReady.ID,
+						Health:    health,
+					})
+					require.NoError(t, uerr)
+				},
+				verifyOnlineRepair: func(t *testing.T) {
+					t.Helper()
+					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
+					require.NoError(t, gerr)
+					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
+					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
+					assert.False(t, has)
+					assertOnlineRepairLatestStatusDetail(t, cdbm.InstanceStatusReady, "Instance is no longer being repaired on Site, Ready for use")
+					_, cerr := machineDAO.Clear(context.Background(), nil, cdbm.MachineClearInput{
+						MachineID: mOnlineRepairReady.ID,
+						Health:    true,
+					})
+					require.NoError(t, cerr)
 				},
 			},
 		},

@@ -306,6 +306,24 @@ func AcquireInstanceTypeQuotaLock(ctx context.Context, tx *cdb.Tx, tenantID uuid
 	return tx.TryAcquireAdvisoryLock(ctx, cdb.GetAdvisoryLockIDFromString(lockID), nil)
 }
 
+// MachineReportsOnlineRepairHealthAlert is true when inventory-synced machine health JSON lists the
+// OnLineRepair probe (tenant online repair active on Site regardless of stale instance status / labels).
+func MachineReportsOnlineRepairHealthAlert(dbMachine *cdbm.Machine) bool {
+	if dbMachine == nil {
+		return false
+	}
+	h, err := dbMachine.GetHealth()
+	if err != nil || h == nil {
+		return false
+	}
+	for i := range h.Alerts {
+		if h.Alerts[i].Id == cam.MachineHealthAlertIDOnlineRepair {
+			return true
+		}
+	}
+	return false
+}
+
 // GetUnallocatedMachineForInstanceType provides unallocatd machine based on instancetype
 func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, instanceType *cdbm.InstanceType) (*cdbm.Machine, error) {
 	if instanceType == nil {

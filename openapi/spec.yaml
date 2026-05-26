@@ -17869,8 +17869,8 @@ components:
         enabled:
           type: boolean
           description: |-
-            When true, initiates the online repair process: applies the tenant-reported OnlineRepair health override on the Machine and sets the associated Instance status to Repairing.
-            When false, exits online repair: clears the health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
+            When true, initiates the online repair process: sends a core compatible merge-mode health override (source `request-online-repair`, matching Core RequestOnlineRepair) and sets the associated Instance status to Repairing.
+            When false, exits online repair: clears that health override and returns the Instance to Ready. Cannot be combined with instance type, maintenance, or label updates in the same request.
         policy:
           $ref: '#/components/schemas/MachineOnlineRepairPolicy'
         acknowledgments:

@@ -58,9 +58,8 @@ type InstanceUpdateRequest struct {
 	// Whether the custom iPXE data should be used for every boot.
 	AlwaysBootWithCustomIpxe NullableBool `json:"alwaysBootWithCustomIpxe,omitempty"`
 	// Indicates whether the Phone Home service should be enabled or disabled for Instance
-	PhoneHomeEnabled NullableBool `json:"phoneHomeEnabled,omitempty"`
-	// Update labels of the Instance. The labels will be entirely replaced by those sent in the request. Any labels not included in the request will be removed. To retain existing labels, first fetch them and include them along with this request.
-	Labels map[string]string `json:"labels,omitempty"`
+	PhoneHomeEnabled NullableBool      `json:"phoneHomeEnabled,omitempty"`
+	Labels           map[string]string `json:"labels,omitempty"`
 	// IDs of additional VPCs the Instance should attach to through non-primary interfaces. This field may only be specified when every entry in `interfaces` uses `vpcPrefixId`. IDs must be unique, must be valid UUIDs, and must not include the primary `vpcId`.
 	SecondaryVpcIds []string `json:"secondaryVpcIds,omitempty"`
 	// Update Interfaces of the Instance

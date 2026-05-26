@@ -866,9 +866,9 @@ func TestAPIMachineUpdateRequest_ToInsertHealthReportOverrideProto(t *testing.T)
 			require.NotNil(t, got.MachineId)
 			assert.Equal(t, tt.machineID, got.MachineId.Id)
 			require.NotNil(t, got.Override)
-			assert.Equal(t, cwssaws.OverrideMode_Replace, got.Override.Mode)
+			assert.Equal(t, cwssaws.OverrideMode_Merge, got.Override.Mode)
 			require.NotNil(t, got.Override.Report)
-			assert.Equal(t, MachineOnlineRepairHealthOverrideSourceTenant, got.Override.Report.Source)
+			assert.Equal(t, MachineOnlineRepairHealthOverrideSource, got.Override.Report.Source)
 
 			require.Len(t, got.Override.Report.Alerts, 1)
 			alert := got.Override.Report.Alerts[0]
@@ -906,14 +906,14 @@ func TestAPIMachineUpdateRequest_ToRemoveHealthReportOverrideProto(t *testing.T)
 		wantSource string
 	}{
 		{
-			name:       "builds remove request with machine id and tenant-reported-issue source",
+			name:       "builds remove request with machine id and request-online-repair source",
 			machineID:  "aabbccdd-eeff-0011-2233-445566778899",
-			wantSource: MachineOnlineRepairHealthOverrideSourceTenant,
+			wantSource: MachineOnlineRepairHealthOverrideSource,
 		},
 		{
 			name:       "builds remove request for another machine id",
 			machineID:  "bbccddee-ff00-1122-3344-556677889900",
-			wantSource: MachineOnlineRepairHealthOverrideSourceTenant,
+			wantSource: MachineOnlineRepairHealthOverrideSource,
 		},
 	}
 	for _, tt := range tests {

@@ -190,12 +190,12 @@ func (s *MachineWorkflowTestSuite) Test_CreateMachineHealthReportOverride_Succes
 		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
 		Override: &cwssaws.HealthReportOverride{
 			Report: &cwssaws.HealthReport{
-				Source: "tenant-reported-issue",
+				Source: "request-online-repair",
 				Alerts: []*cwssaws.HealthProbeAlert{
 					{Id: "OnLineRepair", Message: `{"details":"d","issue_category":"OTHER","summary":"s"}`},
 				},
 			},
-			Mode: cwssaws.OverrideMode_Replace,
+			Mode: cwssaws.OverrideMode_Merge,
 		},
 	}
 	s.env.RegisterActivity(machineManager.CreateMachineHealthReportOverrideOnSite)
@@ -209,7 +209,7 @@ func (s *MachineWorkflowTestSuite) Test_DeleteMachineHealthReportOverride_Succes
 	var machineManager mActivity.ManageMachine
 	req := &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: uuid.New().String()},
-		Source:    "tenant-reported-issue",
+		Source:    "request-online-repair",
 	}
 	s.env.RegisterActivity(machineManager.DeleteMachineHealthReportOverrideOnSite)
 	s.env.OnActivity(machineManager.DeleteMachineHealthReportOverrideOnSite, mock.Anything, mock.Anything).Return(nil)
