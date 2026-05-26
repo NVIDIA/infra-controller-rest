@@ -530,31 +530,3 @@ func aggregateNICoStatuses(compID string, statuses []*pb.FirmwareUpdateStatus) o
 		State:       operations.FirmwareUpdateStateQueued,
 	}
 }
-
-func (m *Manager) BringUpControl(
-	ctx context.Context,
-	target common.Target,
-) error {
-	log.Info().
-		Str("components", target.String()).
-		Msg("NVSwitch BringUpControl: placeholder")
-	return nil
-}
-
-func (m *Manager) GetBringUpStatus(
-	ctx context.Context,
-	target common.Target,
-) (map[string]operations.MachineBringUpState, error) {
-	log.Info().
-		Str("components", target.String()).
-		Msg("NVSwitch GetBringUpStatus: placeholder")
-
-	result := make(
-		map[string]operations.MachineBringUpState,
-		len(target.ComponentIDs),
-	)
-	for _, id := range target.ComponentIDs {
-		result[id] = operations.MachineBringUpStateMachineCreated
-	}
-	return result, nil
-}

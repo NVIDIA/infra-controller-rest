@@ -285,17 +285,18 @@ func (a *SubnetAPIService) DeleteSubnetExecute(r ApiDeleteSubnetRequest) (*http.
 }
 
 type ApiGetAllSubnetRequest struct {
-	ctx             context.Context
-	ApiService      *SubnetAPIService
-	org             string
-	siteId          *string
-	vpcId           *string
-	status          *string
-	query           *string
-	includeRelation *string
-	pageNumber      *int32
-	pageSize        *int32
-	orderBy         *string
+	ctx               context.Context
+	ApiService        *SubnetAPIService
+	org               string
+	siteId            *string
+	vpcId             *string
+	status            *string
+	query             *string
+	includeRelation   *string
+	includeUsageStats *bool
+	pageNumber        *int32
+	pageSize          *int32
+	orderBy           *string
 }
 
 // Filter subnets by Site, required if vpcId query param is not specified
@@ -325,6 +326,12 @@ func (r ApiGetAllSubnetRequest) Query(query string) ApiGetAllSubnetRequest {
 // Related entity to expand
 func (r ApiGetAllSubnetRequest) IncludeRelation(includeRelation string) ApiGetAllSubnetRequest {
 	r.includeRelation = &includeRelation
+	return r
+}
+
+// When true, each Subnet object includes usage statistic using the same structure as IP Block usage. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnets consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
+func (r ApiGetAllSubnetRequest) IncludeUsageStats(includeUsageStats bool) ApiGetAllSubnetRequest {
+	r.includeUsageStats = &includeUsageStats
 	return r
 }
 
@@ -407,6 +414,9 @@ func (a *SubnetAPIService) GetAllSubnetExecute(r ApiGetAllSubnetRequest) ([]Subn
 	if r.includeRelation != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "includeRelation", r.includeRelation, "form", "")
 	}
+	if r.includeUsageStats != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "includeUsageStats", r.includeUsageStats, "form", "")
+	}
 	if r.pageNumber != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "pageNumber", r.pageNumber, "form", "")
 	} else {
@@ -485,16 +495,23 @@ func (a *SubnetAPIService) GetAllSubnetExecute(r ApiGetAllSubnetRequest) ([]Subn
 }
 
 type ApiGetSubnetRequest struct {
-	ctx             context.Context
-	ApiService      *SubnetAPIService
-	org             string
-	subnetId        string
-	includeRelation *string
+	ctx               context.Context
+	ApiService        *SubnetAPIService
+	org               string
+	subnetId          string
+	includeRelation   *string
+	includeUsageStats *bool
 }
 
 // Related entity to expand
 func (r ApiGetSubnetRequest) IncludeRelation(includeRelation string) ApiGetSubnetRequest {
 	r.includeRelation = &includeRelation
+	return r
+}
+
+// When true, each Subnet object includes usage statistic using the same structure as IP Block usage. Prefix and IP usage data is derived by evaluating associated Ethernet interfaces. Each Interface associated with a Subnets consumes a single IP. In addition, 1 gateway and 1 broadcast IP address is reserved per Subnet.
+func (r ApiGetSubnetRequest) IncludeUsageStats(includeUsageStats bool) ApiGetSubnetRequest {
+	r.includeUsageStats = &includeUsageStats
 	return r
 }
 
@@ -549,6 +566,9 @@ func (a *SubnetAPIService) GetSubnetExecute(r ApiGetSubnetRequest) (*Subnet, *ht
 
 	if r.includeRelation != nil {
 		parameterAddToHeaderOrQuery(localVarQueryParams, "includeRelation", r.includeRelation, "form", "")
+	}
+	if r.includeUsageStats != nil {
+		parameterAddToHeaderOrQuery(localVarQueryParams, "includeUsageStats", r.includeUsageStats, "form", "")
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
