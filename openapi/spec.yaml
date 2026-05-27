@@ -16,7 +16,7 @@
 openapi: 3.1.0
 info:
   title: NVIDIA Infra Controller REST API
-  version: 1.5.0
+  version: 1.6.0
   summary: NVIDIA Infra Controller REST API is the centralized RESTful gateway to access NVIDIA Infra Controller service
   description: 'NVIDIA Infra Controller REST API allows users to create and manage resources e.g. VPC, Subnets, Instances across all connected NVIDIA Infra Controller datacenters, also referred to as Sites.'
   license:

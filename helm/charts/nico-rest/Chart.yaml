@@ -17,8 +17,8 @@ apiVersion: v2
 name: nico-rest
 description: Umbrella chart for the NICo REST API platform
 type: application
-version: 0.1.11
-appVersion: "1.5.0"
+version: 0.1.12
+appVersion: "1.6.0"
 keywords:
   - nico
   - bare-metal
