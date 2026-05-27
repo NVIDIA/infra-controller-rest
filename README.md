@@ -29,6 +29,7 @@ View latest OpenAPI schema on [GitHub pages](https://nvidia.github.io/infra-cont
 
 | NICo REST Version | NICo Core Version |
 |------------------|------------------|
+| v1.6.x           | v0.10.x           |
 | v1.5.x           | v0.9.x           |
 | v1.4.x           | v0.8.x           |
 | v1.3.x           | v0.7.x           |

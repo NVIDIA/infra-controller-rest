@@ -7,6 +7,13 @@ Each release lists pull requests grouped by category, with the most recent versi
 
 ## [v1.6.0](https://github.com/NVIDIA/infra-controller-rest/releases/tag/v1.6.0)
 
+> [!NOTE]
+> This release is compatible with Core **v0.10.x**.
+
+> [!IMPORTANT]
+> This is the last independent release of NICo REST. Future releases will be part of the unified NICo repository located at [infra-controller](https://github.com/NVIDIA/infra-controller).
+
+
 ### Features
 
 - **Add support for online repair of Machines, allowing repair without Instance deletion** ([#415](https://github.com/NVIDIA/infra-controller-rest/pull/415))
