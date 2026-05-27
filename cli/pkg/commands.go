@@ -711,6 +711,7 @@ func coerceValue(v string, schemaType SchemaType) (interface{}, error) {
 
 func clientFromContext(c *cli.Context) (*Client, error) {
 	cfg, _ := LoadConfig()
+	ApplyEnvOverrides(cfg)
 
 	tokenCommand := c.String("token-command")
 	tokenCommandFromConfig := false

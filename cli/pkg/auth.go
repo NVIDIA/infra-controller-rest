@@ -71,6 +71,7 @@ func LoginCommand() *cli.Command {
 		},
 		Action: func(c *cli.Context) error {
 			cfg, _ := LoadConfig()
+			ApplyEnvOverrides(cfg)
 
 			tokenCommand := c.String("token-command")
 			if tokenCommand != "" {

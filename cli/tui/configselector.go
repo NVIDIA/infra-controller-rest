@@ -120,6 +120,7 @@ func RunTUI(explicitConfig string) error {
 	if err != nil {
 		return fmt.Errorf("loading config: %w", err)
 	}
+	cli.ApplyEnvOverrides(cfg)
 
 	org := cfg.API.Org
 	if org == "" {
