@@ -46,12 +46,14 @@ func LoginCommand() *cli.Command {
 		Usage: "Authenticate and save the token",
 		Flags: []cli.Flag{
 			&cli.StringFlag{
-				Name:  "username",
-				Usage: "Username for OIDC password grant",
+				Name:    "username",
+				Usage:   "Username for OIDC password grant",
+				EnvVars: []string{"NICO_OIDC_USERNAME"},
 			},
 			&cli.StringFlag{
-				Name:  "password",
-				Usage: "Password for OIDC password grant (prompted if not provided)",
+				Name:    "password",
+				Usage:   "Password for OIDC password grant (prompted if not provided)",
+				EnvVars: []string{"NICO_OIDC_PASSWORD"},
 			},
 			&cli.StringFlag{
 				Name:    "client-secret",

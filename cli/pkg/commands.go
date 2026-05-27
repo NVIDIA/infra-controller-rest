@@ -763,6 +763,9 @@ func clientFromContext(c *cli.Context) (*Client, error) {
 	}
 
 	apiName := cfg.API.Name
+	if c.IsSet("api-name") {
+		apiName = c.String("api-name")
+	}
 	if apiName == "" {
 		apiName = "nico"
 	}

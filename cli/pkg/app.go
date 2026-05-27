@@ -72,6 +72,12 @@ func NewApp(specData []byte) (*cli.App, error) {
 				EnvVars: []string{"NICO_ORG"},
 			},
 			&cli.StringFlag{
+				Name:    "api-name",
+				Usage:   "API path segment used in /v2/org/<org>/<name>/... routes",
+				EnvVars: []string{"NICO_API_NAME"},
+				Value:   "nico",
+			},
+			&cli.StringFlag{
 				Name:    "token",
 				Usage:   "API bearer token",
 				EnvVars: []string{"NICO_TOKEN"},
@@ -84,7 +90,7 @@ func NewApp(specData []byte) (*cli.App, error) {
 			},
 			&cli.BoolFlag{
 				Name:  "debug",
-				Usage: "Enable debug logging",
+				Usage: "Enable debug logging (full HTTP request/response, plus the NICO_* env vars in use)",
 			},
 			&cli.StringFlag{
 				Name:    "token-url",

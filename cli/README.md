@@ -148,13 +148,14 @@ These flags apply to every command and override the corresponding config values.
 | `--config` | `NICO_CONFIG` | Path to the config file (defaults to `~/.nico/config.yaml`) |
 | `--base-url` | `NICO_BASE_URL` | API base URL |
 | `--org` | `NICO_ORG` | Organization name |
+| `--api-name` | `NICO_API_NAME` | API path segment used in `/v2/org/<org>/<name>/...` routes (default: `nico`) |
 | `--token` | `NICO_TOKEN` | Bearer token (skips login) |
 | `--token-command`, `--auth-script` | `NICO_TOKEN_COMMAND`, `NICO_AUTH_SCRIPT` | Shell command/script that prints a bearer token on stdout |
 | `--token-url` | `NICO_TOKEN_URL` | OIDC token endpoint URL for login and refresh |
 | `--keycloak-url` | `NICO_KEYCLOAK_URL` | Keycloak base URL (constructs `--token-url` if not set) |
 | `--keycloak-realm` | `NICO_KEYCLOAK_REALM` | Keycloak realm (default: `nico-dev`) |
 | `--client-id` | `NICO_CLIENT_ID` | OAuth client ID (default: `nico-api`) |
-| `--debug` | | Log the full HTTP request and response for the call, plus every `NICO_*` environment variable in use |
+| `--debug` | | Log the full HTTP request and response, plus every `NICO_*` environment variable in use |
 
 ### Configuring with environment variables
 
@@ -236,8 +237,8 @@ Tokens are saved to the active config file (`~/.nico/config.yaml` by default, or
 
 | Flag | Env Var | Description |
 |------|---------|-------------|
-| `--username` | | Username for OIDC password grant |
-| `--password` | | Password for OIDC password grant (prompted if not provided) |
+| `--username` | `NICO_OIDC_USERNAME` | Username for OIDC password grant |
+| `--password` | `NICO_OIDC_PASSWORD` | Password for OIDC password grant (prompted if not provided) |
 | `--client-secret` | `NICO_CLIENT_SECRET` | Client secret for confidential OIDC clients (also enables the client-credentials grant when no username is set) |
 | `--api-key` | `NICO_API_KEY` | NGC API key to exchange for a bearer token |
 | `--authn-url` | `NICO_AUTHN_URL` | NGC authentication URL for the API-key exchange |
