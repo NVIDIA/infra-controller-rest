@@ -284,6 +284,19 @@ type HealthProbeAlert struct {
 	Classifications []string `json:"classifications"`
 }
 
+// HasAlertID reports whether Alerts contains an entry with Id equal to alertID.
+func (h *MachineHealth) HasAlertID(alertID string) bool {
+	if h == nil {
+		return false
+	}
+	for _, alert := range h.Alerts {
+		if alert.Id == alertID {
+			return true
+		}
+	}
+	return false
+}
+
 // GetIndentedJSON returns formatted json of Machine
 func (m *Machine) GetIndentedJSON() ([]byte, error) {
 	return json.MarshalIndent(m, "", "  ")

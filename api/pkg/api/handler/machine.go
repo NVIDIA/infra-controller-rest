@@ -1467,9 +1467,17 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 				logger.Info().Str("Workflow ID", wid).Msg("completed synchronous applying online repair health override workflow")
 			} else {
 				// Validate if Instance is in Repairing state, has the online repair marker label, or the Machine health includes the online repair health alert
-				_, hasOnlineRepairMarker := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
-				hasOnlineRepairHealthAlert := common.MachineReportsOnlineRepairHealthAlert(machine)
-				if inst.Status != cdbm.InstanceStatusRepairing && !hasOnlineRepairMarker && !hasOnlineRepairHealthAlert {
+				_, hasOnlineRepairLabel := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
+
+				// Check if Machine health includes the online repair health alert
+				hasOnlineRepairHealthAlert := false
+				health, err := machine.GetHealth()
+				if err == nil && health != nil {
+					hasOnlineRepairHealthAlert = health.HasAlertID(model.MachineHealthAlertIDOnlineRepair)
+				}
+
+				// Validate if Instance is in Repairing state, has the online repair marker label, or the Machine health includes the online repair health alert
+				if inst.Status != cdbm.InstanceStatusRepairing && !hasOnlineRepairLabel && !hasOnlineRepairHealthAlert {
 					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf(
 						"Instance must be in Repairing state, retain the online repair marker label (%s), or the Machine health must include the %s alert (synced from Site) to exit online repair (current instance state: %s)",
 						model.InstanceLabelOnlineRepairAllowAutoDeletion, model.MachineHealthAlertIDOnlineRepair, inst.Status), nil)

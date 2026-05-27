@@ -44,9 +44,9 @@ const (
 	MachineMaxLabelCount = 10
 	// InstanceLabelOnlineRepairAllowAutoDeletion records repairPolicy.allowAutoInstanceDeletionOnFailure from the last enter-online-repair request ("true" / "false").
 	InstanceLabelOnlineRepairAllowAutoDeletion = "onlineRepair.allowAutoInstanceDeletionOnFailure"
-	// MachineOnlineRepairHealthOverrideSource is the merges-path source NICo Core uses for in-pool
+	// MachineHealthOverrideSourceOnlineRepair is the merges-path source NICo Core uses for in-pool
 	// online repair (repair_merge_active); must align with RequestOnlineRepair / admin CLI.
-	MachineOnlineRepairHealthOverrideSource = "request-online-repair"
+	MachineHealthOverrideSourceOnlineRepair = "request-online-repair"
 	// MachineHealthAlertIDOnlineRepair is the ID of the online repair health alert.
 	MachineHealthAlertIDOnlineRepair = "OnLineRepair"
 	// TenantReportedIssueAlertID is the ID of the tenant-reported issue health alert.
@@ -315,7 +315,7 @@ func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID s
 		},
 	}
 	hr := &cwssaws.HealthReport{
-		Source: MachineOnlineRepairHealthOverrideSource,
+		Source: MachineHealthOverrideSourceOnlineRepair,
 		Alerts: []*cwssaws.HealthProbeAlert{alert},
 	}
 	return &cwssaws.InsertHealthReportOverrideRequest{
@@ -330,7 +330,7 @@ func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID s
 func (mur APIMachineUpdateRequest) ToRemoveHealthReportOverrideProto(machineID string) (*cwssaws.RemoveHealthReportOverrideRequest, error) {
 	return &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: machineID},
-		Source:    MachineOnlineRepairHealthOverrideSource,
+		Source:    MachineHealthOverrideSourceOnlineRepair,
 	}, nil
 }
 
