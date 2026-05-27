@@ -101,7 +101,7 @@ Each release lists pull requests grouped by category, with the most recent versi
 ### Documentation
 
 - **Add Core compatibility matrix, image rename and repo migration notice** ([#572](https://github.com/NVIDIA/infra-controller-rest/pull/572))
-  Documents the compatibility matrix between NICo REST and Core versions, announces the Docker image rename from `carbide-rest-*` to `nico-rest-*`, and provides guidance for the repository migration from `infra-controller-rest` to `infra-controller-rest`.
+  Documents the compatibility matrix between NICo REST and Core versions, announces the Docker image rename from `carbide-rest-*` to `nico-rest-*`, and adds a notice regarding the REST repository migration from [https://github.com/NVIDIA/infra-controller-rest](https://github.com/NVIDIA/infra-controller-rest) to [https://github.com/NVIDIA/infra-controller/tree/main/rest-api](https://github.com/NVIDIA/infra-controller/tree/main/rest-api).
 
 - **Add DB transaction handling guidance to AGENTS.md** ([#551](https://github.com/NVIDIA/infra-controller-rest/pull/551))
   Adds comprehensive guidance for AI coding agents on the `WithTx` transaction helper pattern, including when to use each variant and best practices for closure scoping.
