@@ -199,6 +199,35 @@ func TestEnvOverridesFromEnvironment_ReportsUnappliedFlagOnlyVars(t *testing.T) 
 		"NICO_BASE_URL maps directly to api.base and should report Applied=true")
 }
 
+func TestKnownEnvVarDescriptors_DocsEveryRegisteredEntry(t *testing.T) {
+	descriptors := KnownEnvVarDescriptors()
+	require.NotEmpty(t, descriptors)
+
+	// Every entry must populate Name and ConfigPath; Value stays empty
+	// since this surface is for static documentation, not live env state.
+	for _, d := range descriptors {
+		assert.NotEmpty(t, d.Name)
+		assert.NotEmpty(t, d.ConfigPath, "%s missing ConfigPath", d.Name)
+		assert.Empty(t, d.Value, "%s should not carry a value here", d.Name)
+	}
+
+	// Spot-check that flag-only entries are reported with Applied=false
+	// and direct config-field entries with Applied=true.
+	byName := map[string]EnvOverride{}
+	for _, d := range descriptors {
+		byName[d.Name] = d
+	}
+	require.Contains(t, byName, "NICO_BASE_URL")
+	assert.True(t, byName["NICO_BASE_URL"].Applied,
+		"direct config field override should report Applied=true")
+	require.Contains(t, byName, "NICO_KEYCLOAK_URL")
+	assert.False(t, byName["NICO_KEYCLOAK_URL"].Applied,
+		"flag-only env var should report Applied=false")
+	require.Contains(t, byName, "NICO_TOKEN")
+	assert.True(t, byName["NICO_TOKEN"].Sensitive,
+		"NICO_TOKEN must stay flagged as sensitive")
+}
+
 func TestKnownEnvVarNames_CoversEveryConfigField(t *testing.T) {
 	// Sanity: KnownEnvVarNames should include every documented var.
 	got := KnownEnvVarNames()

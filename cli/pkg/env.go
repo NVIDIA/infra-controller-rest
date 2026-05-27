@@ -277,6 +277,26 @@ func KnownEnvVarNames() []string {
 	return names
 }
 
+// KnownEnvVarDescriptors returns metadata for every NICO_* env var
+// nicocli recognizes, in registry order, with Value left empty and
+// Applied set to true for direct config-field overrides (false for
+// flag-only entries like NICO_KEYCLOAK_URL). Use this for static
+// documentation surfaces (help output, generated docs); use
+// EnvOverridesFromEnvironment when you want the values currently set
+// in the process environment.
+func KnownEnvVarDescriptors() []EnvOverride {
+	out := make([]EnvOverride, 0, len(envOverrideRegistry))
+	for _, entry := range envOverrideRegistry {
+		out = append(out, EnvOverride{
+			Name:       entry.name,
+			ConfigPath: entry.configPath,
+			Sensitive:  entry.sensitive,
+			Applied:    entry.apply != nil,
+		})
+	}
+	return out
+}
+
 // FormatEnvOverrides returns a multiline string describing each override
 // for human display. Layout:
 //

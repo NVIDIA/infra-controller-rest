@@ -3673,6 +3673,21 @@ func cmdHelp(_ *Session, _ []string) error {
 	fmt.Fprintln(tw, "\t  label-capable lists: "+strings.Join(labelCapableListCommands, ", "))
 	fmt.Fprintln(tw, "exit\tExit interactive mode")
 	tw.Flush()
+
+	envTw := tabwriter.NewWriter(os.Stdout, 0, 0, 3, ' ', 0)
+	fmt.Fprintf(envTw, "\n%s\tCONFIG FIELD / NOTES\n", Bold("ENV VAR"))
+	fmt.Fprintln(envTw, "-------\t--------------------")
+	for _, d := range cli.KnownEnvVarDescriptors() {
+		notes := d.ConfigPath
+		if d.Sensitive {
+			notes += " (sensitive)"
+		}
+		fmt.Fprintf(envTw, "%s\t%s\n", d.Name, notes)
+	}
+	fmt.Fprintln(envTw, "\t  Env vars override config file values; explicit flags still win.")
+	fmt.Fprintln(envTw, "\t  Run 'env' to see currently set values, 'env --mask' to redact sensitive ones.")
+	envTw.Flush()
+
 	fmt.Printf("\n%s\n", Bold("KEYBINDINGS"))
 	fmt.Println("  Ctrl+C    Clear current line")
 	fmt.Println("  Ctrl+D    Quit interactive mode")
