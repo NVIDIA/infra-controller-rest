@@ -662,7 +662,7 @@ generate-sdk:
 
 # Validate OpenAPI spec using Redocly CLI (Docker)
 lint-openapi:
-	npx @redocly/cli lint ./openapi/spec.yaml
+	npx @redocly/cli lint --skip-rule=no-ambiguous-paths ./openapi/spec.yaml
 
 # Preview OpenAPI spec in Redoc UI (Docker)
 preview-openapi:

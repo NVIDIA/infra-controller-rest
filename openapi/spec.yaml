@@ -987,6 +987,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       tags:
         - Site
       description: |-
@@ -1024,6 +1028,8 @@ paths:
       responses:
         '202':
           description: Deletion request was accepted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       tags:
         - Site
       description: |-
@@ -1449,6 +1455,8 @@ paths:
       responses:
         '202':
           description: Accepted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Delete an Allocation by ID.
 
@@ -1494,6 +1502,10 @@ paths:
                         derivedResourceId: null
                         created: '2019-08-24T14:15:22Z'
                         updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Update an existing Allocation
 
@@ -1512,144 +1524,6 @@ paths:
                 value:
                   name: Echo Studios Compute
                   description: Echo Studios compute resource allocation in SJC4
-  '/v2/org/{org}/nico/allocation/{allocationId}/constraint':
-    parameters:
-      - schema:
-          type: string
-        name: org
-        in: path
-        required: true
-        description: Name of the Org
-      - schema:
-          type: string
-          format: uuid
-        name: allocationId
-        in: path
-        required: true
-        description: ID of the Allocation
-    get:
-      summary: Retrieve all Allocation Constraints
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AllocationConstraint'
-              examples:
-                example-1:
-                  value:
-                    - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                      allocationId: 9ec871ce-3363-4de2-8f79-062881067628
-                      resourceType: InstanceType
-                      resourceTypeId: a59ee688-b5e5-4606-9891-f4a605edacd3
-                      constraintType: Reserved
-                      constraintValue: 10
-                      derivedResourceId: null
-                      instanceType:
-                        name: x3.large
-                        infrastructureProviderId: 63c29416-8833-4eaf-9e1c-7c0173cc3150
-                        siteId: c9f4f276-6f7a-4209-953c-2b9870ce7cc1
-                        status: Ready
-                      created: '2019-08-24T14:15:22Z'
-                      updated: '2019-08-24T14:15:22Z'
-          headers:
-            X-Pagination:
-              schema:
-                type: string
-                example: '{"pageNumber":1,"pageSize":20,"total":30,"orderBy": "CREATED_DESC"}'
-              description: Pagination result in JSON format
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-      operationId: get-all-allocation-constraint
-      description: |-
-        Retrieve all Allocation Constraints for a given Allocation ID.
-
-        If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
-
-        If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `TENANT_ADMIN` role.
-      parameters:
-        - schema:
-            type: integer
-            example: 1
-            default: 1
-            minimum: 1
-          in: query
-          name: pageNumber
-          description: Page number for pagination query
-        - schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            example: 20
-          in: query
-          name: pageSize
-          description: Page size for pagination query
-        - schema:
-            type: string
-            enum:
-              - RESOURCE_TYPE_ASC
-              - RESOURCE_TYPE_DESC
-              - CREATED_ASC
-              - CREATED_DESC
-              - UPDATED_ASC
-              - UPDATED_DESC
-          in: query
-          name: orderBy
-          description: Ordering for pagination query
-      tags:
-        - Allocation
-    post:
-      summary: Create Allocation Constraint
-      operationId: create-allocation-constraint
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AllocationConstraint'
-              examples:
-                example-1:
-                  value:
-                    id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                    allocationId: 9ec871ce-3363-4de2-8f79-062881067628
-                    resourceType: InstanceType
-                    resourceTypeId: a59ee688-b5e5-4606-9891-f4a605edacd3
-                    constraintType: Reserved
-                    constraintValue: 10
-                    derivedResourceId: null
-                    instanceType:
-                      name: x3.large
-                      infrastructureProviderId: 63c29416-8833-4eaf-9e1c-7c0173cc3150
-                      siteId: c9f4f276-6f7a-4209-953c-2b9870ce7cc1
-                      status: Ready
-                    created: '2019-08-24T14:15:22Z'
-                    updated: '2019-08-24T14:15:22Z'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-      description: |-
-        Create an Allocation Constraint for a given Allocation ID.
-
-        Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have authorization role with `PROVIDER_ADMIN` suffix.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AllocationConstraintCreateRequest'
-            examples:
-              example-1:
-                value:
-                  resourceType: InstanceType
-                  resourceTypeId: bd5a0240-eb62-4bff-91f7-335e6bb86459
-                  constraintType: Reserved
-                  constraintValue: 10
-      tags:
-        - Allocation
   '/v2/org/{org}/nico/allocation/{allocationId}/constraint/{allocationConstraintId}':
     parameters:
       - schema:
@@ -1671,46 +1545,6 @@ paths:
         in: path
         required: true
         description: ID of the Allocation Constraint
-    get:
-      summary: Retrieve Allocation Constraint
-      tags:
-        - Allocation
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AllocationConstraint'
-              examples:
-                example-1:
-                  value:
-                    - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                      allocationId: 9ec871ce-3363-4de2-8f79-062881067628
-                      resourceType: InstanceType
-                      resourceTypeId: a59ee688-b5e5-4606-9891-f4a605edacd3
-                      constraintType: Reserved
-                      constraintValue: 10
-                      derivedResourceId: null
-                      instanceType:
-                        name: x3.large
-                        infrastructureProviderId: 63c29416-8833-4eaf-9e1c-7c0173cc3150
-                        siteId: c9f4f276-6f7a-4209-953c-2b9870ce7cc1
-                        status: Ready
-                      created: '2019-08-24T14:15:22Z'
-                      updated: '2019-08-24T14:15:22Z'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-      operationId: get-allocation-constraint
-      description: |-
-        Retrieve an Allocation Constraint for a given Allocation ID.
-
-        If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
-
-        If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `TENANT_ADMIN` role.
-      parameters: []
     patch:
       summary: Update Allocation Constraint
       operationId: update-allocation-constraint
@@ -1738,6 +1572,10 @@ paths:
                       status: Ready
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |
         Update an existing Allocation Constraint by ID
 
@@ -1757,18 +1595,6 @@ paths:
               example-1:
                 value:
                   constraintValue: 20
-      tags:
-        - Allocation
-    delete:
-      summary: Delete Allocation Constraint
-      operationId: delete-allocation-constraint
-      responses:
-        '202':
-          description: Accepted
-      description: |
-        Delete an existing Allocation Constraint by ID
-
-        Org must have an Infrastructure Provider. Specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
       tags:
         - Allocation
   '/v2/org/{org}/nico/ipblock':
@@ -2097,6 +1923,10 @@ paths:
                         updated: '2019-08-24T14:15:22Z'
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Update an existing IP Block
 
@@ -5833,6 +5663,8 @@ paths:
                         notice: '''displayName'' has been deprecated. Please take action immediately.'
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
       description: |-
@@ -7063,6 +6895,8 @@ paths:
       responses:
         '202':
           description: Accepted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Delete an Instance by ID
 
@@ -9157,6 +8991,10 @@ paths:
                         updated: '2019-08-24T14:15:22Z'
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       tags:
         - Machine
       description: |
@@ -12292,6 +12130,8 @@ paths:
                     lastName: Doe
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
       operationId: get-user
       description: Retrieve details of the current user.
   '/v2/org/{org}/nico/metadata':
@@ -12311,6 +12151,8 @@ paths:
                   value:
                     version: 0.1.24
                     buildTime: '2019-08-24T14:15:22Z'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
       operationId: get-metadata
       description: Retrieve system metadata providing information about the API server
     parameters:
@@ -21562,6 +21404,18 @@ components:
               value:
                 source: nico
                 message: Could not find resource with specified ID
+                data: null
+    UnauthorizedError:
+      description: Error response when user is not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NICoAPIError'
+          examples:
+            example-1:
+              value:
+                source: nico
+                message: User is not authenticated
                 data: null
     ForbiddenError:
       description: Error response when user is not authorized to call an endpoint or retrieve/modify objects
