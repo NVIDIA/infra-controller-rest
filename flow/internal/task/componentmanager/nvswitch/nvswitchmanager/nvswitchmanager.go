@@ -23,11 +23,13 @@ import (
 
 	"github.com/rs/zerolog/log"
 
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nsmapi"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
+	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 	nsmprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nvswitchmanager"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
@@ -41,14 +43,23 @@ const (
 )
 
 // Manager manages NVLink switch components via the NV-Switch Manager gRPC API.
+//
+// nicoClient is used solely to resolve a switch's rack and the host
+// machines on that rack so that the assignment safety check can refuse
+// power/firmware operations while any host on the rack is still Assigned.
+// Switch power/firmware traffic itself still goes through nsmClient.
 type Manager struct {
-	nsmClient nsmapi.Client
+	nsmClient  nsmapi.Client
+	assignment *nicoprovider.AssignmentChecker
+	nicoClient nicoapi.Client
 }
 
 // New creates a new NV-Switch Manager-based NVSwitch Manager instance.
-func New(nsmClient nsmapi.Client) *Manager {
+func New(nsmClient nsmapi.Client, nicoClient nicoapi.Client) *Manager {
 	return &Manager{
-		nsmClient: nsmClient,
+		nsmClient:  nsmClient,
+		nicoClient: nicoClient,
+		assignment: nicoprovider.NewAssignmentChecker(nicoClient, 0, 0),
 	}
 }
 
@@ -63,7 +74,15 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 		return nil, fmt.Errorf("nvswitch/nvswitchmanager requires nvswitchmanager provider: %w", err)
 	}
 
-	return New(provider.Client()), nil
+	nicoProv, err := providerapi.GetTyped[*nicoprovider.Provider](
+		providerRegistry,
+		nicoprovider.ProviderName,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("nvswitch/nvswitchmanager requires nico provider for rack assignment safety check: %w", err)
+	}
+
+	return New(provider.Client(), nicoProv.Client()), nil
 }
 
 // Descriptor returns the NV-Switch Manager NVSwitch manager descriptor.
@@ -71,7 +90,7 @@ func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
 		Type:              devicetypes.ComponentTypeNVSwitch,
 		Implementation:    ImplementationName,
-		RequiredProviders: []string{nsmprovider.ProviderName},
+		RequiredProviders: []string{nsmprovider.ProviderName, nicoprovider.ProviderName},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityFirmwareControl,
 			capability.CapabilityFirmwareStatus,
@@ -112,6 +131,10 @@ func (m *Manager) PowerControl(
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	if err := m.ensureRackOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
 	}
 
 	action, err := mapPowerOperation(info.Operation)
@@ -184,6 +207,10 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
+	if err := m.ensureRackOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
+	}
+
 	subComponents, err := firmwarecomponents.ParseNSMNVSwitch(info.SubTargets)
 	if err != nil {
 		return err
@@ -239,6 +266,50 @@ func (m *Manager) GetFirmwareStatus(ctx context.Context, target common.Target) (
 		Msg("Retrieved firmware update statuses")
 
 	return result, nil
+}
+
+// ensureRackOperable is the per-Manager policy gate for disruptive
+// operations on the racks that own the given switches. Today the only
+// policy is "block while any host on the rack is still attached to a
+// tenant instance" (assignment check); future policies — e.g. operator-
+// approved overrides that allow proceeding despite an active assignment —
+// should be composed here so callers continue to see a single decision
+// point.
+//
+// A switch that Core does not associate with a rack is logged and
+// skipped: failing closed would block bring-up flows for switches that
+// have not yet been ingested into the rack topology.
+func (m *Manager) ensureRackOperable(ctx context.Context, switchIDs []string) error {
+	if len(switchIDs) == 0 {
+		return nil
+	}
+	if m.nicoClient == nil || m.assignment == nil {
+		return fmt.Errorf("nico client is not configured; rack assignment safety check cannot run")
+	}
+
+	rackBySwitch, err := m.nicoClient.FindSwitchRackIDs(ctx, switchIDs)
+	if err != nil {
+		return fmt.Errorf("look up rack for switches: %w", err)
+	}
+
+	rackIDs := make([]string, 0, len(rackBySwitch))
+	for _, rid := range rackBySwitch {
+		rackIDs = append(rackIDs, rid)
+	}
+
+	var orphan []string
+	for _, sid := range switchIDs {
+		if _, ok := rackBySwitch[sid]; !ok {
+			orphan = append(orphan, sid)
+		}
+	}
+	if len(orphan) > 0 {
+		log.Warn().
+			Strs("switch_ids", orphan).
+			Msg("NVSwitch has no rack assignment; assignment safety check cannot be applied")
+	}
+
+	return m.assignment.WaitForRacksUnassigned(ctx, rackIDs)
 }
 
 // aggregateUpdateStatuses examines all sub-component firmware updates for a switch

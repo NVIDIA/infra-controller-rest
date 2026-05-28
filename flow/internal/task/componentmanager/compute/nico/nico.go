@@ -56,6 +56,9 @@ type Manager struct {
 	// avoid overwhelming the power delivery system when commanding
 	// multiple compute trays. 0 means no delay.
 	powerDelay time.Duration
+	// assignment guards mutating operations from running while any target
+	// machine still has an instance attached (ManagedHostState::Assigned).
+	assignment *nicoprovider.AssignmentChecker
 }
 
 // New creates a new NICo-based compute Manager instance.
@@ -63,6 +66,7 @@ func New(nicoClient nicoapi.Client, powerDelay time.Duration) *Manager {
 	return &Manager{
 		nicoClient: nicoClient,
 		powerDelay: powerDelay,
+		assignment: nicoprovider.NewAssignmentChecker(nicoClient, 0, 0),
 	}
 }
 
@@ -162,6 +166,13 @@ func (m *Manager) PowerControl(
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	// Refuse to power-cycle a host that is currently attached to an
+	// instance. The poll blocks until Core reports the host has left the
+	// Assigned state, or returns an error at the deadline.
+	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
 	}
 
 	// Map common.PowerOperation to nicoapi.SystemPowerControl
@@ -334,6 +345,12 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	// Block firmware upgrade while any target host is still attached to an
+	// instance: BMC/host firmware updates power-cycle the machine.
+	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
 	}
 
 	if len(info.SubTargets) > 0 {
@@ -759,6 +776,13 @@ func (m *Manager) BringUpControl(
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
+	// BringUp opens the power-on gate, which can trigger an actual power
+	// transition. Hold off until the host is no longer attached to an
+	// instance so we don't reset a tenant workload.
+	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
+	}
+
 	for _, componentID := range target.ComponentIDs {
 		if err := m.nicoClient.AllowIngestionAndPowerOn(
 			ctx, componentID, "",
@@ -827,6 +851,16 @@ func nicoToBringUpState(
 	default:
 		return operations.MachineBringUpStateNotDiscovered
 	}
+}
+
+// ensureMachinesOperable is the per-Manager policy gate for disruptive
+// operations on the given machines. Today the only policy is "block while
+// any target host is still attached to a tenant instance" (assignment
+// check); future policies — e.g. operator-approved overrides that allow
+// proceeding despite an active assignment — should be composed here so
+// callers continue to see a single decision point.
+func (m *Manager) ensureMachinesOperable(ctx context.Context, machineIDs []string) error {
+	return m.assignment.WaitForMachinesUnassigned(ctx, machineIDs)
 }
 
 // isAlreadyInDesiredStateError returns true when NICo reports that the

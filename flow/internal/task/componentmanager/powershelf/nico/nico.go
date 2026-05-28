@@ -44,10 +44,18 @@ const (
 // Manager manages power shelf components via the NICo/NICo component dispatch RPCs.
 type Manager struct {
 	nicoClient nicoapi.Client
+	// assignment guards power/firmware operations on a shelf from running
+	// while any host on the shelf's rack is still attached to an instance.
+	// PowerShelves feed the entire rack, so toggling one can power-cycle
+	// every host downstream of it; the check is therefore rack-scoped.
+	assignment *nicoprovider.AssignmentChecker
 }
 
 func New(nicoClient nicoapi.Client) *Manager {
-	return &Manager{nicoClient: nicoClient}
+	return &Manager{
+		nicoClient: nicoClient,
+		assignment: nicoprovider.NewAssignmentChecker(nicoClient, 0, 0),
+	}
 }
 
 // Factory creates a new Manager from the provided providers.
@@ -99,6 +107,46 @@ func powerShelfIDsProto(ids []string) *pb.PowerShelfIdList {
 	return &pb.PowerShelfIdList{Ids: pbIDs}
 }
 
+// ensureRackOperable is the per-Manager policy gate for disruptive
+// operations on the racks that own the given power shelves. Today the only
+// policy is "block while any host on the rack is still attached to a
+// tenant instance" (assignment check); future policies — e.g. operator-
+// approved overrides that allow proceeding despite an active assignment —
+// should be composed here so callers continue to see a single decision
+// point.
+//
+// Shelves not associated with a rack in Core are skipped with a warning
+// (see the equivalent NVSwitch helper for the reasoning).
+func (m *Manager) ensureRackOperable(ctx context.Context, shelfIDs []string) error {
+	if len(shelfIDs) == 0 {
+		return nil
+	}
+
+	rackByShelf, err := m.nicoClient.FindPowerShelfRackIDs(ctx, shelfIDs)
+	if err != nil {
+		return fmt.Errorf("look up rack for power shelves: %w", err)
+	}
+
+	rackIDs := make([]string, 0, len(rackByShelf))
+	for _, rid := range rackByShelf {
+		rackIDs = append(rackIDs, rid)
+	}
+
+	var orphan []string
+	for _, sid := range shelfIDs {
+		if _, ok := rackByShelf[sid]; !ok {
+			orphan = append(orphan, sid)
+		}
+	}
+	if len(orphan) > 0 {
+		log.Warn().
+			Strs("power_shelf_ids", orphan).
+			Msg("PowerShelf has no rack assignment; assignment safety check cannot be applied")
+	}
+
+	return m.assignment.WaitForRacksUnassigned(ctx, rackIDs)
+}
+
 // InjectExpectation registers an expected power shelf with NICo via AddExpectedPowerShelf.
 // The Info field should contain a JSON-encoded nicoapi.AddExpectedPowerShelfRequest.
 func (m *Manager) InjectExpectation(
@@ -137,6 +185,10 @@ func (m *Manager) PowerControl(
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	if err := m.ensureRackOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
 	}
 
 	var action pb.SystemPowerControl
@@ -225,6 +277,10 @@ func (m *Manager) FirmwareControl(
 
 	if err := target.Validate(); err != nil {
 		return fmt.Errorf("target is invalid: %w", err)
+	}
+
+	if err := m.ensureRackOperable(ctx, target.ComponentIDs); err != nil {
+		return fmt.Errorf("refused: %w", err)
 	}
 
 	subComponents, err := firmwarecomponents.ParseNICoPowerShelf(info.SubTargets)
