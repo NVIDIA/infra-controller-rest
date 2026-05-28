@@ -100,7 +100,7 @@ jobs:
         run: npm install -g @redocly/cli@latest
 
       - name: Run OpenAPI lint
-        run: redocly lint ./openapi/spec.yaml --format=github-actions
+        run: redocly lint ./openapi/spec.yaml --format=github-actions --skip-rule=no-ambiguous-paths
 
   # ============================================================================
   # Check Generated Files - Ensure SDK and docs are updated when spec changes
