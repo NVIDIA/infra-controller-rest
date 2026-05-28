@@ -379,20 +379,18 @@ func (csh CreateSubnetHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create Subnet workflow")
 		return nil
 	})
-	// Surface real tx-helper errors first so they aren't masked by the
-	// timeout response (commit/rollback failures wrap into something other
-	// than the cutil.APIError marker we returned for the timeout case).
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
 	if err != nil {
 		var apiErr *cutil.APIError
-		if !errors.As(err, &apiErr) {
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
 			return common.HandleTxError(c, logger, err, "Failed to create Subnet, DB transaction error")
 		}
 	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to create Subnet, DB transaction error")
 	}
 
 	// create response
@@ -1177,20 +1175,18 @@ func (dsh DeleteSubnetHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete Subnet workflow")
 		return nil
 	})
-	// Surface real tx-helper errors first so they aren't masked by the
-	// timeout response (commit/rollback failures wrap into something other
-	// than the cutil.APIError marker we returned for the timeout case).
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
 	if err != nil {
 		var apiErr *cutil.APIError
-		if !errors.As(err, &apiErr) {
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
 			return common.HandleTxError(c, logger, err, "Failed to delete Subnet, DB transaction error")
 		}
 	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to delete Subnet, DB transaction error")
 	}
 
 	// Create response

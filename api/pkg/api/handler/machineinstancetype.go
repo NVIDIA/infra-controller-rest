@@ -308,11 +308,18 @@ func (cmith CreateMachineInstanceTypeHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to associate Machines with Instance Type, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to associate Machines with Instance Type, DB transaction error")
 	}
 
 	// Return response
@@ -742,11 +749,18 @@ func (dmith DeleteMachineInstanceTypeHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to remove Machine/Instance Type association, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to remove Machine/Instance Type association, DB transaction error")
 	}
 
 	// Return response

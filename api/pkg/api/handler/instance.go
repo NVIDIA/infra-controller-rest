@@ -1643,11 +1643,18 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
 	}
 
 	// ==================== Step 7: Response ====================
@@ -1829,11 +1836,18 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, *logger, err, "Failed to reboot Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, *logger, err, "Failed to reboot Instance, DB transaction error")
 	}
 
 	// Create response
@@ -3596,11 +3610,18 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to update Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to update Instance, DB transaction error")
 	}
 
 	// If existing Interfaces were updated, add them to the response
@@ -4828,11 +4849,18 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to delete Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to delete Instance, DB transaction error")
 	}
 
 	// Return response

@@ -320,11 +320,18 @@ func (csh CreateVpcPrefixHandler) Handle(c echo.Context) error {
 		createdVpcPrefix = vpcPrefix
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to create VPC Prefix, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to create VPC Prefix, DB transaction error")
 	}
 
 	// create response
@@ -922,11 +929,18 @@ func (ush UpdateVpcPrefixHandler) Handle(c echo.Context) error {
 		updatedVpcPrefix = updated
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to update VPC prefix, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to update VPC prefix, DB transaction error")
 	}
 
 	// Send response
@@ -1148,11 +1162,18 @@ func (dsh DeleteVpcPrefixHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete VPC prefix workflow")
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to delete VPC Prefix, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to delete VPC Prefix, DB transaction error")
 	}
 
 	// Create response

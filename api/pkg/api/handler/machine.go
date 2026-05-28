@@ -1126,11 +1126,17 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 			return nil
 		})
+		// wrapping if err != nil collapses both branches into one handler
+		// call: real tx-helper errors (non-APIError) bubble out immediately,
+		// while the timeout-case APIError falls through to the itTimeoutResp call.
+		if err != nil {
+			var apiErr *cutil.APIError
+			if !errors.As(err, &apiErr) || itTimeoutResp == nil {
+				return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
+			}
+		}
 		if itTimeoutResp != nil {
 			return itTimeoutResp()
-		}
-		if err != nil {
-			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
 	}
 
@@ -1250,11 +1256,18 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 			return nil
 		})
+		// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+		// rollback failures that wrap into something other than the cutil.APIError
+		// marker we returned for the timeout case) are surfaced via HandleTxError,
+		// while the timeout-case APIError falls through to the timeoutResp call.
+		if err != nil {
+			var apiErr *cutil.APIError
+			if !errors.As(err, &apiErr) || timeoutResp == nil {
+				return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
+			}
+		}
 		if timeoutResp != nil {
 			return timeoutResp()
-		}
-		if err != nil {
-			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
 	}
 
@@ -1351,11 +1364,18 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 			return nil
 		})
+		// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+		// rollback failures that wrap into something other than the cutil.APIError
+		// marker we returned for the timeout case) are surfaced via HandleTxError,
+		// while the timeout-case APIError falls through to the timeoutResp call.
+		if err != nil {
+			var apiErr *cutil.APIError
+			if !errors.As(err, &apiErr) || timeoutResp == nil {
+				return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
+			}
+		}
 		if timeoutResp != nil {
 			return timeoutResp()
-		}
-		if err != nil {
-			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
 	}
 
@@ -1553,20 +1573,18 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 			return nil
 		})
-		// Surface real tx-helper errors first so they aren't masked by the
-		// timeout response (commit/rollback failures wrap into something other
-		// than the cutil.APIError marker we returned for the timeout case).
+		// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+		// rollback failures that wrap into something other than the cutil.APIError
+		// marker we returned for the timeout case) are surfaced via HandleTxError,
+		// while the timeout-case APIError falls through to the timeoutResp call.
 		if err != nil {
 			var apiErr *cutil.APIError
-			if !errors.As(err, &apiErr) {
+			if !errors.As(err, &apiErr) || timeoutResp == nil {
 				return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 			}
 		}
 		if timeoutResp != nil {
 			return timeoutResp()
-		}
-		if err != nil {
-			return common.HandleTxError(c, logger, err, "Failed to update Machine, DB transaction error")
 		}
 	}
 
