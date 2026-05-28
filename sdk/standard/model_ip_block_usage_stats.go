@@ -34,17 +34,17 @@ import (
 // checks if the IpBlockUsageStats type satisfies the MappedNullable interface at compile time
 var _ MappedNullable = &IpBlockUsageStats{}
 
-// IpBlockUsageStats Usa statistics for an IP Block
+// IpBlockUsageStats Usage statistics for an IP Block, VPC Prefix or Subnet
 type IpBlockUsageStats struct {
-	// Number of IP addresses available in the block
+	// Total number of IP addresses in the block (acquired and unused)
 	AvailableIPs *int64 `json:"availableIPs,omitempty"`
 	// Number of individual IP addresses acquired from the block
 	AcquiredIPs *int64 `json:"acquiredIPs,omitempty"`
 	// Example prefixes available to acquire
 	AvailablePrefixes []string `json:"availablePrefixes,omitempty"`
-	// Number of smallest prefixes available to acquire
+	// Total number of /30 prefixes that can still be acquired from this block
 	AvailableSmallestPrefixes *int64 `json:"availableSmallestPrefixes,omitempty"`
-	// Number of prefixes acquired from this block
+	// Total number of prefixes (of any size) acquired from this block
 	AcquiredPrefixes *int64 `json:"acquiredPrefixes,omitempty"`
 }
 
