@@ -2006,16 +2006,17 @@ paths:
                     infrastructureProviderId: e94bcfda-f6cb-42e4-80ec-516811e5abbf
                     tenantId: null
                     routingType: Public
-                    prefix: 202.168.16.0
-                    prefixLength: 20
+                    prefix: 192.168.20.0
+                    prefixLength: 24
                     protocolVersion: IPv4
                     usageStats:
-                      availableIPs: 4094
+                      availableIPs: 256
                       acquiredIPs: 2
                       availablePrefixes:
-                        - 204.168.16.2/20
-                        - 204.168.16.4/20
-                      availableSmallestPrefixes: 2047
+                        - 192.168.20.32/27
+                        - 192.168.20.64/26
+                        - 192.168.20.128/25
+                      availableSmallestPrefixes: 56
                       acquiredPrefixes: 1
                     status: Pending
                     statusHistory:
@@ -14188,22 +14189,21 @@ components:
           vpcId: 5e28ad7c-5fb7-46d6-a28a-fc0ba6fdc4a3
           tenantId: f97df110-f4de-492e-8849-4a6af68026b0
           controllerNetworkSegmentId: abe7b0e8-67db-4e89-903e-fc4f2bd7f034
-          ipv4Prefix: 204.168.16.0
+          ipv4Prefix: 10.217.98.64
           ipv4BlockId: 8c1d1a06-90a2-4863-8ee1-6029265b9f0a
-          ipv4Gateway: 204.168.16.1
+          ipv4Gateway: 10.217.98.65
           ipv6Prefix: null
           ipv6BlockId: null
           ipv6Gateway: null
-          prefixLength: 20
+          prefixLength: 28
           routingType: Public
           status: Ready
           usageStats:
-            availableIPs: 4088
+            availableIPs: 16
             acquiredIPs: 6
             availablePrefixes:
-              - 204.168.16.6/31
-              - 204.168.16.8/31
-            availableSmallestPrefixes: 2044
+              - 10.217.98.64/28
+            availableSmallestPrefixes: 4
             acquiredPrefixes: 0
           statusHistory:
             - status: Ready
