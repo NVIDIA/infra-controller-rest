@@ -42,7 +42,7 @@ type IpBlockUsageStats struct {
 	AcquiredIPs *int64 `json:"acquiredIPs,omitempty"`
 	// Example prefixes available to acquire
 	AvailablePrefixes []string `json:"availablePrefixes,omitempty"`
-	// Total number of /30 prefixes that can still be acquired from this block
+	// Total number of /30 prefixes that can still be acquired from this block (only reduced if prefixes are acquired, not reduced by acquired IPs)
 	AvailableSmallestPrefixes *int64 `json:"availableSmallestPrefixes,omitempty"`
 	// Total number of prefixes (of any size) acquired from this block
 	AcquiredPrefixes *int64 `json:"acquiredPrefixes,omitempty"`

@@ -20122,7 +20122,7 @@ components:
         availableSmallestPrefixes:
           type: integer
           description: |
-            Total number of /30 prefixes that can still be acquired from this block
+            Total number of /30 prefixes that can still be acquired from this block (only reduced if prefixes are acquired, not reduced by acquired IPs)
           format: int64
           readOnly: true
         acquiredPrefixes:
