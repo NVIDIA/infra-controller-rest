@@ -41,17 +41,17 @@ func GetTenantIdentityActivityOptions() workflow.ActivityOptions {
 	}
 }
 
-// SetTenantIdentityConfiguration is a workflow to create or update Tenant Identity Config using the SetTenantIdentityConfigurationOnSite activity
-func SetTenantIdentityConfiguration(ctx workflow.Context, request *cwssaws.SetTenantIdentityConfigRequest) (*cwssaws.TenantIdentityConfigResponse, error) {
-	logger := log.With().Str("Workflow", "SetTenantIdentityConfiguration").Logger()
+// CreateOrUpdateTenantIdentityConfiguration is a workflow to create or update Tenant Identity Config using the CreateOrUpdateTenantIdentityConfigurationOnSite activity
+func CreateOrUpdateTenantIdentityConfiguration(ctx workflow.Context, request *cwssaws.SetTenantIdentityConfigRequest) (*cwssaws.TenantIdentityConfigResponse, error) {
+	logger := log.With().Str("Workflow", "CreateOrUpdateTenantIdentityConfiguration").Logger()
 	logger.Info().Msg("Starting workflow")
 
 	ctx = workflow.WithActivityOptions(ctx, GetTenantIdentityActivityOptions())
 
 	var manager activity.ManageTenantIdentity
 	var response cwssaws.TenantIdentityConfigResponse
-	if err := workflow.ExecuteActivity(ctx, manager.SetTenantIdentityConfigurationOnSite, request).Get(ctx, &response); err != nil {
-		logger.Error().Err(err).Str("Activity", "SetTenantIdentityConfigurationOnSite").Msg("Failed to execute activity from workflow")
+	if err := workflow.ExecuteActivity(ctx, manager.CreateOrUpdateTenantIdentityConfigurationOnSite, request).Get(ctx, &response); err != nil {
+		logger.Error().Err(err).Str("Activity", "CreateOrUpdateTenantIdentityConfigurationOnSite").Msg("Failed to execute activity from workflow")
 		return nil, err
 	}
 
@@ -95,17 +95,17 @@ func DeleteTenantIdentityConfiguration(ctx workflow.Context, request *cwssaws.Ge
 	return &response, nil
 }
 
-// SetTenantIdentityTokenDelegation is a workflow to create or update Token Delegation using the SetTenantIdentityTokenDelegationOnSite activity
-func SetTenantIdentityTokenDelegation(ctx workflow.Context, request *cwssaws.TokenDelegationRequest) (*cwssaws.TokenDelegationResponse, error) {
-	logger := log.With().Str("Workflow", "SetTenantIdentityTokenDelegation").Logger()
+// CreateOrUpdateTenantIdentityTokenDelegation is a workflow to create or update Token Delegation using the CreateOrUpdateTenantIdentityTokenDelegationOnSite activity
+func CreateOrUpdateTenantIdentityTokenDelegation(ctx workflow.Context, request *cwssaws.TokenDelegationRequest) (*cwssaws.TokenDelegationResponse, error) {
+	logger := log.With().Str("Workflow", "CreateOrUpdateTenantIdentityTokenDelegation").Logger()
 	logger.Info().Msg("Starting workflow")
 
 	ctx = workflow.WithActivityOptions(ctx, GetTenantIdentityActivityOptions())
 
 	var manager activity.ManageTenantIdentity
 	var response cwssaws.TokenDelegationResponse
-	if err := workflow.ExecuteActivity(ctx, manager.SetTenantIdentityTokenDelegationOnSite, request).Get(ctx, &response); err != nil {
-		logger.Error().Err(err).Str("Activity", "SetTenantIdentityTokenDelegationOnSite").Msg("Failed to execute activity from workflow")
+	if err := workflow.ExecuteActivity(ctx, manager.CreateOrUpdateTenantIdentityTokenDelegationOnSite, request).Get(ctx, &response); err != nil {
+		logger.Error().Err(err).Str("Activity", "CreateOrUpdateTenantIdentityTokenDelegationOnSite").Msg("Failed to execute activity from workflow")
 		return nil, err
 	}
 

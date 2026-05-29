@@ -30,9 +30,9 @@ func (mi *API) RegisterSubscriber() error {
 	manager := swa.NewManageTenantIdentity(ManagerAccess.Data.EB.Managers.CoreGrpc.Client)
 	w := ManagerAccess.Data.EB.Managers.Workflow.Temporal.Worker
 
-	w.RegisterWorkflow(sww.SetTenantIdentityConfiguration)
-	w.RegisterActivity(manager.SetTenantIdentityConfigurationOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("TenantIdentity: Successfully registered SetTenantIdentityConfiguration workflow & activity")
+	w.RegisterWorkflow(sww.CreateOrUpdateTenantIdentityConfiguration)
+	w.RegisterActivity(manager.CreateOrUpdateTenantIdentityConfigurationOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("TenantIdentity: Successfully registered CreateOrUpdateTenantIdentityConfiguration workflow & activity")
 
 	w.RegisterWorkflow(sww.GetTenantIdentityConfiguration)
 	w.RegisterActivity(manager.GetTenantIdentityConfigurationFromSite)
@@ -42,9 +42,9 @@ func (mi *API) RegisterSubscriber() error {
 	w.RegisterActivity(manager.DeleteTenantIdentityConfigurationOnSite)
 	ManagerAccess.Data.EB.Log.Info().Msg("TenantIdentity: Successfully registered DeleteTenantIdentityConfiguration workflow & activity")
 
-	w.RegisterWorkflow(sww.SetTenantIdentityTokenDelegation)
-	w.RegisterActivity(manager.SetTenantIdentityTokenDelegationOnSite)
-	ManagerAccess.Data.EB.Log.Info().Msg("TenantIdentity: Successfully registered SetTenantIdentityTokenDelegation workflow & activity")
+	w.RegisterWorkflow(sww.CreateOrUpdateTenantIdentityTokenDelegation)
+	w.RegisterActivity(manager.CreateOrUpdateTenantIdentityTokenDelegationOnSite)
+	ManagerAccess.Data.EB.Log.Info().Msg("TenantIdentity: Successfully registered CreateOrUpdateTenantIdentityTokenDelegation workflow & activity")
 
 	w.RegisterWorkflow(sww.GetTenantIdentityTokenDelegation)
 	w.RegisterActivity(manager.GetTenantIdentityTokenDelegationFromSite)

@@ -3584,7 +3584,7 @@ func cmdTenantIdentityConfigGet(s *Session, args []string) error {
 		return err
 	}
 	LogCmd(s, "tenant-identity", "get", site.ID)
-	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, "identity/config"), map[string]string{"siteID": site.ID}, nil, nil)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, "tenant-identity/config"), map[string]string{"siteID": site.ID}, nil, nil)
 	if err != nil {
 		return fmt.Errorf("getting tenant identity config: %w", err)
 	}
@@ -3664,7 +3664,7 @@ func cmdTenantIdentityConfigUpdate(s *Session, args []string) error {
 		return err
 	}
 	LogCmd(s, "tenant-identity", "update", site.ID)
-	bodyOut, _, err := s.Client.Do("PUT", tenantIdentitySitePath(s, "identity/config"), map[string]string{"siteID": site.ID}, nil, payload)
+	bodyOut, _, err := s.Client.Do("PUT", tenantIdentitySitePath(s, "tenant-identity/config"), map[string]string{"siteID": site.ID}, nil, payload)
 	if err != nil {
 		return fmt.Errorf("updating tenant identity config: %w", err)
 	}
@@ -3687,7 +3687,7 @@ func cmdTenantIdentityConfigDelete(s *Session, args []string) error {
 		return nil
 	}
 	LogCmd(s, "tenant-identity", "delete", site.ID)
-	_, _, err = s.Client.Do("DELETE", tenantIdentitySitePath(s, "identity/config"), map[string]string{"siteID": site.ID}, nil, nil)
+	_, _, err = s.Client.Do("DELETE", tenantIdentitySitePath(s, "tenant-identity/config"), map[string]string{"siteID": site.ID}, nil, nil)
 	if err != nil {
 		return fmt.Errorf("deleting tenant identity config: %w", err)
 	}
@@ -3702,7 +3702,7 @@ func cmdTenantIdentityTokenDelegationGet(s *Session, args []string) error {
 		return err
 	}
 	LogCmd(s, "tenant-identity", "token-delegation", "get", site.ID)
-	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, "identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, nil)
+	body, _, err := s.Client.Do("GET", tenantIdentitySitePath(s, "tenant-identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, nil)
 	if err != nil {
 		return fmt.Errorf("getting token delegation: %w", err)
 	}
@@ -3751,7 +3751,7 @@ func cmdTenantIdentityTokenDelegationUpdate(s *Session, args []string) error {
 		return err
 	}
 	LogCmd(s, "tenant-identity", "token-delegation", "update", site.ID)
-	bodyOut, _, err := s.Client.Do("PUT", tenantIdentitySitePath(s, "identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, payload)
+	bodyOut, _, err := s.Client.Do("PUT", tenantIdentitySitePath(s, "tenant-identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, payload)
 	if err != nil {
 		return fmt.Errorf("updating token delegation: %w", err)
 	}
@@ -3774,7 +3774,7 @@ func cmdTenantIdentityTokenDelegationDelete(s *Session, args []string) error {
 		return nil
 	}
 	LogCmd(s, "tenant-identity", "token-delegation", "delete", site.ID)
-	_, _, err = s.Client.Do("DELETE", tenantIdentitySitePath(s, "identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, nil)
+	_, _, err = s.Client.Do("DELETE", tenantIdentitySitePath(s, "tenant-identity/token-delegation"), map[string]string{"siteID": site.ID}, nil, nil)
 	if err != nil {
 		return fmt.Errorf("deleting token delegation: %w", err)
 	}

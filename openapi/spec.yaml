@@ -252,8 +252,8 @@ tags:
       exchange callback, and serve the public JWKS / OIDC discovery
       documents that verifiers (OpenBao, tenant APIs, etc.) consume.
 
-      The six management endpoints (PUT / GET / DELETE on `identity/config`
-      and `identity/token-delegation`) require an authorization role with
+      The six management endpoints (PUT / GET / DELETE on `tenant-identity/config`
+      and `tenant-identity/token-delegation`) require an authorization role with
       `TENANT_ADMIN` suffix in the URL `{org}`. The three `.well-known/*`
       endpoints are public; external verifiers can fetch public keys
       without credentials.
@@ -12344,7 +12344,7 @@ paths:
         Retrieve a specific Audit Log Entry by ID
 
         User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix
-  '/v2/org/{org}/nico/site/{siteID}/identity/config':
+  '/v2/org/{org}/nico/site/{siteID}/tenant-identity/config':
     parameters:
       - schema:
           type: string
@@ -12369,7 +12369,7 @@ paths:
 
         User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
 
-        On first call the Core gRPC API generates a fresh ES256 signing
+        On first call the Core gRPC API generates a new ES256 signing
         keypair; on subsequent calls the existing keypair is reused unless
         `rotateKey: true` is supplied. Returns `201 Created` on first
         call, `200 OK` on subsequent updates. See the Tenant Identity tag
@@ -12466,7 +12466,7 @@ paths:
           $ref: '#/components/responses/GenericHttpError'
         '503':
           $ref: '#/components/responses/TenantIdentityCoreUnavailable'
-  '/v2/org/{org}/nico/site/{siteID}/identity/token-delegation':
+  '/v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation':
     parameters:
       - schema:
           type: string
@@ -12494,7 +12494,7 @@ paths:
 
         User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
 
-        Requires a pre-existing `/identity/config` on this org/site
+        Requires a pre-existing `/tenant-identity/config` on this org/site
         (returns `404` otherwise). Because PUT is full-replace, omitting
         `clientSecretBasic` on an update clears any stored credentials
         and switches the org back to no-auth; re-supply `clientId` /
@@ -12527,7 +12527,7 @@ paths:
         '404':
           description: |-
             Returned when the org has no tenant identity configuration on
-            this site yet; create it via PUT `/identity/config` before
+            this site yet; create it via PUT `/tenant-identity/config` before
             registering a token-delegation callback.
           $ref: '#/components/responses/NotFoundError'
         '500':

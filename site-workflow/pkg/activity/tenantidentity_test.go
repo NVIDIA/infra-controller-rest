@@ -35,8 +35,8 @@ func newMockIdentityManager() ManageTenantIdentity {
 	return NewManageTenantIdentity(carbideAtomicClient)
 }
 
-// TestManageTenantIdentity_SetTenantIdentityConfigurationOnSite verifies the SetTenantIdentityConfiguration activity validates input, calls Core, and surfaces the echoed config and current signing key.
-func TestManageTenantIdentity_SetTenantIdentityConfigurationOnSite(t *testing.T) {
+// TestManageTenantIdentity_CreateOrUpdateTenantIdentityConfigurationOnSite verifies the CreateOrUpdateTenantIdentityConfigurationOnSite activity validates input, calls Core, and surfaces the echoed config and current signing key.
+func TestManageTenantIdentity_CreateOrUpdateTenantIdentityConfigurationOnSite(t *testing.T) {
 	identityMgr := newMockIdentityManager()
 	ctx := context.Background()
 
@@ -50,7 +50,7 @@ func TestManageTenantIdentity_SetTenantIdentityConfigurationOnSite(t *testing.T)
 				TokenTtlSec:     600,
 			},
 		}
-		resp, err := identityMgr.SetTenantIdentityConfigurationOnSite(ctx, req)
+		resp, err := identityMgr.CreateOrUpdateTenantIdentityConfigurationOnSite(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, "acme-corp", resp.GetOrganizationId())
@@ -65,19 +65,19 @@ func TestManageTenantIdentity_SetTenantIdentityConfigurationOnSite(t *testing.T)
 	})
 
 	t.Run("rejects nil request", func(t *testing.T) {
-		_, err := identityMgr.SetTenantIdentityConfigurationOnSite(ctx, nil)
+		_, err := identityMgr.CreateOrUpdateTenantIdentityConfigurationOnSite(ctx, nil)
 		assert.Error(t, err)
 	})
 
 	t.Run("rejects missing organization_id", func(t *testing.T) {
-		_, err := identityMgr.SetTenantIdentityConfigurationOnSite(ctx, &cwssaws.SetTenantIdentityConfigRequest{
+		_, err := identityMgr.CreateOrUpdateTenantIdentityConfigurationOnSite(ctx, &cwssaws.SetTenantIdentityConfigRequest{
 			Config: &cwssaws.TenantIdentityConfig{DefaultAudience: "openbao"},
 		})
 		assert.Error(t, err)
 	})
 
 	t.Run("rejects missing config", func(t *testing.T) {
-		_, err := identityMgr.SetTenantIdentityConfigurationOnSite(ctx, &cwssaws.SetTenantIdentityConfigRequest{
+		_, err := identityMgr.CreateOrUpdateTenantIdentityConfigurationOnSite(ctx, &cwssaws.SetTenantIdentityConfigRequest{
 			OrganizationId: "acme-corp",
 		})
 		assert.Error(t, err)
@@ -137,8 +137,8 @@ func TestManageTenantIdentity_DeleteTenantIdentityConfigurationOnSite(t *testing
 	})
 }
 
-// TestManageTenantIdentity_SetTenantIdentityTokenDelegationOnSite verifies the SetTenantIdentityTokenDelegation activity validates input, calls Core, and never returns the raw client secret.
-func TestManageTenantIdentity_SetTenantIdentityTokenDelegationOnSite(t *testing.T) {
+// TestManageTenantIdentity_CreateOrUpdateTenantIdentityTokenDelegationOnSite verifies the CreateOrUpdateTenantIdentityTokenDelegationOnSite activity validates input, calls Core, and never returns the raw client secret.
+func TestManageTenantIdentity_CreateOrUpdateTenantIdentityTokenDelegationOnSite(t *testing.T) {
 	identityMgr := newMockIdentityManager()
 	ctx := context.Background()
 
@@ -156,7 +156,7 @@ func TestManageTenantIdentity_SetTenantIdentityTokenDelegationOnSite(t *testing.
 				},
 			},
 		}
-		resp, err := identityMgr.SetTenantIdentityTokenDelegationOnSite(ctx, req)
+		resp, err := identityMgr.CreateOrUpdateTenantIdentityTokenDelegationOnSite(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Equal(t, "acme-corp", resp.GetOrganizationId())
@@ -177,26 +177,26 @@ func TestManageTenantIdentity_SetTenantIdentityTokenDelegationOnSite(t *testing.
 				SubjectTokenAudience: "acme-exchange",
 			},
 		}
-		resp, err := identityMgr.SetTenantIdentityTokenDelegationOnSite(ctx, req)
+		resp, err := identityMgr.CreateOrUpdateTenantIdentityTokenDelegationOnSite(ctx, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp)
 		assert.Nil(t, resp.GetAuthMethodConfig(), "oneof should stay unset for auth method none")
 	})
 
 	t.Run("rejects nil request", func(t *testing.T) {
-		_, err := identityMgr.SetTenantIdentityTokenDelegationOnSite(ctx, nil)
+		_, err := identityMgr.CreateOrUpdateTenantIdentityTokenDelegationOnSite(ctx, nil)
 		assert.Error(t, err)
 	})
 
 	t.Run("rejects missing organization_id", func(t *testing.T) {
-		_, err := identityMgr.SetTenantIdentityTokenDelegationOnSite(ctx, &cwssaws.TokenDelegationRequest{
+		_, err := identityMgr.CreateOrUpdateTenantIdentityTokenDelegationOnSite(ctx, &cwssaws.TokenDelegationRequest{
 			Config: &cwssaws.TokenDelegation{TokenEndpoint: "https://example.com"},
 		})
 		assert.Error(t, err)
 	})
 
 	t.Run("rejects missing config", func(t *testing.T) {
-		_, err := identityMgr.SetTenantIdentityTokenDelegationOnSite(ctx, &cwssaws.TokenDelegationRequest{
+		_, err := identityMgr.CreateOrUpdateTenantIdentityTokenDelegationOnSite(ctx, &cwssaws.TokenDelegationRequest{
 			OrganizationId: "acme-corp",
 		})
 		assert.Error(t, err)

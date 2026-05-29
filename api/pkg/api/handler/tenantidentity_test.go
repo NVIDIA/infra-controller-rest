@@ -126,42 +126,42 @@ func TestTenantIdentityHandlers_TimeoutReturns500AndTerminatesWorkflow(t *testin
 		newHandler func() echo.HandlerFunc
 	}{
 		{
-			name: "PUT identity/config", method: http.MethodPut, body: configBody,
-			entity: "TenantIdentity", workflow: "SetTenantIdentityConfiguration", user: tenantUser,
+			name: "PUT tenant-identity/config", method: http.MethodPut, body: configBody,
+			entity: "TenantIdentity", workflow: "CreateOrUpdateTenantIdentityConfiguration", user: tenantUser,
 			newHandler: func() echo.HandlerFunc {
 				return NewCreateOrUpdateTenantIdentityConfigHandler(dbSession, siteClientPool).Handle
 			},
 		},
 		{
-			name: "GET identity/config", method: http.MethodGet,
+			name: "GET tenant-identity/config", method: http.MethodGet,
 			entity: "TenantIdentity", workflow: "GetTenantIdentityConfiguration", user: tenantUser,
 			newHandler: func() echo.HandlerFunc {
 				return NewGetTenantIdentityConfigHandler(dbSession, siteClientPool).Handle
 			},
 		},
 		{
-			name: "DELETE identity/config", method: http.MethodDelete,
+			name: "DELETE tenant-identity/config", method: http.MethodDelete,
 			entity: "TenantIdentity", workflow: "DeleteTenantIdentityConfiguration", user: tenantUser,
 			newHandler: func() echo.HandlerFunc {
 				return NewDeleteTenantIdentityConfigHandler(dbSession, siteClientPool).Handle
 			},
 		},
 		{
-			name: "PUT identity/token-delegation", method: http.MethodPut, body: tokenDelegationBody,
-			entity: "TenantIdentityTokenDelegation", workflow: "SetTenantIdentityTokenDelegation", user: tenantUser,
+			name: "PUT tenant-identity/token-delegation", method: http.MethodPut, body: tokenDelegationBody,
+			entity: "TenantIdentityTokenDelegation", workflow: "CreateOrUpdateTenantIdentityTokenDelegation", user: tenantUser,
 			newHandler: func() echo.HandlerFunc {
 				return NewCreateOrUpdateTenantIdentityTokenDelegationHandler(dbSession, siteClientPool).Handle
 			},
 		},
 		{
-			name: "GET identity/token-delegation", method: http.MethodGet,
+			name: "GET tenant-identity/token-delegation", method: http.MethodGet,
 			entity: "TenantIdentityTokenDelegation", workflow: "GetTenantIdentityTokenDelegation", user: tenantUser,
 			newHandler: func() echo.HandlerFunc {
 				return NewGetTenantIdentityTokenDelegationHandler(dbSession, siteClientPool).Handle
 			},
 		},
 		{
-			name: "DELETE identity/token-delegation", method: http.MethodDelete,
+			name: "DELETE tenant-identity/token-delegation", method: http.MethodDelete,
 			entity: "TenantIdentityTokenDelegation", workflow: "DeleteTenantIdentityTokenDelegation", user: tenantUser,
 			newHandler: func() echo.HandlerFunc {
 				return NewDeleteTenantIdentityTokenDelegationHandler(dbSession, siteClientPool).Handle
@@ -456,7 +456,7 @@ func TestTenantIdentityPUT_WorkflowIDIncludesPayloadHash(t *testing.T) {
 		assert.True(t, strings.HasPrefix(ids[0], wantPrefix), "ID must keep op-org-site prefix: %q", ids[0])
 	}
 
-	t.Run("PUT identity/config", func(t *testing.T) {
+	t.Run("PUT tenant-identity/config", func(t *testing.T) {
 		makeConfigBody := func(audience string) []byte {
 			body, err := json.Marshal(model.APITenantIdentityConfigCreateOrUpdateRequest{
 				Enabled:         cdb.GetBoolPtr(true),
@@ -472,10 +472,10 @@ func TestTenantIdentityPUT_WorkflowIDIncludesPayloadHash(t *testing.T) {
 		doPUT(t, handler, makeConfigBody("openbao-A"))
 		doPUT(t, handler, makeConfigBody("openbao-B"))
 		doPUT(t, handler, makeConfigBody("openbao-A"))
-		assertHashInvariant(t, "tenant-identity-create-or-update-config-"+tenantOrg+"-"+siteIDStr+"-", capturedIDs[base:base+3])
+		assertHashInvariant(t, "tenant-identity-config-create-or-update-"+tenantOrg+"-"+siteIDStr+"-", capturedIDs[base:base+3])
 	})
 
-	t.Run("PUT identity/token-delegation", func(t *testing.T) {
+	t.Run("PUT tenant-identity/token-delegation", func(t *testing.T) {
 		makeTokenDelegationBody := func(endpoint string) []byte {
 			body, err := json.Marshal(model.APITenantIdentityTokenDelegationCreateOrUpdateRequest{
 				TokenEndpoint:        endpoint,
@@ -489,7 +489,7 @@ func TestTenantIdentityPUT_WorkflowIDIncludesPayloadHash(t *testing.T) {
 		doPUT(t, handler, makeTokenDelegationBody("https://auth-a.example.com/oauth2/token"))
 		doPUT(t, handler, makeTokenDelegationBody("https://auth-b.example.com/oauth2/token"))
 		doPUT(t, handler, makeTokenDelegationBody("https://auth-a.example.com/oauth2/token"))
-		assertHashInvariant(t, "tenant-identity-create-or-update-token-delegation-"+tenantOrg+"-"+siteIDStr+"-", capturedIDs[base:base+3])
+		assertHashInvariant(t, "tenant-identity-token-delegation-create-or-update-"+tenantOrg+"-"+siteIDStr+"-", capturedIDs[base:base+3])
 	})
 }
 
@@ -587,19 +587,19 @@ func TestCreateOrUpdateTenantIdentityPUT_StatusReflectsCreateVsUpdate(t *testing
 
 	temporalClient.Mock.On("ExecuteWorkflow",
 		mock.Anything, mock.Anything,
-		"SetTenantIdentityConfiguration", mock.Anything,
+		"CreateOrUpdateTenantIdentityConfiguration", mock.Anything,
 	).Return(createdConfigRun, nil).Once()
 	temporalClient.Mock.On("ExecuteWorkflow",
 		mock.Anything, mock.Anything,
-		"SetTenantIdentityConfiguration", mock.Anything,
+		"CreateOrUpdateTenantIdentityConfiguration", mock.Anything,
 	).Return(updatedConfigRun, nil).Once()
 	temporalClient.Mock.On("ExecuteWorkflow",
 		mock.Anything, mock.Anything,
-		"SetTenantIdentityTokenDelegation", mock.Anything,
+		"CreateOrUpdateTenantIdentityTokenDelegation", mock.Anything,
 	).Return(createdDelegationRun, nil).Once()
 	temporalClient.Mock.On("ExecuteWorkflow",
 		mock.Anything, mock.Anything,
-		"SetTenantIdentityTokenDelegation", mock.Anything,
+		"CreateOrUpdateTenantIdentityTokenDelegation", mock.Anything,
 	).Return(updatedDelegationRun, nil).Once()
 
 	echoSrv := echo.New()
@@ -642,11 +642,11 @@ func TestCreateOrUpdateTenantIdentityPUT_StatusReflectsCreateVsUpdate(t *testing
 		return recorder
 	}
 
-	t.Run("identity/config first create returns 201", func(t *testing.T) {
+	t.Run("tenant-identity/config first create returns 201", func(t *testing.T) {
 		recorder := doConfigPUT(t, "openbao-create")
 		assert.Equal(t, http.StatusCreated, recorder.Code, "body=%s", recorder.Body.String())
 	})
-	t.Run("identity/config subsequent update returns 200", func(t *testing.T) {
+	t.Run("tenant-identity/config subsequent update returns 200", func(t *testing.T) {
 		recorder := doConfigPUT(t, "openbao-update")
 		assert.Equal(t, http.StatusOK, recorder.Code, "body=%s", recorder.Body.String())
 	})

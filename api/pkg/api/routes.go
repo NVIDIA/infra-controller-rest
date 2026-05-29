@@ -1001,32 +1001,32 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 		},
 		// Tenant Identity endpoints
 		{
-			Path:    apiPathPrefix + "/site/:siteID/identity/config",
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/config",
 			Method:  http.MethodPut,
 			Handler: apiHandler.NewCreateOrUpdateTenantIdentityConfigHandler(dbSession, scp),
 		},
 		{
-			Path:    apiPathPrefix + "/site/:siteID/identity/config",
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/config",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetTenantIdentityConfigHandler(dbSession, scp),
 		},
 		{
-			Path:    apiPathPrefix + "/site/:siteID/identity/config",
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/config",
 			Method:  http.MethodDelete,
 			Handler: apiHandler.NewDeleteTenantIdentityConfigHandler(dbSession, scp),
 		},
 		{
-			Path:    apiPathPrefix + "/site/:siteID/identity/token-delegation",
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/token-delegation",
 			Method:  http.MethodPut,
 			Handler: apiHandler.NewCreateOrUpdateTenantIdentityTokenDelegationHandler(dbSession, scp),
 		},
 		{
-			Path:    apiPathPrefix + "/site/:siteID/identity/token-delegation",
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/token-delegation",
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetTenantIdentityTokenDelegationHandler(dbSession, scp),
 		},
 		{
-			Path:    apiPathPrefix + "/site/:siteID/identity/token-delegation",
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/token-delegation",
 			Method:  http.MethodDelete,
 			Handler: apiHandler.NewDeleteTenantIdentityTokenDelegationHandler(dbSession, scp),
 		},

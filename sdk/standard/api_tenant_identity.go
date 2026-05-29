@@ -49,7 +49,7 @@ Create or update tenant identity (JWT-SVID) configuration for the org/site.
 
 User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
 
-On first call the Core gRPC API generates a fresh ES256 signing
+On first call the Core gRPC API generates a new ES256 signing
 keypair; on subsequent calls the existing keypair is reused unless
 `rotateKey: true` is supplied. Returns `201 Created` on first
 call, `200 OK` on subsequent updates. See the Tenant Identity tag
@@ -86,7 +86,7 @@ func (a *TenantIdentityAPIService) CreateOrUpdateTenantIdentityConfigExecute(r A
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/identity/config"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/tenant-identity/config"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteID"+"}", url.PathEscape(parameterValueToString(r.siteID, "siteID")), -1)
 
@@ -234,7 +234,7 @@ workload tokens directly.
 
 User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
 
-Requires a pre-existing `/identity/config` on this org/site
+Requires a pre-existing `/tenant-identity/config` on this org/site
 (returns `404` otherwise). Because PUT is full-replace, omitting
 `clientSecretBasic` on an update clears any stored credentials
 and switches the org back to no-auth; re-supply `clientId` /
@@ -272,7 +272,7 @@ func (a *TenantIdentityAPIService) CreateOrUpdateTenantIdentityTokenDelegationEx
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/identity/token-delegation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteID"+"}", url.PathEscape(parameterValueToString(r.siteID, "siteID")), -1)
 
@@ -443,7 +443,7 @@ func (a *TenantIdentityAPIService) DeleteTenantIdentityConfigExecute(r ApiDelete
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/identity/config"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/tenant-identity/config"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteID"+"}", url.PathEscape(parameterValueToString(r.siteID, "siteID")), -1)
 
@@ -597,7 +597,7 @@ func (a *TenantIdentityAPIService) DeleteTenantIdentityTokenDelegationExecute(r 
 		return nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/identity/token-delegation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteID"+"}", url.PathEscape(parameterValueToString(r.siteID, "siteID")), -1)
 
@@ -1215,7 +1215,7 @@ func (a *TenantIdentityAPIService) GetTenantIdentityConfigExecute(r ApiGetTenant
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/identity/config"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/tenant-identity/config"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteID"+"}", url.PathEscape(parameterValueToString(r.siteID, "siteID")), -1)
 
@@ -1381,7 +1381,7 @@ func (a *TenantIdentityAPIService) GetTenantIdentityTokenDelegationExecute(r Api
 		return localVarReturnValue, nil, &GenericOpenAPIError{error: err.Error()}
 	}
 
-	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/identity/token-delegation"
+	localVarPath := localBasePath + "/v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation"
 	localVarPath = strings.Replace(localVarPath, "{"+"org"+"}", url.PathEscape(parameterValueToString(r.org, "org")), -1)
 	localVarPath = strings.Replace(localVarPath, "{"+"siteID"+"}", url.PathEscape(parameterValueToString(r.siteID, "siteID")), -1)
 

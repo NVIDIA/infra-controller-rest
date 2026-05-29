@@ -70,7 +70,7 @@ func putStatusFromTimestamps(createdAt, updatedAt *timestamppb.Timestamp) int {
 
 // ~~~~~ Create Or Update Handler ~~~~~ //
 
-// CreateOrUpdateTenantIdentityConfigHandler handles PUT /identity/config.
+// CreateOrUpdateTenantIdentityConfigHandler handles PUT /tenant-identity/config.
 type CreateOrUpdateTenantIdentityConfigHandler struct {
 	dbSession  *cdb.Session
 	scp        *sc.ClientPool
@@ -99,7 +99,7 @@ func NewCreateOrUpdateTenantIdentityConfigHandler(dbSession *cdb.Session, scp *s
 // @Success 201 {object} model.APITenantIdentityConfig "Config created on first call"
 // @Success 200 {object} model.APITenantIdentityConfig "Config replaced/updated"
 // @Failure 503 {object} util.APIError
-// @Router /v2/org/{org}/nico/site/{siteID}/identity/config [put]
+// @Router /v2/org/{org}/nico/site/{siteID}/tenant-identity/config [put]
 func (umich CreateOrUpdateTenantIdentityConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantIdentity", "CreateOrUpdate", c, umich.tracerSpan)
 	if handlerSpan != nil {
@@ -169,7 +169,7 @@ func (umich CreateOrUpdateTenantIdentityConfigHandler) Handle(c echo.Context) er
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to hash request payload", nil)
 	}
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-create-or-update-config-" + org + "-" + site.ID.String() + "-" + hash,
+		ID:                       "tenant-identity-config-create-or-update-" + org + "-" + site.ID.String() + "-" + hash,
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -178,7 +178,7 @@ func (umich CreateOrUpdateTenantIdentityConfigHandler) Handle(c echo.Context) er
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := temporalClient.ExecuteWorkflow(ctx, workflowOptions, "SetTenantIdentityConfiguration", protoRequest)
+	we, err := temporalClient.ExecuteWorkflow(ctx, workflowOptions, "CreateOrUpdateTenantIdentityConfiguration", protoRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create or update Tenant Identity Config")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to start workflow to create or update Tenant Identity Config", nil)
@@ -192,7 +192,7 @@ func (umich CreateOrUpdateTenantIdentityConfigHandler) Handle(c echo.Context) er
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, temporalClient, wid, err, "TenantIdentity", "SetTenantIdentityConfiguration")
+			return common.TerminateWorkflowOnTimeOut(c, logger, temporalClient, wid, err, "TenantIdentity", "CreateOrUpdateTenantIdentityConfiguration")
 		}
 
 		code, unwrapped := common.UnwrapWorkflowError(err)
@@ -208,7 +208,7 @@ func (umich CreateOrUpdateTenantIdentityConfigHandler) Handle(c echo.Context) er
 
 // ~~~~~ Get Handler ~~~~~ //
 
-// GetTenantIdentityConfigHandler handles GET /identity/config.
+// GetTenantIdentityConfigHandler handles GET /tenant-identity/config.
 type GetTenantIdentityConfigHandler struct {
 	dbSession  *cdb.Session
 	scp        *sc.ClientPool
@@ -233,7 +233,7 @@ func NewGetTenantIdentityConfigHandler(dbSession *cdb.Session, scp *sc.ClientPoo
 // @Param org path string true "Name of NGC organization"
 // @Param siteID path string true "ID of Site"
 // @Success 200 {object} model.APITenantIdentityConfig
-// @Router /v2/org/{org}/nico/site/{siteID}/identity/config [get]
+// @Router /v2/org/{org}/nico/site/{siteID}/tenant-identity/config [get]
 func (gmich GetTenantIdentityConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantIdentity", "Get", c, gmich.tracerSpan)
 	if handlerSpan != nil {
@@ -288,7 +288,7 @@ func (gmich GetTenantIdentityConfigHandler) Handle(c echo.Context) error {
 	protoRequest := &cwssaws.GetTenantIdentityConfigRequest{OrganizationId: org}
 
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-get-config-" + org + "-" + site.ID.String(),
+		ID:                       "tenant-identity-config-get-" + org + "-" + site.ID.String(),
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -326,7 +326,7 @@ func (gmich GetTenantIdentityConfigHandler) Handle(c echo.Context) error {
 
 // ~~~~~ Delete Handler ~~~~~ //
 
-// DeleteTenantIdentityConfigHandler handles DELETE /identity/config.
+// DeleteTenantIdentityConfigHandler handles DELETE /tenant-identity/config.
 type DeleteTenantIdentityConfigHandler struct {
 	dbSession  *cdb.Session
 	scp        *sc.ClientPool
@@ -350,7 +350,7 @@ func NewDeleteTenantIdentityConfigHandler(dbSession *cdb.Session, scp *sc.Client
 // @Param org path string true "Name of NGC organization"
 // @Param siteID path string true "ID of Site"
 // @Success 204
-// @Router /v2/org/{org}/nico/site/{siteID}/identity/config [delete]
+// @Router /v2/org/{org}/nico/site/{siteID}/tenant-identity/config [delete]
 func (dmich DeleteTenantIdentityConfigHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantIdentity", "Delete", c, dmich.tracerSpan)
 	if handlerSpan != nil {
@@ -405,7 +405,7 @@ func (dmich DeleteTenantIdentityConfigHandler) Handle(c echo.Context) error {
 	protoRequest := &cwssaws.GetTenantIdentityConfigRequest{OrganizationId: org}
 
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-delete-config-" + org + "-" + site.ID.String(),
+		ID:                       "tenant-identity-config-delete-" + org + "-" + site.ID.String(),
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -440,7 +440,7 @@ func (dmich DeleteTenantIdentityConfigHandler) Handle(c echo.Context) error {
 
 // ~~~~~ Create Or Update Token Delegation Handler ~~~~~ //
 
-// CreateOrUpdateTenantIdentityTokenDelegationHandler handles PUT /identity/token-delegation.
+// CreateOrUpdateTenantIdentityTokenDelegationHandler handles PUT /tenant-identity/token-delegation.
 type CreateOrUpdateTenantIdentityTokenDelegationHandler struct {
 	dbSession  *cdb.Session
 	scp        *sc.ClientPool
@@ -458,7 +458,7 @@ func NewCreateOrUpdateTenantIdentityTokenDelegationHandler(dbSession *cdb.Sessio
 
 // Handle godoc
 // @Summary Create Or Update Token Delegation
-// @Description Register an RFC 8693 token exchange callback URL for the org. Requires identity/config to exist first.
+// @Description Register an RFC 8693 token exchange callback URL for the org. Requires tenant-identity/config to exist first.
 // @Tags TenantIdentity
 // @Accept json
 // @Produce json
@@ -469,7 +469,7 @@ func NewCreateOrUpdateTenantIdentityTokenDelegationHandler(dbSession *cdb.Sessio
 // @Success 201 {object} model.APITenantIdentityTokenDelegation "Token delegation created on first call"
 // @Success 200 {object} model.APITenantIdentityTokenDelegation "Token delegation replaced/updated"
 // @Failure 503 {object} util.APIError
-// @Router /v2/org/{org}/nico/site/{siteID}/identity/token-delegation [put]
+// @Router /v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation [put]
 func (utdh CreateOrUpdateTenantIdentityTokenDelegationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantIdentityTokenDelegation", "CreateOrUpdate", c, utdh.tracerSpan)
 	if handlerSpan != nil {
@@ -539,7 +539,7 @@ func (utdh CreateOrUpdateTenantIdentityTokenDelegationHandler) Handle(c echo.Con
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to hash request payload", nil)
 	}
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-create-or-update-token-delegation-" + org + "-" + site.ID.String() + "-" + hash,
+		ID:                       "tenant-identity-token-delegation-create-or-update-" + org + "-" + site.ID.String() + "-" + hash,
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -548,7 +548,7 @@ func (utdh CreateOrUpdateTenantIdentityTokenDelegationHandler) Handle(c echo.Con
 	ctx, cancel := context.WithTimeout(ctx, cutil.WorkflowContextTimeout)
 	defer cancel()
 
-	we, err := temporalClient.ExecuteWorkflow(ctx, workflowOptions, "SetTenantIdentityTokenDelegation", protoRequest)
+	we, err := temporalClient.ExecuteWorkflow(ctx, workflowOptions, "CreateOrUpdateTenantIdentityTokenDelegation", protoRequest)
 	if err != nil {
 		logger.Error().Err(err).Msg("failed to synchronously start Temporal workflow to create or update Token Delegation")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to start workflow to create or update Token Delegation", nil)
@@ -562,7 +562,7 @@ func (utdh CreateOrUpdateTenantIdentityTokenDelegationHandler) Handle(c echo.Con
 	if err != nil {
 		var timeoutErr *tp.TimeoutError
 		if errors.As(err, &timeoutErr) || err == context.DeadlineExceeded || ctx.Err() != nil {
-			return common.TerminateWorkflowOnTimeOut(c, logger, temporalClient, wid, err, "TenantIdentityTokenDelegation", "SetTenantIdentityTokenDelegation")
+			return common.TerminateWorkflowOnTimeOut(c, logger, temporalClient, wid, err, "TenantIdentityTokenDelegation", "CreateOrUpdateTenantIdentityTokenDelegation")
 		}
 
 		code, unwrapped := common.UnwrapWorkflowError(err)
@@ -578,7 +578,7 @@ func (utdh CreateOrUpdateTenantIdentityTokenDelegationHandler) Handle(c echo.Con
 
 // ~~~~~ Get Token Delegation Handler ~~~~~ //
 
-// GetTenantIdentityTokenDelegationHandler handles GET /identity/token-delegation.
+// GetTenantIdentityTokenDelegationHandler handles GET /tenant-identity/token-delegation.
 type GetTenantIdentityTokenDelegationHandler struct {
 	dbSession  *cdb.Session
 	scp        *sc.ClientPool
@@ -603,7 +603,7 @@ func NewGetTenantIdentityTokenDelegationHandler(dbSession *cdb.Session, scp *sc.
 // @Param org path string true "Name of NGC organization"
 // @Param siteID path string true "ID of Site"
 // @Success 200 {object} model.APITenantIdentityTokenDelegation
-// @Router /v2/org/{org}/nico/site/{siteID}/identity/token-delegation [get]
+// @Router /v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation [get]
 func (gtdh GetTenantIdentityTokenDelegationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantIdentityTokenDelegation", "Get", c, gtdh.tracerSpan)
 	if handlerSpan != nil {
@@ -658,7 +658,7 @@ func (gtdh GetTenantIdentityTokenDelegationHandler) Handle(c echo.Context) error
 	protoRequest := &cwssaws.GetTokenDelegationRequest{OrganizationId: org}
 
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-get-token-delegation-" + org + "-" + site.ID.String(),
+		ID:                       "tenant-identity-token-delegation-get-" + org + "-" + site.ID.String(),
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -696,7 +696,7 @@ func (gtdh GetTenantIdentityTokenDelegationHandler) Handle(c echo.Context) error
 
 // ~~~~~ Delete Token Delegation Handler ~~~~~ //
 
-// DeleteTenantIdentityTokenDelegationHandler handles DELETE /identity/token-delegation.
+// DeleteTenantIdentityTokenDelegationHandler handles DELETE /tenant-identity/token-delegation.
 type DeleteTenantIdentityTokenDelegationHandler struct {
 	dbSession  *cdb.Session
 	scp        *sc.ClientPool
@@ -720,7 +720,7 @@ func NewDeleteTenantIdentityTokenDelegationHandler(dbSession *cdb.Session, scp *
 // @Param org path string true "Name of NGC organization"
 // @Param siteID path string true "ID of Site"
 // @Success 204
-// @Router /v2/org/{org}/nico/site/{siteID}/identity/token-delegation [delete]
+// @Router /v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation [delete]
 func (dtdh DeleteTenantIdentityTokenDelegationHandler) Handle(c echo.Context) error {
 	org, dbUser, ctx, logger, handlerSpan := common.SetupHandler("TenantIdentityTokenDelegation", "Delete", c, dtdh.tracerSpan)
 	if handlerSpan != nil {
@@ -775,7 +775,7 @@ func (dtdh DeleteTenantIdentityTokenDelegationHandler) Handle(c echo.Context) er
 	protoRequest := &cwssaws.GetTokenDelegationRequest{OrganizationId: org}
 
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-delete-token-delegation-" + org + "-" + site.ID.String(),
+		ID:                       "tenant-identity-token-delegation-delete-" + org + "-" + site.ID.String(),
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -882,7 +882,7 @@ func (gjwksh GetJWKSHandler) Handle(c echo.Context) error {
 	protoRequest := &cwssaws.JwksRequest{OrganizationId: org, Kind: &kind}
 
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-get-jwks-" + org + "-" + site.ID.String() + "-" + kind.String(),
+		ID:                       "tenant-identity-jwks-get-" + org + "-" + site.ID.String() + "-" + kind.String(),
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,
@@ -1005,7 +1005,7 @@ func (goidch GetOpenIDConfigurationHandler) Handle(c echo.Context) error {
 	protoRequest := &cwssaws.OpenIdConfigRequest{OrganizationId: org}
 
 	workflowOptions := tclient.StartWorkflowOptions{
-		ID:                       "tenant-identity-get-oidc-" + org + "-" + site.ID.String(),
+		ID:                       "tenant-identity-openid-configuration-get-" + org + "-" + site.ID.String(),
 		WorkflowExecutionTimeout: cutil.WorkflowExecutionTimeout,
 		TaskQueue:                queue.SiteTaskQueue,
 		WorkflowIDConflictPolicy: temporalEnums.WORKFLOW_ID_CONFLICT_POLICY_USE_EXISTING,

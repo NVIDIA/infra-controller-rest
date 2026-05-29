@@ -26,7 +26,7 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 )
 
-// APITenantIdentityConfigCreateOrUpdateRequest is the PUT /identity/config body.
+// APITenantIdentityConfigCreateOrUpdateRequest is the PUT /tenant-identity/config body.
 type APITenantIdentityConfigCreateOrUpdateRequest struct {
 	Enabled                  *bool    `json:"enabled"`
 	Issuer                   string   `json:"issuer"`
@@ -115,7 +115,7 @@ type APITenantIdentitySigningKey struct {
 	ExpireAt      *time.Time `json:"expireAt"`
 }
 
-// APITenantIdentityConfig is the GET /identity/config response body.
+// APITenantIdentityConfig is the GET /tenant-identity/config response body.
 type APITenantIdentityConfig struct {
 	Org              string                        `json:"org"`
 	Enabled          bool                          `json:"enabled"`
@@ -174,7 +174,7 @@ type APITenantIdentityBasicClientSecretResponse struct {
 	ClientSecretHash string `json:"clientSecretHash"`
 }
 
-// APITenantIdentityTokenDelegationCreateOrUpdateRequest is the PUT /identity/token-delegation body.
+// APITenantIdentityTokenDelegationCreateOrUpdateRequest is the PUT /tenant-identity/token-delegation body.
 type APITenantIdentityTokenDelegationCreateOrUpdateRequest struct {
 	TokenEndpoint        string                                     `json:"tokenEndpoint"`
 	ClientSecretBasic    *APITenantIdentityBasicClientSecretRequest `json:"clientSecretBasic,omitempty"`
@@ -220,7 +220,7 @@ func (req APITenantIdentityTokenDelegationCreateOrUpdateRequest) ToProto(org str
 	}
 }
 
-// APITenantIdentityTokenDelegation is the GET /identity/token-delegation response body.
+// APITenantIdentityTokenDelegation is the GET /tenant-identity/token-delegation response body.
 type APITenantIdentityTokenDelegation struct {
 	TokenEndpoint        string                                      `json:"tokenEndpoint"`
 	ClientSecretBasic    *APITenantIdentityBasicClientSecretResponse `json:"clientSecretBasic,omitempty"`

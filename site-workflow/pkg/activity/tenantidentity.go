@@ -41,12 +41,12 @@ func NewManageTenantIdentity(carbideClient *client.CoreGrpcAtomicClient) ManageT
 	}
 }
 
-// SetTenantIdentityConfigurationOnSite is an activity to create or update Tenant Identity Config using Core gRPC API
-func (m *ManageTenantIdentity) SetTenantIdentityConfigurationOnSite(
+// CreateOrUpdateTenantIdentityConfigurationOnSite is an activity to create or update Tenant Identity Config using Core gRPC API
+func (m *ManageTenantIdentity) CreateOrUpdateTenantIdentityConfigurationOnSite(
 	ctx context.Context,
 	request *cwssaws.SetTenantIdentityConfigRequest,
 ) (*cwssaws.TenantIdentityConfigResponse, error) {
-	logger := log.With().Str("Activity", "SetTenantIdentityConfigurationOnSite").Logger()
+	logger := log.With().Str("Activity", "CreateOrUpdateTenantIdentityConfigurationOnSite").Logger()
 	logger.Info().Msg("Starting activity")
 
 	if request == nil {
@@ -141,12 +141,12 @@ func (m *ManageTenantIdentity) DeleteTenantIdentityConfigurationOnSite(
 	return response, nil
 }
 
-// SetTenantIdentityTokenDelegationOnSite is an activity to create or update Token Delegation using Core gRPC API
-func (m *ManageTenantIdentity) SetTenantIdentityTokenDelegationOnSite(
+// CreateOrUpdateTenantIdentityTokenDelegationOnSite is an activity to create or update Token Delegation using Core gRPC API
+func (m *ManageTenantIdentity) CreateOrUpdateTenantIdentityTokenDelegationOnSite(
 	ctx context.Context,
 	request *cwssaws.TokenDelegationRequest,
 ) (*cwssaws.TokenDelegationResponse, error) {
-	logger := log.With().Str("Activity", "SetTenantIdentityTokenDelegationOnSite").Logger()
+	logger := log.With().Str("Activity", "CreateOrUpdateTenantIdentityTokenDelegationOnSite").Logger()
 	logger.Info().Msg("Starting activity")
 
 	if request == nil {
