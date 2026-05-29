@@ -9,6 +9,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
+	cauth "github.com/NVIDIA/infra-controller-rest/auth/pkg/config"
 	cutil "github.com/NVIDIA/infra-controller-rest/common/pkg/util"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
@@ -51,16 +52,7 @@ func (gcsah GetCurrentServiceAccountHandler) Handle(c echo.Context) error {
 	if dbUser == nil {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve current user", nil)
 	}
-
-	// Check if service account is enabled for at least one auth configuration
-	serviceAccountEnabled := false
-	jwtOriginConfigs := gcsah.cfg.GetOrInitJWTOriginConfig()
-	for _, jwtOriginConfig := range jwtOriginConfigs.GetAllConfigs() {
-		if jwtOriginConfig.ServiceAccount {
-			serviceAccountEnabled = true
-			break
-		}
-	}
+	serviceAccountEnabled := cauth.GetIsServiceAccountFromContext(c)
 
 	if !serviceAccountEnabled {
 		logger.Info().Msg("service account is disabled for this org")
