@@ -381,14 +381,12 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "VPC specified in request data is not ready", nil)
 	}
 
-	// `auto` is the explicit signal that an Instance lives on a zero-DPU
-	// host (or a host with its DPU in NIC mode); those instances must be
-	// in a Flat VPC. Core also rejects this combination, but we surface
-	// the error here as defense in depth and to avoid round-tripping the
-	// site for an obviously bad request.
-	if apiRequest.Auto && !cdbm.VpcTypeSupportsAutoInterface(vpc.NetworkVirtualizationType) {
-		logger.Warn().Msg("auto-network instances may only be created in a Flat VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`auto` is only supported when the VPC has `networkVirtualizationType` set to `FLAT`", nil)
+	// Validate request fields that depend on the resolved VPC (e.g.
+	// `autoNetwork` requires a Flat VPC).
+	verr = apiRequest.ValidateForVpc(vpc)
+	if verr != nil {
+		logger.Warn().Err(verr).Msg("error validating Instance creation request against VPC")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Instance creation request data", verr)
 	}
 
 	var defaultNvllpID *uuid.UUID
@@ -1288,7 +1286,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 			AlwaysBootWithCustomIpxe: *apiRequest.AlwaysBootWithCustomIpxe,
 			PhoneHomeEnabled:         *apiRequest.PhoneHomeEnabled,
 			UserData:                 apiRequest.UserData,
-			NetworkAuto:              apiRequest.Auto,
+			AutoNetwork:              apiRequest.AutoNetwork,
 			NetworkSecurityGroupID:   apiRequest.NetworkSecurityGroupID,
 			Labels:                   apiRequest.Labels,
 			IsUpdatePending:          false,
@@ -1313,7 +1311,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 		// Update the controller ID
 		// We need this to match the instance ID.  This was previously handled
 		// by the async cloud workflow after successful creation on site.
-		instance, derr = instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommon: cdbm.InstanceUpdateCommon{ControllerInstanceID: cdb.GetUUIDPtr(instance.ID)}})
+		instance, derr = instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{ControllerInstanceID: cdb.GetUUIDPtr(instance.ID)}})
 		if derr != nil {
 			logger.Error().Err(derr).Msg("unable to update Instance record controllerInstanceID in DB")
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed updating new Instance record, DB error", nil)
@@ -1580,7 +1578,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 					TenantKeysetIds:      instanceSshKeyGroupIds,
 				},
 				Os:      osConfig,
-				Network: buildInstanceNetworkConfig(instance.NetworkAuto, interfaceConfigs),
+				Network: buildInstanceNetworkConfig(instance.AutoNetwork, interfaceConfigs),
 				Infiniband: &cwssaws.InstanceInfinibandConfig{
 					IbInterfaces: ibInterfaceConfigs,
 				},
@@ -1731,7 +1729,7 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 		ui, derr = instanceDAO.Update(ctx, tx,
 			cdbm.InstanceUpdateInput{
 				InstanceID: instance.ID,
-				InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+				InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 					Name:        apiRequest.Name,
 					Description: apiRequest.Description,
 					PowerStatus: powerStatus,
@@ -2169,32 +2167,14 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusConflict, "Instance is terminating and cannot be updated", nil)
 	}
 
-	// `auto: true` (re-)resolves interfaces from the host's HostInband
-	// segments; this only makes sense in a Flat VPC. Core also rejects
-	// this combination, but we surface the error here as defense in
-	// depth and to avoid round-tripping the site for an obviously bad
-	// request. `auto: false` is permitted on any VPC type (it's the
-	// default state).
-	if apiRequest.Auto != nil && *apiRequest.Auto && !cdbm.VpcTypeSupportsAutoInterface(vpc.NetworkVirtualizationType) {
-		logger.Warn().Msg("auto-network update is only valid for instances in a Flat VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`auto: true` is only supported when the Instance's VPC has `networkVirtualizationType` set to `FLAT`", nil)
-	}
-
-	// Reject explicit `interfaces` when the effective post-update state
-	// would still have auto enabled. `effectiveAuto` is the request's
-	// value when supplied, otherwise the instance's currently-persisted
-	// state. Validation already rejects (auto=true, interfaces=[...]) in
-	// the same payload, but a PATCH that omits `auto` against an
-	// already-auto instance would otherwise slip past and persist
-	// Interface rows that `buildInstanceNetworkConfig` then drops from
-	// the workflow payload -- leaving DB/site state diverged.
-	effectiveAuto := instance.NetworkAuto
-	if apiRequest.Auto != nil {
-		effectiveAuto = *apiRequest.Auto
-	}
-	if effectiveAuto && len(apiRequest.Interfaces) > 0 {
-		logger.Warn().Msg("explicit interfaces cannot be updated while the instance remains in auto mode")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`interfaces` cannot be set while `auto` is true; disable `auto` first or omit `interfaces`", nil)
+	// Validate network fields that depend on the resolved VPC and the
+	// Instance's currently-persisted auto state (e.g. `autoNetwork: true`
+	// requires a Flat VPC; explicit interfaces can't be set while the
+	// effective post-update auto state is true).
+	verr = apiRequest.ValidateForVpc(vpc, instance.AutoNetwork)
+	if verr != nil {
+		logger.Warn().Err(verr).Msg("error validating Instance update request against VPC")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Instance update request data", verr)
 	}
 
 	if instance.IsMissingOnSite {
@@ -2813,7 +2793,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		ui, derr = instanceDAO.Update(ctx, tx,
 			cdbm.InstanceUpdateInput{
 				InstanceID: instanceID,
-				InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+				InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 					Name:                     apiRequest.Name,
 					Description:              apiRequest.Description,
 					OperatingSystemID:        osID,
@@ -2823,7 +2803,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					PhoneHomeEnabled:         apiRequest.PhoneHomeEnabled,
 					Status:                   instanceStatusConfiguring,
 					UserData:                 apiRequest.UserData,
-					NetworkAuto:              apiRequest.Auto,
+					AutoNetwork:              apiRequest.AutoNetwork,
 					Labels:                   apiRequest.Labels,
 				},
 			},
@@ -3003,7 +2983,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		// Create new Interface records in the DB if specified in request.
 		//
 		// Three branches:
-		//   - Switching to auto mode (`ui.NetworkAuto && len(apiRequest.Interfaces) == 0`):
+		//   - Switching to auto mode (`ui.AutoNetwork && len(apiRequest.Interfaces) == 0`):
 		//     mark every prior explicit interface row as Deleting and
 		//     return an empty list. Reads after this should reflect the
 		//     auto contract (no explicit interfaces) rather than the
@@ -3013,7 +2993,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		//   - Neither (no interface change, not switching to auto):
 		//     carry the existing rows forward.
 		switch {
-		case ui.NetworkAuto && len(apiRequest.Interfaces) == 0:
+		case ui.AutoNetwork && len(apiRequest.Interfaces) == 0:
 			for i := range existingIfcs {
 				existingIfcs[i].Status = cdbm.InterfaceStatusDeleting
 				_, err := ifcDAO.Update(ctx, tx, cdbm.InterfaceUpdateInput{InterfaceID: existingIfcs[i].ID, Status: cdb.GetStrPtr(cdbm.InterfaceStatusDeleting)})
@@ -3539,7 +3519,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					TenantKeysetIds:      instanceSshKeyGroupIds,
 				},
 				Os:      osConfig,
-				Network: buildInstanceNetworkConfig(ui.NetworkAuto, interfaceConfigs),
+				Network: buildInstanceNetworkConfig(ui.AutoNetwork, interfaceConfigs),
 				Infiniband: &cwssaws.InstanceInfinibandConfig{
 					IbInterfaces: ibInterfaceConfigs,
 				},
@@ -4719,7 +4699,7 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 
 	err = cdb.WithTx(ctx, dih.dbSession, func(tx *cdb.Tx) error {
 		// Update Instance to set status to Deleting
-		_, derr := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommon: cdbm.InstanceUpdateCommon{Status: cdb.GetStrPtr(cdbm.InstanceStatusTerminating)}})
+		_, derr := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{Status: cdb.GetStrPtr(cdbm.InstanceStatusTerminating)}})
 		if derr != nil {
 			logger.Error().Err(derr).Msg("error updating Instance in DB")
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Instance", nil)

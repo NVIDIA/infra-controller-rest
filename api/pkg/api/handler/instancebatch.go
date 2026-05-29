@@ -419,14 +419,12 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "VPC specified in request data is not ready", nil)
 	}
 
-	// `auto` is the explicit signal that an Instance lives on a zero-DPU
-	// host (or a host with its DPU in NIC mode); those instances must be
-	// in a Flat VPC. Core also rejects this combination, but we surface
-	// the error here as defense in depth and to avoid round-tripping the
-	// site for an obviously bad request.
-	if apiRequest.Auto && !cdbm.VpcTypeSupportsAutoInterface(vpc.NetworkVirtualizationType) {
-		logger.Warn().Msg("auto-network instances may only be created in a Flat VPC")
-		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`auto` is only supported when the VPC has `networkVirtualizationType` set to `FLAT`", nil)
+	// Validate request fields that depend on the resolved VPC (e.g.
+	// `autoNetwork` requires a Flat VPC).
+	verr = apiRequest.ValidateForVpc(vpc)
+	if verr != nil {
+		logger.Warn().Err(verr).Msg("error validating batch Instance creation request against VPC")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating batch Instance creation request data", verr)
 	}
 
 	var defaultNvllpID *uuid.UUID
@@ -1249,7 +1247,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 			AlwaysBootWithCustomIpxe: *apiRequest.AlwaysBootWithCustomIpxe,
 			PhoneHomeEnabled:         *apiRequest.PhoneHomeEnabled,
 			UserData:                 apiRequest.UserData,
-			NetworkAuto:              apiRequest.Auto,
+			AutoNetwork:              apiRequest.AutoNetwork,
 			NetworkSecurityGroupID:   apiRequest.NetworkSecurityGroupID,
 			Labels:                   apiRequest.Labels,
 			InstanceTypeID:           &apiInstanceTypeID,
@@ -1280,7 +1278,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	for _, inst := range createdInstances {
 		updated, uerr := inDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{
 			InstanceID: inst.ID,
-			InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 				ControllerInstanceID: cdb.GetUUIDPtr(inst.ID),
 			},
 		})
@@ -1645,7 +1643,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 					TenantKeysetIds:      instanceSshKeyGroupIds,
 				},
 				Os:      osConfig,
-				Network: buildInstanceNetworkConfig(instance.NetworkAuto, data.interfaceConfigs),
+				Network: buildInstanceNetworkConfig(instance.AutoNetwork, data.interfaceConfigs),
 				Infiniband: &cwssaws.InstanceInfinibandConfig{
 					IbInterfaces: data.ibInterfaceConfigs,
 				},

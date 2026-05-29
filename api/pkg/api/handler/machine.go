@@ -1418,7 +1418,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 				_, derr = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
 					InstanceID: inst.ID,
-					InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+					InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 						Status: cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
 						Labels: instanceLabels,
 					},
@@ -1494,7 +1494,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 
 				_, derr = iDAO.Update(ctx, orTx, cdbm.InstanceUpdateInput{
 					InstanceID: inst.ID,
-					InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+					InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 						Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
 						Labels: instanceLabels,
 					},

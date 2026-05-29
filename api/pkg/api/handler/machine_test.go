@@ -1813,7 +1813,7 @@ func TestMachineHandler_Update(t *testing.T) {
 		t.Helper()
 		_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 			InstanceID: iOnlineRepairReady.ID,
-			InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 				Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
 				Labels: map[string]string{},
 			},
@@ -1825,7 +1825,7 @@ func TestMachineHandler_Update(t *testing.T) {
 		t.Helper()
 		_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 			InstanceID: iOnlineRepairReady.ID,
-			InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 				Status: cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
 				Labels: map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
 			},
@@ -2575,7 +2575,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					t.Helper()
 					_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 						InstanceID: iOnlineRepairReady.ID,
-						InstanceUpdateCommon: cdbm.InstanceUpdateCommon{
+						InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
 							Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
 							Labels: map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
 						},

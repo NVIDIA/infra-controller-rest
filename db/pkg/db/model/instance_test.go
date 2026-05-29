@@ -1584,7 +1584,7 @@ type InstanceWithAllocation struct {
 	AlwaysBootWithCustomIpxe               bool                                    `bun:"always_boot_with_custom_ipxe,notnull"`
 	PhoneHomeEnabled                       bool                                    `bun:"phone_home_enabled,notnull"`
 	UserData                               *string                                 `bun:"user_data"`
-	NetworkAuto                            bool                                    `bun:"network_auto,notnull"`
+	AutoNetwork                            bool                                    `bun:"auto_network,notnull"`
 	Labels                                 map[string]string                       `bun:"labels,type:jsonb"`
 	IsUpdatePending                        bool                                    `bun:"is_update_pending,notnull"`
 	InfinityRCRStatus                      *string                                 `bun:"infinity_rcr_status"`
@@ -2504,7 +2504,7 @@ func TestInstanceSQLDAO_Update(t *testing.T) {
 			got, err := isd.Update(ctx, nil,
 				InstanceUpdateInput{
 					InstanceID: tc.id,
-					InstanceUpdateCommon: InstanceUpdateCommon{
+					InstanceUpdateCommonInput: InstanceUpdateCommonInput{
 						Name:                                   tc.paramName,
 						Description:                            tc.paramDescription,
 						TenantID:                               tc.paramTenantID,
@@ -3200,7 +3200,7 @@ func TestInstanceSQLDAO_UpdateMultiple(t *testing.T) {
 			desc: "batch update three instances with shared patch",
 			input: InstanceUpdateMultipleInput{
 				InstanceIDs: []uuid.UUID{i1.ID, i2.ID, i3.ID},
-				InstanceUpdateCommon: InstanceUpdateCommon{
+				InstanceUpdateCommonInput: InstanceUpdateCommonInput{
 					Status:            db.GetStrPtr(InstanceStatusReady),
 					MachineID:         &machine.ID,
 					OperatingSystemID: db.GetUUIDPtr(operatingSystem.ID),
@@ -3222,7 +3222,7 @@ func TestInstanceSQLDAO_UpdateMultiple(t *testing.T) {
 			desc: "batch update single instance via slice of one",
 			input: InstanceUpdateMultipleInput{
 				InstanceIDs: []uuid.UUID{i1.ID},
-				InstanceUpdateCommon: InstanceUpdateCommon{
+				InstanceUpdateCommonInput: InstanceUpdateCommonInput{
 					Status: db.GetStrPtr(InstanceStatusUpdating),
 				},
 			},
@@ -3274,8 +3274,8 @@ func TestInstanceSQLDAO_UpdateMultiple_ExceedsMaxBatchItems(t *testing.T) {
 		ids[i] = uuid.New()
 	}
 	input := InstanceUpdateMultipleInput{
-		InstanceIDs:          ids,
-		InstanceUpdateCommon: InstanceUpdateCommon{Name: db.GetStrPtr("test")},
+		InstanceIDs:               ids,
+		InstanceUpdateCommonInput: InstanceUpdateCommonInput{Name: db.GetStrPtr("test")},
 	}
 
 	_, err := isd.UpdateMultiple(ctx, nil, input)
@@ -3297,8 +3297,8 @@ func TestInstanceSQLDAO_UpdateMultiple_RejectsDuplicateIDs(t *testing.T) {
 
 	dupID := uuid.New()
 	input := InstanceUpdateMultipleInput{
-		InstanceIDs:          []uuid.UUID{dupID, uuid.New(), dupID},
-		InstanceUpdateCommon: InstanceUpdateCommon{Status: db.GetStrPtr(InstanceStatusReady)},
+		InstanceIDs:               []uuid.UUID{dupID, uuid.New(), dupID},
+		InstanceUpdateCommonInput: InstanceUpdateCommonInput{Status: db.GetStrPtr(InstanceStatusReady)},
 	}
 
 	_, err := isd.UpdateMultiple(ctx, nil, input)
@@ -3452,7 +3452,7 @@ func TestInstanceSQLDAO_UpdateMultiple_AllFields(t *testing.T) {
 	// mask to a single-ID slice.
 	input := InstanceUpdateMultipleInput{
 		InstanceIDs: []uuid.UUID{instance.ID},
-		InstanceUpdateCommon: InstanceUpdateCommon{
+		InstanceUpdateCommonInput: InstanceUpdateCommonInput{
 			Name:                     db.GetStrPtr("updated-instance-name"),
 			Description:              db.GetStrPtr("updated description"),
 			TenantID:                 &tenant.ID,

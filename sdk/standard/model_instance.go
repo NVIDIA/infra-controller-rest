@@ -73,7 +73,7 @@ type Instance struct {
 	// Serial Console URL for the Instance. Format: ssh://<id>@siteSerialConsoleHostname
 	SerialConsoleUrl NullableString `json:"serialConsoleUrl,omitempty"`
 	// True when this Instance uses NICo auto-resolved networking from the host's underlay (HostInband) network segments. When true, the caller's request `interfaces` list was empty, this `interfaces` field remains empty on readback, and the resolved per-interface details surface under `status.network.interfaces`.
-	Auto                 *bool                 `json:"auto,omitempty"`
+	AutoNetwork          *bool                 `json:"autoNetwork,omitempty"`
 	Interfaces           []Interface           `json:"interfaces,omitempty"`
 	InfinibandInterfaces []InfiniBandInterface `json:"infinibandInterfaces,omitempty"`
 	NvLinkInterfaces     []NVLinkInterface     `json:"nvLinkInterfaces,omitempty"`
@@ -912,36 +912,36 @@ func (o *Instance) UnsetSerialConsoleUrl() {
 	o.SerialConsoleUrl.Unset()
 }
 
-// GetAuto returns the Auto field value if set, zero value otherwise.
-func (o *Instance) GetAuto() bool {
-	if o == nil || IsNil(o.Auto) {
+// GetAutoNetwork returns the AutoNetwork field value if set, zero value otherwise.
+func (o *Instance) GetAutoNetwork() bool {
+	if o == nil || IsNil(o.AutoNetwork) {
 		var ret bool
 		return ret
 	}
-	return *o.Auto
+	return *o.AutoNetwork
 }
 
-// GetAutoOk returns a tuple with the Auto field value if set, nil otherwise
+// GetAutoNetworkOk returns a tuple with the AutoNetwork field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Instance) GetAutoOk() (*bool, bool) {
-	if o == nil || IsNil(o.Auto) {
+func (o *Instance) GetAutoNetworkOk() (*bool, bool) {
+	if o == nil || IsNil(o.AutoNetwork) {
 		return nil, false
 	}
-	return o.Auto, true
+	return o.AutoNetwork, true
 }
 
-// HasAuto returns a boolean if a field has been set.
-func (o *Instance) HasAuto() bool {
-	if o != nil && !IsNil(o.Auto) {
+// HasAutoNetwork returns a boolean if a field has been set.
+func (o *Instance) HasAutoNetwork() bool {
+	if o != nil && !IsNil(o.AutoNetwork) {
 		return true
 	}
 
 	return false
 }
 
-// SetAuto gets a reference to the given bool and assigns it to the Auto field.
-func (o *Instance) SetAuto(v bool) {
-	o.Auto = &v
+// SetAutoNetwork gets a reference to the given bool and assigns it to the AutoNetwork field.
+func (o *Instance) SetAutoNetwork(v bool) {
+	o.AutoNetwork = &v
 }
 
 // GetInterfaces returns the Interfaces field value if set, zero value otherwise.
@@ -1415,8 +1415,8 @@ func (o Instance) ToMap() (map[string]interface{}, error) {
 	if o.SerialConsoleUrl.IsSet() {
 		toSerialize["serialConsoleUrl"] = o.SerialConsoleUrl.Get()
 	}
-	if !IsNil(o.Auto) {
-		toSerialize["auto"] = o.Auto
+	if !IsNil(o.AutoNetwork) {
+		toSerialize["autoNetwork"] = o.AutoNetwork
 	}
 	if !IsNil(o.Interfaces) {
 		toSerialize["interfaces"] = o.Interfaces

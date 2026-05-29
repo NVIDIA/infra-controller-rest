@@ -176,7 +176,7 @@ type Instance struct {
 	AlwaysBootWithCustomIpxe               bool                                    `bun:"always_boot_with_custom_ipxe,notnull"`
 	PhoneHomeEnabled                       bool                                    `bun:"phone_home_enabled,notnull"`
 	UserData                               *string                                 `bun:"user_data"`
-	NetworkAuto                            bool                                    `bun:"network_auto,notnull"`
+	AutoNetwork                            bool                                    `bun:"auto_network,notnull"`
 	Labels                                 map[string]string                       `bun:"labels,type:jsonb"`
 	IsUpdatePending                        bool                                    `bun:"is_update_pending,notnull"`
 	InfinityRCRStatus                      *string                                 `bun:"infinity_rcr_status"`
@@ -211,7 +211,7 @@ type InstanceCreateInput struct {
 	AlwaysBootWithCustomIpxe               bool
 	PhoneHomeEnabled                       bool
 	UserData                               *string
-	NetworkAuto                            bool
+	AutoNetwork                            bool
 	Labels                                 map[string]string
 	IsUpdatePending                        bool
 	InfinityRCRStatus                      *string
@@ -221,13 +221,13 @@ type InstanceCreateInput struct {
 	CreatedBy                              uuid.UUID
 }
 
-// InstanceUpdateCommon captures the per-field update patch shared by
+// InstanceUpdateCommonInput captures the per-field update patch shared by
 // the single-row and multi-row update paths. Every non-pointer field
 // has its zero value interpreted as "unset, do not update"; pointer
 // fields use nil to mean the same. Splitting these fields out of the
 // per-input struct lets `UpdateMultiple` apply one shared patch to a
 // slice of instance IDs.
-type InstanceUpdateCommon struct {
+type InstanceUpdateCommonInput struct {
 	Name                                   *string
 	Description                            *string
 	TenantID                               *uuid.UUID
@@ -245,7 +245,7 @@ type InstanceUpdateCommon struct {
 	AlwaysBootWithCustomIpxe               *bool
 	PhoneHomeEnabled                       *bool
 	UserData                               *string
-	NetworkAuto                            *bool
+	AutoNetwork                            *bool
 	Labels                                 map[string]string
 	IsUpdatePending                        *bool
 	InfinityRCRStatus                      *string
@@ -256,21 +256,21 @@ type InstanceUpdateCommon struct {
 }
 
 // InstanceUpdateInput input parameters for the single-row Update.
-// Embeds InstanceUpdateCommon so callers can read or assign the
+// Embeds InstanceUpdateCommonInput so callers can read or assign the
 // update fields directly without going through a nested struct.
 type InstanceUpdateInput struct {
 	InstanceID uuid.UUID
-	InstanceUpdateCommon
+	InstanceUpdateCommonInput
 }
 
 // InstanceUpdateMultipleInput input parameters for UpdateMultiple.
 // All listed instances receive the same update patch drawn from the
-// embedded InstanceUpdateCommon. Heterogeneous per-row patches are
+// embedded InstanceUpdateCommonInput. Heterogeneous per-row patches are
 // not supported -- callers that need different fields per instance
 // must issue separate calls.
 type InstanceUpdateMultipleInput struct {
 	InstanceIDs []uuid.UUID
-	InstanceUpdateCommon
+	InstanceUpdateCommonInput
 }
 
 // InstanceClearInput input parameters for Clear method
@@ -699,8 +699,8 @@ func (isd InstanceSQLDAO) Update(ctx context.Context, tx *db.Tx, input InstanceU
 	}
 
 	results, err := isd.UpdateMultiple(ctx, tx, InstanceUpdateMultipleInput{
-		InstanceIDs:          []uuid.UUID{input.InstanceID},
-		InstanceUpdateCommon: input.InstanceUpdateCommon,
+		InstanceIDs:               []uuid.UUID{input.InstanceID},
+		InstanceUpdateCommonInput: input.InstanceUpdateCommonInput,
 	})
 	if err != nil {
 		return nil, err
@@ -853,7 +853,7 @@ func (isd InstanceSQLDAO) CreateMultiple(ctx context.Context, tx *db.Tx, inputs 
 			AlwaysBootWithCustomIpxe:               input.AlwaysBootWithCustomIpxe,
 			PhoneHomeEnabled:                       input.PhoneHomeEnabled,
 			UserData:                               input.UserData,
-			NetworkAuto:                            input.NetworkAuto,
+			AutoNetwork:                            input.AutoNetwork,
 			IsUpdatePending:                        input.IsUpdatePending,
 			InfinityRCRStatus:                      input.InfinityRCRStatus,
 			TpmEkCertificate:                       input.TpmEkCertificate,
@@ -896,7 +896,7 @@ func (isd InstanceSQLDAO) CreateMultiple(ctx context.Context, tx *db.Tx, inputs 
 }
 
 // UpdateMultiple applies a single shared update patch (drawn from the
-// embedded InstanceUpdateCommon) to every instance ID in
+// embedded InstanceUpdateCommonInput) to every instance ID in
 // `input.InstanceIDs`, using one bulk UPDATE query.
 //
 // Heterogeneous per-row patches are intentionally not supported. Each
@@ -938,7 +938,7 @@ func (isd InstanceSQLDAO) UpdateMultiple(ctx context.Context, tx *db.Tx, input I
 	// bulk UPDATE will copy these values into a per-ID Instance below.
 	proto := &Instance{}
 	columns := []string{}
-	c := input.InstanceUpdateCommon
+	c := input.InstanceUpdateCommonInput
 
 	traceItems := len(input.InstanceIDs)
 	if traceItems > db.MaxBatchItemsToTrace {
@@ -1035,10 +1035,10 @@ func (isd InstanceSQLDAO) UpdateMultiple(ctx context.Context, tx *db.Tx, input I
 		columns = append(columns, "user_data")
 		trace("user_data", *c.UserData)
 	}
-	if c.NetworkAuto != nil {
-		proto.NetworkAuto = *c.NetworkAuto
-		columns = append(columns, "network_auto")
-		trace("network_auto", fmt.Sprintf("%t", *c.NetworkAuto))
+	if c.AutoNetwork != nil {
+		proto.AutoNetwork = *c.AutoNetwork
+		columns = append(columns, "auto_network")
+		trace("auto_network", fmt.Sprintf("%t", *c.AutoNetwork))
 	}
 	if c.Labels != nil {
 		proto.Labels = c.Labels

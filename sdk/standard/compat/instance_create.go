@@ -35,7 +35,7 @@ import standard "github.com/NVIDIA/infra-controller-rest/sdk/standard"
 // `interfaces` argument before that field became optional on the
 // REST API. Callers should migrate to
 // `standard.NewInstanceCreateRequest(name, tenantId, vpcId)` followed
-// by `SetInterfaces` (or `SetAuto` for zero-DPU instances).
+// by `SetInterfaces` (or `SetAutoNetwork` for zero-DPU instances).
 //
 // Deprecated: use `standard.NewInstanceCreateRequest` + `SetInterfaces`.
 func NewInstanceCreateRequestWithInterfaces(name, tenantID, vpcID string, interfaces []standard.InterfaceCreateRequest) *standard.InstanceCreateRequest {
@@ -48,7 +48,7 @@ func NewInstanceCreateRequestWithInterfaces(name, tenantID, vpcID string, interf
 // `NewBatchInstanceCreateRequest` signature, which took an explicit
 // `interfaces` argument before that field became optional. Callers
 // should migrate to `standard.NewBatchInstanceCreateRequest(...)`
-// followed by `SetInterfaces` (or `SetAuto` for zero-DPU batches).
+// followed by `SetInterfaces` (or `SetAutoNetwork` for zero-DPU batches).
 //
 // Deprecated: use `standard.NewBatchInstanceCreateRequest` + `SetInterfaces`.
 func NewBatchInstanceCreateRequestWithInterfaces(namePrefix string, count int32, tenantID, instanceTypeID, vpcID string, interfaces []standard.InterfaceCreateRequest) *standard.BatchInstanceCreateRequest {

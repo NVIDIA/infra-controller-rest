@@ -3406,13 +3406,13 @@ func TestCreateInstanceHandler_Handle(t *testing.T) {
 					VpcID:             vpc1.ID.String(),
 					OperatingSystemID: cdb.GetStrPtr(os1.ID.String()),
 					IpxeScript:        cdb.GetStrPtr(common.DefaultIpxeScript),
-					Auto:              true,
+					AutoNetwork:       true,
 					Interfaces:        []model.APIInterfaceCreateOrUpdateRequest{},
 				},
 				reqOrg:      tnOrg,
 				reqUser:     tnu1,
 				respCode:    http.StatusBadRequest,
-				respMessage: "`auto` is only supported when the VPC has `networkVirtualizationType` set to `FLAT`",
+				respMessage: "`autoNetwork` is only supported when the VPC has `networkVirtualizationType` set to `FLAT`",
 			},
 			wantErr:            false,
 			verifyChildSpanner: true,
@@ -3619,8 +3619,8 @@ func TestCreateInstanceHandler_Handle(t *testing.T) {
 func resetInstanceStatus(t *testing.T, dbSession *cdb.Session, instanceID uuid.UUID, status string) {
 	instanceDAO := cdbm.NewInstanceDAO(dbSession)
 	_, err := instanceDAO.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
-		InstanceID:           instanceID,
-		InstanceUpdateCommon: cdbm.InstanceUpdateCommon{Status: cdb.GetStrPtr(status)},
+		InstanceID:                instanceID,
+		InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{Status: cdb.GetStrPtr(status)},
 	})
 	if err != nil {
 		t.Fatalf("error updating instance status: %v", err)
@@ -4061,8 +4061,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 
 	insDAO := cdbm.NewInstanceDAO(dbSession)
 	_, err := insDAO.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
-		InstanceID:           inst14.ID,
-		InstanceUpdateCommon: cdbm.InstanceUpdateCommon{IsMissingOnSite: cdb.GetBoolPtr(true)},
+		InstanceID:                inst14.ID,
+		InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{IsMissingOnSite: cdb.GetBoolPtr(true)},
 	})
 	assert.NoError(t, err)
 
@@ -6441,13 +6441,13 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 			},
 			args: args{
 				reqData: &model.APIInstanceUpdateRequest{
-					Auto: cdb.GetBoolPtr(true),
+					AutoNetwork: cdb.GetBoolPtr(true),
 				},
 				reqInstance: inst1.ID.String(),
 				reqOrg:      tnOrg1,
 				reqUser:     tnu1,
 				respCode:    http.StatusBadRequest,
-				respMessage: cdb.GetStrPtr("`auto: true` is only supported when the Instance's VPC has `networkVirtualizationType` set to `FLAT`"),
+				respMessage: cdb.GetStrPtr("`autoNetwork: true` is only supported when the Instance's VPC has `networkVirtualizationType` set to `FLAT`"),
 			},
 			wantErr: false,
 		},

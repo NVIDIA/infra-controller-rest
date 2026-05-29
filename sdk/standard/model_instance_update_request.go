@@ -58,14 +58,15 @@ type InstanceUpdateRequest struct {
 	// Whether the custom iPXE data should be used for every boot.
 	AlwaysBootWithCustomIpxe NullableBool `json:"alwaysBootWithCustomIpxe,omitempty"`
 	// Indicates whether the Phone Home service should be enabled or disabled for Instance
-	PhoneHomeEnabled NullableBool      `json:"phoneHomeEnabled,omitempty"`
-	Labels           map[string]string `json:"labels,omitempty"`
+	PhoneHomeEnabled NullableBool `json:"phoneHomeEnabled,omitempty"`
+	// Update labels of the Instance. The labels will be entirely replaced by those sent in the request. Any labels not included in the request will be removed. To retain existing labels, first fetch them and include them along with this request.
+	Labels map[string]string `json:"labels,omitempty"`
 	// IDs of additional VPCs the Instance should attach to through non-primary interfaces. This field may only be specified when every entry in `interfaces` uses `vpcPrefixId`. IDs must be unique, must be valid UUIDs, and must not include the primary `vpcId`.
 	SecondaryVpcIds []string `json:"secondaryVpcIds,omitempty"`
-	// Update Interfaces of the Instance. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.
+	// Update Interfaces of the Instance. Mutually exclusive with `autoNetwork`: when `autoNetwork` is true this list MUST be empty.
 	Interfaces []InterfaceCreateRequest `json:"interfaces,omitempty"`
 	// When set, asks NICo to auto-resolve the Instance's network interfaces from the host's underlay (HostInband) segments. `null` leaves the value unchanged; `true` (re-)resolves; `false` returns to explicit interface configuration. When `true`, the Instance's VPC MUST already have `networkVirtualizationType: FLAT`, `interfaces` MUST be empty or omitted, and `secondaryVpcIds` MUST be empty or omitted.
-	Auto NullableBool `json:"auto,omitempty"`
+	AutoNetwork NullableBool `json:"autoNetwork,omitempty"`
 	// Update InfiniBand Interfaces of the Instance
 	InfinibandInterfaces []InfiniBandInterfaceCreateRequest `json:"infinibandInterfaces,omitempty"`
 	// Update NVLink Interfaces of the Instance. A subset of GPUs may be specified. Each item references a GPU index (`deviceInstance`) and an NVLink Logical Partition. Different interfaces may reference different NVLink Logical Partitions. Partial updates are not allowed, specified interfaces will delete or replace existing Interfaces. Updating is not allowed if Instance's VPC has `nvLinkLogicalPartitionId` attribute set.
@@ -692,47 +693,47 @@ func (o *InstanceUpdateRequest) SetInterfaces(v []InterfaceCreateRequest) {
 	o.Interfaces = v
 }
 
-// GetAuto returns the Auto field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *InstanceUpdateRequest) GetAuto() bool {
-	if o == nil || IsNil(o.Auto.Get()) {
+// GetAutoNetwork returns the AutoNetwork field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *InstanceUpdateRequest) GetAutoNetwork() bool {
+	if o == nil || IsNil(o.AutoNetwork.Get()) {
 		var ret bool
 		return ret
 	}
-	return *o.Auto.Get()
+	return *o.AutoNetwork.Get()
 }
 
-// GetAutoOk returns a tuple with the Auto field value if set, nil otherwise
+// GetAutoNetworkOk returns a tuple with the AutoNetwork field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *InstanceUpdateRequest) GetAutoOk() (*bool, bool) {
+func (o *InstanceUpdateRequest) GetAutoNetworkOk() (*bool, bool) {
 	if o == nil {
 		return nil, false
 	}
-	return o.Auto.Get(), o.Auto.IsSet()
+	return o.AutoNetwork.Get(), o.AutoNetwork.IsSet()
 }
 
-// HasAuto returns a boolean if a field has been set.
-func (o *InstanceUpdateRequest) HasAuto() bool {
-	if o != nil && o.Auto.IsSet() {
+// HasAutoNetwork returns a boolean if a field has been set.
+func (o *InstanceUpdateRequest) HasAutoNetwork() bool {
+	if o != nil && o.AutoNetwork.IsSet() {
 		return true
 	}
 
 	return false
 }
 
-// SetAuto gets a reference to the given NullableBool and assigns it to the Auto field.
-func (o *InstanceUpdateRequest) SetAuto(v bool) {
-	o.Auto.Set(&v)
+// SetAutoNetwork gets a reference to the given NullableBool and assigns it to the AutoNetwork field.
+func (o *InstanceUpdateRequest) SetAutoNetwork(v bool) {
+	o.AutoNetwork.Set(&v)
 }
 
-// SetAutoNil sets the value for Auto to be an explicit nil
-func (o *InstanceUpdateRequest) SetAutoNil() {
-	o.Auto.Set(nil)
+// SetAutoNetworkNil sets the value for AutoNetwork to be an explicit nil
+func (o *InstanceUpdateRequest) SetAutoNetworkNil() {
+	o.AutoNetwork.Set(nil)
 }
 
-// UnsetAuto ensures that no value is present for Auto, not even an explicit nil
-func (o *InstanceUpdateRequest) UnsetAuto() {
-	o.Auto.Unset()
+// UnsetAutoNetwork ensures that no value is present for AutoNetwork, not even an explicit nil
+func (o *InstanceUpdateRequest) UnsetAutoNetwork() {
+	o.AutoNetwork.Unset()
 }
 
 // GetInfinibandInterfaces returns the InfinibandInterfaces field value if set, zero value otherwise.
@@ -886,8 +887,8 @@ func (o InstanceUpdateRequest) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Interfaces) {
 		toSerialize["interfaces"] = o.Interfaces
 	}
-	if o.Auto.IsSet() {
-		toSerialize["auto"] = o.Auto.Get()
+	if o.AutoNetwork.IsSet() {
+		toSerialize["autoNetwork"] = o.AutoNetwork.Get()
 	}
 	if !IsNil(o.InfinibandInterfaces) {
 		toSerialize["infinibandInterfaces"] = o.InfinibandInterfaces

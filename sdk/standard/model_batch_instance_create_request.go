@@ -65,10 +65,10 @@ type BatchInstanceCreateRequest struct {
 	// When set to true, the Instances will be enabled with the Phone Home service.
 	PhoneHomeEnabled *bool             `json:"phoneHomeEnabled,omitempty"`
 	Labels           map[string]string `json:"labels,omitempty"`
-	// Interface configuration shared across all instances. At least one interface must be specified unless `auto` is true. Either Subnet or VPC Prefix interfaces allowed, only one of the Subnets or VPC Prefixes can be attached over Physical interface. Interface `ipAddress` is not supported for batch instance creation requests. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.
+	// Interface configuration shared across all instances. At least one interface must be specified unless `autoNetwork` is true. Either Subnet or VPC Prefix interfaces allowed, only one of the Subnets or VPC Prefixes can be attached over Physical interface. Interface `ipAddress` is not supported for batch instance creation requests. Mutually exclusive with `autoNetwork`: when `autoNetwork` is true this list MUST be empty.
 	Interfaces []InterfaceCreateRequest `json:"interfaces,omitempty"`
 	// When true, asks NICo to auto-resolve each Instance's network interfaces from the host's underlay (HostInband) network segments. Intended for instances on zero-DPU hosts (or hosts with their DPU in NIC mode). When true: (1) the target VPC's `networkVirtualizationType` MUST be `FLAT`, (2) `interfaces` MUST be empty or omitted, and (3) `secondaryVpcIds` MUST be empty or omitted.
-	Auto *bool `json:"auto,omitempty"`
+	AutoNetwork *bool `json:"autoNetwork,omitempty"`
 	// InfiniBand interface configuration shared across all instances
 	InfinibandInterfaces []InfiniBandInterfaceCreateRequest `json:"infinibandInterfaces,omitempty"`
 	// DPU Extension Services to deploy to all instances in the batch
@@ -604,36 +604,36 @@ func (o *BatchInstanceCreateRequest) SetInterfaces(v []InterfaceCreateRequest) {
 	o.Interfaces = v
 }
 
-// GetAuto returns the Auto field value if set, zero value otherwise.
-func (o *BatchInstanceCreateRequest) GetAuto() bool {
-	if o == nil || IsNil(o.Auto) {
+// GetAutoNetwork returns the AutoNetwork field value if set, zero value otherwise.
+func (o *BatchInstanceCreateRequest) GetAutoNetwork() bool {
+	if o == nil || IsNil(o.AutoNetwork) {
 		var ret bool
 		return ret
 	}
-	return *o.Auto
+	return *o.AutoNetwork
 }
 
-// GetAutoOk returns a tuple with the Auto field value if set, nil otherwise
+// GetAutoNetworkOk returns a tuple with the AutoNetwork field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *BatchInstanceCreateRequest) GetAutoOk() (*bool, bool) {
-	if o == nil || IsNil(o.Auto) {
+func (o *BatchInstanceCreateRequest) GetAutoNetworkOk() (*bool, bool) {
+	if o == nil || IsNil(o.AutoNetwork) {
 		return nil, false
 	}
-	return o.Auto, true
+	return o.AutoNetwork, true
 }
 
-// HasAuto returns a boolean if a field has been set.
-func (o *BatchInstanceCreateRequest) HasAuto() bool {
-	if o != nil && !IsNil(o.Auto) {
+// HasAutoNetwork returns a boolean if a field has been set.
+func (o *BatchInstanceCreateRequest) HasAutoNetwork() bool {
+	if o != nil && !IsNil(o.AutoNetwork) {
 		return true
 	}
 
 	return false
 }
 
-// SetAuto gets a reference to the given bool and assigns it to the Auto field.
-func (o *BatchInstanceCreateRequest) SetAuto(v bool) {
-	o.Auto = &v
+// SetAutoNetwork gets a reference to the given bool and assigns it to the AutoNetwork field.
+func (o *BatchInstanceCreateRequest) SetAutoNetwork(v bool) {
+	o.AutoNetwork = &v
 }
 
 // GetInfinibandInterfaces returns the InfinibandInterfaces field value if set, zero value otherwise.
@@ -841,8 +841,8 @@ func (o BatchInstanceCreateRequest) ToMap() (map[string]interface{}, error) {
 	if !IsNil(o.Interfaces) {
 		toSerialize["interfaces"] = o.Interfaces
 	}
-	if !IsNil(o.Auto) {
-		toSerialize["auto"] = o.Auto
+	if !IsNil(o.AutoNetwork) {
+		toSerialize["autoNetwork"] = o.AutoNetwork
 	}
 	if !IsNil(o.InfinibandInterfaces) {
 		toSerialize["infinibandInterfaces"] = o.InfinibandInterfaces
