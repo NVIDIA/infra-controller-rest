@@ -106,6 +106,13 @@ func (i *HealthCheckTaskInfo) Validate() error {
 }
 ```
 
+**4. Define a component-manager capability and operation interface** when the
+operation calls into component managers. Add the capability in
+`componentmanager/capability`, advertise it from descriptors that support the
+operation, and add the matching operation-specific interface in
+`componentmanager`. The activity should check the capability first, then assert
+the interface.
+
 ### Step 1: Define Activity Methods
 
 Add methods to `*Activities` in `activity/activity.go`. Each method performs one unit of work and must be idempotent (Temporal may retry it).
@@ -116,16 +123,19 @@ func (a *Activities) HealthCheck(
     ctx context.Context,
     target common.Target,
 ) (operations.HealthStatus, error) {
-    cm, err := a.validAndGetComponentManager(target)
+    reader, err := a.requireHealthStatusReader(target)
     if err != nil {
         return operations.HealthStatusUnknown, err
     }
-    return cm.HealthCheck(ctx, target)
+
+    return reader.HealthCheck(ctx, target)
 }
 ```
 
 **Key points:**
-- Receiver is `*Activities`; use `a.validAndGetComponentManager` (not a free function)
+- Receiver is `*Activities`; use the typed capability helper (e.g., 
+  `a.requireHealthStatusReader`, `a.requirePowerController`) to obtain the 
+  operation interface before invoking methods
 - First non-receiver parameter is always `context.Context`
 - Activities are retried automatically per the workflow's retry policy
 - Validate inputs; return descriptive errors
@@ -250,11 +260,12 @@ const (
 )
 
 func (a *Activities) HealthCheck(ctx context.Context, target common.Target) (operations.HealthStatus, error) {
-    cm, err := a.validAndGetComponentManager(target)
+    reader, err := a.requireHealthStatusReader(target)
     if err != nil {
         return operations.HealthStatusUnknown, err
     }
-    return cm.HealthCheck(ctx, target)
+
+    return reader.HealthCheck(ctx, target)
 }
 ```
 

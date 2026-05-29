@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package api
 
@@ -25,6 +11,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	apiHandler "github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 
 	sc "github.com/NVIDIA/infra-controller-rest/api/pkg/client/site"
 )
@@ -1012,7 +999,63 @@ func NewAPIRoutes(dbSession *cdb.Session, tc tClient.Client, tnc tClient.Namespa
 			Method:  http.MethodGet,
 			Handler: apiHandler.NewGetTrayTasksHandler(dbSession, tc, scp, cfg),
 		},
+		// Tenant Identity endpoints
+		{
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/config",
+			Method:  http.MethodPut,
+			Handler: apiHandler.NewCreateOrUpdateTenantIdentityConfigHandler(dbSession, scp),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/config",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetTenantIdentityConfigHandler(dbSession, scp),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/config",
+			Method:  http.MethodDelete,
+			Handler: apiHandler.NewDeleteTenantIdentityConfigHandler(dbSession, scp),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/token-delegation",
+			Method:  http.MethodPut,
+			Handler: apiHandler.NewCreateOrUpdateTenantIdentityTokenDelegationHandler(dbSession, scp),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/token-delegation",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetTenantIdentityTokenDelegationHandler(dbSession, scp),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/tenant-identity/token-delegation",
+			Method:  http.MethodDelete,
+			Handler: apiHandler.NewDeleteTenantIdentityTokenDelegationHandler(dbSession, scp),
+		},
 	}
 
 	return apiRoutes
+}
+
+// NewWellKnownRoutes returns the public tenant-identity discovery routes.
+// Registered before the auth middleware in server.go.
+func NewWellKnownRoutes(dbSession *cdb.Session, scp *sc.ClientPool, cfg *config.Config) []Route {
+	apiName := cfg.GetAPIName()
+	apiPathPrefix := "/org/:orgName/" + apiName
+
+	return []Route{
+		{
+			Path:    apiPathPrefix + "/site/:siteID/.well-known/jwks.json",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetJWKSHandler(dbSession, scp, cwssaws.JwksKind_Oidc),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/.well-known/openid-configuration",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetOpenIDConfigurationHandler(dbSession, scp),
+		},
+		{
+			Path:    apiPathPrefix + "/site/:siteID/.well-known/spiffe/jwks.json",
+			Method:  http.MethodGet,
+			Handler: apiHandler.NewGetJWKSHandler(dbSession, scp, cwssaws.JwksKind_Spiffe),
+		},
+	}
 }

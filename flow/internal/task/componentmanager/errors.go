@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package componentmanager
 
@@ -86,6 +72,10 @@ var (
 	// ErrUnsupportedCapability reports that the active manager for a component
 	// type does not support the requested operation capability.
 	ErrUnsupportedCapability = errors.New("component manager capability is not supported")
+
+	// ErrCapabilityInterfaceNotImplemented reports that a manager declares a
+	// capability but does not implement the matching operation interface.
+	ErrCapabilityInterfaceNotImplemented = errors.New("component manager capability interface is not implemented")
 
 	// ErrComponentManagersNotConfigured reports that the service config has no
 	// component manager entries.
@@ -288,6 +278,27 @@ func (e UnsupportedCapabilityError) Error() string {
 
 func (e UnsupportedCapabilityError) Is(target error) bool {
 	return target == ErrUnsupportedCapability
+}
+
+// CapabilityInterfaceNotImplementedError includes the manager and capability
+// whose descriptor metadata does not match the manager's operation interfaces.
+type CapabilityInterfaceNotImplementedError struct {
+	ComponentType  devicetypes.ComponentType
+	Implementation string
+	Capability     capability.Capability
+}
+
+func (e CapabilityInterfaceNotImplementedError) Error() string {
+	return fmt.Sprintf(
+		"component manager %s/%s declares capability %q but does not implement its operation interface",
+		devicetypes.ComponentTypeToString(e.ComponentType),
+		e.Implementation,
+		e.Capability,
+	)
+}
+
+func (e CapabilityInterfaceNotImplementedError) Is(target error) bool {
+	return target == ErrCapabilityInterfaceNotImplemented
 }
 
 // UnknownProviderError includes the unknown provider name.
