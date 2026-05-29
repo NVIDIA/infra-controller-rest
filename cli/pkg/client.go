@@ -56,6 +56,12 @@ type APIError struct {
 	Body       string
 	Message    string
 	Data       interface{}
+	// Hint is an optional human-readable suggestion appended to the error
+	// message. Used to surface common-misconfiguration tips that the server
+	// response itself cannot convey (for example, an api.name mismatch
+	// between the CLI's configured value and what the deployed server
+	// reports in its "source" field on a 404).
+	Hint string
 }
 
 func (e *APIError) Error() string {
@@ -63,13 +69,17 @@ func (e *APIError) Error() string {
 	if msg == "" {
 		msg = e.Body
 	}
+	base := fmt.Sprintf("API error %d: %s", e.StatusCode, msg)
 	if e.Data != nil {
 		dataJSON, err := json.Marshal(e.Data)
 		if err == nil && string(dataJSON) != "null" {
-			return fmt.Sprintf("API error %d: %s\nDetails: %s", e.StatusCode, msg, string(dataJSON))
+			base = fmt.Sprintf("%s\nDetails: %s", base, string(dataJSON))
 		}
 	}
-	return fmt.Sprintf("API error %d: %s", e.StatusCode, msg)
+	if e.Hint != "" {
+		return base + "\nHint: " + e.Hint
+	}
+	return base
 }
 
 func NewClient(baseURL, org, token string, log *logrus.Entry, debug bool) *Client {
@@ -251,11 +261,40 @@ func (c *Client) do(method, pathTemplate string, pathParams, queryParams map[str
 				apiErr.Message = errResp.Error
 			}
 			apiErr.Data = errResp.Data
+			if hint := c.apiNameMismatchHint(resp.StatusCode, errResp.Source); hint != "" {
+				apiErr.Hint = hint
+			}
 		}
 		return nil, nil, apiErr
 	}
 
 	return respBody, resp.Header, nil
+}
+
+// apiNameMismatchHint returns a suggestion when a 404 response indicates the
+// CLI's configured api.name does not match what the server serves. The
+// server includes its configured API name in the "source" field of
+// structured error responses (see common/pkg/util/api.go NewAPIErrorResponse).
+// When the CLI is configured for a different api.name than the deployed
+// server, requests miss every registered route and land in the not-found
+// handler with a source field naming the server's actual api.name. Returns
+// "" when the status is not 404, the source is empty (non-structured 404, or
+// one from a proxy), or the source already matches the CLI's configuration.
+func (c *Client) apiNameMismatchHint(statusCode int, source string) string {
+	if statusCode != http.StatusNotFound {
+		return ""
+	}
+	if source == "" {
+		return ""
+	}
+	if source == c.APIName {
+		return ""
+	}
+	return fmt.Sprintf(
+		"the server reports api.name %q but the CLI is configured as %q. "+
+			"set api.name to %q in your config (~/.nico/config.yaml) to match.",
+		source, c.APIName, source,
+	)
 }
 
 func formatDebugBody(body []byte) string {
