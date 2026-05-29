@@ -6,7 +6,6 @@ package handler
 import (
 	"net/http"
 
-	"github.com/NVIDIA/infra-controller-rest/api/internal/config"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
 	cauth "github.com/NVIDIA/infra-controller-rest/auth/pkg/config"
@@ -21,15 +20,13 @@ import (
 // GetCurrentServiceAccountHandler is the API Handler for getting the current Service Account
 type GetCurrentServiceAccountHandler struct {
 	dbSession  *cdb.Session
-	cfg        *config.Config
 	tracerSpan *cutil.TracerSpan
 }
 
 // NewGetCurrentServiceAccountHandler initializes and returns a new handler for getting the current Service Account
-func NewGetCurrentServiceAccountHandler(dbSession *cdb.Session, cfg *config.Config) GetCurrentServiceAccountHandler {
+func NewGetCurrentServiceAccountHandler(dbSession *cdb.Session) GetCurrentServiceAccountHandler {
 	return GetCurrentServiceAccountHandler{
 		dbSession:  dbSession,
-		cfg:        cfg,
 		tracerSpan: cutil.NewTracerSpan(),
 	}
 }

@@ -30,8 +30,6 @@ func TestServiceAccountHandler_GetCurrent(t *testing.T) {
 
 	common.TestSetupSchema(t, dbSession)
 
-	cfg := common.GetTestConfig()
-
 	org1 := "test-org"
 	user1 := common.TestBuildUser(t, dbSession, uuid.NewString(), org1, []string{authz.ProviderAdminRole, authz.TenantAdminRole})
 
@@ -93,7 +91,6 @@ func TestServiceAccountHandler_GetCurrent(t *testing.T) {
 
 			handler := GetCurrentServiceAccountHandler{
 				dbSession: dbSession,
-				cfg:       cfg,
 			}
 
 			err := handler.Handle(ec)
