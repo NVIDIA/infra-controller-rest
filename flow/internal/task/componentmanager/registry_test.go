@@ -182,8 +182,10 @@ func TestRegistryGetDescriptor(t *testing.T) {
 
 func TestRegistryDescriptorResultsDoNotShareSliceStorage(t *testing.T) {
 	descriptor := cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypeCompute,
-		Implementation:    "custom",
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "custom",
+		},
 		RequiredProviders: []string{"provider"},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityPowerControl,
@@ -678,12 +680,16 @@ func TestRegistryDescriptors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []cmcatalog.Descriptor{
 		{
-			Type:           devicetypes.ComponentTypeCompute,
-			Implementation: "compute",
+			DescriptorIdentity: cmcatalog.DescriptorIdentity{
+				Type:           devicetypes.ComponentTypeCompute,
+				Implementation: "compute",
+			},
 		},
 		{
-			Type:           devicetypes.ComponentTypeNVSwitch,
-			Implementation: "switch",
+			DescriptorIdentity: cmcatalog.DescriptorIdentity{
+				Type:           devicetypes.ComponentTypeNVSwitch,
+				Implementation: "switch",
+			},
 		},
 	}, descriptors)
 }

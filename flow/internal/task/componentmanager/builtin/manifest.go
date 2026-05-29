@@ -45,6 +45,14 @@ func serviceProviderConfigDecoders() []providerapi.ProviderConfigDecoder {
 	}
 }
 
+// serviceManagerConfigDecoders returns all manager config decoders supported
+// by the Flow service.
+func serviceManagerConfigDecoders() []cmconfig.ManagerConfigDecoder {
+	return []cmconfig.ManagerConfigDecoder{
+		computenico.ConfigDecoder{},
+	}
+}
+
 // serviceDescriptors returns all component manager descriptors compiled into
 // the Flow service. Descriptors stay in a separate manifest even though
 // FactorySpec also contains a Descriptor because descriptor metadata is needed

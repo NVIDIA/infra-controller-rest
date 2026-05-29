@@ -26,26 +26,18 @@ func TestConfigDecoderDecodeYAML(t *testing.T) {
 	require.NoError(t, err)
 	config := decoded.(*Config)
 	assert.Equal(t, DefaultTimeout, config.Timeout)
-	assert.Equal(t, DefaultComputePowerDelay, config.ComputePowerDelay)
 
 	decoded, err = decoder.DecodeYAML(providerYAMLNode(t, `
 timeout: 15s
-compute_power_delay: 0s
 `))
 	require.NoError(t, err)
 	config = decoded.(*Config)
 	assert.Equal(t, 15*time.Second, config.Timeout)
-	assert.Equal(t, 0*time.Second, config.ComputePowerDelay)
 
 	_, err = decoder.DecodeYAML(providerYAMLNode(t, `timeout: nope`))
 	require.Error(t, err)
 	assert.True(t, errors.Is(err, providerapi.ErrInvalidProviderConfigField))
 	assertInvalidConfigField(t, err, "timeout")
-
-	_, err = decoder.DecodeYAML(providerYAMLNode(t, `compute_power_delay: nope`))
-	require.Error(t, err)
-	assert.True(t, errors.Is(err, providerapi.ErrInvalidProviderConfigField))
-	assertInvalidConfigField(t, err, "compute_power_delay")
 
 	_, err = decoder.DecodeYAML(providerYAMLNode(t, `timout: 15s`))
 	require.Error(t, err)
@@ -54,6 +46,10 @@ compute_power_delay: 0s
 	var configErr providerapi.InvalidProviderConfigError
 	require.True(t, errors.As(err, &configErr))
 	assert.Equal(t, ProviderName, configErr.Provider)
+
+	_, err = decoder.DecodeYAML(providerYAMLNode(t, `compute_power_delay: 0s`))
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, providerapi.ErrInvalidProviderConfig))
 }
 
 func assertInvalidConfigField(t *testing.T, err error, field string) {

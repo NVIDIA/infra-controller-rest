@@ -14,16 +14,59 @@ import (
 )
 
 // Descriptor describes a component manager implementation registered in this
-// process. The descriptor identity is Type plus Implementation; provider names
-// stay separate because one manager can require multiple providers and one
-// provider can serve multiple component manager implementations. Capabilities
-// describe the operations this manager supports and are used to validate that
-// active managers can execute a task before it is dispatched.
+// process. DescriptorIdentity is Type plus Implementation; provider names stay
+// separate because one manager can require multiple providers and one provider
+// can serve multiple component manager implementations. Capabilities describe
+// the operations this manager supports and are used to validate that active
+// managers can execute a task before it is dispatched.
 type Descriptor struct {
-	Type              devicetypes.ComponentType
-	Implementation    string
+	DescriptorIdentity
 	RequiredProviders []string
 	Capabilities      capability.CapabilitySet
+}
+
+// DescriptorIdentity identifies a component manager implementation. It is the
+// stable key used by catalogs, factory specs, and manager-specific config.
+type DescriptorIdentity struct {
+	Type           devicetypes.ComponentType
+	Implementation string
+}
+
+// String returns the stable component-type/implementation form used in logs and
+// error messages.
+func (i DescriptorIdentity) String() string {
+	return devicetypes.ComponentTypeToString(i.Type) + "/" + i.Implementation
+}
+
+// Normalize validates an identity and returns its normalized value.
+func (i DescriptorIdentity) Normalize() (DescriptorIdentity, error) {
+	if i.Type == devicetypes.ComponentTypeUnknown {
+		return DescriptorIdentity{}, UnknownComponentTypeError{
+			Name: devicetypes.ComponentTypeToString(i.Type),
+		}
+	}
+
+	i.Implementation = strings.TrimSpace(i.Implementation)
+	if i.Implementation == "" {
+		return DescriptorIdentity{}, ComponentManagerImplementationNameEmptyError{
+			ComponentType: i.Type,
+		}
+	}
+
+	return i, nil
+}
+
+func compareDescriptorIdentities(a DescriptorIdentity, b DescriptorIdentity) int {
+	if n := cmp.Compare(a.Type, b.Type); n != 0 {
+		return n
+	}
+	return cmp.Compare(a.Implementation, b.Implementation)
+}
+
+// SortDescriptorIdentities sorts descriptor identities by component type and
+// then implementation name.
+func SortDescriptorIdentities(identities []DescriptorIdentity) {
+	slices.SortFunc(identities, compareDescriptorIdentities)
 }
 
 // Catalog contains the component manager implementations supported by a
@@ -63,17 +106,17 @@ func New(descriptors []Descriptor) (Catalog, error) {
 	return catalog, nil
 }
 
-// Get returns the descriptor for a component type and implementation.
-func (c Catalog) Get(
-	componentType devicetypes.ComponentType,
-	implementation string,
-) (Descriptor, bool) {
-	descriptors := c.descriptors[componentType]
+// Get returns the descriptor for a normalized descriptor identity. Get does
+// not normalize identity; callers should normalize identities built from raw
+// input before calling. Passing an unnormalized identity simply misses and
+// returns false.
+func (c Catalog) Get(identity DescriptorIdentity) (Descriptor, bool) {
+	descriptors := c.descriptors[identity.Type]
 	if descriptors == nil {
 		return Descriptor{}, false
 	}
 
-	descriptor, ok := descriptors[implementation]
+	descriptor, ok := descriptors[identity.Implementation]
 	if !ok {
 		return Descriptor{}, false
 	}
@@ -105,7 +148,12 @@ func (c Catalog) SelectedDescriptors(
 ) ([]Descriptor, error) {
 	descriptors := make([]Descriptor, 0, len(componentManagers))
 	for componentType, implName := range componentManagers {
-		descriptor, ok := c.Get(componentType, implName)
+		descriptor, ok := c.Get(
+			DescriptorIdentity{
+				Type:           componentType,
+				Implementation: implName,
+			},
+		)
 		if !ok {
 			available := c.Implementations(componentType)
 			if len(available) == 0 {
@@ -144,18 +192,12 @@ func (c Catalog) componentTypesForImplementation(
 
 // Normalize validates a descriptor and returns its normalized value.
 func (d Descriptor) Normalize() (Descriptor, error) {
-	if d.Type == devicetypes.ComponentTypeUnknown {
-		return Descriptor{}, UnknownComponentTypeError{
-			Name: devicetypes.ComponentTypeToString(d.Type),
-		}
+	identity, err := d.DescriptorIdentity.Normalize()
+	if err != nil {
+		return Descriptor{}, err
 	}
 
-	d.Implementation = strings.TrimSpace(d.Implementation)
-	if d.Implementation == "" {
-		return Descriptor{}, ComponentManagerImplementationNameEmptyError{
-			ComponentType: d.Type,
-		}
-	}
+	d.DescriptorIdentity = identity
 
 	requiredProviders := make([]string, 0, len(d.RequiredProviders))
 	seen := make(map[string]struct{}, len(d.RequiredProviders))
@@ -182,6 +224,11 @@ func (d Descriptor) Normalize() (Descriptor, error) {
 	return d, nil
 }
 
+// Identity returns the descriptor identity.
+func (d Descriptor) Identity() DescriptorIdentity {
+	return d.DescriptorIdentity
+}
+
 // Clone returns a descriptor copy whose mutable fields do not share storage
 // with the source descriptor.
 func (d Descriptor) Clone() Descriptor {
@@ -201,10 +248,7 @@ func (d Descriptor) Equal(other Descriptor) bool {
 
 func sortDescriptors(descriptors []Descriptor) {
 	slices.SortFunc(descriptors, func(a, b Descriptor) int {
-		if n := cmp.Compare(a.Type, b.Type); n != 0 {
-			return n
-		}
-		return cmp.Compare(a.Implementation, b.Implementation)
+		return compareDescriptorIdentities(a.Identity(), b.Identity())
 	})
 }
 

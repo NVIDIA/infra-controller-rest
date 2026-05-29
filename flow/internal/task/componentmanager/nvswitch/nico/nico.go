@@ -58,8 +58,10 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 // Descriptor returns the NICo NVSwitch manager descriptor.
 func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypeNVSwitch,
-		Implementation:    ImplementationName,
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypeNVSwitch,
+			Implementation: ImplementationName,
+		},
 		RequiredProviders: []string{nicoprovider.ProviderName},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityFirmwareConsistencyCheck,

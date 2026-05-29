@@ -56,8 +56,10 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 // Descriptor returns the NV-Switch Manager NVSwitch manager descriptor.
 func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypeNVSwitch,
-		Implementation:    ImplementationName,
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypeNVSwitch,
+			Implementation: ImplementationName,
+		},
 		RequiredProviders: []string{nsmprovider.ProviderName},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityFirmwareControl,

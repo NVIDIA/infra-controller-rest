@@ -6,17 +6,44 @@ package nico
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/yaml.v3"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi"
 	pb "github.com/NVIDIA/infra-controller-rest/flow/internal/nicoapi/gen"
+	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor/temporalworkflow/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
+
+func TestConfigDecoderDecodeYAML(t *testing.T) {
+	decoder := ConfigDecoder{}
+
+	decoded, err := decoder.DecodeYAML(yaml.Node{})
+	require.NoError(t, err)
+	config := decoded.(*Config)
+	assert.Equal(t, DefaultComputePowerDelay, config.ComputePowerDelay)
+
+	decoded, err = decoder.DecodeYAML(managerYAMLNode(t, `compute_power_delay: 0s`))
+	require.NoError(t, err)
+	config = decoded.(*Config)
+	assert.Equal(t, 0*time.Second, config.ComputePowerDelay)
+
+	_, err = decoder.DecodeYAML(managerYAMLNode(t, `compute_power_delay: nope`))
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, cmconfig.ErrInvalidManagerConfigField))
+	assertInvalidManagerConfigField(t, err, "compute_power_delay")
+
+	_, err = decoder.DecodeYAML(managerYAMLNode(t, `compute_power_dely: 15s`))
+	require.Error(t, err)
+	assert.True(t, errors.Is(err, cmconfig.ErrInvalidManagerConfig))
+}
 
 func TestInjectExpectation(t *testing.T) {
 	testCases := map[string]struct {
@@ -86,6 +113,24 @@ func mustMarshal(t *testing.T, v any) json.RawMessage {
 		t.Fatalf("failed to marshal: %v", err)
 	}
 	return data
+}
+
+func assertInvalidManagerConfigField(t *testing.T, err error, field string) {
+	t.Helper()
+
+	var fieldErr cmconfig.InvalidManagerConfigFieldError
+	require.True(t, errors.As(err, &fieldErr))
+	assert.Equal(t, ConfigDecoder{}.Identity(), fieldErr.Identity)
+	assert.Equal(t, field, fieldErr.Field)
+}
+
+func managerYAMLNode(t *testing.T, data string) yaml.Node {
+	t.Helper()
+
+	var node yaml.Node
+	require.NoError(t, yaml.Unmarshal([]byte(data), &node))
+	require.NotEmpty(t, node.Content)
+	return *node.Content[0]
 }
 
 // TestFirmwareControl_SubTargetsAccepted verifies that the compute/nico

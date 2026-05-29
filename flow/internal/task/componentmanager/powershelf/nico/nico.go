@@ -51,8 +51,10 @@ func Factory(providerRegistry *providerapi.ProviderRegistry) (componentmanager.C
 // Descriptor returns the NICo PowerShelf manager descriptor.
 func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypePowerShelf,
-		Implementation:    ImplementationName,
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypePowerShelf,
+			Implementation: ImplementationName,
+		},
 		RequiredProviders: []string{nicoprovider.ProviderName},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityFirmwareControl,

@@ -59,8 +59,10 @@ func FactoryFor(componentType devicetypes.ComponentType) componentmanager.Manage
 // type.
 func DescriptorFor(componentType devicetypes.ComponentType) cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:           componentType,
-		Implementation: ImplementationName,
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           componentType,
+			Implementation: ImplementationName,
+		},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityBringUpControl,
 			capability.CapabilityBringUpStatus,

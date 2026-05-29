@@ -9,9 +9,9 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
+	computenico "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/compute/nico"
 	cmconfig "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/config"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
-	nicoprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/nico"
 )
 
 // newProviderDecoderRegistry creates the provider config decoder registry used
@@ -24,6 +24,24 @@ func newProviderDecoderRegistry() (*providerapi.ProviderConfigDecoderRegistry, e
 			return nil, fmt.Errorf(
 				"register service provider config decoder %q: %w",
 				decoder.Name(),
+				err,
+			)
+		}
+	}
+
+	return registry, nil
+}
+
+// newManagerConfigDecoderRegistry creates the manager config decoder registry
+// used by the Flow service.
+func newManagerConfigDecoderRegistry() (*cmconfig.ManagerConfigDecoderRegistry, error) {
+	registry := cmconfig.NewManagerConfigDecoderRegistry()
+
+	for _, decoder := range serviceManagerConfigDecoders() {
+		if err := registry.Register(decoder); err != nil {
+			return nil, fmt.Errorf(
+				"register service manager config decoder %q: %w",
+				managerConfigDecoderName(decoder),
 				err,
 			)
 		}
@@ -48,21 +66,26 @@ func newCatalog() (cmcatalog.Catalog, error) {
 }
 
 func nicoComputePowerDelay(config cmconfig.Config) (time.Duration, error) {
-	providerConfig, ok := config.ProviderConfigs[nicoprovider.ProviderName]
+	identity := computenico.Descriptor().Identity()
+	managerConfig, ok := config.ManagerConfigs[identity]
 	if !ok {
-		return 0, nil
+		return computenico.DefaultComputePowerDelay, nil
 	}
-	if providerConfig == nil {
-		return 0, providerapi.ProviderNotConfiguredError{Name: nicoprovider.ProviderName}
+	if managerConfig == nil {
+		return 0, cmconfig.ManagerConfigNotConfiguredError{Identity: identity}
 	}
 
-	nicoConfig, ok := providerConfig.(*nicoprovider.Config)
+	nicoConfig, ok := managerConfig.(*computenico.Config)
 	if !ok {
-		return 0, componentmanager.ProviderConfigTypeMismatchError{
-			Name: nicoprovider.ProviderName,
-			Got:  providerConfig,
-			Want: "*nico.Config",
+		return 0, componentmanager.ManagerConfigTypeMismatchError{
+			Identity: identity,
+			Got:      managerConfig,
+			Want:     (*computenico.Config)(nil),
 		}
 	}
 	return nicoConfig.ComputePowerDelay, nil
+}
+
+func managerConfigDecoderName(decoder cmconfig.ManagerConfigDecoder) string {
+	return decoder.Identity().String()
 }
