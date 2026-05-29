@@ -846,7 +846,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 
 		// Begin validating Machine ID
 		if apiRequest.MachineID != nil {
-			if tenant.Config == nil || !tenant.Config.TargetedInstanceCreation {
+			if !common.TenantHasTargetedInstanceCreation(tenant) {
 				logger.Warn().Msg("tenant does not have capability to create instances from specific machine")
 				return cutil.NewAPIError(http.StatusForbidden, "Tenant does not have capability to create Instances using specific Machine ID", nil)
 			}
@@ -4759,7 +4759,7 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 		}
 		// if caller attempt to set IsRepairTenant then it must be a tenant with targetedInstanceCreation capability
 		if apiRequest.IsRepairTenant != nil && *apiRequest.IsRepairTenant {
-			if instance.Tenant.Config == nil || !instance.Tenant.Config.TargetedInstanceCreation {
+			if !common.TenantHasTargetedInstanceCreation(instance.Tenant) {
 				logger.Warn().Msg("tenant does not have capability to set IsRepairTenant")
 				return cutil.NewAPIError(http.StatusForbidden, "Tenant does not have capability to set IsRepairTenant", nil)
 			}
