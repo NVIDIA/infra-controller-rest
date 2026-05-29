@@ -648,6 +648,97 @@ func Test_createAndPopulateTenantSiteUpMigrationfunc(t *testing.T) {
 	assert.Equal(t, 2, tot)
 }
 
+func Test_tenantSiteCapabilityAssociationUpMigration(t *testing.T) {
+	ctx := context.Background()
+
+	dbSession := util.GetTestDBSession(t, true)
+	dbSession.DB.AddQueryHook(bundebug.NewQueryHook(
+		bundebug.WithEnabled(false),
+		bundebug.FromEnv("BUNDEBUG"),
+	))
+	defer dbSession.Close()
+
+	// Setup schemas
+	model.TestSetupSchema(t, dbSession)
+
+	// Create initial data
+	ipOrg := "test-provider-org"
+	ipRoles := []string{authz.ProviderAdminRole}
+	ipu := model.TestBuildUser(t, dbSession, uuid.NewString(), ipOrg, ipRoles)
+	ip := model.TestBuildInfrastructureProvider(t, dbSession, "test-provider", ipOrg, ipu)
+
+	tnRoles := []string{authz.TenantAdminRole}
+
+	// Privileged tenant (config.targetedInstanceCreation = true)
+	tnu1 := model.TestBuildUser(t, dbSession, uuid.NewString(), "test-tenant-org-1", tnRoles)
+	tn1 := model.TestBuildTenant(t, dbSession, "test-tenant-1", "test-tenant-org-1", tnu1)
+	tnDAO := model.NewTenantDAO(dbSession)
+	_, err := tnDAO.UpdateFromParams(ctx, nil, tn1.ID, nil, nil, nil, &model.TenantConfig{TargetedInstanceCreation: true})
+	require.NoError(t, err)
+
+	// Non-privileged tenant (no capability) - should not be backfilled
+	tnu2 := model.TestBuildUser(t, dbSession, uuid.NewString(), "test-tenant-org-2", tnRoles)
+	tn2 := model.TestBuildTenant(t, dbSession, "test-tenant-2", "test-tenant-org-2", tnu2)
+
+	site1 := model.TestBuildSite(t, dbSession, ip, "test-site-1", ipu)
+	site2 := model.TestBuildSite(t, dbSession, ip, "test-site-2", ipu)
+
+	// tn1 is explicitly associated with site1 ...
+	model.TestBuildTenantSite(t, dbSession, tn1, site1, map[string]interface{}{}, tnu1)
+	// ... and reaches all provider sites (site1, site2) via a Ready tenant account
+	ta := &model.TenantAccount{
+		ID:                        uuid.New(),
+		AccountNumber:             "acct-1",
+		TenantID:                  &tn1.ID,
+		TenantOrg:                 tn1.Org,
+		InfrastructureProviderID:  ip.ID,
+		InfrastructureProviderOrg: ip.Org,
+		Status:                    model.TenantAccountStatusReady,
+		CreatedBy:                 ipu.ID,
+	}
+	_, err = dbSession.DB.NewInsert().Model(ta).Exec(ctx)
+	require.NoError(t, err)
+
+	// Drop the table so the migration recreates and backfills it from scratch
+	_, err = dbSession.DB.NewDropTable().IfExists().Model((*model.TenantSiteCapabilityAssociation)(nil)).Exec(ctx)
+	require.NoError(t, err)
+
+	// Call up migration function
+	err = tenantSiteCapabilityAssociationUpMigration(ctx, dbSession.DB)
+	assert.NoError(t, err)
+
+	tscaDAO := model.NewTenantSiteCapabilityAssociationDAO(dbSession)
+
+	// Privileged tenant gets both sites (union of tenant_site and provider-reachable), enabled
+	tn1Rows, tn1Total, err := tscaDAO.GetAll(ctx, nil, model.TenantSiteCapabilityAssociationFilterInput{
+		TenantIDs: []uuid.UUID{tn1.ID},
+	}, paginator.PageInput{}, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, tn1Total)
+	for _, r := range tn1Rows {
+		assert.True(t, r.TargetedInstanceCreation)
+		assert.Equal(t, ip.ID, r.InfrastructureProviderID)
+	}
+
+	// Non-privileged tenant gets no rows
+	_, tn2Total, err := tscaDAO.GetAll(ctx, nil, model.TenantSiteCapabilityAssociationFilterInput{
+		TenantIDs: []uuid.UUID{tn2.ID},
+	}, paginator.PageInput{}, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, tn2Total)
+
+	// Idempotent: running the migration again does not create duplicates
+	err = tenantSiteCapabilityAssociationUpMigration(ctx, dbSession.DB)
+	assert.NoError(t, err)
+	_, tn1TotalAfter, err := tscaDAO.GetAll(ctx, nil, model.TenantSiteCapabilityAssociationFilterInput{
+		TenantIDs: []uuid.UUID{tn1.ID},
+	}, paginator.PageInput{}, nil)
+	assert.NoError(t, err)
+	assert.Equal(t, 2, tn1TotalAfter)
+
+	_ = site2
+}
+
 func Test_siteSshHostnameRenameUpMigration(t *testing.T) {
 	ctx := context.Background()
 
