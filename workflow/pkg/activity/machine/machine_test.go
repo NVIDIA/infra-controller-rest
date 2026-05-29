@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package machine
 
@@ -1427,6 +1413,7 @@ func TestGetForgeMachineStatus(t *testing.T) {
 		name                   string
 		args                   args
 		wantStatus             string
+		wantMessage            string
 		wantMachineAllocatable bool
 	}{
 		{
@@ -1498,6 +1485,75 @@ func TestGetForgeMachineStatus(t *testing.T) {
 				},
 			},
 			wantStatus:             cdbm.MachineStatusError,
+			wantMachineAllocatable: false,
+		},
+		{
+			name: "test get forge machine status - with automatic DPU firmware update alert",
+			args: args{
+				controllerMachine: &cwssaws.Machine{
+					State: controllerMachineStatePrefixReady,
+					Health: &cwssaws.HealthReport{
+						Alerts: []*cwssaws.HealthProbeAlert{
+							{
+								Id:      MachineDPUFirmwareUpdateAlertID,
+								Target:  cdb.GetStrPtr(MachineDPUFirmwareUpdateAlertTarget),
+								Message: "AutomaticDpuFirmwareUpdate//",
+								Classifications: []string{
+									MachinePreventAllocations,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantStatus:             cdbm.MachineStatusInitializing,
+			wantMessage:            MachineDPUFirmwareUpdateStatusMessage,
+			wantMachineAllocatable: false,
+		},
+		{
+			name: "test get forge machine status - with non-automatic DPU firmware update alert",
+			args: args{
+				controllerMachine: &cwssaws.Machine{
+					State: controllerMachineStatePrefixAssigned,
+					Health: &cwssaws.HealthReport{
+						Alerts: []*cwssaws.HealthProbeAlert{
+							{
+								Id:      MachineDPUFirmwareUpdateAlertID,
+								Target:  cdb.GetStrPtr(MachineDPUFirmwareUpdateAlertTarget),
+								Message: "ManualDpuFirmwareUpdate//",
+								Classifications: []string{
+									MachinePreventAllocations,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantStatus:             cdbm.MachineStatusInitializing,
+			wantMessage:            MachineDPUFirmwareUpdateStatusMessage,
+			wantMachineAllocatable: false,
+		},
+		{
+			name: "test get forge machine status - non-DPU firmware prevent alert remains error",
+			args: args{
+				controllerMachine: &cwssaws.Machine{
+					State: controllerMachineStatePrefixReady,
+					Health: &cwssaws.HealthReport{
+						Alerts: []*cwssaws.HealthProbeAlert{
+							{
+								Id:      MachineDPUFirmwareUpdateAlertID,
+								Target:  cdb.GetStrPtr("HostFirmware"),
+								Message: "HostFirmwareUpdate//",
+								Classifications: []string{
+									MachinePreventAllocations,
+								},
+							},
+						},
+					},
+				},
+			},
+			wantStatus:             cdbm.MachineStatusError,
+			wantMessage:            MachinePreventAllocationStatusMessage,
 			wantMachineAllocatable: false,
 		},
 		{
@@ -1649,7 +1705,11 @@ func TestGetForgeMachineStatus(t *testing.T) {
 			status, message, isAllocatable := getNICoMachineStatus(tt.args.controllerMachine, log.Logger)
 			assert.Equal(t, tt.wantMachineAllocatable, isAllocatable)
 			assert.Equal(t, tt.wantStatus, status)
-			assert.NotEmpty(t, message)
+			if tt.wantMessage != "" {
+				assert.Equal(t, tt.wantMessage, message)
+			} else {
+				assert.NotEmpty(t, message)
+			}
 		})
 	}
 }

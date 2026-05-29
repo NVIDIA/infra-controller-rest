@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package instance
 
@@ -264,13 +250,15 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 			// from its parent machine when an instance is allocated.
 
 			_, serr := instanceDAO.Update(ctx, nil, cdbm.InstanceUpdateInput{
-				InstanceID:                             instance.ID,
-				NetworkSecurityGroupID:                 controllerInstance.Config.NetworkSecurityGroupId,
-				NetworkSecurityGroupPropagationDetails: sitePropagationStatus,
-				ControllerInstanceID:                   controllerInstanceID,
-				IsUpdatePending:                        isUpdatePending,
-				IsMissingOnSite:                        isMissingOnSite,
-				TpmEkCertificate:                       controllerInstance.TpmEkCertificate,
+				InstanceID: instance.ID,
+				InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+					NetworkSecurityGroupID:                 controllerInstance.Config.NetworkSecurityGroupId,
+					NetworkSecurityGroupPropagationDetails: sitePropagationStatus,
+					ControllerInstanceID:                   controllerInstanceID,
+					IsUpdatePending:                        isUpdatePending,
+					IsMissingOnSite:                        isMissingOnSite,
+					TpmEkCertificate:                       controllerInstance.TpmEkCertificate,
+				},
 			})
 			if serr != nil {
 				slogger.Error().Err(serr).Msg("failed to update missing on Site flag/controller Instance ID in DB")
@@ -926,7 +914,7 @@ func (mi ManageInstance) UpdateInstancesInDB(ctx context.Context, siteID uuid.UU
 			}
 
 			// Set isMissingOnSite flag to true and update status/create status detail, user can decide on deletion
-			_, serr := instanceDAO.Update(ctx, nil, cdbm.InstanceUpdateInput{InstanceID: instance.ID, IsMissingOnSite: cdb.GetBoolPtr(true)})
+			_, serr := instanceDAO.Update(ctx, nil, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{IsMissingOnSite: cdb.GetBoolPtr(true)}})
 			if serr != nil {
 				// Log error and continue
 				slogger.Error().Err(serr).Msg("failed to set missing on Site flag in DB")
@@ -1155,7 +1143,7 @@ func (mi ManageInstance) updateInstanceStatusInDB(ctx context.Context, tx *cdb.T
 		return nil
 	}
 	instanceDAO := cdbm.NewInstanceDAO(mi.dbSession)
-	_, err := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instanceID, Status: status, PowerStatus: powerStatus})
+	_, err := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instanceID, InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{Status: status, PowerStatus: powerStatus}})
 	if err != nil {
 		return err
 	}
