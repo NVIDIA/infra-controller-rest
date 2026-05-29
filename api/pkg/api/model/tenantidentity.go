@@ -158,8 +158,20 @@ func (resp *APITenantIdentityConfig) FromResponseProto(proto *cwssaws.TenantIden
 			resp.SigningKeys = append(resp.SigningKeys, entry)
 		}
 	}
-	resp.Created = proto.GetCreatedAt().AsTime().UTC()
-	resp.Updated = proto.GetUpdatedAt().AsTime().UTC()
+	if ts := proto.GetCreatedAt(); ts != nil {
+		resp.Created = ts.AsTime().UTC()
+	}
+	if ts := proto.GetUpdatedAt(); ts != nil {
+		resp.Updated = ts.AsTime().UTC()
+	}
+}
+
+// IsCreated reports whether the object was created (rather than updated) by the upserting call.
+func (resp *APITenantIdentityConfig) IsCreated() bool {
+	if resp == nil || resp.Created.IsZero() || resp.Updated.IsZero() {
+		return false
+	}
+	return resp.Created.Equal(resp.Updated)
 }
 
 // APITenantIdentityBasicClientSecretRequest carries OAuth2 client_secret_basic credentials.
@@ -242,8 +254,20 @@ func (resp *APITenantIdentityTokenDelegation) FromResponseProto(proto *cwssaws.T
 			ClientSecretHash: basic.GetClientSecretHash(),
 		}
 	}
-	resp.Created = proto.GetCreatedAt().AsTime().UTC()
-	resp.Updated = proto.GetUpdatedAt().AsTime().UTC()
+	if ts := proto.GetCreatedAt(); ts != nil {
+		resp.Created = ts.AsTime().UTC()
+	}
+	if ts := proto.GetUpdatedAt(); ts != nil {
+		resp.Updated = ts.AsTime().UTC()
+	}
+}
+
+// IsCreated reports whether the object was created (rather than updated) by the upserting call.
+func (resp *APITenantIdentityTokenDelegation) IsCreated() bool {
+	if resp == nil || resp.Created.IsZero() || resp.Updated.IsZero() {
+		return false
+	}
+	return resp.Created.Equal(resp.Updated)
 }
 
 // NOTE: Standard for well known OpenID configurations is to use

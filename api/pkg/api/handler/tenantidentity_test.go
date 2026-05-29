@@ -493,31 +493,6 @@ func TestTenantIdentityPUT_WorkflowIDIncludesPayloadHash(t *testing.T) {
 	})
 }
 
-// TestPutStatusFromTimestamps verifies the 201-vs-200 helper based on createdAt/updatedAt equality.
-func TestPutStatusFromTimestamps(t *testing.T) {
-	now := time.Date(2026, 4, 20, 12, 0, 0, 0, time.UTC)
-	later := now.Add(5 * time.Second)
-	ts := func(v time.Time) *timestamppb.Timestamp { return timestamppb.New(v) }
-
-	tests := []struct {
-		name      string
-		createdAt *timestamppb.Timestamp
-		updatedAt *timestamppb.Timestamp
-		want      int
-	}{
-		{name: "first create -> 201", createdAt: ts(now), updatedAt: ts(now), want: http.StatusCreated},
-		{name: "subsequent update -> 200", createdAt: ts(now), updatedAt: ts(later), want: http.StatusOK},
-		{name: "missing createdAt -> 200", updatedAt: ts(now), want: http.StatusOK},
-		{name: "missing updatedAt -> 200", createdAt: ts(now), want: http.StatusOK},
-		{name: "both missing -> 200", want: http.StatusOK},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, putStatusFromTimestamps(tt.createdAt, tt.updatedAt))
-		})
-	}
-}
-
 // TestCreateOrUpdateTenantIdentityPUT_StatusReflectsCreateVsUpdate verifies tenant identity and token-delegation PUT handlers return 201 on first create and 200 on subsequent update.
 func TestCreateOrUpdateTenantIdentityPUT_StatusReflectsCreateVsUpdate(t *testing.T) {
 	dbSession := testSiteInitDB(t)

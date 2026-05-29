@@ -33,7 +33,6 @@ import (
 	tclient "go.temporal.io/sdk/client"
 	tp "go.temporal.io/sdk/temporal"
 	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/handler/util/common"
 	"github.com/NVIDIA/infra-controller-rest/api/pkg/api/model"
@@ -54,18 +53,6 @@ func payloadHash(m proto.Message) (string, error) {
 	}
 	sum := sha1.Sum(b)
 	return hex.EncodeToString(sum[:]), nil
-}
-
-// putStatusFromTimestamps returns 201 when createdAt == updatedAt (first
-// create) and 200 otherwise. Missing timestamps fall back to 200.
-func putStatusFromTimestamps(createdAt, updatedAt *timestamppb.Timestamp) int {
-	if createdAt == nil || updatedAt == nil {
-		return http.StatusOK
-	}
-	if !createdAt.AsTime().Equal(updatedAt.AsTime()) {
-		return http.StatusOK
-	}
-	return http.StatusCreated
 }
 
 // ~~~~~ Create Or Update Handler ~~~~~ //
@@ -200,9 +187,12 @@ func (umich CreateOrUpdateTenantIdentityConfigHandler) Handle(c echo.Context) er
 		return cutil.NewAPIErrorResponse(c, code, "Failed to create or update Tenant Identity Config", nil)
 	}
 
-	status := putStatusFromTimestamps(protoResponse.GetCreatedAt(), protoResponse.GetUpdatedAt())
 	apiConfig := &model.APITenantIdentityConfig{}
 	apiConfig.FromResponseProto(&protoResponse)
+	status := http.StatusOK
+	if apiConfig.IsCreated() {
+		status = http.StatusCreated
+	}
 	return c.JSON(status, apiConfig)
 }
 
@@ -570,9 +560,12 @@ func (utdh CreateOrUpdateTenantIdentityTokenDelegationHandler) Handle(c echo.Con
 		return cutil.NewAPIErrorResponse(c, code, "Failed to create or update Token Delegation", nil)
 	}
 
-	status := putStatusFromTimestamps(protoResponse.GetCreatedAt(), protoResponse.GetUpdatedAt())
 	apiDelegation := &model.APITenantIdentityTokenDelegation{}
 	apiDelegation.FromResponseProto(&protoResponse)
+	status := http.StatusOK
+	if apiDelegation.IsCreated() {
+		status = http.StatusCreated
+	}
 	return c.JSON(status, apiDelegation)
 }
 

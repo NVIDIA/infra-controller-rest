@@ -439,3 +439,26 @@ func TestAPIOpenIDConfiguration_FromResponseProto(t *testing.T) {
 	assert.Empty(t, resp.IDTokenSigningAlgValuesSupported)
 	assert.Equal(t, "https://carbide.example.com/iss/.well-known/spiffe/jwks.json", resp.SpiffeJwksURI)
 }
+
+func TestAPITenantIdentityConfig_IsCreated(t *testing.T) {
+	now := time.Date(2026, 4, 20, 12, 0, 0, 0, time.UTC)
+	later := now.Add(5 * time.Second)
+
+	tests := []struct {
+		name string
+		resp *APITenantIdentityConfig
+		want bool
+	}{
+		{name: "nil receiver", resp: nil, want: false},
+		{name: "first create -> true", resp: &APITenantIdentityConfig{Created: now, Updated: now}, want: true},
+		{name: "subsequent update -> false", resp: &APITenantIdentityConfig{Created: now, Updated: later}, want: false},
+		{name: "zero Created -> false", resp: &APITenantIdentityConfig{Updated: now}, want: false},
+		{name: "zero Updated -> false", resp: &APITenantIdentityConfig{Created: now}, want: false},
+		{name: "both zero -> false", resp: &APITenantIdentityConfig{}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, tt.resp.IsCreated())
+		})
+	}
+}
