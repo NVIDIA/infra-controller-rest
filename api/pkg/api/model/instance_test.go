@@ -2401,7 +2401,7 @@ func TestAPIInstanceCreateRequest_Validate_Auto(t *testing.T) {
 				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
 				VpcID:             uuid.NewString(),
 				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
-				Auto:              true,
+				AutoNetwork:       true,
 				Interfaces:        nil,
 			},
 			wantErr: false,
@@ -2414,13 +2414,13 @@ func TestAPIInstanceCreateRequest_Validate_Auto(t *testing.T) {
 				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
 				VpcID:             uuid.NewString(),
 				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
-				Auto:              true,
+				AutoNetwork:       true,
 				Interfaces: []APIInterfaceCreateOrUpdateRequest{
 					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
 				},
 			},
 			wantErr:          true,
-			wantErrorMessage: "`interfaces` must be empty when `auto` is true",
+			wantErrorMessage: "`interfaces` must be empty when `autoNetwork` is true",
 		},
 		{
 			name: "auto=false with empty interfaces is rejected",
@@ -2430,7 +2430,7 @@ func TestAPIInstanceCreateRequest_Validate_Auto(t *testing.T) {
 				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
 				VpcID:             uuid.NewString(),
 				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
-				Auto:              false,
+				AutoNetwork:       false,
 				Interfaces:        nil,
 			},
 			wantErr:          true,
@@ -2444,11 +2444,11 @@ func TestAPIInstanceCreateRequest_Validate_Auto(t *testing.T) {
 				InstanceTypeID:    cdb.GetStrPtr(uuid.NewString()),
 				VpcID:             uuid.NewString(),
 				OperatingSystemID: cdb.GetStrPtr(uuid.NewString()),
-				Auto:              true,
+				AutoNetwork:       true,
 				SecondaryVpcIDs:   []string{uuid.NewString()},
 			},
 			wantErr:          true,
-			wantErrorMessage: "`secondaryVpcIds` is not supported when `auto` is true",
+			wantErrorMessage: "`secondaryVpcIds` is not supported when `autoNetwork` is true",
 		},
 	}
 	for _, tt := range tests {
@@ -2483,7 +2483,7 @@ func TestAPIBatchInstanceCreateRequest_Validate_Auto(t *testing.T) {
 				InstanceTypeID: uuid.NewString(),
 				VpcID:          uuid.NewString(),
 				IpxeScript:     cdb.GetStrPtr("test ipxe"),
-				Auto:           true,
+				AutoNetwork:    true,
 			},
 			wantErr: false,
 		},
@@ -2496,13 +2496,13 @@ func TestAPIBatchInstanceCreateRequest_Validate_Auto(t *testing.T) {
 				InstanceTypeID: uuid.NewString(),
 				VpcID:          uuid.NewString(),
 				IpxeScript:     cdb.GetStrPtr("test ipxe"),
-				Auto:           true,
+				AutoNetwork:    true,
 				Interfaces: []APIInterfaceCreateOrUpdateRequest{
 					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
 				},
 			},
 			wantErr:          true,
-			wantErrorMessage: "`interfaces` must be empty when `auto` is true",
+			wantErrorMessage: "`interfaces` must be empty when `autoNetwork` is true",
 		},
 	}
 	for _, tt := range tests {
@@ -2532,29 +2532,29 @@ func TestAPIInstanceUpdateRequest_Validate_Auto(t *testing.T) {
 	}{
 		{
 			name:    "auto unset leaves validation untouched",
-			req:     APIInstanceUpdateRequest{Auto: nil},
+			req:     APIInstanceUpdateRequest{AutoNetwork: nil},
 			wantErr: false,
 		},
 		{
 			name:    "auto=true with no interfaces succeeds",
-			req:     APIInstanceUpdateRequest{Auto: &autoTrue},
+			req:     APIInstanceUpdateRequest{AutoNetwork: &autoTrue},
 			wantErr: false,
 		},
 		{
 			name: "auto=true with interfaces is rejected",
 			req: APIInstanceUpdateRequest{
-				Auto: &autoTrue,
+				AutoNetwork: &autoTrue,
 				Interfaces: []APIInterfaceCreateOrUpdateRequest{
 					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
 				},
 			},
 			wantErr:          true,
-			wantErrorMessage: "`interfaces` must be empty when `auto` is true",
+			wantErrorMessage: "`interfaces` must be empty when `autoNetwork` is true",
 		},
 		{
 			name: "auto=false with interfaces succeeds",
 			req: APIInstanceUpdateRequest{
-				Auto: &autoFalse,
+				AutoNetwork: &autoFalse,
 				Interfaces: []APIInterfaceCreateOrUpdateRequest{
 					{SubnetID: cdb.GetStrPtr(uuid.NewString())},
 				},
@@ -2564,11 +2564,11 @@ func TestAPIInstanceUpdateRequest_Validate_Auto(t *testing.T) {
 		{
 			name: "auto=true with secondaryVpcIds is rejected",
 			req: APIInstanceUpdateRequest{
-				Auto:            &autoTrue,
+				AutoNetwork:     &autoTrue,
 				SecondaryVpcIDs: []string{uuid.NewString()},
 			},
 			wantErr:          true,
-			wantErrorMessage: "`secondaryVpcIds` is not supported when `auto` is true",
+			wantErrorMessage: "`secondaryVpcIds` is not supported when `autoNetwork` is true",
 		},
 	}
 	for _, tt := range tests {

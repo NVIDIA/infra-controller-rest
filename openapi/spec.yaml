@@ -15836,7 +15836,7 @@ components:
             - string
             - 'null'
           description: 'Serial Console URL for the Instance. Format: ssh://<id>@siteSerialConsoleHostname'
-        auto:
+        autoNetwork:
           type: boolean
           description: 'True when this Instance uses NICo auto-resolved networking from the host''s underlay (HostInband) network segments. When true, the caller''s request `interfaces` list was empty, this `interfaces` field remains empty on readback, and the resolved per-interface details surface under `status.network.interfaces`.'
         interfaces:
@@ -16101,10 +16101,10 @@ components:
           $ref: '#/components/schemas/Labels'
         interfaces:
           type: array
-          description: 'At least one interface must be specified unless `auto` is true. Either Subnet or VPC Prefix interfaces allowed. Only one of the Subnets or VPC Prefixes can be attached over Physical interface. If only one Subnet is specified, then it will be attached over physical interface regardless of the value of isPhysical. In case of VPC Prefix, isPhysical will always be true. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.'
+          description: 'At least one interface must be specified unless `autoNetwork` is true. Either Subnet or VPC Prefix interfaces allowed. Only one of the Subnets or VPC Prefixes can be attached over Physical interface. If only one Subnet is specified, then it will be attached over physical interface regardless of the value of isPhysical. In case of VPC Prefix, isPhysical will always be true. Mutually exclusive with `autoNetwork`: when `autoNetwork` is true this list MUST be empty.'
           items:
             $ref: '#/components/schemas/InterfaceCreateRequest'
-        auto:
+        autoNetwork:
           type: boolean
           description: 'When true, asks NICo to auto-resolve the Instance''s network interfaces from the host''s underlay (HostInband) network segments. Intended for instances on zero-DPU hosts (or hosts with their DPU in NIC mode). When true: (1) the target VPC''s `networkVirtualizationType` MUST be `FLAT`, (2) `interfaces` MUST be empty or omitted, and (3) `secondaryVpcIds` MUST be empty or omitted. Resolved interfaces surface on the Instance''s read response.'
         infinibandInterfaces:
@@ -16250,10 +16250,10 @@ components:
           $ref: '#/components/schemas/Labels'
         interfaces:
           type: array
-          description: 'Interface configuration shared across all instances. At least one interface must be specified unless `auto` is true. Either Subnet or VPC Prefix interfaces allowed, only one of the Subnets or VPC Prefixes can be attached over Physical interface. Interface `ipAddress` is not supported for batch instance creation requests. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.'
+          description: 'Interface configuration shared across all instances. At least one interface must be specified unless `autoNetwork` is true. Either Subnet or VPC Prefix interfaces allowed, only one of the Subnets or VPC Prefixes can be attached over Physical interface. Interface `ipAddress` is not supported for batch instance creation requests. Mutually exclusive with `autoNetwork`: when `autoNetwork` is true this list MUST be empty.'
           items:
             $ref: '#/components/schemas/InterfaceCreateRequest'
-        auto:
+        autoNetwork:
           type: boolean
           description: 'When true, asks NICo to auto-resolve each Instance''s network interfaces from the host''s underlay (HostInband) network segments. Intended for instances on zero-DPU hosts (or hosts with their DPU in NIC mode). When true: (1) the target VPC''s `networkVirtualizationType` MUST be `FLAT`, (2) `interfaces` MUST be empty or omitted, and (3) `secondaryVpcIds` MUST be empty or omitted.'
         infinibandInterfaces:
@@ -16431,10 +16431,10 @@ components:
             format: uuid
         interfaces:
           type: array
-          description: 'Update Interfaces of the Instance. Mutually exclusive with `auto`: when `auto` is true this list MUST be empty.'
+          description: 'Update Interfaces of the Instance. Mutually exclusive with `autoNetwork`: when `autoNetwork` is true this list MUST be empty.'
           items:
             $ref: '#/components/schemas/InterfaceCreateRequest'
-        auto:
+        autoNetwork:
           type:
             - boolean
             - 'null'
