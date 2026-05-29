@@ -3371,6 +3371,38 @@ func TestCreateInstanceHandler_Handle(t *testing.T) {
 			wantErr:            false,
 			verifyChildSpanner: true,
 		},
+		{
+			// vpc1 is an ETHERNET_VIRTUALIZER VPC; `auto: true` is only
+			// valid for instances in a Flat VPC. The model validator
+			// admits the empty-interfaces + auto pair, so this exercises
+			// the handler-side cross-check that fetches the VPC and
+			// rejects the mismatch before the workflow is invoked.
+			name: "test Instance create API endpoint rejects auto=true on a non-Flat VPC",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceCreateRequest{
+					Name:              "Test Auto on ETV VPC",
+					Description:       cdb.GetStrPtr("auto=true must be rejected outside Flat VPCs"),
+					TenantID:          tn1.ID.String(),
+					InstanceTypeID:    cdb.GetStrPtr(ist1.ID.String()),
+					VpcID:             vpc1.ID.String(),
+					OperatingSystemID: cdb.GetStrPtr(os1.ID.String()),
+					IpxeScript:        cdb.GetStrPtr(common.DefaultIpxeScript),
+					AutoNetwork:       true,
+					Interfaces:        []model.APIInterfaceCreateOrUpdateRequest{},
+				},
+				reqOrg:      tnOrg,
+				reqUser:     tnu1,
+				respCode:    http.StatusBadRequest,
+				respMessage: "`autoNetwork` is only supported when the VPC has `networkVirtualizationType` set to `FLAT`",
+			},
+			wantErr:            false,
+			verifyChildSpanner: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -3573,8 +3605,8 @@ func TestCreateInstanceHandler_Handle(t *testing.T) {
 func resetInstanceStatus(t *testing.T, dbSession *cdb.Session, instanceID uuid.UUID, status string) {
 	instanceDAO := cdbm.NewInstanceDAO(dbSession)
 	_, err := instanceDAO.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
-		InstanceID: instanceID,
-		Status:     cdb.GetStrPtr(status),
+		InstanceID:                instanceID,
+		InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{Status: cdb.GetStrPtr(status)},
 	})
 	if err != nil {
 		t.Fatalf("error updating instance status: %v", err)
@@ -4015,8 +4047,8 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 
 	insDAO := cdbm.NewInstanceDAO(dbSession)
 	_, err := insDAO.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
-		InstanceID:      inst14.ID,
-		IsMissingOnSite: cdb.GetBoolPtr(true),
+		InstanceID:                inst14.ID,
+		InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{IsMissingOnSite: cdb.GetBoolPtr(true)},
 	})
 	assert.NoError(t, err)
 
@@ -6377,6 +6409,31 @@ func TestUpdateInstanceHandler_Handle(t *testing.T) {
 				reqUser:     tnu1,
 				respCode:    http.StatusConflict,
 				respMessage: cdb.GetStrPtr("Instance is missing on site and cannot be updated"),
+			},
+			wantErr: false,
+		},
+		{
+			// inst1 lives on vpc1 (ETHERNET_VIRTUALIZER). Toggling
+			// `auto: true` on an instance whose VPC isn't Flat must be
+			// rejected at the handler layer (the model validator only
+			// checks the `auto`/`interfaces` exclusivity; it can't see
+			// the VPC type).
+			name: "test Instance update API endpoint rejects auto=true on a non-Flat VPC",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData: &model.APIInstanceUpdateRequest{
+					AutoNetwork: cdb.GetBoolPtr(true),
+				},
+				reqInstance: inst1.ID.String(),
+				reqOrg:      tnOrg1,
+				reqUser:     tnu1,
+				respCode:    http.StatusBadRequest,
+				respMessage: cdb.GetStrPtr("`autoNetwork: true` is only supported when the Instance's VPC has `networkVirtualizationType` set to `FLAT`"),
 			},
 			wantErr: false,
 		},

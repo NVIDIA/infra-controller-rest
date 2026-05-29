@@ -250,7 +250,7 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		// `routingProfile` only and let the handler default
 		// `networkVirtualizationType` from site config; Validate
 		// cannot see that default, so the check lives here.
-		if *networkVirtualizationType != cdbm.VpcFNN {
+		if !cdbm.VpcTypeSupportsRoutingProfile(networkVirtualizationType) {
 			logger.Warn().Str("routingProfile", *apiRequest.RoutingProfile).Msg("`routingProfile` can only be specified if network virtualization type is set to `FNN`, or Site has native networking enabled and no network virtualization type is specified")
 			return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "`routingProfile` can only be specified if network virtualization type is set to `FNN`, or Site has native networking enabled and no network virtualization type is specified", nil)
 		}
@@ -419,11 +419,18 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous create VPC workflow")
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to create VPC due to DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to create VPC due to DB transaction error")
 	}
 
 	statusDetails := []cdbm.StatusDetail{*ssd}
@@ -841,11 +848,18 @@ func (uvh UpdateVPCHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC workflow")
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to update VPC due to DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to update VPC due to DB transaction error")
 	}
 
 	// Create response
@@ -1103,11 +1117,18 @@ func (uvvh UpdateVPCVirtualizationHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous update VPC workflow")
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to update VPC virtualization due to DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to update VPC virtualization due to DB transaction error")
 	}
 
 	// Create response
@@ -1778,11 +1799,18 @@ func (dvh DeleteVPCHandler) Handle(c echo.Context) error {
 		logger.Info().Str("Workflow ID", wid).Msg("completed synchronous delete VPC workflow")
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to delete VPC due to DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to delete VPC due to DB transaction error")
 	}
 
 	// Return response

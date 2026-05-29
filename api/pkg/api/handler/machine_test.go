@@ -1799,8 +1799,10 @@ func TestMachineHandler_Update(t *testing.T) {
 		t.Helper()
 		_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 			InstanceID: iOnlineRepairReady.ID,
-			Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
-			Labels:     map[string]string{},
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+				Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
+				Labels: map[string]string{},
+			},
 		})
 		require.NoError(t, uerr)
 	}
@@ -1809,8 +1811,10 @@ func TestMachineHandler_Update(t *testing.T) {
 		t.Helper()
 		_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 			InstanceID: iOnlineRepairReady.ID,
-			Status:     cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
-			Labels:     map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+				Status: cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
+				Labels: map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+			},
 		})
 		require.NoError(t, uerr)
 	}
@@ -2557,8 +2561,10 @@ func TestMachineHandler_Update(t *testing.T) {
 					t.Helper()
 					_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 						InstanceID: iOnlineRepairReady.ID,
-						Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
-						Labels:     map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+						InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+							Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
+							Labels: map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+						},
 					})
 					require.NoError(t, uerr)
 				},
