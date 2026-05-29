@@ -1,3 +1,6 @@
+-- SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+-- SPDX-License-Identifier: Apache-2.0
+
 -- GIN index on task.attributes to support component-targeted task queries.
 --
 -- The intended query pattern (used by ListTasks when ComponentID is set) is:

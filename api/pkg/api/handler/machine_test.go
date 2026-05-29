@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package handler
 
@@ -808,7 +794,6 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	}
 
 	// Build Targeted Instance
-
 	tnOrg4 := "test-tn-org-4"
 	tnu4 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg4}, tnRoles)
 
@@ -917,6 +902,17 @@ func TestMachineHandler_GetAll(t *testing.T) {
 	)
 	assert.Nil(t, err)
 	assert.NotNil(t, ins34)
+
+	tnOrg7 := "test-tn-org-7"
+	tnu7 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg7}, tnRoles)
+	tenant7 := testMachineBuildTenant(t, dbSession, tnOrg7, "test-tenant7")
+	_ = testMachineUpdateTenantCapability(t, dbSession, tenant7)
+	_ = common.TestBuildTenantAccount(t, dbSession, ip, &tenant7.ID, tnOrg7, cdbm.TenantAccountStatusReady, tnu7)
+
+	tnOrg8 := "test-tn-org-8"
+	tnu8 := testMachineBuildUser(t, dbSession, uuid.NewString(), []string{tnOrg8}, tnRoles)
+	tenant8 := testMachineBuildTenant(t, dbSession, tnOrg8, "test-tenant8")
+	_ = testMachineUpdateTenantCapability(t, dbSession, tenant8)
 
 	cfg := common.GetTestConfig()
 	tempClient := &tmocks.Client{}
@@ -1052,7 +1048,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			verifyChildSpanner: true,
 		},
 		{
-			name:               "success case when tenant has TenantAdmin role and has TargetedInstanceCreation capability",
+			name:               "success case when Tenant has TargetedInstanceCreation capability and filters by Site ID",
 			reqOrgName:         tnOrg2,
 			user:               tnu2,
 			querySiteID:        cdb.GetStrPtr(siteT2.ID.String()),
@@ -1062,6 +1058,24 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			expectedTotal:      cdb.GetIntPtr(0),
 			expectInstance:     false,
 			verifyChildSpanner: true,
+		},
+		{
+			name:           "success case when Tenant has TargetedInstanceCreation capability",
+			reqOrgName:     tnOrg7,
+			user:           tnu7,
+			expectedErr:    false,
+			expectedStatus: http.StatusOK,
+			expectedCnt:    totalCount / 2,
+			expectedTotal:  cdb.GetIntPtr(totalCount / 2),
+		},
+		{
+			name:           "empty result when Tenant has TargetedInstanceCreation capability but no Tenant Account",
+			reqOrgName:     tnOrg8,
+			user:           tnu8,
+			expectedErr:    false,
+			expectedStatus: http.StatusOK,
+			expectedCnt:    0,
+			expectedTotal:  cdb.GetIntPtr(0),
 		},
 		{
 			name:                "success case when Instance Type ID specified in query",
@@ -1338,7 +1352,7 @@ func TestMachineHandler_GetAll(t *testing.T) {
 			expectedCnt:    0,
 		},
 		{
-			name:           "failure case when Tenant ID specified in query does not belong to the current infrastructure provider",
+			name:           "failure case when Tenant ID specified in query does have an account with current org's Provider",
 			reqOrgName:     ipOrg4,
 			user:           ipu,
 			queryTenantID:  []string{tenant2.ID.String()},
@@ -1785,8 +1799,10 @@ func TestMachineHandler_Update(t *testing.T) {
 		t.Helper()
 		_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 			InstanceID: iOnlineRepairReady.ID,
-			Status:     cdb.GetStrPtr(cdbm.InstanceStatusReady),
-			Labels:     map[string]string{},
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+				Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
+				Labels: map[string]string{},
+			},
 		})
 		require.NoError(t, uerr)
 	}
@@ -1795,10 +1811,23 @@ func TestMachineHandler_Update(t *testing.T) {
 		t.Helper()
 		_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
 			InstanceID: iOnlineRepairReady.ID,
-			Status:     cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
-			Labels:     map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+				Status: cdb.GetStrPtr(cdbm.InstanceStatusRepairing),
+				Labels: map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+			},
 		})
 		require.NoError(t, uerr)
+	}
+
+	assertOnlineRepairLatestStatusDetail := func(t *testing.T, instanceID uuid.UUID, wantStatus, wantMessage string) {
+		t.Helper()
+		sdDAO := cdbm.NewStatusDetailDAO(dbSession)
+		recent, rerr := sdDAO.GetRecentByEntityIDs(context.Background(), nil, []string{instanceID.String()}, 1)
+		require.NoError(t, rerr)
+		require.Len(t, recent, 1)
+		assert.Equal(t, wantStatus, recent[0].Status)
+		require.NotNil(t, recent[0].Message)
+		assert.Equal(t, wantMessage, *recent[0].Message)
 	}
 
 	mit1 := common.TestBuildMachineInstanceType(t, dbSession, m, instanceType1)
@@ -2417,7 +2446,7 @@ func TestMachineHandler_Update(t *testing.T) {
 			},
 		},
 		{
-			name: "test Machine update API online repair failure, Instance must be Repairing to exit",
+			name: "test Machine update API online repair failure, exit without Repairing status, marker label, or machine OnLineRepair health alert",
 			fields: fields{
 				dbSession: dbSession,
 				tc:        tc,
@@ -2457,6 +2486,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
 					assert.Equal(t, "false", inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion])
+					assertOnlineRepairLatestStatusDetail(t, iOnlineRepairReady.ID, cdbm.InstanceStatusRepairing, "Instance is currently being repaired")
 				},
 			},
 		},
@@ -2482,6 +2512,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
 					assert.Equal(t, "true", inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion])
+					assertOnlineRepairLatestStatusDetail(t, iOnlineRepairReady.ID, cdbm.InstanceStatusRepairing, "Instance is currently being repaired")
 				},
 			},
 		},
@@ -2508,6 +2539,89 @@ func TestMachineHandler_Update(t *testing.T) {
 					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
 					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
 					assert.False(t, has)
+					assertOnlineRepairLatestStatusDetail(t, iOnlineRepairReady.ID, cdbm.InstanceStatusReady, "Instance repair has been completed, ready for use")
+				},
+			},
+		},
+		{
+			name: "test Machine update API online repair success, exit when instance Ready but online repair marker label remains",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData:    buildOnlineRepairExitRequest(),
+				reqMachine: mOnlineRepairReady,
+				reqOrg:     ipOrg1,
+				reqUser:    ipu,
+				respCode:   http.StatusOK,
+				beforeHandle: func(t *testing.T) {
+					t.Helper()
+					_, uerr := isd.Update(context.Background(), nil, cdbm.InstanceUpdateInput{
+						InstanceID: iOnlineRepairReady.ID,
+						InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+							Status: cdb.GetStrPtr(cdbm.InstanceStatusReady),
+							Labels: map[string]string{model.InstanceLabelOnlineRepairAllowAutoDeletion: "false"},
+						},
+					})
+					require.NoError(t, uerr)
+				},
+				verifyOnlineRepair: func(t *testing.T) {
+					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
+					require.NoError(t, gerr)
+					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
+					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
+					assert.False(t, has)
+					assertOnlineRepairLatestStatusDetail(t, iOnlineRepairReady.ID, cdbm.InstanceStatusReady, "Instance repair has been completed, ready for use")
+				},
+			},
+		},
+		{
+			name: "test Machine update API online repair success, exit when Ready without marker but Machine health lists OnLineRepair alert",
+			fields: fields{
+				dbSession: dbSession,
+				tc:        tc,
+				scp:       scp,
+				cfg:       cfg,
+			},
+			args: args{
+				reqData:    buildOnlineRepairExitRequest(),
+				reqMachine: mOnlineRepairReady,
+				reqOrg:     ipOrg1,
+				reqUser:    ipu,
+				respCode:   http.StatusOK,
+				beforeHandle: func(t *testing.T) {
+					t.Helper()
+					machineRepairResetReady(t)
+					health := map[string]interface{}{
+						"alerts": []map[string]interface{}{
+							{
+								"id":      model.MachineHealthAlertIDOnlineRepair,
+								"message": `{}`,
+							},
+						},
+					}
+					_, uerr := machineDAO.Update(ctx, nil, cdbm.MachineUpdateInput{
+						MachineID: mOnlineRepairReady.ID,
+						Health:    health,
+					})
+					require.NoError(t, uerr)
+				},
+				verifyOnlineRepair: func(t *testing.T) {
+					t.Helper()
+					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
+					require.NoError(t, gerr)
+					assert.Equal(t, cdbm.InstanceStatusReady, inst.Status)
+					_, has := inst.Labels[model.InstanceLabelOnlineRepairAllowAutoDeletion]
+					assert.False(t, has)
+					assertOnlineRepairLatestStatusDetail(t, iOnlineRepairReady.ID, cdbm.InstanceStatusReady, "Instance repair has been completed, ready for use")
+					_, cerr := machineDAO.Clear(context.Background(), nil, cdbm.MachineClearInput{
+						MachineID: mOnlineRepairReady.ID,
+						Health:    true,
+					})
+					require.NoError(t, cerr)
 				},
 			},
 		},
@@ -2532,6 +2646,7 @@ func TestMachineHandler_Update(t *testing.T) {
 					inst, gerr := isd.GetByID(context.Background(), nil, iOnlineRepairReady.ID, nil)
 					require.NoError(t, gerr)
 					assert.Equal(t, cdbm.InstanceStatusRepairing, inst.Status)
+					assertOnlineRepairLatestStatusDetail(t, iOnlineRepairReady.ID, cdbm.InstanceStatusRepairing, "Instance is currently being repaired")
 				},
 			},
 		},

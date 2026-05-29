@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package handler
 
@@ -417,6 +403,14 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	if vpc.ControllerVpcID == nil || vpc.Status != cdbm.VpcStatusReady {
 		logger.Warn().Msg("VPC specified in request data is not ready")
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "VPC specified in request data is not ready", nil)
+	}
+
+	// Validate request fields that depend on the resolved VPC (e.g.
+	// `autoNetwork` requires a Flat VPC).
+	verr = apiRequest.ValidateForVpc(vpc)
+	if verr != nil {
+		logger.Warn().Err(verr).Msg("error validating batch Instance creation request against VPC")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating batch Instance creation request data", verr)
 	}
 
 	var defaultNvllpID *uuid.UUID
@@ -1239,6 +1233,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 			AlwaysBootWithCustomIpxe: *apiRequest.AlwaysBootWithCustomIpxe,
 			PhoneHomeEnabled:         *apiRequest.PhoneHomeEnabled,
 			UserData:                 apiRequest.UserData,
+			AutoNetwork:              apiRequest.AutoNetwork,
 			NetworkSecurityGroupID:   apiRequest.NetworkSecurityGroupID,
 			Labels:                   apiRequest.Labels,
 			InstanceTypeID:           &apiInstanceTypeID,
@@ -1258,20 +1253,27 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	}
 	logger.Info().Int("count", len(createdInstances)).Msg("batch created all instance records")
 
-	// --- Build and batch update ControllerInstanceIDs ---
-	instanceUpdateInputs := make([]cdbm.InstanceUpdateInput, 0, len(createdInstances))
+	// --- Set each instance's ControllerInstanceID to its own ID ---
+	//
+	// Each row needs a *different* ControllerInstanceID value (its own
+	// ID), so this doesn't fit `UpdateMultiple`'s shared-mask /
+	// shared-values contract. We issue one single-row Update per
+	// instance inside the existing transaction -- atomic and cheap at
+	// the batch sizes we support (capped at MaxBatchSize, ~18 today).
+	updatedInstances := make([]cdbm.Instance, 0, len(createdInstances))
 	for _, inst := range createdInstances {
-		instanceUpdateInputs = append(instanceUpdateInputs, cdbm.InstanceUpdateInput{
-			InstanceID:           inst.ID,
-			ControllerInstanceID: cdb.GetUUIDPtr(inst.ID),
+		updated, uerr := inDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{
+			InstanceID: inst.ID,
+			InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+				ControllerInstanceID: cdb.GetUUIDPtr(inst.ID),
+			},
 		})
-	}
-
-	updatedInstances, err := inDAO.UpdateMultiple(ctx, tx, instanceUpdateInputs)
-	if err != nil {
-		logger.Error().Err(err).Msg("failed to batch update controller instance IDs")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError,
-			fmt.Sprintf("Failed to batch update instances: %v", err), nil)
+		if uerr != nil {
+			logger.Error().Err(uerr).Msg("failed to update controller instance ID")
+			return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError,
+				fmt.Sprintf("Failed to update Instance: %v", uerr), nil)
+		}
+		updatedInstances = append(updatedInstances, *updated)
 	}
 	logger.Info().Int("count", len(updatedInstances)).Msg("batch updated all controller instance IDs")
 
@@ -1626,10 +1628,8 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 					TenantOrganizationId: tenant.Org,
 					TenantKeysetIds:      instanceSshKeyGroupIds,
 				},
-				Os: osConfig,
-				Network: &cwssaws.InstanceNetworkConfig{
-					Interfaces: data.interfaceConfigs,
-				},
+				Os:      osConfig,
+				Network: buildInstanceNetworkConfig(instance.AutoNetwork, data.interfaceConfigs),
 				Infiniband: &cwssaws.InstanceInfinibandConfig{
 					IbInterfaces: data.ibInterfaceConfigs,
 				},
@@ -1770,7 +1770,6 @@ func allocateMachinesForBatch(
 
 	// Get all available Machines for the Instance Type
 	filterInput := cdbm.MachineFilterInput{
-		SiteID:          instancetype.SiteID,
 		InstanceTypeIDs: []uuid.UUID{instancetype.ID},
 		IsAssigned:      cdb.GetBoolPtr(false),
 		Statuses:        []string{cdbm.MachineStatusReady},

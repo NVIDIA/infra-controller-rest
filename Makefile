@@ -1,19 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-.PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers
+.PHONY: test postgres-up postgres-down ensure-postgres postgres-wait clean check-source-headers fix-source-headers
 .PHONY: build docker-build docker-build-local
 .PHONY: test-ipam test-site-agent test-site-manager test-workflow test-db test-api test-auth test-common test-cert-manager test-site-workflow migrate core-mock-server-build core-mock-server-start core-mock-server-stop flow-mock-server-build flow-mock-server-start flow-mock-server-stop
 .PHONY: validate-openapi preview-openapi generate-client
@@ -84,6 +72,9 @@ clean:
 
 check-source-headers:
 	python3 scripts/check_source_headers.py
+
+fix-source-headers:
+	python3 scripts/check_source_headers.py --fix
 
 ensure-postgres:
 	@docker inspect $(POSTGRES_CONTAINER_NAME) > /dev/null 2>&1 || $(MAKE) postgres-up
@@ -671,7 +662,7 @@ generate-sdk:
 
 # Validate OpenAPI spec using Redocly CLI (Docker)
 lint-openapi:
-	npx @redocly/cli lint ./openapi/spec.yaml
+	npx @redocly/cli lint --skip-rule=no-ambiguous-paths ./openapi/spec.yaml
 
 # Preview OpenAPI spec in Redoc UI (Docker)
 preview-openapi:

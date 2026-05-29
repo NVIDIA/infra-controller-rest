@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package model
 
@@ -44,8 +30,9 @@ const (
 	MachineMaxLabelCount = 10
 	// InstanceLabelOnlineRepairAllowAutoDeletion records repairPolicy.allowAutoInstanceDeletionOnFailure from the last enter-online-repair request ("true" / "false").
 	InstanceLabelOnlineRepairAllowAutoDeletion = "onlineRepair.allowAutoInstanceDeletionOnFailure"
-	// MachineOnlineRepairHealthOverrideSourceTenant is the source of the online repair health override.
-	MachineOnlineRepairHealthOverrideSourceTenant = "tenant-reported-issue"
+	// MachineHealthOverrideSourceOnlineRepair is the merges-path source NICo Core uses for in-pool
+	// online repair (repair_merge_active); must align with RequestOnlineRepair / admin CLI.
+	MachineHealthOverrideSourceOnlineRepair = "request-online-repair"
 	// MachineHealthAlertIDOnlineRepair is the ID of the online repair health alert.
 	MachineHealthAlertIDOnlineRepair = "OnLineRepair"
 	// TenantReportedIssueAlertID is the ID of the tenant-reported issue health alert.
@@ -314,14 +301,14 @@ func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID s
 		},
 	}
 	hr := &cwssaws.HealthReport{
-		Source: MachineOnlineRepairHealthOverrideSourceTenant,
+		Source: MachineHealthOverrideSourceOnlineRepair,
 		Alerts: []*cwssaws.HealthProbeAlert{alert},
 	}
 	return &cwssaws.InsertHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: machineID},
 		Override: &cwssaws.HealthReportOverride{
 			Report: hr,
-			Mode:   cwssaws.OverrideMode_Replace,
+			Mode:   cwssaws.OverrideMode_Merge,
 		},
 	}, nil
 }
@@ -329,7 +316,7 @@ func (mur APIMachineUpdateRequest) ToInsertHealthReportOverrideProto(machineID s
 func (mur APIMachineUpdateRequest) ToRemoveHealthReportOverrideProto(machineID string) (*cwssaws.RemoveHealthReportOverrideRequest, error) {
 	return &cwssaws.RemoveHealthReportOverrideRequest{
 		MachineId: &cwssaws.MachineId{Id: machineID},
-		Source:    MachineOnlineRepairHealthOverrideSourceTenant,
+		Source:    MachineHealthOverrideSourceOnlineRepair,
 	}, nil
 }
 

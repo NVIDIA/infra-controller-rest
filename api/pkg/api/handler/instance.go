@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package handler
 
@@ -55,7 +41,8 @@ import (
 )
 
 const (
-	NVLinkInterfaceStatusSyncGraceWindow = 90 * time.Second
+	NVLinkInterfaceStatusSyncGraceWindow     = 90 * time.Second
+	InfiniBandInterfaceStatusSyncGraceWindow = 90 * time.Second
 )
 
 // ~~~~~ Create Handler ~~~~~ //
@@ -67,6 +54,22 @@ type CreateInstanceHandler struct {
 	scp        *sc.ClientPool
 	cfg        *config.Config
 	tracerSpan *cutil.TracerSpan
+}
+
+// buildInstanceNetworkConfig assembles the workflow
+// InstanceNetworkConfig from the persisted auto flag and the
+// per-interface configs built earlier in the handler. When auto is
+// true the explicit interface list is intentionally omitted: NICo
+// resolves interfaces from the host's HostInband segments, so
+// sending an explicit list alongside auto=true is contradictory
+// (rejected by Core, and on update could otherwise carry forward
+// the instance's previously-persisted interfaces).
+func buildInstanceNetworkConfig(auto bool, interfaceConfigs []*cwssaws.InstanceInterfaceConfig) *cwssaws.InstanceNetworkConfig {
+	nc := &cwssaws.InstanceNetworkConfig{Auto: auto}
+	if !auto {
+		nc.Interfaces = interfaceConfigs
+	}
+	return nc
 }
 
 // NewCreateInstanceHandler initializes and returns a new handler for creating Instance
@@ -362,6 +365,14 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 	if vpc.ControllerVpcID == nil || vpc.Status != cdbm.VpcStatusReady {
 		logger.Warn().Msg("VPC specified in request data is not ready")
 		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "VPC specified in request data is not ready", nil)
+	}
+
+	// Validate request fields that depend on the resolved VPC (e.g.
+	// `autoNetwork` requires a Flat VPC).
+	verr = apiRequest.ValidateForVpc(vpc)
+	if verr != nil {
+		logger.Warn().Err(verr).Msg("error validating Instance creation request against VPC")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Instance creation request data", verr)
 	}
 
 	var defaultNvllpID *uuid.UUID
@@ -1261,6 +1272,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 			AlwaysBootWithCustomIpxe: *apiRequest.AlwaysBootWithCustomIpxe,
 			PhoneHomeEnabled:         *apiRequest.PhoneHomeEnabled,
 			UserData:                 apiRequest.UserData,
+			AutoNetwork:              apiRequest.AutoNetwork,
 			NetworkSecurityGroupID:   apiRequest.NetworkSecurityGroupID,
 			Labels:                   apiRequest.Labels,
 			IsUpdatePending:          false,
@@ -1285,7 +1297,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 		// Update the controller ID
 		// We need this to match the instance ID.  This was previously handled
 		// by the async cloud workflow after successful creation on site.
-		instance, derr = instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, ControllerInstanceID: cdb.GetUUIDPtr(instance.ID)})
+		instance, derr = instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{ControllerInstanceID: cdb.GetUUIDPtr(instance.ID)}})
 		if derr != nil {
 			logger.Error().Err(derr).Msg("unable to update Instance record controllerInstanceID in DB")
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed updating new Instance record, DB error", nil)
@@ -1551,10 +1563,8 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 					TenantOrganizationId: tenant.Org,
 					TenantKeysetIds:      instanceSshKeyGroupIds,
 				},
-				Os: osConfig,
-				Network: &cwssaws.InstanceNetworkConfig{
-					Interfaces: interfaceConfigs,
-				},
+				Os:      osConfig,
+				Network: buildInstanceNetworkConfig(instance.AutoNetwork, interfaceConfigs),
 				Infiniband: &cwssaws.InstanceInfinibandConfig{
 					IbInterfaces: ibInterfaceConfigs,
 				},
@@ -1617,11 +1627,18 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to create Instance, DB transaction error")
 	}
 
 	// ==================== Step 7: Response ====================
@@ -1704,10 +1721,12 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 		var derr error
 		ui, derr = instanceDAO.Update(ctx, tx,
 			cdbm.InstanceUpdateInput{
-				InstanceID:  instance.ID,
-				Name:        apiRequest.Name,
-				Description: apiRequest.Description,
-				PowerStatus: powerStatus,
+				InstanceID: instance.ID,
+				InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+					Name:        apiRequest.Name,
+					Description: apiRequest.Description,
+					PowerStatus: powerStatus,
+				},
 			},
 		)
 		if derr != nil {
@@ -1801,11 +1820,18 @@ func (uih UpdateInstanceHandler) handleReboot(c echo.Context, logger *zerolog.Lo
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, *logger, err, "Failed to reboot Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, *logger, err, "Failed to reboot Instance, DB transaction error")
 	}
 
 	// Create response
@@ -2139,6 +2165,16 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	// we know the caller has access to this instance.
 	if instance.Status == cdbm.InstanceStatusTerminating || instance.Status == cdbm.InstanceStatusTerminated {
 		return cutil.NewAPIErrorResponse(c, http.StatusConflict, "Instance is terminating and cannot be updated", nil)
+	}
+
+	// Validate network fields that depend on the resolved VPC and the
+	// Instance's currently-persisted auto state (e.g. `autoNetwork: true`
+	// requires a Flat VPC; explicit interfaces can't be set while the
+	// effective post-update auto state is true).
+	verr = apiRequest.ValidateForVpc(vpc, instance.AutoNetwork)
+	if verr != nil {
+		logger.Warn().Err(verr).Msg("error validating Instance update request against VPC")
+		return cutil.NewAPIErrorResponse(c, http.StatusBadRequest, "Error validating Instance update request data", verr)
 	}
 
 	if instance.IsMissingOnSite {
@@ -2715,9 +2751,12 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 	var existingIfcs []cdbm.Interface
 	var existingIbIfcs []cdbm.InfiniBandInterface
 	var existingNvlIfcs []cdbm.NVLinkInterface
+	var newOrExistingIbIfcs []cdbm.InfiniBandInterface
+	var newOrExistingNvlIfcs []cdbm.NVLinkInterface
 	var dbskgs []cdbm.SSHKeyGroup
 	var ssds []cdbm.StatusDetail
 	reqCtx := ctx
+	reIssueInfiniBandInterfaces := false
 	reIssueNVLinkInterfaces := false
 
 	// timeoutResp lets the closure signal a post-rollback handler — the
@@ -2753,17 +2792,20 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		var derr error
 		ui, derr = instanceDAO.Update(ctx, tx,
 			cdbm.InstanceUpdateInput{
-				InstanceID:               instanceID,
-				Name:                     apiRequest.Name,
-				Description:              apiRequest.Description,
-				OperatingSystemID:        osID,
-				IpxeScript:               apiRequest.IpxeScript,
-				AlwaysBootWithCustomIpxe: apiRequest.AlwaysBootWithCustomIpxe,
-				NetworkSecurityGroupID:   nsgID,
-				PhoneHomeEnabled:         apiRequest.PhoneHomeEnabled,
-				Status:                   instanceStatusConfiguring,
-				UserData:                 apiRequest.UserData,
-				Labels:                   apiRequest.Labels,
+				InstanceID: instanceID,
+				InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{
+					Name:                     apiRequest.Name,
+					Description:              apiRequest.Description,
+					OperatingSystemID:        osID,
+					IpxeScript:               apiRequest.IpxeScript,
+					AlwaysBootWithCustomIpxe: apiRequest.AlwaysBootWithCustomIpxe,
+					NetworkSecurityGroupID:   nsgID,
+					PhoneHomeEnabled:         apiRequest.PhoneHomeEnabled,
+					Status:                   instanceStatusConfiguring,
+					UserData:                 apiRequest.UserData,
+					AutoNetwork:              apiRequest.AutoNetwork,
+					Labels:                   apiRequest.Labels,
+				},
 			},
 		)
 		if derr != nil {
@@ -2938,8 +2980,30 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve current Ethernet Interfaces for Instance, DB error", nil)
 		}
 
-		// Create new Interface records in the DB if specified in request
-		if len(apiRequest.Interfaces) > 0 {
+		// Create new Interface records in the DB if specified in request.
+		//
+		// Three branches:
+		//   - Switching to auto mode (`ui.AutoNetwork && len(apiRequest.Interfaces) == 0`):
+		//     mark every prior explicit interface row as Deleting and
+		//     return an empty list. Reads after this should reflect the
+		//     auto contract (no explicit interfaces) rather than the
+		//     stale rows that pre-dated the mode switch.
+		//   - Explicit interfaces in the request: create the new rows
+		//     and mark the previous rows as Deleting (existing behavior).
+		//   - Neither (no interface change, not switching to auto):
+		//     carry the existing rows forward.
+		switch {
+		case ui.AutoNetwork && len(apiRequest.Interfaces) == 0:
+			for i := range existingIfcs {
+				existingIfcs[i].Status = cdbm.InterfaceStatusDeleting
+				_, err := ifcDAO.Update(ctx, tx, cdbm.InterfaceUpdateInput{InterfaceID: existingIfcs[i].ID, Status: cdb.GetStrPtr(cdbm.InterfaceStatusDeleting)})
+				if err != nil {
+					logger.Error().Err(err).Msg("failed to update Interface record in DB")
+					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Interface for Instance, DB error", nil)
+				}
+			}
+			newdbIfcs = []cdbm.Interface{}
+		case len(apiRequest.Interfaces) > 0:
 			for _, dbifc := range dbInterfaces {
 				input := cdbm.InterfaceCreateInput{
 					InstanceID:         instance.ID,
@@ -2975,7 +3039,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Interface for Instance, DB error", nil)
 				}
 			}
-		} else {
+		default:
 			newdbIfcs = existingIfcs
 		}
 
@@ -2990,49 +3054,109 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		if apiRequest.InfiniBandInterfaces != nil {
-			for _, apiibifc := range apiRequest.InfiniBandInterfaces {
-				// NOTE: This is redundant due to earlier validation, but we handle it anyway
-				ibpID, err := uuid.Parse(apiibifc.InfiniBandPartitionID)
-				if err != nil {
-					logger.Error().Err(err).Msg("failed to parse InfinibandPartitionID")
-					return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Failed to parse InfiniBand Partition ID specified in request: %s", apiibifc.InfiniBandPartitionID), nil)
-				}
 
-				dbibifc, err := ibiDAO.Create(ctx, tx, cdbm.InfiniBandInterfaceCreateInput{
-					InstanceID:            instanceID,
-					SiteID:                site.ID,
-					InfiniBandPartitionID: ibpID,
-					Device:                apiibifc.Device,
-					Vendor:                apiibifc.Vendor,
-					DeviceInstance:        apiibifc.DeviceInstance,
-					IsPhysical:            apiibifc.IsPhysical,
-					VirtualFunctionID:     apiibifc.VirtualFunctionID,
-					Status:                cdbm.InfiniBandInterfaceStatusPending,
-					CreatedBy:             dbUser.ID,
-				})
+			// Bucket existing InfiniBand rows by (partition ID, device name, device instance) so we can align with the incoming request.
+			existingIbIfcMap := make(map[string][]cdbm.InfiniBandInterface)
 
-				if err != nil {
-					logger.Error().Err(err).Msg("failed to create Infiniband Interface record in DB")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Infiniband Interface for Instance, DB error", nil)
-				}
-
-				newIbIfcs = append(newIbIfcs, *dbibifc)
-			}
-
-			// Update status of existing InfiniBand Interfaces to Deleting
+			// There can be multiple historical rows per key; Ordering existingIbIfcs by Created ascending makes the slice per key chronological.
 			for i := range existingIbIfcs {
-				existingIbIfcs[i].Status = cdbm.InfiniBandInterfaceStatusDeleting
-				_, err = ibiDAO.Update(ctx, tx, cdbm.InfiniBandInterfaceUpdateInput{
-					InfiniBandInterfaceID: existingIbIfcs[i].ID,
-					Status:                cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusDeleting),
-				})
-				if err != nil {
-					logger.Error().Err(err).Msg("failed to update Infiniband Interface record in DB")
-					return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Infiniband Interface for Instance, DB error", nil)
+				key := fmt.Sprintf("%s:%s:%d", existingIbIfcs[i].InfiniBandPartitionID.String(), existingIbIfcs[i].Device, existingIbIfcs[i].DeviceInstance)
+				existingIbIfcMap[key] = append(existingIbIfcMap[key], existingIbIfcs[i])
+			}
+
+			existingReadyIbIfcsCount := 0
+			existingPendingIbIfcsCount := 0
+			existingDeletingIbIfcsCount := 0
+
+			for _, apiIbIfc := range apiRequest.InfiniBandInterfaces {
+				key := fmt.Sprintf("%s:%s:%d", apiIbIfc.InfiniBandPartitionID, apiIbIfc.Device, apiIbIfc.DeviceInstance)
+				existingIbIfcsForKey := existingIbIfcMap[key]
+
+				// Check the status of the most recent InfiniBand interface for this (partition, device, device instance) key.
+				if len(existingIbIfcsForKey) > 0 {
+					mostRecentIbIfc := existingIbIfcsForKey[len(existingIbIfcsForKey)-1]
+					if mostRecentIbIfc.Status == cdbm.InfiniBandInterfaceStatusReady {
+						// This interface is already ready, we don't need to re-issue the InfiniBand interface
+						existingReadyIbIfcsCount++
+					} else {
+						if mostRecentIbIfc.Updated.After(time.Now().Add(-InfiniBandInterfaceStatusSyncGraceWindow)) {
+							if mostRecentIbIfc.Status == cdbm.InfiniBandInterfaceStatusPending {
+								existingPendingIbIfcsCount++
+							} else if mostRecentIbIfc.Status == cdbm.InfiniBandInterfaceStatusDeleting {
+								existingDeletingIbIfcsCount++
+							} else if mostRecentIbIfc.Status == cdbm.InfiniBandInterfaceStatusError {
+								reIssueInfiniBandInterfaces = true
+							}
+						} else {
+							reIssueInfiniBandInterfaces = true
+						}
+					}
+				} else {
+					// No existing InfiniBand interface found for this InfiniBand Partition ID, Device and Device Instance
+					reIssueInfiniBandInterfaces = true
 				}
 			}
-		} else {
-			newIbIfcs = existingIbIfcs
+
+			// If we're here and we're not re-issuing InfiniBand interfaces, we need to check if the number of existing InfiniBand interfaces in transition is different from the number of InfiniBand interfaces in the request
+			// Assumptions:
+			// - There can be no more than 4 InfiniBand Interfaces in Ready state
+			// - There can be no more than 4 InfiniBand Interfaces in Pending state
+			// - There can more than 4 InfiniBand Interfaces in Deleting state, in multiples of 4
+			// - There cannot be Ready and Pending InfiniBand Interfaces at the same time
+			// - There cannot be Ready and Deleting InfiniBand Interfaces at the same time
+			if !reIssueInfiniBandInterfaces {
+				if existingReadyIbIfcsCount > 0 && existingReadyIbIfcsCount != len(apiRequest.InfiniBandInterfaces) {
+					reIssueInfiniBandInterfaces = true
+				} else if existingPendingIbIfcsCount > 0 && existingPendingIbIfcsCount != len(apiRequest.InfiniBandInterfaces) {
+					reIssueInfiniBandInterfaces = true
+				} else if existingDeletingIbIfcsCount > 0 && existingDeletingIbIfcsCount != len(apiRequest.InfiniBandInterfaces) {
+					reIssueInfiniBandInterfaces = true
+				}
+			}
+
+			if reIssueInfiniBandInterfaces {
+				for _, apiibifc := range apiRequest.InfiniBandInterfaces {
+					// NOTE: This is redundant due to earlier validation, but we handle it anyway
+					ibpID, err := uuid.Parse(apiibifc.InfiniBandPartitionID)
+					if err != nil {
+						logger.Error().Err(err).Msg("failed to parse InfinibandPartitionID")
+						return cutil.NewAPIError(http.StatusBadRequest, fmt.Sprintf("Failed to parse InfiniBand Partition ID specified in request: %s", apiibifc.InfiniBandPartitionID), nil)
+					}
+
+					dbibifc, err := ibiDAO.Create(ctx, tx, cdbm.InfiniBandInterfaceCreateInput{
+						InstanceID:            instanceID,
+						SiteID:                site.ID,
+						InfiniBandPartitionID: ibpID,
+						Device:                apiibifc.Device,
+						Vendor:                apiibifc.Vendor,
+						DeviceInstance:        apiibifc.DeviceInstance,
+						IsPhysical:            apiibifc.IsPhysical,
+						VirtualFunctionID:     apiibifc.VirtualFunctionID,
+						Status:                cdbm.InfiniBandInterfaceStatusPending,
+						CreatedBy:             dbUser.ID,
+					})
+
+					if err != nil {
+						logger.Error().Err(err).Msg("failed to create Infiniband Interface record in DB")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to create Infiniband Interface for Instance, DB error", nil)
+					}
+
+					newIbIfcs = append(newIbIfcs, *dbibifc)
+				}
+
+				// Update status of existing InfiniBand Interfaces to Deleting
+				for i := range existingIbIfcs {
+					existingIbIfcs[i].Status = cdbm.InfiniBandInterfaceStatusDeleting
+					_, err = ibiDAO.Update(ctx, tx, cdbm.InfiniBandInterfaceUpdateInput{
+						InfiniBandInterfaceID: existingIbIfcs[i].ID,
+						Status:                cdb.GetStrPtr(cdbm.InfiniBandInterfaceStatusDeleting),
+					})
+					if err != nil {
+						logger.Error().Err(err).Msg("failed to update Infiniband Interface record in DB")
+						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update Infiniband Interface for Instance, DB error", nil)
+					}
+				}
+			}
 		}
 
 		// Fetch existing DPU Extension Service Deployments for the Instance
@@ -3162,6 +3286,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 								existingPendingNvlIfcsCount++
 							} else if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusDeleting {
 								existingDeletingNvlIfcsCount++
+							} else if mostRecentNvlIfc.Status == cdbm.NVLinkInterfaceStatusError {
+								reIssueNVLinkInterfaces = true
 							}
 						} else {
 							reIssueNVLinkInterfaces = true
@@ -3174,8 +3300,21 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				}
 			}
 
-			if !reIssueNVLinkInterfaces && (existingReadyNvlIfcsCount != len(apiRequest.NVLinkInterfaces) || (existingPendingNvlIfcsCount != len(apiRequest.NVLinkInterfaces)) || (existingDeletingNvlIfcsCount != 0)) {
-				reIssueNVLinkInterfaces = true
+			// If we're here and we're not re-issuing NVLink interfaces, we need to check if the number of existing NVLink interfaces in transition is different from the number of NVLink interfaces in the request
+			// Assumptions:
+			// - There can be no more than 4 NVLink Interfaces in Ready state
+			// - There can be no more than 4 NVLink Interfaces in Pending state
+			// - There can more than 4 NVLink Interfaces in Deleting state, in multiples of 4
+			// - There cannot be Ready and Pending NVLink Interfaces at the same time
+			// - There cannot be Ready and Deleting NVLink Interfaces at the same time
+			if !reIssueNVLinkInterfaces {
+				if existingReadyNvlIfcsCount > 0 && existingReadyNvlIfcsCount != len(apiRequest.NVLinkInterfaces) {
+					reIssueNVLinkInterfaces = true
+				} else if existingPendingNvlIfcsCount > 0 && existingPendingNvlIfcsCount != len(apiRequest.NVLinkInterfaces) {
+					reIssueNVLinkInterfaces = true
+				} else if existingDeletingNvlIfcsCount > 0 && existingDeletingNvlIfcsCount != len(apiRequest.NVLinkInterfaces) {
+					reIssueNVLinkInterfaces = true
+				}
 			}
 
 			if reIssueNVLinkInterfaces {
@@ -3227,11 +3366,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 						return cutil.NewAPIError(http.StatusInternalServerError, "Failed to update NVLink Interfaces for Instance, DB error", nil)
 					}
 				}
-			} else {
-				newNvlIfcs = existingNvlIfcs
 			}
-		} else {
-			newNvlIfcs = existingNvlIfcs
 		}
 
 		// Get Status Details
@@ -3304,9 +3439,11 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// Populate InfiniBand Interface details for Site Controller request
+		// This loop accommodates both cases where InfiniBand Interfaces for updated or no update was requested
+		// IF there are any new InfiniBand Interfaces, that means all existing InfiniBand Interfaces will be in Deleting state
 		ibInterfaceConfigs := []*cwssaws.InstanceIBInterfaceConfig{}
-
-		for _, newIbIfc := range newIbIfcs {
+		newOrExistingIbIfcs = append(newIbIfcs, existingIbIfcs...)
+		for _, newIbIfc := range newOrExistingIbIfcs {
 			if newIbIfc.Status == cdbm.InfiniBandInterfaceStatusDeleting {
 				// NOTE: Don't send any InfiniBand Interfaces that are being deleted
 				continue
@@ -3350,8 +3487,11 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		}
 
 		// Populate NVLink Interface details for Site Controller request
+		// IF there are any new NVLink Interfaces, that means all existing NVLink Interfaces will be in Deleting state
+		// This loop accommodates both cases where NVLink Interfaces for updated or no update was requested
 		nvlInterfaceConfigs := []*cwssaws.InstanceNVLinkGpuConfig{}
-		for _, newNvlIfc := range newNvlIfcs {
+		newOrExistingNvlIfcs = append(newNvlIfcs, existingNvlIfcs...)
+		for _, newNvlIfc := range newOrExistingNvlIfcs {
 			if newNvlIfc.Status == cdbm.NVLinkInterfaceStatusDeleting {
 				// NOTE: Don't send any NVLink interfaces that are being deleted
 				continue
@@ -3378,10 +3518,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					TenantOrganizationId: tenant.Org,
 					TenantKeysetIds:      instanceSshKeyGroupIds,
 				},
-				Os: osConfig,
-				Network: &cwssaws.InstanceNetworkConfig{
-					Interfaces: interfaceConfigs,
-				},
+				Os:      osConfig,
+				Network: buildInstanceNetworkConfig(ui.AutoNetwork, interfaceConfigs),
 				Infiniband: &cwssaws.InstanceInfinibandConfig{
 					IbInterfaces: ibInterfaceConfigs,
 				},
@@ -3438,11 +3576,18 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to update Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to update Instance, DB transaction error")
 	}
 
 	// If existing Interfaces were updated, add them to the response
@@ -3451,20 +3596,8 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 		newdbIfcs = append(newdbIfcs, existingIfcs...)
 	}
 
-	// If existing InfiniBand Interfaces were updated, add them to the response
-	if len(existingIbIfcs) > 0 {
-		// Add the existing InfiniBand Interfaces to the response
-		newIbIfcs = append(newIbIfcs, existingIbIfcs...)
-	}
-
-	// If existing NVLink Interfaces were updated, add them to the response
-	if len(existingNvlIfcs) > 0 && !reIssueNVLinkInterfaces {
-		// Add the existing NVLink Interfaces to the response
-		newNvlIfcs = append(newNvlIfcs, existingNvlIfcs...)
-	}
-
 	// Create response
-	apiInstance := model.NewAPIInstance(ui, site, newdbIfcs, newIbIfcs, updateDesds, newNvlIfcs, dbskgs, ssds)
+	apiInstance := model.NewAPIInstance(ui, site, newdbIfcs, newOrExistingIbIfcs, updateDesds, newOrExistingNvlIfcs, dbskgs, ssds)
 
 	// If the instance has no NSG ID, then we need to check if its parent VPC does.
 	// We'll need to pull that separately because the user might not have asked for
@@ -3696,12 +3829,20 @@ func (gih GetInstanceHandler) Handle(c echo.Context) error {
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Site for Instance", nil)
 	}
 
-	// Get the instance subnets record from the db
+	// Get the instance Interfaces record from the db
 	ifcDAO := cdbm.NewInterfaceDAO(gih.dbSession)
-	ifcs, _, err := ifcDAO.GetAll(ctx, nil, cdbm.InterfaceFilterInput{InstanceIDs: []uuid.UUID{instance.ID}}, cdbp.PageInput{}, []string{cdbm.SubnetRelationName, cdbm.VpcPrefixRelationName})
+	ifcs, _, err := ifcDAO.GetAll(
+		ctx,
+		nil,
+		cdbm.InterfaceFilterInput{
+			InstanceIDs: []uuid.UUID{instance.ID},
+		},
+		cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InterfaceOrderByCreated, Order: cdbp.OrderAscending}, Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
+		[]string{cdbm.SubnetRelationName, cdbm.VpcPrefixRelationName},
+	)
 	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving instance Subnet Details from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance Subnets for Instance", nil)
+		logger.Error().Err(err).Msg("error retrieving instance Interfaces Details from DB")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance Interfaces for Instance", nil)
 	}
 
 	// Get the instance infiniband interface record from the db
@@ -3712,12 +3853,26 @@ func (gih GetInstanceHandler) Handle(c echo.Context) error {
 		cdbm.InfiniBandInterfaceFilterInput{
 			InstanceIDs: []uuid.UUID{instanceID},
 		},
-		cdbp.PageInput{},
+		cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InfiniBandInterfaceOrderByCreated, Order: cdbp.OrderAscending}, Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
 		[]string{cdbm.InfiniBandPartitionRelationName},
 	)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving instance InfiniBand Interfaces Details from DB")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance InfiniBand Interfaces for Instance", nil)
+	}
+
+	// Get the instance NVLink Interface record from the db
+	nvlDAO := cdbm.NewNVLinkInterfaceDAO(gih.dbSession)
+	nvlIfcs, _, err := nvlDAO.GetAll(
+		ctx,
+		nil,
+		cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}},
+		cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.NVLinkInterfaceOrderByCreated, Order: cdbp.OrderAscending}, Limit: cdb.GetIntPtr(cdbp.TotalLimit)},
+		nil,
+	)
+	if err != nil {
+		logger.Error().Err(err).Msg("error retrieving instance NVLink interfaces Details from DB")
+		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance NVLink interfaces for Instance", nil)
 	}
 
 	// Get DPU Extension Service Deployments for the instance
@@ -3737,14 +3892,6 @@ func (gih GetInstanceHandler) Handle(c echo.Context) error {
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving DPU Extension Service Deployments for instance from DB")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve DPU Extension Service Deployments for instance", nil)
-	}
-
-	// Get the instance NVLink Interface record from the db
-	nvlDAO := cdbm.NewNVLinkInterfaceDAO(gih.dbSession)
-	nvlIfcs, _, err := nvlDAO.GetAll(ctx, nil, cdbm.NVLinkInterfaceFilterInput{InstanceIDs: []uuid.UUID{instanceID}}, cdbp.PageInput{}, nil)
-	if err != nil {
-		logger.Error().Err(err).Msg("error retrieving instance NVLink interfaces Details from DB")
-		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Instance NVLink interfaces for Instance", nil)
 	}
 
 	// Get the ssh key group instance associations record from the db
@@ -4559,7 +4706,7 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 
 	err = cdb.WithTx(ctx, dih.dbSession, func(tx *cdb.Tx) error {
 		// Update Instance to set status to Deleting
-		_, derr := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, Status: cdb.GetStrPtr(cdbm.InstanceStatusTerminating)})
+		_, derr := instanceDAO.Update(ctx, tx, cdbm.InstanceUpdateInput{InstanceID: instance.ID, InstanceUpdateCommonInput: cdbm.InstanceUpdateCommonInput{Status: cdb.GetStrPtr(cdbm.InstanceStatusTerminating)}})
 		if derr != nil {
 			logger.Error().Err(derr).Msg("error updating Instance in DB")
 			return cutil.NewAPIError(http.StatusInternalServerError, "Failed to delete Instance", nil)
@@ -4668,11 +4815,18 @@ func (dih DeleteInstanceHandler) Handle(c echo.Context) error {
 
 		return nil
 	})
+	// The wrapping `if err != nil` ensures real tx-helper errors (commit /
+	// rollback failures that wrap into something other than the cutil.APIError
+	// marker we returned for the timeout case) are surfaced via HandleTxError,
+	// while the timeout-case APIError falls through to the timeoutResp call.
+	if err != nil {
+		var apiErr *cutil.APIError
+		if !errors.As(err, &apiErr) || timeoutResp == nil {
+			return common.HandleTxError(c, logger, err, "Failed to delete Instance, DB transaction error")
+		}
+	}
 	if timeoutResp != nil {
 		return timeoutResp()
-	}
-	if err != nil {
-		return common.HandleTxError(c, logger, err, "Failed to delete Instance, DB transaction error")
 	}
 
 	// Return response

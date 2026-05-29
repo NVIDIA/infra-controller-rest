@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package nicoapi
 
@@ -111,8 +97,8 @@ func (c *grpcClient) GetMachines(ctx context.Context) ([]MachineDetail, error) {
 	return result, nil
 }
 
-// GetMachines retrieves all machines known by nico-core-api
-// (FindMachineIds + FindMachinesByIds).
+// GetLeakingMachineIds retrieves IDs of all machines which are leaking and are powered on.
+// The search filter passed in to FindMachineIds limits the results to these two conditions.
 func (c *grpcClient) GetLeakingMachineIds(ctx context.Context) ([]string, error) {
 	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
 	defer cancel()
@@ -132,6 +118,31 @@ func (c *grpcClient) GetLeakingMachineIds(ctx context.Context) ([]string, error)
 	ids := make([]string, 0, len(machineIDs.GetMachineIds()))
 	for _, machineID := range machineIDs.GetMachineIds() {
 		ids = append(ids, machineID.GetId())
+	}
+	return ids, nil
+}
+
+// GetLeakingSwitchIds retrieves IDs of all switches which are leaking.
+// The search filter passed in to FindSwitchIds limits the results to this condition.
+// Once we have the ability to limit the results to powered on switches,
+// we can add that condition to the search filter.
+func (c *grpcClient) GetLeakingSwitchIds(ctx context.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(ctx, c.grpcTimeout)
+	defer cancel()
+
+	alert := "hardware-health.tray-leak-detection"
+	searchConfig := pb.SwitchSearchFilter{
+		OnlyWithHealthAlert: &alert,
+	}
+
+	switchIDs, err := c.gclient.FindSwitchIds(ctx, &searchConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	ids := make([]string, 0, len(switchIDs.GetIds()))
+	for _, switchID := range switchIDs.GetIds() {
+		ids = append(ids, switchID.GetId())
 	}
 	return ids, nil
 }
@@ -631,5 +642,9 @@ func (c *grpcClient) AddExpectedSwitchInfo(info ExpectedSwitchInfo) {
 }
 
 func (c *grpcClient) SetLeakingMachineIds(ids []string) {
+	panic("Not a unit test")
+}
+
+func (c *grpcClient) SetLeakingSwitchIds(ids []string) {
 	panic("Not a unit test")
 }

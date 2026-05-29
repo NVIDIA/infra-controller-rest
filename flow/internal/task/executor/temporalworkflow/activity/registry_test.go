@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package activity
 
@@ -25,7 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 )
 
 // TestActivities_All_ContainsAllActivities verifies that All() returns every
@@ -80,13 +65,12 @@ func TestActivities_Isolation(t *testing.T) {
 	assert.NotContains(t, m2, "isolation-sentinel", "mutations to one instance's map must not bleed into another instance's map")
 }
 
-// TestActivities_ValidAndGetComponentManager_NilRegistry verifies that manager
-// lookup returns a clear configuration error when no registry is configured.
-func TestActivities_ValidAndGetComponentManager_NilRegistry(t *testing.T) {
-	acts := New(nil, nil)
-	_, err := acts.validAndGetComponentManager(
+// TestRequireCapableManager_NilRegistry verifies that manager lookup returns a
+// clear configuration error when no registry is configured.
+func TestRequireCapableManager_NilRegistry(t *testing.T) {
+	_, err := requirePowerController(
+		nil,
 		newActivityTestTarget(),
-		capability.CapabilityPowerControl,
 	)
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, componentmanager.ErrRegistryNotConfigured))
