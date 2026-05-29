@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package activity
 
@@ -35,7 +21,7 @@ import (
 )
 
 func TestActivitiesReturnErrorWhenComponentManagerRegistryIsMissing(t *testing.T) {
-	acts := New(nil, nil)
+	acts := New(nil, nil, nil)
 
 	for name, call := range activityCallsForMissingManagerTest(t, acts) {
 		t.Run(name, func(t *testing.T) {
@@ -54,7 +40,7 @@ func TestActivitiesReturnErrorWhenComponentManagerIsMissing(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	acts := New(nil, registry)
+	acts := New(nil, nil, registry)
 
 	for name, call := range activityCallsForMissingManagerTest(t, acts) {
 		t.Run(name, func(t *testing.T) {
@@ -95,6 +81,27 @@ func TestActivityCallsManagerWhenCapabilityIsSupported(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, manager.called)
+}
+
+func TestActivityRequiresOperationInterfaceAfterCapabilityValidation(t *testing.T) {
+	acts := newDescriptorOnlyActivities(
+		t,
+		capability.CapabilityPowerStatus,
+	)
+
+	_, err := acts.GetPowerStatus(
+		context.Background(),
+		newActivityTestTarget(),
+	)
+
+	require.Error(t, err)
+	require.False(t, errors.Is(err, componentmanager.ErrUnsupportedCapability))
+	require.True(t, errors.Is(err, componentmanager.ErrCapabilityInterfaceNotImplemented))
+	require.ErrorContains(
+		t,
+		err,
+		`declares capability "PowerStatus" but does not implement its operation interface`,
+	)
 }
 
 func activityCallsForMissingManagerTest(
@@ -292,7 +299,49 @@ func newCapabilityTestActivities(
 	)
 	require.NoError(t, err)
 
-	return New(nil, registry), manager
+	return New(nil, nil, registry), manager
+}
+
+type descriptorOnlyManager struct {
+	descriptor cmcatalog.Descriptor
+}
+
+func (m descriptorOnlyManager) Descriptor() cmcatalog.Descriptor {
+	return m.descriptor
+}
+
+func newDescriptorOnlyActivities(
+	t *testing.T,
+	capabilities ...capability.Capability,
+) *Activities {
+	t.Helper()
+
+	descriptor := cmcatalog.Descriptor{
+		Type:           devicetypes.ComponentTypeCompute,
+		Implementation: "descriptor-only",
+		Capabilities:   capability.CapabilitySet(capabilities),
+	}
+	registry, err := componentmanager.NewRegistry(
+		[]componentmanager.FactorySpec{
+			{
+				Descriptor: descriptor,
+				Factory: func(
+					*providerapi.ProviderRegistry,
+				) (componentmanager.ComponentManager, error) {
+					return descriptorOnlyManager{descriptor: descriptor}, nil
+				},
+			},
+		},
+		cmconfig.Config{
+			ComponentManagers: map[devicetypes.ComponentType]string{
+				devicetypes.ComponentTypeCompute: "descriptor-only",
+			},
+		},
+		providerapi.NewProviderRegistry(),
+	)
+	require.NoError(t, err)
+
+	return New(nil, nil, registry)
 }
 
 func newActivityTestTarget() common.Target {

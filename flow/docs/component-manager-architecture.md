@@ -72,13 +72,52 @@ provider, err := providerapi.GetTyped[*nico.Provider](
 ```go
 type ComponentManager interface {
     Descriptor() cmcatalog.Descriptor
+}
+
+type ExpectationInjector interface {
+    // CapabilityInjectExpectation
     InjectExpectation(ctx, target, info) error
+}
+
+type PowerController interface {
+    // CapabilityPowerControl
     PowerControl(ctx, target, info) error
-    FirmwareControl(ctx, target, info) error
-    GetFirmwareStatus(ctx, target) (map, error)
+}
+
+type PowerStatusReader interface {
+    // CapabilityPowerStatus
     GetPowerStatus(ctx, target) (map, error)
 }
+
+type FirmwareController interface {
+    // CapabilityFirmwareControl
+    FirmwareControl(ctx, target, info) error
+}
+
+type FirmwareStatusReader interface {
+    // CapabilityFirmwareStatus
+    GetFirmwareStatus(ctx, target) (map, error)
+}
+
+type BringUpController interface {
+    // CapabilityBringUpControl
+    BringUpControl(ctx, target) error
+}
+
+type BringUpStatusReader interface {
+    // CapabilityBringUpStatus
+    GetBringUpStatus(ctx, target) (map, error)
+}
+
+type FirmwareConsistencyChecker interface {
+    // CapabilityFirmwareConsistencyCheck
+    VerifyFirmwareConsistency(ctx, target) error
+}
 ```
+
+The base interface only carries descriptor metadata. Operation methods are
+capability-specific interfaces, so implementations only define the operations
+they advertise in `catalog.Descriptor.Capabilities`.
 
 ### ManagerFactory
 
@@ -261,6 +300,7 @@ import (
     "fmt"
 
     "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
+    "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
     cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
     "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providerapi"
     myapiprovider "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/providers/myapi"
@@ -299,6 +339,11 @@ func Descriptor() cmcatalog.Descriptor {
         Type:              devicetypes.ComponentTypeCompute,
         Implementation:    ImplementationName,
         RequiredProviders: []string{myapiprovider.ProviderName},
+        Capabilities: capability.CapabilitySet{
+            capability.CapabilityInjectExpectation,
+            capability.CapabilityPowerControl,
+            capability.CapabilityFirmwareControl,
+        },
     }
 }
 
@@ -315,17 +360,17 @@ func (m *Manager) Descriptor() cmcatalog.Descriptor {
     return Descriptor()
 }
 
-// InjectExpectation implements ComponentManager.
+// InjectExpectation implements componentmanager.ExpectationInjector.
 func (m *Manager) InjectExpectation(ctx context.Context, target common.Target, info operations.InjectExpectationTaskInfo) error {
     // Implementation here
 }
 
-// PowerControl implements ComponentManager.
+// PowerControl implements componentmanager.PowerController.
 func (m *Manager) PowerControl(ctx context.Context, target common.Target, info operations.PowerControlTaskInfo) error {
     // Implementation here
 }
 
-// FirmwareControl implements ComponentManager.
+// FirmwareControl implements componentmanager.FirmwareController.
 func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, info operations.FirmwareControlTaskInfo) error {
     // Implementation here — initiate firmware update, return immediately
 }

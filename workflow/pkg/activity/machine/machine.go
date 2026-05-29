@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package machine
 
@@ -120,6 +106,9 @@ const (
 	// Machine health attributes
 	MachinePreventAllocations             = "PreventAllocations"
 	MachinePreventAllocationStatusMessage = "Machine has one or more health probe alerts that prevents allocation"
+	MachineDPUFirmwareUpdateAlertID       = "HostUpdateInProgress"
+	MachineDPUFirmwareUpdateAlertTarget   = "DpuFirmware"
+	MachineDPUFirmwareUpdateStatusMessage = "Machine DPU firmware update is in progress"
 )
 
 // ManageMachine is an activity wrapper for Machine management tasks that allows injecting DB access
@@ -190,7 +179,8 @@ func (mm *ManageMachine) UpdateMachinesInDB(ctx context.Context, siteIDStr strin
 
 	// Get all machines for Site to allow faster lookups
 	mDAO := cdbm.NewMachineDAO(mm.dbSession)
-	filterInput := cdbm.MachineFilterInput{SiteID: &siteID}
+
+	filterInput := cdbm.MachineFilterInput{SiteIDs: []uuid.UUID{site.ID}}
 
 	existingMachines, _, err := mDAO.GetAll(ctx, nil, filterInput, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
@@ -981,6 +971,7 @@ func getNICoMachineStatus(controllerMachine *cwssaws.Machine, logger zerolog.Log
 	hasTenant := (controllerMachineStatePrefix == controllerMachineStatePrefixAssigned)
 	hasPreventAlerts := false
 	hasMaintenanceDegraded := false
+	hasDPUFirmwareUpdateInProgress := false
 
 	if controllerMachine.Health != nil && controllerMachine.Health.Alerts != nil {
 		for _, alert := range controllerMachine.Health.Alerts {
@@ -994,6 +985,11 @@ func getNICoMachineStatus(controllerMachine *cwssaws.Machine, logger zerolog.Log
 			// Check for Maintenance+Degraded alert
 			if alert.Id == "Maintenance" && alert.Target != nil && *alert.Target == "Degraded" {
 				hasMaintenanceDegraded = true
+			}
+			if alert.Id == MachineDPUFirmwareUpdateAlertID &&
+				alert.Target != nil &&
+				*alert.Target == MachineDPUFirmwareUpdateAlertTarget {
+				hasDPUFirmwareUpdateInProgress = true
 			}
 		}
 	}
@@ -1009,6 +1005,9 @@ func getNICoMachineStatus(controllerMachine *cwssaws.Machine, logger zerolog.Log
 		if controllerMachine.MaintenanceReference != nil {
 			statusMessage = fmt.Sprintf("%s: %s", statusMessage, *controllerMachine.MaintenanceReference)
 		}
+	} else if hasDPUFirmwareUpdateInProgress {
+		machineStatus = cdbm.MachineStatusInitializing
+		statusMessage = MachineDPUFirmwareUpdateStatusMessage
 	} else if hasPreventAlerts {
 		// Has Prevent alerts
 		machineStatus = cdbm.MachineStatusError

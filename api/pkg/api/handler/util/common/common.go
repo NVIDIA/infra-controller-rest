@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package common
 
@@ -307,8 +293,8 @@ func AcquireInstanceTypeQuotaLock(ctx context.Context, tx *cdb.Tx, tenantID uuid
 }
 
 // GetUnallocatedMachineForInstanceType provides unallocatd machine based on instancetype
-func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, instancetype *cdbm.InstanceType) (*cdbm.Machine, error) {
-	if instancetype == nil {
+func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, instanceType *cdbm.InstanceType) (*cdbm.Machine, error) {
+	if instanceType == nil {
 		return nil, ErrInvalidFunctionParams
 	}
 
@@ -322,8 +308,7 @@ func GetUnallocatedMachineForInstanceType(ctx context.Context, tx *cdb.Tx, dbSes
 	// Get all available Machines for the Instance Type
 	// Since this query is occurring outside of a lock, we will have to double check availability of Machines
 	filterInput := cdbm.MachineFilterInput{
-		SiteID:          instancetype.SiteID,
-		InstanceTypeIDs: []uuid.UUID{instancetype.ID},
+		InstanceTypeIDs: []uuid.UUID{instanceType.ID},
 		IsAssigned:      cdb.GetBoolPtr(false),
 		Statuses:        []string{cdbm.MachineStatusReady},
 	}
@@ -401,8 +386,16 @@ func GetCountOfMachinesForInstanceType(ctx context.Context, tx *cdb.Tx, dbSessio
 // machines broken down by site and machine status.
 func GetSiteMachineCountStats(ctx context.Context, tx *cdb.Tx, dbSession *cdb.Session, logger zerolog.Logger, infrastructureProviderID *uuid.UUID, siteID *uuid.UUID) (map[uuid.UUID]*cam.APISiteMachineStats, error) {
 	mDAO := cdbm.NewMachineDAO(dbSession)
-	machines, _, err := mDAO.GetAll(ctx, tx, cdbm.MachineFilterInput{InfrastructureProviderID: infrastructureProviderID, SiteID: siteID}, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 
+	filterInput := cdbm.MachineFilterInput{}
+	if infrastructureProviderID != nil {
+		filterInput.InfrastructureProviderIDs = []uuid.UUID{*infrastructureProviderID}
+	}
+	if siteID != nil {
+		filterInput.SiteIDs = []uuid.UUID{*siteID}
+	}
+
+	machines, _, err := mDAO.GetAll(ctx, tx, filterInput, cdbp.PageInput{Limit: cdb.GetIntPtr(cdbp.TotalLimit)}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -1382,7 +1375,7 @@ func IsProviderOrTenant(ctx context.Context, logger zerolog.Logger, dbSession *c
 // This function can be used across handlers to reduce duplication of initialization logic.
 func SetupHandler(modelName, handlerName string, c echo.Context, s *cutil.TracerSpan) (org string, user *cdbm.User, ctx context.Context, logger zerolog.Logger, hs oteltrace.Span) {
 	// Get org
-	org = c.Param("orgName")
+	org = strings.ToLower(c.Param("orgName"))
 
 	// Get context
 	ctx = c.Request().Context()

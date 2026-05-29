@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package model
 
@@ -866,9 +852,9 @@ func TestAPIMachineUpdateRequest_ToInsertHealthReportOverrideProto(t *testing.T)
 			require.NotNil(t, got.MachineId)
 			assert.Equal(t, tt.machineID, got.MachineId.Id)
 			require.NotNil(t, got.Override)
-			assert.Equal(t, cwssaws.OverrideMode_Replace, got.Override.Mode)
+			assert.Equal(t, cwssaws.OverrideMode_Merge, got.Override.Mode)
 			require.NotNil(t, got.Override.Report)
-			assert.Equal(t, MachineOnlineRepairHealthOverrideSourceTenant, got.Override.Report.Source)
+			assert.Equal(t, MachineHealthOverrideSourceOnlineRepair, got.Override.Report.Source)
 
 			require.Len(t, got.Override.Report.Alerts, 1)
 			alert := got.Override.Report.Alerts[0]
@@ -906,14 +892,14 @@ func TestAPIMachineUpdateRequest_ToRemoveHealthReportOverrideProto(t *testing.T)
 		wantSource string
 	}{
 		{
-			name:       "builds remove request with machine id and tenant-reported-issue source",
+			name:       "builds remove request with machine id and request-online-repair source",
 			machineID:  "aabbccdd-eeff-0011-2233-445566778899",
-			wantSource: MachineOnlineRepairHealthOverrideSourceTenant,
+			wantSource: MachineHealthOverrideSourceOnlineRepair,
 		},
 		{
 			name:       "builds remove request for another machine id",
 			machineID:  "bbccddee-ff00-1122-3344-556677889900",
-			wantSource: MachineOnlineRepairHealthOverrideSourceTenant,
+			wantSource: MachineHealthOverrideSourceOnlineRepair,
 		},
 	}
 	for _, tt := range tests {
