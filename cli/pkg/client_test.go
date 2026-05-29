@@ -201,3 +201,115 @@ func TestClientDoDoesNotRefreshOnForbidden(t *testing.T) {
 	require.Equal(t, http.StatusForbidden, apiErr.StatusCode)
 	require.Equal(t, 0, refreshes)
 }
+
+func TestAPINameMismatchHint(t *testing.T) {
+	cases := []struct {
+		name       string
+		clientName string
+		statusCode int
+		source     string
+		wantHas    string
+		wantEmpty  bool
+	}{
+		{
+			name:       "404 with mismatched source suggests server value",
+			clientName: "nico",
+			statusCode: http.StatusNotFound,
+			source:     "carbide",
+			wantHas:    `set api.name to "carbide"`,
+		},
+		{
+			name:       "404 with forge source suggests forge",
+			clientName: "nico",
+			statusCode: http.StatusNotFound,
+			source:     "forge",
+			wantHas:    `set api.name to "forge"`,
+		},
+		{
+			name:       "404 with matching source returns empty hint",
+			clientName: "nico",
+			statusCode: http.StatusNotFound,
+			source:     "nico",
+			wantEmpty:  true,
+		},
+		{
+			name:       "404 with empty source returns empty hint",
+			clientName: "nico",
+			statusCode: http.StatusNotFound,
+			source:     "",
+			wantEmpty:  true,
+		},
+		{
+			name:       "non-404 status returns empty hint",
+			clientName: "nico",
+			statusCode: http.StatusInternalServerError,
+			source:     "carbide",
+			wantEmpty:  true,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			c := &Client{APIName: tc.clientName}
+			got := c.apiNameMismatchHint(tc.statusCode, tc.source)
+			if tc.wantEmpty {
+				require.Empty(t, got)
+				return
+			}
+			require.Contains(t, got, tc.wantHas)
+			require.Contains(t, got, tc.clientName)
+		})
+	}
+}
+
+func TestClientDoAddsAPINameHintOn404SourceMismatch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"source":"carbide","message":"The requested path could not be found"}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-org", "token", nil, false)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/site", nil, nil, nil)
+	apiErr, ok := err.(*APIError)
+	require.True(t, ok, "err = %T, want *APIError", err)
+	require.Equal(t, http.StatusNotFound, apiErr.StatusCode)
+	require.Contains(t, apiErr.Hint, `set api.name to "carbide"`)
+	require.Contains(t, apiErr.Error(), "Hint:")
+}
+
+func TestClientDoOmitsAPINameHintWhenSourceMatches(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"source":"nico","message":"site not found"}`))
+	}))
+	defer server.Close()
+
+	client := NewClient(server.URL, "test-org", "token", nil, false)
+	_, _, err := client.Do("GET", "/v2/org/{org}/nico/site/missing", nil, nil, nil)
+	apiErr, ok := err.(*APIError)
+	require.True(t, ok, "err = %T, want *APIError", err)
+	require.Equal(t, http.StatusNotFound, apiErr.StatusCode)
+	require.Empty(t, apiErr.Hint)
+	require.NotContains(t, apiErr.Error(), "Hint:")
+}
+
+func TestAPIErrorErrorIncludesHintAndDetails(t *testing.T) {
+	e := &APIError{
+		StatusCode: 404,
+		Message:    "not found",
+		Data:       map[string]string{"path": "/x"},
+		Hint:       "try foo",
+	}
+	got := e.Error()
+	require.Contains(t, got, "API error 404")
+	require.Contains(t, got, "Details:")
+	require.Contains(t, got, "Hint: try foo")
+}
+
+func TestAPIErrorErrorOmitsHintWhenEmpty(t *testing.T) {
+	e := &APIError{StatusCode: 500, Message: "boom"}
+	got := e.Error()
+	require.NotContains(t, got, "Hint:")
+}
