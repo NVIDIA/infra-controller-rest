@@ -2595,3 +2595,38 @@ func TestQueryTagsFor(t *testing.T) {
 	tags3 := QueryTagsFor(&withTags{})
 	assert.ElementsMatch(t, []string{"alpha", "beta"}, tags3)
 }
+
+func TestTenantHasTargetedInstanceCreation(t *testing.T) {
+	tests := []struct {
+		name     string
+		tenant   *cdbm.Tenant
+		expected bool
+	}{
+		{
+			name:     "nil tenant",
+			tenant:   nil,
+			expected: false,
+		},
+		{
+			name:     "nil config",
+			tenant:   &cdbm.Tenant{Config: nil},
+			expected: false,
+		},
+		{
+			name:     "config with capability disabled",
+			tenant:   &cdbm.Tenant{Config: &cdbm.TenantConfig{TargetedInstanceCreation: false}},
+			expected: false,
+		},
+		{
+			name:     "config with capability enabled",
+			tenant:   &cdbm.Tenant{Config: &cdbm.TenantConfig{TargetedInstanceCreation: true}},
+			expected: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.expected, TenantHasTargetedInstanceCreation(tc.tenant))
+		})
+	}
+}

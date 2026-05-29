@@ -58,7 +58,7 @@ func ValidateProviderOrTenantSiteAccess(ctx context.Context, logger zerolog.Logg
 		hasAccess = tsCount > 0
 
 		// Check if Tenant is privileged
-		if !hasAccess && tenant.Config.TargetedInstanceCreation {
+		if !hasAccess && common.TenantHasTargetedInstanceCreation(tenant) {
 			// Check if privileged tenant has an account with the Site's Infrastructure Provider
 			taDAO := cdbm.NewTenantAccountDAO(dbSession)
 			_, taCount, err := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{

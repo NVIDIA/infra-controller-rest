@@ -1279,11 +1279,24 @@ func IsTenant(ctx context.Context, logger zerolog.Logger, dbSession *cdb.Session
 		return nil, cutil.NewAPIError(http.StatusInternalServerError, "Failed to retrieve tenant for org, DB error", nil)
 	}
 
-	if requirePrivileged && !tenant.Config.TargetedInstanceCreation {
+	if requirePrivileged && !TenantHasTargetedInstanceCreation(tenant) {
 		return nil, cutil.NewAPIError(http.StatusForbidden, "Tenant does not have Targeted Instance Creation capability enabled", nil)
 	}
 
 	return tenant, nil
+}
+
+// TenantHasTargetedInstanceCreation reports whether the Tenant has the
+// TargetedInstanceCreation capability enabled at the tenant level (the
+// "ceiling"). It is nil-safe so callers don't have to repeat the
+// tenant/Config nil checks.
+//
+// This is the single chokepoint for the tenant-level capability read. A
+// later phase will introduce a site-scoped EffectiveTargetedInstanceCreation
+// that composes this ceiling with per-site association rows and the provider
+// gate; until then this preserves the existing tenant-global behavior.
+func TenantHasTargetedInstanceCreation(tenant *cdbm.Tenant) bool {
+	return tenant != nil && tenant.Config != nil && tenant.Config.TargetedInstanceCreation
 }
 
 // IsProviderOrTenant ensures that user is authorized to act as a Provider Admin or/and Tenant Admin for the org.
@@ -1337,7 +1350,7 @@ func IsProviderOrTenant(ctx context.Context, logger zerolog.Logger, dbSession *c
 		}
 
 		if tenant != nil && requirePrivilegedTenant {
-			if !tenant.Config.TargetedInstanceCreation {
+			if !TenantHasTargetedInstanceCreation(tenant) {
 				if infrastructureProvider == nil {
 					return nil, nil, cutil.NewAPIError(http.StatusForbidden, "Tenant does not have targeted Instance creation capability enabled", nil)
 				}

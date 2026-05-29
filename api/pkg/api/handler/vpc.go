@@ -239,7 +239,7 @@ func (cvh CreateVPCHandler) Handle(c echo.Context) error {
 	if apiRequest.RoutingProfile != nil {
 		// For now, we gate on TargetedInstanceCreation permission,
 		// Which implies a "privileged tenant"
-		if tenant.Config == nil || !tenant.Config.TargetedInstanceCreation {
+		if !common.TenantHasTargetedInstanceCreation(tenant) {
 			logger.Warn().Msg("tenant does not have sufficient privileges to set `routingProfile`")
 			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant does not have sufficient privileges to set `routingProfile`", nil)
 		}
