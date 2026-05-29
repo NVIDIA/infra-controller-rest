@@ -59,6 +59,16 @@ func (s *notifyingTaskStore) UpdateTaskStatus(
 	return nil
 }
 
+// UpdateTaskReport delegates to the underlying store.
+func (s *notifyingTaskStore) UpdateTaskReport(
+	ctx context.Context,
+	u *taskdef.TaskReportUpdate,
+) error {
+	return s.Store.UpdateTaskReport(ctx, u)
+}
+
 // Ensure notifyingTaskStore satisfies taskdef.TaskStatusUpdater so it can
 // be passed to activity.SetTaskStatusUpdater.
 var _ taskdef.TaskStatusUpdater = (*notifyingTaskStore)(nil) //nolint
+
+var _ taskdef.TaskReportUpdater = (*notifyingTaskStore)(nil) //nolint

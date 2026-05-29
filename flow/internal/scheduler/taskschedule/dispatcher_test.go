@@ -175,6 +175,10 @@ func (m *mockTaskStore) UpdateTaskStatus(_ context.Context, _ *taskdef.TaskStatu
 	panic("mockTaskStore.UpdateTaskStatus: not implemented")
 }
 
+func (m *mockTaskStore) UpdateTaskReport(_ context.Context, _ *taskdef.TaskReportUpdate) error {
+	panic("mockTaskStore.UpdateTaskReport: not implemented")
+}
+
 func (m *mockTaskStore) ListActiveTasksForRack(_ context.Context, _ uuid.UUID) ([]*taskdef.Task, error) {
 	panic("mockTaskStore.ListActiveTasksForRack: not implemented")
 }

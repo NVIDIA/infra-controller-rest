@@ -24,11 +24,6 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
-// mockUpdateTaskStatusForFirmwareControl is a mock activity for updating task status
-func mockUpdateTaskStatusForFirmwareControl(ctx context.Context, arg *task.TaskStatusUpdate) error {
-	return nil
-}
-
 // mockFirmwareControl is a mock activity for starting firmware update
 func mockFirmwareControl(ctx context.Context, target common.Target, info operations.FirmwareControlTaskInfo) error {
 	return nil
@@ -166,9 +161,7 @@ func TestFirmwareControlWorkflow(t *testing.T) {
 
 			env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
 
-			env.RegisterActivityWithOptions(mockUpdateTaskStatusForFirmwareControl, activity.RegisterOptions{
-				Name: activitypkg.NameUpdateTaskStatus,
-			})
+			registerTaskUpdateActivities(env)
 			env.RegisterActivityWithOptions(mockFirmwareControl, activity.RegisterOptions{
 				Name: activitypkg.NameFirmwareControl,
 			})
@@ -182,7 +175,6 @@ func TestFirmwareControlWorkflow(t *testing.T) {
 				Name: activitypkg.NameGetPowerStatus,
 			})
 
-			env.OnActivity(mockUpdateTaskStatusForFirmwareControl, mock.Anything, mock.Anything).Return(nil)
 			env.OnActivity(mockFirmwareControl, mock.Anything, mock.Anything, mock.Anything).Return(tc.activityError)
 			env.OnActivity(mockGetFirmwareStatus, mock.Anything, mock.Anything).Return(
 				&activitypkg.GetFirmwareStatusResult{
@@ -195,6 +187,7 @@ func TestFirmwareControlWorkflow(t *testing.T) {
 			env.OnActivity(mockGetPowerStatus, mock.Anything, mock.Anything).Return(
 				map[string]operations.PowerStatus{"comp1": operations.PowerStatusOn, "comp2": operations.PowerStatusOn}, nil)
 
+			expectTaskUpdateActivities(env)
 			env.ExecuteWorkflow(firmwareControl, tc.reqInfo, tc.info)
 
 			assert.True(t, env.IsWorkflowCompleted())

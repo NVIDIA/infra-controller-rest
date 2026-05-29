@@ -144,6 +144,14 @@ func (si *StageIterator) HasNext() bool {
 	return si != nil && si.position < len(si.stages)
 }
 
+// Total returns the number of stages in the rule definition.
+func (si *StageIterator) Total() int {
+	if si == nil {
+		return 0
+	}
+	return len(si.stages)
+}
+
 // Reset resets the iterator to the beginning
 // Allows re-iteration without creating a new iterator
 func (si *StageIterator) Reset() {

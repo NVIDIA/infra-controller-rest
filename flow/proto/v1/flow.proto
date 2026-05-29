@@ -316,10 +316,12 @@ message Task {
     string operation = 2;
     UUID rack_id = 3;
     repeated UUID component_uuids = 4;
+    // description is provided by the client when the task is created.
     string description = 5;
     TaskExecutorType executor_type = 6;
     string execution_id = 7;
     TaskStatus status = 8;
+    // message is brief text tied to status (not execution progress).
     string message = 9;
     // queue_expires_at is set only for waiting tasks; absent for all other statuses.
     optional google.protobuf.Timestamp queue_expires_at = 10;
@@ -328,6 +330,8 @@ message Task {
     optional UUID applied_rule_id = 13;
     google.protobuf.Timestamp updated_at = 14;
     optional google.protobuf.Timestamp started_at = 15;
+    // report is a versioned JSON document with structured execution progress.
+    string report = 16;
 }
 
 message CreateExpectedRackRequest {

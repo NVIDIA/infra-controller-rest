@@ -36,6 +36,7 @@ type Task struct {
 	ExecutionID   string                    `bun:"execution_id,notnull"`
 	Status        taskcommon.TaskStatus     `bun:"status,type:varchar(32),notnull"`
 	Message       string                    `bun:"message,nullzero"`
+	Report        json.RawMessage           `bun:"report,type:jsonb"`
 	AppliedRuleID *uuid.UUID                `bun:"applied_rule_id,type:uuid"` // Which operation rule was applied
 	CreatedAt     time.Time                 `bun:"created_at,nullzero,notnull,default:current_timestamp"`
 	UpdatedAt     time.Time                 `bun:"updated_at,nullzero,notnull,default:current_timestamp"`
@@ -78,17 +79,23 @@ func (t *Task) UpdateScheduledTask(
 }
 
 // UpdateTaskStatus updates the status of the task.
+// report, when non-nil, replaces the stored report column.
 func (t *Task) UpdateTaskStatus(
 	ctx context.Context,
 	idb bun.IDB,
 	status taskcommon.TaskStatus,
 	message string,
+	report json.RawMessage,
 ) error {
 	t.Status = status
 	t.Message = message
 	t.UpdatedAt = time.Now().UTC()
 
 	columns := []string{"status", "message", "updated_at", "finished_at"}
+	if report != nil {
+		t.Report = report
+		columns = append(columns, "report")
+	}
 
 	if status == taskcommon.TaskStatusRunning && t.StartedAt == nil {
 		t.StartedAt = &t.UpdatedAt
@@ -103,6 +110,24 @@ func (t *Task) UpdateTaskStatus(
 	_, err := idb.NewUpdate().
 		Model(t).
 		Column(columns...).
+		Where("id = ?", t.ID).
+		Exec(ctx)
+
+	return err
+}
+
+// UpdateTaskReport updates the structured report without changing status or message.
+func (t *Task) UpdateTaskReport(
+	ctx context.Context,
+	idb bun.IDB,
+	report json.RawMessage,
+) error {
+	t.Report = report
+	t.UpdatedAt = time.Now().UTC()
+
+	_, err := idb.NewUpdate().
+		Model(t).
+		Column("report", "updated_at").
 		Where("id = ?", t.ID).
 		Exec(ctx)
 

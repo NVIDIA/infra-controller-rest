@@ -100,8 +100,7 @@ func TestPowerControlWorkflow_GracefulWithVerification(t *testing.T) {
 				activity.RegisterOptions{Name: activitypkg.NamePowerControl})
 			env.RegisterActivityWithOptions(mockGetPowerStatus,
 				activity.RegisterOptions{Name: activitypkg.NameGetPowerStatus})
-			env.RegisterActivityWithOptions(mockUpdateTaskStatus,
-				activity.RegisterOptions{Name: activitypkg.NameUpdateTaskStatus})
+			registerTaskUpdateActivities(env)
 
 			// Mock activity responses
 			env.OnActivity(mockPowerControl, mock.Anything, mock.Anything,
@@ -116,9 +115,6 @@ func TestPowerControlWorkflow_GracefulWithVerification(t *testing.T) {
 				mock.Anything).Return(map[string]operations.PowerStatus{
 				"ext-compute-1": expectedStatus,
 			}, nil)
-
-			env.OnActivity(mockUpdateTaskStatus, mock.Anything,
-				mock.Anything).Return(nil)
 
 			// Create test components
 			components := []*component.Component{
@@ -140,6 +136,7 @@ func TestPowerControlWorkflow_GracefulWithVerification(t *testing.T) {
 			env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
 
 			// Execute workflow
+			expectTaskUpdateActivities(env)
 			env.ExecuteWorkflow(powerControl, reqInfo, info)
 
 			// Verify workflow completed successfully
@@ -210,8 +207,7 @@ func TestPowerControlWorkflow_ForcefulWithFinalVerification(t *testing.T) {
 				activity.RegisterOptions{Name: activitypkg.NamePowerControl})
 			env.RegisterActivityWithOptions(mockGetPowerStatus,
 				activity.RegisterOptions{Name: activitypkg.NameGetPowerStatus})
-			env.RegisterActivityWithOptions(mockUpdateTaskStatus,
-				activity.RegisterOptions{Name: activitypkg.NameUpdateTaskStatus})
+			registerTaskUpdateActivities(env)
 
 			// Mock activity responses
 			env.OnActivity(mockPowerControl, mock.Anything, mock.Anything,
@@ -220,8 +216,6 @@ func TestPowerControlWorkflow_ForcefulWithFinalVerification(t *testing.T) {
 				mock.Anything).Return(map[string]operations.PowerStatus{
 				"ext-compute-1": operations.PowerStatusOn,
 			}, nil)
-			env.OnActivity(mockUpdateTaskStatus, mock.Anything,
-				mock.Anything).Return(nil)
 
 			// Create test components
 			components := []*component.Component{
@@ -243,6 +237,7 @@ func TestPowerControlWorkflow_ForcefulWithFinalVerification(t *testing.T) {
 			env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
 
 			// Execute workflow
+			expectTaskUpdateActivities(env)
 			env.ExecuteWorkflow(powerControl, reqInfo, info)
 
 			// Verify workflow completed successfully
@@ -276,8 +271,7 @@ func TestPowerControlWorkflow_CompositeVerification(t *testing.T) {
 		activity.RegisterOptions{Name: activitypkg.NameGetPowerStatus})
 	env.RegisterActivityWithOptions(mockVerifyReachability,
 		activity.RegisterOptions{Name: "VerifyReachability"})
-	env.RegisterActivityWithOptions(mockUpdateTaskStatus,
-		activity.RegisterOptions{Name: activitypkg.NameUpdateTaskStatus})
+	registerTaskUpdateActivities(env)
 
 	// Mock activity responses
 	env.OnActivity(mockPowerControl, mock.Anything, mock.Anything,
@@ -288,8 +282,6 @@ func TestPowerControlWorkflow_CompositeVerification(t *testing.T) {
 	}, nil)
 	env.OnActivity(mockVerifyReachability, mock.Anything, mock.Anything,
 		mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	env.OnActivity(mockUpdateTaskStatus, mock.Anything,
-		mock.Anything).Return(nil)
 
 	// Rule with composite verification (power status + reachability)
 	ruleDef := &operationrules.RuleDefinition{
@@ -348,6 +340,7 @@ func TestPowerControlWorkflow_CompositeVerification(t *testing.T) {
 	env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
 
 	// Execute workflow
+	expectTaskUpdateActivities(env)
 	env.ExecuteWorkflow(powerControl, reqInfo, info)
 
 	// Verify workflow completed successfully

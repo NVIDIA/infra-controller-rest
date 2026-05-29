@@ -14,20 +14,22 @@ import (
 // independent, multiple managers can coexist in the same process without
 // sharing mutable state.
 type Activities struct {
-	updater  task.TaskStatusUpdater
-	registry *componentmanager.Registry
+	updater       task.TaskStatusUpdater
+	reportUpdater task.TaskReportUpdater
+	registry      *componentmanager.Registry
 }
 
-// New creates an Activities instance bound to the given status updater and
-// component manager registry. Either argument may be nil; activity calls that
-// require the missing dependency will return an error at invocation time.
+// New creates an Activities instance. Any argument may be nil; activity
+// calls that need a missing dependency return an error at invocation time.
 func New(
 	updater task.TaskStatusUpdater,
+	reportUpdater task.TaskReportUpdater,
 	registry *componentmanager.Registry,
 ) *Activities {
 	return &Activities{
-		updater:  updater,
-		registry: registry,
+		updater:       updater,
+		reportUpdater: reportUpdater,
+		registry:      registry,
 	}
 }
 
@@ -41,6 +43,7 @@ func (a *Activities) All() map[string]any {
 		NamePowerControl:              a.PowerControl,
 		NameGetPowerStatus:            a.GetPowerStatus,
 		NameUpdateTaskStatus:          a.UpdateTaskStatus,
+		NameUpdateTaskReport:          a.UpdateTaskReport,
 		NameFirmwareControl:           a.FirmwareControl,
 		NameGetFirmwareStatus:         a.GetFirmwareStatus,
 		NameBringUpControl:            a.BringUpControl,

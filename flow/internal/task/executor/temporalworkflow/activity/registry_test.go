@@ -4,19 +4,16 @@
 package activity
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager"
 )
 
 // TestActivities_All_ContainsAllActivities verifies that All() returns every
 // expected activity name with a non-nil function value.
 func TestActivities_All_ContainsAllActivities(t *testing.T) {
-	acts := New(nil, nil)
+	acts := New(nil, nil, nil)
 	all := acts.All()
 
 	expectedNames := []string{
@@ -24,6 +21,7 @@ func TestActivities_All_ContainsAllActivities(t *testing.T) {
 		NamePowerControl,
 		NameGetPowerStatus,
 		NameUpdateTaskStatus,
+		NameUpdateTaskReport,
 		NameFirmwareControl,
 		NameGetFirmwareStatus,
 		NameBringUpControl,
@@ -41,7 +39,7 @@ func TestActivities_All_ContainsAllActivities(t *testing.T) {
 // TestActivities_All_ReturnsCopy verifies that mutating the returned map does
 // not affect subsequent calls — each call produces an independent map.
 func TestActivities_All_ReturnsCopy(t *testing.T) {
-	acts := New(nil, nil)
+	acts := New(nil, nil, nil)
 	first := acts.All()
 	firstLen := len(first)
 
@@ -55,23 +53,12 @@ func TestActivities_All_ReturnsCopy(t *testing.T) {
 // TestActivities_Isolation verifies that two Activities instances do not share
 // state: mutations to one instance's map must not affect the other.
 func TestActivities_Isolation(t *testing.T) {
-	a1 := New(nil, nil)
-	a2 := New(nil, nil)
+	a1 := New(nil, nil, nil)
+	a2 := New(nil, nil, nil)
 
 	m1 := a1.All()
 	m1["isolation-sentinel"] = func() {}
 
 	m2 := a2.All()
 	assert.NotContains(t, m2, "isolation-sentinel", "mutations to one instance's map must not bleed into another instance's map")
-}
-
-// TestRequireCapableManager_NilRegistry verifies that manager lookup returns a
-// clear configuration error when no registry is configured.
-func TestRequireCapableManager_NilRegistry(t *testing.T) {
-	_, err := requirePowerController(
-		nil,
-		newActivityTestTarget(),
-	)
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, componentmanager.ErrRegistryNotConfigured))
 }

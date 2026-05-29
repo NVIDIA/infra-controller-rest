@@ -466,6 +466,7 @@ func TaskTo(task *taskdef.Task) *pb.Task {
 		ExecutionId:    task.ExecutionID,
 		Status:         TaskStatusTo(task.Status),
 		Message:        task.Message,
+		Report:         string(task.Report),
 		CreatedAt:      timestamppb.New(task.CreatedAt),
 		UpdatedAt:      timestamppb.New(task.UpdatedAt),
 	}

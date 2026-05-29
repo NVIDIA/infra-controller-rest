@@ -76,10 +76,10 @@ func injectExpectation(
 	typeToTargets := buildTargets(&reqInfo)
 
 	if err := injectExpectationForAll(ctx, typeToTargets, info); err != nil {
-		return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err)
+		return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err, nil)
 	}
 
-	return updateFinishedTaskStatus(ctx, reqInfo.TaskID, nil)
+	return updateFinishedTaskStatus(ctx, reqInfo.TaskID, nil, nil)
 }
 
 // injectExpectationForAll calls the InjectExpectation activity for each

@@ -17,6 +17,7 @@ import (
 	taskcommon "github.com/NVIDIA/infra-controller-rest/flow/internal/task/common"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/conflict"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/executor"
+	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/message"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operationrules"
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/operations"
 	taskstore "github.com/NVIDIA/infra-controller-rest/flow/internal/task/store"
@@ -131,7 +132,7 @@ func New(ctx context.Context, conf *Config) (*ManagerImpl, error) {
 	wrappedStore := newNotifyingTaskStore(conf.TaskStore, promoter)
 
 	// Build executor — updater is passed explicitly, no global involved at this layer.
-	exec, err := executor.New(ctx, conf.ExecutorConfig, wrappedStore)
+	exec, err := executor.New(ctx, conf.ExecutorConfig, wrappedStore, wrappedStore)
 	if err != nil {
 		return nil, err
 	}
@@ -332,11 +333,11 @@ func (m *ManagerImpl) createAndExecuteTask(
 				}
 
 				task.Status = taskcommon.TaskStatusWaiting
-				task.Message = "Queued: waiting for rack to become available"
+				task.Message = message.ForStatus(taskcommon.TaskStatusWaiting)
 				task.QueueExpiresAt = m.getReqExpiresAt(req)
 			} else {
 				task.Status = taskcommon.TaskStatusPending
-				task.Message = "Created"
+				task.Message = message.ForStatus(taskcommon.TaskStatusPending)
 			}
 
 			return m.taskStore.CreateTask(txCtx, &task)
@@ -422,7 +423,7 @@ func (m *ManagerImpl) resolveAndExecuteTask(
 		if uerr := m.taskStore.UpdateTaskStatus(ctx, &taskdef.TaskStatusUpdate{
 			ID:      task.ID,
 			Status:  taskcommon.TaskStatusFailed,
-			Message: err.Error(),
+			Message: message.ForFailure(err),
 		}); uerr != nil {
 			log.Error().Err(uerr).
 				Msgf("failed to mark task %s failed", task.ID)

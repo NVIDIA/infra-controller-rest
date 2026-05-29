@@ -86,12 +86,9 @@ func TestInjectExpectationWorkflow(t *testing.T) {
 			env.RegisterActivityWithOptions(mockInjectExpectation, activity.RegisterOptions{
 				Name: activitypkg.NameInjectExpectation,
 			})
-			env.RegisterActivityWithOptions(mockUpdateTaskStatus, activity.RegisterOptions{
-				Name: activitypkg.NameUpdateTaskStatus,
-			})
+			registerTaskUpdateActivities(env)
 
 			env.OnActivity(mockInjectExpectation, mock.Anything, mock.Anything, mock.Anything).Return(tc.activityError)
-			env.OnActivity(mockUpdateTaskStatus, mock.Anything, mock.Anything).Return(nil)
 
 			info := &operations.InjectExpectationTaskInfo{}
 			reqInfo := taskdef.ExecutionInfo{
@@ -99,6 +96,7 @@ func TestInjectExpectationWorkflow(t *testing.T) {
 				Components: toWorkflowComponents(tc.components),
 			}
 
+			expectTaskUpdateActivities(env)
 			env.ExecuteWorkflow(injectExpectation, reqInfo, info)
 
 			assert.True(t, env.IsWorkflowCompleted())

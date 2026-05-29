@@ -2170,11 +2170,13 @@ type Task struct {
 	Operation      string                 `protobuf:"bytes,2,opt,name=operation,proto3" json:"operation,omitempty"`
 	RackId         *UUID                  `protobuf:"bytes,3,opt,name=rack_id,json=rackId,proto3" json:"rack_id,omitempty"`
 	ComponentUuids []*UUID                `protobuf:"bytes,4,rep,name=component_uuids,json=componentUuids,proto3" json:"component_uuids,omitempty"`
-	Description    string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
-	ExecutorType   TaskExecutorType       `protobuf:"varint,6,opt,name=executor_type,json=executorType,proto3,enum=v1.TaskExecutorType" json:"executor_type,omitempty"`
-	ExecutionId    string                 `protobuf:"bytes,7,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
-	Status         TaskStatus             `protobuf:"varint,8,opt,name=status,proto3,enum=v1.TaskStatus" json:"status,omitempty"`
-	Message        string                 `protobuf:"bytes,9,opt,name=message,proto3" json:"message,omitempty"`
+	// description is provided by the client when the task is created.
+	Description  string           `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
+	ExecutorType TaskExecutorType `protobuf:"varint,6,opt,name=executor_type,json=executorType,proto3,enum=v1.TaskExecutorType" json:"executor_type,omitempty"`
+	ExecutionId  string           `protobuf:"bytes,7,opt,name=execution_id,json=executionId,proto3" json:"execution_id,omitempty"`
+	Status       TaskStatus       `protobuf:"varint,8,opt,name=status,proto3,enum=v1.TaskStatus" json:"status,omitempty"`
+	// message is brief text tied to status (not execution progress).
+	Message string `protobuf:"bytes,9,opt,name=message,proto3" json:"message,omitempty"`
 	// queue_expires_at is set only for waiting tasks; absent for all other statuses.
 	QueueExpiresAt *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=queue_expires_at,json=queueExpiresAt,proto3,oneof" json:"queue_expires_at,omitempty"`
 	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,11,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -2182,8 +2184,10 @@ type Task struct {
 	AppliedRuleId  *UUID                  `protobuf:"bytes,13,opt,name=applied_rule_id,json=appliedRuleId,proto3,oneof" json:"applied_rule_id,omitempty"`
 	UpdatedAt      *timestamppb.Timestamp `protobuf:"bytes,14,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	StartedAt      *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=started_at,json=startedAt,proto3,oneof" json:"started_at,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// report is a versioned JSON document with structured execution progress.
+	Report        string `protobuf:"bytes,16,opt,name=report,proto3" json:"report,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *Task) Reset() {
@@ -2319,6 +2323,13 @@ func (x *Task) GetStartedAt() *timestamppb.Timestamp {
 		return x.StartedAt
 	}
 	return nil
+}
+
+func (x *Task) GetReport() string {
+	if x != nil {
+		return x.Report
+	}
+	return ""
 }
 
 type CreateExpectedRackRequest struct {
@@ -7771,7 +7782,7 @@ const file_flow_proto_rawDesc = "" +
 	"rack_field\x18\x01 \x01(\x0e2\x14.v1.RackOrderByFieldH\x00R\trackField\x12D\n" +
 	"\x0fcomponent_field\x18\x02 \x01(\x0e2\x19.v1.ComponentOrderByFieldH\x00R\x0ecomponentField\x12\x1c\n" +
 	"\tdirection\x18\x03 \x01(\tR\tdirectionB\a\n" +
-	"\x05field\"\x98\x06\n" +
+	"\x05field\"\xb0\x06\n" +
 	"\x04Task\x12\x18\n" +
 	"\x02id\x18\x01 \x01(\v2\b.v1.UUIDR\x02id\x12\x1c\n" +
 	"\toperation\x18\x02 \x01(\tR\toperation\x12!\n" +
@@ -7792,7 +7803,8 @@ const file_flow_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x0e \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12>\n" +
 	"\n" +
-	"started_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampH\x03R\tstartedAt\x88\x01\x01B\x13\n" +
+	"started_at\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampH\x03R\tstartedAt\x88\x01\x01\x12\x16\n" +
+	"\x06report\x18\x10 \x01(\tR\x06reportB\x13\n" +
 	"\x11_queue_expires_atB\x0e\n" +
 	"\f_finished_atB\x12\n" +
 	"\x10_applied_rule_idB\r\n" +

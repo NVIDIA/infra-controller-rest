@@ -278,18 +278,16 @@ func TestRegistryNameDispatch(t *testing.T) {
 	)
 	env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
 
+	registerTaskUpdateActivities(env)
 	env.RegisterActivityWithOptions(mockPowerControl, sdkactivity.RegisterOptions{
 		Name: taskactivity.NamePowerControl,
-	})
-	env.RegisterActivityWithOptions(mockUpdateTaskStatus, sdkactivity.RegisterOptions{
-		Name: taskactivity.NameUpdateTaskStatus,
 	})
 	env.RegisterActivityWithOptions(mockGetPowerStatus, sdkactivity.RegisterOptions{
 		Name: taskactivity.NameGetPowerStatus,
 	})
 
 	env.OnActivity(taskactivity.NamePowerControl, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	env.OnActivity(taskactivity.NameUpdateTaskStatus, mock.Anything, mock.Anything).Return(nil)
+	expectTaskUpdateActivities(env)
 	env.OnActivity(taskactivity.NameGetPowerStatus, mock.Anything, mock.Anything).Return(
 		map[string]operations.PowerStatus{"ext-compute-1": operations.PowerStatusOn}, nil,
 	)

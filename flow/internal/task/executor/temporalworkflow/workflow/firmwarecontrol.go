@@ -50,19 +50,20 @@ func firmwareControl(
 	}
 
 	if err := checkFirmwareUpdatePrerequisites(ctx, &reqInfo); err != nil {
-		return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err)
+		return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err, nil)
 	}
 
 	typeToTargets := buildTargets(&reqInfo)
 
-	err := executeRuleBasedOperation(
+	report, err := executeRuleBasedOperation(
 		ctx,
+		reqInfo.TaskID,
 		typeToTargets,
 		info,
 		reqInfo.RuleDefinition,
 	)
 
-	return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err)
+	return updateFinishedTaskStatus(ctx, reqInfo.TaskID, err, report)
 }
 
 // checkFirmwareUpdatePrerequisites validates that firmware update can proceed.

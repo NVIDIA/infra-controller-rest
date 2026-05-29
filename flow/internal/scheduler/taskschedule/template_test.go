@@ -214,7 +214,7 @@ func TestSummaryFromTemplate(t *testing.T) {
 		"unknown power control code": {
 			input:      mustMarshalTemplate(taskcommon.TaskTypePowerControl, "bmc_cycle", emptyInfo),
 			wantOpType: "POWER_CONTROL",
-			wantDesc:   "bmc_cycle",
+			wantDesc:   "bmc cycle",
 		},
 
 		// ── bring-up / ingest ────────────────────────────────────────────────
@@ -267,8 +267,8 @@ func TestSummaryFromTemplate(t *testing.T) {
 		// ── unknown type ──────────────────────────────────────────────────────
 		"unknown operation type": {
 			input:      mustMarshalTemplate(taskcommon.TaskTypeInjectExpectation, "inject", emptyInfo),
-			wantOpType: string(taskcommon.TaskTypeInjectExpectation),
-			wantDesc:   "inject",
+			wantOpType: "INJECT_EXPECTATION",
+			wantDesc:   "Inject Expectation",
 		},
 	}
 

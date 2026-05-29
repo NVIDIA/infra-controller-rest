@@ -36,10 +36,6 @@ func mockPowerControl(
 	return nil
 }
 
-func mockUpdateTaskStatus(ctx context.Context, arg *taskdef.TaskStatusUpdate) error {
-	return nil
-}
-
 // mockGetPowerStatus is a mock activity function for testing power status verification.
 // The actual return values are defined via env.OnActivity().Return() in each test case.
 func mockGetPowerStatus(ctx context.Context, target common.Target) (map[string]operations.PowerStatus, error) {
@@ -266,11 +262,9 @@ func TestPowerControlWorkflow(t *testing.T) {
 			testSuite := &testsuite.WorkflowTestSuite{}
 			env := testSuite.NewTestWorkflowEnvironment()
 
+			registerTaskUpdateActivities(env)
 			env.RegisterActivityWithOptions(mockPowerControl, activity.RegisterOptions{
 				Name: taskactivity.NamePowerControl,
-			})
-			env.RegisterActivityWithOptions(mockUpdateTaskStatus, activity.RegisterOptions{
-				Name: taskactivity.NameUpdateTaskStatus,
 			})
 			env.RegisterActivityWithOptions(mockGetPowerStatus, activity.RegisterOptions{
 				Name: taskactivity.NameGetPowerStatus,
@@ -279,7 +273,6 @@ func TestPowerControlWorkflow(t *testing.T) {
 			env.RegisterWorkflowWithOptions(genericComponentStepWorkflow, temporalworkflow.RegisterOptions{Name: nameGenericComponentStepWorkflow})
 
 			env.OnActivity(taskactivity.NamePowerControl, mock.Anything, mock.Anything, mock.Anything).Return(tc.activityError)
-			env.OnActivity(taskactivity.NameUpdateTaskStatus, mock.Anything, mock.Anything).Return(nil)
 
 			// Track call count for restart operations which need Off then On
 			callCount := 0
@@ -321,6 +314,8 @@ func TestPowerControlWorkflow(t *testing.T) {
 					return result, nil
 				},
 			)
+
+			expectTaskUpdateActivities(env)
 
 			info := &operations.PowerControlTaskInfo{Operation: tc.op}
 			reqInfo := taskdef.ExecutionInfo{

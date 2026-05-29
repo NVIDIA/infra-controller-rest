@@ -84,6 +84,7 @@ type Manager struct {
 func (c *Config) Build(
 	ctx context.Context,
 	updater task.TaskStatusUpdater,
+	reportUpdater task.TaskReportUpdater,
 ) (executor.Executor, error) {
 	if err := c.Validate(); err != nil {
 		return nil, err
@@ -99,7 +100,7 @@ func (c *Config) Build(
 
 	// Bind dependencies into an Activities instance so each manager has its
 	// own isolated copy — no shared mutable globals between managers.
-	acts := activity.New(updater, c.ComponentManagerRegistry)
+	acts := activity.New(updater, reportUpdater, c.ComponentManagerRegistry)
 
 	publisherClient, err := temporal.New(c.ClientConf)
 	if err != nil {

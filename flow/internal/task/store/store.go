@@ -45,6 +45,9 @@ type Store interface {
 	// UpdateTaskStatus updates the status and message of a task.
 	UpdateTaskStatus(ctx context.Context, arg *taskdef.TaskStatusUpdate) error
 
+	// UpdateTaskReport merges a report snapshot without a status change.
+	UpdateTaskReport(ctx context.Context, arg *taskdef.TaskReportUpdate) error
+
 	// ListActiveTasksForRack returns non-finished, non-waiting tasks for a rack
 	// (i.e. tasks with status pending or running).
 	ListActiveTasksForRack(ctx context.Context, rackID uuid.UUID) ([]*taskdef.Task, error)

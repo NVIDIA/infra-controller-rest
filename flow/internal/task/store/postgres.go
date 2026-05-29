@@ -138,16 +138,38 @@ func (s *PostgresStore) UpdateScheduledTask(
 	return nil
 }
 
-// UpdateTaskStatus updates the status and message of a task.
+// UpdateTaskStatus persists status, message, and (optionally) the report
+// snapshot. The report carried in arg is treated as authoritative: when
+// non-empty it replaces the stored document, when empty the stored
+// document is left untouched (the underlying model omits the report
+// column from the UPDATE in that case). No read-modify-write is performed,
+// so concurrent transitions cannot lose updates.
 func (s *PostgresStore) UpdateTaskStatus(
 	ctx context.Context,
 	arg *taskdef.TaskStatusUpdate,
 ) error {
-	taskDao := &model.Task{
-		ID: arg.ID,
+	taskDao := &model.Task{ID: arg.ID}
+	err := taskDao.UpdateTaskStatus(ctx, s.idb(ctx), arg.Status, arg.Message, arg.Report)
+	if err != nil {
+		return errors.GRPCErrorInternal(err.Error())
 	}
 
-	err := taskDao.UpdateTaskStatus(ctx, s.pg.DB, arg.Status, arg.Message)
+	return nil
+}
+
+// UpdateTaskReport replaces the stored report with the snapshot in arg.
+// Empty snapshots are dropped rather than written so a malformed caller
+// cannot clear the stored report by accident.
+func (s *PostgresStore) UpdateTaskReport(
+	ctx context.Context,
+	arg *taskdef.TaskReportUpdate,
+) error {
+	if len(arg.Report) == 0 {
+		return nil
+	}
+
+	taskDao := &model.Task{ID: arg.ID}
+	err := taskDao.UpdateTaskReport(ctx, s.idb(ctx), arg.Report)
 	if err != nil {
 		return errors.GRPCErrorInternal(err.Error())
 	}

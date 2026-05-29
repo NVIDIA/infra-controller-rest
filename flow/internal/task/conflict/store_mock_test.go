@@ -65,6 +65,10 @@ func (m *mockStore) ListRacksWithWaitingTasks(ctx context.Context) ([]uuid.UUID,
 	return m.racksWithWaiting, nil
 }
 
+func (m *mockStore) UpdateTaskReport(_ context.Context, _ *taskdef.TaskReportUpdate) error {
+	return nil
+}
+
 func (m *mockStore) UpdateTaskStatus(ctx context.Context, arg *taskdef.TaskStatusUpdate) error {
 	if m.updateStatusErr != nil {
 		return m.updateStatusErr
