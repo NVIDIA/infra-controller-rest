@@ -12,6 +12,7 @@ import (
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAPIInterface(t *testing.T) {
@@ -58,6 +59,124 @@ func TestNewAPIInterface(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAPIInterfaceCreateOrUpdateRequest_RoutingProfileValidate(t *testing.T) {
+	tests := []struct {
+		name                       string
+		req                        APIInterfaceCreateOrUpdateRequest
+		wantErr                    bool
+		wantErrorContains          []string
+		wantAllowedAnycastPrefixes []string
+		wantNonNilPrefixes         bool
+	}{
+		{
+			name: "VPC Prefix interface accepts IPv4 and IPv6 anycast prefixes",
+			req: APIInterfaceCreateOrUpdateRequest{
+				VpcPrefixID: cdb.GetStrPtr(uuid.NewString()),
+				RoutingProfile: &APIInterfaceRoutingProfile{
+					AllowedAnycastPrefixes: []string{"192.0.2.0/24", "2001:db8::/64"},
+				},
+			},
+			wantAllowedAnycastPrefixes: []string{"192.0.2.0/24", "2001:db8::/64"},
+		},
+		{
+			name: "explicit empty routing profile stays non-nil with empty anycast prefixes",
+			req: APIInterfaceCreateOrUpdateRequest{
+				VpcPrefixID:    cdb.GetStrPtr(uuid.NewString()),
+				RoutingProfile: &APIInterfaceRoutingProfile{},
+			},
+			wantAllowedAnycastPrefixes: []string{},
+			wantNonNilPrefixes:         true,
+		},
+		{
+			name: "invalid anycast prefix returns field-specific error",
+			req: APIInterfaceCreateOrUpdateRequest{
+				VpcPrefixID: cdb.GetStrPtr(uuid.NewString()),
+				RoutingProfile: &APIInterfaceRoutingProfile{
+					AllowedAnycastPrefixes: []string{"not-a-prefix"},
+				},
+			},
+			wantErr:           true,
+			wantErrorContains: []string{"allowedAnycastPrefixes", "not-a-prefix"},
+		},
+		{
+			name: "Subnet interface rejects routing profile",
+			req: APIInterfaceCreateOrUpdateRequest{
+				SubnetID:       cdb.GetStrPtr(uuid.NewString()),
+				RoutingProfile: &APIInterfaceRoutingProfile{},
+			},
+			wantErr:           true,
+			wantErrorContains: []string{"routingProfile", "cannot be specified for Subnet based Interfaces"},
+		},
+		{
+			name: "Subnet interface accepts nil routing profile",
+			req: APIInterfaceCreateOrUpdateRequest{
+				SubnetID: cdb.GetStrPtr(uuid.NewString()),
+			},
+		},
+		{
+			name: "VPC Prefix interface accepts nil routing profile",
+			req: APIInterfaceCreateOrUpdateRequest{
+				VpcPrefixID: cdb.GetStrPtr(uuid.NewString()),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.req.Validate()
+			if tt.wantErr {
+				require.Error(t, err)
+				for _, want := range tt.wantErrorContains {
+					assert.Contains(t, err.Error(), want)
+				}
+				return
+			}
+
+			assert.NoError(t, err)
+			if tt.req.RoutingProfile != nil {
+				if tt.wantNonNilPrefixes {
+					assert.NotNil(t, tt.req.RoutingProfile.AllowedAnycastPrefixes)
+				}
+				assert.Equal(t, tt.wantAllowedAnycastPrefixes, tt.req.RoutingProfile.AllowedAnycastPrefixes)
+			}
+		})
+	}
+}
+
+func TestAPIInterfaceRoutingProfile_ToDBModel(t *testing.T) {
+	var nilProfile *APIInterfaceRoutingProfile
+	assert.Nil(t, nilProfile.ToDBModel())
+
+	emptyProfile := (&APIInterfaceRoutingProfile{}).ToDBModel()
+	require.NotNil(t, emptyProfile)
+	assert.NotNil(t, emptyProfile.AllowedAnycastPrefixes)
+	assert.Empty(t, emptyProfile.AllowedAnycastPrefixes)
+
+	apiProfile := &APIInterfaceRoutingProfile{
+		AllowedAnycastPrefixes: []string{"192.0.2.0/24", "2001:db8::/64"},
+	}
+	dbProfile := apiProfile.ToDBModel()
+	require.NotNil(t, dbProfile)
+	assert.Equal(t, []string{"192.0.2.0/24", "2001:db8::/64"}, dbProfile.AllowedAnycastPrefixes)
+
+	apiProfile.AllowedAnycastPrefixes[0] = "198.51.100.0/24"
+	assert.Equal(t, []string{"192.0.2.0/24", "2001:db8::/64"}, dbProfile.AllowedAnycastPrefixes)
+}
+
+func TestNewAPIInterfaceRoutingProfile(t *testing.T) {
+	assert.Nil(t, NewAPIInterfaceRoutingProfile(nil))
+
+	dbProfile := &cdbm.InterfaceRoutingProfile{
+		AllowedAnycastPrefixes: []string{"192.0.2.0/24", "2001:db8::/64"},
+	}
+	apiProfile := NewAPIInterfaceRoutingProfile(dbProfile)
+	require.NotNil(t, apiProfile)
+	assert.Equal(t, []string{"192.0.2.0/24", "2001:db8::/64"}, apiProfile.AllowedAnycastPrefixes)
+
+	dbProfile.AllowedAnycastPrefixes[0] = "198.51.100.0/24"
+	assert.Equal(t, []string{"192.0.2.0/24", "2001:db8::/64"}, apiProfile.AllowedAnycastPrefixes)
 }
 
 func TestAPIInterfaceCreateRequest_Validate(t *testing.T) {

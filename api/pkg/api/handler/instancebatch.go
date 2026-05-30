@@ -627,6 +627,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 				VpcPrefixID:        &vpcPrefixUUID,
 				VpcPrefix:          vpcPrefix,
 				RequestedIpAddress: nil, // Explicit IPs are not supported for batch create.
+				RoutingProfile:     ifc.RoutingProfile.ToDBModel(),
 				Device:             ifc.Device,
 				DeviceInstance:     ifc.DeviceInstance,
 				VirtualFunctionID:  ifc.VirtualFunctionID,
@@ -1336,6 +1337,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 					DeviceInstance:     dbifc.DeviceInstance,
 					VirtualFunctionID:  dbifc.VirtualFunctionID,
 					RequestedIpAddress: dbifc.RequestedIpAddress,
+					RoutingProfile:     dbifc.RoutingProfile,
 					IsPhysical:         dbifc.IsPhysical,
 					Status:             cdbm.InterfaceStatusPending,
 					CreatedBy:          dbUser.ID,
@@ -1534,6 +1536,9 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 			if !ifc.IsPhysical && ifc.VirtualFunctionID != nil {
 				vfID := uint32(*ifc.VirtualFunctionID)
 				interfaceConfig.VirtualFunctionId = &vfID
+			}
+			if ifc.RoutingProfile != nil {
+				interfaceConfig.RoutingProfile = ifc.RoutingProfile.ToProto()
 			}
 			createdInstancesData[idx].interfaceConfigs = append(createdInstancesData[idx].interfaceConfigs, interfaceConfig)
 		}

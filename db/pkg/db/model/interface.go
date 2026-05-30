@@ -11,9 +11,9 @@ import (
 
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	"github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
-	"github.com/google/uuid"
-
 	stracer "github.com/NVIDIA/infra-controller-rest/db/pkg/tracer"
+	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
@@ -57,31 +57,73 @@ var (
 	}
 )
 
+// InterfaceRoutingProfile is the DB representation of interface-local routing options.
+type InterfaceRoutingProfile struct {
+	AllowedAnycastPrefixes []string `json:"allowedAnycastPrefixes"`
+}
+
+// ToProto converts this interface routing profile into its workflow proto representation.
+func (irp *InterfaceRoutingProfile) ToProto() *cwssaws.InstanceInterfaceRoutingProfile {
+	if irp == nil {
+		return nil
+	}
+	profile := &cwssaws.InstanceInterfaceRoutingProfile{
+		AllowedAnycastPrefixes: make([]*cwssaws.PrefixFilterPolicyEntry, 0, len(irp.AllowedAnycastPrefixes)),
+	}
+	for _, prefix := range irp.AllowedAnycastPrefixes {
+		profile.AllowedAnycastPrefixes = append(profile.AllowedAnycastPrefixes, &cwssaws.PrefixFilterPolicyEntry{Prefix: prefix})
+	}
+	return profile
+}
+
+// FromProto populates this routing profile from its workflow proto representation.
+func (irp *InterfaceRoutingProfile) FromProto(proto *cwssaws.InstanceInterfaceRoutingProfile) {
+	if proto == nil {
+		*irp = InterfaceRoutingProfile{}
+		return
+	}
+	irp.AllowedAnycastPrefixes = make([]string, 0, len(proto.GetAllowedAnycastPrefixes()))
+	for _, entry := range proto.GetAllowedAnycastPrefixes() {
+		irp.AllowedAnycastPrefixes = append(irp.AllowedAnycastPrefixes, entry.GetPrefix())
+	}
+}
+
+// NewInterfaceRoutingProfile builds a DB routing profile from a workflow proto.
+func NewInterfaceRoutingProfile(proto *cwssaws.InstanceInterfaceRoutingProfile) *InterfaceRoutingProfile {
+	if proto == nil {
+		return nil
+	}
+	profile := &InterfaceRoutingProfile{}
+	profile.FromProto(proto)
+	return profile
+}
+
 // Interface table maintains association between an instance and a subnet
 type Interface struct {
 	bun.BaseModel `bun:"table:interface,alias:ifc"`
 
-	ID                 uuid.UUID         `bun:"type:uuid,pk"`
-	InstanceID         uuid.UUID         `bun:"instance_id,type:uuid,notnull"`
-	Instance           *Instance         `bun:"rel:belongs-to,join:instance_id=id"`
-	SubnetID           *uuid.UUID        `bun:"subnet_id,type:uuid"`
-	Subnet             *Subnet           `bun:"rel:belongs-to,join:subnet_id=id"`
-	VpcPrefixID        *uuid.UUID        `bun:"vpc_prefix_id,type:uuid"`
-	VpcPrefix          *VpcPrefix        `bun:"rel:belongs-to,join:vpc_prefix_id=id"`
-	MachineInterfaceID *uuid.UUID        `bun:"machine_interface_id,type:uuid"`
-	MachineInterface   *MachineInterface `bun:"rel:belongs-to,join:machine_interface_id=id"`
-	Device             *string           `bun:"device"`
-	DeviceInstance     *int              `bun:"device_instance"`
-	IsPhysical         bool              `bun:"is_physical,notnull"`
-	VirtualFunctionID  *int              `bun:"virtual_function_id"`
-	RequestedIpAddress *string           `bun:"requested_ip_address"`
-	MacAddress         *string           `bun:"mac_address"`
-	IPAddresses        []string          `bun:"ip_addresses,type:text[]"`
-	Status             string            `bun:"status,notnull"`
-	Created            time.Time         `bun:"created,nullzero,notnull,default:current_timestamp"`
-	Updated            time.Time         `bun:"updated,nullzero,notnull,default:current_timestamp"`
-	Deleted            *time.Time        `bun:"deleted,soft_delete"`
-	CreatedBy          uuid.UUID         `bun:"type:uuid,notnull"`
+	ID                 uuid.UUID                `bun:"type:uuid,pk"`
+	InstanceID         uuid.UUID                `bun:"instance_id,type:uuid,notnull"`
+	Instance           *Instance                `bun:"rel:belongs-to,join:instance_id=id"`
+	SubnetID           *uuid.UUID               `bun:"subnet_id,type:uuid"`
+	Subnet             *Subnet                  `bun:"rel:belongs-to,join:subnet_id=id"`
+	VpcPrefixID        *uuid.UUID               `bun:"vpc_prefix_id,type:uuid"`
+	VpcPrefix          *VpcPrefix               `bun:"rel:belongs-to,join:vpc_prefix_id=id"`
+	MachineInterfaceID *uuid.UUID               `bun:"machine_interface_id,type:uuid"`
+	MachineInterface   *MachineInterface        `bun:"rel:belongs-to,join:machine_interface_id=id"`
+	Device             *string                  `bun:"device"`
+	DeviceInstance     *int                     `bun:"device_instance"`
+	IsPhysical         bool                     `bun:"is_physical,notnull"`
+	VirtualFunctionID  *int                     `bun:"virtual_function_id"`
+	RequestedIpAddress *string                  `bun:"requested_ip_address"`
+	MacAddress         *string                  `bun:"mac_address"`
+	IPAddresses        []string                 `bun:"ip_addresses,type:text[]"`
+	RoutingProfile     *InterfaceRoutingProfile `bun:"routing_profile,type:jsonb"`
+	Status             string                   `bun:"status,notnull"`
+	Created            time.Time                `bun:"created,nullzero,notnull,default:current_timestamp"`
+	Updated            time.Time                `bun:"updated,nullzero,notnull,default:current_timestamp"`
+	Deleted            *time.Time               `bun:"deleted,soft_delete"`
+	CreatedBy          uuid.UUID                `bun:"type:uuid,notnull"`
 }
 
 // InterfaceCreateInput input parameters for Create method
@@ -94,6 +136,7 @@ type InterfaceCreateInput struct {
 	DeviceInstance     *int
 	VirtualFunctionID  *int
 	RequestedIpAddress *string
+	RoutingProfile     *InterfaceRoutingProfile
 	Status             string
 	CreatedBy          uuid.UUID
 }
@@ -108,6 +151,7 @@ type InterfaceUpdateInput struct {
 	DeviceInstance     *int
 	VirtualFunctionID  *int
 	RequestedIpAddress *string
+	RoutingProfile     *InterfaceRoutingProfile
 	MacAddress         *string
 	IpAddresses        []string
 	Status             *string
@@ -129,6 +173,7 @@ type InterfaceFilterInput struct {
 type InterfaceClearInput struct {
 	InterfaceID        uuid.UUID
 	RequestedIpAddress bool
+	RoutingProfile     bool
 }
 
 var _ bun.BeforeAppendModelHook = (*Interface)(nil)
@@ -418,6 +463,10 @@ func (ifcd InterfaceSQLDAO) Update(ctx context.Context, tx *db.Tx, input Interfa
 			ifcd.tracerSpan.SetAttribute(interfaceDAOSpan, "requested_ip_address", *input.RequestedIpAddress)
 		}
 	}
+	if input.RoutingProfile != nil {
+		is.RoutingProfile = input.RoutingProfile
+		updatedFields = append(updatedFields, "routing_profile")
+	}
 	if input.MacAddress != nil {
 		is.MacAddress = input.MacAddress
 		updatedFields = append(updatedFields, "mac_address")
@@ -548,6 +597,7 @@ func (ifcd InterfaceSQLDAO) CreateMultiple(ctx context.Context, tx *db.Tx, input
 			DeviceInstance:     input.DeviceInstance,
 			VirtualFunctionID:  input.VirtualFunctionID,
 			RequestedIpAddress: input.RequestedIpAddress,
+			RoutingProfile:     input.RoutingProfile,
 			IsPhysical:         input.IsPhysical,
 			Status:             input.Status,
 			CreatedBy:          input.CreatedBy,
@@ -613,6 +663,10 @@ func (ifcd InterfaceSQLDAO) Clear(ctx context.Context, tx *db.Tx, input Interfac
 	if input.RequestedIpAddress {
 		i.RequestedIpAddress = nil
 		updatedFields = append(updatedFields, "requested_ip_address")
+	}
+	if input.RoutingProfile {
+		i.RoutingProfile = nil
+		updatedFields = append(updatedFields, "routing_profile")
 	}
 
 	if len(updatedFields) > 0 {

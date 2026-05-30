@@ -16825,7 +16825,12 @@ components:
           type:
             - string
             - 'null'
-          description: Explicitly requested IP address for the interface. This is only used for VPC Prefix based interfaces and is not valid for Subnet based interfaces. The least-significant host bit must be 1.
+          description: Explicitly requested IP address for the interface. This is only used for VPC Prefix-based interfaces and is not valid for Subnet-based interfaces. The least-significant host bit must be 1.
+        routingProfile:
+          oneOf:
+            - $ref: '#/components/schemas/InterfaceRoutingProfile'
+            - type: 'null'
+          description: Interface-local routing profile options. Only valid for VPC Prefix-based interfaces.
         status:
           $ref: '#/components/schemas/InterfaceStatus'
         created:
@@ -16846,6 +16851,18 @@ components:
         - Ready
         - Deleting
         - Error
+    InterfaceRoutingProfile:
+      title: InterfaceRoutingProfile
+      type: object
+      description: Interface-local routing profile options that narrow the owning VPC's routing profile.
+      properties:
+        allowedAnycastPrefixes:
+          type: array
+          description: CIDR prefixes this interface is allowed to announce as anycast routes.
+          default: []
+          items:
+            type: string
+            example: 192.0.2.0/24
     InterfaceCreateRequest:
       title: InterfaceCreateRequest
       type: object
@@ -16872,7 +16889,12 @@ components:
           type:
             - string
             - 'null'
-          description: Explicitly requested IP address for the interface. It cannot be specified for Subnet based interfaces. The least-significant host bit must be 1.
+          description: Explicitly requested IP address for the interface. It cannot be specified for Subnet-based interfaces. The least-significant host bit must be 1.
+        routingProfile:
+          oneOf:
+            - $ref: '#/components/schemas/InterfaceRoutingProfile'
+            - type: 'null'
+          description: Interface-local routing profile options. It cannot be specified for Subnet-based interfaces.
         isPhysical:
           type: boolean
           description: Specifies whether this Subnet or VPC Prefix should be attached to the Instance over physical interface.

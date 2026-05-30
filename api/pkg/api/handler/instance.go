@@ -584,6 +584,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 				VpcPrefixID:        &vpcPrefixID,
 				VpcPrefix:          vpcPrefix, // We attach this here so it can be used when we convert to the API model.
 				RequestedIpAddress: ifc.IPAddress,
+				RoutingProfile:     ifc.RoutingProfile.ToDBModel(),
 				Device:             ifc.Device,
 				DeviceInstance:     ifc.DeviceInstance,
 				VirtualFunctionID:  ifc.VirtualFunctionID,
@@ -1335,6 +1336,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 				DeviceInstance:     dbifc.DeviceInstance,
 				VirtualFunctionID:  dbifc.VirtualFunctionID,
 				RequestedIpAddress: dbifc.RequestedIpAddress,
+				RoutingProfile:     dbifc.RoutingProfile,
 				IsPhysical:         dbifc.IsPhysical,
 				Status:             dbifc.Status,
 				CreatedBy:          dbUser.ID,
@@ -1392,6 +1394,9 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 
 			if dbifc.RequestedIpAddress != nil {
 				interfaceConfig.IpAddress = dbifc.RequestedIpAddress
+			}
+			if dbifc.RoutingProfile != nil {
+				interfaceConfig.RoutingProfile = dbifc.RoutingProfile.ToProto()
 			}
 
 			interfaceConfigs = append(interfaceConfigs, interfaceConfig)
@@ -2435,6 +2440,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 				VpcPrefixID:        &vpcPrefixID,
 				VpcPrefix:          vpcPrefix, // We attach this here so it can be used when we convert to the API model.
 				RequestedIpAddress: ifc.IPAddress,
+				RoutingProfile:     ifc.RoutingProfile.ToDBModel(),
 				Device:             ifc.Device,
 				DeviceInstance:     ifc.DeviceInstance,
 				VirtualFunctionID:  ifc.VirtualFunctionID,
@@ -3013,6 +3019,7 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 					DeviceInstance:     dbifc.DeviceInstance,
 					VirtualFunctionID:  dbifc.VirtualFunctionID,
 					RequestedIpAddress: dbifc.RequestedIpAddress,
+					RoutingProfile:     dbifc.RoutingProfile,
 					IsPhysical:         dbifc.IsPhysical,
 					Status:             dbifc.Status,
 					CreatedBy:          dbUser.ID,
@@ -3433,6 +3440,9 @@ func (uih UpdateInstanceHandler) Handle(c echo.Context) error {
 
 			if ifc.RequestedIpAddress != nil {
 				interfaceConfig.IpAddress = ifc.RequestedIpAddress
+			}
+			if ifc.RoutingProfile != nil {
+				interfaceConfig.RoutingProfile = ifc.RoutingProfile.ToProto()
 			}
 
 			interfaceConfigs[i] = interfaceConfig

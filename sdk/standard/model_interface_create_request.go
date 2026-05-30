@@ -24,8 +24,9 @@ var _ MappedNullable = &InterfaceCreateRequest{}
 type InterfaceCreateRequest struct {
 	SubnetId    *string `json:"subnetId,omitempty"`
 	VpcPrefixId *string `json:"vpcPrefixId,omitempty"`
-	// Explicitly requested IP address for the interface. It cannot be specified for Subnet based interfaces. The least-significant host bit must be 1.
-	IpAddress NullableString `json:"ipAddress,omitempty"`
+	// Explicitly requested IP address for the interface. It cannot be specified for Subnet-based interfaces. The least-significant host bit must be 1.
+	IpAddress      NullableString                  `json:"ipAddress,omitempty"`
+	RoutingProfile NullableInterfaceRoutingProfile `json:"routingProfile,omitempty"`
 	// Specifies whether this Subnet or VPC Prefix should be attached to the Instance over physical interface.
 	IsPhysical *bool `json:"isPhysical,omitempty"`
 	// Name of the device to use
@@ -158,6 +159,49 @@ func (o *InterfaceCreateRequest) SetIpAddressNil() {
 // UnsetIpAddress ensures that no value is present for IpAddress, not even an explicit nil
 func (o *InterfaceCreateRequest) UnsetIpAddress() {
 	o.IpAddress.Unset()
+}
+
+// GetRoutingProfile returns the RoutingProfile field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *InterfaceCreateRequest) GetRoutingProfile() InterfaceRoutingProfile {
+	if o == nil || IsNil(o.RoutingProfile.Get()) {
+		var ret InterfaceRoutingProfile
+		return ret
+	}
+	return *o.RoutingProfile.Get()
+}
+
+// GetRoutingProfileOk returns a tuple with the RoutingProfile field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *InterfaceCreateRequest) GetRoutingProfileOk() (*InterfaceRoutingProfile, bool) {
+	if o == nil {
+		return nil, false
+	}
+	return o.RoutingProfile.Get(), o.RoutingProfile.IsSet()
+}
+
+// HasRoutingProfile returns a boolean if a field has been set.
+func (o *InterfaceCreateRequest) HasRoutingProfile() bool {
+	if o != nil && o.RoutingProfile.IsSet() {
+		return true
+	}
+
+	return false
+}
+
+// SetRoutingProfile gets a reference to the given NullableInterfaceRoutingProfile and assigns it to the RoutingProfile field.
+func (o *InterfaceCreateRequest) SetRoutingProfile(v InterfaceRoutingProfile) {
+	o.RoutingProfile.Set(&v)
+}
+
+// SetRoutingProfileNil sets the value for RoutingProfile to be an explicit nil
+func (o *InterfaceCreateRequest) SetRoutingProfileNil() {
+	o.RoutingProfile.Set(nil)
+}
+
+// UnsetRoutingProfile ensures that no value is present for RoutingProfile, not even an explicit nil
+func (o *InterfaceCreateRequest) UnsetRoutingProfile() {
+	o.RoutingProfile.Unset()
 }
 
 // GetIsPhysical returns the IsPhysical field value if set, zero value otherwise.
@@ -317,6 +361,9 @@ func (o InterfaceCreateRequest) ToMap() (map[string]interface{}, error) {
 	}
 	if o.IpAddress.IsSet() {
 		toSerialize["ipAddress"] = o.IpAddress.Get()
+	}
+	if o.RoutingProfile.IsSet() {
+		toSerialize["routingProfile"] = o.RoutingProfile.Get()
 	}
 	if !IsNil(o.IsPhysical) {
 		toSerialize["isPhysical"] = o.IsPhysical
