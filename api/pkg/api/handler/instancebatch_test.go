@@ -19,12 +19,14 @@ import (
 	authz "github.com/NVIDIA/infra-controller-rest/auth/pkg/authorization"
 	cdb "github.com/NVIDIA/infra-controller-rest/db/pkg/db"
 	cdbm "github.com/NVIDIA/infra-controller-rest/db/pkg/db/model"
+	cdbp "github.com/NVIDIA/infra-controller-rest/db/pkg/db/paginator"
 	cdbu "github.com/NVIDIA/infra-controller-rest/db/pkg/util"
 	cwssaws "github.com/NVIDIA/infra-controller-rest/workflow-schema/schema/site-agent/workflows/v1"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun/extra/bundebug"
 	tmocks "go.temporal.io/sdk/mocks"
 )
@@ -447,6 +449,9 @@ func TestBatchCreateInstanceHandler_Handle(t *testing.T) {
 							IsPhysical:     true,
 							Device:         cdb.GetStrPtr("MT42822 BlueField-2 integrated ConnectX-6 Dx network controller"),
 							DeviceInstance: cdb.GetIntPtr(0),
+							RoutingProfile: &model.APIInterfaceRoutingProfile{
+								AllowedAnycastPrefixes: []string{"192.0.2.0/24", "2001:db8::/64"},
+							},
 						},
 						{
 							VpcPrefixID:    cdb.GetStrPtr(vpcPrefixSecondary.ID.String()),
@@ -1302,6 +1307,14 @@ func TestBatchCreateInstanceHandler_Handle(t *testing.T) {
 					assert.Nil(t, jsonErr)
 					assert.Equal(t, tt.args.reqData.Count, len(response), "Expected %d instances, got %d", tt.args.reqData.Count, len(response))
 
+					hasRoutingProfile := false
+					for _, reqIfc := range tt.args.reqData.Interfaces {
+						if reqIfc.RoutingProfile != nil {
+							hasRoutingProfile = true
+							break
+						}
+					}
+
 					// Verify instance names follow the pattern: namePrefix-randomSuffix-index
 					for i, inst := range response {
 						expectedPrefix := tt.args.reqData.NamePrefix + "-"
@@ -1312,6 +1325,51 @@ func TestBatchCreateInstanceHandler_Handle(t *testing.T) {
 							assert.ElementsMatch(t, tt.expectedSecondaryVpcIDs, inst.SecondaryVpcIDs)
 						} else {
 							assert.Empty(t, inst.SecondaryVpcIDs)
+						}
+
+						if hasRoutingProfile {
+							require.Len(t, inst.Interfaces, len(tt.args.reqData.Interfaces))
+							for j, reqIfc := range tt.args.reqData.Interfaces {
+								if reqIfc.RoutingProfile != nil {
+									require.NotNil(t, inst.Interfaces[j].RoutingProfile)
+									assert.Equal(t, reqIfc.RoutingProfile.AllowedAnycastPrefixes, inst.Interfaces[j].RoutingProfile.AllowedAnycastPrefixes)
+								}
+							}
+
+							ifcDAO := cdbm.NewInterfaceDAO(dbSession)
+							dbIfcs, _, ierr := ifcDAO.GetAll(ec.Request().Context(), nil,
+								cdbm.InterfaceFilterInput{InstanceIDs: []uuid.UUID{uuid.MustParse(inst.ID)}},
+								cdbp.PageInput{OrderBy: &cdbp.OrderBy{Field: cdbm.InterfaceOrderByCreated, Order: cdbp.OrderAscending}},
+								nil)
+							require.NoError(t, ierr)
+							require.Len(t, dbIfcs, len(tt.args.reqData.Interfaces))
+							for j, reqIfc := range tt.args.reqData.Interfaces {
+								if reqIfc.RoutingProfile != nil {
+									require.NotNil(t, dbIfcs[j].RoutingProfile)
+									assert.Equal(t, reqIfc.RoutingProfile.AllowedAnycastPrefixes, dbIfcs[j].RoutingProfile.AllowedAnycastPrefixes)
+								}
+							}
+						}
+					}
+
+					if hasRoutingProfile {
+						var batchReq *cwssaws.BatchInstanceAllocationRequest
+						for i := len(tsc.Calls) - 1; i >= 0; i-- {
+							call := tsc.Calls[i]
+							if call.Method == "ExecuteWorkflow" && len(call.Arguments) > 3 && call.Arguments[2] == "CreateInstances" {
+								batchReq = call.Arguments[3].(*cwssaws.BatchInstanceAllocationRequest)
+								break
+							}
+						}
+						require.NotNil(t, batchReq)
+						require.Len(t, batchReq.InstanceRequests, len(response))
+						for _, instReq := range batchReq.InstanceRequests {
+							require.Len(t, instReq.Config.Network.Interfaces, len(tt.args.reqData.Interfaces))
+							for j, reqIfc := range tt.args.reqData.Interfaces {
+								if reqIfc.RoutingProfile != nil {
+									assertInterfaceRoutingProfilePrefixes(t, instReq.Config.Network.Interfaces[j].RoutingProfile, reqIfc.RoutingProfile.AllowedAnycastPrefixes)
+								}
+							}
 						}
 					}
 				}
