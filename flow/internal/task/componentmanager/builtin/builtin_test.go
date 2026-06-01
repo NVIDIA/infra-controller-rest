@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package builtin
 
@@ -55,6 +41,12 @@ func (c testProviderConfig) Name() string {
 
 func (c testProviderConfig) NewProvider(context.Context) (providerapi.Provider, error) {
 	return nil, nil
+}
+
+type testManagerConfig struct{}
+
+func (c testManagerConfig) Validate(cmcatalog.DescriptorIdentity) error {
+	return nil
 }
 
 type testServiceProvider struct {
@@ -121,10 +113,13 @@ func TestLoadConfigUsesDefaultsWithoutPath(t *testing.T) {
 	nicoConfig, ok := config.ProviderConfigs[nicoprovider.ProviderName].(*nicoprovider.Config)
 	require.True(t, ok)
 	assert.Equal(t, nicoprovider.DefaultTimeout, nicoConfig.Timeout)
+
+	computeConfig, ok := config.ManagerConfigs[computenico.Descriptor().Identity()].(*computenico.Config)
+	require.True(t, ok)
 	assert.Equal(
 		t,
-		nicoprovider.DefaultComputePowerDelay,
-		nicoConfig.ComputePowerDelay,
+		computenico.DefaultComputePowerDelay,
+		computeConfig.ComputePowerDelay,
 	)
 }
 
@@ -167,6 +162,25 @@ providers: {}
 	require.NoError(t, err)
 	assert.Equal(t, computenico.ImplementationName, config.ComponentManagers[devicetypes.ComponentTypeCompute])
 	assert.True(t, config.HasProvider(nicoprovider.ProviderName))
+}
+
+func TestLoadConfigUsesExplicitManagerConfig(t *testing.T) {
+	path := writeServiceConfig(t, `
+component_managers:
+  compute: nico
+manager_configs:
+  compute:
+    nico:
+      compute_power_delay: 0s
+providers: {}
+`)
+
+	config, err := LoadConfig(path)
+
+	require.NoError(t, err)
+	computeConfig, ok := config.ManagerConfigs[computenico.Descriptor().Identity()].(*computenico.Config)
+	require.True(t, ok)
+	assert.Equal(t, 0*time.Second, computeConfig.ComputePowerDelay)
 }
 
 func TestNewProviderRegistry(t *testing.T) {
@@ -348,6 +362,19 @@ func TestServiceProviderConfigDecoderRegistry(t *testing.T) {
 	assert.True(t, ok)
 }
 
+func TestServiceManagerConfigDecoderRegistry(t *testing.T) {
+	registry, err := newManagerConfigDecoderRegistry()
+	require.NoError(t, err)
+
+	assert.Equal(
+		t,
+		[]cmcatalog.DescriptorIdentity{computenico.Descriptor().Identity()},
+		registry.List(),
+	)
+
+	assert.NotNil(t, registry.Get(computenico.Descriptor().Identity()))
+}
+
 func TestServiceCatalog(t *testing.T) {
 	catalog, err := newCatalog()
 
@@ -485,11 +512,11 @@ func TestServiceCatalog(t *testing.T) {
 	}
 }
 
-func TestNicoComputePowerDelayUsesProviderConfig(t *testing.T) {
+func TestNicoComputePowerDelayUsesManagerConfig(t *testing.T) {
 	delay := 7 * time.Second
 	config := cmconfig.Config{
-		ProviderConfigs: map[string]providerapi.ProviderConfig{
-			nicoprovider.ProviderName: &nicoprovider.Config{
+		ManagerConfigs: map[cmcatalog.DescriptorIdentity]cmconfig.ManagerConfig{
+			computenico.Descriptor().Identity(): &computenico.Config{
 				ComputePowerDelay: delay,
 			},
 		},
@@ -501,19 +528,17 @@ func TestNicoComputePowerDelayUsesProviderConfig(t *testing.T) {
 	assert.Equal(t, delay, got)
 }
 
-func TestNicoComputePowerDelayDefaultsWhenProviderConfigMissing(t *testing.T) {
+func TestNicoComputePowerDelayDefaultsWhenManagerConfigMissing(t *testing.T) {
 	got, err := nicoComputePowerDelay(cmconfig.Config{})
 
 	require.NoError(t, err)
-	assert.Equal(t, time.Duration(0), got)
+	assert.Equal(t, computenico.DefaultComputePowerDelay, got)
 }
 
 func TestNicoComputePowerDelayRejectsUnexpectedConfigType(t *testing.T) {
 	config := cmconfig.Config{
-		ProviderConfigs: map[string]providerapi.ProviderConfig{
-			nicoprovider.ProviderName: testProviderConfig{
-				name: nicoprovider.ProviderName,
-			},
+		ManagerConfigs: map[cmcatalog.DescriptorIdentity]cmconfig.ManagerConfig{
+			computenico.Descriptor().Identity(): testManagerConfig{},
 		},
 	}
 
@@ -521,11 +546,13 @@ func TestNicoComputePowerDelayRejectsUnexpectedConfigType(t *testing.T) {
 
 	assert.Equal(t, time.Duration(0), got)
 	require.Error(t, err)
-	assert.True(t, errors.Is(err, componentmanager.ErrProviderConfigTypeMismatch))
+	assert.True(t, errors.Is(err, componentmanager.ErrManagerConfigTypeMismatch))
 
-	var mismatch componentmanager.ProviderConfigTypeMismatchError
+	var mismatch componentmanager.ManagerConfigTypeMismatchError
 	require.True(t, errors.As(err, &mismatch))
-	assert.Equal(t, nicoprovider.ProviderName, mismatch.Name)
+	assert.Equal(t, computenico.Descriptor().Identity(), mismatch.Identity)
+	assert.IsType(t, (*computenico.Config)(nil), mismatch.Want)
+	assert.Contains(t, err.Error(), "compute/nico.Config")
 }
 
 func writeServiceConfig(t *testing.T, data string) string {
@@ -545,7 +572,10 @@ func requireDescriptor(
 ) cmcatalog.Descriptor {
 	t.Helper()
 
-	descriptor, ok := catalog.Get(componentType, implementation)
+	descriptor, ok := catalog.Get(cmcatalog.DescriptorIdentity{
+		Type:           componentType,
+		Implementation: implementation,
+	})
 	require.True(t, ok)
 	return descriptor
 }

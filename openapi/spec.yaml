@@ -1,17 +1,5 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-# http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 openapi: 3.1.0
 info:
@@ -255,6 +243,40 @@ tags:
   - name: Metadata
     description: |-
       Metadata describes various system level attributes of the API service.
+  - name: Tenant Identity
+    description: |-
+      Tenant identity (JWT-SVID issuance) and RFC 8693 token delegation.
+
+      Tenant Admins use these endpoints to enable JWT-SVID issuance for an
+      org on a specific site, rotate the signing key, configure a token
+      exchange callback, and serve the public JWKS / OIDC discovery
+      documents that verifiers (OpenBao, tenant APIs, etc.) consume.
+
+      The six management endpoints (PUT / GET / DELETE on `tenant-identity/config`
+      and `tenant-identity/token-delegation`) require an authorization role with
+      `TENANT_ADMIN` suffix in the URL `{org}`. The three `.well-known/*`
+      endpoints are public; external verifiers can fetch public keys
+      without credentials.
+
+      PUT is a full-replace upsert: every call must include all required
+      fields, and omitted optional fields are cleared. To pause issuance
+      without destroying signing keys, PUT with `enabled: false`; to
+      destroy the signing keypair, use DELETE. Signing keys survive
+      `enabled: false` and survive non-rotation upserts, so JWKS consumers
+      and in-flight JWTs continue to verify across pauses and attribute
+      changes.
+
+      JWKS verifiers should treat every key in the returned set as valid
+      and match candidates by `kid` — during a key-rotation overlap
+      window two keys are present until the previous key expires. The
+      OIDC discovery endpoint's `id_token_signing_alg_values_supported`
+      is intentionally empty because NICo issues bearer access JWTs,
+      not OIDC `id_token`s. The three public endpoints return
+      `404 Not Found` when identity material cannot be served for this
+      org/site (unknown site, org is not a tenant, no tenant allocation
+      on the site, or no identity configuration); the two JWKS routes
+      additionally return `502 Bad Gateway` when the Core gRPC API
+      responds with a body that is not a parseable JWK Set.
   - name: Deprecations
     description: |-
       NICo REST API maintains backward compatibility with the previous versions. Any breaking changes are announced using deprecation notices.
@@ -999,6 +1021,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Site'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       tags:
         - Site
       description: |-
@@ -1036,6 +1062,8 @@ paths:
       responses:
         '202':
           description: Deletion request was accepted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       tags:
         - Site
       description: |-
@@ -1461,6 +1489,8 @@ paths:
       responses:
         '202':
           description: Accepted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Delete an Allocation by ID.
 
@@ -1506,6 +1536,10 @@ paths:
                         derivedResourceId: null
                         created: '2019-08-24T14:15:22Z'
                         updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Update an existing Allocation
 
@@ -1524,144 +1558,6 @@ paths:
                 value:
                   name: Echo Studios Compute
                   description: Echo Studios compute resource allocation in SJC4
-  '/v2/org/{org}/nico/allocation/{allocationId}/constraint':
-    parameters:
-      - schema:
-          type: string
-        name: org
-        in: path
-        required: true
-        description: Name of the Org
-      - schema:
-          type: string
-          format: uuid
-        name: allocationId
-        in: path
-        required: true
-        description: ID of the Allocation
-    get:
-      summary: Retrieve all Allocation Constraints
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AllocationConstraint'
-              examples:
-                example-1:
-                  value:
-                    - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                      allocationId: 9ec871ce-3363-4de2-8f79-062881067628
-                      resourceType: InstanceType
-                      resourceTypeId: a59ee688-b5e5-4606-9891-f4a605edacd3
-                      constraintType: Reserved
-                      constraintValue: 10
-                      derivedResourceId: null
-                      instanceType:
-                        name: x3.large
-                        infrastructureProviderId: 63c29416-8833-4eaf-9e1c-7c0173cc3150
-                        siteId: c9f4f276-6f7a-4209-953c-2b9870ce7cc1
-                        status: Ready
-                      created: '2019-08-24T14:15:22Z'
-                      updated: '2019-08-24T14:15:22Z'
-          headers:
-            X-Pagination:
-              schema:
-                type: string
-                example: '{"pageNumber":1,"pageSize":20,"total":30,"orderBy": "CREATED_DESC"}'
-              description: Pagination result in JSON format
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-      operationId: get-all-allocation-constraint
-      description: |-
-        Retrieve all Allocation Constraints for a given Allocation ID.
-
-        If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
-
-        If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `TENANT_ADMIN` role.
-      parameters:
-        - schema:
-            type: integer
-            example: 1
-            default: 1
-            minimum: 1
-          in: query
-          name: pageNumber
-          description: Page number for pagination query
-        - schema:
-            type: integer
-            minimum: 1
-            maximum: 100
-            example: 20
-          in: query
-          name: pageSize
-          description: Page size for pagination query
-        - schema:
-            type: string
-            enum:
-              - RESOURCE_TYPE_ASC
-              - RESOURCE_TYPE_DESC
-              - CREATED_ASC
-              - CREATED_DESC
-              - UPDATED_ASC
-              - UPDATED_DESC
-          in: query
-          name: orderBy
-          description: Ordering for pagination query
-      tags:
-        - Allocation
-    post:
-      summary: Create Allocation Constraint
-      operationId: create-allocation-constraint
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AllocationConstraint'
-              examples:
-                example-1:
-                  value:
-                    id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                    allocationId: 9ec871ce-3363-4de2-8f79-062881067628
-                    resourceType: InstanceType
-                    resourceTypeId: a59ee688-b5e5-4606-9891-f4a605edacd3
-                    constraintType: Reserved
-                    constraintValue: 10
-                    derivedResourceId: null
-                    instanceType:
-                      name: x3.large
-                      infrastructureProviderId: 63c29416-8833-4eaf-9e1c-7c0173cc3150
-                      siteId: c9f4f276-6f7a-4209-953c-2b9870ce7cc1
-                      status: Ready
-                    created: '2019-08-24T14:15:22Z'
-                    updated: '2019-08-24T14:15:22Z'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-      description: |-
-        Create an Allocation Constraint for a given Allocation ID.
-
-        Org must have an Infrastructure Provider entity and specified Allocation must have been created by the Provider. User must have authorization role with `PROVIDER_ADMIN` suffix.
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AllocationConstraintCreateRequest'
-            examples:
-              example-1:
-                value:
-                  resourceType: InstanceType
-                  resourceTypeId: bd5a0240-eb62-4bff-91f7-335e6bb86459
-                  constraintType: Reserved
-                  constraintValue: 10
-      tags:
-        - Allocation
   '/v2/org/{org}/nico/allocation/{allocationId}/constraint/{allocationConstraintId}':
     parameters:
       - schema:
@@ -1683,46 +1579,6 @@ paths:
         in: path
         required: true
         description: ID of the Allocation Constraint
-    get:
-      summary: Retrieve Allocation Constraint
-      tags:
-        - Allocation
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AllocationConstraint'
-              examples:
-                example-1:
-                  value:
-                    - id: 497f6eca-6276-4993-bfeb-53cbbbba6f08
-                      allocationId: 9ec871ce-3363-4de2-8f79-062881067628
-                      resourceType: InstanceType
-                      resourceTypeId: a59ee688-b5e5-4606-9891-f4a605edacd3
-                      constraintType: Reserved
-                      constraintValue: 10
-                      derivedResourceId: null
-                      instanceType:
-                        name: x3.large
-                        infrastructureProviderId: 63c29416-8833-4eaf-9e1c-7c0173cc3150
-                        siteId: c9f4f276-6f7a-4209-953c-2b9870ce7cc1
-                        status: Ready
-                      created: '2019-08-24T14:15:22Z'
-                      updated: '2019-08-24T14:15:22Z'
-        '403':
-          $ref: '#/components/responses/ForbiddenError'
-      operationId: get-allocation-constraint
-      description: |-
-        Retrieve an Allocation Constraint for a given Allocation ID.
-
-        If org has an Infrastructure Provider entity, then specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
-
-        If org does not have an Infrastructure Provider entity but has a Tenant entity, then specified Allocation must belong to the Tenant and requesting user must have `TENANT_ADMIN` role.
-      parameters: []
     patch:
       summary: Update Allocation Constraint
       operationId: update-allocation-constraint
@@ -1750,6 +1606,10 @@ paths:
                       status: Ready
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |
         Update an existing Allocation Constraint by ID
 
@@ -1769,18 +1629,6 @@ paths:
               example-1:
                 value:
                   constraintValue: 20
-      tags:
-        - Allocation
-    delete:
-      summary: Delete Allocation Constraint
-      operationId: delete-allocation-constraint
-      responses:
-        '202':
-          description: Accepted
-      description: |
-        Delete an existing Allocation Constraint by ID
-
-        Org must have an Infrastructure Provider. Specified Allocation must have been created by the Provider and requesting user must have `PROVIDER_ADMIN` role.
       tags:
         - Allocation
   '/v2/org/{org}/nico/ipblock':
@@ -2109,6 +1957,10 @@ paths:
                         updated: '2019-08-24T14:15:22Z'
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Update an existing IP Block
 
@@ -5845,6 +5697,8 @@ paths:
                         notice: '''displayName'' has been deprecated. Please take action immediately.'
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
       description: |-
@@ -7075,6 +6929,8 @@ paths:
       responses:
         '202':
           description: Accepted
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       description: |-
         Delete an Instance by ID
 
@@ -9169,6 +9025,10 @@ paths:
                         updated: '2019-08-24T14:15:22Z'
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
       tags:
         - Machine
       description: |
@@ -12304,6 +12164,8 @@ paths:
                     lastName: Doe
                     created: '2019-08-24T14:15:22Z'
                     updated: '2019-08-24T14:15:22Z'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
       operationId: get-user
       description: Retrieve details of the current user.
   '/v2/org/{org}/nico/metadata':
@@ -12323,6 +12185,8 @@ paths:
                   value:
                     version: 0.1.24
                     buildTime: '2019-08-24T14:15:22Z'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
       operationId: get-metadata
       description: Retrieve system metadata providing information about the API server
     parameters:
@@ -12480,6 +12344,388 @@ paths:
         Retrieve a specific Audit Log Entry by ID
 
         User must have authorization role with `PROVIDER_ADMIN` or `TENANT_ADMIN` suffix
+  '/v2/org/{org}/nico/site/{siteID}/tenant-identity/config':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: siteID
+        in: path
+        required: true
+        description: ID of the Site
+    put:
+      summary: Create or Update Tenant Identity Configuration
+      tags:
+        - Tenant Identity
+      operationId: create-or-update-tenant-identity-config
+      description: |-
+        Create or update tenant identity (JWT-SVID) configuration for the org/site.
+
+        User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
+
+        On first call the Core gRPC API generates a new ES256 signing
+        keypair; on subsequent calls the existing keypair is reused unless
+        `rotateKey: true` is supplied. Returns `201 Created` on first
+        call, `200 OK` on subsequent updates. See the Tenant Identity tag
+        description for upsert semantics and the `enabled` vs DELETE
+        distinction.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantIdentityConfigCreateOrUpdateRequest'
+      responses:
+        '200':
+          description: Tenant identity configuration replaced/updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityConfig'
+        '201':
+          description: Tenant identity configuration created on first call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityConfig'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while loading the Tenant or Site, contacting the Core gRPC API, starting the configuration workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          $ref: '#/components/responses/TenantIdentityCoreUnavailable'
+    get:
+      summary: Retrieve Tenant Identity Configuration for current Org
+      tags:
+        - Tenant Identity
+      operationId: get-tenant-identity-config
+      description: |-
+        Retrieve the tenant identity configuration and signing key metadata.
+
+        User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
+
+        The response reflects the stored configuration. Fields you
+        omitted on PUT may be filled in by Core: `allowedAudiences`
+        defaults to `[defaultAudience]`, and `subjectPrefix` defaults
+        to the issuer's trust domain. `signingKeys` lists one entry
+        normally, or two during a key-rotation overlap.
+      responses:
+        '200':
+          description: Tenant identity configuration retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityConfig'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while loading the Tenant or Site, contacting the Core gRPC API, starting the get workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          $ref: '#/components/responses/TenantIdentityCoreUnavailable'
+    delete:
+      summary: Delete Tenant Identity Configuration
+      tags:
+        - Tenant Identity
+      operationId: delete-tenant-identity-config
+      description: |-
+        Delete the tenant identity configuration and destroy the per-org signing keypair.
+
+        User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
+
+        After DELETE, JWKS and OIDC discovery for this org begin returning
+        `404`; previously-issued JWT-SVIDs become unverifiable once
+        consumers refresh their JWKS cache. To pause issuance without
+        destroying signing keys, PUT with `enabled: false` instead.
+      responses:
+        '204':
+          description: Tenant identity configuration deleted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while loading the Tenant or Site, contacting the Core gRPC API, starting the delete workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          $ref: '#/components/responses/TenantIdentityCoreUnavailable'
+  '/v2/org/{org}/nico/site/{siteID}/tenant-identity/token-delegation':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: siteID
+        in: path
+        required: true
+        description: ID of the Site
+    put:
+      summary: Create or Update Token Delegation
+      tags:
+        - Tenant Identity
+      operationId: create-or-update-tenant-identity-token-delegation
+      description: |-
+        Register an RFC 8693 token exchange callback for the tenant. When
+        configured, the Core gRPC API issues a short-lived intermediate
+        JWT-SVID to the tenant's exchange server instead of signing
+        workload tokens directly.
+
+        User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
+
+        Requires a pre-existing `/tenant-identity/config` on this org/site
+        (returns `404` otherwise). Because PUT is full-replace, omitting
+        `clientSecretBasic` on an update clears any stored credentials
+        and switches the org back to no-auth; re-supply `clientId` /
+        `clientSecret` on every PUT to keep basic auth (the raw secret
+        is never returned by GET). Returns `201 Created` on first call,
+        `200 OK` on subsequent updates.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantIdentityTokenDelegationCreateOrUpdateRequest'
+      responses:
+        '200':
+          description: Token delegation replaced/updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityTokenDelegation'
+        '201':
+          description: Token delegation created on first call
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityTokenDelegation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: |-
+            Returned when the org has no tenant identity configuration on
+            this site yet; create it via PUT `/tenant-identity/config` before
+            registering a token-delegation callback.
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while loading the Tenant or Site, contacting the Core gRPC API, starting the token-delegation update workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          $ref: '#/components/responses/TenantIdentityCoreUnavailable'
+    get:
+      summary: Retrieve Token Delegation for current Org
+      tags:
+        - Tenant Identity
+      operationId: get-tenant-identity-token-delegation
+      description: |-
+        Retrieve the registered token exchange callback for the tenant.
+
+        User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
+
+        The raw `clientSecret` is never returned; only its SHA-256 hash.
+      responses:
+        '200':
+          description: Token delegation retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityTokenDelegation'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while loading the Tenant or Site, contacting the Core gRPC API, starting the token-delegation get workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          $ref: '#/components/responses/TenantIdentityCoreUnavailable'
+    delete:
+      summary: Delete Token Delegation
+      tags:
+        - Tenant Identity
+      operationId: delete-tenant-identity-token-delegation
+      description: |-
+        Delete the RFC 8693 token exchange callback for the tenant.
+
+        User must have authorization role with `TENANT_ADMIN` suffix in the URL `{org}`.
+
+        Subsequent Instance Metadata Service requests for the tenant revert to direct (non-delegated) signing by the Core gRPC API.
+      responses:
+        '204':
+          description: Token delegation deleted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while loading the Tenant or Site, contacting the Core gRPC API, starting the token-delegation delete workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          $ref: '#/components/responses/TenantIdentityCoreUnavailable'
+  '/v2/org/{org}/nico/site/{siteID}/.well-known/jwks.json':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: siteID
+        in: path
+        required: true
+        description: ID of the Site
+    get:
+      summary: Retrieve OIDC JWKS for current Org
+      tags:
+        - Tenant Identity
+      operationId: get-jwks
+      description: |-
+        Public RFC 7517 JSON Web Key Set for JWT-SVID signature verification (`use: sig`). No authentication required.
+
+        NICo currently issues `ES256` signatures over `P-256` keys.
+        Returns `404 Not Found` when no identity configuration exists
+        for this org/site, and `502 Bad Gateway` when the Core gRPC API
+        returns a malformed body. See the Tenant Identity tag
+        description for consumer guidance during key rotation.
+      security: []
+      responses:
+        '200':
+          description: JWKS document.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityJWKS'
+        '404':
+          description: No identity configuration exists for this org/site.
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while resolving the Site or Tenant, retrieving the Temporal client, starting the JWKS workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '502':
+          description: Core gRPC API returned a malformed JWKS body that could not be parsed as a keyset.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          description: Core gRPC API is unavailable.
+          $ref: '#/components/responses/GenericHttpError'
+  '/v2/org/{org}/nico/site/{siteID}/.well-known/openid-configuration':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: siteID
+        in: path
+        required: true
+        description: ID of the Site
+    get:
+      summary: Retrieve OpenID Configuration for current Org
+      tags:
+        - Tenant Identity
+      operationId: get-openid-configuration
+      description: |-
+        Public OIDC discovery document pointing at the JWKS URIs. No authentication required.
+
+        `id_token_signing_alg_values_supported` is intentionally empty
+        because NICo issues bearer access JWTs, not OIDC `id_token`s;
+        strict OIDC client libraries that require a non-empty algorithm
+        list will reject this document. Use the JWKS endpoint directly
+        for signature verification. Returns `404` when no identity
+        material exists for this org/site.
+      security: []
+      responses:
+        '200':
+          description: OpenID discovery document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OpenIDConfiguration'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while resolving the Site or Tenant, retrieving the Temporal client, starting the OpenID Configuration workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          description: Core gRPC API is unavailable.
+          $ref: '#/components/responses/GenericHttpError'
+  '/v2/org/{org}/nico/site/{siteID}/.well-known/spiffe/jwks.json':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: siteID
+        in: path
+        required: true
+        description: ID of the Site
+    get:
+      summary: Retrieve SPIFFE JWKS for current Org
+      tags:
+        - Tenant Identity
+      operationId: get-spiffe-jwks
+      description: |-
+        SPIFFE trust-domain JWKS — same key material as the OIDC JWKS but with `use: jwt-svid` for SPIFFE-native verifiers. No authentication required.
+
+        Not-configured and malformed-body behavior matches the OIDC JWKS endpoint.
+      security: []
+      responses:
+        '200':
+          description: SPIFFE JWKS document.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantIdentityJWKS'
+        '404':
+          description: No identity configuration exists for this org/site.
+          $ref: '#/components/responses/NotFoundError'
+        '500':
+          description: Internal server error while resolving the Site or Tenant, retrieving the Temporal client, starting the SPIFFE JWKS workflow, or after the workflow timed out and was terminated.
+          $ref: '#/components/responses/GenericHttpError'
+        '502':
+          description: Core gRPC API returned a malformed SPIFFE JWKS body that could not be parsed as a keyset.
+          $ref: '#/components/responses/GenericHttpError'
+        '503':
+          description: Core gRPC API is unavailable.
+          $ref: '#/components/responses/GenericHttpError'
 components:
   schemas:
     InfrastructureProvider:
@@ -17455,7 +17701,7 @@ components:
             Names are lowercase and select sub-parts of the tray
             (BMC, BIOS, etc.). The accepted set per tray type comes from
             the Flow service's NICo proto bindings (which mirror Core's
-            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            per-tray-type enums in `NICo-core/crates/rpc/proto/forge.proto`),
             so the supported values track Core as new sub-parts are added:
               - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
               - powershelf trays (PowerShelfComponent): currently pmc, psu
@@ -17555,7 +17801,7 @@ components:
             Names are lowercase and select sub-parts of the tray
             (BMC, BIOS, etc.). The accepted set per tray type comes from
             the Flow service's NICo proto bindings (which mirror Core's
-            per-tray-type enums in `carbide-core/crates/rpc/proto/forge.proto`),
+            per-tray-type enums in `NICo-core/crates/rpc/proto/forge.proto`),
             so the supported values track Core as new sub-parts are added:
               - switch trays (NvSwitchComponent): currently bmc, cpld, bios, nvos
               - powershelf trays (PowerShelfComponent): currently pmc, psu
@@ -21392,7 +21638,22 @@ components:
       properties:
         enabled:
           type: boolean
-          description: Indicates whether Service Account is enabled
+          description: |-
+            Indicates whether the calling token is authenticated as a Service Account.
+            This is determined per request from how the token's issuer is configured
+            at deployment time (the issuer config in the `nico-rest-api-config`
+            ConfigMap); it cannot be toggled via the API. Rules by issuer origin:
+              - `keycloak`: true for a client-credentials (service-to-service) token —
+                i.e. the token carries a client ID — when the issuer is deployed with
+                `keycloak.serviceAccount: true`.
+              - `custom`: true when the `claimMapping` matched for this org sets
+                `isServiceAccount: true`. Only permitted when the API runs in
+                disconnected mode.
+              - `kas-ssa` / `kas-legacy`: always false; service accounts are not
+                supported for these origins.
+
+            For details on issuer origins and configuration, see the NICo REST `auth`
+            module [README](https://github.com/NVIDIA/infra-controller-rest/tree/main/auth).
         infrastructureProviderId:
           type:
             - string
@@ -21536,6 +21797,420 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InstanceTypeStats'
+    TenantIdentityConfigCreateOrUpdateRequest:
+      title: TenantIdentityConfigCreateOrUpdateRequest
+      description: |-
+        Tenant identity configuration payload. `issuer`,
+        `defaultAudience`, and `tokenTtlSeconds` are required. `enabled` is
+        optional and defaults to `true` when omitted. The `org` identifier
+        is taken from the URL path segment `{org}`.
+
+        Two request shapes are supported, distinguished by whether the
+        PUT also forces a signing-key rotation:
+
+          1. **Without key rotation** -- `rotateKey` is omitted or `false`;
+             `signingKeyOverlapSeconds` must be omitted.
+          2. **With key rotation** -- `rotateKey: true` and
+             `signingKeyOverlapSeconds` are both required; the Core gRPC
+             API generates a fresh ES256 keypair into the other key slot,
+             swaps the active signer, and arms a JWKS overlap window for
+             the previous key.
+      oneOf:
+        - $ref: '#/components/schemas/TenantIdentityConfigCreateOrUpdateRequestWithoutKeyRotation'
+        - $ref: '#/components/schemas/TenantIdentityConfigCreateOrUpdateRequestWithKeyRotation'
+    TenantIdentityConfigCreateOrUpdateRequestWithoutKeyRotation:
+      title: Without key rotation
+      description: |-
+        Standard create-or-update of the tenant identity config. Use
+        this shape when **not** rotating the signing key.
+        `signingKeyOverlapSeconds` is not used here -- it is only
+        meaningful together with `rotateKey: true` and is rejected by
+        the REST API in that combination. Switch to the "With key
+        rotation" variant when you need to set it.
+      type: object
+      required:
+        - issuer
+        - defaultAudience
+        - tokenTtlSeconds
+      properties:
+        enabled:
+          type: boolean
+          default: true
+          description: |-
+            Optional. Set to `true` to enable JWT-SVID issuance for
+            this org or `false` to keep the config but pause issuance.
+            Defaults to `true` when omitted.
+        issuer:
+          type: string
+          description: |-
+            JWT `iss` claim / OIDC issuer. Required in the REST
+            request body. The Core gRPC API (`Issuer::parse`) is
+            authoritative for scheme and host rules and accepts
+            `https://`, `http://`, or `spiffe://` URLs with a DNS
+            host; malformed values are rejected with
+            `400 Bad Request`.
+        defaultAudience:
+          type: string
+          description: Default audience applied when a workload does not specify one. Required.
+        allowedAudiences:
+          type: array
+          default: []
+          description: |-
+            Allowlist of audience strings that may appear in issued
+            JWT-SVIDs. When **empty or omitted**, the Core gRPC API
+            persists `[defaultAudience]` as the stored allowlist, so
+            only the default audience can be issued -- empty is
+            **not** "allow any". To accept additional audiences,
+            provide a non-empty list; non-empty lists must include
+            `defaultAudience`. A subsequent GET returns the
+            persisted allowlist, which may differ from an empty list
+            that was sent on PUT.
+          items:
+            type: string
+        tokenTtlSeconds:
+          type: integer
+          minimum: 1
+          description: |-
+            Issued-token TTL in seconds. Required in the REST request
+            body and must be > 0. The Core gRPC API enforces its
+            configured `[machine_identity].token_ttl_min_sec` /
+            `token_ttl_max_sec` window and rejects values outside the
+            window with `400 Bad Request`. The window is per-site, so
+            REST does not advertise a fixed maximum here.
+        subjectPrefix:
+          type: string
+          description: |-
+            Optional SPIFFE ID URI prefix for JWT `sub` (RFC-shaped
+            `spiffe://…`). When omitted, the Core gRPC API derives a
+            prefix from the issuer's trust domain.
+        rotateKey:
+          type: boolean
+          enum:
+            - false
+          default: false
+          description: |-
+            Must be omitted or `false` for this variant. Switch to the
+            "With key rotation" variant to force a fresh ES256 signing
+            keypair and arm a JWKS overlap window.
+    TenantIdentityConfigCreateOrUpdateRequestWithKeyRotation:
+      title: With key rotation
+      description: |-
+        Create-or-update of the tenant identity config that also
+        forces a signing-key rotation. Both `rotateKey: true` and
+        `signingKeyOverlapSeconds` are required.
+      type: object
+      required:
+        - issuer
+        - defaultAudience
+        - tokenTtlSeconds
+        - rotateKey
+        - signingKeyOverlapSeconds
+      properties:
+        enabled:
+          type: boolean
+          default: true
+          description: |-
+            Optional. Set to `true` to enable JWT-SVID issuance for
+            this org or `false` to keep the config but pause issuance.
+            Defaults to `true` when omitted.
+        issuer:
+          type: string
+          description: |-
+            JWT `iss` claim / OIDC issuer. Required in the REST
+            request body. The Core gRPC API (`Issuer::parse`) is
+            authoritative for scheme and host rules and accepts
+            `https://`, `http://`, or `spiffe://` URLs with a DNS
+            host; malformed values are rejected with
+            `400 Bad Request`.
+        defaultAudience:
+          type: string
+          description: Default audience applied when a workload does not specify one. Required.
+        allowedAudiences:
+          type: array
+          default: []
+          description: |-
+            Allowlist of audience strings that may appear in issued
+            JWT-SVIDs. When **empty or omitted**, the Core gRPC API
+            persists `[defaultAudience]` as the stored allowlist, so
+            only the default audience can be issued -- empty is
+            **not** "allow any". To accept additional audiences,
+            provide a non-empty list; non-empty lists must include
+            `defaultAudience`. A subsequent GET returns the
+            persisted allowlist, which may differ from an empty list
+            that was sent on PUT.
+          items:
+            type: string
+        tokenTtlSeconds:
+          type: integer
+          minimum: 1
+          description: |-
+            Issued-token TTL in seconds. Required in the REST request
+            body and must be > 0. The Core gRPC API enforces its
+            configured `[machine_identity].token_ttl_min_sec` /
+            `token_ttl_max_sec` window and rejects values outside the
+            window with `400 Bad Request`. The window is per-site, so
+            REST does not advertise a fixed maximum here.
+        subjectPrefix:
+          type: string
+          description: |-
+            Optional SPIFFE ID URI prefix for JWT `sub` (RFC-shaped
+            `spiffe://…`). When omitted, the Core gRPC API derives a
+            prefix from the issuer's trust domain.
+        rotateKey:
+          type: boolean
+          enum:
+            - true
+          description: |-
+            Must be `true` for this variant. Generates a fresh ES256
+            signing keypair into the other key slot, swaps the
+            current signer, and arms a JWKS overlap window for the
+            previous key.
+        signingKeyOverlapSeconds:
+          type: integer
+          minimum: 1
+          description: |-
+            Required when `rotateKey` is `true`. Number of seconds
+            the previous verification key remains in JWKS so that
+            JWTs already signed with it stay verifiable until they
+            expire. Must be `>= tokenTtlSeconds`. The Core gRPC API
+            enforces an upper bound via its
+            `[machine_identity].signing_key_overlap_max_sec` config;
+            values above that bound are rejected with
+            `400 Bad Request`.
+    TenantIdentityConfig:
+      title: TenantIdentityConfig
+      description: |-
+        Current tenant identity configuration plus the per-org signing key
+        metadata (`signingKeys`). During a JWKS overlap window two
+        entries appear; under steady state only the active signer is
+        listed. Use `signingKeys[].kid` (filtering by `currentSigner`)
+        instead of the legacy single `keyId` field, which was removed
+        with the key-rotation change in NICo-core.
+      type: object
+      properties:
+        org:
+          type: string
+        enabled:
+          type: boolean
+        issuer:
+          type: string
+        defaultAudience:
+          type: string
+        allowedAudiences:
+          type: array
+          description: |-
+            Stored allowlist of audience strings. Always non-empty: when a
+            PUT supplied an empty list, the Core gRPC API substituted
+            `[defaultAudience]` before persisting. Issuance rejects audiences
+            outside this list.
+          items:
+            type: string
+        tokenTtlSeconds:
+          type: integer
+        subjectPrefix:
+          type: string
+          description: |-
+            SPIFFE ID prefix used in the JWT `sub` claim. When the PUT body
+            omitted `subjectPrefix`, Core stored
+            `spiffe://<trust-domain-from-issuer>` here, so the value
+            returned by GET may differ from what was submitted.
+        signingKeys:
+          type: array
+          items:
+            $ref: '#/components/schemas/TenantIdentitySigningKey'
+          description: |-
+            Per-org signing keys currently published in JWKS. Exactly
+            one entry has `currentSigner: true`. During a rotation
+            overlap window a second entry is present with
+            `currentSigner: false` and a populated `expireAt`; once
+            the overlap window elapses the Core gRPC API deletes the
+            expired entry and only the current signer remains.
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+    TenantIdentitySigningKey:
+      title: TenantIdentitySigningKey
+      description: |-
+        A single JWT-SVID signing key entry returned in
+        `TenantIdentityConfig.signingKeys`. Multiple entries appear
+        during a key-rotation overlap window; in steady state only the
+        active signer is listed.
+      type: object
+      required:
+        - kid
+        - alg
+        - currentSigner
+      properties:
+        kid:
+          type: string
+          description: Key identifier; matches the `kid` published in JWKS for this key.
+        alg:
+          type: string
+          description: Signing algorithm, e.g. `ES256`.
+        currentSigner:
+          type: boolean
+          description: |-
+            True when this key is the active signer for new JWT-SVIDs.
+            Exactly one entry per response is `true`.
+        expireAt:
+          type:
+            - string
+            - "null"
+          format: date-time
+          description: |-
+            Set on the inactive (previous) key during the JWKS overlap
+            window; the Core gRPC API deletes the inactive slot once
+            `now >= expireAt`. Null on the current signer.
+    TenantIdentityBasicClientSecretRequest:
+      title: TenantIdentityBasicClientSecretRequest
+      description: Raw OAuth2 `client_secret_basic` credentials. `clientSecret` is accepted on input but never returned in responses.
+      type: object
+      required:
+        - clientId
+        - clientSecret
+      properties:
+        clientId:
+          type: string
+        clientSecret:
+          type: string
+          description: |-
+            Raw OAuth2 client secret. Transmitted over TLS to the Core gRPC API,
+            which encrypts it at rest in its database using a per-site key. Never
+            echoed in responses; subsequent reads return only a `sha256:` hash
+            prefix in `clientSecretHash`.
+    TenantIdentityBasicClientSecretResponse:
+      title: TenantIdentityBasicClientSecretResponse
+      description: Public half of `client_secret_basic` credentials. Only the SHA-256 hash of the secret is returned.
+      type: object
+      properties:
+        clientId:
+          type: string
+        clientSecretHash:
+          type: string
+          description: SHA-256 hash of the raw secret.
+    TenantIdentityTokenDelegationCreateOrUpdateRequest:
+      title: TenantIdentityTokenDelegationCreateOrUpdateRequest
+      description: |-
+        RFC 8693 token exchange callback configuration. Omit
+        `clientSecretBasic` entirely for auth method `none`; include it
+        for `client_secret_basic`.
+
+        Because PUT is full-replace, omitting `clientSecretBasic` on a
+        subsequent update **clears** any previously-stored credentials
+        and switches the org back to no-auth. To keep basic-auth across
+        updates, re-supply `clientId` and `clientSecret` on every PUT —
+        Core never returns the raw secret (only its hash), so the secret
+        must be available to the caller.
+      type: object
+      required:
+        - tokenEndpoint
+        - subjectTokenAudience
+      properties:
+        tokenEndpoint:
+          type: string
+          format: uri
+          description: |-
+            URL of the tenant's RFC 8693 token exchange endpoint.
+            The Core gRPC API validates scheme and host against its
+            configured `[machine_identity].token_endpoint_domain_allowlist`
+            and rejects mismatches with `400 Bad Request`. Operators that
+            need to enforce HTTPS-only must populate that allowlist.
+        clientSecretBasic:
+          $ref: '#/components/schemas/TenantIdentityBasicClientSecretRequest'
+        subjectTokenAudience:
+          type: string
+          description: Audience value placed on the intermediate JWT-SVID posted to the exchange endpoint.
+    TenantIdentityTokenDelegation:
+      title: TenantIdentityTokenDelegation
+      description: Current token delegation configuration for the org.
+      type: object
+      properties:
+        tokenEndpoint:
+          type: string
+          format: uri
+        clientSecretBasic:
+          $ref: '#/components/schemas/TenantIdentityBasicClientSecretResponse'
+        subjectTokenAudience:
+          type: string
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+    TenantIdentityJWKS:
+      title: TenantIdentityJWKS
+      description: |-
+        RFC 7517 JSON Web Key Set. NICo-rest returns this schema only
+        on `200 OK`; in that case the `keys` member is present. The Core
+        gRPC API normally returns one key, or two during a rotation overlap
+        window. When no identity configuration exists for the org/site, the
+        JWKS endpoints return `404 Not Found`.
+      type: object
+      required:
+        - keys
+      properties:
+        keys:
+          type: array
+          description: |-
+            RFC 7517 JWK members. NICo currently emits only EC keys
+            (`kty: EC`, `crv: P-256`, `alg: ES256`); the schema is
+            intentionally open-ended so that future algorithms can be
+            added without a spec change.
+          items:
+            type: object
+            properties:
+              kty:
+                type: string
+                example: EC
+              use:
+                type: string
+                description: "`sig` for OIDC JWKS, `jwt-svid` for SPIFFE JWKS"
+              crv:
+                type: string
+                example: P-256
+              kid:
+                type: string
+              x:
+                type: string
+                description: Base64url-encoded EC x coordinate
+              'y':
+                type: string
+                description: Base64url-encoded EC y coordinate
+              alg:
+                type: string
+                example: ES256
+    OpenIDConfiguration:
+      title: OpenIDConfiguration
+      description: |-
+        OIDC discovery document. Note: `id_token_signing_alg_values_supported`
+        is always empty because NICo issues JWT bearer access tokens, not
+        OIDC `id_token`s.
+      type: object
+      properties:
+        issuer:
+          type: string
+        jwks_uri:
+          type: string
+          format: uri
+        response_types_supported:
+          type: array
+          items:
+            type: string
+        subject_types_supported:
+          type: array
+          items:
+            type: string
+        id_token_signing_alg_values_supported:
+          type: array
+          items:
+            type: string
+        spiffe_jwks_uri:
+          type: string
+          format: uri
   securitySchemes:
     JWTBearerToken:
       type: http
@@ -21575,6 +22250,18 @@ components:
                 source: nico
                 message: Could not find resource with specified ID
                 data: null
+    UnauthorizedError:
+      description: Error response when user is not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NICoAPIError'
+          examples:
+            example-1:
+              value:
+                source: nico
+                message: User is not authenticated
+                data: null
     ForbiddenError:
       description: Error response when user is not authorized to call an endpoint or retrieve/modify objects
       content:
@@ -21600,6 +22287,15 @@ components:
                 message: Error validating request data
                 data:
                   name: A value is required
+    TenantIdentityCoreUnavailable:
+      description: |-
+        Core gRPC API is unavailable, or site-level machine identity is
+        disabled (`enabled=false` in site config), so the request cannot
+        be served.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NICoAPIError'
   parameters: {}
   requestBodies: {}
 security:

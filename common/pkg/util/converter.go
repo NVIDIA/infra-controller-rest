@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package util
 
@@ -30,4 +16,19 @@ func IntPtrToUint32Ptr(i *int) *uint32 {
 	}
 	u := uint32(*i) //nolint:gosec // bounded upstream by Validate / proto-source.
 	return &u
+}
+
+// Uint32PtrToIntPtr converts a `*uint32` to a `*int`. nil in, nil out.
+// The cast is always safe on 64-bit platforms (the only ones we target);
+// on a hypothetical 32-bit build it would wrap on values above
+// `MaxInt32`. Under the proto-conversion convention this is a trusted
+// cast used inside `FromProto` mappers — the upstream value originates
+// from a proto `uint32` field, and any bounds checks that would gate it
+// belong in `Validate` upstream.
+func Uint32PtrToIntPtr(u *uint32) *int {
+	if u == nil {
+		return nil
+	}
+	i := int(*u) //nolint:gosec // bounded by uint32 range; safe on 64-bit targets.
+	return &i
 }

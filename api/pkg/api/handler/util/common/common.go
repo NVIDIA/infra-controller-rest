@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package common
 
@@ -929,7 +915,7 @@ func MatchInstanceTypeCapabilitiesForMachines(ctx context.Context, logger zerolo
 		//
 		// If we can assume that name+type can never have a duplicate,
 		// we can rely on prefixing the map entries with type.
-		mmcCapMapByMachinId[*mmc.MachineID][mmc.Type+"-"+mmc.Name] = &cmmc
+		mmcCapMapByMachinId[*mmc.MachineID][mmc.MapKey()] = &cmmc
 	}
 
 	// Loop through Capabilities of Instance Type with Machines
@@ -938,7 +924,7 @@ func MatchInstanceTypeCapabilitiesForMachines(ctx context.Context, logger zerolo
 		for mID, mCapMap := range mmcCapMapByMachinId {
 
 			// See earlier comments above about prefixing with type.
-			mmc, found := mCapMap[imc.Type+"-"+imc.Name]
+			mmc, found := mCapMap[imc.MapKey()]
 			if !found {
 				return false, &mID, nil
 			}
@@ -1389,7 +1375,7 @@ func IsProviderOrTenant(ctx context.Context, logger zerolog.Logger, dbSession *c
 // This function can be used across handlers to reduce duplication of initialization logic.
 func SetupHandler(modelName, handlerName string, c echo.Context, s *cutil.TracerSpan) (org string, user *cdbm.User, ctx context.Context, logger zerolog.Logger, hs oteltrace.Span) {
 	// Get org
-	org = c.Param("orgName")
+	org = strings.ToLower(c.Param("orgName"))
 
 	// Get context
 	ctx = c.Request().Context()

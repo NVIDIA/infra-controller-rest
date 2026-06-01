@@ -6,10 +6,13 @@ This document explains the configuration files for the Component Manager system.
 
 The Component Manager configuration controls:
 1. Which implementation to use for each component type (compute, NVL switch, power shelf)
-2. Which API providers to enable and their settings
+2. Manager behavior settings for selected implementations
+3. Which API providers to enable and their client settings
 
-Timing parameters for power control and firmware update operations are configured
-**per-rule** via action parameters in operation rules, not in the component manager config.
+Timing parameters for power control and firmware update operations are generally
+configured **per-rule** via action parameters in operation rules. Manager-wide
+behavior settings, such as compute power-call staggering, live under
+`manager_configs`.
 
 ## Configuration Files
 
@@ -53,7 +56,6 @@ Available implementations:
 providers:
   nico:
     timeout: "<duration>"
-    compute_power_delay: "<duration>"
   nvswitchmanager:
     timeout: "<duration>"
   psm:
@@ -72,12 +74,28 @@ equivalent to omitting the section for provider-backed component managers.
 | `nvswitchmanager` | nvswitch/nvswitchmanager | NV-Switch Manager API for NVLink switch management |
 | `psm` | powershelf/psm | Power Shelf Manager API |
 
+### Manager Configs
+
+```yaml
+manager_configs:
+  compute:
+    nico:
+      compute_power_delay: "<duration>"
+```
+
+Configures behavior for a selected component manager implementation. The keys
+are the descriptor identity: component type, then implementation name. Entries
+must match the selected `component_managers` implementation.
+
+| Manager | Option | Type | Default | Description |
+|---------|--------|------|---------|-------------|
+| `compute/nico` | `compute_power_delay` | duration string | `2s` | Delay between sequential power control calls for compute trays. Prevents overwhelming the power delivery system. Set to `0s` to disable. |
+
 #### Provider Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
 | `timeout` | duration string | `1m` (nico, nvswitchmanager), `30s` (psm) | gRPC call timeout |
-| `compute_power_delay` | duration string | `2s` (nico only) | Delay between sequential power control calls for compute trays. Prevents overwhelming the power delivery system. Set to `0s` to disable. |
 
 Duration strings use Go format: `30s`, `1m`, `2m30s`, etc.
 
@@ -92,10 +110,14 @@ component_managers:
   nvswitch: nico
   powershelf: nico
 
+manager_configs:
+  compute:
+    nico:
+      compute_power_delay: "2s"
+
 providers:
   nico:
     timeout: "1m"
-    compute_power_delay: "2s"
 ```
 
 ### Test Configuration

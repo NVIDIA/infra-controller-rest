@@ -1,19 +1,5 @@
-/*
- * SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
- * SPDX-License-Identifier: Apache-2.0
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// SPDX-FileCopyrightText: Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
+// SPDX-License-Identifier: Apache-2.0
 
 package model
 
@@ -43,7 +29,7 @@ func (caps APIMachineCapabilities) Validate() error {
 	}
 	seen := map[string]bool{}
 	for _, mc := range caps {
-		key := mc.Type + "-" + mc.Name
+		key := mc.MapKey()
 		if seen[key] {
 			return validation.Errors{
 				"machineCapabilities": fmt.Errorf("requested Capability type `%s` cannot contain duplicate Capability name: %s", mc.Type, mc.Name),
@@ -57,7 +43,7 @@ func (caps APIMachineCapabilities) Validate() error {
 // APIMachineCapability is the datastructure to capture API representation of a MachineCapability
 type APIMachineCapability struct {
 	// Type is the type of the machine capability
-	Type string `json:"type"`
+	Type cdbm.MachineCapabilityType `json:"type"`
 	// Name describes the capability
 	Name string `json:"name"`
 	// Frequency describes the frequency of the capability
@@ -77,7 +63,16 @@ type APIMachineCapability struct {
 	// Count describes the number of items present for this capability
 	Count *int `json:"count"`
 	// DeviceType describes the type of the device
-	DeviceType *string `json:"deviceType,omitempty"`
+	DeviceType *cdbm.MachineCapabilityDeviceType `json:"deviceType,omitempty"`
+}
+
+// MapKey returns the canonical `Type-Name` string used as a map key
+// for dedup or `(Type, Name)` lookups against the DB-side
+// `(*cdbm.MachineCapability).MapKey()`. Both methods produce the same
+// shape so an API request capability and its DB counterpart hash to
+// the same key.
+func (mc APIMachineCapability) MapKey() string {
+	return string(mc.Type) + "-" + mc.Name
 }
 
 // Validate ensures the values on a single capability are acceptable
@@ -121,18 +116,18 @@ func (mc APIMachineCapability) Validate() error {
 // every other Type must not carry a DeviceType. A nil DeviceType is
 // always allowed.
 func (mc APIMachineCapability) validateDeviceType(value interface{}) error {
-	dt, ok := value.(*string)
+	dt, ok := value.(*cdbm.MachineCapabilityDeviceType)
 	if !ok || dt == nil {
 		return nil
 	}
 	switch mc.Type {
 	case cdbm.MachineCapabilityTypeNetwork:
 		if *dt != cdbm.MachineCapabilityDeviceTypeDPU {
-			return errors.New("Unsupported Device Type specified for Network Capability " + *dt)
+			return fmt.Errorf("Unsupported Device Type specified for Network Capability %s", *dt)
 		}
 	case cdbm.MachineCapabilityTypeGPU:
 		if *dt != cdbm.MachineCapabilityDeviceTypeNVLink {
-			return errors.New("Unsupported Device Type specified for GPU Capability " + *dt)
+			return fmt.Errorf("Unsupported Device Type specified for GPU Capability %s", *dt)
 		}
 	default:
 		return fmt.Errorf("Unsupported Device Type: %s specified for Capability type %s", *dt, mc.Type)
