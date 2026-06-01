@@ -1574,7 +1574,7 @@ func QueryTagsFor(v any) []string {
 		return cached.([]string)
 	}
 	var tags []string
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if tag := t.Field(i).Tag.Get("query"); tag != "" {
 			tags = append(tags, tag)
 		}

@@ -6,6 +6,7 @@ package subnet
 import (
 	"context"
 	"database/sql"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -476,7 +477,7 @@ func (mslm ManageSubnetLifecycleMetrics) RecordSubnetStatusTransitionMetrics(ctx
 			// DELETE event: Measure time from Deleting to actual deletion
 			// Find the earliest Deleting status (iterate backwards since sorted DESC)
 			var deletingSD *cdbm.StatusDetail
-			for i := len(statusDetails) - 1; i >= 0; i-- {
+			for i := range slices.Backward(statusDetails) {
 				if statusDetails[i].Status == cdbm.SubnetStatusDeleting {
 					deletingSD = &statusDetails[i]
 					break

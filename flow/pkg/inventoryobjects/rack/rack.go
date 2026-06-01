@@ -5,6 +5,7 @@ package rack
 
 import (
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 
@@ -113,8 +114,7 @@ func (r *Rack) sortComponentsByPosition() {
 	trayIndexMap := make(map[devicetypes.ComponentType]int)
 	prevRackSlot := make(map[devicetypes.ComponentType]int)
 
-	for i := len(r.Components) - 1; i >= 0; i-- {
-		c := r.Components[i]
+	for i, c := range slices.Backward(r.Components) {
 		t := c.Type
 		if prevRackSlot[t] > 0 && c.Position.SlotID > prevRackSlot[t] {
 			// Not the first tray for a component category and the rack slot

@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -1348,7 +1349,7 @@ func (milm ManageInstanceLifecycleMetrics) RecordInstanceStatusTransitionMetrics
 			// DELETE event: Measure time from Terminating to actual deletion
 			// Find the earliest Terminating status (iterate backwards since sorted DESC)
 			var terminatingSD *cdbm.StatusDetail
-			for i := len(statusDetails) - 1; i >= 0; i-- {
+			for i := range slices.Backward(statusDetails) {
 				if statusDetails[i].Status == cdbm.InstanceStatusTerminating {
 					terminatingSD = &statusDetails[i]
 					break

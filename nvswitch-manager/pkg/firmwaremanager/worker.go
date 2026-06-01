@@ -94,7 +94,7 @@ func (p *WorkerPool) Start() {
 	log.Infof("Starting worker pool with %d workers (scheduler interval: %v)", p.numWorkers, p.schedulerInterval)
 
 	// Start workers
-	for i := 0; i < p.numWorkers; i++ {
+	for i := range p.numWorkers {
 		p.wg.Add(1)
 		go p.worker(i)
 	}

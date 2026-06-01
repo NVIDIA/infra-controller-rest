@@ -851,7 +851,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 	// Build all instance names first, then check in a single batch query
 	inDAO := cdbm.NewInstanceDAO(bcih.dbSession)
 	allInstanceNames := make([]string, apiRequest.Count)
-	for i := 0; i < apiRequest.Count; i++ {
+	for i := range apiRequest.Count {
 		allInstanceNames[i] = generateInstanceName(i)
 	}
 
@@ -1108,7 +1108,7 @@ func (bcih BatchCreateInstanceHandler) Handle(c echo.Context) error {
 		dbnvlic = []cdbm.NVLinkInterface{}
 		for _, nvlCap := range itNvlCaps {
 			if nvlCap.Count != nil {
-				for i := 0; i < *nvlCap.Count; i++ {
+				for i := range *nvlCap.Count {
 					dbnvlic = append(dbnvlic, cdbm.NVLinkInterface{
 						NVLinkLogicalPartitionID: *defaultNvllpID,
 						Device:                   cdb.GetStrPtr(nvlCap.Name),

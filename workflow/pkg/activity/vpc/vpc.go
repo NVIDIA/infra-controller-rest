@@ -6,6 +6,7 @@ package vpc
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -478,7 +479,7 @@ func (mvlm ManageVpcLifecycleMetrics) RecordVpcStatusTransitionMetrics(ctx conte
 			// DELETE event: Measure time from Deleting to actual deletion
 			// Find the earliest Deleting status (iterate backwards since sorted DESC)
 			var deletingStatusDetail *cdbm.StatusDetail
-			for i := len(statusDetails) - 1; i >= 0; i-- {
+			for i := range slices.Backward(statusDetails) {
 				sd := &statusDetails[i]
 				if sd.Status == cdbm.VpcStatusDeleting {
 					deletingStatusDetail = sd

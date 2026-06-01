@@ -1250,7 +1250,7 @@ func (cih CreateInstanceHandler) Handle(c echo.Context) error {
 			// For a given Machine, all the GPUs should be connected to the same NVLink Logical Partition
 			for _, nvlCap := range nvlCaps {
 				if nvlCap.Count != nil {
-					for i := 0; i < *nvlCap.Count; i++ {
+					for i := range *nvlCap.Count {
 						dbnvlic = append(dbnvlic, cdbm.NVLinkInterface{NVLinkLogicalPartitionID: *defaultNvllpID, Device: cdb.GetStrPtr(nvlCap.Name), DeviceInstance: i})
 					}
 				}

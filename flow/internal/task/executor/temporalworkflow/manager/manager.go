@@ -149,8 +149,8 @@ func (m *Manager) Start(ctx context.Context) error {
 	for queue, worker := range m.workers {
 		log.Info().Msgf("Starting temporal worker for queue %s", queue)
 		if err := worker.Start(); err != nil {
-			for i := len(started) - 1; i >= 0; i-- {
-				started[i].Stop()
+			for _, s := range slices.Backward(started) {
+				s.Stop()
 			}
 			// Do not close publisherClient/subscriberClient here: they are
 			// owned by the Manager (created in Build, not in Start) and must

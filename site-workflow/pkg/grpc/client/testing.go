@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"slices"
 	"time"
 
 	"github.com/gogo/status"
@@ -46,7 +47,7 @@ func generateSiteVersion() string {
 // It handles carrying over to the next byte when a byte overflows (reaches 255).
 func incrementMAC(mac net.HardwareAddr) {
 	// Iterate from the last byte to the first.
-	for i := len(mac) - 1; i >= 0; i-- {
+	for i := range slices.Backward(mac) {
 		// Increment the current byte.
 		mac[i]++
 		// If the byte is not 0, it means there was no overflow, so we can stop.
@@ -101,7 +102,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindVpcIds(ctx context.Context, in *wflo
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.VpcIds = append(out.VpcIds, &wflows.VpcId{Value: uuid.NewString()})
 		}
 	}
@@ -149,7 +150,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindNetworkSegmentIds(ctx context.Contex
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.NetworkSegmentsIds = append(out.NetworkSegmentsIds, &wflows.NetworkSegmentId{Value: uuid.NewString()})
 		}
 	}
@@ -210,7 +211,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindIBPartitionIds(ctx context.Context, 
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.IbPartitionIds = append(out.IbPartitionIds, &wflows.IBPartitionId{Value: uuid.NewString()})
 		}
 	}
@@ -283,7 +284,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindInstanceIds(ctx context.Context, in 
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.InstanceIds = append(out.InstanceIds, &wflows.InstanceId{Value: uuid.NewString()})
 		}
 	}
@@ -362,7 +363,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindMachineIds(ctx context.Context, in *
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.MachineIds = append(out.MachineIds, &wflows.MachineId{Id: uuid.NewString()})
 		}
 	}
@@ -425,7 +426,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindTenantKeysetIds(ctx context.Context,
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		orgID := uuid.NewString()
-		for i := 0; i < count; i++ {
+		for range count {
 			out.KeysetIds = append(out.KeysetIds, &wflows.TenantKeysetIdentifier{OrganizationId: orgID, KeysetId: uuid.NewString()})
 		}
 	}
@@ -480,7 +481,7 @@ func (mcgsc *MockCoreGrpcServiceClient) ListOsImage(ctx context.Context, in *wfl
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		id := uuid.NewString()
-		for i := 0; i < count; i++ {
+		for range count {
 			out.Images = append(out.Images, &wflows.OsImage{Attributes: &wflows.OsImageAttributes{Id: &wflows.UUID{Value: id}}})
 		}
 	}
@@ -520,7 +521,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindTenantOrganizationIds(ctx context.Co
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.TenantOrganizationIds = append(out.TenantOrganizationIds, randSeq(10))
 		}
 	}
@@ -585,7 +586,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindInstanceTypeIds(ctx context.Context,
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.InstanceTypeIds = append(out.InstanceTypeIds, randSeq(10))
 		}
 	}
@@ -635,7 +636,7 @@ func (mcgsc *MockCoreGrpcServiceClient) SearchVpcPrefixes(ctx context.Context, i
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.VpcPrefixIds = append(out.VpcPrefixIds, &wflows.VpcPrefixId{Value: uuid.NewString()})
 		}
 	}
@@ -685,7 +686,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindVpcPeeringIds(ctx context.Context, i
 
 	count, ok := ctx.Value("WantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.VpcPeeringIds = append(out.VpcPeeringIds, &wflows.VpcPeeringId{Value: uuid.NewString()})
 		}
 	}
@@ -809,7 +810,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindNetworkSecurityGroupIds(ctx context.
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.NetworkSecurityGroupIds = append(out.NetworkSecurityGroupIds, randSeq(10))
 		}
 	}
@@ -969,7 +970,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedMachines(ctx context.Conte
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		mac, _ := net.ParseMAC("02:00:00:00:00:00")
-		for i := 0; i < count; i++ {
+		for range count {
 			// Create a 16-byte array for UUID from MAC address (6 bytes) + padding
 			var uuidBytes [16]byte
 			copy(uuidBytes[:6], mac)
@@ -1007,7 +1008,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedMachinesLinked(ctx context
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		mac, _ := net.ParseMAC("02:00:00:00:00:00")
-		for i := 0; i < count; i++ {
+		for range count {
 			// Create a 16-byte array for UUID from MAC address (6 bytes) + padding
 			var uuidBytes [16]byte
 			copy(uuidBytes[:6], mac)
@@ -1075,7 +1076,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedPowerShelves(ctx context.C
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		mac, _ := net.ParseMAC("02:00:00:00:00:00")
-		for i := 0; i < count; i++ {
+		for range count {
 			var uuidBytes [16]byte
 			copy(uuidBytes[:6], mac)
 			epsID, _ := uuid.FromBytes(uuidBytes[:])
@@ -1103,7 +1104,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedPowerShelvesLinked(ctx con
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		mac, _ := net.ParseMAC("02:00:00:00:00:00")
-		for i := 0; i < count; i++ {
+		for range count {
 			var uuidBytes [16]byte
 			copy(uuidBytes[:6], mac)
 			powerShelfID, _ := uuid.FromBytes(uuidBytes[:])
@@ -1170,7 +1171,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedSwitches(ctx context.Conte
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		mac, _ := net.ParseMAC("02:00:00:00:00:00")
-		for i := 0; i < count; i++ {
+		for range count {
 			var uuidBytes [16]byte
 			copy(uuidBytes[:6], mac)
 			esID, _ := uuid.FromBytes(uuidBytes[:])
@@ -1198,7 +1199,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedSwitchesLinked(ctx context
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
 		mac, _ := net.ParseMAC("02:00:00:00:00:00")
-		for i := 0; i < count; i++ {
+		for range count {
 			var uuidBytes [16]byte
 			copy(uuidBytes[:6], mac)
 			switchID, _ := uuid.FromBytes(uuidBytes[:])
@@ -1275,7 +1276,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllExpectedRacks(ctx context.Context,
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.ExpectedRacks = append(out.ExpectedRacks, &wflows.ExpectedRack{
 				RackId:   &wflows.RackId{Id: uuid.NewString()},
 				RackType: uuid.NewString(),
@@ -1335,7 +1336,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetAllSkuIds(ctx context.Context, in *em
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.Ids = append(out.Ids, uuid.NewString())
 		}
 	}
@@ -1411,7 +1412,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindDpuExtensionServiceIds(ctx context.C
 	out := &wflows.DpuExtensionServiceIdList{}
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.ServiceIds = append(out.ServiceIds, uuid.NewString())
 		}
 	}
@@ -1436,7 +1437,7 @@ func (mcgsc *MockCoreGrpcServiceClient) GetDpuExtensionServiceVersionsInfo(ctx c
 	}
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.VersionInfos = append(out.VersionInfos, &wflows.DpuExtensionServiceVersionInfo{
 				Version:       generateSiteVersion(),
 				Data:          "test data",
@@ -1481,7 +1482,7 @@ func (mcgsc *MockCoreGrpcServiceClient) FindNVLinkLogicalPartitionIds(ctx contex
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.PartitionIds = append(out.PartitionIds, &wflows.NVLinkLogicalPartitionId{Value: uuid.NewString()})
 		}
 	}
@@ -1512,7 +1513,7 @@ func (mcgsc *MockCoreGrpcServiceClient) NVLinkLogicalPartitionsForTenant(ctx con
 
 	count, ok := ctx.Value("wantCount").(int)
 	if ok {
-		for i := 0; i < count; i++ {
+		for range count {
 			out.Partitions = append(out.Partitions, &wflows.NVLinkLogicalPartition{
 				Id: &wflows.NVLinkLogicalPartitionId{Value: uuid.NewString()},
 			})
