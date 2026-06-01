@@ -17,3 +17,18 @@ func IntPtrToUint32Ptr(i *int) *uint32 {
 	u := uint32(*i) //nolint:gosec // bounded upstream by Validate / proto-source.
 	return &u
 }
+
+// Uint32PtrToIntPtr converts a `*uint32` to a `*int`. nil in, nil out.
+// The cast is always safe on 64-bit platforms (the only ones we target);
+// on a hypothetical 32-bit build it would wrap on values above
+// `MaxInt32`. Under the proto-conversion convention this is a trusted
+// cast used inside `FromProto` mappers — the upstream value originates
+// from a proto `uint32` field, and any bounds checks that would gate it
+// belong in `Validate` upstream.
+func Uint32PtrToIntPtr(u *uint32) *int {
+	if u == nil {
+		return nil
+	}
+	i := int(*u) //nolint:gosec // bounded by uint32 range; safe on 64-bit targets.
+	return &i
+}

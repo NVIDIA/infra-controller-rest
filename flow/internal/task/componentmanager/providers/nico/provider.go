@@ -20,27 +20,16 @@ const (
 
 	// DefaultTimeout is the default timeout for NICo gRPC calls.
 	DefaultTimeout = time.Minute
-
-	// DefaultComputePowerDelay is the default delay between sequential
-	// power control calls for compute trays. A small stagger avoids
-	// overwhelming the power delivery system.
-	DefaultComputePowerDelay = 2 * time.Second
 )
 
 // Config holds configuration for the NICo provider.
 type Config struct {
 	// Timeout is the gRPC call timeout for NICo operations.
 	Timeout time.Duration
-
-	// ComputePowerDelay is the delay inserted between sequential power
-	// control calls when commanding multiple compute trays.
-	// 0 means no delay.
-	ComputePowerDelay time.Duration
 }
 
 type rawConfig struct {
-	Timeout           string `yaml:"timeout"`
-	ComputePowerDelay string `yaml:"compute_power_delay"`
+	Timeout string `yaml:"timeout"`
 }
 
 // Name returns the provider name for this config.
@@ -67,8 +56,7 @@ func (ConfigDecoder) Name() string {
 // DefaultConfig returns the default NICo provider config.
 func (ConfigDecoder) DefaultConfig() providerapi.ProviderConfig {
 	return &Config{
-		Timeout:           DefaultTimeout,
-		ComputePowerDelay: DefaultComputePowerDelay,
+		Timeout: DefaultTimeout,
 	}
 }
 
@@ -94,18 +82,6 @@ func (d ConfigDecoder) DecodeYAML(raw yaml.Node) (providerapi.ProviderConfig, er
 			}
 		}
 		config.Timeout = timeout
-	}
-
-	if parsed.ComputePowerDelay != "" {
-		delay, err := time.ParseDuration(parsed.ComputePowerDelay)
-		if err != nil {
-			return nil, providerapi.InvalidProviderConfigFieldError{
-				Provider: ProviderName,
-				Field:    "compute_power_delay",
-				Err:      err,
-			}
-		}
-		config.ComputePowerDelay = delay
 	}
 
 	return config, nil

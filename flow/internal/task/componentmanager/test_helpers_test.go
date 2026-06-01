@@ -46,8 +46,10 @@ func testDescriptor(
 	requiredProviders ...string,
 ) cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              componentType,
-		Implementation:    implementation,
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           componentType,
+			Implementation: implementation,
+		},
 		RequiredProviders: requiredProviders,
 	}
 }
@@ -75,9 +77,11 @@ func newRegistryWithCapabilities(
 	t.Helper()
 
 	descriptor := cmcatalog.Descriptor{
-		Type:           devicetypes.ComponentTypeCompute,
-		Implementation: "custom",
-		Capabilities:   capability.CapabilitySet(capabilities),
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "custom",
+		},
+		Capabilities: capability.CapabilitySet(capabilities),
 	}
 
 	registry, err := NewRegistry(

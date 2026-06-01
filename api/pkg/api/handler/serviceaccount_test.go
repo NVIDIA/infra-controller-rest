@@ -6,7 +6,6 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -30,8 +29,6 @@ func TestServiceAccountHandler_GetCurrent(t *testing.T) {
 	defer dbSession.Close()
 
 	common.TestSetupSchema(t, dbSession)
-
-	cfg := common.GetTestConfig()
 
 	org1 := "test-org"
 	user1 := common.TestBuildUser(t, dbSession, uuid.NewString(), org1, []string{authz.ProviderAdminRole, authz.TenantAdminRole})
@@ -74,13 +71,6 @@ func TestServiceAccountHandler_GetCurrent(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			cfg.JwtOriginConfig = cauth.NewJWTOriginConfig()
-
-			if test.serviceAccountEnabled {
-				// Add service account auth config
-				cfg.JwtOriginConfig.AddConfig(test.org, fmt.Sprintf("https://%s.com", test.org), fmt.Sprintf("https://%s.com", test.org), cauth.TokenOriginCustom, true, nil, nil)
-			}
-
 			// Setup echo server/context
 			e := echo.New()
 			req := httptest.NewRequest(http.MethodGet, "/service-account/current", nil)
@@ -94,9 +84,13 @@ func TestServiceAccountHandler_GetCurrent(t *testing.T) {
 
 			ec.SetRequest(ec.Request().WithContext(ctx))
 
+			// Normally, the auth processor records the service-account flag on the request
+			// context based on the type of issuer/Origin/claimMappings, but in this test we
+			// set it manually for testing purposes.
+			cauth.SetIsServiceAccountInContext(ec, test.serviceAccountEnabled)
+
 			handler := GetCurrentServiceAccountHandler{
 				dbSession: dbSession,
-				cfg:       cfg,
 			}
 
 			err := handler.Handle(ec)

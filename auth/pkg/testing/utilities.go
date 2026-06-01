@@ -224,14 +224,14 @@ func NewConcurrencyHelper(t *testing.T) *ConcurrencyHelper {
 func (h *ConcurrencyHelper) RunConcurrent(fn func() error, numGoroutines int, description string) []error {
 	errChan := make(chan error, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		go func() {
 			errChan <- fn()
 		}()
 	}
 
 	var errors []error
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		if err := <-errChan; err != nil {
 			errors = append(errors, err)
 		}

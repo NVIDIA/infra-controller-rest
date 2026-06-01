@@ -58,8 +58,10 @@ func Factory(
 // Descriptor returns the PSM PowerShelf manager descriptor.
 func Descriptor() cmcatalog.Descriptor {
 	return cmcatalog.Descriptor{
-		Type:              devicetypes.ComponentTypePowerShelf,
-		Implementation:    ImplementationName,
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypePowerShelf,
+			Implementation: ImplementationName,
+		},
 		RequiredProviders: []string{psmprovider.ProviderName},
 		Capabilities: capability.CapabilitySet{
 			capability.CapabilityFirmwareControl,

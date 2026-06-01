@@ -6,6 +6,7 @@ package componentmanager
 import (
 	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/capability"
 	cmcatalog "github.com/NVIDIA/infra-controller-rest/flow/internal/task/componentmanager/catalog"
@@ -122,6 +123,10 @@ var (
 	// ErrProviderConfigTypeMismatch reports that a provider config has a
 	// different concrete type than the caller expected.
 	ErrProviderConfigTypeMismatch = errors.New("provider config type mismatch")
+
+	// ErrManagerConfigTypeMismatch reports that a manager config has a
+	// different concrete type than the caller expected.
+	ErrManagerConfigTypeMismatch = errors.New("manager config type mismatch")
 )
 
 // ManagerNotConfiguredError includes the component type that has no active
@@ -339,18 +344,58 @@ type RequiredProviderNotConfiguredError = cmconfig.RequiredProviderNotConfigured
 type ProviderConfigTypeMismatchError struct {
 	Name string
 	Got  any
-	Want string
+	Want any
 }
 
 func (e ProviderConfigTypeMismatchError) Error() string {
 	return fmt.Sprintf(
-		"provider %q returned config type %T, want %s",
+		"provider %q returned config type %s, want %s",
 		e.Name,
-		e.Got,
-		e.Want,
+		typeName(e.Got),
+		typeName(e.Want),
 	)
 }
 
 func (e ProviderConfigTypeMismatchError) Is(target error) bool {
 	return target == ErrProviderConfigTypeMismatch
+}
+
+// ManagerConfigTypeMismatchError includes the manager config identity and the
+// type expected by the caller.
+type ManagerConfigTypeMismatchError struct {
+	Identity cmcatalog.DescriptorIdentity
+	Got      any
+	Want     any
+}
+
+func (e ManagerConfigTypeMismatchError) Error() string {
+	return fmt.Sprintf(
+		"manager config %s has type %s, want %s",
+		e.Identity.String(),
+		typeName(e.Got),
+		typeName(e.Want),
+	)
+}
+
+func (e ManagerConfigTypeMismatchError) Is(target error) bool {
+	return target == ErrManagerConfigTypeMismatch
+}
+
+func typeName(v any) string {
+	if v == nil {
+		return "<nil>"
+	}
+
+	t := reflect.TypeOf(v)
+	prefix := ""
+	for t.Kind() == reflect.Pointer {
+		prefix += "*"
+		t = t.Elem()
+	}
+
+	if t.PkgPath() == "" {
+		return prefix + t.String()
+	}
+
+	return prefix + t.PkgPath() + "." + t.Name()
 }

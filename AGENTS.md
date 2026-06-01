@@ -179,6 +179,47 @@ make kind-down              # tear down cluster
 - OpenAPI schema in `openapi/spec.yaml` must be updated whenever API
   endpoints are added or modified.
 
+### Prefer range-based iteration over C-style `for` loops
+
+The module is on Go 1.25, so reach for range-based iteration before the
+three-clause `for i := 0; i < n; i++` / `i--` form. Go 1.22 range-over-integer
+and Go 1.23 range-over-function iterators (`slices.Backward`, `slices.All`,
+`slices.Values`, `maps.Keys`, `maps.Values`, …) drop the manual index
+bookkeeping that the older form makes a reader re-derive to trust.
+
+1. **Counting loop → range-over-integer.** When the bound is a count (not a
+   slice you also index for values), use `for i := range n` (index needed) or
+   `for range n` (index unused) instead of `for i := 0; i < n; i++`. This
+   covers `reflect` walks: `for i := range v.NumField()` /
+   `for i := range v.Len()`.
+2. **Reverse loop → `slices.Backward`.** Replace
+   `for i := len(s) - 1; i >= 0; i--` with `for i, v := range slices.Backward(s)`.
+   When the reverse order is intentional (LIFO teardown, "find the last element
+   matching X"), `slices.Backward` states that intent instead of leaving it
+   implicit in the index arithmetic. Use `for i := range slices.Backward(s)`
+   when you only need the index (to take `&s[i]` or mutate `s[i]`).
+3. **Index loop over a slice → plain `range`.** `for i := 0; i < len(s); i++`
+   that reads `s[i]` becomes `for i, v := range s` (or `for _, v := range s`);
+   keep the index-only `for i := range s` when the body needs `&s[i]`.
+
+Keep the C-style form when range can't express the loop, and say why if it
+isn't obvious:
+
+- **Byte-wise string scans.** A loop that indexes `s[i]` on a `string` must
+  stay C-style — `for i := range s` over a string yields *runes*, silently
+  changing byte offsets.
+- **The index is mutated or looks ahead/behind** in the body (`i++` to consume
+  a paired argument, `s[i+1]`, `i = j-1`). Range indices are read-only.
+- **1-indexed or offset-start loops** (`for page := 1; page <= total; page++`,
+  `for i := windowStart; i < windowEnd; i++`). Range-over-integer is 0-based;
+  forcing a `+1` reads worse than the original.
+- **Generated code** (e.g. `sdk/standard`) — leave it; regeneration overwrites
+  hand edits.
+
+A related cleanup: a backward byte scan for a delimiter is
+`strings.LastIndexByte`, not a hand-rolled `for i := idx; i >= 0; i--` — see
+`(*IPAddr).Scan` in `powershelf-manager/pkg/db/model/types.go`.
+
 ### Proto conversion methods
 
 DB and API model types that round-trip with a workflow-schema (`cwssaws`)
@@ -333,6 +374,19 @@ on the underlying primitive until they need it.
   Entity callers reach it via `entity.Labels.FromProto(proto.Metadata.GetLabels())`
   — the proto getter is nil-safe and returns `nil` for missing
   metadata, which the method translates into a `nil` receiver.
+- `db/pkg/db/model.MachineCapabilityType` and `MachineCapabilityDeviceType`
+  (`type X string` with `(X).ToProto() cwssaws.X` and
+  `(*X).FromProto(cwssaws.X)`) are the reference for **typed-string
+  domain enums** that round-trip with proto enum values. The DB column
+  stays a plain string under the named type, but the conversion to /
+  from the proto enum lives as methods on the type — not as a free
+  helper. `(*MachineCapability).ToProto` collapses to
+  `mc.Type.ToProto()` / `mc.DeviceType.ToProto()`, and `FromProto`
+  collapses to `mc.Type.FromProto(...)`. Unknown values silently leave
+  the receiver as the empty string (a warning is logged) so the
+  entity-level `Validate` can be the gate that rejects them; an
+  optional `*X` field with the proto's zero-value enum on the wire
+  drops to `nil` rather than encoding an "unknown" pointer.
 - `APIMachineCapabilities` (`type APIMachineCapabilities
   []APIMachineCapability` with `(APIMachineCapabilities).Validate()`)
   is the reference for slice-shaped values that own list-level rules.

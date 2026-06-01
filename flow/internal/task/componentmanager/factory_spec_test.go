@@ -45,13 +45,17 @@ func TestSelectFactorySpecsReturnsSelectedDescriptors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, []cmcatalog.Descriptor{
 		{
-			Type:              devicetypes.ComponentTypeCompute,
-			Implementation:    "custom",
+			DescriptorIdentity: cmcatalog.DescriptorIdentity{
+				Type:           devicetypes.ComponentTypeCompute,
+				Implementation: "custom",
+			},
 			RequiredProviders: []string{"nico"},
 		},
 		{
-			Type:           devicetypes.ComponentTypePowerShelf,
-			Implementation: "psm",
+			DescriptorIdentity: cmcatalog.DescriptorIdentity{
+				Type:           devicetypes.ComponentTypePowerShelf,
+				Implementation: "psm",
+			},
 			RequiredProviders: []string{
 				"alpha",
 				"beta",

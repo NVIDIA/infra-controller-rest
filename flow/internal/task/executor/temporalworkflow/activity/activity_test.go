@@ -274,9 +274,11 @@ func newCapabilityTestActivities(
 	t.Helper()
 
 	descriptor := cmcatalog.Descriptor{
-		Type:           devicetypes.ComponentTypeCompute,
-		Implementation: "limited",
-		Capabilities:   capability.CapabilitySet(capabilities),
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "limited",
+		},
+		Capabilities: capability.CapabilitySet(capabilities),
 	}
 	manager := &capabilityTestManager{descriptor: descriptor}
 	registry, err := componentmanager.NewRegistry(
@@ -317,9 +319,11 @@ func newDescriptorOnlyActivities(
 	t.Helper()
 
 	descriptor := cmcatalog.Descriptor{
-		Type:           devicetypes.ComponentTypeCompute,
-		Implementation: "descriptor-only",
-		Capabilities:   capability.CapabilitySet(capabilities),
+		DescriptorIdentity: cmcatalog.DescriptorIdentity{
+			Type:           devicetypes.ComponentTypeCompute,
+			Implementation: "descriptor-only",
+		},
+		Capabilities: capability.CapabilitySet(capabilities),
 	}
 	registry, err := componentmanager.NewRegistry(
 		[]componentmanager.FactorySpec{

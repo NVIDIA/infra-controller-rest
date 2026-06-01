@@ -7,6 +7,7 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"net"
+	"strings"
 )
 
 // MacAddr wraps net.HardwareAddr to provide proper SQL driver support for PostgreSQL macaddr type.
@@ -88,13 +89,8 @@ func (ip *IPAddr) Scan(src interface{}) error {
 	}
 
 	// PostgreSQL inet type may include CIDR notation, strip it if present
-	if idx := len(ipStr) - 1; idx > 0 {
-		for i := idx; i >= 0; i-- {
-			if ipStr[i] == '/' {
-				ipStr = ipStr[:i]
-				break
-			}
-		}
+	if i := strings.LastIndexByte(ipStr, '/'); i >= 0 {
+		ipStr = ipStr[:i]
 	}
 
 	parsed := net.ParseIP(ipStr)

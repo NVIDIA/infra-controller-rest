@@ -1055,12 +1055,13 @@ func (uith UpdateInstanceTypeHandler) Handle(c echo.Context) error {
 			// Create a map to track capabilities that already exist
 			// in the DB so we can compare against the incoming request.
 			existingMacCapMap := map[string]*cdbm.MachineCapability{}
-			for _, mc := range existingMcs {
-				existingMacCapMap[mc.Type+"-"+mc.Name] = &mc
+			for i := range existingMcs {
+				mc := &existingMcs[i]
+				existingMacCapMap[mc.MapKey()] = mc
 			}
 
 			for pos, reqMacCap := range apiRequest.MachineCapabilities {
-				capKey := reqMacCap.Type + "-" + reqMacCap.Name
+				capKey := reqMacCap.MapKey()
 
 				existingCap := existingMacCapMap[capKey]
 				// The incoming requested capability doesn't exist at all currently,

@@ -135,7 +135,7 @@ func testStatsBuildMachine(t *testing.T, dbSession *cdb.Session, ip *cdbm.Infras
 	return m
 }
 
-func testStatsBuildMachineCapability(t *testing.T, dbSession *cdb.Session, machineID string, capType, name string, count int) *cdbm.MachineCapability {
+func testStatsBuildMachineCapability(t *testing.T, dbSession *cdb.Session, machineID string, capType cdbm.MachineCapabilityType, name string, count int) *cdbm.MachineCapability {
 	mc := &cdbm.MachineCapability{
 		ID:        uuid.New(),
 		MachineID: &machineID,

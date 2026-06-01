@@ -94,8 +94,7 @@ func (gmgsh GetMachineGPUStatsHandler) Handle(c echo.Context) error {
 
 	// Fetch GPU capabilities for all machines
 	mcDAO := cdbm.NewMachineCapabilityDAO(gmgsh.dbSession)
-	gpuType := cdbm.MachineCapabilityTypeGPU
-	capabilities, _, err := mcDAO.GetAll(ctx, nil, machineIDs, nil, &gpuType,
+	capabilities, _, err := mcDAO.GetAll(ctx, nil, machineIDs, nil, cdb.GetTypedStrPtr(cdbm.MachineCapabilityTypeGPU),
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, cdb.GetIntPtr(cdbp.TotalLimit), nil)
 	if err != nil {
 		logger.Error().Err(err).Msg("error retrieving GPU capabilities")

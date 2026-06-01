@@ -262,6 +262,12 @@ Generic YAML parsing and validation lives in
 `internal/task/componentmanager/config`. That package should not import
 provider implementations directly.
 
+Manager-specific behavior settings use the same pattern, but are keyed by
+descriptor identity instead of provider name. A manager that needs YAML config
+implements `cmconfig.ManagerConfigDecoder`; the decoded config is stored under
+`Config.ManagerConfigs[Descriptor().Identity()]`. Provider configs should stay
+focused on provider/client settings such as timeouts and endpoints.
+
 ### Step 3: Register the Provider Decoder
 
 Update the service-supported provider catalog in
@@ -398,9 +404,12 @@ func serviceDescriptors() []cmcatalog.Descriptor {
 }
 
 func serviceFactorySpecs(config cmconfig.Config) ([]componentmanager.FactorySpec, error) {
+    // Simplified example: production code should check that the config exists
+    // and has the expected type, returning an error instead of panicking.
+    cfg := config.ManagerConfigs[myimpl.Descriptor().Identity()].(*myimpl.Config)
     factorySpecs := []componentmanager.FactorySpec{
         // ... existing factory specs ...
-        myimpl.FactorySpec(), // Add new implementation
+        myimpl.FactorySpec(cfg), // Add new implementation
     }
     return factorySpecs, nil
 }
@@ -415,6 +424,11 @@ component_managers:
   compute: myimpl
   nvswitch: nico
   powershelf: psm
+
+manager_configs:
+  compute:
+    myimpl:
+      behavior_setting: "value"
 
 providers:
   myapi:

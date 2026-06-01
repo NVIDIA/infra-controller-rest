@@ -128,7 +128,7 @@ func (gaaeh GetAllAuditEntryHandler) Handle(c echo.Context) error {
 		logger.Error().Err(err).Msg("error retrieving Users from DB")
 		return cutil.NewAPIErrorResponse(c, http.StatusInternalServerError, "Failed to retrieve Users", nil)
 	}
-	for i := 0; i < len(dbUsers); i++ {
+	for i := range dbUsers {
 		dbUsersMap[dbUsers[i].ID] = &dbUsers[i]
 	}
 

@@ -697,6 +697,11 @@ component_managers:
   nvswitch: nico
   powershelf: psm
 
+manager_configs:
+  compute:
+    nico:
+      compute_power_delay: "2s"
+
 providers:
   nico:
     timeout: "1m"

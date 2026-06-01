@@ -201,7 +201,7 @@ func testMachineBuildMachine(t *testing.T, dbSession *cdb.Session, ip uuid.UUID,
 	return m
 }
 
-func testMachineBuildMachineCapability(t *testing.T, dbSession *cdb.Session, mID *string, typ string, name string, capacity *string, count *int) *cdbm.MachineCapability {
+func testMachineBuildMachineCapability(t *testing.T, dbSession *cdb.Session, mID *string, typ cdbm.MachineCapabilityType, name string, capacity *string, count *int) *cdbm.MachineCapability {
 	mc := &cdbm.MachineCapability{
 		ID:             uuid.New(),
 		MachineID:      mID,
@@ -1070,7 +1070,7 @@ func TestManageMachine_UpdateMachinesInDB(t *testing.T) {
 
 				// Verify reported DPU count is correct
 				if tt.args.isDPUCountReported != nil && *tt.args.isDPUCountReported {
-					mctd1s, mctd1Total, mtdserr := mcDAO.GetAll(tt.args.ctx, nil, []string{um1.ID}, nil, nil, cdb.GetStrPtr(cdbm.MachineCapabilityTypeDPU), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+					mctd1s, mctd1Total, mtdserr := mcDAO.GetAll(tt.args.ctx, nil, []string{um1.ID}, nil, nil, cdb.GetTypedStrPtr(cdbm.MachineCapabilityTypeDPU), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 					assert.Nil(t, mtdserr)
 					if mctd1Total > 0 {
 						assert.Equal(t, *mctd1s[0].Count, 2)

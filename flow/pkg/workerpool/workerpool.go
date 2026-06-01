@@ -93,7 +93,7 @@ func (wp *WorkerPool) Start() error {
 	}
 
 	// Create and start workers
-	for i := 0; i < wp.config.MaxWorkers; i++ {
+	for i := range wp.config.MaxWorkers {
 		worker := &worker{
 			id:   i + 1,
 			pool: wp,

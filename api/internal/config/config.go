@@ -621,6 +621,9 @@ func (c *Config) ValidateIssuersConfig(issuers []IssuerConfig) error {
 				if mapping.OrgAttribute != "" {
 					return fmt.Errorf("issuer %s: claimMapping %d: orgAttribute cannot be specified when isServiceAccount is true", issuer.Name, j)
 				}
+				if !c.GetEnvDisconnected() {
+					return fmt.Errorf("issuer %s: claimMapping %d: isServiceAccount is only supported in disconnected mode", issuer.Name, j)
+				}
 			}
 
 			// Dynamic org mapping

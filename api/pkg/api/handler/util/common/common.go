@@ -915,7 +915,7 @@ func MatchInstanceTypeCapabilitiesForMachines(ctx context.Context, logger zerolo
 		//
 		// If we can assume that name+type can never have a duplicate,
 		// we can rely on prefixing the map entries with type.
-		mmcCapMapByMachinId[*mmc.MachineID][mmc.Type+"-"+mmc.Name] = &cmmc
+		mmcCapMapByMachinId[*mmc.MachineID][mmc.MapKey()] = &cmmc
 	}
 
 	// Loop through Capabilities of Instance Type with Machines
@@ -924,7 +924,7 @@ func MatchInstanceTypeCapabilitiesForMachines(ctx context.Context, logger zerolo
 		for mID, mCapMap := range mmcCapMapByMachinId {
 
 			// See earlier comments above about prefixing with type.
-			mmc, found := mCapMap[imc.Type+"-"+imc.Name]
+			mmc, found := mCapMap[imc.MapKey()]
 			if !found {
 				return false, &mID, nil
 			}
@@ -1574,7 +1574,7 @@ func QueryTagsFor(v any) []string {
 		return cached.([]string)
 	}
 	var tags []string
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		if tag := t.Field(i).Tag.Get("query"); tag != "" {
 			tags = append(tags, tag)
 		}

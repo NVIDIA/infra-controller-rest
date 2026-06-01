@@ -28,6 +28,14 @@ func LoadConfig(path string) (cmconfig.Config, error) {
 		)
 	}
 
+	managerDecoderRegistry, err := newManagerConfigDecoderRegistry()
+	if err != nil {
+		return cmconfig.Config{}, fmt.Errorf(
+			"initialize service manager config decoders: %w",
+			err,
+		)
+	}
+
 	catalog, err := newCatalog()
 	if err != nil {
 		return cmconfig.Config{}, err
@@ -39,6 +47,7 @@ func LoadConfig(path string) (cmconfig.Config, error) {
 			path,
 			decoders,
 			catalog,
+			managerDecoderRegistry,
 		)
 		if err != nil {
 			return cmconfig.Config{}, fmt.Errorf("load config from file: %w", err)
@@ -48,13 +57,15 @@ func LoadConfig(path string) (cmconfig.Config, error) {
 			defaultServiceComponentManagers(),
 			decoders,
 			catalog,
+			managerDecoderRegistry,
 		)
 		if err != nil {
 			return cmconfig.Config{}, fmt.Errorf("get default config: %w", err)
 		}
 	}
 
-	if err := config.Validate(decoders, catalog); err != nil {
+	err = config.Validate(decoders, catalog, managerDecoderRegistry)
+	if err != nil {
 		return cmconfig.Config{}, fmt.Errorf("validate loaded config: %w", err)
 	}
 

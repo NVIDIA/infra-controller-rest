@@ -477,7 +477,7 @@ func clearSuggestionLines(count int) {
 	if count == 0 {
 		return
 	}
-	for i := 0; i < count; i++ {
+	for range count {
 		fmt.Print("\r\n")
 		ClearLine()
 	}

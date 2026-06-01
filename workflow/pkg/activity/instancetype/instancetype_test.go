@@ -155,7 +155,7 @@ func testInstanceTypeBuildInstanceType(t *testing.T, dbSession *cdb.Session, nam
 	return instanceType
 }
 
-func testInstanceTypeBuildMachineCapability(t *testing.T, dbSession *cdb.Session, iID *uuid.UUID, typ string, name string, capacity *string, count *int, deviceType *string) *cdbm.MachineCapability {
+func testInstanceTypeBuildMachineCapability(t *testing.T, dbSession *cdb.Session, iID *uuid.UUID, typ cdbm.MachineCapabilityType, name string, capacity *string, count *int, deviceType *cdbm.MachineCapabilityDeviceType) *cdbm.MachineCapability {
 	mc := &cdbm.MachineCapability{
 		ID:             uuid.New(),
 		InstanceTypeID: iID,
@@ -557,7 +557,16 @@ func TestManageInstanceType_UpdateInstanceTypesInDB(t *testing.T) {
 						for i := range tot {
 							assert.Equal(t, cloudCaps[i].Name, *siteCaps[i].Name)
 							if cloudCaps[i].Type == cdbm.MachineCapabilityTypeNetwork && cloudCaps[i].DeviceType != nil {
-								assert.Equal(t, *siteCaps[i].DeviceType, CloudCapabilityDeviceTypeToProtobufType[cloudCaps[i].Type])
+								var protoDeviceType cwssaws.MachineCapabilityDeviceType
+								switch *cloudCaps[i].DeviceType {
+								case cdbm.MachineCapabilityDeviceTypeDPU:
+									protoDeviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_DPU
+								case cdbm.MachineCapabilityDeviceTypeNVLink:
+									protoDeviceType = cwssaws.MachineCapabilityDeviceType_MACHINE_CAPABILITY_DEVICE_TYPE_NVLINK
+								default:
+									t.Fatalf("unsupported DeviceType %q in test fixture", *cloudCaps[i].DeviceType)
+								}
+								assert.Equal(t, *siteCaps[i].DeviceType, protoDeviceType)
 							}
 						}
 					}

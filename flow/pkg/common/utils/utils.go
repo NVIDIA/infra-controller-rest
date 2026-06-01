@@ -43,7 +43,7 @@ func StructToMap(obj any) map[string]any {
 	}
 
 	t := reflect.TypeOf(obj)
-	for i := 0; i < v.NumField(); i++ {
+	for i := range v.NumField() {
 		field := t.Field(i)
 		fieldValue := v.Field(i)
 
@@ -185,7 +185,7 @@ func deepCopyValue(value any) any {
 		return mapCopy.Interface()
 	case reflect.Slice:
 		sliceCopy := reflect.MakeSlice(v.Type(), v.Len(), v.Cap())
-		for i := 0; i < v.Len(); i++ {
+		for i := range v.Len() {
 			sliceCopy.Index(i).Set(reflect.ValueOf(deepCopyValue(v.Index(i).Interface())))
 		}
 		return sliceCopy.Interface()
@@ -198,7 +198,7 @@ func deepCopyValue(value any) any {
 		return ptrCopy.Interface()
 	case reflect.Struct:
 		structCopy := reflect.New(v.Type()).Elem()
-		for i := 0; i < v.NumField(); i++ {
+		for i := range v.NumField() {
 			if structCopy.Field(i).CanSet() {
 				structCopy.Field(i).Set(reflect.ValueOf(deepCopyValue(v.Field(i).Interface())))
 			}
