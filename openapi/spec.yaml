@@ -12222,9 +12222,12 @@ paths:
                   value:
                     - id: e313b3ca-c47a-4ec1-a79b-a147fad51a50
                       endpoint: /v2/org/test-org-1/nico/ep
-                      queryParams: '{"test":["1234"]}'
+                      queryParams:
+                        test:
+                          - '1234'
                       method: POST
-                      body: '{"key1":"value1"}'
+                      body:
+                        key1: value1
                       statusCode: 200
                       clientIP: 12.123.43.112
                       userID: 5d9fe319-14d4-40e3-8e5a-7d79e680d55b
@@ -12239,9 +12242,12 @@ paths:
                       apiVersion: 0.1.91
                     - id: e313b3ca-c47a-4ec1-a79b-a147fad51a50
                       endpoint: /v2/org/test-org-1/nico/ep
-                      queryParams: '{"test":["1234"]}'
+                      queryParams:
+                        test:
+                          - '1234'
                       method: POST
-                      body: '{"key1":"value1"}'
+                      body:
+                        key1: value1
                       statusCode: 403
                       statusMessage: User does not have permissions
                       clientIP: 12.123.43.112
@@ -12322,9 +12328,12 @@ paths:
                   value:
                     id: e313b3ca-c47a-4ec1-a79b-a147fad51a50
                     endpoint: /v2/org/test-org-1/nico/ep
-                    queryParams: '{"test":["1234"]}'
+                    queryParams:
+                      test:
+                        - '1234'
                     method: POST
-                    body: '{"key1":"value1"}'
+                    body:
+                      key1: value1
                     statusCode: 200
                     clientIP: 12.123.43.112
                     userID: 5d9fe319-14d4-40e3-8e5a-7d79e680d55b
@@ -21481,9 +21490,12 @@ components:
       examples:
         - id: e313b3ca-c47a-4ec1-a79b-a147fad51a50
           endpoint: /v2/org/test-org-1/nico/ep
-          queryParams: '{"test":["1234"]}'
+          queryParams:
+            test:
+              - '1234'
           method: POST
-          body: '{"key1":"value1"}'
+          body:
+            key1: value1
           statusCode: 200
           clientIP: 12.123.43.112
           userID: 5d9fe319-14d4-40e3-8e5a-7d79e680d55b
@@ -21498,9 +21510,12 @@ components:
           apiVersion: 0.1.91
         - id: e313b3ca-c47a-4ec1-a79b-a147fad51a50
           endpoint: /v2/org/test-org-1/nico/ep
-          queryParams: '{"test":["1234"]}'
+          queryParams:
+            test:
+              - '1234'
           method: POST
-          body: '{"key1":"value1"}'
+          body:
+            key1: value1
           statusCode: 403
           statusMessage: User does not have permissions
           clientIP: 12.123.43.112
@@ -21524,14 +21539,18 @@ components:
           type: string
           description: API endpoint
         queryParams:
-          type: string
-          description: Query parameters
+          type: object
+          description: Query parameters from the request URL, keyed by parameter name. Each value is the list of values supplied for that parameter.
+          additionalProperties:
+            type: array
+            items:
+              type: string
         method:
           type: string
           description: HTTP method
         body:
-          type: string
-          description: HTTP body in JSON format
+          type: object
+          description: Request body parsed as a JSON object. Empty when the request had no body. Sensitive fields (e.g. passwords) are obfuscated.
         statusCode:
           type: integer
           description: HTTP response status code
