@@ -131,7 +131,7 @@ func TestBringUpWorkflow(t *testing.T) {
 					map[string]operations.PowerStatus{
 						"ps-1": operations.PowerStatusOn,
 					}, nil)
-				env.OnActivity(activitypkg.NameBringUpControl, mock.Anything, mock.Anything).Return(nil)
+				env.OnActivity(activitypkg.NameBringUpControl, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 				env.OnActivity(activitypkg.NameGetBringUpStatus, mock.Anything, mock.Anything).Return(
 					&activitypkg.GetBringUpStatusResult{
 						States: map[string]operations.MachineBringUpState{
