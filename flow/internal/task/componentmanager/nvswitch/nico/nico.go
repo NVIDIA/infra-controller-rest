@@ -128,18 +128,33 @@ func switchIDsProto(ids []string) *pb.SwitchIdList {
 }
 
 // ensureRackOperable is the per-Manager policy gate for disruptive
-// operations on the racks that own the given switches. Today the only
-// policy is "block while any host on the rack is still attached to a
-// tenant instance" (assignment check); future policies — e.g. operator-
-// approved overrides that allow proceeding despite an active assignment —
-// should be composed here so callers continue to see a single decision
-// point.
+// operations on the racks that own the given switches. The default policy
+// refuses to proceed while any host on the resolved rack(s) is still in
+// Core's Assigned/* lifecycle state, because a switch reset disrupts
+// NVLink traffic for the entire rack.
+//
+// When overrideAssignmentCheck is true the gate is short-circuited
+// without performing the rack lookup: the operator has acknowledged the
+// tenant impact upstream and the rack-resolution gRPC call is no longer
+// necessary. A warning is emitted with the switch IDs so the bypass is
+// auditable from the worker log alone.
 //
 // A switch that Core does not associate with a rack is logged and
 // skipped: failing closed would block bring-up flows for switches that
 // have not yet been ingested into the rack topology.
-func (m *Manager) ensureRackOperable(ctx context.Context, switchIDs []string) error {
+func (m *Manager) ensureRackOperable(
+	ctx context.Context,
+	switchIDs []string,
+	overrideAssignmentCheck bool,
+) error {
 	if len(switchIDs) == 0 {
+		return nil
+	}
+
+	if overrideAssignmentCheck {
+		log.Warn().
+			Strs("switch_ids", switchIDs).
+			Msg("Assignment safety check bypassed by override_assignment_check on NVSwitch operation")
 		return nil
 	}
 
@@ -185,7 +200,7 @@ func (m *Manager) PowerControl(
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
-	if err := m.ensureRackOperable(ctx, target.ComponentIDs); err != nil {
+	if err := m.ensureRackOperable(ctx, target.ComponentIDs, info.OverrideAssignmentCheck); err != nil {
 		return fmt.Errorf("refused: %w", err)
 	}
 
@@ -296,7 +311,7 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
-	if err := m.ensureRackOperable(ctx, target.ComponentIDs); err != nil {
+	if err := m.ensureRackOperable(ctx, target.ComponentIDs, info.OverrideAssignmentCheck); err != nil {
 		return fmt.Errorf("refused: %w", err)
 	}
 

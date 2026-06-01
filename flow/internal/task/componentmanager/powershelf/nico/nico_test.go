@@ -193,6 +193,31 @@ func TestFirmwareControl_RefusesWhenRackHostAssigned(t *testing.T) {
 	assert.Contains(t, err.Error(), "Assigned state")
 }
 
+// TestFirmwareControl_OverrideBypassesRackAssignmentCheck verifies that
+// OverrideAssignmentCheck short-circuits the rack-scoped gate on
+// PowerShelf FirmwareControl. The host on the resolved rack is in
+// Assigned/* — which would otherwise block the call — yet the
+// operation is expected to proceed past the gate.
+func TestFirmwareControl_OverrideBypassesRackAssignmentCheck(t *testing.T) {
+	client := nicoapi.NewMockClient()
+	client.SetPowerShelfRackID("ps-1", "rack-A")
+	client.SetRackHostMachineIDs("rack-A", []string{"host-1"})
+	client.AddMachine(nicoapi.MachineDetail{MachineID: "host-1", State: "Assigned/Provisioning"})
+
+	m := newManagerForSafetyTest(t, client)
+	target := common.Target{
+		Type:         devicetypes.ComponentTypePowerShelf,
+		ComponentIDs: []string{"ps-1"},
+	}
+
+	err := m.FirmwareControl(context.Background(), target, operations.FirmwareControlTaskInfo{
+		Operation:               operations.FirmwareOperationUpgrade,
+		TargetVersion:           "1.0.0",
+		OverrideAssignmentCheck: true,
+	})
+	require.NoError(t, err)
+}
+
 func mustMarshal(t *testing.T, v any) json.RawMessage {
 	t.Helper()
 	data, err := json.Marshal(v)

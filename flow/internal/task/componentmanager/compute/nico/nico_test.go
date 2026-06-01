@@ -537,7 +537,7 @@ func TestBringUpControl_RefusesAssignedMachine(t *testing.T) {
 		ComponentIDs: []string{"machine-1"},
 	}
 
-	err := m.BringUpControl(context.Background(), target)
+	err := m.BringUpControl(context.Background(), target, operations.BringUpTaskInfo{})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "refused")
 	assert.Contains(t, err.Error(), "Assigned state")
@@ -560,4 +560,45 @@ func TestFirmwareControl_RefusesAssignedMachine(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "refused")
 	assert.Contains(t, err.Error(), "Assigned state")
+}
+
+// TestPowerControl_OverrideBypassesAssignmentCheck verifies that the
+// operator-controlled OverrideAssignmentCheck flag short-circuits the
+// assignment-state gate on PowerControl. The target host is in
+// Assigned/* — which would otherwise block the call — yet the operation
+// is expected to proceed past the gate. PowerOperationPowerOn is chosen
+// because the mock client accepts it without additional fixture setup.
+func TestPowerControl_OverrideBypassesAssignmentCheck(t *testing.T) {
+	client := nicoapi.NewMockClient()
+	client.AddMachine(nicoapi.MachineDetail{MachineID: "machine-1", State: "Assigned/Provisioning"})
+
+	m := newManagerForSafetyTest(t, client)
+	target := common.Target{
+		Type:         devicetypes.ComponentTypeCompute,
+		ComponentIDs: []string{"machine-1"},
+	}
+
+	err := m.PowerControl(context.Background(), target, operations.PowerControlTaskInfo{
+		Operation:               operations.PowerOperationPowerOn,
+		OverrideAssignmentCheck: true,
+	})
+	require.NoError(t, err)
+}
+
+// TestBringUpControl_OverrideBypassesAssignmentCheck is the BringUp
+// counterpart of TestPowerControl_OverrideBypassesAssignmentCheck.
+func TestBringUpControl_OverrideBypassesAssignmentCheck(t *testing.T) {
+	client := nicoapi.NewMockClient()
+	client.AddMachine(nicoapi.MachineDetail{MachineID: "machine-1", State: "Assigned/Provisioning"})
+
+	m := newManagerForSafetyTest(t, client)
+	target := common.Target{
+		Type:         devicetypes.ComponentTypeCompute,
+		ComponentIDs: []string{"machine-1"},
+	}
+
+	err := m.BringUpControl(context.Background(), target, operations.BringUpTaskInfo{
+		OverrideAssignmentCheck: true,
+	})
+	require.NoError(t, err)
 }

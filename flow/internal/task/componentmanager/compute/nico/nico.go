@@ -156,8 +156,10 @@ func (m *Manager) PowerControl(
 
 	// Refuse to power-cycle a host that is currently attached to an
 	// instance. The poll blocks until Core reports the host has left the
-	// Assigned state, or returns an error at the deadline.
-	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs); err != nil {
+	// Assigned state, or returns an error at the deadline. The operator
+	// may set OverrideAssignmentCheck to bypass this gate for supervised
+	// maintenance; the bypass is logged inside ensureMachinesOperable.
+	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs, info.OverrideAssignmentCheck); err != nil {
 		return fmt.Errorf("refused: %w", err)
 	}
 
@@ -334,8 +336,11 @@ func (m *Manager) FirmwareControl(ctx context.Context, target common.Target, inf
 	}
 
 	// Block firmware upgrade while any target host is still attached to an
-	// instance: BMC/host firmware updates power-cycle the machine.
-	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs); err != nil {
+	// instance: BMC/host firmware updates power-cycle the machine. The
+	// operator may set OverrideAssignmentCheck to bypass this gate for
+	// supervised maintenance; the bypass is logged inside
+	// ensureMachinesOperable.
+	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs, info.OverrideAssignmentCheck); err != nil {
 		return fmt.Errorf("refused: %w", err)
 	}
 
@@ -749,6 +754,7 @@ func (m *Manager) GetFirmwareStatus(ctx context.Context, target common.Target) (
 func (m *Manager) BringUpControl(
 	ctx context.Context,
 	target common.Target,
+	info operations.BringUpTaskInfo,
 ) error {
 	log.Debug().
 		Str("components", target.String()).
@@ -762,10 +768,12 @@ func (m *Manager) BringUpControl(
 		return fmt.Errorf("target is invalid: %w", err)
 	}
 
-	// BringUp opens the power-on gate, which can trigger an actual power
-	// transition. Hold off until the host is no longer attached to an
-	// instance so we don't reset a tenant workload.
-	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs); err != nil {
+	// Opening the power-on gate can trigger an actual power transition,
+	// so the same assignment-state safety check that guards PowerControl
+	// applies here. OverrideAssignmentCheck propagates from the parent
+	// BringUp request when the operator elects to bypass; the bypass is
+	// logged inside ensureMachinesOperable.
+	if err := m.ensureMachinesOperable(ctx, target.ComponentIDs, info.OverrideAssignmentCheck); err != nil {
 		return fmt.Errorf("refused: %w", err)
 	}
 
@@ -840,12 +848,26 @@ func nicoToBringUpState(
 }
 
 // ensureMachinesOperable is the per-Manager policy gate for disruptive
-// operations on the given machines. Today the only policy is "block while
-// any target host is still attached to a tenant instance" (assignment
-// check); future policies — e.g. operator-approved overrides that allow
-// proceeding despite an active assignment — should be composed here so
-// callers continue to see a single decision point.
-func (m *Manager) ensureMachinesOperable(ctx context.Context, machineIDs []string) error {
+// operations on the given machines. The default policy refuses to proceed
+// while any target host is still in Core's Assigned/* lifecycle state.
+//
+// When overrideAssignmentCheck is true the gate is short-circuited and the
+// operation runs against the current set of machines unconditionally. The
+// override is intended for operator-supervised maintenance windows where
+// tenant impact has been acknowledged out-of-band; authorisation is
+// enforced upstream and is not re-checked here. A warning is emitted with
+// the machine IDs so the bypass is auditable from the worker log alone.
+func (m *Manager) ensureMachinesOperable(
+	ctx context.Context,
+	machineIDs []string,
+	overrideAssignmentCheck bool,
+) error {
+	if overrideAssignmentCheck {
+		log.Warn().
+			Strs("machine_ids", machineIDs).
+			Msg("Assignment safety check bypassed by override_assignment_check on compute operation")
+		return nil
+	}
 	return m.assignment.WaitForMachinesUnassigned(ctx, machineIDs)
 }
 

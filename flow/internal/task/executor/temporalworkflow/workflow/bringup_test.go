@@ -24,7 +24,7 @@ import (
 	"github.com/NVIDIA/infra-controller-rest/flow/pkg/common/devicetypes"
 )
 
-func mockBringUpControl(ctx context.Context, target common.Target) error {
+func mockBringUpControl(_ context.Context, _ common.Target, _ operations.BringUpTaskInfo) error {
 	return nil
 }
 
