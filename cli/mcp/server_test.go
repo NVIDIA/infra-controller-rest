@@ -80,34 +80,50 @@ func TestSplitArgs(t *testing.T) {
 		"base_url":   "should-be-ignored",
 		"unknown":    "ignored",
 	}
-	pathParams, queryParams := splitArgs(in, params)
+	pathParams, queryParams, err := splitArgs(in, params)
+	require.NoError(t, err)
 	require.Equal(t, map[string]string{"siteId": "abc-123"}, pathParams)
 	require.Equal(t, map[string]string{"pageNumber": "5", "pageSize": "50"}, queryParams)
 }
 
+func TestSplitArgs_UnsupportedType(t *testing.T) {
+	params := []appcli.Parameter{
+		{Name: "tags", In: "query"},
+	}
+	in := map[string]any{
+		"tags": []string{"a", "b"},
+	}
+	_, _, err := splitArgs(in, params)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "tags")
+}
+
 func TestCoerceToString(t *testing.T) {
 	cases := []struct {
-		name string
-		in   any
-		want string
+		name    string
+		in      any
+		want    string
+		wantOK  bool
 	}{
-		{"string", "foo", "foo"},
-		{"empty_string", "", ""},
-		{"int_as_float64", float64(42), "42"},
-		{"negative_int_as_float64", float64(-3), "-3"},
-		{"float_with_fraction", float64(3.14), "3.14"},
-		{"bool_true", true, "true"},
-		{"bool_false", false, "false"},
-		{"int", 7, "7"},
-		{"int64", int64(99), "99"},
-		{"json_number", json.Number("12345"), "12345"},
-		{"nil", nil, ""},
-		{"unsupported_slice", []int{1, 2}, ""},
-		{"unsupported_map", map[string]any{"a": 1}, ""},
+		{"string", "foo", "foo", true},
+		{"empty_string", "", "", true},
+		{"int_as_float64", float64(42), "42", true},
+		{"negative_int_as_float64", float64(-3), "-3", true},
+		{"float_with_fraction", float64(3.14), "3.14", true},
+		{"bool_true", true, "true", true},
+		{"bool_false", false, "false", true},
+		{"int", 7, "7", true},
+		{"int64", int64(99), "99", true},
+		{"json_number", json.Number("12345"), "12345", true},
+		{"nil", nil, "", true},
+		{"unsupported_slice", []int{1, 2}, "", false},
+		{"unsupported_map", map[string]any{"a": 1}, "", false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			require.Equal(t, c.want, coerceToString(c.in))
+			got, ok := coerceToString(c.in)
+			require.Equal(t, c.wantOK, ok)
+			require.Equal(t, c.want, got)
 		})
 	}
 }

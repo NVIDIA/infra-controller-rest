@@ -43,13 +43,34 @@ var commonConfigDescriptions = []struct {
 // override fields (org, base_url, api_name, token). Path parameters are
 // marked required; OpenAPI-required query parameters are marked
 // required; the config overrides are always optional.
+type paramKey struct {
+	in   string
+	name string
+}
+
+// mergeParameters combines path-item and operation parameters, with
+// operation-level definitions overriding path-item-level ones that
+// share the same {in,name} tuple per OpenAPI override semantics.
+func mergeParameters(item appcli.PathItem, op *appcli.Operation) []appcli.Parameter {
+	merged := map[paramKey]appcli.Parameter{}
+	for _, p := range item.Parameters {
+		merged[paramKey{in: p.In, name: p.Name}] = p
+	}
+	for _, p := range op.Parameters {
+		merged[paramKey{in: p.In, name: p.Name}] = p
+	}
+	out := make([]appcli.Parameter, 0, len(merged))
+	for _, p := range merged {
+		out = append(out, p)
+	}
+	return out
+}
+
 func buildInputSchema(item appcli.PathItem, op *appcli.Operation) *jsonschema.Schema {
 	props := map[string]*jsonschema.Schema{}
-	var required []string
+	requiredSet := map[string]struct{}{}
 
-	allParams := append([]appcli.Parameter{}, item.Parameters...)
-	allParams = append(allParams, op.Parameters...)
-	for _, p := range allParams {
+	for _, p := range mergeParameters(item, op) {
 		if p.Name == "org" {
 			// Resolved from the config layer (org override or server
 			// default). The OpenAPI {org} segment is filled in by
@@ -61,8 +82,13 @@ func buildInputSchema(item appcli.PathItem, op *appcli.Operation) *jsonschema.Sc
 		}
 		props[p.Name] = paramToJSONSchema(p)
 		if p.In == "path" || p.Required {
-			required = append(required, p.Name)
+			requiredSet[p.Name] = struct{}{}
 		}
+	}
+
+	required := make([]string, 0, len(requiredSet))
+	for name := range requiredSet {
+		required = append(required, name)
 	}
 
 	for _, c := range commonConfigDescriptions {

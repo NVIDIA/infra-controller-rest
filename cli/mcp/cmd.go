@@ -101,6 +101,9 @@ func runServe(c *urfave.Context, specData []byte) error {
 
 	listen := c.String("listen")
 	path := c.String("path")
+	if path == "" || path[0] != '/' {
+		return fmt.Errorf("invalid --path %q: must be non-empty and start with '/'", path)
+	}
 	shutdownTimeout := c.Duration("shutdown-timeout")
 
 	mux := http.NewServeMux()
@@ -121,6 +124,7 @@ func runServe(c *urfave.Context, specData []byte) error {
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
 
 	select {
 	case err := <-errCh:
@@ -143,7 +147,10 @@ func runServe(c *urfave.Context, specData []byte) error {
 // app-global flags on top of the loaded config file, mirroring what the
 // dynamically-generated commands do via clientFromContext.
 func buildServeOptions(c *urfave.Context) (Options, error) {
-	cfg, _ := appcli.LoadConfig()
+	cfg, err := appcli.LoadConfig()
+	if err != nil {
+		return Options{}, fmt.Errorf("loading config: %w", err)
+	}
 	appcli.ApplyEnvOverrides(cfg)
 
 	baseURL := cfg.API.Base

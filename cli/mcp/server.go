@@ -97,8 +97,7 @@ func sortedPaths(spec *appcli.Spec) []string {
 
 func registerGET(server *mcp.Server, spec *appcli.Spec, path string, item appcli.PathItem, opts Options) {
 	op := item.Get
-	allParams := append([]appcli.Parameter{}, item.Parameters...)
-	allParams = append(allParams, op.Parameters...)
+	allParams := mergeParameters(item, op)
 
 	tool := &mcp.Tool{
 		Name:        toolName(op.OperationID),
@@ -121,7 +120,10 @@ func registerGET(server *mcp.Server, spec *appcli.Spec, path string, item appcli
 			client.TokenRefresh = cfg.TokenRefresh
 		}
 
-		pathParams, queryParams := splitArgs(in, allParams)
+		pathParams, queryParams, err := splitArgs(in, allParams)
+		if err != nil {
+			return errorResult(err), nil, nil
+		}
 		body, _, err := client.Do(http.MethodGet, path, pathParams, queryParams, nil)
 		if err != nil {
 			return errorResult(err), nil, nil
@@ -158,7 +160,10 @@ func toolDescription(op *appcli.Operation) string {
 // "org" path parameter is intentionally skipped here because
 // appcli.Client.Do substitutes {org} from Client.Org, which
 // resolveCallConfig sets from the per-call override or config layer.
-func splitArgs(in map[string]any, params []appcli.Parameter) (pathParams, queryParams map[string]string) {
+//
+// TODO: full OpenAPI style/explode serialization for array and object
+// parameters is intentionally deferred; unsupported shapes fail fast.
+func splitArgs(in map[string]any, params []appcli.Parameter) (pathParams, queryParams map[string]string, err error) {
 	pathParams = map[string]string{}
 	queryParams = map[string]string{}
 	for _, p := range params {
@@ -169,7 +174,10 @@ func splitArgs(in map[string]any, params []appcli.Parameter) (pathParams, queryP
 		if !ok {
 			continue
 		}
-		s := coerceToString(raw)
+		s, ok := coerceToString(raw)
+		if !ok {
+			return nil, nil, fmt.Errorf("unsupported argument type for %q: %T", p.Name, raw)
+		}
 		if s == "" {
 			continue
 		}
@@ -180,35 +188,35 @@ func splitArgs(in map[string]any, params []appcli.Parameter) (pathParams, queryP
 			queryParams[p.Name] = s
 		}
 	}
-	return pathParams, queryParams
+	return pathParams, queryParams, nil
 }
 
-func coerceToString(v any) string {
+func coerceToString(v any) (string, bool) {
 	switch t := v.(type) {
 	case nil:
-		return ""
+		return "", true
 	case string:
-		return t
+		return t, true
 	case bool:
 		if t {
-			return "true"
+			return "true", true
 		}
-		return "false"
+		return "false", true
 	case float64:
 		// JSON numbers decode to float64; format integers without the
 		// decimal point so they round-trip through query strings.
 		if t == float64(int64(t)) {
-			return fmt.Sprintf("%d", int64(t))
+			return fmt.Sprintf("%d", int64(t)), true
 		}
-		return fmt.Sprintf("%g", t)
+		return fmt.Sprintf("%g", t), true
 	case int:
-		return fmt.Sprintf("%d", t)
+		return fmt.Sprintf("%d", t), true
 	case int64:
-		return fmt.Sprintf("%d", t)
+		return fmt.Sprintf("%d", t), true
 	case json.Number:
-		return t.String()
+		return t.String(), true
 	default:
-		return ""
+		return "", false
 	}
 }
 
