@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/NVIDIA/infra-controller-rest/cli/mcp"
 	appcli "github.com/NVIDIA/infra-controller-rest/cli/pkg"
 	"github.com/NVIDIA/infra-controller-rest/cli/tui"
 	"github.com/NVIDIA/infra-controller-rest/openapi"
@@ -27,6 +28,7 @@ func main() {
 			return tui.RunTUI(c.String("config"))
 		},
 	})
+	app.Commands = append(app.Commands, mcp.Command(openapi.Spec))
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

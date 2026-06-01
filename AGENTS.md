@@ -32,7 +32,7 @@ infra-controller-rest/
 ├── api/                  # Main REST API server (Echo-based)
 ├── auth/                 # Authentication (Keycloak, JWT, service accounts)
 ├── cert-manager/         # Native PKI certificate management (credsmgr)
-├── cli/                  # CLI client (nicocli) with TUI
+├── cli/                  # CLI client (nicocli) with TUI and MCP server mode
 ├── common/               # Shared utilities and configuration
 ├── db/                   # Database layer (Bun ORM, pgx, migrations)
 ├── deploy/               # Kubernetes deployment (Kind, Kustomize, Helm)
