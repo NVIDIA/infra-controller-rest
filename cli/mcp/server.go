@@ -74,6 +74,14 @@ func BuildServer(specData []byte, opts Options) (*mcp.Server, error) {
 //     Content-Type: application/json; the SDK never opens an SSE
 //     stream. The data-hall deployment behind the Latinum Agent
 //     Gateway Shard Proxy (NATS) requires this.
+//
+// DNS-rebinding (localhost) protection and cross-origin protection are
+// deliberately left at the SDK's secure defaults (go-sdk v1.4.1+):
+// browser cross-origin requests and localhost DNS-rebinding attempts are
+// rejected, while non-browser MCP/gateway clients -- which send no Origin
+// or Sec-Fetch-Site header -- pass through unaffected. Do not set
+// DisableLocalhostProtection or a permissive CrossOriginProtection here
+// without understanding the security trade-off.
 func NewHandler(server *mcp.Server) http.Handler {
 	return mcp.NewStreamableHTTPHandler(
 		func(*http.Request) *mcp.Server { return server },

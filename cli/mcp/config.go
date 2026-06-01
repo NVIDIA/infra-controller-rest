@@ -135,8 +135,8 @@ func (c resolvedConfig) requireNonEmpty() error {
 	if len(missing) == 0 {
 		return nil
 	}
-	return fmt.Errorf("missing required config value(s): %s; pass via tool args, server flags, or %s",
-		strings.Join(missing, ", "), appcli.ConfigPath())
+	return fmt.Errorf("missing required config value(s): %s; pass via tool-call arguments, server flags, or NICO_* environment variables",
+		strings.Join(missing, ", "))
 }
 
 func stringArg(in map[string]any, key string) string {

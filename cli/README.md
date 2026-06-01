@@ -360,7 +360,7 @@ nicocli mcp serve \
 | `--path` | `NICO_MCP_PATH` | HTTP path prefix the MCP handler is mounted at (default `/mcp`) |
 | `--shutdown-timeout` | `NICO_MCP_SHUTDOWN_TIMEOUT` | Graceful shutdown timeout (default `10s`) |
 
-`--base-url`, `--org`, `--api-name`, `--token`, and `--token-command` are inherited from the root command and provide the server-side defaults. Like every other `nicocli` command, the server loads `~/.nico/config.yaml` at startup; unset flags fall back to config values.
+`--base-url`, `--org`, `--api-name`, `--token`, and `--token-command` are inherited from the root command and provide optional server-side defaults; each also reads its `NICO_*` environment variable. Unlike the other `nicocli` commands, `mcp serve` does **not** read `~/.nico/config.yaml` -- the server is stateless and entirely parameter-driven, so `nicocli mcp serve` starts cleanly with no config file present and every connection detail is supplied per tool call (see below), falling back to these flags only when an argument is omitted.
 
 ### Per-call config overrides
 
@@ -373,7 +373,7 @@ Every typical config value can also be passed as an argument on each MCP tool ca
 | `api_name` | `--api-name` | `api.name` |
 | `token` | `--token` | `auth.token` |
 
-Precedence per tool call (first non-empty wins): tool argument → inbound `Authorization` header (token only) → server startup flag → server-loaded config file → `token_command` refresh on a 401. `token_command`, OIDC credentials, and NGC api_key settings are NOT exposed as tool arguments -- they are login-flow inputs configured server-side.
+Precedence per tool call (first non-empty wins): tool argument → inbound `Authorization` header (token only) → server startup flag/env → `token_command` refresh on a 401. The MCP server does not read the on-disk config file. `token_command`, OIDC credentials, and NGC api_key settings are NOT exposed as tool arguments -- they are login-flow inputs configured server-side via flags/env.
 
 ### Probing the server
 

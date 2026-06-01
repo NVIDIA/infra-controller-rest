@@ -256,8 +256,7 @@ func TestOptions_WithDefaults(t *testing.T) {
 	require.NotNil(t, o.Log)
 }
 
-// TestNoConfigWriteBack runs the runServe-relevant config helpers (just
-// LoadConfig + ApplyEnvOverrides + the package's TokenRefresh closure)
+// TestNoConfigWriteBack exercises the package's TokenRefresh closure
 // against a temp config file and verifies the file on disk is byte-
 // identical before and after. This is the design guarantee from the
 // "Statelessness invariants" section: the MCP server never writes back

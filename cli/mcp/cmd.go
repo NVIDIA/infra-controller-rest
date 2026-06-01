@@ -29,8 +29,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	urfave "github.com/urfave/cli/v2"
-
-	appcli "github.com/NVIDIA/infra-controller-rest/cli/pkg"
 )
 
 // Command returns the "mcp" urfave/cli command tree for nicocli. Wire
@@ -89,10 +87,7 @@ func serveCommand(specData []byte) *urfave.Command {
 // and runs an http.Server until SIGINT/SIGTERM. It is split out from the
 // urfave Action closure so tests can drive it directly.
 func runServe(c *urfave.Context, specData []byte) error {
-	opts, err := buildServeOptions(c)
-	if err != nil {
-		return err
-	}
+	opts := buildServeOptions(c)
 
 	server, err := BuildServer(specData, opts)
 	if err != nil {
@@ -143,63 +138,26 @@ func runServe(c *urfave.Context, specData []byte) error {
 	}
 }
 
-// buildServeOptions resolves the urfave context into Options by layering
-// app-global flags on top of the loaded config file, mirroring what the
-// dynamically-generated commands do via clientFromContext.
-func buildServeOptions(c *urfave.Context) (Options, error) {
-	cfg, err := appcli.LoadConfig()
-	if err != nil {
-		return Options{}, fmt.Errorf("loading config: %w", err)
-	}
-	appcli.ApplyEnvOverrides(cfg)
-
-	baseURL := cfg.API.Base
-	if c.IsSet("base-url") {
-		baseURL = c.String("base-url")
-	}
-	if baseURL == "" {
-		baseURL = c.String("base-url")
-	}
-
-	org := cfg.API.Org
-	if c.IsSet("org") {
-		org = c.String("org")
-	}
-
-	apiName := cfg.API.Name
-	if c.IsSet("api-name") {
-		apiName = c.String("api-name")
-	}
-	if apiName == "" {
-		apiName = "nico"
-	}
-
-	token := ""
-	if c.IsSet("token") {
-		token = c.String("token")
-	} else if cfg.Auth.Token != "" {
-		token = cfg.Auth.Token
-	}
-
-	tokenCommand := ""
-	if c.IsSet("token-command") {
-		tokenCommand = c.String("token-command")
-	} else if cfg.Auth.TokenCommand != "" {
-		tokenCommand = cfg.Auth.TokenCommand
-	}
-
+// buildServeOptions resolves the MCP server's start-up defaults from the
+// process flags (each of which also reads its NICO_* environment
+// variable). Unlike the dynamically-generated commands, mcp serve does
+// NOT read ~/.nico/config.yaml: the server is stateless and entirely
+// parameter-driven, so every connection detail is supplied per tool call
+// via resolveCallConfig, with these flag values as the only fallback.
+// This lets "nicocli mcp serve" start cleanly with no config file present.
+func buildServeOptions(c *urfave.Context) Options {
 	log := logrus.NewEntry(logrus.StandardLogger())
 	if c.Bool("debug") {
 		log.Logger.SetLevel(logrus.DebugLevel)
 	}
 
 	return Options{
-		BaseURL:      baseURL,
-		Org:          org,
-		APIName:      apiName,
-		Token:        token,
-		TokenCommand: tokenCommand,
+		BaseURL:      c.String("base-url"),
+		Org:          c.String("org"),
+		APIName:      c.String("api-name"),
+		Token:        c.String("token"),
+		TokenCommand: c.String("token-command"),
 		Debug:        c.Bool("debug"),
 		Log:          log,
-	}, nil
+	}
 }
