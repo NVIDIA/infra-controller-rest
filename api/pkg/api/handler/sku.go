@@ -105,7 +105,7 @@ func (gash GetAllSkuHandler) Handle(c echo.Context) error {
 		}
 	} else if tenant != nil {
 		// Check if Tenant is privileged
-		if !tenant.Config.TargetedInstanceCreation {
+		if !common.TenantHasTargetedInstanceCreation(tenant) {
 			logger.Warn().Msg("Tenant doesn't have targeted Instance creation capability, access denied")
 			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant must have targeted Instance creation capability in order to retrieve SKUs", nil)
 		}
@@ -274,7 +274,7 @@ func (gsh GetSkuHandler) Handle(c echo.Context) error {
 		}
 	} else if tenant != nil {
 		// Check if Tenant is privileged
-		if !tenant.Config.TargetedInstanceCreation {
+		if !common.TenantHasTargetedInstanceCreation(tenant) {
 			logger.Warn().Msg("Tenant doesn't have targeted Instance creation capability, access denied")
 			return cutil.NewAPIErrorResponse(c, http.StatusForbidden, "Tenant must have targeted Instance creation capability in order to retrieve SKU", nil)
 		}

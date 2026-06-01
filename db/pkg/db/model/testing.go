@@ -33,6 +33,9 @@ func TestSetupSchema(t *testing.T, dbSession *db.Session) {
 	// create TenantSite table
 	err = dbSession.DB.ResetModel(context.Background(), (*TenantSite)(nil))
 	assert.Nil(t, err)
+	// create TenantSiteCapabilityAssociation table
+	err = dbSession.DB.ResetModel(context.Background(), (*TenantSiteCapabilityAssociation)(nil))
+	assert.Nil(t, err)
 	// create Network Security Group table
 	err = dbSession.DB.ResetModel(context.Background(), (*NetworkSecurityGroup)(nil))
 	assert.Nil(t, err)
@@ -221,6 +224,22 @@ func TestBuildTenantSite(t *testing.T, dbSession *db.Session, tn *Tenant, st *Si
 	assert.Nil(t, err)
 
 	return ts
+}
+
+// TestBuildTenantSiteCapabilityAssociation creates a test per-site capability association for a Tenant
+func TestBuildTenantSiteCapabilityAssociation(t *testing.T, dbSession *db.Session, tn *Tenant, st *Site, targetedInstanceCreation bool, user *User) *TenantSiteCapabilityAssociation {
+	tscaDAO := NewTenantSiteCapabilityAssociationDAO(dbSession)
+
+	tsca, err := tscaDAO.Create(context.Background(), nil, TenantSiteCapabilityAssociationCreateInput{
+		TenantID:                 tn.ID,
+		SiteID:                   st.ID,
+		InfrastructureProviderID: st.InfrastructureProviderID,
+		TargetedInstanceCreation: targetedInstanceCreation,
+		CreatedBy:                user.ID,
+	})
+	assert.Nil(t, err)
+
+	return tsca
 }
 
 // TestBuildInstanceType creates a test Instance Type

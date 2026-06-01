@@ -649,7 +649,7 @@ func (gsh GetSiteHandler) Handle(c echo.Context) error {
 
 		if !isAssociated {
 			// Check if Tenant is privileged
-			if tenant.Config != nil && tenant.Config.TargetedInstanceCreation {
+			if common.TenantHasTargetedInstanceCreation(tenant) {
 				taDAO := cdbm.NewTenantAccountDAO(gsh.dbSession)
 				tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
 					InfrastructureProviderID: &st.InfrastructureProviderID,
@@ -894,7 +894,7 @@ func (gash GetAllSiteHandler) Handle(c echo.Context) error {
 
 		// If Tenant is privileged (has TargetedInstanceCreation capability),
 		// also retrieve all Sites from Providers they have a Tenant Account with
-		if tenant.Config != nil && tenant.Config.TargetedInstanceCreation {
+		if common.TenantHasTargetedInstanceCreation(tenant) {
 			taDAO := cdbm.NewTenantAccountDAO(gash.dbSession)
 			tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
 				TenantIDs: []uuid.UUID{tenant.ID},
@@ -1224,7 +1224,7 @@ func (gssdh GetSiteStatusDetailsHandler) Handle(c echo.Context) error {
 
 		if !isAssociated {
 			// Check if Tenant is privileged
-			if tenant.Config != nil && tenant.Config.TargetedInstanceCreation {
+			if common.TenantHasTargetedInstanceCreation(tenant) {
 				taDAO := cdbm.NewTenantAccountDAO(gssdh.dbSession)
 				tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
 					InfrastructureProviderID: &st.InfrastructureProviderID,

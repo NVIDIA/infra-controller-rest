@@ -241,7 +241,7 @@ func (gamh GetAllMachineHandler) Handle(c echo.Context) error {
 
 	if tenant != nil {
 		// Check if Tenant is privileged
-		if tenant.Config.TargetedInstanceCreation {
+		if common.TenantHasTargetedInstanceCreation(tenant) {
 			// Get IDs for all Providers the privileged Tenant has an account with
 			taDAO := cdbm.NewTenantAccountDAO(gamh.dbSession)
 			tas, _, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
@@ -614,7 +614,7 @@ func (gmh GetMachineHandler) Handle(c echo.Context) error {
 		isProviderOrPrivilegedTenant = true
 	} else if tenant != nil {
 		// Check if Tenant is privileged
-		if tenant.Config.TargetedInstanceCreation {
+		if common.TenantHasTargetedInstanceCreation(tenant) {
 			// Check if privileged Tenant has an account with Infrastructure Provider
 			taDAO := cdbm.NewTenantAccountDAO(gmh.dbSession)
 			_, taCount, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
@@ -758,7 +758,7 @@ func (umh UpdateMachineHandler) Handle(c echo.Context) error {
 	// Validate if Tenant is allowed to update Machine
 	if tenant != nil {
 		// Check if Tenant is privileged
-		if tenant.Config.TargetedInstanceCreation {
+		if common.TenantHasTargetedInstanceCreation(tenant) {
 			// Check if privileged Tenant has an account with Infrastructure Provider
 			taDAO := cdbm.NewTenantAccountDAO(umh.dbSession)
 			_, taCount, serr := taDAO.GetAll(ctx, nil, cdbm.TenantAccountFilterInput{
