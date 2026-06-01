@@ -37,7 +37,7 @@ func TestNewAPIRoutes(t *testing.T) {
 		"metadata":                  1,
 		"service-account":           1,
 		"infrastructure-provider":   4,
-		"tenant":                    4,
+		"tenant":                    5,
 		"tenant-account":            5,
 		"site":                      6,
 		"vpc":                       6,

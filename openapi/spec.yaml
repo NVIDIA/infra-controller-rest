@@ -466,6 +466,77 @@ paths:
 
         User must have authorization role with `TENANT_ADMIN` suffix.
       parameters: []
+  '/v2/org/{org}/nico/tenant/{tenantId}/capabilities':
+    parameters:
+      - schema:
+          type: string
+        name: org
+        in: path
+        required: true
+        description: Name of the Org
+      - schema:
+          type: string
+          format: uuid
+        name: tenantId
+        in: path
+        required: true
+        description: ID of the Tenant
+    patch:
+      summary: Update scoped Tenant capabilities
+      operationId: update-tenant-capabilities
+      tags:
+        - Tenant
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantCapability'
+              examples:
+                example-1:
+                  value:
+                    capabilityName: TargetedInstanceCreation
+                    enabled: true
+                    siteIds:
+                      - 550e8400-e29b-41d4-a716-446655440000
+                      - 6ba7b810-9dad-11d1-80b4-00c04fd430c8
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+      description: |-
+        Enable or disable a scoped capability (e.g. `TargetedInstanceCreation`) for a resolved set of Sites.
+
+        Org must have a Tenant entity whose ID matches the `tenantId` path param. User must have authorization role with `TENANT_ADMIN` suffix.
+
+        Enabling a capability requires the tenant-level entitlement (`Tenant.Config`) to already be set; disabling is always permitted.
+
+        An empty `sites` array applies the change to all eligible Sites (the union of Tenant Site memberships and Sites reachable via `Ready` Tenant Accounts), optionally restricted by `infrastructureProviderId`. A non-empty `sites` array scopes the change to the listed Sites.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantCapabilityUpdateRequest'
+            examples:
+              enable-all-sites:
+                value:
+                  capabilityName: TargetedInstanceCreation
+                  sites: []
+                  enabled: true
+              enable-specific-sites:
+                value:
+                  capabilityName: TargetedInstanceCreation
+                  sites:
+                    - 550e8400-e29b-41d4-a716-446655440000
+                  enabled: true
+              disable-specific-sites:
+                value:
+                  capabilityName: TargetedInstanceCreation
+                  sites:
+                    - 550e8400-e29b-41d4-a716-446655440000
+                  enabled: false
+        description: Tenant capability update request
   '/v2/org/{org}/nico/tenant/account':
     parameters:
       - schema:
@@ -13119,6 +13190,59 @@ components:
         No params needed, an empty request will suffice.
       examples:
         - {}
+    TenantCapabilityUpdateRequest:
+      title: TenantCapabilityUpdateRequest
+      type: object
+      description: |-
+        Request data to enable or disable a scoped Tenant capability for a resolved set of Sites.
+
+        An empty `sites` array applies the change to all eligible Sites (optionally filtered by
+        `infrastructureProviderId`); a non-empty array scopes the change to the listed Sites.
+      examples:
+        - capabilityName: TargetedInstanceCreation
+          sites: []
+          enabled: true
+      properties:
+        capabilityName:
+          type: string
+          description: The capability to toggle
+          enum:
+            - TargetedInstanceCreation
+        sites:
+          type: array
+          description: Site IDs to scope the change to. Empty array means all eligible Sites.
+          items:
+            type: string
+            format: uuid
+        infrastructureProviderId:
+          type: string
+          format: uuid
+          description: Optionally restrict the resolved Site set to Sites owned by this provider
+        enabled:
+          type: boolean
+          description: true opts in, false opts out, for the resolved Sites
+      required:
+        - capabilityName
+        - enabled
+    TenantCapability:
+      title: TenantCapability
+      type: object
+      description: Result of a scoped Tenant capability update
+      examples:
+        - capabilityName: TargetedInstanceCreation
+          enabled: true
+          siteIds:
+            - 550e8400-e29b-41d4-a716-446655440000
+      properties:
+        capabilityName:
+          type: string
+        enabled:
+          type: boolean
+        siteIds:
+          type: array
+          items:
+            type: string
+            format: uuid
     Site:
       title: Site
       type: object
