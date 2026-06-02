@@ -22,10 +22,9 @@ func TestAPITenantAccountCreateRequest_Validate(t *testing.T) {
 		errStr    string
 	}{
 		{
-			desc:      "errors when infrastructureProviderID is not provided",
+			desc:      "ok when infrastructureProviderID is omitted (inferred from org by handler)",
 			obj:       APITenantAccountCreateRequest{TenantID: cdb.GetStrPtr(uuid.New().String())},
-			expectErr: true,
-			errStr:    "infrastructureProviderId: " + validationErrorValueRequired + ".",
+			expectErr: false,
 		},
 		{
 			desc:      "errors when infrastructureProviderID is invalid",
